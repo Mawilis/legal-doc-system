@@ -1,8 +1,7 @@
-/* eslint-disable */
 /**
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT
+ * VERSION: V74.9.0-SESSION-OWNED-BEARER-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -11,8 +10,12 @@
  * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
- * CERTIFICATION / UPDATE DATE: 2026-10-28
- * CHANGELOG: V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT — Excludes security-critical
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: V74.9.0-SESSION-OWNED-BEARER-CURRENTNESS — Stops harvesting
+ *            arbitrary response tokens; AuthProvider exclusively promotes EOS
+ *            candidates. Missing-bearer legal reads fail locally, and a delayed
+ *            old-session 401 cannot purge or redirect a newer session.
+ *            V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT — Excludes security-critical
  *            auth, system-services workspace-bootstrap and legal-acceptance
  *            status GETs from synthetic 503 source backoff. Such reads must
  *            reach EOS to obtain fresh authority or an authentic server error;
@@ -42,6 +45,7 @@
  *                               financial execution and settlement authority.
  */
 
+/* eslint-disable */
 import axios from 'axios';
 import { sha3_512 } from 'js-sha3';
 import { generateTraceAnchor, broadcastTelemetry } from '../utils/telemetryHelper.js';
@@ -50,11 +54,12 @@ import { bridgeLog } from '../utils/bridgeLog.js';
 /**
  * @constant {axios.AxiosInstance} api
  * @description The primary sovereign HTTP client for Wilsy OS. Every request is
- * cryptographically sealed with a deterministic SHA3-512 hash, synchronised with
- * the server's master clock, and queued atomically during quantum key rotation.
+ * accompanied by deterministic SHA3-512 transport metadata and a bounded clock
+ * observation. An unkeyed request digest is not authentication, PKI or legal proof.
  * @collaboration Wilson Khanyezi & AI Engineering — Designed the atomic queue and seal parity.
- * @epitome The single entry point for all backend communication; enforces zero‑trust security.
- * @institutional Ensures all outbound requests carry tenant identity and cryptographic proof.
+ * @epitome Canonical Python EOS HTTP transport; no browser authority is issued.
+ * @institutional Tenant headers are selected only after EOS bootstrap. Server
+ * authentication and authorization remain independent of browser digests.
  */
 const api = axios.create({
   baseURL: '/api',
@@ -72,11 +77,18 @@ const sourceBackoffUntil = new Map();
 // Active tenant transport context is set only after EOS workspace-bootstrap
 // revalidates the authenticated principal and its current tenant membership.
 let activeTenantTransportId = null;
+const MODEL_DEBUG = import.meta.env.VITE_WILSY_MODEL_DEBUG === '1';
 const RESERVED_TENANT_SCOPE_VALUES = new Set([
   'DEFAULT', 'GLOBAL', 'GLOBAL_ROOT', 'MASTER', 'ROOT',
   'SOVEREIGN_ROOT', 'WILSY', 'WILSY_GLOBAL_ROOT', 'WILSY_SOVEREIGN_ROOT',
 ]);
 
+/**
+ * @description Validate transport identifier syntax only, never tenant admission.
+ * @collaboration AuthProvider and source clients; EOS validates every tenant.
+ * @returns {boolean} Whether the selector has canonical transport shape.
+ * @institutional No persistence, transaction, IAM or financial authority.
+ */
 export const isCanonicalTenantTransportId = (tenantId) => (
   typeof tenantId === 'string'
   && tenantId === tenantId.trim()
@@ -86,14 +98,25 @@ export const isCanonicalTenantTransportId = (tenantId) => (
 );
 
 
+/**
+ * @description Anchor or clear the exact EOS-bootstrap tenant transport selector.
+ * @collaboration AuthProvider owns promotion; projections consume this client.
+ * @institutional Changes clear source backoff so one session's degraded reads
+ * cannot mask another session's sources. This setter grants no membership/IAM.
+ * @param {string|null} tenantId Revalidated tenant ID or explicit invalidation.
+ * @returns {void}
+ * @throws {Error} For a malformed or reserved selector.
+ */
 export const setActiveTenantTransportId = (tenantId) => {
   if (tenantId === null || tenantId === undefined || tenantId === '') {
     activeTenantTransportId = null;
+    sourceBackoffUntil.clear();
     return;
   }
   if (!isCanonicalTenantTransportId(tenantId)) {
     throw new Error('ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID');
   }
+  if (activeTenantTransportId !== tenantId) sourceBackoffUntil.clear();
   activeTenantTransportId = tenantId;
 };
 
@@ -239,29 +262,6 @@ const getStoredRefreshToken = () => {
 };
 
 /**
- * @function setTokens
- * @description Persists access and refresh tokens consistently across storage layers with automatic backup sync.
- * @param {string} accessToken - Primary access token.
- * @param {string} refreshToken - Secondary refresh token.
- * @collaboration AI Engineering (2026-08-14) — Token persistence.
- * @epitome Ensures token redundancy and prevents data loss.
- * @institutional Critical for fault‑tolerant session handling.
- */
-const setTokens = (accessToken, refreshToken) => {
-  try {
-    if (accessToken) {
-      localStorage.setItem(TOKEN_KEY, accessToken);
-      localStorage.setItem('token', accessToken);
-    }
-    if (refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    }
-  } catch (err) {
-    console.error('[BRIDGE] Error persisting tokens:', err);
-  }
-};
-
-/**
  * @function purgeTokens
  * @description Erases all authentication and session artifacts upon credential expiration or security violation.
  * @collaboration AI Engineering (2026-08-14) — Token cleanup.
@@ -307,7 +307,7 @@ const syncServerTime = async () => {
       serverTimeOffset = serverTime - (start + roundTrip / 2);
     }
   } catch (err) {
-    console.warn('[TIME-SYNC] Falling back to local clock due to network constraint:', err.message);
+    if (MODEL_DEBUG) console.info('[TIME-SYNC] KERNEL_CLOCK_SOURCE_UNAVAILABLE');
   }
 };
 
@@ -415,9 +415,8 @@ api.interceptors.request.use(
     );
     // Only a non-empty bearer credential is an explicit candidate. Malformed
     // values cannot suppress the current session bearer.
-    const hasSuppliedAuthorization = /^Bearer\s+\S+$/i.test(
-      authorizationValue
-    );
+    const explicitBearer = /^Bearer\s+(\S+)$/i.exec(authorizationValue);
+    const hasSuppliedAuthorization = Boolean(explicitBearer && !/^(undefined|null)$/i.test(explicitBearer[1]));
     const token = getStoredToken();
     const storedToken = typeof token === 'string' ? token.trim() : '';
     const hasStoredToken = (
@@ -434,6 +433,17 @@ api.interceptors.request.use(
         delete config.headers.Authorization;
         delete config.headers.authorization;
       }
+    }
+
+    if (
+      /^\/legal-acceptance(?:\/|$)/i.test(config.url || '')
+      && !hasSuppliedAuthorization && (!hasStoredToken || config.skipAuth)
+    ) {
+      const missing = new Error('AUTHENTICATION_REQUIRED');
+      missing.code = 'AUTHENTICATION_REQUIRED';
+      missing.config = config;
+      missing.isClientAuthGuard = true;
+      throw missing;
     }
 
     // Attach tenant scope only after EOS workspace-bootstrap revalidation.
@@ -521,16 +531,8 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    // APEX SNIFFER: Harvest tokens dynamically from successful API responses
-    const harvestedToken = response.data?.token || response.data?.accessToken || response.headers['authorization']?.replace(/^Bearer\s+/i, '');
-    const harvestedRefresh = response.data?.refreshToken;
-
-    if (harvestedToken) {
-      setTokens(harvestedToken, harvestedRefresh);
-      if (import.meta.env?.DEV) {
-        console.log('[BRIDGE] 🔐 Neural Sniffer captured and anchored fresh Identity Token.');
-      }
-    }
+    // Only AuthProvider may promote an EOS-validated candidate. Other response
+    // fields or headers must never replace browser session credentials.
     return response;
   },
   async (error) => {
@@ -555,7 +557,7 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      const challengePath = /^\/auth\/(?:login|sovereign-login|verify-otp|verify-3fa|validate-mfa-setup|otp\/verify|otp\/send)$/i.test(url);
+      const challengePath = /^\/auth\/(?:login|sovereign-login|verify-otp|verify-3fa|validate-mfa-setup|otp\/verify|otp\/send|global\/(?:login|verify-mfa|memberships|select-membership))$/i.test(url);
 
       if (challengePath) {
         return Promise.reject(error);
@@ -575,15 +577,21 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      const path = (
-        typeof window !== 'undefined'
-        && window.location?.pathname
-      ) || '';
+      const canonical = api.defaults?.headers?.common?.Authorization;
+      const stored = getStoredToken();
+      const current = typeof canonical === 'string' && /^Bearer\s+\S+$/i.test(canonical)
+        ? canonical : (stored ? 'Bearer ' + stored : null);
+      // A late denial belongs to the request's credential, not automatically
+      // to whichever principal/capacity is now active in the browser.
+      if (
+        !current || authorization.trim() !== current
+        || (stored && authorization.trim() !== 'Bearer ' + stored)
+      ) return Promise.reject(error);
 
-      if (!path.startsWith('/login')) {
-        purgeTokens();
-        window.location.href = '/login?expired=true';
-      }
+      purgeTokens();
+      if (api.defaults?.headers?.common) delete api.defaults.headers.common.Authorization;
+      setActiveTenantTransportId(null);
+      window.dispatchEvent(new CustomEvent('wilsy:session-invalidated'));
 
       return Promise.reject(error);
     }
@@ -779,7 +787,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT
+ * VERSION: V74.9.0-SESSION-OWNED-BEARER-CURRENTNESS
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata

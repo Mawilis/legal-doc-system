@@ -1,8 +1,11 @@
 /**
  * TITLE: WILSY OS Authenticated Legal Workspace Journey Certificate
- * VERSION: v1.1.0-LEGAL-BOOTSTRAP-DUNNING-SEPARATION
+ * VERSION: v1.2.0-HEADQUARTERS-ADMISSION-CURRENTNESS-CERT
  * AUTHORITY: Client integration evidence only; Python EOS remains authoritative.
- * CHANGELOG: v1.1.0-LEGAL-BOOTSTRAP-DUNNING-SEPARATION verifies no restricted dunning read is
+ * CHANGELOG: v1.2.0-HEADQUARTERS-ADMISSION-CURRENTNESS-CERT adds deterministic
+ *            stale-covenant, duplicate-bootstrap, logout-race and identity-switch
+ *            regression cases. The existing legal and dunning boundaries remain.
+ *            v1.2.0-HEADQUARTERS-ADMISSION-CURRENTNESS-CERT verifies no restricted dunning read is
  *            used to determine login or subscription lifecycle authority.
  *            v1.0.0-AUTH-BOOTSTRAP-LEGAL-BOUNDARY-JOURNEY verified authenticated Legal admission.
  * EPITOME: Exercises persisted-session revalidation, exact authenticated tenant
@@ -19,7 +22,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,8 +44,15 @@ vi.mock('../../src/services/api', () => ({
 }));
 vi.mock('../../src/utils/sovereignClient', () => ({ default: sovereignClient }));
 
-import { AuthProvider } from '../../src/contexts/authContext.jsx';
-import { AuthenticatedTenantBoundary } from '../../src/App.jsx';
+vi.mock('../../src/components/sovereign/SovereignDashboardController.jsx', () => ({
+  default: () => <main><h1>WILSY Headquarters</h1></main>,
+}));
+vi.mock('../../src/components/intelligence/WilsyOSIntelligenceDockRuntime.jsx', () => ({
+  default: () => null,
+}));
+
+import AuthContext, { AuthProvider, useAuth } from '../../src/contexts/authContext.jsx';
+import App, { AuthenticatedTenantBoundary, LegalAcceptanceBoundary } from '../../src/App.jsx';
 
 const tenantId = 'TENANT-LEGAL-JOURNEY';
 const userId = 'PRINCIPAL-LEGAL-JOURNEY';
@@ -99,13 +109,14 @@ describe('authenticated Legal workspace journey', () => {
     delete api.defaults.headers.common['x-tenant-id'];
     sovereignClient.get.mockReset().mockResolvedValue({ data: {} });
     setActiveTenantTransportId.mockReset();
+    window.history.replaceState({}, '', '/');
   });
 
   it('revalidates the session and exact tenant before releasing the Legal workspace after server COMPLETE', async () => {
     api.get.mockImplementation((path) => {
       if (path === '/auth/workspace-bootstrap') return Promise.resolve({ data: readyWorkspace });
       if (path === '/legal-acceptance/status') {
-        return Promise.resolve({ data: { status: 'COMPLETE', tenantId, documents: [] } });
+        return Promise.resolve({ data: { status: 'COMPLETE', admissionScope: 'PLATFORM_WORKSPACE', tenantId, principalId: userId, documents: [] } });
       }
       throw new Error(`Unexpected API read: ${path}`);
     });
@@ -121,8 +132,13 @@ describe('authenticated Legal workspace journey', () => {
     expect(await screen.findByTestId('authenticated-legal-runtime')).toBeInTheDocument();
     expect(api.get).toHaveBeenCalledWith('/auth/workspace-bootstrap', {
       headers: { Authorization: 'Bearer synthetic-session-token' },
+      skipAuthRedirect: true,
+      signal: expect.any(AbortSignal),
     });
-    expect(api.get).toHaveBeenCalledWith('/legal-acceptance/status');
+    expect(api.get).toHaveBeenCalledWith('/legal-acceptance/status', {
+      headers: { Authorization: 'Bearer synthetic-session-token' },
+      skipAuthRedirect: true, signal: expect.any(AbortSignal),
+    });
     expect(api.defaults.headers.common.Authorization).toBe('Bearer synthetic-session-token');
     expect(setActiveTenantTransportId).toHaveBeenCalledWith(tenantId);
     // A restricted collection projection is not subscription lifecycle truth.
@@ -137,6 +153,8 @@ describe('authenticated Legal workspace journey', () => {
         return Promise.resolve({
           data: {
             status: 'USER_TERMS_REQUIRED',
+            admissionScope: 'PLATFORM_WORKSPACE',
+            principalId: userId,
             tenantId,
             documents: [{
               agreementType: 'USER_TERMS',
@@ -165,17 +183,84 @@ describe('authenticated Legal workspace journey', () => {
 
     await waitFor(() => expect(screen.queryByTestId('authenticated-legal-runtime')).not.toBeInTheDocument());
     expect(await screen.findByRole("table", { name: "Required legal document records" })).toBeInTheDocument();
-    expect(screen.getByText("LEGAL ADMISSION CONTROL")).toBeInTheDocument();
+    expect(screen.getByText("PLATFORM WORKSPACE AGREEMENTS")).toBeInTheDocument();
+    expect(screen.queryByTestId("system-rail")).not.toBeInTheDocument();
+    expect(screen.getAllByAltText("WILSY gold emblem")).toHaveLength(1);
     expect(api.get).toHaveBeenCalledWith('/auth/workspace-bootstrap', {
       headers: { Authorization: 'Bearer synthetic-session-token' },
+      skipAuthRedirect: true,
+      signal: expect.any(AbortSignal),
     });
-    expect(api.get).toHaveBeenCalledWith('/legal-acceptance/status');
+    expect(api.get).toHaveBeenCalledWith('/legal-acceptance/status', {
+      headers: { Authorization: 'Bearer synthetic-session-token' },
+      skipAuthRedirect: true, signal: expect.any(AbortSignal),
+    });
   });
+  it('does not nest a second admission shell at a stale covenant URL after COMPLETE', async () => {
+    window.history.replaceState({}, '', '/covenant');
+    let statusReads = 0;
+    api.get.mockImplementation((path) => {
+      if (path === '/auth/workspace-bootstrap') return Promise.resolve({ data: readyWorkspace });
+      if (path === '/legal-acceptance/status') {
+        statusReads += 1;
+        return statusReads === 1
+          ? Promise.resolve({ data: { status: 'COMPLETE', admissionScope: 'PLATFORM_WORKSPACE', tenantId, principalId: userId, documents: [] } })
+          : new Promise(() => {});
+      }
+      return Promise.resolve({ data: {} });
+    });
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'WILSY Headquarters' })).toBeInTheDocument());
+    expect(statusReads).toBe(1);
+    expect(screen.queryByText('Resolving server evidence')).not.toBeInTheDocument();
+    expect(screen.queryByText('LEGAL ADMISSION CONTROL')).not.toBeInTheDocument();
+    expect(screen.getAllByAltText('WILSY gold emblem')).toHaveLength(1);
+  });
+
+  it('deduplicates an in-flight restoration under Strict Mode', async () => {
+    let resolveBootstrap;
+    const bootstrap = new Promise((resolve) => { resolveBootstrap = resolve; });
+    api.get.mockImplementation((path) => {
+      if (path === '/auth/workspace-bootstrap') return bootstrap;
+      return Promise.resolve({ data: { status: 'COMPLETE', admissionScope: 'PLATFORM_WORKSPACE', tenantId, principalId: userId, documents: [] } });
+    });
+    render(<React.StrictMode><MemoryRouter><AuthProvider><AuthenticatedTenantBoundary runtime={runtime} /></AuthProvider></MemoryRouter></React.StrictMode>);
+    expect(api.get.mock.calls.filter(([path]) => path === '/auth/workspace-bootstrap')).toHaveLength(1);
+    await act(async () => { resolveBootstrap({ data: readyWorkspace }); });
+    expect(await screen.findByTestId('authenticated-legal-runtime')).toBeInTheDocument();
+  });
+
+  it('cannot resurrect a logged-out session from a late bootstrap response', async () => {
+    let resolveBootstrap;
+    api.get.mockReturnValue(new Promise((resolve) => { resolveBootstrap = resolve; }));
+    const Probe = () => {
+      const auth = useAuth();
+      return <><output data-testid="auth-status">{String(auth.isAuthenticated)}</output><button onClick={() => auth.logout()}>End session</button></>;
+    };
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'End session' })); });
+    await act(async () => { resolveBootstrap({ data: readyWorkspace }); });
+    expect(screen.getByTestId('auth-status')).toHaveTextContent('false');
+    expect(localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(api.defaults.headers.common.Authorization).toBeUndefined();
+  });
+
+  it('invalidates completed admission immediately when the selected capacity changes', async () => {
+    const first = { token: 'synthetic-scope-a', isAuthenticated: true, authStage: 'AUTHENTICATED', loading: false, user: { id: userId, tenantId, role: 'tenant_owner', workspaceId: 'WILSY_HEADQUARTERS' }, tenant: readyWorkspace.workspace.tenant };
+    api.get.mockResolvedValueOnce({ data: { status: 'COMPLETE', admissionScope: 'PLATFORM_WORKSPACE', tenantId, principalId: userId, documents: [] } }).mockReturnValue(new Promise(() => {}));
+    const tree = (auth) => <MemoryRouter><AuthContext.Provider value={auth}><LegalAcceptanceBoundary runtime={runtime} /></AuthContext.Provider></MemoryRouter>;
+    const view = render(tree(first));
+    expect(await screen.findByTestId('authenticated-legal-runtime')).toBeInTheDocument();
+    view.rerender(tree({ ...first, token: 'synthetic-scope-b', user: { ...first.user, role: 'tenant_legal_partner', workspaceId: 'LEGAL_PRACTICE' } }));
+    expect(screen.queryByTestId('authenticated-legal-runtime')).not.toBeInTheDocument();
+    expect(screen.getByTestId('workspace-bootstrap')).toBeInTheDocument();
+  });
+
 });
 
 /*
  * ARTIFACT: App.authenticatedLegalWorkspaceJourney.test.jsx
- * VERSION: v1.1.0-LEGAL-BOOTSTRAP-DUNNING-SEPARATION
+ * VERSION: v1.2.0-HEADQUARTERS-ADMISSION-CURRENTNESS-CERT
  * AUTHORITY BOUNDARY: Synthetic authenticated journey test only.
  * TENANT POSTURE: Server-issued exact tenant only.
  * FAIL-CLOSED POSTURE: No implicit billing permission or login bypass.

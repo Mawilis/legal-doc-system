@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.5.0-SESSION-SCOPED-PLATFORM-ADMISSION
+ * VERSION: v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -12,12 +12,10 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
- *   v20.5.0-SESSION-SCOPED-PLATFORM-ADMISSION — Gives the authenticated tenant one platform-use
- *     admission boundary. A completed session at /covenant redirects to the
- *     company runtime rather than mounting a second Legal Control shell.
- *     Explicit workspace principal, tenant, selected business capacity and
- *     revision keys prevent stale admission state across role changes; source
- *     401/403 remain distinct from 503 while EOS retains acceptance authority.
+ *   v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS — Owns one explicitly
+ *     authenticated, scope-current platform-agreement read. Completed covenant
+ *     URLs redirect to the authorized workspace; required agreements use the
+ *     shared brand bar without a Legal Control rail or protected prefetch.
  *   v20.4.3-SINGLE-COMMAND-SEARCH-OWNER — Delegates shared search controls to
  *     the mounted workspace search and honors claimed keyboard events so a
  *     single shortcut cannot leave two modal backdrops open.
@@ -68,7 +66,7 @@
  */
 
 /* eslint-disable */
-import React, { Suspense, useEffect, useState, useMemo } from 'react';
+import React, { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
@@ -136,14 +134,14 @@ const ProtectedTmsRoute = ({ user, children }) => {
  * @collaboration Shared authenticated workspaces, source-owned My Work and EOS
  * workspace bootstrap. Header layout and navigation are presentation only.
  * @description Persistent authenticated top-bar frame shared by protected routes.
- * @param {{user: Object, onLogout: Function, children: React.ReactNode}} props
+ * @param {{user: Object, onLogout: Function, children: React.ReactNode, workspaceReleased?: boolean}} props
  * @returns {JSX.Element} Stable brand, global search, bounded system trust,
  *          notification availability, identity menu, and the active route outlet.
  * @institutional Python EOS remains the authority for identity, tenant, role,
  *          work visibility, notifications, and runtime health. This component
  *          renders only server-revalidated projections and never grants access.
  */
-export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
+export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceReleased = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, authStage, loading: authLoading } = useAuth();
@@ -171,7 +169,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     .map((part) => String(part || '')).join(':');
 
   useEffect(() => {
-    if (!user?.tenantId || user?.systemServicesWorkspace) {
+    if (!workspaceReleased || !hasAuthenticatedSession || authLoading || !user?.tenantId || user?.systemServicesWorkspace) {
       setWorkCountScope(null);
       setWorkCount(null);
       return undefined;
@@ -205,7 +203,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
       active = false;
       window.clearInterval(interval);
     };
-  }, [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
+  }, [workspaceReleased, hasAuthenticatedSession, authLoading, user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
 
   const openGlobalSearch = () => {
     const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
@@ -283,7 +281,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
               <span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
             </div>
           )}
-          <WilsyDailyAttentionCentre
+          {workspaceReleased && <WilsyDailyAttentionCentre
             key={currentWorkScope}
             tenantId={user?.tenantId}
             systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
@@ -299,7 +297,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
               setNotificationsOpen(false);
               navigate('/headquarters?section=hr-workspace');
             }}
-          />
+          />}
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
               {avatarUrl ? <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full border border-amber-300/30 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>}
@@ -518,9 +516,7 @@ const SovereignRouter = () => {
             ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
             : <Navigate to="/login" replace />)
       } />
-      {/* Platform-use acceptance is mounted exclusively by LegalAcceptanceBoundary
-          while REQUIRED; after COMPLETE, this legacy URL cannot mount another gate. */}
-      <Route path="/covenant" element={<Navigate to={isAuthenticated ? '/' : unauthenticatedEntryPath} replace />} />
+      <Route path="/covenant" element={<Navigate to="/" replace />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
           ? <ErrorBoundary><WilsyHeadquartersWorkspace key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} tenantId={user.tenantId} /></ErrorBoundary>
@@ -579,82 +575,203 @@ const WorkspaceBootstrapSurface = () => (
 );
 
 
-const WorkspaceBootstrapError = ({ message }) => (
+const WorkspaceBootstrapError = ({ message, title = 'Workspace access is unavailable' }) => (
   <div data-testid="workspace-bootstrap-error" role="alert" className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
-    <p className="font-mono text-xs tracking-widest uppercase text-red-300">Workspace access is unavailable</p>
-    <p className="mt-3 max-w-lg font-mono text-[10px] tracking-widest uppercase text-gray-500">{message}</p>
+    <p className="font-mono text-xs tracking-widest uppercase text-red-300">{title}</p>
+    <p className="mt-3 max-w-lg font-mono text-[10px] tracking-widest uppercase text-gray-500">{typeof message === 'string' ? message : 'WORKSPACE_AUTHORITY_UNAVAILABLE'}</p>
   </div>
 );
 
-/**
- * @description Resolve server-owned legal acceptance before mounting protected consumers.
- * @collaboration AuthenticatedTenantBoundary, LegalAcceptanceGate, and RuntimeComposition.
- * @institutional Prevents dashboard, billing, AI, and tenant-management hydration
- *              from racing ahead of the legal acceptance decision.
- * @param {{runtime?: React.ReactNode}} props Optional runtime seam for deterministic certificates.
- * @returns {JSX.Element} Loading, bounded legal, unavailable, or protected runtime surface.
- */
-export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition />, expectedTenantId = null }) => {
+// In-flight transport sharing only: no completed acceptance is cached as
+// authority. Keys include the exact bearer and scope and are never logged.
+const platformAdmissionReads = new Map();
+const PLATFORM_ADMISSION_STATES = new Set([
+  'COMPLETE', 'USER_TERMS_REQUIRED', 'ADMIN_ACK_REQUIRED',
+  'OWNER_AGREEMENTS_REQUIRED', 'MATERIAL_REACCEPTANCE_REQUIRED',
+  'DOCUMENT_APPROVAL_REQUIRED',
+]);
+
+const acquirePlatformAdmission = (token, scope) => {
+  const key = JSON.stringify([token, scope]);
+  let entry = platformAdmissionReads.get(key);
+  if (!entry) {
+    const controller = new AbortController();
+    entry = { controller, subscribers: 0, promise: null };
+    const owned = entry;
+    entry.promise = api.get('/legal-acceptance/status', {
+      headers: { Authorization: 'Bearer ' + token },
+      skipAuthRedirect: true,
+      signal: controller.signal,
+    }).finally(() => {
+      if (platformAdmissionReads.get(key) === owned) platformAdmissionReads.delete(key);
+    });
+    platformAdmissionReads.set(key, entry);
+  }
+  entry.subscribers += 1;
+  let released = false;
+  return {
+    promise: entry.promise,
+    release: () => {
+      if (released) return;
+      released = true;
+      entry.subscribers -= 1;
+      queueMicrotask(() => {
+        if (entry.subscribers === 0 && platformAdmissionReads.get(key) === entry) {
+          platformAdmissionReads.delete(key);
+          entry.controller.abort();
+        }
+      });
+    },
+  };
+};
+
+const validatePlatformAdmission = (plan, user) => {
+  if (
+    !plan || plan.admissionScope !== 'PLATFORM_WORKSPACE'
+    || plan.tenantId !== user.tenantId || plan.principalId !== user.id
+    || !PLATFORM_ADMISSION_STATES.has(plan.status)
+    || !Array.isArray(plan.documents)
+    || (plan.status === 'COMPLETE' && plan.documents.some((document) => document.accepted !== true))
+  ) throw new Error('PLATFORM_ADMISSION_CONTRACT_INVALID');
+  return plan;
+};
+
+const platformAdmissionError = (error) => {
+  const status = error?.response?.status;
+  if (status === 401) return { code: 'SESSION_EXPIRED', title: 'Sign-in needs verification' };
+  if (status === 403) return { code: 'PLATFORM_ADMISSION_FORBIDDEN', title: 'Workspace admission is not authorized' };
+  if (error?.message === 'PLATFORM_ADMISSION_CONTRACT_INVALID') {
+    return { code: 'PLATFORM_ADMISSION_CONTRACT_INVALID', title: 'Workspace admission could not be verified' };
+  }
+  if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') {
+    return { code: 'PLATFORM_ADMISSION_SLOW', title: 'Workspace agreement verification is slow' };
+  }
+  return status
+    ? { code: 'PLATFORM_ADMISSION_UNAVAILABLE', title: 'Workspace agreement service is unavailable' }
+    : { code: 'PLATFORM_ADMISSION_UNREACHABLE', title: 'Workspace agreement service could not be reached' };
+};
+
+const PlatformAdmissionSession = ({ auth, scope, runtime }) => {
   const navigate = useNavigate();
   const [phase, setPhase] = useState('LOADING');
   const [plan, setPlan] = useState(null);
   const [error, setError] = useState(null);
+  const activeRef = useRef(false);
+  const ownedReadsRef = useRef(new Set());
+
+  const readStatus = useCallback(async () => {
+    if (!activeRef.current) throw new Error('PLATFORM_ADMISSION_REQUEST_SUPERSEDED');
+    const read = acquirePlatformAdmission(auth.token, scope);
+    ownedReadsRef.current.add(read.release);
+    try {
+      const response = await read.promise;
+      if (!activeRef.current) throw new Error('PLATFORM_ADMISSION_REQUEST_SUPERSEDED');
+      return validatePlatformAdmission(response?.data, auth.user);
+    } finally {
+      read.release();
+      ownedReadsRef.current.delete(read.release);
+    }
+  }, [auth.token, auth.user.id, auth.user.tenantId, scope]);
+
+  const classifyFailure = useCallback((requestError) => {
+    if (!activeRef.current) return;
+    const classified = platformAdmissionError(requestError);
+    setError(classified);
+    setPhase('UNAVAILABLE');
+    if (requestError?.response?.status === 401) {
+      window.dispatchEvent(new CustomEvent('wilsy:session-invalidated'));
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-    api.get('/legal-acceptance/status').then((response) => {
-      if (!active) return;
-      const nextPlan = response.data;
-      if (expectedTenantId && nextPlan?.tenantId !== expectedTenantId) {
-        setError('LEGAL_ACCEPTANCE_TENANT_MISMATCH');
-        setPhase('UNAVAILABLE');
-        return;
-      }
+    let current = true;
+    activeRef.current = true;
+    readStatus().then((nextPlan) => {
+      if (!current || !activeRef.current) return;
       setPlan(nextPlan);
-      setPhase(nextPlan?.status === 'COMPLETE' ? 'COMPLETE' : 'REQUIRED');
+      setPhase(nextPlan.status === 'COMPLETE' ? 'COMPLETE' : 'REQUIRED');
     }).catch((requestError) => {
-      if (!active) return;
-      const status = Number(requestError?.response?.status || 0);
-      const detail = requestError?.response?.data?.detail;
-      setError(status === 401
-        ? 'AUTHENTICATED_SESSION_REVALIDATION_REQUIRED'
-        : status === 403
-          ? 'LEGAL_ACCEPTANCE_ACCESS_DENIED'
-          : typeof detail === 'string' && detail.length <= 160
-            ? detail
-            : 'LEGAL_ACCEPTANCE_STATUS_UNAVAILABLE');
-      setPhase('UNAVAILABLE');
+      if (current) classifyFailure(requestError);
     });
-    return () => { active = false; };
-  }, [expectedTenantId]);
+    return () => {
+      current = false;
+      activeRef.current = false;
+      for (const release of ownedReadsRef.current) release();
+      ownedReadsRef.current.clear();
+    };
+  }, [classifyFailure, readStatus]);
 
-  if (phase === 'LOADING') return <WorkspaceBootstrapSurface />;
-  if (phase === 'UNAVAILABLE') return <WorkspaceBootstrapError message={error} />;
-  const releaseWorkspace = () => {
-    // LegalAcceptanceGate invokes this callback only after its refreshed
-    // server status is COMPLETE. Updating phase therefore projects server truth;
-    // it does not manufacture legal acceptance in the browser.
-    setPhase('COMPLETE');
-    navigate('/', { replace: true });
+  const releaseWorkspace = (confirmedPlan) => {
+    if (!activeRef.current) return;
+    try {
+      const confirmed = validatePlatformAdmission(confirmedPlan, auth.user);
+      if (confirmed.status !== 'COMPLETE') return;
+      setPlan(confirmed);
+      setPhase('COMPLETE');
+      navigate('/', { replace: true });
+    } catch (requestError) {
+      classifyFailure(requestError);
+    }
   };
 
-  if (phase === 'REQUIRED') {
-    return (
-      <Routes>
-        <Route
-          path="/covenant"
-          element={(
-            <LegalAcceptanceGate
-              initialPlan={plan}
-              onComplete={releaseWorkspace}
-            />
-          )}
-        />
-        <Route path="*" element={<Navigate to="/covenant" replace />} />
-      </Routes>
-    );
+  const requestOptions = useMemo(() => ({
+    headers: { Authorization: 'Bearer ' + auth.token },
+    skipAuthRedirect: true,
+  }), [auth.token]);
+
+  if (phase === 'LOADING') return <WorkspaceBootstrapSurface />;
+  if (phase === 'COMPLETE') return runtime;
+
+  return (
+    <AuthenticatedGlobalChrome user={auth.user} onLogout={auth.logout} workspaceReleased={false}>
+      {phase === 'UNAVAILABLE' ? (
+        <WorkspaceBootstrapError title={error?.title} message={error?.code} />
+      ) : (
+        <Routes>
+          <Route path="/covenant" element={
+            <LegalAcceptanceGate initialPlan={plan} presentation="platform"
+              loadStatus={readStatus} requestOptions={requestOptions}
+              onRequestError={classifyFailure} onComplete={releaseWorkspace} />
+          } />
+          <Route path="*" element={<Navigate to="/covenant" replace />} />
+        </Routes>
+      )}
+    </AuthenticatedGlobalChrome>
+  );
+};
+
+/**
+ * @description Resolve mandatory platform-use agreements for one current EOS
+ * session. This is not a Legal Operations product or practice admission gate.
+ * @collaboration AuthProvider, TenantProvider, approved document/acceptance
+ * registries, LegalAcceptanceGate presentation and protected runtime composition.
+ * @institutional No read starts before authenticated bootstrap, exact tenant and
+ * a non-empty canonical bearer. Session/capacity changes remount the boundary;
+ * late responses cannot reuse a prior COMPLETE projection. No IAM, commercial,
+ * persistence, transaction or financial authority is created.
+ * @param {{runtime?: React.ReactNode}} props Optional deterministic render seam.
+ * @returns {JSX.Element} Unverified loading, platform agreement/error or released runtime.
+ */
+export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition /> }) => {
+  const auth = useAuth();
+  const credentialRevision = useRef({ token: auth.token, revision: 0 });
+  if (credentialRevision.current.token !== auth.token) {
+    credentialRevision.current = { token: auth.token, revision: credentialRevision.current.revision + 1 };
   }
-  return runtime;
+  const tenantId = auth.user?.tenantId;
+  const ready = Boolean(
+    auth.isAuthenticated && auth.authStage === AUTH_STATES.AUTHENTICATED
+    && !auth.loading && auth.user?.id && tenantId
+    && typeof auth.token === 'string' && auth.token.trim() === auth.token
+    && auth.token && !/^(undefined|null)$/i.test(auth.token)
+  );
+  if (!ready) return <WorkspaceBootstrapSurface />;
+  const scope = JSON.stringify([
+    auth.user.id, tenantId, auth.user.role, auth.user.workspaceId,
+    auth.user.membershipRevision, auth.user.businessRoleRevision,
+    auth.sessionGeneration, credentialRevision.current.revision,
+  ]);
+  return <PlatformAdmissionSession key={scope} auth={auth} scope={scope} runtime={runtime} />;
 };
 
 const RuntimeComposition = () => (
@@ -666,10 +783,10 @@ const RuntimeComposition = () => (
 );
 
 const AuthenticatedRuntimeComposition = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, authStage, loading, token, sessionGeneration, user } = useAuth();
   const { activeTenant } = useTenants();
 
-  if (!isAuthenticated || !user?.id || !user?.tenantId || !activeTenant) {
+  if (!isAuthenticated || loading || authStage !== AUTH_STATES.AUTHENTICATED || !token || !user?.id || !user?.tenantId || !activeTenant) {
     return <WorkspaceBootstrapError message="AUTHENTICATED_WORKSPACE_UNRESOLVED" />;
   }
 
@@ -677,6 +794,8 @@ const AuthenticatedRuntimeComposition = () => {
     <>
       <RuntimeComposition />
       <WilsyOSIntelligenceDockRuntime
+        key={JSON.stringify([user.id, user.tenantId, user.role, user.workspaceId, sessionGeneration])}
+        sessionGeneration={sessionGeneration}
         authenticated
         authUser={user}
         activeTenant={activeTenant}
@@ -695,8 +814,9 @@ const AuthenticatedRuntimeComposition = () => {
  * @returns {JSX.Element} Independently gated SYSTEM, tenant or unauthenticated UI.
  */
 export const AuthenticatedTenantBoundary = ({ runtime }) => {
-  const { isAuthenticated, tenant, user } = useAuth();
+  const { isAuthenticated, authStage, loading, token, sessionGeneration, tenant, user } = useAuth();
   if (!isAuthenticated) return <RuntimeComposition />;
+  if (loading || authStage !== AUTH_STATES.AUTHENTICATED || !token || !user?.id) return <WorkspaceBootstrapSurface />;
 
   // Global SYSTEM principals have no tenant membership by design. Mount the
   // existing authenticated SYSTEM dashboard path without TenantProvider or
@@ -713,33 +833,20 @@ export const AuthenticatedTenantBoundary = ({ runtime }) => {
   if (systemServicesSession) return <RuntimeComposition />;
 
   return (
-    <TenantProvider initialTenant={tenant} authenticatedTenantId={String(user?.tenantId || '')}>
+    <TenantProvider key={JSON.stringify([user.id, user.tenantId, user.role, user.workspaceId, user.membershipRevision, user.businessRoleRevision, sessionGeneration])} initialTenant={tenant} authenticatedTenantId={String(user?.tenantId || '')}>
       <AuthenticatedBootstrapBoundary runtime={runtime} />
     </TenantProvider>
   );
 };
 
 const AuthenticatedBootstrapBoundary = ({ runtime }) => {
-  const { isAuthenticated, user, token } = useAuth();
   const { activeTenant, bootstrapReady, loading, error, authorityMismatch } = useTenants();
-  // Source-validated principal, tenant, selected capacity and revisions are
-  // rendering identity only, never browser-created legal acceptance authority.
-  const admissionScope = [
-    user?.id, user?.tenantId, user?.businessRole, user?.workspaceId,
-    user?.membershipRevision, user?.businessRoleRevision,
-  ].map((value) => String(value ?? '')).join(':');
-  if (!isAuthenticated || !token || !user?.id || !user?.tenantId || !bootstrapReady || loading) {
-    return <WorkspaceBootstrapSurface />;
-  }
+  if (!bootstrapReady || loading) return <WorkspaceBootstrapSurface />;
   if (authorityMismatch || error || !activeTenant) {
     return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (error || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
   }
   return (
-    <LegalAcceptanceBoundary
-      key={admissionScope}
-      expectedTenantId={user.tenantId}
-      runtime={runtime || <AuthenticatedRuntimeComposition />}
-    />
+    <LegalAcceptanceBoundary runtime={runtime || <AuthenticatedRuntimeComposition />} />
   );
 };
 
@@ -777,7 +884,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.5.0-SESSION-SCOPED-PLATFORM-ADMISSION
+ * VERSION: v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
