@@ -1,6 +1,6 @@
 /**
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.7.0-WILSY-HEADQUARTERS-WORKSPACE-SESSION-CERT
+ * VERSION: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
@@ -276,7 +276,10 @@ describe('authoritative authentication state machine', () => {
       mfa_challenge: 'sysmfa_one-time-challenge',
       code: '123456',
     });
-    expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
+    expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap', expect.objectContaining({
+      headers: { Authorization: 'Bearer system-access-token' },
+      skipAuthRedirect: true, signal: expect.any(AbortSignal),
+    }));
     expect(api.defaults.headers.common.Authorization).toBe('Bearer system-access-token');
     expect(screen.getByTestId('tenant-id')).toBeEmptyDOMElement();
     const projected = JSON.parse(window.localStorage.getItem('wilsy_sovereign_user'));
@@ -432,11 +435,10 @@ describe('authoritative authentication state machine', () => {
 
     expect(api.get).toHaveBeenCalledWith(
       '/auth/workspace-bootstrap',
-      {
-        headers: {
-          Authorization: 'Bearer stored-token',
-        },
-      },
+      expect.objectContaining({
+        headers: { Authorization: 'Bearer stored-token' },
+        skipAuthRedirect: true, signal: expect.any(AbortSignal),
+      }),
     );
     expect(api.defaults.headers.common.Authorization).toBe('Bearer stored-token');
     expect(screen.getByTestId('role')).toHaveTextContent('tenant_legal_partner');
@@ -501,12 +503,14 @@ describe('authoritative authentication state machine', () => {
     await waitFor(() => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
     });
-    expect(api.get).toHaveBeenNthCalledWith(1, '/auth/workspace-bootstrap', {
+    expect(api.get).toHaveBeenNthCalledWith(1, '/auth/workspace-bootstrap', expect.objectContaining({
       headers: { Authorization: 'Bearer stored-system-token' },
-    });
-    expect(api.get).toHaveBeenNthCalledWith(2, '/system-services/workspace-bootstrap', {
+      skipAuthRedirect: true, signal: expect.any(AbortSignal),
+    }));
+    expect(api.get).toHaveBeenNthCalledWith(2, '/system-services/workspace-bootstrap', expect.objectContaining({
       headers: { Authorization: 'Bearer stored-system-token' },
-    });
+      skipAuthRedirect: true, signal: expect.any(AbortSignal),
+    }));
     expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
     expect(screen.getByTestId('tenant-id')).toBeEmptyDOMElement();
     expect(api.defaults.headers.common.Authorization).toBe('Bearer stored-system-token');
@@ -1025,11 +1029,14 @@ describe('authoritative authentication state machine', () => {
     fireEvent.click(screen.getByRole('button', { name: 'verify' }));
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
+      expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap', expect.objectContaining({
+        headers: { Authorization: 'Bearer candidate-session-token' },
+        skipAuthRedirect: true, signal: expect.any(AbortSignal),
+      }));
     });
 
     // The MFA response and candidate bearer alone are never browser authority.
-    expect(api.defaults.headers.common.Authorization).toBe('Bearer candidate-session-token');
+    expect(api.defaults.headers.common.Authorization).toBeUndefined();
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
     expect(screen.getByTestId('stage')).not.toHaveTextContent(
       AUTH_STATES.AUTHENTICATED,
@@ -1075,9 +1082,12 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.7.0-WILSY-HEADQUARTERS-WORKSPACE-SESSION-CERT
+ * VERSION: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection certificate only; D21B8 branding, workspace principal names and Legal permission provenance are presentation-only and never browser authorization authority
- * CHANGELOG: v1.7.0-WILSY-HEADQUARTERS-WORKSPACE-SESSION-CERT — Added exact configured/null branding projection, anti-discovery/login/persisted override, legacy-alias stripping, mandatory provenance, cross-tenant and malformed-schema fail-closed evidence.
+ * CHANGELOG: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT proves explicit bearer routing and
+ * abort/currentness while rejecting an unverified MFA candidate as browser
+ * authority. This retains all anti-forgery and tenant isolation cases.
+ *            v1.7.0-WILSY-HEADQUARTERS-WORKSPACE-SESSION-CERT — Added exact configured/null branding projection, anti-discovery/login/persisted override, legacy-alias stripping, mandatory provenance, cross-tenant and malformed-schema fail-closed evidence.
  *            v1.4.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION-CERT — Added server-only person-name projection, anti-login/persisted-name authority proofs, explicit null-name preservation, and malformed-name fail-closed evidence.
  *            v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT — Added exact, empty, absent and malformed Legal
  * permission-projection evidence while retaining anti-JWT/browser-authority proofs.

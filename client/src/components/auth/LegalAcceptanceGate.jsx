@@ -1,6 +1,6 @@
 /**
- * TITLE: WILSY OS Institutional Legal Admission Operating Shell
- * VERSION: v1.8.1-DOM-COMPATIBLE-RECORD-SCROLL-RESET
+ * TITLE: WILSY OS Server-Owned Agreement Admission Presentation
+ * VERSION: v1.9.0-PLATFORM-AGREEMENT-PRESENTATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides an operational legal-control workspace with collapsible
  *           system context, compact records, document focus, and explicit
@@ -8,8 +8,12 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/LegalAcceptanceGate.jsx
  * COLLABORATION / OWNERSHIP: Python legal_acceptance_router/service owns all
  *                            legal truth; this component owns presentation only.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v1.8.1 replaces Element.scrollTo with direct bounded scrollTop
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.9.0-PLATFORM-AGREEMENT-PRESENTATION presents platform agreements
+ *            beneath the single shared brand bar without a Legal system rail.
+ *            Commands and refreshes carry current request context; unmount aborts
+ *            owned transport and late replies cannot release another session.
+ *            v1.8.1 replaces Element.scrollTo with direct bounded scrollTop
  *            and scrollLeft reset so record navigation remains compatible with
  *            browser-like DOM runtimes that do not implement scrollTo. The
  *            presentation reset still changes no legal evidence or authority.
@@ -86,13 +90,22 @@ const isIntegrityBlocked = (document) => {
     || /has not been approved/i.test(String(document.content || ''));
 };
 
+const EMPTY_REQUEST_OPTIONS = Object.freeze({});
+
 const diagnosticFor = (requestError, fallback) => {
-  const response = requestError?.response;
-  const detail = response?.data?.detail;
+  const status = requestError?.response?.status || null;
+  if (status === 401) return { title: 'SESSION VERIFICATION REQUIRED', detail: 'SESSION_EXPIRED', status };
+  if (status === 403) return { title: 'ADMISSION NOT AUTHORIZED', detail: 'ADMISSION_FORBIDDEN', status };
+  if (requestError?.code === 'ECONNABORTED' || requestError?.code === 'ETIMEDOUT') {
+    return { title: 'AGREEMENT SOURCE SLOW', detail: 'ADMISSION_SOURCE_TIMEOUT', status };
+  }
+  const detail = requestError?.response?.data?.detail
+    || requestError?.response?.data?.error?.code;
   return {
     title: fallback,
-    detail: typeof detail === 'string' ? detail : 'SERVER_DETAIL_UNAVAILABLE',
-    status: response?.status || null,
+    detail: typeof detail === 'string' && /^[A-Z][A-Z0-9_]{0,119}$/.test(detail)
+      ? detail : (status ? 'ADMISSION_SOURCE_UNAVAILABLE' : 'ADMISSION_SOURCE_UNREACHABLE'),
+    status,
   };
 };
 
@@ -140,6 +153,19 @@ function ShellFrame({ plan, recordedCount, total, remainingCount, railCollapsed,
   return <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#070908] text-stone-100"><SystemBar plan={plan} recordedCount={recordedCount} total={total} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={onToggleRail} focusMode={focusMode} /><div className="flex min-h-0 flex-1"><SystemRail plan={plan} recordedCount={recordedCount} total={total} remainingCount={remainingCount} collapsed={railCollapsed} mobileOpen={mobileRailOpen} onCloseMobile={onCloseMobileRail} /><div className="min-h-0 min-w-0 flex-1">{children}</div></div><StatusFooter plan={plan} recordedCount={recordedCount} total={total} /></div>;
 }
 
+function PlatformAgreementFrame({ children }) {
+  return (
+    <div data-testid="platform-agreement-frame" className="flex h-[calc(100dvh-64px)] min-h-0 flex-col bg-[#080f1d] text-stone-100">
+      <section aria-label="Platform agreement applicability" className="shrink-0 border-b border-white/10 px-5 py-4">
+        <h1 className="text-lg font-semibold">Workspace agreements</h1>
+        <p className="mt-1 text-sm text-stone-400">Review the approved platform agreements required for your current account and capacity.</p>
+        <p className="mt-1 text-xs text-stone-500">Agreement evidence does not grant Legal practice permissions or product entitlements.</p>
+      </section>
+      <div className="min-h-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 function ErrorSurface({ error, compact = false }) {
   if (!error) return null;
   return <div role="alert" className={`${compact ? 'mt-3' : 'mb-5'} flex items-start gap-3 border border-red-400/25 bg-red-400/[0.035] px-3 py-2.5 text-xs leading-5 text-red-200`}><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" /><div><p className="text-[9px] font-bold uppercase tracking-[0.14em]">{error.title}</p><p className="mt-1 font-mono text-[10px] text-red-300">{error.detail}{error.status ? ` · HTTP ${error.status}` : ''}</p></div></div>;
@@ -156,12 +182,12 @@ function FocusAction({ document, submitting, recordEvidence, confirmationState }
   return <button type="button" onClick={() => recordEvidence(document)} disabled={submitting === document.documentId} className="flex min-h-10 w-full items-center justify-center gap-2 border border-[#d4af37]/60 bg-[#d4af37] px-3 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#10110f] transition hover:bg-[#e0bd4a] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f3d66f]">{submitting === document.documentId ? <Loader2 className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" aria-hidden="true" />}{submitting === document.documentId ? 'Recording evidence…' : actionLabelFor(document)}</button>;
 }
 
-function CommandDeck({ document, index, total, submitting, recordEvidence, confirmationState, nextUnresolved, onNextUnresolved, onPrevious, onNext, onReturn, error }) {
+function CommandDeck({ document, index, total, submitting, recordEvidence, confirmationState, nextUnresolved, onNextUnresolved, onPrevious, onNext, onReturn, error, platform = false }) {
   const serverRecorded = document.accepted;
-  return <aside aria-label="Document command deck" data-testid="document-command-deck" className="flex min-h-0 max-h-[42dvh] shrink-0 flex-col overflow-y-auto border-t border-white/[0.06] px-4 py-4 md:max-h-none md:overflow-visible md:border-l md:border-t-0 md:px-5 md:py-5"><div className="flex items-center justify-between"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#b99a45]">Record</p><span className="font-mono text-[10px] text-stone-500">{index + 1} / {total}</span></div><div className="mt-4 border-b border-white/[0.06] pb-4"><p className="text-[8px] font-bold tracking-[0.14em] text-stone-600">CURRENT RECORD</p><h2 className="mt-2 text-sm font-semibold text-stone-100">{document.title}</h2><p className="mt-1 font-mono text-[9px] uppercase tracking-[0.06em] text-stone-600">{recordTypeFor(document)}</p></div><div className="grid grid-cols-2 gap-2 border-b border-white/[0.06] py-4"><Compartment label="STATE" value={serverRecorded ? 'RECORDED' : 'REQUIRED'} /><Compartment label="METHOD" value={evidenceMethodFor(document)} /></div><div className="mt-auto space-y-2 pt-4"><FocusAction document={document} submitting={submitting} recordEvidence={recordEvidence} confirmationState={confirmationState} />{serverRecorded ? (nextUnresolved ? <button type="button" aria-label="Next unresolved record" onClick={onNextUnresolved} className="flex min-h-9 w-full items-center justify-center gap-1 border border-[#d4af37]/60 px-2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#f0d477] transition hover:bg-[#d4af37]/[0.08] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Next unresolved record <ChevronRight className="h-3.5 w-3.5" /></button> : null) : <div className="grid grid-cols-2 gap-2"><button type="button" aria-label="Previous record" onClick={onPrevious} disabled={index <= 0} className="flex min-h-9 items-center justify-center gap-1 border border-white/[0.13] px-2 text-[9px] font-bold uppercase text-stone-400 transition hover:text-stone-100 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]"> <ChevronLeft className="h-3.5 w-3.5" /> Previous</button><button type="button" aria-label="Next record" onClick={onNext} disabled={index >= total - 1} className="flex min-h-9 items-center justify-center gap-1 border border-white/[0.13] px-2 text-[9px] font-bold uppercase text-stone-400 transition hover:text-stone-100 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Next <ChevronRight className="h-3.5 w-3.5" /></button></div>}<button type="button" aria-label="Return to legal control" onClick={onReturn} className="flex min-h-9 w-full items-center justify-center gap-2 border border-white/[0.13] px-2 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400 transition hover:text-[#f0d477] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]"><ArrowLeft className="h-3.5 w-3.5" /> Return to legal control</button>{error && <ErrorSurface error={error} compact />}</div></aside>;
+  return <aside aria-label="Document command deck" data-testid="document-command-deck" className="flex min-h-0 max-h-[42dvh] shrink-0 flex-col overflow-y-auto border-t border-white/[0.06] px-4 py-4 md:max-h-none md:overflow-visible md:border-l md:border-t-0 md:px-5 md:py-5"><div className="flex items-center justify-between"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#b99a45]">Record</p><span className="font-mono text-[10px] text-stone-500">{index + 1} / {total}</span></div><div className="mt-4 border-b border-white/[0.06] pb-4"><p className="text-[8px] font-bold tracking-[0.14em] text-stone-600">CURRENT RECORD</p><h2 className="mt-2 text-sm font-semibold text-stone-100">{document.title}</h2><p className="mt-1 font-mono text-[9px] uppercase tracking-[0.06em] text-stone-600">{recordTypeFor(document)}</p></div><div className="grid grid-cols-2 gap-2 border-b border-white/[0.06] py-4"><Compartment label="STATE" value={serverRecorded ? 'RECORDED' : 'REQUIRED'} /><Compartment label="METHOD" value={evidenceMethodFor(document)} /></div><div className="mt-auto space-y-2 pt-4"><FocusAction document={document} submitting={submitting} recordEvidence={recordEvidence} confirmationState={confirmationState} />{serverRecorded ? (nextUnresolved ? <button type="button" aria-label="Next unresolved record" onClick={onNextUnresolved} className="flex min-h-9 w-full items-center justify-center gap-1 border border-[#d4af37]/60 px-2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#f0d477] transition hover:bg-[#d4af37]/[0.08] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Next unresolved record <ChevronRight className="h-3.5 w-3.5" /></button> : null) : <div className="grid grid-cols-2 gap-2"><button type="button" aria-label="Previous record" onClick={onPrevious} disabled={index <= 0} className="flex min-h-9 items-center justify-center gap-1 border border-white/[0.13] px-2 text-[9px] font-bold uppercase text-stone-400 transition hover:text-stone-100 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]"> <ChevronLeft className="h-3.5 w-3.5" /> Previous</button><button type="button" aria-label="Next record" onClick={onNext} disabled={index >= total - 1} className="flex min-h-9 items-center justify-center gap-1 border border-white/[0.13] px-2 text-[9px] font-bold uppercase text-stone-400 transition hover:text-stone-100 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Next <ChevronRight className="h-3.5 w-3.5" /></button></div>}<button type="button" aria-label={platform ? 'Return to agreements' : 'Return to legal control'} onClick={onReturn} className="flex min-h-9 w-full items-center justify-center gap-2 border border-white/[0.13] px-2 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400 transition hover:text-[#f0d477] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]"><ArrowLeft className="h-3.5 w-3.5" /> {platform ? 'Return to agreements' : 'Return to legal control'}</button>{error && <ErrorSurface error={error} compact />}</div></aside>;
 }
 
-function DocumentFocusFrame({ plan, document, documents, index, submitting, error, confirmationState, nextUnresolved, onNextUnresolved, onReturn, onPrevious, onNext, recordEvidence }) {
+function DocumentFocusFrame({ plan, document, documents, index, submitting, error, confirmationState, nextUnresolved, onNextUnresolved, onReturn, onPrevious, onNext, recordEvidence, platform = false }) {
   const readingSurfaceRef = useRef(null);
 
   useEffect(() => {
@@ -214,6 +240,7 @@ function DocumentFocusFrame({ plan, document, documents, index, submitting, erro
           onNext={onNext}
           onReturn={onReturn}
           error={error}
+          platform={platform}
         />
       </div>
     </main>
@@ -222,13 +249,40 @@ function DocumentFocusFrame({ plan, document, documents, index, submitting, erro
 
 /**
  * Render the server-derived acceptance plan as an operational control plane.
- * @param {{onComplete?: () => void, initialPlan?: object|null}} props
+ * @param {{onComplete?: Function, initialPlan?: object|null, presentation?: string,
+ * loadStatus?: Function|null, requestOptions?: object, onRequestError?: Function|null}} props
+ * @institutional The parent owns current session and platform applicability;
+ * request options carry transport only. No browser state becomes evidence.
+ * @mutation Only the explicit source-owned acceptance POST; caller/server own
+ * durable idempotency, immutable evidence and transaction commit/rollback.
  * @returns {React.ReactElement} Fail-closed legal admission workspace.
  * @collaboration Consumes GET/POST /api/legal-acceptance and notifies App.
  * @institutional Focus, rail, and navigation state never become legal truth.
  * @authority Python EOS owns status, evidence, identity, and release.
  */
-export default function LegalAcceptanceGate({ onComplete, initialPlan = null }) {
+export default function LegalAcceptanceGate({ onComplete, initialPlan = null, presentation = 'legal', loadStatus = null, requestOptions = EMPTY_REQUEST_OPTIONS, onRequestError = null }) {
+  const platform = presentation === 'platform';
+  const Frame = platform ? PlatformAgreementFrame : ShellFrame;
+  const admissionTitle = platform ? 'PLATFORM WORKSPACE AGREEMENTS' : 'LEGAL ADMISSION CONTROL';
+  const mountedRef = useRef(false);
+  const operationRef = useRef(0);
+  const readRevisionRef = useRef(0);
+  const commandPendingRef = useRef(false);
+  const actionControllerRef = useRef(null);
+  const completionCallbackRef = useRef(onComplete);
+  completionCallbackRef.current = onComplete;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    operationRef.current += 1;
+    const controller = new AbortController();
+    actionControllerRef.current = controller;
+    return () => {
+      mountedRef.current = false;
+      operationRef.current += 1;
+      controller.abort();
+    };
+  }, []);
   const [plan, setPlan] = useState(initialPlan);
   const [loading, setLoading] = useState(!initialPlan);
   const [submitting, setSubmitting] = useState(null);
@@ -241,25 +295,53 @@ export default function LegalAcceptanceGate({ onComplete, initialPlan = null }) 
   const railBeforeFocus = useRef(false);
   const completionNotified = useRef(false);
 
-  const notifyComplete = useCallback(() => { if (!completionNotified.current) { completionNotified.current = true; onComplete?.(); } }, [onComplete]);
+  const notifyComplete = useCallback((confirmedPlan) => {
+    if (
+      mountedRef.current && confirmedPlan?.status === 'COMPLETE'
+      && Array.isArray(confirmedPlan.documents)
+      && confirmedPlan.documents.every((document) => document.accepted === true)
+      && !completionNotified.current
+    ) {
+      completionNotified.current = true;
+      completionCallbackRef.current?.(confirmedPlan);
+    }
+  }, []);
+
   const loadPlan = useCallback(async ({ showLoading = true } = {}) => {
+    const operation = operationRef.current;
+    const revision = ++readRevisionRef.current;
+    const current = () => mountedRef.current && operation === operationRef.current && revision === readRevisionRef.current;
+    if (!current()) return null;
     if (showLoading) setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/legal-acceptance/status');
-      const nextPlan = response.data;
+      const nextPlan = loadStatus
+        ? await loadStatus()
+        : (await api.get('/legal-acceptance/status', { ...requestOptions, signal: actionControllerRef.current?.signal })).data;
+      if (!current()) return null;
+      if (!nextPlan || !Array.isArray(nextPlan.documents)) throw new Error('LEGAL_ACCEPTANCE_PLAN_INVALID');
       setPlan(nextPlan);
-      if (nextPlan?.status === 'COMPLETE') notifyComplete();
+      notifyComplete(nextPlan);
       return nextPlan;
     } catch (requestError) {
-      setError(diagnosticFor(requestError, 'LEGAL STATUS UNAVAILABLE'));
+      if (current()) {
+        setError(diagnosticFor(requestError, platform ? 'PLATFORM AGREEMENT STATUS UNAVAILABLE' : 'LEGAL STATUS UNAVAILABLE'));
+        if ([401, 403].includes(requestError?.response?.status)) onRequestError?.(requestError);
+      }
       return null;
-    } finally { if (showLoading) setLoading(false); }
-  }, [notifyComplete]);
+    } finally {
+      if (current() && showLoading) setLoading(false);
+    }
+  }, [loadStatus, notifyComplete, onRequestError, platform, requestOptions]);
 
   useEffect(() => {
-    if (initialPlan) { setPlan(initialPlan); setLoading(false); if (initialPlan.status === 'COMPLETE') notifyComplete(); return; }
-    loadPlan();
+    if (initialPlan) {
+      setPlan(initialPlan);
+      setLoading(false);
+      notifyComplete(initialPlan);
+      return;
+    }
+    void loadPlan();
   }, [initialPlan, loadPlan, notifyComplete]);
 
   const documents = useMemo(() => (Array.isArray(plan?.documents) ? plan.documents : []), [plan?.documents]);
@@ -288,33 +370,57 @@ export default function LegalAcceptanceGate({ onComplete, initialPlan = null }) 
   }, [focusDocument]);
 
   const recordEvidence = async (document) => {
-    setSubmitting(document.documentId); setError(null); setConfirmationState(null);
+    if (!mountedRef.current || commandPendingRef.current || document.accepted || isIntegrityBlocked(document)) return;
+    commandPendingRef.current = true;
+    const operation = operationRef.current;
+    const current = () => mountedRef.current && operation === operationRef.current;
+    setSubmitting(document.documentId);
+    setError(null);
+    setConfirmationState(null);
     try {
-      await api.post('/legal-acceptance/accept', { document_id: document.documentId, document_version: document.version, document_sha3_512: document.sha3_512, acceptance_method: evidenceMethodFor(document), locale: document.locale || 'en-ZA' }, { headers: { 'Idempotency-Key': newIdempotencyKey() } });
+      await api.post('/legal-acceptance/accept', {
+        document_id: document.documentId, document_version: document.version,
+        document_sha3_512: document.sha3_512, acceptance_method: evidenceMethodFor(document),
+        locale: document.locale || 'en-ZA',
+      }, {
+        ...requestOptions,
+        headers: { ...requestOptions.headers, 'Idempotency-Key': newIdempotencyKey() },
+        signal: actionControllerRef.current?.signal,
+      });
+      if (!current()) return;
       const refreshed = await loadPlan({ showLoading: false });
+      if (!current()) return;
       const refreshedDocuments = Array.isArray(refreshed?.documents) ? refreshed.documents : [];
       const refreshedDocument = refreshedDocuments.find((item) => item.documentId === document.documentId);
       if (refreshedDocument?.accepted === true) setConfirmationState(null);
       else setConfirmationState({ documentId: document.documentId, status: refreshed ? 'pending' : 'unavailable' });
-    } catch (requestError) { setError(diagnosticFor(requestError, 'EVIDENCE RECORDING REJECTED')); }
-    finally { setSubmitting(null); }
+    } catch (requestError) {
+      if (current()) {
+        setError(diagnosticFor(requestError, 'EVIDENCE RECORDING REJECTED'));
+        if ([401, 403].includes(requestError?.response?.status)) onRequestError?.(requestError);
+      }
+    } finally {
+      commandPendingRef.current = false;
+      if (current()) setSubmitting(null);
+    }
   };
 
-  if (loading) return <ShellFrame plan={plan} recordedCount={0} total={0} remainingCount={0} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full items-center justify-center px-5"><section className="w-full max-w-xl border border-white/[0.09] bg-[#0d100e] p-6"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">LEGAL ADMISSION CONTROL</p><div className="mt-5 flex items-center gap-3"><Loader2 className="h-4 w-4 animate-spin text-[#d4af37]" /><div><h1 className="text-lg font-semibold">Resolving server evidence</h1><p className="mt-1 text-xs text-stone-500">Workspace release remains sealed until the current plan is known.</p></div></div></section></main></ShellFrame>;
-  if (error && !plan) return <ShellFrame plan={plan} recordedCount={0} total={0} remainingCount={0} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full items-center justify-center px-5"><section role="alert" className="w-full max-w-xl border border-red-400/20 bg-[#110d0d] p-6"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-red-300">ADMISSION AUTHORITY UNAVAILABLE</p><ErrorSurface error={error} compact /></section></main></ShellFrame>;
+  if (plan?.status === 'COMPLETE' && plan.documents?.every((document) => document.accepted === true)) return null;
+  if (loading) return <Frame plan={plan} recordedCount={0} total={0} remainingCount={0} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full items-center justify-center px-5"><section className="w-full max-w-xl border border-white/[0.09] bg-[#0d100e] p-6"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">{admissionTitle}</p><div className="mt-5 flex items-center gap-3"><Loader2 className="h-4 w-4 animate-spin text-[#d4af37]" /><div><h1 className="text-lg font-semibold">Resolving server evidence</h1><p className="mt-1 text-xs text-stone-500">Workspace release remains sealed until the current plan is known.</p></div></div></section></main></Frame>;
+  if (error && !plan) return <Frame plan={plan} recordedCount={0} total={0} remainingCount={0} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full items-center justify-center px-5"><section role="alert" className="w-full max-w-xl border border-red-400/20 bg-[#110d0d] p-6"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-red-300">{error.title}</p><ErrorSurface error={error} compact /></section></main></Frame>;
   if (!plan) return null;
   const missingAgreementTypes = Array.isArray(plan.missingAgreementTypes) ? plan.missingAgreementTypes : [];
   const emptyPlan = (plan.status === 'USER_TERMS_REQUIRED' || plan.status === 'DOCUMENT_APPROVAL_REQUIRED') && total === 0;
-  if (emptyPlan) return <ShellFrame plan={plan} recordedCount={0} total={0} remainingCount={0} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full items-center justify-center px-5"><section role="status" className="w-full max-w-2xl border border-[#d4af37]/20 bg-[#0d100e] p-6"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">LEGAL ADMISSION CONTROL · SEALED</p><h1 className="mt-3 text-xl font-semibold">{plan.status === 'USER_TERMS_REQUIRED' ? 'Required documents are not yet available' : 'Legal documents are being prepared'}</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-400">Workspace access remains unavailable until the required server documents are published and recorded. This screen does not record evidence.</p>{missingAgreementTypes.length > 0 && <ul aria-label="Missing agreement types" className="mt-5 grid gap-2 sm:grid-cols-2">{missingAgreementTypes.map((item) => <li key={item} className="border border-white/[0.07] px-3 py-2 font-mono text-[10px] text-stone-400">{item}</li>)}</ul>}<p className="mt-6 border-t border-white/[0.07] pt-3 text-[8px] font-bold uppercase tracking-[0.14em] text-stone-700">No inferred evidence · fail closed</p></section></main></ShellFrame>;
+  if (emptyPlan) return <Frame plan={plan} recordedCount={0} total={0} remainingCount={0} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full items-center justify-center px-5"><section role="status" className="w-full max-w-2xl border border-[#d4af37]/20 bg-[#0d100e] p-6"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">{admissionTitle} · SEALED</p><h1 className="mt-3 text-xl font-semibold">{plan.status === 'USER_TERMS_REQUIRED' ? 'Required documents are not yet available' : 'Legal documents are being prepared'}</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-400">Workspace access remains unavailable until the required server documents are published and recorded. This screen does not record evidence.</p>{missingAgreementTypes.length > 0 && <ul aria-label="Missing agreement types" className="mt-5 grid gap-2 sm:grid-cols-2">{missingAgreementTypes.map((item) => <li key={item} className="border border-white/[0.07] px-3 py-2 font-mono text-[10px] text-stone-400">{item}</li>)}</ul>}<p className="mt-6 border-t border-white/[0.07] pt-3 text-[8px] font-bold uppercase tracking-[0.14em] text-stone-700">No inferred evidence · fail closed</p></section></main></Frame>;
   const nextUnresolved = focusIndex >= 0 ? documents.find((item, itemIndex) => itemIndex > focusIndex && !item.accepted) || documents.find((item) => !item.accepted) : null;
   const goToNextUnresolved = () => { if (nextUnresolved) enterFocus(nextUnresolved.documentId); };
-  if (focusDocument) return <ShellFrame plan={plan} recordedCount={recordedCount} total={total} remainingCount={remainingCount} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)} focusMode><DocumentFocusFrame plan={plan} document={focusDocument} documents={documents} index={focusIndex} submitting={submitting} error={error} confirmationState={confirmationState} nextUnresolved={nextUnresolved} onNextUnresolved={goToNextUnresolved} onReturn={returnToControl} onPrevious={() => navigateFocus(-1)} onNext={() => navigateFocus(1)} recordEvidence={recordEvidence} /></ShellFrame>;
+  if (focusDocument) return <Frame plan={plan} recordedCount={recordedCount} total={total} remainingCount={remainingCount} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)} focusMode><DocumentFocusFrame platform={platform} plan={plan} document={focusDocument} documents={documents} index={focusIndex} submitting={submitting} error={error} confirmationState={confirmationState} nextUnresolved={nextUnresolved} onNextUnresolved={goToNextUnresolved} onReturn={returnToControl} onPrevious={() => navigateFocus(-1)} onNext={() => navigateFocus(1)} recordEvidence={recordEvidence} /></Frame>;
 
-  return <ShellFrame plan={plan} recordedCount={recordedCount} total={total} remainingCount={remainingCount} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full min-h-0 flex-col overflow-hidden"><header data-testid="control-strip" className="flex min-h-[76px] shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0b0e0c] px-4 py-3 sm:px-6"><div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">LEGAL ADMISSION CONTROL</p><p className="mt-1 text-xs text-stone-500">Operate the server-issued document ledger.</p></div><div className="flex flex-wrap items-center gap-1.5"><Compartment label="REQUIRED" value={total} mono /><Compartment label="RECORDED" value={recordedCount} mono /><Compartment label="REMAINING" value={remainingCount} mono /><Compartment label="WORKSPACE" value="SEALED" /></div></header><div className="grid min-h-0 flex-1 gap-3 overflow-y-auto px-3 py-3 sm:px-5 lg:grid-cols-[minmax(0,1fr)_280px]"><section aria-label="Document ledger" className="min-w-0 border border-white/[0.08] bg-[#0b0e0c]"><div className="flex items-center justify-between border-b border-white/[0.08] px-3 py-2.5"><div><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-stone-600">Controlled records</p><h1 className="mt-1 text-sm font-semibold uppercase tracking-[0.07em] text-stone-200">Document ledger</h1></div><span className="font-mono text-[10px] text-stone-600">{total} rows</span></div><div className="hidden grid-cols-[24px_minmax(0,1.6fr)_minmax(110px,0.7fr)_minmax(110px,0.7fr)_minmax(100px,0.7fr)_auto] gap-3 border-b border-white/[0.07] px-3 py-2 text-[8px] font-bold uppercase tracking-[0.13em] text-stone-600 sm:grid"><span>Focus</span><span>Document</span><span>Type</span><span>Version</span><span>Method</span><span>State</span></div><div role="table" aria-label="Required legal document records" className="divide-y divide-white/[0.07]">{documents.map((document) => { const selected = selectedDocument?.documentId === document.documentId; return <button key={`${document.documentId}:${document.version}`} type="button" role="row" aria-selected={selected} onClick={() => setSelectedDocumentId(document.documentId)} onDoubleClick={() => enterFocus(document.documentId)} className={`group grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-2 border-l-2 px-3 py-2.5 text-left transition motion-reduce:transition-none sm:grid-cols-[24px_minmax(0,1.6fr)_minmax(110px,0.7fr)_minmax(110px,0.7fr)_minmax(100px,0.7fr)_auto] sm:gap-3 ${selected ? 'border-l-[#d4af37] bg-[#d4af37]/[0.07]' : 'border-l-transparent bg-[#0b0e0c] hover:bg-white/[0.025]'}`}><span className={`h-2 w-2 rounded-full border ${selected ? 'border-[#f0d477] bg-[#d4af37]' : document.accepted ? 'border-emerald-300 bg-emerald-300' : 'border-[#b99a45]'}`} aria-label={selected ? 'Focused row' : 'Record'} /><span className="min-w-0"><span className="block truncate text-xs font-semibold text-stone-100">{document.title}</span><span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[0.06em] text-stone-600 sm:hidden">{recordTypeFor(document)} · v{document.version} · {evidenceMethodFor(document)}</span></span><span className="hidden truncate font-mono text-[9px] uppercase text-stone-500 sm:block">{recordTypeFor(document)}</span><span className="hidden font-mono text-[10px] text-stone-500 sm:block">v{document.version}</span><span className="hidden text-[9px] font-bold uppercase text-[#b99a45] sm:block">{evidenceMethodFor(document)}</span><span className={`truncate text-[9px] font-bold uppercase ${document.accepted ? 'text-emerald-300' : isIntegrityBlocked(document) ? 'text-amber-200' : 'text-stone-500'}`}>{isIntegrityBlocked(document) ? 'REVIEW' : document.accepted ? 'RECORDED' : 'REQUIRED'}<ChevronRight className="ml-1 inline h-3 w-3 text-stone-700" aria-hidden="true" /></span></button>; })}</div></section><aside aria-label="Selected legal record" className="h-fit min-w-0 border border-white/[0.08] bg-[#0b0e0c] p-4"><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#b99a45]">Selected record</p>{selectedDocument ? <><h2 className="mt-2 text-sm font-semibold leading-5 text-stone-100">{selectedDocument.title}</h2><dl className="mt-4 grid grid-cols-2 gap-2 text-[9px]"><div><dt className="text-stone-600">TYPE</dt><dd className="mt-1 font-mono uppercase text-stone-400">{recordTypeFor(selectedDocument)}</dd></div><div><dt className="text-stone-600">VERSION</dt><dd className="mt-1 font-mono text-stone-400">{selectedDocument.version}</dd></div><div><dt className="text-stone-600">METHOD</dt><dd className="mt-1 font-bold uppercase text-[#b99a45]">{evidenceMethodFor(selectedDocument)}</dd></div><div><dt className="text-stone-600">STATE</dt><dd className="mt-1 font-bold uppercase text-stone-400">{isIntegrityBlocked(selectedDocument) ? 'REVIEW' : selectedDocument.accepted ? 'RECORDED' : 'REQUIRED'}</dd></div></dl>{isIntegrityBlocked(selectedDocument) && <div role="alert" className="mt-4 border border-amber-300/25 bg-amber-300/[0.045] px-3 py-2 text-[10px] leading-4 text-amber-100">Integrity review required before evidence can be recorded.</div>}<button type="button" onClick={() => enterFocus(selectedDocument.documentId)} className="mt-5 flex min-h-10 w-full items-center justify-center gap-2 border border-white/[0.16] px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-stone-300 transition hover:border-[#d4af37]/60 hover:text-[#f0d477] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Review document <ChevronRight className="h-3.5 w-3.5" /></button></> : <p className="mt-3 text-xs text-stone-500">No server-issued record is available.</p>}</aside>{error && <ErrorSurface error={error} compact />}</div></main></ShellFrame>;
+  return <Frame plan={plan} recordedCount={recordedCount} total={total} remainingCount={remainingCount} railCollapsed={railCollapsed} mobileRailOpen={mobileRailOpen} onToggleRail={toggleRail} onCloseMobileRail={() => setMobileRailOpen(false)}><main className="flex h-full min-h-0 flex-col overflow-hidden"><header data-testid="control-strip" className="flex min-h-[76px] shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0b0e0c] px-4 py-3 sm:px-6"><div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#b99a45]">{admissionTitle}</p><p className="mt-1 text-xs text-stone-500">Operate the server-issued document ledger.</p></div><div className="flex flex-wrap items-center gap-1.5"><Compartment label="REQUIRED" value={total} mono /><Compartment label="RECORDED" value={recordedCount} mono /><Compartment label="REMAINING" value={remainingCount} mono /><Compartment label="WORKSPACE" value="SEALED" /></div></header><div className="grid min-h-0 flex-1 gap-3 overflow-y-auto px-3 py-3 sm:px-5 lg:grid-cols-[minmax(0,1fr)_280px]"><section aria-label="Document ledger" className="min-w-0 border border-white/[0.08] bg-[#0b0e0c]"><div className="flex items-center justify-between border-b border-white/[0.08] px-3 py-2.5"><div><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-stone-600">Controlled records</p><h1 className="mt-1 text-sm font-semibold uppercase tracking-[0.07em] text-stone-200">Document ledger</h1></div><span className="font-mono text-[10px] text-stone-600">{total} rows</span></div><div className="hidden grid-cols-[24px_minmax(0,1.6fr)_minmax(110px,0.7fr)_minmax(110px,0.7fr)_minmax(100px,0.7fr)_auto] gap-3 border-b border-white/[0.07] px-3 py-2 text-[8px] font-bold uppercase tracking-[0.13em] text-stone-600 sm:grid"><span>Focus</span><span>Document</span><span>Type</span><span>Version</span><span>Method</span><span>State</span></div><div role="table" aria-label="Required legal document records" className="divide-y divide-white/[0.07]">{documents.map((document) => { const selected = selectedDocument?.documentId === document.documentId; return <button key={`${document.documentId}:${document.version}`} type="button" role="row" aria-selected={selected} onClick={() => setSelectedDocumentId(document.documentId)} onDoubleClick={() => enterFocus(document.documentId)} className={`group grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-2 border-l-2 px-3 py-2.5 text-left transition motion-reduce:transition-none sm:grid-cols-[24px_minmax(0,1.6fr)_minmax(110px,0.7fr)_minmax(110px,0.7fr)_minmax(100px,0.7fr)_auto] sm:gap-3 ${selected ? 'border-l-[#d4af37] bg-[#d4af37]/[0.07]' : 'border-l-transparent bg-[#0b0e0c] hover:bg-white/[0.025]'}`}><span className={`h-2 w-2 rounded-full border ${selected ? 'border-[#f0d477] bg-[#d4af37]' : document.accepted ? 'border-emerald-300 bg-emerald-300' : 'border-[#b99a45]'}`} aria-label={selected ? 'Focused row' : 'Record'} /><span className="min-w-0"><span className="block truncate text-xs font-semibold text-stone-100">{document.title}</span><span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[0.06em] text-stone-600 sm:hidden">{recordTypeFor(document)} · v{document.version} · {evidenceMethodFor(document)}</span></span><span className="hidden truncate font-mono text-[9px] uppercase text-stone-500 sm:block">{recordTypeFor(document)}</span><span className="hidden font-mono text-[10px] text-stone-500 sm:block">v{document.version}</span><span className="hidden text-[9px] font-bold uppercase text-[#b99a45] sm:block">{evidenceMethodFor(document)}</span><span className={`truncate text-[9px] font-bold uppercase ${document.accepted ? 'text-emerald-300' : isIntegrityBlocked(document) ? 'text-amber-200' : 'text-stone-500'}`}>{isIntegrityBlocked(document) ? 'REVIEW' : document.accepted ? 'RECORDED' : 'REQUIRED'}<ChevronRight className="ml-1 inline h-3 w-3 text-stone-700" aria-hidden="true" /></span></button>; })}</div></section><aside aria-label="Selected legal record" className="h-fit min-w-0 border border-white/[0.08] bg-[#0b0e0c] p-4"><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#b99a45]">Selected record</p>{selectedDocument ? <><h2 className="mt-2 text-sm font-semibold leading-5 text-stone-100">{selectedDocument.title}</h2><dl className="mt-4 grid grid-cols-2 gap-2 text-[9px]"><div><dt className="text-stone-600">TYPE</dt><dd className="mt-1 font-mono uppercase text-stone-400">{recordTypeFor(selectedDocument)}</dd></div><div><dt className="text-stone-600">VERSION</dt><dd className="mt-1 font-mono text-stone-400">{selectedDocument.version}</dd></div><div><dt className="text-stone-600">METHOD</dt><dd className="mt-1 font-bold uppercase text-[#b99a45]">{evidenceMethodFor(selectedDocument)}</dd></div><div><dt className="text-stone-600">STATE</dt><dd className="mt-1 font-bold uppercase text-stone-400">{isIntegrityBlocked(selectedDocument) ? 'REVIEW' : selectedDocument.accepted ? 'RECORDED' : 'REQUIRED'}</dd></div></dl>{isIntegrityBlocked(selectedDocument) && <div role="alert" className="mt-4 border border-amber-300/25 bg-amber-300/[0.045] px-3 py-2 text-[10px] leading-4 text-amber-100">Integrity review required before evidence can be recorded.</div>}<button type="button" onClick={() => enterFocus(selectedDocument.documentId)} className="mt-5 flex min-h-10 w-full items-center justify-center gap-2 border border-white/[0.16] px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-stone-300 transition hover:border-[#d4af37]/60 hover:text-[#f0d477] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d4af37]">Review document <ChevronRight className="h-3.5 w-3.5" /></button></> : <p className="mt-3 text-xs text-stone-500">No server-issued record is available.</p>}</aside>{error && <ErrorSurface error={error} compact />}</div></main></Frame>;
 }
 
 // ARTIFACT: LegalAcceptanceGate.jsx
-// VERSION: v1.8.1-DOM-COMPATIBLE-RECORD-SCROLL-RESET
+// VERSION: v1.9.0-PLATFORM-AGREEMENT-PRESENTATION
 // AUTHORITY BOUNDARY: client projection only; no signature or commercial execution
 // TENANT POSTURE: server-issued acceptance plan only; no localStorage legal truth
 // FAIL-CLOSED POSTURE: unavailable, incomplete, or integrity-blocked plans never enter workspace

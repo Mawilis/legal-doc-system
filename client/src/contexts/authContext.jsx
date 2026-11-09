@@ -1,14 +1,19 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION
+ * VERSION: v58.1.0-SESSION-OPERATION-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/authContext.jsx
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
- * CERTIFICATION / UPDATE DATE: 2026-10-16
- * CHANGELOG: 2026-11-08 v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION admits WILSY_HEADQUARTERS as a server-issued
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: 2026-11-09 v58.1.0-SESSION-OPERATION-CURRENTNESS deduplicates
+ *            current candidate bootstrap reads and invalidates superseded auth
+ *            operations before logout, discovery, login or MFA can publish state.
+ *            Explicit bearers remain candidates until EOS revalidation; session
+ *            generation keys downstream legal/business projections.
+ *            2026-11-08 v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION admits WILSY_HEADQUARTERS as a server-issued
  *            workspace identifier. It remains a presentation projection and
  *            requires the exact READY EOS workspace bootstrap contract.
  *            v57.0.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION accepted the canonical conflict-review write permission
@@ -52,7 +57,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import api, { setActiveTenantTransportId } from '@/services/api';
 
 const WORKSPACE_CONTRACT_VERSION = 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION';
@@ -134,6 +139,10 @@ const LEGACY_BRANDING_KEYS = Object.freeze([
   'accentColor',
 ]);
 
+/**
+ * @description Closed browser states; only EOS revalidation may establish a session.
+ * @institutional State labels grant no identity, membership or permission.
+ */
 export const AUTH_STATES = Object.freeze({
   IDLE: 'IDLE',
   PRIMARY_AUTHENTICATING: 'PRIMARY_AUTHENTICATING',
@@ -236,6 +245,7 @@ const clearPersistedSessionAuthority = () => {
   localStorage.removeItem('wilsy_sovereign_user');
   localStorage.removeItem('wilsy_refresh_token');
   localStorage.removeItem('wilsy_active_tenant');
+  sessionStorage.removeItem('token');
 };
 
 const candidateSessionProjection = (data, fallbackEmail = '') => {
@@ -660,6 +670,15 @@ const authenticatedSystemServicesUser = (projection, principalId, email) => {
   };
 };
 
+/**
+ * @description Own one browser session operation and project only EOS-validated
+ * identity, exact membership/capacity revisions and workspace truth.
+ * @collaboration App admission, TenantProvider, canonical API and MFA portals.
+ * @institutional Candidates remain untrusted; logout/switch invalidates all
+ * superseded operations. No server transaction, IAM or financial authority is owned.
+ * @param {{children: React.ReactNode}} props Browser application subtree.
+ * @returns {JSX.Element} A session-current authenticated context provider.
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   // Persisted bearer material is only a candidate. It remains unanchored until
@@ -676,11 +695,74 @@ export const AuthProvider = ({ children }) => {
   );
   const [error, setError] = useState(null);
 
+
+  const authEpochRef = useRef(0);
+  const mountedRef = useRef(true);
+  const bootstrapReadsRef = useRef(new Map());
+  const [sessionGeneration, setSessionGeneration] = useState(0);
+
+  // One in-flight read per exact credential/path; settled results are never
+  // cached as session authority. Strict Mode reuses the pending request only.
+  const readWorkspace = useCallback((candidateToken, path = '/auth/workspace-bootstrap') => {
+    const key = path + ':' + candidateToken;
+    const existing = bootstrapReadsRef.current.get(key);
+    if (existing) return existing.promise;
+    const controller = new AbortController();
+    const entry = { controller, promise: null };
+    const promise = api.get(path, {
+      headers: { Authorization: `Bearer ${candidateToken}` },
+      skipAuthRedirect: true,
+      signal: controller.signal,
+    }).finally(() => {
+      if (bootstrapReadsRef.current.get(key) === entry) {
+        bootstrapReadsRef.current.delete(key);
+      }
+    });
+    entry.promise = promise;
+    bootstrapReadsRef.current.set(key, entry);
+    return promise;
+  }, []);
+
+  const invalidateSession = useCallback(() => {
+    authEpochRef.current += 1;
+    for (const entry of bootstrapReadsRef.current.values()) entry.controller.abort();
+    bootstrapReadsRef.current.clear();
+    clearPersistedSessionAuthority();
+    setActiveTenantTransportId(null);
+    setToken(null);
+    setUser(null);
+    setSessionGeneration((generation) => generation + 1);
+    return authEpochRef.current;
+  }, []);
+
+  const ensureCurrent = useCallback((epoch) => {
+    if (!mountedRef.current || epoch !== authEpochRef.current) {
+      throw new Error('AUTHENTICATION_OPERATION_SUPERSEDED');
+    }
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      // Strict Mode immediately reacquires the same mounted owner. A real
+      // unmount cancels its requests after that synchronous ownership decision.
+      queueMicrotask(() => {
+        if (!mountedRef.current) {
+          for (const entry of bootstrapReadsRef.current.values()) entry.controller.abort();
+          bootstrapReadsRef.current.clear();
+        }
+      });
+    };
+  }, []);
+
   const isAuthenticated = Boolean(token && user && authStage === AUTH_STATES.AUTHENTICATED);
   const mfaRequired = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
 
   useEffect(() => {
     let active = true;
+    const epoch = ++authEpochRef.current;
+    const isCurrent = () => active && mountedRef.current && epoch === authEpochRef.current;
     const candidateToken = readPersistedAccessTokenCandidate();
 
     if (!candidateToken) {
@@ -695,12 +777,8 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       try {
-        const response = await api.get('/auth/workspace-bootstrap', {
-          headers: {
-            Authorization: `Bearer ${candidateToken}`,
-          },
-        });
-        if (!active) return;
+        const response = await readWorkspace(candidateToken);
+        if (!isCurrent()) return;
 
         const persistedUser = readPersistedUserProjection();
         const authoritative = boundedWorkspaceProjection(
@@ -747,7 +825,7 @@ export const AuthProvider = ({ children }) => {
         setAuthStage(AUTH_STATES.AUTHENTICATED);
         emitAuthState(AUTH_STATES.AUTHENTICATED);
       } catch {
-        if (!active) return;
+        if (!isCurrent()) return;
 
         // A tenant workspace denial may be a platform SYSTEM principal. It is
         // never promoted from a role label: EOS must independently authorize
@@ -759,10 +837,8 @@ export const AuthProvider = ({ children }) => {
         const persistedPrincipalId = String(persistedUser?.id || '').trim();
         if (!discoveredTenant?.tenantId && persistedPrincipalId) {
           try {
-            const response = await api.get('/system-services/workspace-bootstrap', {
-              headers: { Authorization: `Bearer ${candidateToken}` },
-            });
-            if (!active) return;
+            const response = await readWorkspace(candidateToken, '/system-services/workspace-bootstrap');
+            if (!isCurrent()) return;
             systemWorkspace = boundedSystemServicesWorkspaceProjection(
               response?.data || {},
               persistedPrincipalId,
@@ -773,6 +849,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
+        if (!isCurrent()) return;
         if (systemWorkspace) {
           anchorCanonicalBearer(candidateToken);
           setActiveTenantTransportId(null);
@@ -802,13 +879,13 @@ export const AuthProvider = ({ children }) => {
           emitAuthState(AUTH_STATES.IDLE);
         }
       } finally {
-        if (active) setLoading(false);
+        if (isCurrent()) setLoading(false);
       }
     };
 
     void restore();
     return () => { active = false; };
-  }, []);
+  }, [readWorkspace]);
 
   useEffect(() => {
     if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -819,6 +896,8 @@ export const AuthProvider = ({ children }) => {
   const discoverTenant = useCallback(async (tenantAlias) => {
     const alias = String(tenantAlias || '').trim().toLowerCase();
     if (!alias) throw new Error('Enter an organization or workspace identifier.');
+    const epoch = invalidateSession();
+    setAuthStage(AUTH_STATES.IDLE);
     setLoading(true);
     setError(null);
     setActiveTenantTransportId(null);
@@ -829,6 +908,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ alias }),
       });
       const data = await parseJsonResponse(response);
+      ensureCurrent(epoch);
       if (!response.ok || !data.success || !data.tenant?.tenantId) {
         throw new Error(data.message || data.detail || 'Organization or workspace was not found.');
       }
@@ -841,17 +921,19 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('wilsy_active_tenant', JSON.stringify(authoritativeTenant));
       return authoritativeTenant;
     } catch (discoveryError) {
+      if (epoch !== authEpochRef.current || !mountedRef.current) throw discoveryError;
       setTenant(null);
       localStorage.removeItem('discoveredTenant');
       localStorage.removeItem('wilsy_active_tenant');
       setError(discoveryError.message || 'Organization discovery is unavailable.');
       throw discoveryError;
     } finally {
-      setLoading(false);
+      if (epoch === authEpochRef.current && mountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [ensureCurrent, invalidateSession]);
 
-  const persistSession = useCallback(async (session, fallbackEmail = '') => {
+  const persistSession = useCallback(async (session, fallbackEmail = '', epoch = authEpochRef.current) => {
+    ensureCurrent(epoch);
     const candidateToken = String(session?.token || '').trim();
     const candidatePrincipalId = String(session?.user?.id || '').trim();
 
@@ -861,11 +943,8 @@ export const AuthProvider = ({ children }) => {
 
     // Candidate credentials are not browser authority. Python EOS must first
     // re-resolve current principal, membership, business role, and tenant truth.
-    const response = await api.get('/auth/workspace-bootstrap', {
-      headers: {
-        Authorization: `Bearer ${candidateToken}`,
-      },
-    });
+    const response = await readWorkspace(candidateToken);
+    ensureCurrent(epoch);
 
     const authoritative = boundedWorkspaceProjection(
       response?.data || {},
@@ -916,32 +995,34 @@ export const AuthProvider = ({ children }) => {
       user: authoritative.user,
       tenant: authoritative.tenant,
     };
-  }, [tenant]);
+  }, [ensureCurrent, readWorkspace, tenant]);
 
   const refreshWorkspace = useCallback(async () => {
     if (!token) throw new Error('AUTHENTICATED_WORKSPACE_REFRESH_REQUIRES_SESSION');
-    const response = await api.get('/auth/workspace-bootstrap', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const epoch = authEpochRef.current;
+    const response = await readWorkspace(token);
+    ensureCurrent(epoch);
     const authoritative = boundedWorkspaceProjection(
       response?.data || {},
       user?.email || '',
     );
     const currentTenantId = String(tenant?.tenantId || '').trim();
-    if (currentTenantId && currentTenantId !== authoritative.user.tenantId) {
+    if (authoritative.user.id !== user?.id || (currentTenantId && currentTenantId !== authoritative.user.tenantId)) {
       throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
     }
+    setSessionGeneration((generation) => generation + 1);
     setUser(authoritative.user);
     setTenant(authoritative.tenant);
     setActiveTenantTransportId(authoritative.user.tenantId);
     localStorage.setItem('wilsy_sovereign_user', JSON.stringify(authoritative.user));
     localStorage.setItem('wilsy_active_tenant', JSON.stringify(authoritative.tenant));
     return authoritative;
-  }, [tenant, token, user?.email]);
+  }, [ensureCurrent, readWorkspace, tenant, token, user?.id, user?.email]);
 
   useEffect(() => {
     if (!token || !user?.systemServicesWorkspace) return undefined;
     let active = true;
+    const epoch = authEpochRef.current;
     let refreshing = false;
     const refreshSystemSession = async () => {
       if (refreshing) return;
@@ -957,6 +1038,7 @@ export const AuthProvider = ({ children }) => {
         const data = response?.data || {};
         if (
           !active
+          || epoch !== authEpochRef.current
           || data.status !== 'REFRESHED'
           || data.scope !== 'SYSTEM'
           || typeof data.access_token !== 'string'
@@ -968,7 +1050,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('wilsy_refresh_token', data.refresh_token);
         setToken(data.access_token);
       } catch (refreshError) {
-        if (active) {
+        if (active && epoch === authEpochRef.current) {
           setError(refreshError?.response?.data?.detail || refreshError.message || 'SYSTEM_SESSION_REFRESH_FAILED');
         }
       } finally {
@@ -984,7 +1066,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const handleBrandingAuthorityRefresh = () => {
+      const epoch = authEpochRef.current;
       void refreshWorkspace().catch((refreshError) => {
+        if (!mountedRef.current || epoch !== authEpochRef.current) return;
         setError(refreshError?.message || 'AUTHENTICATED_WORKSPACE_REFRESH_FAILED');
       });
     };
@@ -997,6 +1081,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password, discoveredTenantId = tenant?.tenantId) => {
     const tenantId = String(discoveredTenantId || '').trim();
+    const epoch = invalidateSession();
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.PRIMARY_AUTHENTICATING);
@@ -1008,6 +1093,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('wilsy_tenant_id');
         localStorage.removeItem('tenantId');
         const response = await api.post('/auth/global/login', { email, password });
+        ensureCurrent(epoch);
         const data = response.data || {};
         if (
           data.status !== AUTH_STATES.MFA_REQUIRED
@@ -1051,6 +1137,7 @@ export const AuthProvider = ({ children }) => {
             refreshToken: data.refreshToken,
           },
           email,
+          epoch,
         );
         return {
           ...data,
@@ -1062,18 +1149,20 @@ export const AuthProvider = ({ children }) => {
       }
       return { ...data, email, status: currentStatus };
     } catch (loginError) {
+      if (epoch !== authEpochRef.current || !mountedRef.current) throw loginError;
       setAuthStage(AUTH_STATES.FAILED);
       setError(loginError?.response?.data?.detail || loginError?.response?.data?.message || loginError.message || 'Authentication failed.');
       throw loginError;
     } finally {
-      setLoading(false);
+      if (epoch === authEpochRef.current && mountedRef.current) setLoading(false);
     }
-  }, [persistSession, tenant]);
+  }, [ensureCurrent, invalidateSession, persistSession, tenant]);
 
   const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false, discoveredTenantId = tenant?.tenantId) => {
     const targetEmail = email || pendingEmail;
     const targetCode = String(code || '').trim();
     if (!/^\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
+    const epoch = invalidateSession();
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.MFA_VERIFYING);
@@ -1083,6 +1172,7 @@ export const AuthProvider = ({ children }) => {
           mfa_challenge: globalMfaChallenge,
           code: targetCode,
         });
+        ensureCurrent(epoch);
         const data = response.data || {};
         if (
           data.status !== 'AUTHENTICATED'
@@ -1094,15 +1184,16 @@ export const AuthProvider = ({ children }) => {
           || data.workspace_id !== 'SYSTEM_SERVICES'
         ) throw new Error('EOS did not issue a valid SYSTEM session.');
 
-        anchorCanonicalBearer(data.access_token);
-        setActiveTenantTransportId(null);
         try {
-          const workspaceResponse = await api.get('/system-services/workspace-bootstrap');
+          const workspaceResponse = await readWorkspace(data.access_token, '/system-services/workspace-bootstrap');
+          ensureCurrent(epoch);
           const projectedUser = authenticatedSystemServicesUser(
             workspaceResponse?.data || {},
             data.principal_id,
             targetEmail,
           );
+          anchorCanonicalBearer(data.access_token);
+          setActiveTenantTransportId(null);
           localStorage.setItem('wilsy_auth_token', data.access_token);
           localStorage.setItem('token', data.access_token);
           localStorage.setItem('wilsy_refresh_token', data.refresh_token);
@@ -1122,6 +1213,7 @@ export const AuthProvider = ({ children }) => {
           emitAuthState(AUTH_STATES.AUTHENTICATED);
           return { ...data, success: true, token: data.access_token, user: projectedUser };
         } catch (projectionError) {
+          ensureCurrent(epoch);
           anchorCanonicalBearer(null);
           setActiveTenantTransportId(null);
           throw projectionError;
@@ -1137,6 +1229,7 @@ export const AuthProvider = ({ children }) => {
       const promoted = await persistSession(
         { ...candidate, refreshToken: data.refreshToken },
         targetEmail,
+        epoch,
       );
       setPendingEmail('');
       setQrCodeData(null);
@@ -1148,51 +1241,71 @@ export const AuthProvider = ({ children }) => {
         user: promoted.user,
       };
     } catch (verificationError) {
+      if (epoch !== authEpochRef.current || !mountedRef.current) throw verificationError;
       setAuthStage(AUTH_STATES.FAILED);
       setError(verificationError?.response?.data?.detail || verificationError?.response?.data?.message || verificationError.message || 'Identity verification failed.');
       throw verificationError;
     } finally {
-      setLoading(false);
+      if (epoch === authEpochRef.current && mountedRef.current) setLoading(false);
     }
-  }, [authStage, globalMfaChallenge, pendingEmail, persistSession, tenant]);
+  }, [authStage, ensureCurrent, globalMfaChallenge, invalidateSession, pendingEmail, persistSession, readWorkspace, tenant]);
 
   const updateSovereignIdentity = useCallback(async (updates) => {
     if (!user) throw new Error('No authenticated identity is available.');
-    const updatedUser = { ...user, ...updates };
+    if (Object.keys(updates || {}).some((key) => key !== 'hasSignedCovenant')) {
+      throw new Error('AUTHENTICATED_IDENTITY_MUTATION_REQUIRES_EOS');
+    }
+    // Compatibility display hint only; admission always re-reads EOS evidence.
+    const updatedUser = { ...user, hasSignedCovenant: updates?.hasSignedCovenant === true };
     setUser(updatedUser);
     localStorage.setItem('wilsy_sovereign_user', JSON.stringify(updatedUser));
     return updatedUser;
   }, [user]);
 
   const logout = useCallback(async () => {
-    try {
-      if (token) await api.post(user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout');
-    } catch {
-      // Local purge is still required; server logout is best-effort.
-    } finally {
-      anchorCanonicalBearer(null);
-      setActiveTenantTransportId(null);
-      setToken(null);
-      setUser(null);
-      setTenant(null);
-      setAuthStage(AUTH_STATES.IDLE);
-      setPendingEmail('');
-      setQrCodeData(null);
-      setMfaTempToken(null);
-      setGlobalMfaChallenge(null);
-      localStorage.removeItem('wilsy_auth_token');
-      localStorage.removeItem('token');
-      localStorage.removeItem('wilsy_sovereign_user');
-      localStorage.removeItem('wilsy_refresh_token');
-      localStorage.removeItem('discoveredTenant');
-      localStorage.removeItem('wilsy_active_tenant');
-      emitAuthState(AUTH_STATES.IDLE);
+    const previousToken = token;
+    const path = user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout';
+    invalidateSession();
+    setTenant(null);
+    setAuthStage(AUTH_STATES.IDLE);
+    setLoading(false);
+    setError(null);
+    setPendingEmail('');
+    setQrCodeData(null);
+    setMfaTempToken(null);
+    setGlobalMfaChallenge(null);
+    localStorage.removeItem('discoveredTenant');
+    emitAuthState(AUTH_STATES.IDLE);
+    // Local invalidation precedes network I/O. A delayed logout response cannot
+    // clear a later session; only the old explicit credential is submitted.
+    if (previousToken) {
+      try {
+        await api.post(path, {}, {
+          headers: { Authorization: `Bearer ${previousToken}` },
+          skipAuthRedirect: true,
+        });
+      } catch {
+        console.error('[AUTH] LOGOUT_SERVER_CONFIRMATION_UNAVAILABLE');
+      }
     }
-  }, [token, user]);
+  }, [invalidateSession, token, user]);
+
+  useEffect(() => {
+    const invalidate = () => {
+      invalidateSession();
+      setAuthStage(AUTH_STATES.IDLE);
+      setLoading(false);
+      setError('SESSION_EXPIRED');
+      emitAuthState(AUTH_STATES.IDLE);
+    };
+    window.addEventListener('wilsy:session-invalidated', invalidate);
+    return () => window.removeEventListener('wilsy:session-invalidated', invalidate);
+  }, [invalidateSession]);
 
   const value = useMemo(() => ({
     user,
     token,
+    sessionGeneration,
     isAuthenticated,
     tenant,
     tenantId: user?.tenantId || tenant?.tenantId || null,
@@ -1214,11 +1327,19 @@ export const AuthProvider = ({ children }) => {
     refreshWorkspace,
     setAuthStage,
     publicAuthPaths,
-  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, globalMfaChallenge, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
+  }), [user, token, sessionGeneration, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, globalMfaChallenge, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+/**
+ * @description Read the current provider-owned session projection.
+ * @collaboration Authenticated UI, admission and workspace request consumers.
+ * @institutional The context cannot replace server authorization or persisted
+ * evidence. Public auth operations retain the provider's currentness guards.
+ * @returns {Object} Current browser session and bounded authentication operations.
+ * @throws {Error} If no AuthProvider owns this consumer.
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be executed within an active AuthProvider.');
@@ -1229,12 +1350,12 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION
+ * VERSION: v58.1.0-SESSION-OPERATION-CURRENTNESS
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION — Admits only the canonical server-projected conflict-review write permission into the closed Legal presentation set; browser state remains non-authorizing and malformed projections fail closed.
+ * CHANGELOG: v58.1.0-SESSION-OPERATION-CURRENTNESS — Admits only the canonical server-projected conflict-review write permission into the closed Legal presentation set; browser state remains non-authorizing and malformed projections fail closed.
  *            v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Refreshes exact READY workspace authority after a certified branding mutation request; management response fields never become AuthContext authority.
  *            v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Carries only exact READY workspace.branding into authenticated tenant state, requires explicit null/configured branding provenance, strictly validates the D21B6 schema, strips legacy branding aliases, and prevents discovery/login/MFA/persisted/JWT branding from becoming authenticated authority.
  *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.

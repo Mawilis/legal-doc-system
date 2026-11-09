@@ -129,6 +129,7 @@ vi.mock('../../../src/components/intelligence/wilsyAIConversationHistoryEngine.j
     if (message && typeof message === 'object') thread.messages.push(message);
     return { ...thread, messages: [...thread.messages] };
   }),
+  resetWilsyAIConversationSession: vi.fn(),
   clearWilsyAIConversationThreads: mockClearThreads,
 }));
 
