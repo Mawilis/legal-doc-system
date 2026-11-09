@@ -1,15 +1,19 @@
 """Server-owned legal acceptance policy and orchestration.
 
 TITLE: WILSY OS Legal Acceptance Service
-VERSION: v1.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
+VERSION: v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derives a deterministic acceptance plan from canonical documents and
          authenticated identity, then appends immutable evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_acceptance_service.py
 COLLABORATION / OWNERSHIP: HTTP router is transport-only; document and
                             acceptance registries own durable truth.
-CERTIFICATION / UPDATE DATE: 2026-09-17
-CHANGELOG: v1.0.0 establishes server-owned required-document policy, ordinary
+CERTIFICATION / UPDATE DATE: 2026-11-09
+CHANGELOG: v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY explicitly identifies these
+           mandatory agreements as PLATFORM_WORKSPACE admission and resolves a
+           GLOBAL session's exact selected capacity with current revisions.
+           No agreement, acceptance evidence, commercial truth or IAM is bypassed.
+           v1.0.0 establishes server-owned required-document policy, ordinary
            user/admin flows, owner-flow fail-closed readiness, and replay-safe
            acceptance submission.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -59,9 +63,15 @@ from tools.eos.legal_operations.registry.legal_document_registry import (
     LegalDocumentRegistryError,
 )
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
+from tools.eos.auth.workspace_bootstrap_projection import (
+    WorkspaceBootstrapProjectionError,
+    resolve_workspace_id,
+)
 
 
-VERSION: Final[str] = "v1.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE"
+VERSION: Final[str] = "v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY"
+PLATFORM_ADMISSION_SCOPE: Final[str] = "PLATFORM_WORKSPACE"
+# These are platform-use obligations, not a Legal Operations product grant.
 ORDINARY_REQUIRED: Final[tuple[LegalAgreementType, ...]] = (
     LegalAgreementType.INSTITUTIONAL_CHARTER,
     LegalAgreementType.USER_TERMS,
@@ -114,7 +124,13 @@ def _principal(identity: SovereignIdentity, session_id: str, locale: str) -> Acc
 
 
 class LegalAcceptanceService:
-    """Compose canonical tenant, document, policy, and acceptance authorities."""
+    """Compose platform-use obligations over existing canonical authorities.
+
+    Current tenant, membership and selected capacity determine applicability.
+    Approved document versions and immutable acceptance streams remain separate
+    authorities; no product entitlement, practice permission, corporate execution,
+    payment or settlement is issued. Callers own sessions, transactions and retry.
+    """
 
     def __init__(
         self,
@@ -125,6 +141,10 @@ class LegalAcceptanceService:
         membership_repository: Any = None,
         business_role_repository: Any = None,
     ) -> None:
+        """Bind existing registries and optionally injected tenant/authority reads.
+
+        Construction performs no I/O, index provisioning, mutation or transaction.
+        """
         self.document_collection = document_collection
         self.acceptance_collection = acceptance_collection
         self.document_registry = LegalDocumentRegistry
@@ -155,6 +175,7 @@ class LegalAcceptanceService:
         self,
         principal: AcceptancePrincipal,
         *,
+        identity: SovereignIdentity,
         session: Any = None,
     ) -> str:
         """Require current ACTIVE membership and exact durable business-role truth."""
@@ -185,12 +206,48 @@ class LegalAcceptanceService:
                 "LEGAL_ACCEPTANCE_MEMBERSHIP_INACTIVE"
             )
 
+        scope = identity.principal_scope
+        if scope not in (None, "TENANT", "GLOBAL"):
+            raise LegalAcceptanceServiceError("LEGAL_ACCEPTANCE_PRINCIPAL_SCOPE_INVALID")
+        selected_role: str | None = None
+        if scope == "GLOBAL":
+            # GLOBAL authentication has already bound the selection. Re-read
+            # that exact capacity; resolving all roles would merge or ambiguously
+            # reject the Owner/Partner distinction after a successful bootstrap.
+            roles = identity.roles
+            if (
+                len(roles) != 1
+                or roles[0] not in TENANT_ROLES
+                or roles[0] != roles[0].strip()
+                or not isinstance(identity.membership_revision, int)
+                or isinstance(identity.membership_revision, bool)
+                or not isinstance(identity.capacity_revision, int)
+                or isinstance(identity.capacity_revision, bool)
+                or identity.capacity_revision < 0
+                or identity.membership_revision != getattr(membership, "revision", None)
+            ):
+                raise LegalAcceptanceServiceError("LEGAL_ACCEPTANCE_SELECTED_CAPACITY_STALE")
+            selected_role = roles[0]
+
         try:
-            business_role = self.business_role_repository.resolve(
-                principal.principal_id,
-                principal.tenant_id,
-                session=session,
-            )
+            if scope == "GLOBAL":
+                resolver = getattr(self.business_role_repository, "resolve_business_role", None)
+                if not callable(resolver):
+                    raise TenantBusinessRoleRepositoryError(
+                        "TENANT_BUSINESS_ROLE_EXACT_RESOLVER_REQUIRED"
+                    )
+                business_role = resolver(
+                    principal.principal_id,
+                    principal.tenant_id,
+                    selected_role,
+                    session=session,
+                )
+            else:
+                business_role = self.business_role_repository.resolve(
+                    principal.principal_id,
+                    principal.tenant_id,
+                    session=session,
+                )
         except TenantBusinessRoleNotFoundError as error:
             raise LegalAcceptanceServiceError(
                 "LEGAL_ACCEPTANCE_BUSINESS_ROLE_REQUIRED"
@@ -214,6 +271,19 @@ class LegalAcceptanceService:
             raise LegalAcceptanceServiceError(
                 "LEGAL_ACCEPTANCE_BUSINESS_ROLE_INACTIVE"
             )
+        if scope == "GLOBAL":
+            try:
+                expected_workspace = resolve_workspace_id(role, tenant_id=principal.tenant_id)
+            except WorkspaceBootstrapProjectionError as error:
+                raise LegalAcceptanceServiceError(
+                    "LEGAL_ACCEPTANCE_SELECTED_CAPACITY_INVALID"
+                ) from error
+            if (
+                role != selected_role
+                or getattr(business_role, "revision", None) != identity.capacity_revision
+                or expected_workspace != identity.workspace_id
+            ):
+                raise LegalAcceptanceServiceError("LEGAL_ACCEPTANCE_SELECTED_CAPACITY_STALE")
         return role
 
     def _required_types(self, business_role: str) -> tuple[LegalAgreementType, ...]:
@@ -224,10 +294,21 @@ class LegalAcceptanceService:
         )
 
     def status(self, identity: SovereignIdentity, *, session_id: str, locale: str = "en-ZA", session: Any = None) -> dict[str, Any]:
-        """Return a deterministic server-derived acceptance plan and projection."""
+        """Read the exact principal's mandatory platform agreement plan.
+
+        The plan is scoped PLATFORM_WORKSPACE and is not Legal practice,
+        commercial entitlement, signatory or IAM authority. Missing approved
+        documents and missing acceptance evidence remain required; existing exact
+        version/digest evidence is reused. Every participating read receives the
+        caller's session; this service never starts, commits or retries it.
+
+        Raises:
+            LegalAcceptanceServiceError: Missing, stale or unavailable authority,
+                malformed evidence, or unavailable canonical persistence.
+        """
         principal = _principal(identity, session_id, locale)
         self._validate_tenant(principal, session=session)
-        business_role = self._resolve_business_role(principal, session=session)
+        business_role = self._resolve_business_role(principal, identity=identity, session=session)
         try:
             evidence = LegalAcceptanceRegistry.list_for_principal(principal.tenant_id, principal.principal_id, self.acceptance_collection, session=session)
         except LegalAcceptanceRegistryError as error:
@@ -255,13 +336,26 @@ class LegalAcceptanceService:
             state = LegalAcceptanceStatus.DOCUMENT_APPROVAL_REQUIRED.value if not cards else LegalAcceptanceStatus.MATERIAL_REACCEPTANCE_REQUIRED.value
         else:
             state = LegalAcceptanceStatus.COMPLETE.value
-        return {"status": state, "tenantId": principal.tenant_id, "principalId": principal.principal_id, "documents": cards, "missingAgreementTypes": missing, "ownerBinding": {"available": False, "reason": "EXPLICIT_AUTHORISED_SIGNATORY_AND_APPROVED_COMMERCIAL_DOCUMENTS_REQUIRED"}, "legacyCompatibility": {"hasSignedCovenant": state == LegalAcceptanceStatus.COMPLETE.value}}
+        return {"status": state, "admissionScope": PLATFORM_ADMISSION_SCOPE, "tenantId": principal.tenant_id, "principalId": principal.principal_id, "documents": cards, "missingAgreementTypes": missing, "ownerBinding": {"available": False, "reason": "EXPLICIT_AUTHORISED_SIGNATORY_AND_APPROVED_COMMERCIAL_DOCUMENTS_REQUIRED"}, "legacyCompatibility": {"hasSignedCovenant": state == LegalAcceptanceStatus.COMPLETE.value}}
 
     def accept(self, identity: SovereignIdentity, *, document_id: str, document_version: str, document_sha3_512: str, acceptance_method: AcceptanceMethod, idempotency_key: str, session_id: str, locale: str = "en-ZA", session: Any = None) -> dict[str, Any]:
-        """Verify server-selected approved document and append immutable evidence."""
+        """Append evidence for one current approved platform agreement.
+
+        Tenant/principal and the current selected capacity come from authenticated
+        authority. Exact document version and SHA3-512 must match the approved
+        current record. Immutable registry replay preserves existing evidence;
+        divergent replay fails closed. All reads/writes receive the caller's
+        session, and the caller owns commit/rollback/retry. This method grants no
+        corporate signatory, product/practice, payment or settlement authority.
+
+        Raises:
+            LegalAcceptanceServiceError: Invalid/stale authority or document,
+                unsupported corporate execution, invalid method/key, or registry
+                integrity/persistence failure.
+        """
         principal = _principal(identity, session_id, locale)
         self._validate_tenant(principal, session=session)
-        business_role = self._resolve_business_role(principal, session=session)
+        business_role = self._resolve_business_role(principal, identity=identity, session=session)
         if acceptance_method not in (AcceptanceMethod.ACCEPTANCE, AcceptanceMethod.ACKNOWLEDGEMENT):
             raise LegalAcceptanceServiceError("LEGAL_ACCEPTANCE_METHOD_INVALID")
         if not isinstance(idempotency_key, str) or not idempotency_key.strip():
@@ -296,11 +390,12 @@ __all__ = [
     "AcceptancePrincipal",
     "LegalAcceptanceService",
     "LegalAcceptanceServiceError",
+    "PLATFORM_ADMISSION_SCOPE",
     "VERSION",
 ]
 
 # ARTIFACT: legal_acceptance_service.py
-# VERSION: v1.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE
+# VERSION: v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY
 # AUTHORITY BOUNDARY: server-derived acceptance planning and evidence composition only
 # TENANT POSTURE: canonical tenant is resolved before every read/write
 # FAIL-CLOSED POSTURE: absent/unapproved/divergent documents and invalid authority deny
