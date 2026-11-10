@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT
+VERSION: v1.0.2-EXACT-RULE-URGENCY-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT requires every
+CHANGELOG: v1.0.2-EXACT-RULE-URGENCY-CERT corrects the expected
+           rules-only score: overdue NORMAL is 80 + 10, not 100.
+           v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT requires every
            omitted source to be named without claiming entitlement or access.
            v1.0.0-ATTENTION-FEED-CONTRACT-CERT introduces deterministic
            synthetic-authority negative and positive projection tests.
@@ -75,7 +77,7 @@ def test_attention_item_is_real_source_derived_and_non_executable():
     overdue = feed["items"][0]
     assert overdue["sourceRecordId"] == "ops-0"
     assert overdue["isOverdue"] is True
-    assert overdue["urgencyScore"] == 100
+    assert overdue["urgencyScore"] == 90
     assert overdue["whyRanked"] == "Overdue source deadline"
     assert overdue["actionHints"] == ["OPEN"]
     assert overdue["authzScope"] == "SOURCE_SERVICE_ONLY"
@@ -154,7 +156,7 @@ def test_no_authorised_source_cannot_be_presented_as_enterprise_clear():
 
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT
+# VERSION: v1.0.2-EXACT-RULE-URGENCY-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
