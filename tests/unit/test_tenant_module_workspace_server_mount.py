@@ -1,11 +1,15 @@
 # TITLE: WILSY EOS Tenant Module Workspace API and Transport Contract Tests
-# VERSION: v1.0.1-EOS-TENANT-MODULE-WORKSPACE-PYTHON-TRANSPORT
+# VERSION: v1.0.2-EOS-TENANT-MODULE-WORKSPACE-LOOPBACK-PROXY-CERT
 # AUTHORITY: Static and in-process Python EOS route/transport certification only.
 # EPITOME: Verify authenticated Operations and Intelligence workspace routes, tenant-authority input rejection, canonical Python EOS mounting, direct frontend development proxying, distinct module persistence, and permission-operation separation.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_module_workspace_server_mount.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns tenant module workspace API and durable work authority.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.2-EOS-TENANT-MODULE-WORKSPACE-LOOPBACK-PROXY-CERT verifies that the
+#   loopback-constrained Vite target resolver keeps defaults at Python EOS
+#   9095 and Vite 5173 while allowing isolated browser overrides; replaces
+#   the brittle literal-target assertion without changing runtime behavior.
 #   v1.0.1-EOS-TENANT-MODULE-WORKSPACE-PYTHON-TRANSPORT replaces the retired
 #   Node BFF source assertion with verification of the canonical Python EOS
 #   router mount and Vite's direct /api/tenant-modules proxy to port 9095.
@@ -122,7 +126,14 @@ def test_module_workspace_transport_targets_python_eos_through_dev_proxy():
     proxy_end = vite.index("      },", proxy_start)
     proxy_block = vite[proxy_start:proxy_end]
 
-    assert "target: 'http://localhost:9095'" in proxy_block
+    assert "const configuredTarget = process.env.WILSY_EOS_DEV_TARGET || 'http://127.0.0.1:9095';" in vite
+    assert "const configuredPort = process.env.WILSY_VITE_PORT || '5173';" in vite
+    assert "targetUrl.protocol !== 'http:'" in vite
+    assert "['127.0.0.1', 'localhost'].includes(targetUrl.hostname)" in vite
+    assert "const eosProxyTarget = targetUrl.origin;" in vite
+    assert "port: Number(configuredPort)" in vite
+    assert "strictPort: true" in vite
+    assert 'target: eosProxyTarget' in proxy_block
     assert "changeOrigin: true" in proxy_block
     assert "rewrite:" not in proxy_block
 
@@ -175,7 +186,7 @@ def test_each_module_command_has_separate_permission_operation_pair():
 
 
 # ARTIFACT: tests/unit/test_tenant_module_workspace_server_mount.py
-# VERSION: v1.0.1-EOS-TENANT-MODULE-WORKSPACE-PYTHON-TRANSPORT
+# VERSION: v1.0.2-EOS-TENANT-MODULE-WORKSPACE-LOOPBACK-PROXY-CERT
 # AUTHORITY BOUNDARY: In-process API and frontend development transport tests only.
 # TENANT POSTURE: Forged tenant/principal inputs are rejected; no tenant records are mutated.
 # FAIL-CLOSED POSTURE: Missing EOS route mounts, invalid request boundaries or proxy drift fail the focused suite.
