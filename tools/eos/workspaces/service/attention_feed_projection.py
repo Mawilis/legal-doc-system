@@ -253,7 +253,7 @@ def build_attention_feed(
     # invalidate pagination when the source records are unchanged; conversely
     # a changed identity, due date or status prevents silent page shifting.
     data_revision = hashlib.sha3_512(json.dumps(
-        [(x["id"], x["status"], x["priority"], x["dueAt"]) for x in normalized],
+        [(x["id"], x["status"], x["priority"], x["dueAt"], x["isOverdue"]) for x in normalized],
         separators=(",", ":"), ensure_ascii=True,
     ).encode("utf-8")).hexdigest()
     fingerprint = _cursor_fingerprint(
