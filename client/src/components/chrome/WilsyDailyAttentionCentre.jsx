@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE
+ * VERSION: v1.8.1-EXACT-ATTENTION-COVERAGE-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE consumes EOS-authorised cursor-paginated
+ * CHANGELOG: v1.8.1-EXACT-ATTENTION-COVERAGE-RESET shows all non-represented sources
+ *            without inferring licence or permission, and clears obsolete
+ *            pagination state whenever the source or filter changes.
+ *            v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE consumes EOS-authorised cursor-paginated
  *            AttentionItems for real server-side triage and source selection;
  *            an unavailable feed cannot masquerade as a cleared enterprise
  *            queue. Direct OPEN navigation retains source-owned authority.
@@ -186,6 +189,7 @@ export default function WilsyDailyAttentionCentre({
     setAttentionFeed(null);
     setAttentionStatus('IDLE');
     setAttentionError('');
+    setLoadingMore(false);
     setFilter('ALL');
     setSource('ALL');
     setQuery('');
@@ -265,6 +269,7 @@ export default function WilsyDailyAttentionCentre({
     const controller = new AbortController();
     const generation = ++feedGenerationRef.current;
     setAttentionFeed(null);
+    setLoadingMore(false);
     setAttentionStatus('LOADING');
     setAttentionError('');
     const selectedView = {
@@ -647,7 +652,8 @@ export default function WilsyDailyAttentionCentre({
                   <p className="mt-2 text-[10px] leading-5 text-slate-400">
                     Verified sources: {attentionFeed.sources.map((entry) =>
                       entry.moduleId + ' (' + entry.state + ')').join(', ') || 'none'}.
-                    Finance and People are not represented by this feed.
+                    Not represented in this session: {attentionFeed.coverage.notRepresentedSources.join(', ') || 'none'}.
+                    No omitted source is assumed licensed or authorised.
                     This is not an enterprise-wide clearance.
                   </p>
                 )}
@@ -867,7 +873,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE
+ * VERSION: v1.8.1-EXACT-ATTENTION-COVERAGE-RESET
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
