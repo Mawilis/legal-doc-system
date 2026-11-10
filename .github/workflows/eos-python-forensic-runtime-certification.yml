@@ -1,3 +1,23 @@
+# WILSY OS Python EOS Forensic, QR, and Runtime Certification
+# TITLE: Python EOS Forensic Runtime and Historical QR Certification
+# VERSION: v1.3.0-PYTHON-QR-TENANT-BOUNDARY-CERTIFICATION
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Runs the Python forensic and billing QR byte-contract, authenticated
+#          tenant-bound route, runtime retirement, and PDF regression certificates.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-python-forensic-runtime-certification.yml
+# COLLABORATION / OWNERSHIP: Python EOS auth, billing, forensic and CI owners.
+# CERTIFICATION / UPDATE DATE: 2026-11-10
+# CHANGELOG:
+#   v1.3.0-PYTHON-QR-TENANT-BOUNDARY-CERTIFICATION runs QR payload compatibility,
+#   authentication, tenant, tamper, persisted identity and source-owner tests.
+#   v1.2.0 added physical Python-only runtime retirement certification.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: CI uses synthetic invoices and test-only secrets; no production data or keys.
+# TENANT BOUNDARY: Route tests prove exact TenantAuthorizationContext scoping.
+# AUTHORITY BOUNDARY: Certification only; no business or deployment authority.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution and settlement.
+# FAIL-CLOSED POSTURE: Any compile or test failure fails this workflow.
+
 name: Python EOS Forensic Runtime Certification
 
 on:
@@ -5,44 +25,45 @@ on:
     paths:
       - "tools/eos/api/forensic_merkle_router.py"
       - "tools/eos/api/artifact_pdf_router.py"
-      - "tools/eos/security/forensic_merkle_registry.py"
+      - "tools/eos/api/billing_router.py"
       - "tools/eos/api/server.py"
-      - "server/server.js"
-      - "server/app.js"
+      - "tools/eos/security/forensic_merkle_registry.py"
+      - "tools/eos/saas/billing/invoice_qr_legacy_contract.py"
+      - "tools/eos/governance/production_surface_policy.json"
+      - "tools/eos/governance/repository_integrity_guard.py"
+      - "server/**"
+      - "services/**"
       - "requirements.txt"
-      - "tests/unit/test_artifact_pdf_router.py"
-      - "server/app.js"
-      - "server/routes/api.js"
-      - "server/routes/forensicRoutes.js"
+      - "client/src/components/billing/ForensicProofBlock.jsx"
       - "client/src/services/wilsyForensicMerkleClient.js"
       - "client/src/components/chrome/WilsyForensicMerkleShowroom.jsx"
       - "client/vite.config.js"
       - "tests/unit/test_forensic_merkle_registry.py"
       - "tests/unit/test_forensic_merkle_router.py"
-      - "tests/unit/test_python_eos_forensic_runtime_retirement.py"
       - "tests/unit/test_artifact_pdf_router.py"
+      - "tests/unit/test_python_eos_forensic_runtime_retirement.py"
+      - "tests/unit/test_billing_invoice_proof_tenant_boundary.py"
+      - "tests/unit/test_billing_qr_tenant_boundary.py"
+      - "tests/unit/test_invoice_qr_legacy_contract.py"
+      - "tests/unit/test_global_principal_auth_challenge_startup.py"
+      - "tests/unit/test_system_services_case_startup.py"
       - ".github/workflows/eos-python-forensic-runtime-certification.yml"
   push:
     branches:
       - eos/python-only-runtime-retirement-20261108
+      - eos/daily-attention-consolidation-20261110
     paths:
       - "tools/eos/api/forensic_merkle_router.py"
-      - "tools/eos/security/forensic_merkle_registry.py"
-      - "tools/eos/api/server.py"
       - "tools/eos/api/artifact_pdf_router.py"
-      - "server/server.js"
-      - "requirements.txt"
+      - "tools/eos/api/billing_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/security/forensic_merkle_registry.py"
+      - "tools/eos/saas/billing/invoice_qr_legacy_contract.py"
+      - "tools/eos/governance/production_surface_policy.json"
       - "tests/unit/test_python_eos_forensic_runtime_retirement.py"
-      - "tests/unit/test_artifact_pdf_router.py"
-      - "server/app.js"
-      - "server/routes/api.js"
-      - "server/routes/forensicRoutes.js"
-      - "client/src/services/wilsyForensicMerkleClient.js"
-      - "client/src/components/chrome/WilsyForensicMerkleShowroom.jsx"
-      - "client/vite.config.js"
-      - "tests/unit/test_forensic_merkle_registry.py"
-      - "tests/unit/test_forensic_merkle_router.py"
-      - "tests/unit/test_python_eos_forensic_runtime_retirement.py"
+      - "tests/unit/test_billing_invoice_proof_tenant_boundary.py"
+      - "tests/unit/test_billing_qr_tenant_boundary.py"
+      - "tests/unit/test_invoice_qr_legacy_contract.py"
       - ".github/workflows/eos-python-forensic-runtime-certification.yml"
   workflow_dispatch:
 
@@ -67,9 +88,32 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -r requirements.txt
           python -m pip install --disable-pip-version-check pytest==9.1.1 httpx
-      - name: Compile Python EOS forensic runtime
+      - name: Compile Python EOS forensic and QR runtime
         run: |
-          python -m py_compile tools/eos/security/forensic_merkle_registry.py tools/eos/api/forensic_merkle_router.py tools/eos/api/artifact_pdf_router.py tools/eos/api/server.py
-      - name: Run forensic registry and authenticated route tests
+          python -m py_compile \
+            tools/eos/security/forensic_merkle_registry.py \
+            tools/eos/api/forensic_merkle_router.py \
+            tools/eos/api/artifact_pdf_router.py \
+            tools/eos/api/billing_router.py \
+            tools/eos/saas/billing/invoice_qr_legacy_contract.py \
+            tools/eos/api/server.py
+      - name: Run forensic, QR, and authenticated route certificates
         run: |
-          python -m pytest -q tests/unit/test_forensic_merkle_registry.py tests/unit/test_forensic_merkle_router.py tests/unit/test_python_eos_forensic_runtime_retirement.py tests/unit/test_artifact_pdf_router.py
+          python -m pytest -q \
+            tests/unit/test_forensic_merkle_registry.py \
+            tests/unit/test_forensic_merkle_router.py \
+            tests/unit/test_artifact_pdf_router.py \
+            tests/unit/test_python_eos_forensic_runtime_retirement.py \
+            tests/unit/test_billing_invoice_proof_tenant_boundary.py \
+            tests/unit/test_billing_qr_tenant_boundary.py \
+            tests/unit/test_invoice_qr_legacy_contract.py \
+            tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_system_services_case_startup.py
+
+# ARTIFACT: eos-python-forensic-runtime-certification.yml
+# VERSION: v1.3.0-PYTHON-QR-TENANT-BOUNDARY-CERTIFICATION
+# AUTHORITY BOUNDARY: CI certification only.
+# TENANT POSTURE: synthetic authenticated contexts only; no live tenant records.
+# FAIL-CLOSED POSTURE: compile and certificate failures fail this workflow.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

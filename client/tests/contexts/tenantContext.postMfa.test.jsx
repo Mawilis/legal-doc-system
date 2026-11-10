@@ -1,17 +1,20 @@
 /**
  * TITLE: Authenticated Workspace Tenant Projection Handoff Certificate
- * VERSION: v1.2.0-NO-UNAUTHORIZED-DUNNING-BOOTSTRAP
+ * VERSION: v1.3.0-GOVERNED-C2-TENANT-DIRECTORY-DENY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves TenantProvider consumes only the exact AuthProvider
  *          server-certified workspace tenant during authenticated bootstrap,
  *          ignores persisted browser state as authority, performs no redundant
  *          tenant-profile read, fails closed on mismatch or missing projection,
- *          and keeps explicit directory refresh separate.
+ *          and limits refresh/alias resolution to the authenticated projection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/tenantContext.postMfa.test.jsx
- * COLLABORATION / OWNERSHIP: TenantProvider, AuthProvider workspace-bootstrap
- *                            projection, Kennel tenantApi client.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * COLLABORATION / OWNERSHIP: TenantProvider and AuthProvider workspace-bootstrap
+ *                            projection; transport mocks certify no directory call.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * CHANGELOG:
+ *   v1.3.0-GOVERNED-C2-TENANT-DIRECTORY-DENY — Proves refresh and alias resolution
+ *     never issue global directory or arbitrary tenant-profile requests, and a
+ *     persisted tenant is ignored when the authenticated workspace is absent.
  *   v1.2.0-NO-UNAUTHORIZED-DUNNING-BOOTSTRAP — Confirms no restricted dunning
  *     projection is fetched automatically during workspace hydration; posture
  *     remains UNKNOWN pending an actual SubscriptionRegistry lifecycle source.
@@ -58,12 +61,14 @@ const authenticatedTenant = {
 
 function Harness() {
   const [switchError, setSwitchError] = useState('');
+  const [resolvedTenant, setResolvedTenant] = useState('');
   const {
     activeTenant,
     bootstrapReady,
     authorityMismatch,
     error,
     switchTenant,
+    resolveTenant,
     refreshTenants,
     accessPosture,
     refreshAccessPosture,
@@ -80,9 +85,11 @@ function Harness() {
       <span data-testid="posture-source">{accessPosture.source}</span>
       <button type="button" onClick={() => refreshAccessPosture()}>refresh posture</button>
       <span data-testid="switch-error">{switchError}</span>
+      <span data-testid="resolved-tenant">{resolvedTenant}</span>
       <button type="button" onClick={() => switchTenant('TENANT-A')}>same</button>
       <button type="button" onClick={() => { void switchTenant('TENANT-B').catch((reason) => setSwitchError(reason.message)); }}>cross-tenant</button>
       <button type="button" onClick={() => refreshTenants()}>refresh</button>
+      <button type="button" onClick={() => resolveTenant('TENANT-B').then((value) => setResolvedTenant(value?.tenantId || ''))}>resolve other</button>
     </div>
   );
 }
@@ -203,6 +210,32 @@ describe('authenticated workspace tenant projection handoff', () => {
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
   });
 
+  it('does not resolve or fetch an arbitrary tenant outside the authenticated workspace', async () => {
+    renderProvider({
+      initialTenant: authenticatedTenant,
+      authenticatedTenantId: 'TENANT-A',
+    });
+
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+    fireEvent.click(screen.getByRole('button', { name: 'resolve other' }));
+
+    await waitFor(() => expect(screen.getByTestId('resolved-tenant')).toHaveTextContent(''));
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
+    expect(tenantApi.getTenants).not.toHaveBeenCalled();
+  });
+
+  it('does not restore a persisted tenant when authenticated workspace scope is absent', async () => {
+    localStorage.setItem('wilsy_active_tenant', JSON.stringify(authenticatedTenant));
+
+    renderProvider();
+
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+    expect(screen.getByTestId('tenant')).toHaveTextContent('');
+    expect(screen.getByTestId('mismatch')).toHaveTextContent('false');
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
+    expect(tenantApi.getTenants).not.toHaveBeenCalled();
+  });
+
   it('requires a new EOS membership decision before cross-tenant switching', async () => {
     renderProvider({
       initialTenant: authenticatedTenant,
@@ -222,7 +255,7 @@ describe('authenticated workspace tenant projection handoff', () => {
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
   });
 
-  it('keeps same-tenant switching idempotent and directory refresh explicit', async () => {
+  it('keeps same-tenant switching idempotent and refresh tenant-scoped without a directory request', async () => {
     renderProvider({
       initialTenant: authenticatedTenant,
       authenticatedTenantId: 'TENANT-A',
@@ -235,20 +268,20 @@ describe('authenticated workspace tenant projection handoff', () => {
     expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
 
-    tenantApi.getTenants.mockResolvedValue({ data: [authenticatedTenant] });
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
-    await waitFor(() => expect(tenantApi.getTenants).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByTestId('tenant')).toHaveTextContent('TENANT-A'));
+    expect(tenantApi.getTenants).not.toHaveBeenCalled();
     expect(tenantApi.getTenant).not.toHaveBeenCalled();
   });
 });
 
 /**
  * ARTIFACT: client/tests/contexts/tenantContext.postMfa.test.jsx
- * VERSION: v1.2.0-NO-UNAUTHORIZED-DUNNING-BOOTSTRAP
+ * VERSION: v1.3.0-GOVERNED-C2-TENANT-DIRECTORY-DENY
  * AUTHORITY BOUNDARY: browser tenant projection certificate only; Python EOS workspace-bootstrap remains authoritative
  * TENANT POSTURE: exact authenticated initialTenant/authenticatedTenantId match required; persisted state cannot establish authenticated scope
- * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant and performs no compensating privileged tenant-profile read
+ * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant; refresh and alias resolution cannot enumerate or fetch arbitrary tenants
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

@@ -1,5 +1,0 @@
-# Legacy Node worker image retired.
-# Durable work is owned by Kennel EOS and tools/eos/runtime/worker_process.py.
-# The Python worker is opt-in through the explicit python-workers profile.
-FROM scratch
-COPY __LEGACY_NODE_BACKEND_RETIRED__ /retired

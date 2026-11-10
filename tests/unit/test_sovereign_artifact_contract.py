@@ -1,17 +1,24 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.3.2-WILSY-PYTHON-DOCSTRING-SEAL-CERT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
-         losing their required sovereign header, version agreement, changelog,
-         explicit end seal, or fail-closed inventory classification.
+EPITOME: Certifies complete changed-blob headers, exact versions and canonical
+         paths, all required end-seal fields, and retained evidence posture.
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_sovereign_artifact_contract.py
 COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
-CERTIFICATION / UPDATE DATE: 2026-11-08
+CERTIFICATION / UPDATE DATE: 2026-11-10
 CHANGELOG:
+    2026-11-10 v1.3.2-WILSY-PYTHON-DOCSTRING-SEAL-CERT recognizes Python
+    docstring-delimited seals and equivalent date/privacy labels while
+    preserving terminal-seal, exact-version, and canonical-path enforcement.
+    2026-11-10 v1.3.1-WILSY-COMPLETE-END-SEAL-CONTRACT accepts the governed certification-date variants and
+    enforces exact changelog/version agreement, correct paths, complete seals,
+    and whole-repository production, test, and active governance coverage.
+    2026-11-10 v1.2.0-WILSY-CHANGED-BLOB-SOVEREIGN-CONTRACT validates Git-blob metadata for changed
+    applicable production, test, and active governance files.
     2026-11-08 v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD recognizes version declarations in YAML comment headers
     as well as Markdown and source-file headers, preserving strict agreement
     checks across all governed artifacts.
@@ -44,15 +51,27 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
+from tools.eos.governance.repository_integrity_guard import (
+    IntegrityFailure,
+    _artifact_scope,
+    validate_artifact_contract,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.3.2-WILSY-PYTHON-DOCSTRING-SEAL-CERT",
+    ),
+    (
+        ROOT / "tools/eos/governance/repository_integrity_guard.py",
+        "v1.2.0-CHANGED-BLOB-PYTHON-DOCSTRING-SEAL-CERT",
     ),
     (
         ROOT / "DEPLOYMENT.md",
-        "v1.2.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY",
+        "v1.3.0-PYTHON-EOS-RETIRED-BACKEND-AND-MIGRATION-LINEAGE",
     ),
     (
         ROOT / "server/README.md",
@@ -94,6 +113,7 @@ ARTIFACTS = (
 REQUIRED_HEADER_MARKERS = (
     "TITLE:",
     "VERSION:",
+    "TITLE:",
     "AUTHORITY:",
     "EPITOME:",
     "ABSOLUTE CANONICAL PATH:",
@@ -142,6 +162,141 @@ def test_governed_artifacts_have_complete_header_version_changelog_and_seal() ->
         )
         for marker in FORBIDDEN_TEMPLATE_MARKERS:
             assert marker not in content, f"{path}: unresolved marker {marker}"
+
+
+def test_changed_artifact_guard_rejects_version_drift_and_incorrect_paths() -> None:
+    """Keep changed-blob enforcement strict for version and canonical-path drift.
+
+    Tenant scope: synthetic repository metadata only. Mutation, persistence,
+    authority, idempotency, and transaction ownership: none. Financial
+    authority: none; Kennel EOS exclusively owns execution.
+    """
+    version = "v1.0.0-CHANGED-ARTIFACT-CONTRACT-TEST"
+    path = "client/src/components/example.jsx"
+    content = f"""/**
+TITLE: Example changed source artifact
+VERSION: {version}
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Synthetic regression fixture for the changed Git blob contract.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/{path}
+COLLABORATION / OWNERSHIP: Repository integrity regression test owner.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: {version} establishes the synthetic complete artifact fixture.
+COMPLIANCE: Repository governance only.
+SECURITY / PRIVACY POSTURE: Synthetic metadata; no secrets or tenant data.
+TENANT BOUNDARY: No tenant data or authority.
+AUTHORITY BOUNDARY: No runtime or business authority.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+*/
+// ARTIFACT: Example changed source artifact
+// VERSION: {version}
+// AUTHORITY BOUNDARY: No runtime or business authority.
+// TENANT POSTURE: No tenant data or authority.
+// FAIL-CLOSED POSTURE: Invalid changed-blob metadata rejects.
+// FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
+// END OF WILSY OS SOVEREIGN ARTIFACT
+"""
+    validate_artifact_contract(path, content)
+    certification_variant = content.replace(
+        "CERTIFICATION / UPDATE DATE:",
+        "CERTIFICATION OR UPDATE DATE:",
+    )
+    validate_artifact_contract(path, certification_variant)
+    python_docstring = content.replace("/**\n", '"""\n', 1)
+    python_docstring = python_docstring.replace(
+        "\n*/\n// ARTIFACT:",
+        '\n"""\n"""\nARTIFACT:',
+        1,
+    )
+    python_docstring = re.sub(r"(?m)^// ?", "", python_docstring).rstrip() + '\n"""\n'
+    validate_artifact_contract(path, python_docstring)
+    python_label_variant = python_docstring.replace(
+        "CERTIFICATION / UPDATE DATE:",
+        "CERTIFICATION/UPDATE DATE:",
+    ).replace(
+        "SECURITY / PRIVACY POSTURE:",
+        "SECURITY/PRIVACY POSTURE:",
+    )
+    validate_artifact_contract(path, python_label_variant)
+    with pytest.raises(IntegrityFailure, match="terminal sovereign end seal is missing"):
+        validate_artifact_contract(path, python_docstring + "assert True\n")
+    with pytest.raises(IntegrityFailure, match="header and end-seal versions differ"):
+        validate_artifact_contract(
+            path,
+            content.replace(
+                f"// VERSION: {version}\n// AUTHORITY BOUNDARY:",
+                "// VERSION: v1.0.1-CHANGED-ARTIFACT-CONTRACT-TEST\n// AUTHORITY BOUNDARY:",
+            ),
+        )
+    with pytest.raises(IntegrityFailure, match="canonical artifact path mismatch"):
+        validate_artifact_contract(
+            path,
+            content.replace(path, "client/src/components/other.jsx"),
+        )
+    multiline_path = content.replace(
+        f"ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/{path}",
+        "ABSOLUTE CANONICAL PATH:\n"
+        "    /Users/wilsonkhanyezi/legal-doc-system/client/src/components/\n"
+        "    example.jsx",
+    )
+    validate_artifact_contract(path, multiline_path)
+    with pytest.raises(IntegrityFailure, match="incomplete sovereign end seal"):
+        validate_artifact_contract(
+            path,
+            content.replace(
+                "// FAIL-CLOSED POSTURE:",
+                "// OMITTED FAIL-CLOSED POSTURE:",
+            ),
+        )
+    with pytest.raises(
+        IntegrityFailure,
+        match="current version is absent from the header changelog",
+    ):
+        validate_artifact_contract(
+            path,
+            content.replace(
+                f"CHANGELOG: {version}",
+                f"CHANGELOG: {version}-DRIFTED",
+            ),
+        )
+
+
+def test_changed_artifact_scope_covers_source_tests_and_active_governance() -> None:
+    """Require changed source and active governance paths to use the blob contract.
+
+    Tenant scope: repository paths only. Mutation and persistence: none.
+    Authority: validation scope only, without runtime or business authority.
+    Financial authority: none; Kennel EOS exclusively owns execution.
+    """
+    assert _artifact_scope("src/production_module.py") == "text"
+    assert _artifact_scope("tests/unit/test_example.py") == "text"
+    assert _artifact_scope(".github/workflows/example.yml") == "text"
+    assert _artifact_scope("nested/AGENTS.md") == "text"
+    assert _artifact_scope("tools/eos/governance/example.json") == "json"
+    assert _artifact_scope("package-lock.json") is None
+    assert _artifact_scope(
+        "server/scripts/migration/DocumentMigrationEngine.js"
+    ) is None
+    assert _artifact_scope(
+        "docs/architecture/eos-runtime-database-consumer-inventory.md"
+    ) is None
+
+
+def test_active_json_artifacts_use_the_complete_metadata_contract() -> None:
+    """Validate active package and policy JSON metadata without changing them.
+
+    Tenant scope: repository configuration only. Mutation, persistence,
+    transaction ownership, idempotency, and business authority: none.
+    Financial authority: none; Kennel EOS exclusively owns execution.
+    """
+    for relative_path in (
+        "package.json",
+        "tools/eos/governance/production_surface_policy.json",
+    ):
+        validate_artifact_contract(
+            relative_path,
+            (ROOT / relative_path).read_text(encoding="utf-8"),
+        )
 
 
 def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
@@ -264,7 +419,7 @@ def test_deleted_root_node_orchestrators_remain_absent() -> None:
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.3.2-WILSY-PYTHON-DOCSTRING-SEAL-CERT
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.

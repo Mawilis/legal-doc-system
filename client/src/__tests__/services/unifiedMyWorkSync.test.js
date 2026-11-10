@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session My Work Coordination Certification
- * VERSION: v1.0.0-EXACT-SCOPE-READ-CURRENTNESS-CERT
+ * VERSION: v1.0.1-CURRENT-SCOPE-CHANGELOG-ALIGNMENT
  * AUTHORITY: WILSY OS Core Governance; only EOS authorizes business activity.
  * EPITOME: Proves scoped shared reads, actual EOS response verification,
  *          current session safety, source-confirmed invalidation and cleanup.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: unifiedMyWorkSync, AuthProvider session scope,
  *                            unifiedMyWorkProjection and source-owned commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0 covers overlapping reads, cancelled consumers, distinct
+ * CHANGELOG: v1.0.1-CURRENT-SCOPE-CHANGELOG-ALIGNMENT records the exact current certification version; assertions and runtime behavior are unchanged.
+ * CHANGELOG: v1.0.0-EXACT-SCOPE-READ-CURRENTNESS-CERT covers overlapping reads, cancelled consumers, distinct
  *            tenant/principal/capacity partitions, stale network completion,
  *            session loss, source revision and corrupt payload rejection.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -226,7 +227,7 @@ describe('one EOS source-owned My Work read for current authenticated scope', ()
 
 /*
  * ARTIFACT: unifiedMyWorkSync.test.js
- * VERSION: v1.0.0-EXACT-SCOPE-READ-CURRENTNESS-CERT
+ * VERSION: v1.0.1-CURRENT-SCOPE-CHANGELOG-ALIGNMENT
  * AUTHORITY BOUNDARY: Synthetic client read-coordination certificate only.
  * TENANT POSTURE: Explicit principal, tenant and session revision isolation.
  * FAIL-CLOSED POSTURE: Unknown, stale or invalidated work is never accepted.

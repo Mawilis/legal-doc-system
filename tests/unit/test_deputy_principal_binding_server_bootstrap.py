@@ -1,7 +1,7 @@
 """Direct certificate for L8-6B binding-index server bootstrap.
 
 TITLE: WILSY OS Deputy Principal Binding Index Bootstrap Certificate
-VERSION: v1.0.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP-CERT
+VERSION: v1.0.1-L8-6B-SERVER-V1.43-ALIGNMENT
 AUTHORITY: Direct ASGI-startup certification for binding schema readiness only.
 EPITOME: Prove successful database startup ensures the immutable L8-6B binding
          indexes on the exact canonical collection, failed database bootstrap
@@ -11,6 +11,7 @@ COLLABORATION / OWNERSHIP: Certificate for server startup composition only;
                             binding registry owns indexes/persistence and L8-6B
                             orchestration owns identity composition.
 CERTIFICATION / UPDATE DATE: 2026-09-23
+CHANGELOG: 2026-11-10 v1.0.1-L8-6B-SERVER-V1.43-ALIGNMENT pins the bootstrap certificate to the current v1.43 server release; index assertions are unchanged.
 CHANGELOG: 2026-09-23 v1.0.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP-CERT
            establishes successful-connect index invocation, failed-connect
            no-op, exact collection ownership, no binding creation, and server
@@ -148,12 +149,12 @@ def test_index_bootstrap_failure_propagates_fail_closed(
 
 def test_server_version_is_exact_l8_6b_bootstrap_release() -> None:
     """Certificate remains bound to the intended production startup release."""
-    assert server.VERSION == "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
+    assert server.VERSION == "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
     assert VERSION == "v1.0.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP-CERT"
 
 
 # ARTIFACT: test_deputy_principal_binding_server_bootstrap.py
-# VERSION: v1.0.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP-CERT
+# VERSION: v1.0.1-L8-6B-SERVER-V1.43-ALIGNMENT
 # AUTHORITY BOUNDARY: direct server startup binding-index readiness certificate only
 # TENANT POSTURE: startup creates indexes only and no tenant binding records
 # FAIL-CLOSED POSTURE: DB/index bootstrap failure never masquerades as ready

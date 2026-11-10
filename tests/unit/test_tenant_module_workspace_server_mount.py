@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Tenant Module Workspace API and Transport Contract Tests
-# VERSION: v1.0.3-CANONICAL-DEV-TRANSPORT
+# VERSION: v1.0.4-APIR0UTE-STATIC-CERTIFICATION
 # AUTHORITY: Static and in-process Python EOS route/transport certification only.
 # EPITOME: Verify authenticated Operations and Intelligence workspace routes, tenant-authority input rejection, canonical Python EOS mounting, fixed loopback proxy defaults, isolated browser-runner rewriting, distinct module persistence, and permission-operation separation.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_module_workspace_server_mount.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns tenant module workspace API and durable work authority.
 # CERTIFICATION OR UPDATE DATE: 2026-11-10
 # CHANGELOG:
+#   v1.0.4-APIR0UTE-STATIC-CERTIFICATION narrows Starlette BaseRoute values to
+#   FastAPI APIRoute before reading path, methods or dependency metadata so
+#   Pyright checks the existing route assertions without changing their scope.
 #   v1.0.3-CANONICAL-DEV-TRANSPORT removes assertions for unused alternate
 #   frontend/EOS environment overrides and verifies the single 5173/9095
 #   baseline plus the browser runner's disposable EOS-target rewrite.
@@ -34,8 +37,10 @@ application runtime.
 
 import inspect
 from pathlib import Path
+from typing import cast
 
 import pytest
+from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
 from tools.eos.api import server
@@ -53,6 +58,7 @@ def test_operations_and_intelligence_workspace_routes_are_distinct_and_mounted_o
     routes = {
         (route.path, tuple(sorted(route.methods or ()))): route
         for route in router.routes
+        if isinstance(route, APIRoute)
     }
     expected = {
         ("/tenant-modules/operations/workspace", ("GET",)),
@@ -157,7 +163,9 @@ def test_module_products_have_distinct_workspace_keys_and_persistence_collection
 
 def test_each_module_command_has_separate_permission_operation_pair():
     """Every module route uses its own exact permission and operation identity."""
-    routes = {route.path: route for route in router.routes}
+    routes = {
+        route.path: route for route in router.routes if isinstance(route, APIRoute)
+    }
     cases = {
         "/tenant-modules/operations/workspace": (
             "operations:work_item:read",
@@ -185,12 +193,15 @@ def test_each_module_command_has_separate_permission_operation_pair():
         ),
     }
     for path, expected in cases.items():
-        dependency = routes[path].dependant.dependencies[0].call
+        dependency = cast(
+            RequireTenantAuthorization,
+            routes[path].dependant.dependencies[0].call,
+        )
         assert (dependency.permission_id, dependency.operation) == expected
 
 
 # ARTIFACT: tests/unit/test_tenant_module_workspace_server_mount.py
-# VERSION: v1.0.3-CANONICAL-DEV-TRANSPORT
+# VERSION: v1.0.4-APIR0UTE-STATIC-CERTIFICATION
 # AUTHORITY BOUNDARY: In-process API and frontend development transport tests only.
 # TENANT POSTURE: Forged tenant/principal inputs are rejected; no tenant records are mutated.
 # FAIL-CLOSED POSTURE: Missing EOS route mounts, invalid request boundaries or proxy drift fail the focused suite.
