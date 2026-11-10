@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.8.1-EXACT-ATTENTION-COVERAGE-RESET
+ * VERSION: v1.9.0-SAFE-ATTENTION-READ-RECOVERY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.8.1-EXACT-ATTENTION-COVERAGE-RESET shows all non-represented sources
+ * CHANGELOG: v1.9.0-SAFE-ATTENTION-READ-RECOVERY preserves the Mac recovery contract in the
+ *            integrated AttentionItem feed: transient failures recover via
+ *            bounded delayed revalidation, browser reconnect and visibility;
+ *            401/403 and malformed source evidence remain fail-closed.
+ *            v1.8.1-EXACT-ATTENTION-COVERAGE-RESET shows all non-represented sources
  *            without inferring licence or permission, and clears obsolete
  *            pagination state whenever the source or filter changes.
  *            v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE consumes EOS-authorised cursor-paginated
@@ -168,6 +172,8 @@ export default function WilsyDailyAttentionCentre({
   const dragRef = useRef(null);
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
+  const [workError, setWorkError] = useState('');
+  const [recoveryAttempts, setRecoveryAttempts] = useState(0);
   const [attentionFeed, setAttentionFeed] = useState(null);
   const [attentionStatus, setAttentionStatus] = useState('IDLE');
   const [attentionError, setAttentionError] = useState('');
@@ -186,6 +192,8 @@ export default function WilsyDailyAttentionCentre({
   useEffect(() => {
     setProjection(null);
     setStatus('IDLE');
+    setWorkError('');
+    setRecoveryAttempts(0);
     setAttentionFeed(null);
     setAttentionStatus('IDLE');
     setAttentionError('');
@@ -214,6 +222,7 @@ export default function WilsyDailyAttentionCentre({
     let active = true;
     const controller = new AbortController();
     setProjection(null);
+    setWorkError('');
     setStatus('LOADING');
 
     // Authenticated production reads share the exact current session and
@@ -231,12 +240,21 @@ export default function WilsyDailyAttentionCentre({
       .then((verified) => {
         if (active) {
           setProjection(verified);
+          setWorkError('');
+          setRecoveryAttempts(0);
           setStatus('READY');
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (active) {
           setProjection(null);
+          const http = error?.response?.status;
+          setWorkError(http === 401 || http === 403
+            ? 'ATTENTION_ACCESS_DENIED'
+            : [502, 503, 504].includes(http)
+              || ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)
+              ? 'ATTENTION_CONNECTION_UNAVAILABLE'
+              : 'ATTENTION_PROJECTION_UNVERIFIED');
           setStatus('UNAVAILABLE');
         }
       });
@@ -296,10 +314,14 @@ export default function WilsyDailyAttentionCentre({
     }).catch((error) => {
       if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
       setAttentionFeed(null);
-      setAttentionError(error?.response?.status === 403
+      const http = error?.response?.status;
+      setAttentionError(http === 401 || http === 403
         ? 'ATTENTION_ACCESS_DENIED'
-        : error?.message?.startsWith('ATTENTION_')
-          ? error.message : 'ATTENTION_SOURCE_READ_UNAVAILABLE');
+        : [502, 503, 504].includes(http)
+          || ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)
+            ? 'ATTENTION_CONNECTION_UNAVAILABLE'
+            : error?.message?.startsWith('ATTENTION_')
+              ? error.message : 'ATTENTION_SOURCE_READ_UNVERIFIED');
       setAttentionStatus('UNAVAILABLE');
     });
     return () => {
@@ -310,6 +332,34 @@ export default function WilsyDailyAttentionCentre({
     open, workScope, status, projection, tenantId, auth?.user?.id,
     filter, source, debouncedQuery, refreshId,
   ]);
+
+  // A failed source is never promoted to empty; revalidate transient outages
+  // only in the same current AuthProvider session. No auth denial is retried.
+  useEffect(() => {
+    if (!open || !workScope) return undefined;
+    const transientFailure = (status === 'UNAVAILABLE'
+      && workError === 'ATTENTION_CONNECTION_UNAVAILABLE')
+      || (attentionStatus === 'UNAVAILABLE'
+        && attentionError === 'ATTENTION_CONNECTION_UNAVAILABLE');
+    if (!transientFailure) return undefined;
+    const refresh = () => {
+      setRecoveryAttempts((previous) => previous + 1);
+      setRefreshId((previous) => previous + 1);
+    };
+    const visible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    const delay = recoveryAttempts === 0 ? 1500
+      : recoveryAttempts === 1 ? 5000 : 20000;
+    const timer = window.setTimeout(refresh, delay);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', visible);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', visible);
+    };
+  }, [open, workScope, status, workError, attentionStatus, attentionError, recoveryAttempts]);
 
   const loadMoreAttention = () => {
     if (!workScope || !attentionFeed?.nextCursor || loadingMore) return;
@@ -601,11 +651,13 @@ export default function WilsyDailyAttentionCentre({
                 <AlertTriangle size={17}/> Work source unavailable
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                {attentionError === 'ATTENTION_ACCESS_DENIED'
+                {(attentionError || workError) === 'ATTENTION_ACCESS_DENIED'
                   ? 'This session is not authorised for the requested attention source.'
-                  : attentionError
-                    ? 'The authorised attention feed could not be verified. No cached or invented work is shown.'
-                    : 'Current tenant authorisation or an EOS work source could not be verified. No cached or invented work is shown.'}
+                  : (attentionError || workError) === 'ATTENTION_CONNECTION_UNAVAILABLE'
+                    ? 'EOS is temporarily unavailable. Recovery retries automatically; no stale business work is presented.'
+                    : (attentionError || workError)
+                      ? 'The authorised attention feed could not be verified. No cached or invented work is shown.'
+                      : 'Current tenant authorisation or an EOS work source could not be verified. No cached or invented work is shown.'}
               </p>
               {!systemServicesWorkspace && tenantId && (
                 <button type="button" onClick={() => setRefreshId((id) => id + 1)}
@@ -701,7 +753,7 @@ export default function WilsyDailyAttentionCentre({
                   <section aria-label="Daily attention next decision" className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.055] px-3 py-3">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-xs font-semibold text-amber-100">{selectedFilter.label}: {filteredItems.length} to review</h3>
+                        <h3 className="text-xs font-semibold text-amber-100">{selectedFilter.label}: {workScope && attentionFeed ? attentionFeed.filteredTotal : filteredItems.length} to review</h3>
                         <p className="mt-1 text-[11px] leading-5 text-slate-300">{selectedFilter.purpose}</p>
                         <p className="mt-1 text-[11px] leading-5 text-slate-400" role="status">
                           {triageResult} Showing {chosenSourceLabel}.
@@ -742,9 +794,11 @@ export default function WilsyDailyAttentionCentre({
                     <p className="mt-1 text-xs text-slate-400">
                       {items.length > 0
                         ? 'Try another filter or search term.'
-                        : sourceIds.length > 0
-                          ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '.'
-                          : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
+                        : workScope && attentionFeed && attentionFeed.counts.active > 0
+                          ? 'Other source-authorised active work exists. Clear filters to review it.'
+                          : sourceIds.length > 0
+                            ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '. This excludes unrepresented modules.'
+                            : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
                     </p>
                     {(filter !== 'ALL' || source !== 'ALL' || query.trim()) && (
                       <button type="button" onClick={() => { setFilter('ALL'); setSource('ALL'); setQuery(''); }}
@@ -873,7 +927,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.8.1-EXACT-ATTENTION-COVERAGE-RESET
+ * VERSION: v1.9.0-SAFE-ATTENTION-READ-RECOVERY
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
