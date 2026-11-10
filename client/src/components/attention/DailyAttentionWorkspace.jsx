@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.0.3-UNIQUE-OPERATIONS-ACTIONS
+ * VERSION: v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.3-UNIQUE-OPERATIONS-ACTIONS distinguishes
+ * CHANGELOG: v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL mounts
+ *          a 390px desktop detail rail beside the dense list and a bounded
+ *          mobile inspection sheet without hiding source-owned record entry.
+ *          v1.0.3-UNIQUE-OPERATIONS-ACTIONS distinguishes
  *          the empty-source creation handoff from the persistent Operations
  *          management shortcut for unambiguous accessible controls.
  *          v1.0.2-ESCAPE-AND-OPERATIONS-ACCESS ensures
@@ -272,7 +275,8 @@ export default function DailyAttentionWorkspace({
           </button>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto" ref={listRef}>
+        <div className="relative flex min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto" ref={listRef}>
           {ranked.length > 0 && showBriefing && filter === 'ALL' && !query.trim() && source === 'ALL' && (
             <section aria-label="Today's attention briefing" className="border-b border-white/10 bg-amber-300/[0.035] px-4 py-3">
               <div className="mb-2 flex items-center justify-between">
@@ -379,11 +383,10 @@ export default function DailyAttentionWorkspace({
           )}
           {pageError && <p role="alert" className="px-4 py-2 text-xs text-rose-200">
             Page verification failed. Refresh to reload EOS source truth.</p>}
-        </div>
-      )}
-      {selected && mode === 'WORK' && (
-        <aside aria-label="Attention detail rail"
-          className="max-h-[42%] shrink-0 overflow-auto border-t border-amber-300/25 bg-[#182842] px-4 py-3">
+          </div>
+          {selected && (
+            <aside aria-label="Attention detail rail"
+              className="absolute inset-x-0 bottom-0 z-10 max-h-[75%] shrink-0 overflow-auto border-t border-amber-300/25 bg-[#182842] px-4 py-3 shadow-2xl md:static md:inset-auto md:w-[390px] md:max-h-full md:border-l md:border-t-0 md:shadow-none">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200">
               Work detail · {label(selected.sourceModule)}
@@ -410,7 +413,9 @@ export default function DailyAttentionWorkspace({
               Open full record <ExternalLink size={13}/>
             </button>
           </div>
-        </aside>
+            </aside>
+          )}
+        </div>
       )}
       <footer className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
@@ -435,7 +440,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.0.0-DENSE-ATTENTION-REPLACEMENT
+// VERSION: v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
