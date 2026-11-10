@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorised Daily Attention Feed Projection
-VERSION: v1.0.1-STABLE-REVALIDATED-PAGINATION
+VERSION: v1.1.0-FULL-ADMISSION-COVERAGE
 AUTHORITY: WILSY OS Core Governance; source EOS registries remain canonical.
 EPITOME: Present independently authorized My Work rows as deterministic,
          cursor-paginated attention obligations without inventing commands.
@@ -8,7 +8,9 @@ COLLABORATION / OWNERSHIP: unified_my_work_router admits each source and owns
          its source transaction; attention_router exposes read-only HTTP;
          the browser presents only validated, bounded attention projections.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.1-STABLE-REVALIDATED-PAGINATION makes cursor
+CHANGELOG: v1.1.0-FULL-ADMISSION-COVERAGE identifies every omitted
+           module without asserting whether it is licensed or inaccessible.
+           v1.0.1-STABLE-REVALIDATED-PAGINATION makes cursor
            fingerprints stable across successive authorised reads while
            rejecting changed source work identities or status; malformed
            URL-safe base64 cursors fail with structured errors.
@@ -283,7 +285,7 @@ def build_attention_feed(
         ],
         "coverage": {
             "admittedSources": list(admitted),
-            "notRepresentedSources": ["FINANCE", "PEOPLE"],
+            "notRepresentedSources": [s for s in SOURCE_ORDER if s not in admitted] + ["FINANCE", "PEOPLE"],
             "completeEnterpriseCoverage": False,
         },
         "filteredTotal": len(filtered),
@@ -299,7 +301,7 @@ def build_attention_feed(
 __all__ = ["SCHEMA", "SOURCE_ORDER", "AttentionFeedError", "build_attention_feed"]
 
 # ARTIFACT: tools/eos/workspaces/service/attention_feed_projection.py
-# VERSION: v1.0.1-STABLE-REVALIDATED-PAGINATION
+# VERSION: v1.1.0-FULL-ADMISSION-COVERAGE
 # AUTHORITY BOUNDARY: Exact previously admitted EOS source projection; read only.
 # TENANT POSTURE: Exact caller tenant/principal and bounded source-dependent cursor.
 # FAIL-CLOSED POSTURE: Invalid source, scope, counts, dates and cursor reject.
