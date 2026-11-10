@@ -1,14 +1,17 @@
 """WILSY OS — Python EOS Runtime Retirement Certificate.
 
-VERSION: v1.1.0-NODE-RESURRECTION-PREVENTION
+VERSION: v1.2.0-LOOPBACK-ONLY-EOS-TRANSPORT-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Prevent previously retired Node transports and service generators from
 returning while preserving Python forensic and PDF route ownership.
 ABSOLUTE CANONICAL PATH:
 /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_python_eos_forensic_runtime_retirement.py
 COLLABORATION / OWNERSHIP: EOS runtime, client transport, CI retirement checks.
-UPDATE DATE: 2026-11-09.
-CHANGELOG: v1.1.0-NODE-RESURRECTION-PREVENTION replaces inspection of the legacy
+UPDATE DATE: 2026-11-10.
+CHANGELOG: v1.2.0-LOOPBACK-ONLY-EOS-TRANSPORT-CERT replaces
+literal single-port matching with stronger checks that every Vite API target
+uses validated loopback-only Python EOS, including side-by-side dev acceptance.
+v1.1.0-NODE-RESURRECTION-PREVENTION replaces inspection of the legacy
 Express app with required absence; forbids discovered repair generators and
 standalone business listeners and executable retired-service package scripts.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -17,6 +20,7 @@ database, credential, financial execution or real MFA authority.
 """
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -75,7 +79,14 @@ def test_frontend_forensic_bridge_has_no_node_backend_fallback_or_root_tenant_de
 def test_vite_application_api_proxy_targets_python_eos_only():
     """Keep the frontend build runtime separate from backend execution authority."""
     source = (ROOT / "client/vite.config.js").read_text(encoding="utf-8")
-    assert "target: 'http://127.0.0.1:9095'" in source
+    assert "process.env.WILSY_EOS_DEV_TARGET || 'http://127.0.0.1:9095'" in source
+    assert "const eosProxyTarget = targetUrl.origin" in source
+    assert "['127.0.0.1', 'localhost'].includes(targetUrl.hostname)" in source
+    assert "targetUrl.protocol !== 'http:'" in source
+    assert "targetUrl.pathname !== '/'" in source
+    assert "WILSY_EOS_DEV_TARGET_LOOPBACK_REQUIRED" in source
+    assert source.count("target: eosProxyTarget") >= 10
+    assert re.search(r"target\s*:\s*['\"]https?://", source) is None
     assert "localhost:4000" not in source
     assert "127.0.0.1:4000" not in source
 
@@ -116,7 +127,7 @@ def test_browser_certifier_never_launches_a_node_bff():
 
 # SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: Python EOS Runtime Retirement Certificate
-# VERSION: v1.1.0-NODE-RESURRECTION-PREVENTION
+# VERSION: v1.2.0-LOOPBACK-ONLY-EOS-TRANSPORT-CERT
 # AUTHORITY BOUNDARY: Repository regression evidence only.
 # TENANT POSTURE: No persistence or identity mutation.
 # FAIL-CLOSED POSTURE: Reintroduced entrypoints fail certification.
