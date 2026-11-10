@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION
+VERSION: v1.42.0-ATTENTION-FEED-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -11,8 +11,11 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: 2026-11-03 v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP mounts the additive global login/selection/MFA/refresh/logout routes, installs global TOTP factor indexes, and accepts an injected platform KMS decryptor; absent KMS wiring keeps MFA completion unavailable.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: 2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
+Daily Attention feed, counts, calendar and source-coverage read surfaces
+under /api without granting a second command or transaction authority.
+2026-11-03 v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP mounts the additive global login/selection/MFA/refresh/logout routes, installs global TOTP factor indexes, and accepts an injected platform KMS decryptor; absent KMS wiring keeps MFA completion unavailable.
 2026-11-03 v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP installs the durable tenant-neutral global authentication rate-limit indexes alongside global credential and one-time membership/MFA challenge indexes during canonical connected startup; readiness remains false until every required index succeeds.
 2026-11-03 v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP installs unique global-principal credential and single-use membership/MFA challenge indexes during canonical connected startup; no credentials, memberships, capacities, permissions, sessions, or identity authority are created.
 2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
@@ -125,6 +128,7 @@ from .hiring_lifecycle_router import router as hiring_lifecycle_router
 from .candidate_evidence_upload_router import router as candidate_evidence_upload_router
 from .tenant_module_workspace_router import router as tenant_module_workspace_router
 from .unified_my_work_router import router as unified_my_work_router
+from .attention_router import router as attention_router
 from .pos_workspace_router import router as pos_workspace_router, ensure_pos_workspace_indexes
 from .commercial_agreement_router import router as commercial_agreement_router
 from tools.eos.saas.entitlement.commercial_agreement_execution_verifier import CommercialAgreementExecutionVerifier
@@ -1074,6 +1078,7 @@ class WilsyAPIServer:
         app.include_router(candidate_evidence_upload_router, prefix="/api")
         app.include_router(tenant_module_workspace_router, prefix="/api")
         app.include_router(unified_my_work_router, prefix="/api")
+        app.include_router(attention_router, prefix="/api")
         app.include_router(pos_workspace_router, prefix="/api")
         app.include_router(commercial_agreement_router, prefix="/api")
         app.include_router(legal_operations_command_router, prefix="/api")
@@ -1153,7 +1158,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION
+# VERSION: v1.42.0-ATTENTION-FEED-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
