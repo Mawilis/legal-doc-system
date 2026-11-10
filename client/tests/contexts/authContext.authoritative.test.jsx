@@ -1,13 +1,16 @@
 /**
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT
+ * VERSION: v1.9.0-LOGOUT-DISCOVERY-CONTINUITY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-11-08 v1.7.0-WILSY-HEADQUARTERS-WORKSPACE-SESSION-CERT certifies that the exact WILSY_HEADQUARTERS
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: 2026-11-10 v1.9.0-LOGOUT-DISCOVERY-CONTINUITY-CERT
+ *            confirms logout destroys bearer authority while retaining only
+ *            the previously discovered tenant navigation context.
+ *            2026-11-08 v1.7.0-WILSY-HEADQUARTERS-WORKSPACE-SESSION-CERT certifies that the exact WILSY_HEADQUARTERS
  * workspace identifier is accepted only from READY EOS workspace bootstrap.
  * Customer tenant owner routing remains unchanged and browser projections do
  * not create IAM authority.
@@ -990,6 +993,31 @@ describe('authoritative authentication state machine', () => {
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
+  it('preserves discovered tenant navigation after logout but revokes every bearer', async () => {
+    const discovered = {
+      tenantId: 'TENANT-BROWSER', alias: 'browser', name: 'Browser Tenant',
+    };
+    window.localStorage.setItem('discoveredTenant', JSON.stringify(discovered));
+    api.post.mockResolvedValueOnce({
+      data: { status: AUTH_STATES.AUTHENTICATED, token: 'logout-candidate-token', user: authoritativeUser },
+    });
+    api.get.mockResolvedValueOnce(workspaceBootstrap());
+    renderHarness();
+    fireEvent.click(screen.getByRole('button', { name: 'login' }));
+    await waitFor(() => expect(screen.getByTestId('authenticated')).toHaveTextContent('true'));
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer logout-candidate-token');
+
+    fireEvent.click(screen.getByRole('button', { name: 'logout' }));
+    await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE));
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(screen.getByTestId('tenant-id')).toHaveTextContent('TENANT-BROWSER');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('token')).toBeNull();
+    expect(window.localStorage.getItem('wilsy_sovereign_user')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('discoveredTenant'))).toEqual(discovered);
+    expect(api.defaults.headers.common.Authorization).toBeUndefined();
+  });
+
   it('requires server SYSTEM workspace bootstrap before elevating an MFA session', async () => {
     let resolveBootstrap;
     const bootstrapPending = new Promise((resolve) => {
@@ -1082,7 +1110,7 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT
+ * VERSION: v1.9.0-LOGOUT-DISCOVERY-CONTINUITY-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection certificate only; D21B8 branding, workspace principal names and Legal permission provenance are presentation-only and never browser authorization authority
  * CHANGELOG: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT proves explicit bearer routing and
  * abort/currentness while rejecting an unverified MFA candidate as browser
