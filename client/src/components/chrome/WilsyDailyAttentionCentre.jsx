@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE
+ * VERSION: v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE mounts a
+ * CHANGELOG: v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT gives
+ *            authenticated triage a responsive 920px cockpit with room for
+ *            a 390px detail rail; isolated historic fixtures keep 460px.
+ *            Floating clamp/docking uses actual matching panel width.
+ *            v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE mounts a
  *            governed dense inbox/briefing/detail UI only after the authenticated
  *            AttentionItem feed validates; isolated My Work fixtures retain
  *            their historical verification seam and source-owned navigation.
@@ -513,7 +517,7 @@ export default function WilsyDailyAttentionCentre({
     const updateAnchor = () => {
       const anchor = rootRef.current?.getBoundingClientRect();
       if (!anchor) return;
-      const width = Math.min(460, window.innerWidth - 32);
+      const width = Math.min(workScope ? 920 : 460, window.innerWidth - 32);
       setDocked({
         right: Math.max(8, Math.min(window.innerWidth - anchor.right,
           Math.max(8, window.innerWidth - width - 8))),
@@ -523,14 +527,14 @@ export default function WilsyDailyAttentionCentre({
     updateAnchor();
     window.addEventListener('resize', updateAnchor);
     return () => window.removeEventListener('resize', updateAnchor);
-  }, [open]);
+  }, [open, workScope]);
 
   // Floating position is a transient layout preference, not business state.
   const panelBounds = () => {
     const rect = panelRef.current?.getBoundingClientRect();
     return {
       x: rect?.left || 16, y: rect?.top || 72,
-      width: rect?.width || Math.min(460, window.innerWidth - 32),
+      width: rect?.width || Math.min(workScope ? 920 : 460, window.innerWidth - 32),
       height: rect?.height || Math.min(780, window.innerHeight - 80),
     };
   };
@@ -620,7 +624,8 @@ export default function WilsyDailyAttentionCentre({
           style={floating
             ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
             : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }}
-          className="fixed z-[90] flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60"
+          className={'fixed z-[90] flex max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60 ' +
+            (workScope ? 'w-[min(920px,calc(100vw-2rem))]' : 'w-[min(460px,calc(100vw-2rem))]')}
         >
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
@@ -958,7 +963,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE
+ * VERSION: v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
