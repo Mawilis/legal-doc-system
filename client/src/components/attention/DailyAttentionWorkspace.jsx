@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.0.0-DENSE-ATTENTION-REPLACEMENT
+ * VERSION: v1.0.1-OPERATIONS-ACTION-COMPATIBILITY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.0-DENSE-ATTENTION-REPLACEMENT provides a responsive
+ * CHANGELOG: v1.0.1-OPERATIONS-ACTION-COMPATIBILITY preserves
+ *          the certified source-owned Operations handoff control while
+ *          demoting it behind the empty-state explanation.
+ *          v1.0.0-DENSE-ATTENTION-REPLACEMENT provides a responsive
  *          Orient/Triage/Open/Source-close-loop interface with 5-item briefing,
  *          compact counts, filtering, selection, detail inspection and scoped
  *          keyboard navigation; unavailable source commands are never faked.
@@ -320,7 +323,7 @@ export default function DailyAttentionWorkspace({
                   {sourceCoverage.some((entry) => entry.moduleId === 'OPERATIONS') && onOpenOperations && (
                     <button type="button" onClick={onOpenOperations}
                       className="mt-4 rounded-lg border border-amber-300/50 px-3 py-2 text-xs font-semibold text-amber-100">
-                      Create or manage Operations work <ArrowRight size={13} className="ml-1 inline"/>
+                      Manage Operations <ArrowRight size={13} className="ml-1 inline"/>
                     </button>
                   )}
                 </>
