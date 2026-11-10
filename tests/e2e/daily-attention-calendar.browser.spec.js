@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK
+ * VERSION: v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK adds real
+ * CHANGELOG: v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE certifies
+ *          actual authenticated replacement UI, named source coverage,
+ *          dense triage rows and contextual detail rail on both screen sizes.
+ *          v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK adds real
  *          authenticated attention feed/counts/calendar/coverage reads,
  *          foreign scope rejection and post-completion count reconciliation.
  *          v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK begins at the
@@ -73,6 +76,10 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await entryBell.click();
       const entryPanel = page.getByRole('dialog', {name: 'Daily attention centre'});
       await expect(entryPanel).toBeVisible();
+      const entryWorkspace = entryPanel.locator('[data-attention-production-ui="true"]');
+      await expect(entryWorkspace).toBeVisible();
+      await expect(entryWorkspace.getByRole('button', {name: /^Active:/})).toBeVisible();
+      await expect(entryWorkspace.getByText('Not represented in this session:', {exact: false})).toBeVisible();
       await expect(entryPanel.getByRole('button', {name: 'Manage Operations', exact: true})).toBeVisible();
 
       const title = `Calendar source work calendar-browser-${randomUUID()}`;
@@ -196,6 +203,16 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await bell.click();
       const panel = page.getByRole('dialog', {name: 'Daily attention centre'});
       await expect(panel).toBeVisible();
+      const triage = panel.locator('[data-attention-production-ui="true"]');
+      await expect(triage).toBeVisible();
+      await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toBeVisible();
+      await expect(triage.getByRole('region', {name: 'Attention inbox'})).toBeVisible();
+      const row = triage.getByRole('button', {name: 'Inspect ' + title});
+      await expect(row).toBeVisible();
+      await row.click();
+      await expect(triage.getByRole('complementary', {name: 'Attention detail rail'})).toBeVisible();
+      await expect(triage.getByRole('button', {name: 'Open full record'})).toBeVisible();
+      await triage.getByRole('button', {name: 'Close attention detail'}).click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       const dates = panel.getByRole('group', {name: 'Choose work deadline date'});
       await expect(dates).toBeVisible();
@@ -329,7 +346,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK
+// VERSION: v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
