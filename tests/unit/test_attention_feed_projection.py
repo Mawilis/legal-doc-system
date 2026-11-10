@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.0.2-EXACT-RULE-URGENCY-CERT
+VERSION: v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.2-EXACT-RULE-URGENCY-CERT corrects the expected
+CHANGELOG: v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT verifies deterministic
+           500-item pagination with no overlap or fabricated totals.
+           v1.0.2-EXACT-RULE-URGENCY-CERT corrects the expected
            rules-only score: overdue NORMAL is 80 + 10, not 100.
            v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT requires every
            omitted source to be named without claiming entitlement or access.
@@ -141,6 +143,25 @@ def test_source_count_drift_and_row_tenant_mismatch_fail_closed():
         build_attention_feed(damaged)
 
 
+def test_five_hundred_source_items_page_without_duplicates_or_fabricated_total():
+    """500-item source scan preserves exact count through five bounded pages."""
+    data = snapshot(count=500)
+    cursor = None
+    seen = set()
+    for _ in range(5):
+        page = build_attention_feed(data, limit=100, cursor=cursor)
+        assert page["counts"]["active"] == 500
+        assert page["filteredTotal"] == 500
+        assert len(page["items"]) == 100
+        ids = {item["id"] for item in page["items"]}
+        assert len(ids) == 100
+        assert not seen.intersection(ids)
+        seen.update(ids)
+        cursor = page["nextCursor"]
+    assert cursor is None
+    assert len(seen) == 500
+
+
 def test_no_authorised_source_cannot_be_presented_as_enterprise_clear():
     empty = build_unified_my_work(
         tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
@@ -156,7 +177,7 @@ def test_no_authorised_source_cannot_be_presented_as_enterprise_clear():
 
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.0.2-EXACT-RULE-URGENCY-CERT
+# VERSION: v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
