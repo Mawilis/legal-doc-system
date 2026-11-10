@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.0.2-ESCAPE-AND-OPERATIONS-ACCESS
+ * VERSION: v1.0.3-UNIQUE-OPERATIONS-ACTIONS
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.2-ESCAPE-AND-OPERATIONS-ACCESS ensures
+ * CHANGELOG: v1.0.3-UNIQUE-OPERATIONS-ACTIONS distinguishes
+ *          the empty-source creation handoff from the persistent Operations
+ *          management shortcut for unambiguous accessible controls.
+ *          v1.0.2-ESCAPE-AND-OPERATIONS-ACCESS ensures
  *          calendar-first Escape does not dismiss the parent dialog and
  *          preserves admitted Operations management even with existing work.
  *          v1.0.1-OPERATIONS-ACTION-COMPATIBILITY preserves
@@ -331,7 +334,7 @@ export default function DailyAttentionWorkspace({
                   {sourceCoverage.some((entry) => entry.moduleId === 'OPERATIONS') && onOpenOperations && (
                     <button type="button" onClick={onOpenOperations}
                       className="mt-4 rounded-lg border border-amber-300/50 px-3 py-2 text-xs font-semibold text-amber-100">
-                      Manage Operations <ArrowRight size={13} className="ml-1 inline"/>
+                      Create Operations work <ArrowRight size={13} className="ml-1 inline"/>
                     </button>
                   )}
                 </>
