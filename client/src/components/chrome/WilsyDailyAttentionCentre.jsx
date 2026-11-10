@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.9.1-FULL-FEED-RECOVERY-BACKOFF
+ * VERSION: v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.9.1-FULL-FEED-RECOVERY-BACKOFF resets the retry
+ * CHANGELOG: v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY retains
+ *            the proven isolated legacy empty-state copy, while real
+ *            authenticated feeds add explicit omitted-source context.
+ *            v1.9.1-FULL-FEED-RECOVERY-BACKOFF resets the retry
  *            schedule only after BOTH source aggregation and the AttentionItem
  *            read succeed, preventing repeated short retries on prolonged 503.
  *            v1.9.0-SAFE-ATTENTION-READ-RECOVERY preserves the Mac recovery contract in the
@@ -801,7 +804,7 @@ export default function WilsyDailyAttentionCentre({
                         : workScope && attentionFeed && attentionFeed.counts.active > 0
                           ? 'Other source-authorised active work exists. Clear filters to review it.'
                           : sourceIds.length > 0
-                            ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '. This excludes unrepresented modules.'
+                            ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '.'
                             : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
                     </p>
                     {(filter !== 'ALL' || source !== 'ALL' || query.trim()) && (
@@ -931,7 +934,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.9.1-FULL-FEED-RECOVERY-BACKOFF
+ * VERSION: v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
