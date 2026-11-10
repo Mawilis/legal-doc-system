@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.0.0-ATTENTION-FEED-CONTRACT-CERT
+VERSION: v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.0-ATTENTION-FEED-CONTRACT-CERT introduces deterministic
+CHANGELOG: v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT requires every
+           omitted source to be named without claiming entitlement or access.
+           v1.0.0-ATTENTION-FEED-CONTRACT-CERT introduces deterministic
            synthetic-authority negative and positive projection tests.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic tenant IDs and records only.
@@ -64,7 +66,7 @@ def test_attention_item_is_real_source_derived_and_non_executable():
         "active": 5, "overdue": 1, "dueToday": 1, "highPriority": 2,
     }
     assert feed["coverage"]["admittedSources"] == ["OPERATIONS", "CRM"]
-    assert feed["coverage"]["notRepresentedSources"] == ["FINANCE", "PEOPLE"]
+    assert feed["coverage"]["notRepresentedSources"] == ["LEGAL", "INTELLIGENCE", "FINANCE", "PEOPLE"]
     assert feed["coverage"]["completeEnterpriseCoverage"] is False
     assert feed["sources"] == [
         {"moduleId": "OPERATIONS", "state": "ok", "count": 5},
@@ -152,7 +154,7 @@ def test_no_authorised_source_cannot_be_presented_as_enterprise_clear():
 
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.0.0-ATTENTION-FEED-CONTRACT-CERT
+# VERSION: v1.0.1-COMPLETE-SOURCE-COVERAGE-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
