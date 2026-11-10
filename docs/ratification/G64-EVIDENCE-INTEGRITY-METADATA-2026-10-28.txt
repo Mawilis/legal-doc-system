@@ -1,0 +1,22 @@
+# G64 Evidence Integrity Metadata
+# Date: 2026-10-28
+# Public metadata only. Original documents, archive, and detailed manifest are not stored in this repository.
+
+Archive byte size: 38333
+Archive SHA-256: 56603388437a8ecaa3bceb8db0b671c36912d95bd66eaa4a7d8b100fb823e291
+
+DOCX byte size: 37808
+DOCX SHA-256: 7e12061d517773ae8b072eb712a57e1b45db1e3ec1fc19afbb8142f0fb1d3f93
+
+PDF byte size: 2713
+PDF SHA-256: 7014d9c94f1405f7a9e5d4f208eeb645a10e1046861e63e44af490ac06fc10e0
+
+Integrity notes:
+- ZIP archive test passed with no compressed-data errors.
+- DOCX and PDF hashes and sizes matched the private package manifest.
+- Duplicate copies matched the packaged DOCX and PDF hashes.
+- These digests establish byte consistency only. They do not authenticate identity, signatures, delegated authority, or institutional ratification.
+- Institutional ratification remains FAIL-CLOSED pending independent verification and Gates 2-4.
+- This metadata is not a ratification decision, authorization, or production certification.
+
+END OF WILSY OS EVIDENCE METADATA
