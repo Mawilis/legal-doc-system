@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL
+ * VERSION: v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL mounts
+ * CHANGELOG: v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE
+ *          makes Calendar consume the verified complete My Work snapshot,
+ *          never only the currently filtered AttentionItem page.
+ *          v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL mounts
  *          a 390px desktop detail rail beside the dense list and a bounded
  *          mobile inspection sheet without hiding source-owned record entry.
  *          v1.0.3-UNIQUE-OPERATIONS-ACTIONS distinguishes
@@ -80,7 +83,7 @@ const countLabel = (name, count) => name + ': ' + count;
  *          request delegates to the source-owned My Work route.
  */
 export default function DailyAttentionWorkspace({
-  feed, filter, setFilter, source, setSource, query, setQuery,
+  feed, calendarItems, filter, setFilter, source, setSource, query, setQuery,
   onRefresh, onOpenWork, onOpenOperations, onOpenWorkforce,
   onLoadMore, loadingMore, pageError,
 }) {
@@ -92,7 +95,8 @@ export default function DailyAttentionWorkspace({
   const searchRef = useRef(null);
   const listRef = useRef(null);
   const page = feed.items;
-  const rows = useMemo(() => page.map(toWorkItem), [page]);
+  const rows = useMemo(() => Array.isArray(calendarItems)
+    ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
   const ranked = page.slice(0, 5);
   const sourceCoverage = feed.sources || [];
@@ -440,7 +444,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL
+// VERSION: v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
