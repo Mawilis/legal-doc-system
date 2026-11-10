@@ -1,15 +1,19 @@
 """Direct certificate for the Legal Evidence S3 storage adapter.
 
-VERSION: v1.1.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER-CERT
+VERSION: v1.2.0-L10A2R-C4D7-VERIFIED-READ-CERT
 AUTHORITY: Wilsy OS Core Governance
-CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.1.0-L10A2R-C4D6C-A certifies the S3 C4D6B page adapter,
+CERTIFICATION / UPDATE DATE: 2026-10-26
+CHANGELOG: 2026-10-26 v1.2.0-L10A2R-C4D7 certifies bounded exact-version
+           content reads, metadata and SHA3-512 validation, and fail-closed
+           rejection of content corruption before bytes are returned.
+           v1.1.0-L10A2R-C4D6C-A certifies the S3 C4D6B page adapter,
            exact continuation marker-pair transport, tamper rejection,
            exact-version HEAD recovery and preserved C4D2 semantics.
 """
 from __future__ import annotations
 
 from hashlib import sha3_512
+from io import BytesIO
 from typing import Any, cast
 
 import pytest
@@ -51,6 +55,7 @@ class FakeS3Client:
             "ETag": "object-etag",
         }
         self.head_response: dict[str, Any] | None = None
+        self.get_response: dict[str, Any] | None = None
         self.list_multipart_uploads_response: dict[str, Any] = {
             "Uploads": [],
             "IsTruncated": False,
@@ -91,6 +96,12 @@ class FakeS3Client:
         if self.head_response is None:
             raise AssertionError("head_response must be configured")
         return dict(self.head_response)
+
+    def get_object(self, **kwargs: Any) -> dict[str, Any]:
+        self._record("get_object", kwargs)
+        if self.get_response is None:
+            raise AssertionError("get_response must be configured")
+        return dict(self.get_response)
 
     def list_multipart_uploads(self, **kwargs: Any) -> dict[str, Any]:
         self._record(
@@ -174,6 +185,117 @@ def evidence_for(
         content_length=length,
         content_fingerprint=digest,
     )
+
+
+def test_verified_read_returns_exact_version_only_after_hash_validation() -> None:
+    client = FakeS3Client()
+    value = intent(maximum=1024)
+    evidence = evidence_for(value)
+    client.head_response = {
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "ETag": "object-etag",
+        "VersionId": "version-1",
+    }
+    client.get_response = {
+        "Body": BytesIO(b"abc"),
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "VersionId": "version-1",
+    }
+
+    content = adapter(client).read_verified_content(value, evidence)
+
+    assert content == b"abc"
+    assert [name for name, _ in client.calls] == [
+        "head_object",
+        "get_object",
+    ]
+    assert client.calls[-1][1]["VersionId"] == "version-1"
+    assert client.calls[-1][1]["Key"] == _storage_key(value)
+
+
+def test_verified_read_rejects_corrupt_body_without_returning_bytes() -> None:
+    client = FakeS3Client()
+    value = intent(maximum=1024)
+    evidence = evidence_for(value)
+    client.head_response = {
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "ETag": "object-etag",
+        "VersionId": "version-1",
+    }
+    client.get_response = {
+        "Body": BytesIO(b"abd"),
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "VersionId": "version-1",
+    }
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D7_CONTENT_INTEGRITY_MISMATCH$",
+    ):
+        adapter(client).read_verified_content(value, evidence)
+
+
+def test_verified_read_rejects_wrong_provider_version_before_returning_bytes() -> None:
+    client = FakeS3Client()
+    value = intent(maximum=1024)
+    evidence = evidence_for(value)
+    client.head_response = {
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "ETag": "object-etag",
+        "VersionId": "version-1",
+    }
+    client.get_response = {
+        "Body": BytesIO(b"abc"),
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "VersionId": "different-version",
+    }
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D7_PROVIDER_METADATA_MISMATCH$",
+    ):
+        adapter(client).read_verified_content(value, evidence)
+
+
+def test_verified_read_rejects_evidence_above_legal_content_ceiling() -> None:
+    client = FakeS3Client()
+    value = intent(maximum=30 * 1024 * 1024)
+    evidence = evidence_for(
+        value,
+        length=26 * 1024 * 1024,
+        fingerprint=sha3_512(b"placeholder").hexdigest(),
+    )
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D7_CONTENT_EVIDENCE_INVALID$",
+    ):
+        adapter(client).read_verified_content(value, evidence)
+
+    assert client.calls == []
+
+
+def test_verified_read_rejects_cross_tenant_evidence_before_provider_call() -> None:
+    client = FakeS3Client()
+    tenant_a = intent(tenant="tenant-a")
+    tenant_b = intent(tenant="tenant-b")
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_B2_SCOPE_MISMATCH$",
+    ):
+        adapter(client).read_verified_content(
+            tenant_a,
+            evidence_for(tenant_b),
+        )
+
+    assert client.calls == []
 
 
 def test_adapter_implements_certified_storage_port() -> None:
@@ -1419,12 +1541,13 @@ def test_c4d6ca_page_surface_grants_no_complete_or_orphan_authority() -> None:
     )
 
 # ARTIFACT: test_legal_evidence_s3_storage_adapter.py
-# VERSION: v1.1.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER-CERT
+# VERSION: v1.2.0-L10A2R-C4D7-VERIFIED-READ-CERT
 # AUTHORITY BOUNDARY: direct fake-provider S3 storage and C4D6C-A page-enumeration evidence only
 # TENANT POSTURE: exact tenant scope remains sealed before provider enumeration
 # COVERAGE POSTURE: one page is evidence of one page only; no exhaustive-coverage attestation
 # CONTINUATION POSTURE: exact provider marker pairs only; malformed or tampered references fail closed
 # OPERATIONAL POSTURE: fake-client certificate only; real AWS remains deferred
+# CONTENT POSTURE: exact-version reads return bytes only after full length and SHA3-512 verification
 # ORPHAN POSTURE: no orphan or disownership inference
 # DELETION POSTURE: no deletion authorization or execution authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
