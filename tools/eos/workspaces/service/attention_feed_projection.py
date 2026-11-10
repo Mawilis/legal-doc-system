@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorised Daily Attention Feed Projection
-VERSION: v1.0.0-AUTHORISED-ATTENTION-ITEMS
+VERSION: v1.0.1-STABLE-REVALIDATED-PAGINATION
 AUTHORITY: WILSY OS Core Governance; source EOS registries remain canonical.
 EPITOME: Present independently authorized My Work rows as deterministic,
          cursor-paginated attention obligations without inventing commands.
@@ -8,7 +8,11 @@ COLLABORATION / OWNERSHIP: unified_my_work_router admits each source and owns
          its source transaction; attention_router exposes read-only HTTP;
          the browser presents only validated, bounded attention projections.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.0-AUTHORISED-ATTENTION-ITEMS establishes the first
+CHANGELOG: v1.0.1-STABLE-REVALIDATED-PAGINATION makes cursor
+           fingerprints stable across successive authorised reads while
+           rejecting changed source work identities or status; malformed
+           URL-safe base64 cursors fail with structured errors.
+           v1.0.0-AUTHORISED-ATTENTION-ITEMS establishes the first
            AttentionItem contract, deterministic due/priority triage,
            session-bound cursor, source-coverage truth and calendar readback.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -27,6 +31,7 @@ FAIL-CLOSED POSTURE: Invalid source, foreign scope, malformed row or cursor
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import json
 from datetime import datetime, timezone
@@ -61,12 +66,12 @@ def _instant(value: object) -> datetime:
 
 
 def _cursor_fingerprint(
-    *, tenant_id: str, principal_id: str, as_of: str, view: str,
+    *, tenant_id: str, principal_id: str, data_revision: str, view: str,
     sources: tuple[str, ...], query: str,
 ) -> str:
     """Bind an offset to the reverified EOS session and selected read surface."""
     payload = json.dumps(
-        [tenant_id, principal_id, as_of, view, sources, query],
+        [tenant_id, principal_id, data_revision, view, sources, query],
         ensure_ascii=True, separators=(",", ":"),
     )
     return hashlib.sha3_512(payload.encode("utf-8")).hexdigest()[:32]
@@ -80,7 +85,7 @@ def _decode_cursor(value: str | None, fingerprint: str) -> int:
     try:
         raw = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
         decoded = json.loads(raw)
-    except (ValueError, TypeError, UnicodeError) as error:
+    except (ValueError, TypeError, UnicodeError, binascii.Error) as error:
         raise AttentionFeedError("ATTENTION_CURSOR_INVALID") from error
     if (
         not isinstance(decoded, list) or len(decoded) != 2
@@ -244,9 +249,16 @@ def build_attention_feed(
         SOURCE_ORDER.index(x["sourceModule"]),
         x["sourceRecordId"],
     ))
+    # Re-read and reauthorize on every page. A fresh as_of timestamp must not
+    # invalidate pagination when the source records are unchanged; conversely
+    # a changed identity, due date or status prevents silent page shifting.
+    data_revision = hashlib.sha3_512(json.dumps(
+        [(x["id"], x["status"], x["priority"], x["dueAt"]) for x in normalized],
+        separators=(",", ":"), ensure_ascii=True,
+    ).encode("utf-8")).hexdigest()
     fingerprint = _cursor_fingerprint(
         tenant_id=projection["tenant_id"], principal_id=projection["principal_id"],
-        as_of=projection["as_of"], view=view, sources=sources, query=query,
+        data_revision=data_revision, view=view, sources=sources, query=query,
     )
     offset = _decode_cursor(cursor, fingerprint)
     if offset > len(filtered):
@@ -287,7 +299,7 @@ def build_attention_feed(
 __all__ = ["SCHEMA", "SOURCE_ORDER", "AttentionFeedError", "build_attention_feed"]
 
 # ARTIFACT: tools/eos/workspaces/service/attention_feed_projection.py
-# VERSION: v1.0.0-AUTHORISED-ATTENTION-ITEMS
+# VERSION: v1.0.1-STABLE-REVALIDATED-PAGINATION
 # AUTHORITY BOUNDARY: Exact previously admitted EOS source projection; read only.
 # TENANT POSTURE: Exact caller tenant/principal and bounded source-dependent cursor.
 # FAIL-CLOSED POSTURE: Invalid source, scope, counts, dates and cursor reject.
