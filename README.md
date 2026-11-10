@@ -2,7 +2,7 @@
 
 ### Sovereign Legal & Enterprise Operating System
 
-[![Repository Integrity](https://github.com/Mawilis/legal-doc-system/actions/workflows/repository-integrity.yml/badge.svg)](https://github.com/Mawilis/legal-doc-system/actions/workflows/repository-integrity.yml) [![Production CI](https://github.com/Mawilis/legal-doc-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Mawilis/legal-doc-system/actions/workflows/ci.yml) ![Pre-Production](https://img.shields.io/badge/posture-pre--production-blue) ![Python/Kennel EOS Authority](https://img.shields.io/badge/authority-Python%2FKennel%20EOS-5b21b6)
+[![Repository Integrity](https://github.com/Mawilis/legal-doc-system/actions/workflows/repository-integrity.yml/badge.svg)](https://github.com/Mawilis/legal-doc-system/actions/workflows/repository-integrity.yml) [![Production CI](https://github.com/Mawilis/legal-doc-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Mawilis/legal-doc-system/actions/workflows/ci.yml) [![P9 Integrated Authority Certification](https://github.com/Mawilis/legal-doc-system/actions/workflows/p9-binding-transaction-index-certification.yml/badge.svg?branch=cert%2Fp9-binding-transaction-index-closure-20261026)](https://github.com/Mawilis/legal-doc-system/actions/workflows/p9-binding-transaction-index-certification.yml) [![Release Posture](https://img.shields.io/badge/production-not--declared-orange)](https://github.com/Mawilis/legal-doc-system/blob/main/RELEASES.md) [![Public Status Ledger](https://img.shields.io/badge/status-governed--development-blue)](https://github.com/Mawilis/legal-doc-system/blob/main/tools/eos/governance/public_project_status.json) ![Python/Kennel EOS Authority](https://img.shields.io/badge/authority-Python%2FKennel%20EOS-5b21b6)
 
 WILSY OS is a governed platform for legal operations and enterprise workflows,
 designed around explicit tenant scope, provenance-bearing evidence, and
@@ -37,9 +37,9 @@ Production readiness is not declared.
 {
   "authority": "Wilsy OS Core Governance",
   "canonical_truth": "Python EOS governs business, intelligence, tenant, and execution evidence.",
-  "current_frontier": "WILSY_AI_GOVERNED_DEVELOPMENT",
+  "current_frontier": "P9_INTEGRATED_LEGAL_OPS_RECONCILIATION",
   "financial_execution_authority": "Kennel EOS exclusively",
-  "governance_version": "v1.0.0-public-status",
+  "governance_version": "v1.1.0-investor-evidence-ledger",
   "milestones": [
     {
       "name": "Executive intelligence spine",
@@ -85,14 +85,44 @@ Production readiness is not declared.
       "name": "Production release",
       "result": null,
       "state": "NOT_DECLARED"
+    },
+    {
+      "evidence_commit": "ae525b4d229e6eb6dcc0502ce630c7b9298dc973",
+      "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/246",
+      "limitation": "Does not certify integrated P9 source, production index migration, ethical-wall enforcement, or matter-content authorization.",
+      "name": "P9 focused binding index and transaction rollback certification",
+      "result": "PASS",
+      "scope": "Focused disposable real-Mongo index, replay, tenant-isolation and transaction-rollback certification; candidate workflow passed.",
+      "state": "CLOSED"
+    },
+    {
+      "candidate_certification_state": "PASS",
+      "candidate_evidence_commit": "54609a2fe30df96b8e0e21c0ef110349afa7a01b",
+      "candidate_evidence_url": "https://github.com/Mawilis/legal-doc-system/actions/runs/40304328501",
+      "candidate_gate_summary": "G63 fail-closed institutional policy boundary plus current-main P9 authority chain passed exact-head unit and disposable real-Mongo certification; Repository Integrity and unified pipeline also passed.",
+      "candidate_real_mongo_tests_passed": 29,
+      "candidate_real_mongo_tests_skipped": 0,
+      "candidate_unit_tests_passed": 390,
+      "candidate_unit_tests_skipped": 0,
+      "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/229",
+      "limitation": "Overall milestone remains IN_PROGRESS: PR #229 is semantically stale and not merge-ready; institutional ratification (G64), canonical authority wiring (G65), effective production wall enforcement (G66), cross-source point-of-read certification (G67), production workload identity, audit-target provisioning/fingerprint match, immutable image promotion and deployment approval remain open. No operational matter-content access or production deployment is declared.",
+      "name": "P9 integrated Legal Ops mainline reconciliation",
+      "result": null,
+      "state": "IN_PROGRESS"
+    },
+    {
+      "limitation": "Badge and release-policy changes are proposed on a review branch; public mainline changes only after governed review and merge.",
+      "name": "Investor-facing governance ledger and release signals",
+      "result": null,
+      "state": "IN_PROGRESS"
     }
   ],
   "project": "WILSY OS",
-  "release_posture": "development; no production release tag issued by this campaign",
+  "release_posture": "governed development; current-main P9/G63 candidate passed 390 unit and 29 disposable real-Mongo tests with zero skips and unified production gates; institutional ratification and production deployment not declared",
   "schema_version": 1,
   "status": "governed-development",
   "tenant_posture": "tenant scope is explicit and fail-closed",
-  "updated": "2026-09-03"
+  "updated": "2026-10-26"
 }
 ```
 <!-- WILSY_PUBLIC_STATUS_END -->
