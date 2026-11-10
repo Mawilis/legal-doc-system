@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF
+ * VERSION: v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -10,8 +10,12 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * CHANGELOG:
+ *   v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK — Uses the user-approved
+ *     supplied WILSY OS square icon in the existing 48px emblem slot;
+ *     preserves the WILSY wordmark, Build. Operate. Grow. tagline and
+ *     authenticated global chrome. No session or business authority changes.
  *   v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF — Routes existing authenticated
  *     Daily Attention Operations entry to the source-owned Headquarters
  *     Operations workspace, with no browser-owned business command.
@@ -274,7 +278,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
       <header className="sticky top-0 z-40 flex h-16 w-full min-w-0 items-center gap-2 border-b border-white/10 bg-[#0b1830]/95 px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-6">
         <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[200px] xl:w-[240px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <img src="/brand/wilsy-gold-emblem.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
+          <img src="/icons/icon-192.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
           <span className="hidden min-w-0 leading-tight min-[360px]:block">
 
 
@@ -904,7 +908,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF
+ * VERSION: v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
