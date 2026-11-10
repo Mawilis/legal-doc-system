@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY
+ * VERSION: v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY retains
+ * CHANGELOG: v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE mounts a
+ *            governed dense inbox/briefing/detail UI only after the authenticated
+ *            AttentionItem feed validates; isolated My Work fixtures retain
+ *            their historical verification seam and source-owned navigation.
+ *            v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY retains
  *            the proven isolated legacy empty-state copy, while real
  *            authenticated feeds add explicit omitted-source context.
  *            v1.9.1-FULL-FEED-RECOVERY-BACKOFF resets the retry
@@ -91,6 +95,7 @@ import {
 } from '../../services/unifiedMyWorkProjection.js';
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
 import { readAttentionFeed } from '../../services/attentionFeedClient.js';
+import DailyAttentionWorkspace from '../attention/DailyAttentionWorkspace.jsx';
 
 const FILTERS = Object.freeze([
   { id: 'ALL', label: 'All work', purpose: 'Review every active item currently included by EOS.' },
@@ -675,7 +680,26 @@ export default function WilsyDailyAttentionCentre({
             </div>
           )}
 
-          {status === 'READY' && (!workScope || attentionStatus === 'READY') && (
+          {status === 'READY' && workScope && attentionStatus === 'READY' && (
+            <DailyAttentionWorkspace
+              key={workScope}
+              feed={attentionFeed}
+              filter={filter}
+              setFilter={setFilter}
+              source={source}
+              setSource={setSource}
+              query={query}
+              setQuery={setQuery}
+              onRefresh={() => setRefreshId((id) => id + 1)}
+              onOpenWork={onOpenWork}
+              onOpenOperations={onOpenOperations}
+              onOpenWorkforce={onOpenWorkforce}
+              onLoadMore={loadMoreAttention}
+              loadingMore={loadingMore}
+              pageError={attentionError === 'ATTENTION_PAGE_REVALIDATION_FAILED'}
+            />
+          )}
+          {status === 'READY' && !workScope && (
             <>
               <div className="shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -934,7 +958,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY
+ * VERSION: v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
