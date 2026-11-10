@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK
+ * VERSION: v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK begins at the
+ * CHANGELOG: v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK adds real
+ *          authenticated attention feed/counts/calendar/coverage reads,
+ *          foreign scope rejection and post-completion count reconciliation.
+ *          v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK begins at the
  *          global authenticated bell and exercises Operations handoff
  *          before source-created durable work, calendar and EOS completion.
  *          v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION creates source work using
@@ -140,6 +143,53 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       ))).toHaveLength(1);
       expect(beforeAggregate.summary.source_counts.OPERATIONS).toBeGreaterThanOrEqual(1);
 
+      const attentionFeedResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(attentionFeedResponse.status()).toBe(200);
+      const attentionFeed = await attentionFeedResponse.json();
+      expect(attentionFeed.schema).toBe('WILSY-OS-ATTENTION-FEED/V1');
+      expect(attentionFeed.tenantId).toBe(state.tenant_id);
+      expect(attentionFeed.principalId).toBe(actor.principal_id);
+      expect(attentionFeed.counts.active).toBe(beforeAggregate.summary.active_count);
+      expect(attentionFeed.coverage.admittedSources).toContain('OPERATIONS');
+      expect(attentionFeed.coverage.completeEnterpriseCoverage).toBe(false);
+      expect(attentionFeed.items.some(item => (
+        item.id === 'OPERATIONS:' + work.work_item_id
+        && item.title === title
+        && item.actionHints.length === 1
+        && item.actionHints[0] === 'OPEN'
+        && item.authzScope === 'SOURCE_SERVICE_ONLY'
+      ))).toBe(true);
+
+      const attentionCounts = await context.request.get('/api/attention/counts', {headers});
+      expect(attentionCounts.status()).toBe(200);
+      expect((await attentionCounts.json()).counts.active).toBe(attentionFeed.counts.active);
+
+      const attentionCoverage = await context.request.get('/api/attention/sources/health', {headers});
+      expect(attentionCoverage.status()).toBe(200);
+      expect((await attentionCoverage.json()).sources.some(source => (
+        source.moduleId === 'OPERATIONS' && source.state === 'ok'
+      ))).toBe(true);
+
+      const start = new Date(new Date(due.iso).getTime() - 86400000).toISOString();
+      const end = new Date(new Date(due.iso).getTime() + 86400000).toISOString();
+      const calendarResponse = await context.request.get(
+        '/api/attention/calendar?' + new URLSearchParams({from: start, to: end}),
+        {headers},
+      );
+      expect(calendarResponse.status()).toBe(200);
+      expect((await calendarResponse.json()).items.some(item => (
+        item.id === 'OPERATIONS:' + work.work_item_id
+      ))).toBe(true);
+
+      const unauthorisedSource = await context.request.get('/api/attention/feed?sources=PEOPLE', {headers});
+      expect(unauthorisedSource.status()).toBe(403);
+      expect(await unauthorisedSource.text()).not.toContain(title);
+      const foreignAttention = await context.request.get('/api/attention/feed', {
+        headers: {...headers, 'X-Tenant-ID': state.foreign_tenant_id},
+      });
+      expect(foreignAttention.status()).toBe(403);
+      expect(await foreignAttention.text()).not.toContain(title);
+
       await page.goto('/headquarters');
       const bell = page.getByRole('button', {name: /^Open daily attention/});
       await expect(bell).toBeVisible();
@@ -253,6 +303,14 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         beforeAggregate.summary.source_counts.OPERATIONS - 1
       );
 
+      const afterAttentionResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(afterAttentionResponse.status()).toBe(200);
+      const afterAttention = await afterAttentionResponse.json();
+      expect(afterAttention.counts.active).toBe(attentionFeed.counts.active - 1);
+      expect(afterAttention.items.some(item => (
+        item.id === 'OPERATIONS:' + work.work_item_id
+      ))).toBe(false);
+
       // A verified source completion must refresh global chrome in the same
       // authenticated browser session, not wait for the old periodic poll.
       await expect(bell).toHaveAttribute(
@@ -271,7 +329,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION
+// VERSION: v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
