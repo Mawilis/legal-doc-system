@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.7.0-EXECUTIVE-TRIAGE-INTENT
+ * VERSION: v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.7.0-EXECUTIVE-TRIAGE-INTENT turns the four
+ * CHANGELOG: v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE consumes EOS-authorised cursor-paginated
+ *            AttentionItems for real server-side triage and source selection;
+ *            an unavailable feed cannot masquerade as a cleared enterprise
+ *            queue. Direct OPEN navigation retains source-owned authority.
+ *            v1.7.0-EXECUTIVE-TRIAGE-INTENT turns the four
  *            EOS-backed filter controls into an explained triage decision:
  *            per-filter verified counts, an explicit source-safe next action,
  *            and an empty-state recovery path without fabricated work.
@@ -73,6 +77,7 @@ import {
   unifiedMyWorkSourceLabel,
 } from '../../services/unifiedMyWorkProjection.js';
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
+import { readAttentionFeed } from '../../services/attentionFeedClient.js';
 
 const FILTERS = Object.freeze([
   { id: 'ALL', label: 'All work', purpose: 'Review every active item currently included by EOS.' },
@@ -160,6 +165,12 @@ export default function WilsyDailyAttentionCentre({
   const dragRef = useRef(null);
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
+  const [attentionFeed, setAttentionFeed] = useState(null);
+  const [attentionStatus, setAttentionStatus] = useState('IDLE');
+  const [attentionError, setAttentionError] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const feedGenerationRef = useRef(0);
   const [refreshId, setRefreshId] = useState(0);
   const [filter, setFilter] = useState('ALL');
   const [source, setSource] = useState('ALL');
@@ -172,6 +183,9 @@ export default function WilsyDailyAttentionCentre({
   useEffect(() => {
     setProjection(null);
     setStatus('IDLE');
+    setAttentionFeed(null);
+    setAttentionStatus('IDLE');
+    setAttentionError('');
     setFilter('ALL');
     setSource('ALL');
     setQuery('');
@@ -236,6 +250,100 @@ export default function WilsyDailyAttentionCentre({
   }, [open, workScope]);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 200);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  // Authenticated sessions use the EOS AttentionItem feed as the triage list.
+  // Existing isolated UI fixtures still exercise the canonical My Work seam.
+  useEffect(() => {
+    if (!open || !workScope || status !== 'READY' || !projection) {
+      setAttentionFeed(null);
+      setAttentionStatus('IDLE');
+      return undefined;
+    }
+    const controller = new AbortController();
+    const generation = ++feedGenerationRef.current;
+    setAttentionFeed(null);
+    setAttentionStatus('LOADING');
+    setAttentionError('');
+    const selectedView = {
+      ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+    }[filter];
+    readAttentionFeed(
+      { tenantId, principalId: auth.user.id },
+      {
+        view: selectedView,
+        sources: source !== 'ALL' ? source : undefined,
+        q: debouncedQuery,
+        limit: 50,
+        signal: controller.signal,
+      },
+    ).then((verified) => {
+      if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
+      const included = projection.sources_included || [];
+      if (
+        verified.coverage.admittedSources.length !== included.length
+        || included.some((item) => !verified.coverage.admittedSources.includes(item))
+      ) throw new Error('ATTENTION_SOURCE_COVERAGE_MISMATCH');
+      setAttentionFeed(verified);
+      setAttentionStatus('READY');
+    }).catch((error) => {
+      if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
+      setAttentionFeed(null);
+      setAttentionError(error?.response?.status === 403
+        ? 'ATTENTION_ACCESS_DENIED'
+        : error?.message?.startsWith('ATTENTION_')
+          ? error.message : 'ATTENTION_SOURCE_READ_UNAVAILABLE');
+      setAttentionStatus('UNAVAILABLE');
+    });
+    return () => {
+      controller.abort();
+      feedGenerationRef.current += 1;
+    };
+  }, [
+    open, workScope, status, projection, tenantId, auth?.user?.id,
+    filter, source, debouncedQuery, refreshId,
+  ]);
+
+  const loadMoreAttention = () => {
+    if (!workScope || !attentionFeed?.nextCursor || loadingMore) return;
+    const generation = feedGenerationRef.current;
+    const prior = attentionFeed;
+    setLoadingMore(true);
+    const selectedView = {
+      ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+    }[filter];
+    readAttentionFeed(
+      { tenantId, principalId: auth.user.id },
+      {
+        view: selectedView,
+        sources: source !== 'ALL' ? source : undefined,
+        q: debouncedQuery,
+        cursor: prior.nextCursor,
+        limit: 50,
+      },
+    ).then((page) => {
+      if (generation !== feedGenerationRef.current) return;
+      if (
+        page.filteredTotal !== prior.filteredTotal
+        || page.counts.active !== prior.counts.active
+        || page.coverage.admittedSources.join() !== prior.coverage.admittedSources.join()
+      ) throw new Error('ATTENTION_PAGE_SOURCE_CHANGED');
+      const already = new Set(prior.items.map((item) => item.id));
+      if (page.items.some((item) => already.has(item.id))) {
+        throw new Error('ATTENTION_PAGE_DUPLICATE');
+      }
+      setAttentionFeed({ ...page, items: [...prior.items, ...page.items] });
+    }).catch(() => {
+      if (generation !== feedGenerationRef.current) return;
+      setAttentionError('ATTENTION_PAGE_REVALIDATION_FAILED');
+    }).finally(() => {
+      if (generation === feedGenerationRef.current) setLoadingMore(false);
+    });
+  };
+
+  useEffect(() => {
     if (!open) return undefined;
     const handleKey = (event) => {
       if (event.key !== 'Escape') return;
@@ -258,7 +366,23 @@ export default function WilsyDailyAttentionCentre({
     };
   }, [open, onClose, view]);
 
-  const items = projection?.items || [];
+  const items = workScope
+    ? attentionStatus === 'READY'
+      ? attentionFeed.items.map((item) => ({
+          source_key: item.id,
+          source: item.sourceModule,
+          work_item_id: item.sourceRecordId,
+          title: item.title,
+          description: item.summary,
+          priority: item.priority,
+          status: item.status,
+          due_at: item.dueAt,
+          is_overdue: item.isOverdue,
+          urgencyScore: item.urgencyScore,
+          whyRanked: item.whyRanked,
+        }))
+      : []
+    : projection?.items || [];
   const sourceIds = projection?.sources_included || [];
   const sourceOptions = sourceIds.map((id) => [id, unifiedMyWorkSourceLabel(id)]);
   const sourceLabels = sourceOptions.map(([, label]) => label);
@@ -270,10 +394,20 @@ export default function WilsyDailyAttentionCentre({
     ? activeCount
     : open && status === 'READY' ? projection.summary.active_count : null;
   const badgeCount = validCount(verifiedCount) && verifiedCount > 0 ? verifiedCount : null;
-  const dueTodayCount = items.filter((item) => dueToday(item.due_at)).length;
-  const highCount = items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
-  const overdueCount = items.filter((item) => item.is_overdue).length;
-  const filterCounts = { ALL: items.length, OVERDUE: overdueCount, TODAY: dueTodayCount, HIGH: highCount };
+  const dueTodayCount = workScope && attentionFeed
+    ? attentionFeed.counts.dueToday
+    : items.filter((item) => dueToday(item.due_at)).length;
+  const highCount = workScope && attentionFeed
+    ? attentionFeed.counts.highPriority
+    : items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
+  const overdueCount = workScope && attentionFeed
+    ? attentionFeed.counts.overdue
+    : items.filter((item) => item.is_overdue).length;
+  const activeTotal = workScope && attentionFeed
+    ? attentionFeed.counts.active : items.length;
+  const filterCounts = {
+    ALL: activeTotal, OVERDUE: overdueCount, TODAY: dueTodayCount, HIGH: highCount,
+  };
 
   useEffect(() => {
     if (projection && source !== 'ALL' && !projection.sources_included.includes(source)) {
@@ -282,6 +416,7 @@ export default function WilsyDailyAttentionCentre({
   }, [projection, source]);
 
   const filteredItems = useMemo(() => {
+    if (workScope) return items;
     const phrase = query.trim().toLocaleLowerCase();
     return items.filter((item) => {
       if (filter === 'OVERDUE' && !item.is_overdue) return false;
@@ -295,7 +430,7 @@ export default function WilsyDailyAttentionCentre({
       ].some((value) => typeof value === 'string'
         && value.toLocaleLowerCase().includes(phrase));
     });
-  }, [items, filter, source, query]);
+  }, [items, filter, source, query, workScope]);
   const selectedFilter = FILTERS.find(({ id }) => id === filter) || FILTERS[0];
   const nextItem = nextWorkItem(filteredItems);
   const triageResult = nextItem
@@ -449,20 +584,23 @@ export default function WilsyDailyAttentionCentre({
             </div>
           </div>
 
-          {status === 'LOADING' && (
+          {(status === 'LOADING' || (status === 'READY' && workScope && attentionStatus === 'LOADING')) && (
             <div role="status" className="flex items-center gap-2 px-5 py-8 text-sm text-amber-200">
               <RefreshCw size={16} className="animate-spin"/> Checking current work…
             </div>
           )}
 
-          {status === 'UNAVAILABLE' && (
+          {(status === 'UNAVAILABLE' || (status === 'READY' && workScope && attentionStatus === 'UNAVAILABLE')) && (
             <div role="alert" className="space-y-3 px-5 py-6">
               <div className="flex items-center gap-2 font-medium text-rose-200">
                 <AlertTriangle size={17}/> Work source unavailable
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Current tenant authorisation or an EOS work source could not be verified.
-                No cached or invented work is shown.
+                {attentionError === 'ATTENTION_ACCESS_DENIED'
+                  ? 'This session is not authorised for the requested attention source.'
+                  : attentionError
+                    ? 'The authorised attention feed could not be verified. No cached or invented work is shown.'
+                    : 'Current tenant authorisation or an EOS work source could not be verified. No cached or invented work is shown.'}
               </p>
               {!systemServicesWorkspace && tenantId && (
                 <button type="button" onClick={() => setRefreshId((id) => id + 1)}
@@ -473,7 +611,7 @@ export default function WilsyDailyAttentionCentre({
             </div>
           )}
 
-          {status === 'READY' && (
+          {status === 'READY' && (!workScope || attentionStatus === 'READY') && (
             <>
               <div className="shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -499,13 +637,22 @@ export default function WilsyDailyAttentionCentre({
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Stat label="Active" value={items.length} />
-                  <Stat label="Overdue" value={projection.summary.overdue_count} urgent={projection.summary.overdue_count > 0}/>
+                <div className="flex flex-wrap gap-2" aria-label="Verified current-source workload">
+                  <Stat label="Active" value={activeTotal} />
+                  <Stat label="Overdue" value={overdueCount} urgent={overdueCount > 0}/>
                   <Stat label="Due today" value={dueTodayCount}/>
+                  <Stat label="High priority" value={highCount}/>
                 </div>
+                {workScope && attentionFeed && (
+                  <p className="mt-2 text-[10px] leading-5 text-slate-400">
+                    Verified sources: {attentionFeed.sources.map((entry) =>
+                      entry.moduleId + ' (' + entry.state + ')').join(', ') || 'none'}.
+                    Finance and People are not represented by this feed.
+                    This is not an enterprise-wide clearance.
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] text-slate-400">{highCount} high-priority items</p>
+                  <p className="text-[11px] text-slate-400">{highCount} high-priority items in authorised sources</p>
                   <button type="button" onClick={() => setRefreshId((id) => id + 1)}
                     className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-amber-200 hover:bg-white/10">
                     <RefreshCw size={13}/> Refresh
@@ -578,9 +725,13 @@ export default function WilsyDailyAttentionCentre({
                     <p className="mt-3 text-sm font-medium text-white">
                       {items.length > 0
                         ? 'No work matches these filters'
-                        : sourceIds.length > 0
-                          ? 'No active work in the included sources'
-                          : 'No work source was included in this session'}
+                        : workScope && attentionFeed && attentionFeed.counts.active > 0
+                          ? 'No work matches this view'
+                          : workScope && attentionFeed && sourceIds.length > 0
+                            ? 'Queue clear in verified sources — not across all WILSY modules'
+                            : sourceIds.length > 0
+                              ? 'No active work in the included sources'
+                              : 'No work source was included in this session'}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       {items.length > 0
@@ -603,7 +754,7 @@ export default function WilsyDailyAttentionCentre({
                     )}
                   </div>
                 ) : filteredItems.map((item) => (
-                  <article key={item.source_key} className="mb-2 rounded-xl border border-white/10 bg-white/[0.035] p-3">
+                  <article key={item.source_key} className="mb-1 flex flex-col gap-1 rounded-lg border border-white/10 bg-white/[0.025] px-3 py-2">
                     <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.08em]">
                       <span className="font-semibold text-amber-200">{unifiedMyWorkSourceLabel(item.source)}</span>
                       <span className={item.is_overdue ? 'font-semibold text-rose-300' : 'text-slate-400'}>
@@ -617,13 +768,18 @@ export default function WilsyDailyAttentionCentre({
                       <ChevronDown size={15} className={'mt-0.5 shrink-0 transition ' +
                         (expanded === item.source_key ? 'rotate-180' : '')}/>
                     </button>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                    {item.whyRanked && (
+                      <p className="mt-1 text-[11px] text-amber-100/80">
+                        Priority {item.urgencyScore}/100 · {item.whyRanked}
+                      </p>
+                    )}
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
                       <span className="inline-flex items-center gap-1"><Clock3 size={12}/>{dueLabel(item.due_at)}</span>
                       <span>{item.status}</span>
                     </div>
                     <button type="button" onClick={() => onOpenWork(item)}
                       aria-label={'Act on ' + item.title + ' in My Work'}
-                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
+                      className="mt-1 inline-flex w-fit items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
                       Act in My Work <ArrowRight size={13}/>
                     </button>
                     {expanded === item.source_key && (
@@ -644,11 +800,22 @@ export default function WilsyDailyAttentionCentre({
                     )}
                   </article>
                 ))}
+                {workScope && attentionFeed?.nextCursor && (
+                  <button type="button" disabled={loadingMore} onClick={loadMoreAttention}
+                    className="mb-2 w-full rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-white/10 disabled:opacity-50">
+                    {loadingMore ? 'Loading authorised work…' : 'Load more authorised work'}
+                  </button>
+                )}
+                {attentionError === 'ATTENTION_PAGE_REVALIDATION_FAILED' && (
+                  <p role="alert" className="p-2 text-xs text-rose-200">
+                    The current work page changed or failed verification. Refresh to reread EOS.
+                  </p>
+                )}
               </div>
 
               <div className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-3">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
-                  <span>{filteredItems.length} of {items.length} authorised items</span>
+                  <span>{items.length} of {activeTotal} active authorised items · {workScope && attentionFeed ? attentionFeed.filteredTotal + ' matching' : 'local projection'}</span>
                   <span>Included: {sourceLabels.length ? sourceLabels.join(', ') : 'no source projection'}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -690,7 +857,7 @@ export default function WilsyDailyAttentionCentre({
 /** Read-only summary tile for EOS-authorised active work. */
 function Stat({ label, value, urgent = false }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+    <div className="min-w-[90px] flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5">
       <p className="text-[10px] text-slate-400">{label}</p>
       <p className={'mt-1 text-lg font-semibold tabular-nums ' +
         (urgent ? 'text-rose-200' : 'text-white')}>{value}</p>
@@ -700,7 +867,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.7.0-EXECUTIVE-TRIAGE-INTENT
+ * VERSION: v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
