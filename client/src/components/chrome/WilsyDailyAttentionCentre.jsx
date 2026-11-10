@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT
+ * VERSION: v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT gives
+ * CHANGELOG: v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR passes the
+ *            independently verified current My Work snapshot into Calendar,
+ *            excluding filtered attention-page truncation from deadline view.
+ *            v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT gives
  *            authenticated triage a responsive 920px cockpit with room for
  *            a 390px detail rail; isolated historic fixtures keep 460px.
  *            Floating clamp/docking uses actual matching panel width.
@@ -689,6 +692,7 @@ export default function WilsyDailyAttentionCentre({
             <DailyAttentionWorkspace
               key={workScope}
               feed={attentionFeed}
+              calendarItems={projection.items}
               filter={filter}
               setFilter={setFilter}
               source={source}
@@ -963,7 +967,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT
+ * VERSION: v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
