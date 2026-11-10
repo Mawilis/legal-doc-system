@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE
+ * VERSION: v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE certifies
+ * CHANGELOG: v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT confirms
+ *          the desktop contextual rail uses 390px and the mobile rail stays
+ *          inside the viewport without compromising authorised work handoff.
+ *          v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE certifies
  *          actual authenticated replacement UI, named source coverage,
  *          dense triage rows and contextual detail rail on both screen sizes.
  *          v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK adds real
@@ -210,7 +213,13 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const row = triage.getByRole('button', {name: 'Inspect ' + title});
       await expect(row).toBeVisible();
       await row.click();
-      await expect(triage.getByRole('complementary', {name: 'Attention detail rail'})).toBeVisible();
+      const rail = triage.getByRole('complementary', {name: 'Attention detail rail'});
+      await expect(rail).toBeVisible();
+      const railBounds = await rail.boundingBox();
+      expect(railBounds.width).toBeGreaterThan(300);
+      expect(railBounds.width).toBeLessThanOrEqual(420);
+      expect(railBounds.x).toBeGreaterThanOrEqual(0);
+      expect(railBounds.x + railBounds.width).toBeLessThanOrEqual(viewport.width);
       await expect(triage.getByRole('button', {name: 'Open full record'})).toBeVisible();
       await triage.getByRole('button', {name: 'Close attention detail'}).click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
@@ -346,7 +355,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE
+// VERSION: v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
