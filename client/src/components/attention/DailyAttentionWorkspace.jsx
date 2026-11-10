@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.0.1-OPERATIONS-ACTION-COMPATIBILITY
+ * VERSION: v1.0.2-ESCAPE-AND-OPERATIONS-ACCESS
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.1-OPERATIONS-ACTION-COMPATIBILITY preserves
+ * CHANGELOG: v1.0.2-ESCAPE-AND-OPERATIONS-ACCESS ensures
+ *          calendar-first Escape does not dismiss the parent dialog and
+ *          preserves admitted Operations management even with existing work.
+ *          v1.0.1-OPERATIONS-ACTION-COMPATIBILITY preserves
  *          the certified source-owned Operations handoff control while
  *          demoting it behind the empty-state explanation.
  *          v1.0.0-DENSE-ATTENTION-REPLACEMENT provides a responsive
@@ -112,8 +115,13 @@ export default function DailyAttentionWorkspace({
       || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || '')
       || target?.isContentEditable) return;
     if (event.key === 'Escape') {
-      if (showShortcuts) setShowShortcuts(false);
-      else setSelectedId(null);
+      if (showShortcuts || mode === 'CALENDAR' || selectedId) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (showShortcuts) setShowShortcuts(false);
+        else if (mode === 'CALENDAR') setMode('WORK');
+        else setSelectedId(null);
+      }
       return;
     }
     if (event.key === '?') {
@@ -404,10 +412,19 @@ export default function DailyAttentionWorkspace({
       <footer className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
           <span>{page.length} loaded · {feed.filteredTotal} matching · {feed.counts.active} active</span>
-          <button type="button" onClick={() => onOpenWork?.(null)}
-            className="inline-flex items-center gap-1 text-amber-200 hover:text-amber-100">
-            Open My Work <ArrowRight size={13}/>
-          </button>
+          <div className="flex items-center gap-3">
+            {sourceCoverage.some((entry) => entry.moduleId === 'OPERATIONS')
+              && onOpenOperations && (
+              <button type="button" onClick={onOpenOperations}
+                className="inline-flex items-center gap-1 text-xs text-slate-300 hover:text-amber-100">
+                Manage Operations
+              </button>
+            )}
+            <button type="button" onClick={() => onOpenWork?.(null)}
+              className="inline-flex items-center gap-1 text-amber-200 hover:text-amber-100">
+              Open My Work <ArrowRight size={13}/>
+            </button>
+          </div>
         </div>
       </footer>
     </div>
