@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
+ * VERSION: v1.2.0-THREE-SOURCE-ACTION-CONTRACTS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -9,7 +9,10 @@
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.1.0-SOURCE-COMMAND-AVAILABILITY verifies
+ * CHANGELOG: v1.2.0-THREE-SOURCE-ACTION-CONTRACTS adds
+ *          CRM and module CREATE/COMPLETE routes using already-authorized
+ *          source transactions and required durable create idempotency keys.
+ *          v1.1.0-SOURCE-COMMAND-AVAILABILITY verifies
  *          independent source-owned completion availability and delegates
  *          actual commands to existing tenant-module routes; no browser IAM.
  *          v1.0.0-EOS-ATTENTION-READ-CONTRACT establishes bounded read
@@ -173,8 +176,10 @@ export async function readAttentionSourceActions(scope) {
     || !data.sourceActions || typeof data.sourceActions !== 'object'
     || Array.isArray(data.sourceActions)
     || Object.entries(data.sourceActions).some(([source, actions]) =>
-      !['OPERATIONS', 'INTELLIGENCE'].includes(source)
-      || !Array.isArray(actions) || actions.length !== 1 || actions[0] !== 'COMPLETE')) {
+      !['OPERATIONS', 'INTELLIGENCE', 'CRM'].includes(source)
+      || !Array.isArray(actions) || actions.length < 1 || actions.length > 2
+      || actions.some((action) => !['CREATE', 'COMPLETE'].includes(action))
+      || new Set(actions).size !== actions.length)) {
     throw new Error('ATTENTION_ACTION_AVAILABILITY_INVALID');
   }
   return data.sourceActions;
@@ -191,24 +196,70 @@ export async function readAttentionSourceActions(scope) {
  *              does not fabricate optimistic terminal status.
  */
 export async function completeAttentionSourceWork(item, completionNote) {
-  const slug = { OPERATIONS: 'operations', INTELLIGENCE: 'intelligence' }[item?.sourceModule];
+  const slug = { OPERATIONS: 'operations', INTELLIGENCE: 'intelligence', CRM: 'crm' }[item?.sourceModule];
   if (!slug || !item?.sourceRecordId || typeof completionNote !== 'string'
     || !completionNote.trim() || completionNote.length > 1000) {
     throw new Error('ATTENTION_SOURCE_COMPLETION_INPUT_INVALID');
   }
+  const base = slug === 'crm' ? '/crm/owner-workspace'
+    : '/tenant-modules/' + slug + '/workspace';
   const response = await api.post(
-    '/tenant-modules/' + slug + '/workspace/work-items/'
-      + encodeURIComponent(item.sourceRecordId) + '/complete',
+    base + '/work-items/' + encodeURIComponent(item.sourceRecordId) + '/complete',
     { completion_note: completionNote.trim() },
   );
-  if (!response?.data || response.data.work_item_id !== item.sourceRecordId) {
+  if (!response?.data || response.data.work_item_id !== item.sourceRecordId
+    || response.data.tenant_id !== item.tenantId
+    || response.data.status !== 'COMPLETED') {
     throw new Error('ATTENTION_SOURCE_COMPLETION_READBACK_INVALID');
   }
   return response.data;
 }
 
+/**
+ * @description Create genuine source-owned work with a stable operator retry key.
+ * @param {string} moduleId Authorized EOS work source.
+ * @param {{tenantId:string,principalId:string}} scope Current authenticated scope.
+ * @param {{title:string,description?:string,priority?:string,due_at?:string|null}} form Work inputs.
+ * @param {string} idempotencyKey Random per-intent key retained across retries.
+ * @returns {Promise<Object>} Persisted source record, exact tenant checked.
+ * @authority No browser permission; EOS separately checks create IAM and entitlement.
+ * @idempotency Source owner stores/replays the supplied same-intent key.
+ */
+export async function createAttentionSourceWork(moduleId, scope, form, idempotencyKey) {
+  const base = {
+    OPERATIONS: '/tenant-modules/operations/workspace',
+    INTELLIGENCE: '/tenant-modules/intelligence/workspace',
+    CRM: '/crm/owner-workspace',
+  }[moduleId];
+  if (!base || !scope?.tenantId || !scope?.principalId
+    || typeof idempotencyKey !== 'string' || !idempotencyKey || idempotencyKey.length > 160
+    || typeof form?.title !== 'string' || !form.title.trim()
+    || form.title.length > 240
+    || typeof (form.description || '') !== 'string'
+    || (form.description || '').length > 4000
+    || !['CRITICAL', 'HIGH', 'NORMAL', 'LOW'].includes(form.priority || 'NORMAL')) {
+    throw new Error('ATTENTION_SOURCE_CREATE_INPUT_INVALID');
+  }
+  const body = {
+    title: form.title.trim(),
+    description: form.description || '',
+    kind: 'TASK',
+    priority: form.priority || 'NORMAL',
+    due_at: form.due_at || null,
+  };
+  const response = await api.post(base + '/work-items', body, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
+  if (!response?.data || response.data.tenant_id !== scope.tenantId
+    || typeof response.data.work_item_id !== 'string'
+    || !response.data.work_item_id) {
+    throw new Error('ATTENTION_SOURCE_CREATE_READBACK_INVALID');
+  }
+  return response.data;
+}
+
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
+// VERSION: v1.2.0-THREE-SOURCE-ACTION-CONTRACTS
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
