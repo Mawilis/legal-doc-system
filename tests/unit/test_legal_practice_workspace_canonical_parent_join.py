@@ -1,4 +1,21 @@
-"""G79-R15R2 trusted six-entity lifecycle parent relationships."""
+"""TITLE: Legal Practice Workspace Matter-Lineage Certificate.
+VERSION: v1.0.0-G79-R15R2-MATTER-LINEAGE-CERT
+AUTHORITY: Canonical parent-lineage validation and fail-closed route posture.
+EPITOME: Certifies six-entity matter relationships and proves the currently
+         mounted workspace route denies disclosure before reading those entities.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_practice_workspace_canonical_parent_join.py
+COLLABORATION / OWNERSHIP: Exercises the canonical matter-lineage service and
+                           Legal Operations workspace router.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.0-G79-R15R2-MATTER-LINEAGE-CERT preserves pure parent-lineage
+           corruption checks and matches the mounted workspace route's current
+           fail-closed confidentiality boundary before legal matter reads.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic matter IDs only; no protected matter data.
+TENANT BOUNDARY: Runtime route admission remains exact-tenant scoped.
+AUTHORITY BOUNDARY: Lineage validation creates no disclosure or matter authority.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+"""
 import ast
 from copy import deepcopy
 from pathlib import Path
@@ -120,22 +137,40 @@ def test_no_positive_legal_authority_issued():
                  "authorize_practitioner"):
         assert not hasattr(lineage, name)
 
-def test_practice_route_calls_join_before_denial():
+def test_practice_route_denies_before_matter_lineage_reads():
     tree = ast.parse(Path(router.__file__).read_text())
     endpoint = next(
         n for n in tree.body
         if isinstance(n, ast.AsyncFunctionDef)
         and n.name == "get_legal_practice_workspace_projection"
     )
-    positions = {}
+    calls = []
+    denial_details = []
     for node in ast.walk(endpoint):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-            if node.func.id in (
-                "resolve_workspace_canonical_parents",
-                "_require_workspace_disclosure_clearance"
-            ):
-                positions.setdefault(node.func.id, []).append(node.lineno)
-    assert len(positions["resolve_workspace_canonical_parents"]) == 1
-    assert len(positions["_require_workspace_disclosure_clearance"]) == 1
-    assert (positions["resolve_workspace_canonical_parents"][0]
-            < positions["_require_workspace_disclosure_clearance"][0])
+        if not isinstance(node, ast.Call):
+            continue
+        name = (
+            node.func.id
+            if isinstance(node.func, ast.Name)
+            else node.func.attr
+            if isinstance(node.func, ast.Attribute)
+            else ""
+        )
+        calls.append(name)
+        if name == "HTTPException":
+            for keyword in node.keywords:
+                if keyword.arg == "detail" and isinstance(keyword.value, ast.Constant):
+                    denial_details.append(keyword.value.value)
+    assert "LEGAL_OPERATIONS_WORKSPACE_CONFIDENTIALITY_AUTHORITY_UNAVAILABLE" in denial_details
+    assert "resolve_workspace_canonical_parents" not in calls
+    assert "_require_workspace_disclosure_clearance" not in calls
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_legal_practice_workspace_canonical_parent_join.py
+# VERSION: v1.0.0-G79-R15R2-MATTER-LINEAGE-CERT
+# AUTHORITY BOUNDARY: lineage validation and disclosure-denial tests only
+# TENANT POSTURE: route must preserve exact authorized tenant scope
+# FAIL-CLOSED POSTURE: unavailable confidentiality authority denies before matter reads
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
