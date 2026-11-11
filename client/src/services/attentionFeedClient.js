@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE
+ * VERSION: v1.5.0-CANONICAL-SOURCE-WORK-TEXT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -9,7 +9,10 @@
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE uses
+ * CHANGELOG: v1.5.0-CANONICAL-SOURCE-WORK-TEXT trims
+ *          optional source-task descriptions to match EOS strict domain
+ *          text invariants before submitting the authoritative write.
+ *          v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE uses
  *          only admitted source adapters; legal and future subscribed
  *          modules remain visible via their owning work surface without
  *          accidentally triggering unrelated command dependency checks.
@@ -277,7 +280,7 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
   }
   const body = {
     title: form.title.trim(),
-    description: form.description || '',
+    description: (form.description || '').trim(),
     kind: 'TASK',
     priority: form.priority || 'NORMAL',
     due_at: form.due_at || null,
@@ -294,7 +297,7 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
 }
 
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE
+// VERSION: v1.5.0-CANONICAL-SOURCE-WORK-TEXT
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
