@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
+ * VERSION: v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,11 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
+ * CHANGELOG: v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY distinguishes
+ *          source adapters not yet wired into inline create/complete from
+ *          genuine current-session source IAM denial, without making
+ *          claims about a tenant's subscription or employee privileges.
+ *          v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
  *          identifies missing admitted-source command verification without
  *          concealing healthy source actions or conflating denial with outage.
  *          v2.3.0-SEMANTIC-SEVERITY-TRIAGE presents source
@@ -208,6 +212,8 @@ export default function DailyAttentionWorkspace({
   );
   const visibleOverdueCount = page.filter((item) => item.isOverdue).length;
   const sourceCoverage = feed.sources || [];
+  const inlineCommandSources = ['CRM', 'OPERATIONS', 'INTELLIGENCE'];
+  const unmappedSources = sourceCoverage.filter((entry) => !inlineCommandSources.includes(entry.moduleId));
   const creatableSources = Object.entries(authorisedActions)
     .filter(([, actions]) => actions.includes('CREATE')).map(([moduleId]) => moduleId);
   const chosenCreateSource = creatableSources.includes(createSource)
@@ -399,10 +405,15 @@ export default function DailyAttentionWorkspace({
         {!actionAvailabilityUnavailable && sourceCoverage.length > 0
           && creatableSources.length === 0 && (
             <p role="status" className="mt-2 text-xs text-slate-400">
-              No create-work permission was admitted for this session. Existing work remains readable.
-              Ask your tenant administrator to review source-specific create permissions.
+              {sourceCoverage.some((entry) => inlineCommandSources.includes(entry.moduleId))
+                ? 'No inline create-work permission was verified for the admitted sources. Existing work remains readable.'
+                : 'No inline create-work adapter is available for the admitted work sources. Use their governed source workspaces for commands.'}
             </p>
           )}
+        {unmappedSources.length > 0 && <p className="mt-1 text-[11px] text-slate-400">
+          Source-owned commands outside this panel: {unmappedSources.map((item) => label(item.moduleId)).join(', ')}.
+          A missing inline adapter does not imply a missing tenant subscription or permission.
+        </p>}
         {createOpen && chosenCreateSource && (
           <form onSubmit={submitCreate}
             aria-label="Create source work"
@@ -868,7 +879,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
+// VERSION: v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
