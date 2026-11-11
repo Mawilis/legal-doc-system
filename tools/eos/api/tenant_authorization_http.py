@@ -1,7 +1,7 @@
 """Canonical tenant authorization HTTP composition and denial observation.
 
 TITLE: WILSY OS Tenant Authorization HTTP Boundary
-VERSION: v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION
+VERSION: v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER
 AUTHORITY: FastAPI dependency translation of frozen durable tenant authorization.
 EPITOME: Binds an authenticated identity and explicit tenant scope to current
          IAM truth, then emits one bounded terminal observation for admitted
@@ -11,6 +11,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/te
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering / Python EOS IAM.
 CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-11-11 v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER evaluates existing
+    synchronous MongoDB authorization and its workforce transaction in
+    FastAPI's bounded threadpool; 403/503 decisions are unchanged.
     2026-10-28 v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION exposes one exact-scope,
     single-read business-role lookup for the canonical resolver while preserving
     separate authorization-role reads and existing denial/outage classification.
@@ -43,6 +46,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from fastapi import Depends, Header, Request, status
+from starlette.concurrency import run_in_threadpool
 
 from tools.eos.api.exceptions import ForbiddenOperationException, WilsyAPIException
 from tools.eos.auth.authentication import (
@@ -425,51 +429,54 @@ class RequireTenantAuthorization:
         except ValueError:
             workforce_required = False
 
-        try:
-            if workforce_required:
-                client = get_client()
-                database = get_database()
-                if client is None or database is None:
-                    _observe_terminal(
-                        outcome="DEPENDENCY_UNAVAILABLE",
-                        reason=TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
-                        tenant_id=tenant_id,
-                        principal_id=identity.identity_id,
-                        correlation_id=correlation_id,
-                        http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    )
-                    raise WilsyAPIException(
-                        "Authorization authority unavailable.",
-                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    )
-                workforce_collection = database[WORKFORCE_RELATIONSHIP_COLLECTION]
-                with client.start_session() as session:
-                    with session.start_transaction():
-                        decision = authorize_tenant_operation(
-                            principal_id=identity.identity_id,
+        def evaluate_authority() -> TenantAuthorizationDecision:
+                if workforce_required:
+                    client = get_client()
+                    database = get_database()
+                    if client is None or database is None:
+                        _observe_terminal(
+                            outcome="DEPENDENCY_UNAVAILABLE",
+                            reason=TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
                             tenant_id=tenant_id,
-                            permission_id=self.permission_id,
-                            operation=self.operation,
-                            principal_repository=principal_repository,
-                            membership_repository=membership_repository,
-                            business_role_repository=role_assignment_repository,
-                            role_assignment_repository=role_assignment_repository,
-                            session=session,
-                            workforce_relationship_collection=workforce_collection,
-                            selected_business_role=selected_business_role,
+                            principal_id=identity.identity_id,
+                            correlation_id=correlation_id,
+                            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
                         )
-            else:
-                decision = authorize_tenant_operation(
-                    principal_id=identity.identity_id,
-                    tenant_id=tenant_id,
-                    permission_id=self.permission_id,
-                    operation=self.operation,
-                    principal_repository=principal_repository,
-                    membership_repository=membership_repository,
-                    business_role_repository=role_assignment_repository,
-                    role_assignment_repository=role_assignment_repository,
-                    selected_business_role=selected_business_role,
-                )
+                        raise WilsyAPIException(
+                            "Authorization authority unavailable.",
+                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        )
+                    workforce_collection = database[WORKFORCE_RELATIONSHIP_COLLECTION]
+                    with client.start_session() as session:
+                        with session.start_transaction():
+                            return authorize_tenant_operation(
+                                principal_id=identity.identity_id,
+                                tenant_id=tenant_id,
+                                permission_id=self.permission_id,
+                                operation=self.operation,
+                                principal_repository=principal_repository,
+                                membership_repository=membership_repository,
+                                business_role_repository=role_assignment_repository,
+                                role_assignment_repository=role_assignment_repository,
+                                session=session,
+                                workforce_relationship_collection=workforce_collection,
+                                selected_business_role=selected_business_role,
+                            )
+                else:
+                    return authorize_tenant_operation(
+                        principal_id=identity.identity_id,
+                        tenant_id=tenant_id,
+                        permission_id=self.permission_id,
+                        operation=self.operation,
+                        principal_repository=principal_repository,
+                        membership_repository=membership_repository,
+                        business_role_repository=role_assignment_repository,
+                        role_assignment_repository=role_assignment_repository,
+                        selected_business_role=selected_business_role,
+                    )
+
+        try:
+            decision = await run_in_threadpool(evaluate_authority)
         except (ForbiddenOperationException, WilsyAPIException):
             raise
         except Exception as error:
@@ -591,7 +598,7 @@ __all__ = [
 
 
 # ARTIFACT: tenant_authorization_http.py
-# VERSION: v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION
+# VERSION: v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER
 # AUTHORITY BOUNDARY: existing HTTP IAM composition plus bounded post-decision observation only; no authentication, grant, deny, persistence, workflow, legal-decision, AI, notification, payment, execution, or settlement truth ownership
 # TENANT POSTURE: explicit X-Tenant-ID remains scope only; current durable membership and role evidence remain mandatory
 # FAIL-CLOSED POSTURE: only canonical AUTHORIZED succeeds; denied, unavailable, inconsistent, and unknown results remain bounded and telemetry failure cannot alter them
