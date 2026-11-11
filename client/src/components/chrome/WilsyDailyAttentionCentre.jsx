@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT
+ * VERSION: v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -17,7 +17,11 @@
  * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
  *                     endpoints independently authorize every mutation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * CHANGELOG: v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT allows
+ * CHANGELOG: v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE returns
+ *            completion success to its presenting detail rail only after
+ *            source EOS readback, releasing mobile bulk-triage controls;
+ *            refusals retain the inspected record and evidence.
+ *            v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT allows
  *            user-initiated completion for current exact-source, verified
  *            active work despite optional capability-probe outage;
  *            authoritative EOS POST still rechecks permission and state.
@@ -503,13 +507,14 @@ export default function WilsyDailyAttentionCentre({
       || item?.status !== 'OPEN'
       || !attentionFeed?.items.some((row) => row.id === item.id
         && row.sourceRecordId === item.sourceRecordId)
-      || completionId) return;
+      || completionId) return false;
     setCompletionError('');
     setCompletionId(item.id);
     try {
       await completeAttentionSourceWork(item, note);
       invalidateUnifiedMyWork(workScope);
       setRefreshId((id) => id + 1);
+      return true;
     } catch (error) {
       const http = error?.response?.status;
       setCompletionError(http === 403 ? 'EOS denied completion. Verify tenant membership, source entitlement and complete permission.'
@@ -518,6 +523,7 @@ export default function WilsyDailyAttentionCentre({
         : http === 409 ? 'Work changed since inspection. Refresh and review again.'
           : http === 422 ? 'Completion evidence was rejected by its source.'
             : 'Source completion could not be confirmed. Refresh before retrying.');
+      return false;
     } finally {
       setCompletionId(null);
     }
@@ -1211,7 +1217,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT
+ * VERSION: v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
