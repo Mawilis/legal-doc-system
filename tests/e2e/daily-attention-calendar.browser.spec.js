@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT
+ * VERSION: v1.8.0-DURABLE-EXECUTIVE-BULK-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT executes
+ * CHANGELOG: v1.8.0-DURABLE-EXECUTIVE-BULK-CERT executes
+ *          two independently authorized Operations completions from the
+ *          selected Daily Attention queue and verifies durable readback.
+ *          v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT executes
  *          source-authorised create and complete directly within the
  *          authenticated Daily Attention panel at desktop/mobile widths.
  *          v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT confirms
@@ -401,6 +404,47 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(afterInline.status()).toBe(200);
       expect((await afterInline.json()).items.some(item =>
         item.work_item_id === inlineWork.work_item_id)).toBe(false);
+
+      // Batch triage uses two independently admitted source commands, not a
+      // synthetic attention-level mutation or unverifiable optimistic status.
+      const batchTitles = [
+        'Executive batch A ' + randomUUID(),
+        'Executive batch B ' + randomUUID(),
+      ];
+      const bulkWorks = [];
+      for (const batchTitle of batchTitles) {
+        const createdBatch = await context.request.post(path, {
+          headers: {...headers, 'Idempotency-Key': randomUUID()},
+          data: { title: batchTitle, description: 'Source-confirmed batch certificate',
+            kind: 'TASK', priority: 'HIGH', due_at: null },
+        });
+        expect(createdBatch.status()).toBe(201);
+        bulkWorks.push(await createdBatch.json());
+      }
+      await panel.getByRole('button', {name: 'Refresh', exact: true}).click();
+      for (const batchTitle of batchTitles) {
+        await expect(panel.getByRole('checkbox', {name: 'Select ' + batchTitle})).toBeVisible();
+        await panel.getByRole('checkbox', {name: 'Select ' + batchTitle}).check();
+      }
+      await panel.getByRole('textbox', {name: 'Bulk completion evidence'})
+        .fill('Two independently verified source tasks are complete');
+      const bulkConfirmations = bulkWorks.map((item) =>
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path + '/' + item.work_item_id + '/complete'
+          && response.request().method() === 'POST'
+        )));
+      await panel.getByRole('button', {name: 'Complete up to 2'}).click();
+      for (const result of await Promise.all(bulkConfirmations)) {
+        expect(result.status()).toBe(200);
+        expect((await result.json()).status).toBe('COMPLETED');
+      }
+      await expect(panel.getByText(/2 source completions confirmed; 0 require review/)).toBeVisible();
+      const afterBulk = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
+      expect(afterBulk.status()).toBe(200);
+      const remainingBulk = (await afterBulk.json()).items;
+      for (const item of bulkWorks) {
+        expect(remainingBulk.some((row) => row.work_item_id === item.work_item_id)).toBe(false);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width + 1);
       expect(errors).toEqual([]);
     } finally {
@@ -410,7 +454,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT
+// VERSION: v1.8.0-DURABLE-EXECUTIVE-BULK-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
