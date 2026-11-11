@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.7.0-SOURCE-CONFIRMED-COMPLETION
+ * VERSION: v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.7.0-SOURCE-CONFIRMED-COMPLETION shows a
+ * CHANGELOG: v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS adds x selection
+ *          toggling and e evidence-entry focus for source-admitted work;
+ *          no keyboard key directly executes an unverified mutation.
+ *          v1.7.0-SOURCE-CONFIRMED-COMPLETION shows a
  *          source-permitted completion form with operator evidence and
  *          explicit success/failure revalidation, never optimistic mutation.
  *          v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE adds checkbox
@@ -123,6 +126,7 @@ export default function DailyAttentionWorkspace({
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(DEFAULT_VIEWPORT_HEIGHT);
   const searchRef = useRef(null);
+  const completionRef = useRef(null);
   const listRef = useRef(null);
   const inboxRef = useRef(null);
   const page = feed.items;
@@ -232,6 +236,17 @@ export default function DailyAttentionWorkspace({
       return;
     }
     if (mode !== 'WORK' || page.length === 0) return;
+    if (event.key === 'x' && selected) {
+      event.preventDefault();
+      setCheckedIds((before) => before.includes(selected.id)
+        ? before.filter((id) => id !== selected.id) : [...before, selected.id]);
+      return;
+    }
+    if (event.key === 'e' && canComplete && selected) {
+      event.preventDefault();
+      completionRef.current?.focus();
+      return;
+    }
     if (event.key === 'j' || event.key === 'k') {
       event.preventDefault();
       const next = Math.max(0, Math.min(page.length - 1,
@@ -283,7 +298,8 @@ export default function DailyAttentionWorkspace({
         {showShortcuts && (
           <div role="note" className="mt-2 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-xs leading-5 text-slate-300">
             <strong className="text-amber-100">Shortcuts:</strong> j/k select work · Enter/o open
-            · / search · 1–4 filters · Esc clear detail · ? toggle help.
+            · / search · 1–4 filters · x select · e complete evidence when permitted
+            · Esc clear detail · ? toggle help.
             Completion, assignment and snooze shortcuts become available only
             when their source-owned action APIs are certified.
           </div>
@@ -577,7 +593,7 @@ export default function DailyAttentionWorkspace({
               <label htmlFor="attention-completion-evidence" className="block text-xs font-semibold text-amber-100">
                 Complete source work
               </label>
-              <textarea id="attention-completion-evidence" value={completionNote}
+              <textarea ref={completionRef} id="attention-completion-evidence" value={completionNote}
                 maxLength={1000} rows={2} required
                 onChange={(event) => setCompletionNote(event.target.value)}
                 placeholder="Record what was completed and the evidence for this decision"
@@ -624,7 +640,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.7.0-SOURCE-CONFIRMED-COMPLETION
+// VERSION: v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
