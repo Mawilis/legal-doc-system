@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY
+ * VERSION: v2.7.0-SOURCE-EXECUTION-IN-PANEL
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,11 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY permits
+ * CHANGELOG: v2.7.0-SOURCE-EXECUTION-IN-PANEL enables
+ *          on-item completion evidence entry for a verified admitted work
+ *          source even if optional command probing is unavailable; final
+ *          success is exclusively the owning EOS POST/readback.
+ *          v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY permits
  *          operator-initiated create on a verified admitted source even
  *          when optional preflight capability checks are unavailable;
  *          EOS still refuses any unauthorized or unsubscribed source write.
@@ -203,8 +207,10 @@ export default function DailyAttentionWorkspace({
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
-  const canComplete = selected && authorisedActions[selected.sourceModule]?.includes('COMPLETE')
-    && selected.status === 'OPEN' && typeof onCompleteWork === 'function';
+  const canComplete = selected && selected.status === 'OPEN'
+    && ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(selected.sourceModule)
+    && sourceCoverage.some((entry) => entry.moduleId === selected.sourceModule)
+    && typeof onCompleteWork === 'function';
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const checkedItems = page.filter((item) => checkedSet.has(item.id));
   const bulkEligible = checkedItems.filter((item) => item.status === 'OPEN'
@@ -848,6 +854,9 @@ export default function DailyAttentionWorkspace({
               <label htmlFor="attention-completion-evidence" className="block text-xs font-semibold text-amber-100">
                 Complete source work
               </label>
+              {!authorisedActions[selected.sourceModule]?.includes('COMPLETE') &&
+                <p className="text-[11px] text-amber-200">Completion permission not preverified.
+                  EOS independently authorizes the actual action; a denial leaves this work open.</p>}
               <textarea ref={completionRef} id="attention-completion-evidence" value={completionNote}
                 maxLength={1000} rows={2} required
                 onChange={(event) => setCompletionNote(event.target.value)}
@@ -895,7 +904,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY
+// VERSION: v2.7.0-SOURCE-EXECUTION-IN-PANEL
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
