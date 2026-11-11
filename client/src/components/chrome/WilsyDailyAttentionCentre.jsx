@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR
+ * VERSION: v2.2.0-STABLE-ATTENTION-REVALIDATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -8,8 +8,11 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyDailyAttentionCentre.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR passes the
+ * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CHANGELOG: v2.2.0-STABLE-ATTENTION-REVALIDATION keeps verified
+ *            same-session work visible during refresh and preserves search
+ *            focus, row selection and the detail rail across reads.
+ *            v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR passes the
  *            independently verified current My Work snapshot into Calendar,
  *            excluding filtered attention-page truncation from deadline view.
  *            v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT gives
@@ -198,6 +201,10 @@ export default function WilsyDailyAttentionCentre({
   const [loadingMore, setLoadingMore] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const feedGenerationRef = useRef(0);
+  const verifiedProjectionScopeRef = useRef(null);
+  const verifiedAttentionScopeRef = useRef(null);
+  const liveScopeKey = workScope && tenantId && auth?.user?.id
+    ? [workScope, tenantId, auth.user.id].join('::') : null;
   const [refreshId, setRefreshId] = useState(0);
   const [filter, setFilter] = useState('ALL');
   const [source, setSource] = useState('ALL');
@@ -209,6 +216,8 @@ export default function WilsyDailyAttentionCentre({
 
   useEffect(() => {
     setProjection(null);
+    verifiedProjectionScopeRef.current = null;
+    verifiedAttentionScopeRef.current = null;
     setStatus('IDLE');
     setWorkError('');
     setRecoveryAttempts(0);
@@ -239,9 +248,13 @@ export default function WilsyDailyAttentionCentre({
     }
     let active = true;
     const controller = new AbortController();
-    setProjection(null);
+    if (!liveScopeKey || verifiedProjectionScopeRef.current !== liveScopeKey) {
+      setProjection(null);
+      setAttentionFeed(null);
+      verifiedAttentionScopeRef.current = null;
+      setStatus('LOADING');
+    }
     setWorkError('');
-    setStatus('LOADING');
 
     // Authenticated production reads share the exact current session and
     // source validator with global chrome. Isolated presentational fixtures
@@ -258,6 +271,7 @@ export default function WilsyDailyAttentionCentre({
       .then((verified) => {
         if (active) {
           setProjection(verified);
+          verifiedProjectionScopeRef.current = liveScopeKey;
           setWorkError('');
           if (!workScope) setRecoveryAttempts(0);
           setStatus('READY');
@@ -266,6 +280,9 @@ export default function WilsyDailyAttentionCentre({
       .catch((error) => {
         if (active) {
           setProjection(null);
+          setAttentionFeed(null);
+          verifiedProjectionScopeRef.current = null;
+          verifiedAttentionScopeRef.current = null;
           const http = error?.response?.status;
           setWorkError(http === 401 || http === 403
             ? 'ATTENTION_ACCESS_DENIED'
@@ -280,7 +297,7 @@ export default function WilsyDailyAttentionCentre({
       active = false;
       controller.abort();
     };
-  }, [open, tenantId, systemServicesWorkspace, refreshId, workScope]);
+  }, [open, tenantId, systemServicesWorkspace, refreshId, workScope, liveScopeKey]);
 
   useEffect(() => {
     if (!open || !workScope) return undefined;
@@ -304,7 +321,7 @@ export default function WilsyDailyAttentionCentre({
     }
     const controller = new AbortController();
     const generation = ++feedGenerationRef.current;
-    setAttentionFeed(null);
+    if (verifiedAttentionScopeRef.current !== liveScopeKey) setAttentionFeed(null);
     setLoadingMore(false);
     setAttentionStatus('LOADING');
     setAttentionError('');
@@ -328,11 +345,13 @@ export default function WilsyDailyAttentionCentre({
         || included.some((item) => !verified.coverage.admittedSources.includes(item))
       ) throw new Error('ATTENTION_SOURCE_COVERAGE_MISMATCH');
       setAttentionFeed(verified);
+      verifiedAttentionScopeRef.current = liveScopeKey;
       setRecoveryAttempts(0);
       setAttentionStatus('READY');
     }).catch((error) => {
       if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
       setAttentionFeed(null);
+      verifiedAttentionScopeRef.current = null;
       const http = error?.response?.status;
       setAttentionError(http === 401 || http === 403
         ? 'ATTENTION_ACCESS_DENIED'
@@ -349,7 +368,7 @@ export default function WilsyDailyAttentionCentre({
     };
   }, [
     open, workScope, status, projection, tenantId, auth?.user?.id,
-    filter, source, debouncedQuery, refreshId,
+    filter, source, debouncedQuery, refreshId, liveScopeKey,
   ]);
 
   // A failed source is never promoted to empty; revalidate transient outages
@@ -441,7 +460,7 @@ export default function WilsyDailyAttentionCentre({
   }, [open, onClose, view]);
 
   const items = workScope
-    ? attentionStatus === 'READY'
+    ? attentionFeed && verifiedAttentionScopeRef.current === liveScopeKey
       ? attentionFeed.items.map((item) => ({
           source_key: item.id,
           source: item.sourceModule,
@@ -659,7 +678,8 @@ export default function WilsyDailyAttentionCentre({
             </div>
           </div>
 
-          {(status === 'LOADING' || (status === 'READY' && workScope && attentionStatus === 'LOADING')) && (
+          {(status === 'LOADING' || (status === 'READY' && workScope && attentionStatus === 'LOADING'
+            && (!attentionFeed || verifiedAttentionScopeRef.current !== liveScopeKey))) && (
             <div role="status" className="flex items-center gap-2 px-5 py-8 text-sm text-amber-200">
               <RefreshCw size={16} className="animate-spin"/> Checking current work…
             </div>
@@ -688,9 +708,19 @@ export default function WilsyDailyAttentionCentre({
             </div>
           )}
 
-          {status === 'READY' && workScope && attentionStatus === 'READY' && (
+          {status === 'READY' && workScope && attentionFeed
+            && verifiedProjectionScopeRef.current === liveScopeKey
+            && verifiedAttentionScopeRef.current === liveScopeKey
+            && ['READY', 'LOADING'].includes(attentionStatus) && (
+            <div aria-busy={attentionStatus === 'LOADING'} className="min-h-0 flex flex-1 flex-col">
+              {attentionStatus === 'LOADING' && (
+                <p role="status" className="shrink-0 border-b border-amber-300/20 px-5 py-2 text-xs text-amber-200">
+                  <RefreshCw size={12} className="mr-2 inline animate-spin"/>
+                  Updating authorised work. Previous verified results remain visible until the new view is checked.
+                </p>
+              )}
             <DailyAttentionWorkspace
-              key={workScope}
+              key={liveScopeKey}
               feed={attentionFeed}
               calendarItems={projection.items}
               filter={filter}
@@ -707,6 +737,7 @@ export default function WilsyDailyAttentionCentre({
               loadingMore={loadingMore}
               pageError={attentionError === 'ATTENTION_PAGE_REVALIDATION_FAILED'}
             />
+            </div>
           )}
           {status === 'READY' && !workScope && (
             <>
@@ -967,7 +998,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR
+ * VERSION: v2.2.0-STABLE-ATTENTION-REVALIDATION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
