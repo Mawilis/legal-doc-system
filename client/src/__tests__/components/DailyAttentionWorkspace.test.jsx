@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.6.0-BOUNDED-BULK-EXECUTION-CERT
+ * VERSION: v1.7.0-MODULE-SPECIFIC-EMPTY-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,9 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.6.0-BOUNDED-BULK-EXECUTION-CERT proves
+ * CHANGELOG: v1.7.0-MODULE-SPECIFIC-EMPTY-CERT asserts
+ *          one-source empty queue copy and an authorized create-work path.
+ *          v1.6.0-BOUNDED-BULK-EXECUTION-CERT proves
  *          capability-gated selection, source-owned result reconciliation,
  *          and retention of unsuccessful selected work.
  *          v1.5.0-SOURCE-COMPLETION-UI-CERT verifies
@@ -151,7 +153,7 @@ describe('Daily Attention bounded inbox', () => {
       />,
     );
 
-    expect(screen.getByText('No active work in verified sources')).toBeTruthy();
+    expect(screen.getByText('No active Operations work')).toBeTruthy();
     expect(screen.getByText(/were not verified for this session/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Verified from 1 admitted source/ }));
     const evidence = screen.getByRole('region', { name: 'Verified attention source details' });
@@ -303,10 +305,35 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByRole('checkbox', { name: 'Select Attention item 2' }).checked).toBe(true);
   });
 
+  it('offers a source-owned create work action when the admitted empty source can create', () => {
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(0)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={vi.fn()}
+        source="ALL"
+        setSource={vi.fn()}
+        query=""
+        setQuery={vi.fn()}
+        onRefresh={vi.fn()}
+        onOpenWork={vi.fn()}
+        onCreateWork={vi.fn().mockResolvedValue(true)}
+        authorisedActions={{ OPERATIONS: ['CREATE'] }}
+        onLoadMore={vi.fn()}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create Operations work' }));
+    expect(screen.getByRole('form', { name: 'Create source work' })).toBeTruthy();
+    expect(screen.getByText('No active Operations work')).toBeTruthy();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.6.0-BOUNDED-BULK-EXECUTION-CERT
+// VERSION: v1.7.0-MODULE-SPECIFIC-EMPTY-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
