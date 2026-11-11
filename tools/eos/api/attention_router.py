@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authenticated HTTP Read Surface
-VERSION: v1.0.0-EOS-SOURCE-AUTHORISED-FEED
+VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
 AUTHORITY: WILSY OS Core Governance; canonical source EOS service authority.
 EPITOME: Serve cursor-bounded attention feeds, counts, source coverage and
          deadline calendar from the existing independently authorised My Work.
@@ -8,7 +8,11 @@ COLLABORATION / OWNERSHIP: unified_my_work_router.read_my_work authorizes
          source reads and tenant/principal admission; attention_feed_projection
          normalizes read-only items; no second source/task registry is created.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.0-EOS-SOURCE-AUTHORISED-FEED establishes GET /attention/feed,
+CHANGELOG: v1.1.0-SOURCE-COMMAND-AVAILABILITY reports existing
+           Operations and Intelligence completion capabilities only after
+           independent current-tenant IAM evaluation; source APIs retain
+           all command, persistence and audit authority.
+           v1.0.0-EOS-SOURCE-AUTHORISED-FEED establishes GET /attention/feed,
            /attention/counts, /attention/calendar, /attention/sources/health.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No unauthorised partial queue, no credentials or
@@ -31,12 +35,22 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from tools.eos.api.unified_my_work_router import read_my_work
+from tools.eos.api.tenant_authorization_http import (
+    OptionalTenantAuthorization, TenantAuthorizationContext,
+)
 from tools.eos.workspaces.service.attention_feed_projection import (
     AttentionFeedError,
     build_attention_feed,
 )
 
 router = APIRouter(prefix="/attention", tags=["Daily Attention"])
+
+_OPERATIONS_COMPLETE = OptionalTenantAuthorization(
+    "operations:work_item:complete", "operations_work_item_complete"
+)
+_INTELLIGENCE_COMPLETE = OptionalTenantAuthorization(
+    "intelligence:work_item:complete", "intelligence_work_item_complete"
+)
 
 
 def _project(
@@ -143,6 +157,45 @@ async def attention_calendar(
     }
 
 
+@router.get("/actions")
+async def attention_authorised_actions(
+    source: dict[str, Any] = Depends(read_my_work),
+    operations_context: TenantAuthorizationContext | None = Depends(_OPERATIONS_COMPLETE),
+    intelligence_context: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_COMPLETE),
+) -> dict[str, Any]:
+    """Return existing source command availability; never issue work authority.
+
+    The actual source endpoint re-authorizes every completion. A read-only
+    admission cannot by itself authorize a write; both read and complete
+    capabilities must be current for this exact tenant and principal.
+    """
+    tenant_id = source["tenant_id"]
+    principal_id = source["principal_id"]
+    admitted = set(source["sources_included"])
+    actions: dict[str, list[str]] = {}
+    for module, context in (
+        ("OPERATIONS", operations_context),
+        ("INTELLIGENCE", intelligence_context),
+    ):
+        if context is None or module not in admitted:
+            continue
+        if (
+            context.tenant_id != tenant_id
+            or context.identity.identity_id != principal_id
+        ):
+            raise HTTPException(
+                status_code=503, detail="ATTENTION_ACTION_CONTEXT_INCONSISTENT"
+            )
+        actions[module] = ["COMPLETE"]
+    return {
+        "schema": "WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1",
+        "tenantId": tenant_id,
+        "principalId": principal_id,
+        "sourceActions": actions,
+        "authority": "SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE",
+    }
+
+
 @router.get("/sources/health")
 async def attention_source_health(
     source: dict[str, Any] = Depends(read_my_work),
@@ -164,10 +217,11 @@ async def attention_source_health(
 
 
 __all__ = ["router", "attention_feed", "attention_counts",
-           "attention_calendar", "attention_source_health"]
+           "attention_calendar", "attention_source_health",
+           "attention_authorised_actions"]
 
 # ARTIFACT: tools/eos/api/attention_router.py
-# VERSION: v1.0.0-EOS-SOURCE-AUTHORISED-FEED
+# VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
 # AUTHORITY BOUNDARY: Authenticated source-owned reads; no attention commands.
 # TENANT POSTURE: Exact tenant/principal read_my_work dependency each request.
 # FAIL-CLOSED POSTURE: No inferred health, entitlement, access or cleared queue.
