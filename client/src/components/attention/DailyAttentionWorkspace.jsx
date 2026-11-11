@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY
+ * VERSION: v2.1.1-ACTION-VERIFICATION-RECOVERY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY makes
+ * CHANGELOG: v2.1.1-ACTION-VERIFICATION-RECOVERY exposes
+ *          failed command-availability verification and a source refresh,
+ *          without erasing verified work or pretending commands exist.
+ *          v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY makes
  *          single-source empty queues identify their actual module and
  *          offers a permitted create-work path instead of a passive zero.
  *          v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION adds
@@ -128,6 +131,7 @@ export default function DailyAttentionWorkspace({
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
   onCreateWork, creatingWork = false, creationError = '', creationNotice = '', workUpdating = false,
   onBulkComplete, bulkCompleting = false, bulkResult = '',
+  actionAvailabilityUnavailable = false,
 }) {
   const [mode, setMode] = useState('WORK');
   const [selectedId, setSelectedId] = useState(null);
@@ -357,6 +361,10 @@ export default function DailyAttentionWorkspace({
           </div>
         </div>
         {creationNotice && <p role="status" className="mt-2 text-xs text-emerald-200">{creationNotice}</p>}
+        {actionAvailabilityUnavailable && <p role="alert" className="mt-2 text-xs text-amber-200">
+          Source commands could not be verified. The authorised work list remains available.
+          <button type="button" onClick={onRefresh} className="ml-2 underline">Retry command verification</button>
+        </p>}
         {createOpen && chosenCreateSource && (
           <form onSubmit={submitCreate}
             aria-label="Create source work"
@@ -746,7 +754,7 @@ export default function DailyAttentionWorkspace({
                 onChange={(event) => setCompletionNote(event.target.value)}
                 placeholder="Record what was completed and the evidence for this decision"
                 className="w-full rounded-md border border-white/20 bg-[#09162a] px-2 py-1.5 text-xs text-white"/>
-              <button type="submit" disabled={!!completingId || !completionNote.trim()}
+              <button type="submit" disabled={!!completingId || workUpdating || !completionNote.trim()}
                 className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
                 {completingId === selected.id ? 'Confirming with EOS…' : 'Confirm completion'}
               </button>
@@ -788,7 +796,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY
+// VERSION: v2.1.1-ACTION-VERIFICATION-RECOVERY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
