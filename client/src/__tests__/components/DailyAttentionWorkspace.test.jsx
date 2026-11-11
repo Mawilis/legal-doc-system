@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.7.0-MODULE-SPECIFIC-EMPTY-CERT
+ * VERSION: v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.7.0-MODULE-SPECIFIC-EMPTY-CERT asserts
+ * CHANGELOG: v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT checks
+ *          source-priority colour labels, overdue override and detail
+ *          semantics without fabricating urgency or financial authority.
+ *          v1.7.0-MODULE-SPECIFIC-EMPTY-CERT asserts
  *          one-source empty queue copy and an authorized create-work path.
  *          v1.6.0-BOUNDED-BULK-EXECUTION-CERT proves
  *          capability-gated selection, source-owned result reconciliation,
@@ -330,10 +333,45 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByText('No active Operations work')).toBeTruthy();
   });
 
+  it('presents each declared severity as labeled semantic visual triage and overrides overdue', () => {
+    const feed = fixtureFeed(5);
+    feed.items[0].priority = 'CRITICAL';
+    feed.items[1].priority = 'HIGH';
+    feed.items[2].priority = 'NORMAL';
+    feed.items[3].priority = 'LOW';
+    feed.items[4].priority = 'LOW';
+    feed.items[4].isOverdue = true;
+    feed.counts.overdue = 1;
+    render(
+      <DailyAttentionWorkspace
+        feed={feed}
+        calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError=""
+      />,
+    );
+    const legend = screen.getByRole('group', { name: 'Severity of loaded work' });
+    expect(legend.textContent).toContain('Critical 1');
+    expect(legend.textContent).toContain('High 1');
+    expect(legend.textContent).toContain('Normal 1');
+    expect(legend.textContent).toContain('Low 2');
+    expect(legend.textContent).toContain('Overdue 1');
+    for (const level of ['Critical', 'High', 'Normal', 'Low']) {
+      expect(screen.getByLabelText('Severity ' + level + '; priority ' + level.toUpperCase())).toBeTruthy();
+    }
+    expect(screen.getByLabelText('Severity Overdue; priority LOW')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 4' }));
+    expect(screen.getByText('Overdue severity')).toBeTruthy();
+    expect(screen.getByText('LOW source priority · deadline passed')).toBeTruthy();
+  });
+  
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.7.0-MODULE-SPECIFIC-EMPTY-CERT
+// VERSION: v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
