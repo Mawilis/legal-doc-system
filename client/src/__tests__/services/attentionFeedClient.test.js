@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
+ * VERSION: v1.5.0-CANONICAL-WORK-DESCRIPTION-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
+ * CHANGELOG: v1.5.0-CANONICAL-WORK-DESCRIPTION-CERT verifies
+ *          EOS strict-domain whitespace normalization for a real create.
+ *          v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
  *          verifies unsupported-but-admitted source reads never trigger a
  *          blanket command IAM probe or invent executable capabilities.
  *          v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
@@ -172,6 +174,25 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('normalizes natural task text to strict EOS work-item invariants', async () => {
+    api.post.mockResolvedValue({ data: {
+      work_item_id: 'CRM-NORMALIZED', tenant_id: tenantId, status: 'OPEN',
+    } });
+    await createAttentionSourceWork('CRM', scope, {
+      title: ' Call Investors  ',
+      description: ' Discuss WILSY OS launch  ',
+      priority: 'CRITICAL',
+    }, 'normalized-intent');
+    expect(api.post).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items',
+      {
+        title: 'Call Investors', description: 'Discuss WILSY OS launch',
+        kind: 'TASK', priority: 'CRITICAL', due_at: null,
+      },
+      { headers: { 'Idempotency-Key': 'normalized-intent' } },
+    );
+  });
+
   it('creates CRM source work with an exact-tenant idempotent EOS command', async () => {
     api.post.mockResolvedValue({ data: {
       work_item_id: 'CRM-1', tenant_id: tenantId, status: 'OPEN',
@@ -246,7 +267,7 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
 });
 
 // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
+// VERSION: v1.5.0-CANONICAL-WORK-DESCRIPTION-CERT
 // AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.
