@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-READS
+ * VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -9,7 +9,11 @@
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.3.0-ISOLATED-SOURCE-ACTION-READS reads
+ * CHANGELOG: v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE uses
+ *          only admitted source adapters; legal and future subscribed
+ *          modules remain visible via their owning work surface without
+ *          accidentally triggering unrelated command dependency checks.
+ *          v1.3.0-ISOLATED-SOURCE-ACTION-READS reads
  *          command capability separately for each admitted source,
  *          retaining healthy actions despite unrelated source outages.
  *          v1.2.0-THREE-SOURCE-ACTION-CONTRACTS adds
@@ -186,7 +190,8 @@ export async function readAttentionSourceActions(scope, admittedSources = null) 
   }
   const admitted = Array.isArray(admittedSources) ? admittedSources.filter((source) =>
     ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(source)) : null;
-  if (admitted && admitted.length) {
+  if (admitted) {
+    if (!admitted.length) return { sourceActions: {}, unavailableSources: [] };
     const settled = await Promise.allSettled(admitted.map((source) =>
       api.get('/attention/actions/' + source.toLowerCase(), { forceNetworkRetry: true })));
     const sourceActions = {};
@@ -289,7 +294,7 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
 }
 
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-READS
+// VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-SCOPE
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
