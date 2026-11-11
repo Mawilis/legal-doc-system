@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.0.0-500-ITEM-BOUNDED-RENDER-CERT
+ * VERSION: v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -8,8 +8,11 @@
  * COLLABORATION / OWNERSHIP: DailyAttentionWorkspace owns display/windowing;
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.0-500-ITEM-BOUNDED-RENDER-CERT proves a bounded DOM row
+ * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CHANGELOG: v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT verifies
+ *          admitted-source evidence expansion and honest partial-scope
+ *          empty copy alongside bounded 500-item rendering.
+ *          v1.0.0-500-ITEM-BOUNDED-RENDER-CERT proves a bounded DOM row
  *          window, accessible position metadata, priority/status visibility,
  *          and keyboard-independent scroll access to the final loaded row.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -113,10 +116,72 @@ describe('Daily Attention bounded inbox', () => {
     expect(container.querySelectorAll('[data-attention-row]').length)
       .toBeLessThanOrEqual(32);
   });
+  it('lets executives inspect exact admitted-source evidence without claiming platform clearance', () => {
+    const inert = vi.fn();
+    const feed = fixtureFeed(0);
+    render(
+      <DailyAttentionWorkspace
+        feed={feed}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query=""
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onOpenOperations={inert}
+        onWorkforce={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+
+    expect(screen.getByText('No active work in verified sources')).toBeTruthy();
+    expect(screen.getByText(/were not verified for this session/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Verified from 1 admitted source/ }));
+    const evidence = screen.getByRole('region', { name: 'Verified attention source details' });
+    expect(evidence.textContent).toContain('Operations');
+    expect(evidence.textContent).toContain('Verified · empty');
+    expect(evidence.textContent).toContain('Not verified in this session');
+    fireEvent.click(screen.getByRole('button', { name: 'Recheck authorised sources' }));
+    expect(inert).toHaveBeenCalledTimes(1);
+  });
+
+  it('provides accurate no-matches recovery even when active counts are zero', () => {
+    const clearFilter = vi.fn();
+    const clearSource = vi.fn();
+    const clearQuery = vi.fn();
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(0)}
+        calendarItems={[]}
+        filter="HIGH"
+        setFilter={clearFilter}
+        source="ALL"
+        setSource={clearSource}
+        query=""
+        setQuery={clearQuery}
+        onRefresh={vi.fn()}
+        onOpenWork={vi.fn()}
+        onLoadMore={vi.fn()}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    expect(screen.getByText('No matches in this view')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(clearFilter).toHaveBeenCalledWith('ALL');
+    expect(clearSource).toHaveBeenCalledWith('ALL');
+    expect(clearQuery).toHaveBeenCalledWith('');
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.0.0-500-ITEM-BOUNDED-RENDER-CERT
+// VERSION: v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
