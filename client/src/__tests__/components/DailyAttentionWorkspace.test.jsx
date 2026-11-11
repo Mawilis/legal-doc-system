@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT
+ * VERSION: v1.5.0-SOURCE-COMPLETION-UI-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,9 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT checks
+ * CHANGELOG: v1.5.0-SOURCE-COMPLETION-UI-CERT verifies
+ *          capability-gated completion evidence and no uncontrolled mutation.
+ *          v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT checks
  *          multi-select, inspection handoff and clear controls without
  *          authorising a business mutation.
  *          v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT proves
@@ -240,10 +242,33 @@ describe('Daily Attention bounded inbox', () => {
     expect(inert).not.toHaveBeenCalled();
   });
 
+  it('exposes source completion only for EOS-admitted commands and submits operator evidence', () => {
+    const onComplete = vi.fn();
+    const feed = fixtureFeed(1);
+    const base = {
+      feed, calendarItems: [], filter: 'ALL', setFilter: vi.fn(),
+      source: 'ALL', setSource: vi.fn(), query: '', setQuery: vi.fn(),
+      onRefresh: vi.fn(), onOpenWork: vi.fn(), onLoadMore: vi.fn(),
+      loadingMore: false, pageError: '', onCompleteWork: onComplete,
+    };
+    const { rerender } = render(<DailyAttentionWorkspace {...base} authorisedActions={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
+    expect(screen.queryByRole('button', { name: 'Confirm completion' })).toBeNull();
+    rerender(<DailyAttentionWorkspace {...base}
+      authorisedActions={{ OPERATIONS: ['COMPLETE'] }} />);
+    fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
+      target: { value: 'Verified operational delivery and recorded completion evidence' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm completion' }));
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete.mock.calls[0][0].sourceRecordId).toBe('attention-0');
+    expect(onComplete.mock.calls[0][1]).toContain('Verified operational delivery');
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT
+// VERSION: v1.5.0-SOURCE-COMPLETION-UI-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
