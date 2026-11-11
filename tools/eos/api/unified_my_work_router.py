@@ -8,7 +8,8 @@ COLLABORATION / OWNERSHIP: TenantAuthorizationHTTP owns current IAM;
          Legal Operations, CRM and tenant module source services own reads,
          transactions and durable state; projection owns read shape.
 CERTIFICATION / UPDATE DATE: 2026-11-11
-CHANGELOG: v1.1.0 runs synchronous MongoDB source reads and projection in
+CHANGELOG: v1.1.0-NONBLOCKING-SOURCE-READ-TRANSACTIONS runs synchronous
+           MongoDB source reads and projection in
            FastAPI's request threadpool; source IAM, isolation and fail-closed
            results remain unchanged. v1.0.0 composed independent module work.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
