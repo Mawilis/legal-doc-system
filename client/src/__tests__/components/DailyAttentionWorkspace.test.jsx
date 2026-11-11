@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.2.0-DENSE-WINDOW-GEOMETRY-CERT
+ * VERSION: v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,9 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.2.0-DENSE-WINDOW-GEOMETRY-CERT verifies
+ * CHANGELOG: v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT proves
+ *          existing rail selection survives same-page query edits.
+ *          v1.2.0-DENSE-WINDOW-GEOMETRY-CERT verifies
  *          scroll access and bounded rendering with 44px executive rows.
  *          v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT verifies
  *          admitted-source evidence expansion and honest partial-scope
@@ -180,10 +182,37 @@ describe('Daily Attention bounded inbox', () => {
     expect(clearQuery).toHaveBeenCalledWith('');
   });
 
+  it('preserves inspected work while search input changes before server revalidation', () => {
+    const inert = vi.fn();
+    const feed = fixtureFeed(1);
+    const build = (query) => (
+      <DailyAttentionWorkspace
+        feed={feed}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query={query}
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />
+    );
+    const { rerender } = render(build(''));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+    rerender(build('attention'));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.2.0-DENSE-WINDOW-GEOMETRY-CERT
+// VERSION: v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
