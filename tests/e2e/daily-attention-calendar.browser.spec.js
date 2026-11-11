@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT
+ * VERSION: v2.1.0-MOBILE-ACTION-STEP-EVIDENCE
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT tests
+ * CHANGELOG: v2.1.0-MOBILE-ACTION-STEP-EVIDENCE adds
+ *          bounded viewport-tagged stage markers for diagnosing a hanging
+ *          real command journey without extending its failure timeout.
+ *          v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT tests
  *          the source-owned task form and durable completion from panel.
  *          v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT verifies
  *          the currently admitted Operations source independently
@@ -95,6 +98,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(entryWorkspace.getByRole('button', {name: /^Active:/})).toBeVisible();
       await expect(entryWorkspace.getByText('Not represented in this session:', {exact: false})).toBeVisible();
       await expect(entryPanel.getByRole('button', {name: 'Manage Operations', exact: true})).toBeVisible();
+      console.log('[ATTENTION-STEP]', viewport.width, 'entry-ready');
 
       const title = `Calendar source work calendar-browser-${randomUUID()}`;
       const due = await page.evaluate(() => {
@@ -126,6 +130,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         operations.getByRole('button', {name: 'Create action'}).click(),
       ]);
       expect(created.status()).toBe(201);
+      console.log('[ATTENTION-STEP]', viewport.width, 'source-created');
       const command = created.request().postDataJSON();
       expect(command).toEqual({
         title, description: '', kind: 'TASK', priority: 'HIGH', due_at: due.iso,
@@ -344,6 +349,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(afterAttentionResponse.status()).toBe(200);
       const afterAttention = await afterAttentionResponse.json();
       expect(afterAttention.counts.active).toBe(attentionFeed.counts.active - 1);
+      console.log('[ATTENTION-STEP]', viewport.width, 'calendar-work-completed');
       expect(afterAttention.items.some(item => (
         item.id === 'OPERATIONS:' + work.work_item_id
       ))).toBe(false);
@@ -394,6 +400,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const inlineWork = await createdInline.json();
       expect(inlineWork.title).toBe(directTitle);
       expect(inlineWork.tenant_id).toBe(state.tenant_id);
+      console.log('[ATTENTION-STEP]', viewport.width, 'inline-created');
 
       const inlineRow = panel.getByRole('button', {name: 'Inspect ' + directTitle});
       await expect(inlineRow).toBeVisible();
@@ -412,6 +419,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const completedInlineBody = await completedInline.json();
       expect(completedInlineBody.status).toBe('COMPLETED');
       expect(completedInlineBody.work_item_id).toBe(inlineWork.work_item_id);
+      console.log('[ATTENTION-STEP]', viewport.width, 'inline-completed');
       const afterInline = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
       expect(afterInline.status()).toBe(200);
       expect((await afterInline.json()).items.some(item =>
@@ -433,6 +441,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         expect(createdBatch.status()).toBe(201);
         bulkWorks.push(await createdBatch.json());
       }
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-source-created');
       await panel.getByRole('button', {name: 'Refresh', exact: true}).click();
       for (const batchTitle of batchTitles) {
         await expect(panel.getByRole('checkbox', {name: 'Select ' + batchTitle})).toBeVisible();
@@ -451,6 +460,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         expect((await result.json()).status).toBe('COMPLETED');
       }
       await expect(panel.getByText(/2 source completions confirmed; 0 require review/)).toBeVisible();
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-completed');
       const afterBulk = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
       expect(afterBulk.status()).toBe(200);
       const remainingBulk = (await afterBulk.json()).items;
@@ -466,7 +476,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT
+// VERSION: v2.1.0-MOBILE-ACTION-STEP-EVIDENCE
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
