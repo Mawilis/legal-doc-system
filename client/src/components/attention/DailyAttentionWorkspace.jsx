@@ -10,6 +10,18 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: No cached work, storage, unsourced PII, fabricated
+ *          status/SLAs, approval controls, or browser-side authority.
+ * TENANT BOUNDARY: Receives only validated exact-session EOS AttentionItem feed;
+ *          every item is already checked against current tenant and source.
+ * AUTHORITY BOUNDARY: OPEN delegates to existing EOS-authorised My Work.
+ *          Selection is inspection only, not permission to bulk mutate.
+ *          Existing module completion POSTs independently reauthorize writes.
+ * TRANSACTION / IDEMPOTENCY BOUNDARY: Presentation only; zero writes, source
+ *          services own transactions, replay evidence and audit.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
+ * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
  * CHANGELOG: v2.8.0-EXECUTABLE-MOBILE-HEADER bounds the
  *          workspace control header on narrow screens and permits internal
  *          scrolling so source work submission remains reachable at 390px.
@@ -89,18 +101,6 @@
  *          Orient/Triage/Open/Source-close-loop interface with 5-item briefing,
  *          compact counts, filtering, selection, detail inspection and scoped
  *          keyboard navigation; unavailable source commands are never faked.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * SECURITY / PRIVACY POSTURE: No cached work, storage, unsourced PII, fabricated
- *          status/SLAs, approval controls, or browser-side authority.
- * TENANT BOUNDARY: Receives only validated exact-session EOS AttentionItem feed;
- *          every item is already checked against current tenant and source.
- * AUTHORITY BOUNDARY: OPEN delegates to existing EOS-authorised My Work.
- *          Selection is inspection only, not permission to bulk mutate.
- *          Existing module completion POSTs independently reauthorize writes.
- * TRANSACTION / IDEMPOTENCY BOUNDARY: Presentation only; zero writes, source
- *          services own transactions, replay evidence and audit.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
