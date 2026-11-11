@@ -127,9 +127,9 @@ export default function DailyAttentionWorkspace({
   const sourceCoverage = feed.sources || [];
   const missing = feed.coverage.notRepresentedSources || [];
   const allEmpty = feed.counts.active === 0 && !feed.nextCursor;
+  const hasFiltered = filter !== 'ALL' || source !== 'ALL' || query.trim().length > 0;
   const filterEmpty = !page.length && hasFiltered;
   const singleSource = source !== 'ALL' ? sourceCoverage.find((entry) => entry.moduleId === source) : null;
-  const hasFiltered = filter !== 'ALL' || source !== 'ALL' || query.trim().length > 0;
 
   useEffect(() => {
     setSelectionIndex(0);
