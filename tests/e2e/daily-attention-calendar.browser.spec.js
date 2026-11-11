@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
+ * VERSION: v2.3.0-BULK-ACTION-STAGE-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
+ * CHANGELOG: v2.3.0-BULK-ACTION-STAGE-CERT pinpoints the
+ *          real mobile queue refresh, checkbox selection and submit stage
+ *          without hiding a stuck workflow behind extended timeouts.
+ *          v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
  *          requires source-confirmed detail rail dismissal before mobile
  *          bulk-task selection, preventing overlay interception.
  *          v2.1.0-MOBILE-ACTION-STEP-EVIDENCE adds
@@ -447,9 +450,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       }
       console.log('[ATTENTION-STEP]', viewport.width, 'bulk-source-created');
       await panel.getByRole('button', {name: 'Refresh', exact: true}).click();
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-refresh-clicked');
       for (const batchTitle of batchTitles) {
         await expect(panel.getByRole('checkbox', {name: 'Select ' + batchTitle})).toBeVisible();
         await panel.getByRole('checkbox', {name: 'Select ' + batchTitle}).check();
+        console.log('[ATTENTION-STEP]', viewport.width, 'bulk-row-selected');
       }
       await panel.getByRole('textbox', {name: 'Bulk completion evidence'})
         .fill('Two independently verified source tasks are complete');
@@ -458,7 +463,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
           new URL(response.url()).pathname === path + '/' + item.work_item_id + '/complete'
           && response.request().method() === 'POST'
         )));
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-evidence-entered');
       await panel.getByRole('button', {name: 'Complete up to 2'}).click();
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-submit-clicked');
       for (const result of await Promise.all(bulkConfirmations)) {
         expect(result.status()).toBe(200);
         expect((await result.json()).status).toBe('COMPLETED');
@@ -480,7 +487,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
+// VERSION: v2.3.0-BULK-ACTION-STAGE-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
