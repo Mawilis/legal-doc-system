@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
+ * VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
+ * CHANGELOG: v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
+ *          verifies unsupported-but-admitted source reads never trigger a
+ *          blanket command IAM probe or invent executable capabilities.
+ *          v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
  *          proves that a failing Operations capability service cannot
  *          suppress independently verified CRM task actions.
  *          v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT verifies
@@ -234,10 +237,16 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
     });
   });
 
+  it('keeps an admitted Legal-only workspace readable without probing unrelated module commands', async () => {
+    const result = await readAttentionSourceActions(scope, ['LEGAL']);
+    expect(result).toEqual({ sourceActions: {}, unavailableSources: [] });
+    expect(api.get).not.toHaveBeenCalled();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
+// VERSION: v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
 // AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.
