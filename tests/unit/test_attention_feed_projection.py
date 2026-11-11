@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT
+VERSION: v1.3.0-THREE-SOURCE-ACTION-IAM-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-11
-CHANGELOG: v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT proves
+CHANGELOG: v1.3.0-THREE-SOURCE-ACTION-IAM-CERT certifies
+           source create/complete permissions independently, including CRM;
+           denied/unadmitted sources do not gain command availability.
+           v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT proves
            source completion can be advertised only for matching read and
            independently authorized command contexts; foreign scope denies.
            v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT verifies deterministic
@@ -184,13 +187,26 @@ def test_no_authorised_source_cannot_be_presented_as_enterprise_clear():
 
 
 
+async def certify_actions(source, **overrides):
+    contexts = {
+        "operations_context": None,
+        "intelligence_context": None,
+        "crm_context": None,
+        "operations_create": None,
+        "intelligence_create": None,
+        "crm_create": None,
+    }
+    contexts.update(overrides)
+    return await attention_authorised_actions(source=source, **contexts)
+
+
 def test_attention_actions_only_advertise_independently_authorized_source():
     source = snapshot()
     good = SimpleNamespace(
         tenant_id=TENANT,
         identity=SimpleNamespace(identity_id=PRINCIPAL),
     )
-    response = asyncio.run(attention_authorised_actions(
+    response = asyncio.run(certify_actions(
         source=source, operations_context=good, intelligence_context=None,
     ))
     assert response["schema"] == "WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1"
@@ -199,12 +215,21 @@ def test_attention_actions_only_advertise_independently_authorized_source():
     assert response["sourceActions"] == {"OPERATIONS": ["COMPLETE"]}
     assert response["authority"] == "SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE"
 
-    none = asyncio.run(attention_authorised_actions(
+    expanded = asyncio.run(certify_actions(
+        source, operations_context=good, operations_create=good,
+        crm_context=good, crm_create=good,
+    ))
+    assert expanded["sourceActions"] == {
+        "OPERATIONS": ["CREATE", "COMPLETE"],
+        "CRM": ["CREATE", "COMPLETE"],
+    }
+
+    none = asyncio.run(certify_actions(
         source=source, operations_context=None, intelligence_context=None,
     ))
     assert none["sourceActions"] == {}
     # Intelligence is not in the admitted My Work scope for this fixture.
-    omitted = asyncio.run(attention_authorised_actions(
+    omitted = asyncio.run(certify_actions(
         source=source, operations_context=None, intelligence_context=good,
     ))
     assert omitted["sourceActions"] == {}
@@ -217,14 +242,14 @@ def test_attention_actions_reject_foreign_command_context_without_disclosing_rec
         identity=SimpleNamespace(identity_id=PRINCIPAL),
     )
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(attention_authorised_actions(
+        asyncio.run(certify_actions(
             source=source, operations_context=foreign, intelligence_context=None,
         ))
     assert exc.value.status_code == 503
     assert exc.value.detail == "ATTENTION_ACTION_CONTEXT_INCONSISTENT"
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT
+# VERSION: v1.3.0-THREE-SOURCE-ACTION-IAM-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
