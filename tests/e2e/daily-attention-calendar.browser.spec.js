@@ -1,14 +1,17 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT
+ * VERSION: v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT confirms
+ * CERTIFICATION / UPDATE DATE: 2026-11-11.
+ * CHANGELOG: v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT executes
+ *          source-authorised create and complete directly within the
+ *          authenticated Daily Attention panel at desktop/mobile widths.
+ *          v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT confirms
  *          the desktop contextual rail uses 390px and the mobile rail stays
  *          inside the viewport without compromising authorised work handoff.
  *          v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE certifies
@@ -346,6 +349,58 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await bell.click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       await expect(agendaItem).toHaveCount(0);
+
+      // Executive action parity: use the Daily Attention surface itself,
+      // not a routed Operations-only screen or fabricated in-memory status.
+      const actionResponse = await context.request.get('/api/attention/actions', {headers});
+      expect(actionResponse.status()).toBe(200);
+      const actionAvailability = await actionResponse.json();
+      expect(actionAvailability.tenantId).toBe(state.tenant_id);
+      expect(actionAvailability.principalId).toBe(actor.principal_id);
+      expect(actionAvailability.sourceActions.OPERATIONS).toContain('CREATE');
+      expect(actionAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
+
+      await panel.getByRole('tab', {name: 'Work list', exact: true}).click();
+      await panel.getByRole('button', {name: 'Create work', exact: true}).click();
+      const createForm = panel.getByRole('form', {name: 'Create source work'});
+      await createForm.getByLabel('Owning source').selectOption('OPERATIONS');
+      const directTitle = 'Daily Attention executive source work ' + randomUUID();
+      await createForm.getByLabel('Work title').fill(directTitle);
+      await createForm.getByLabel('Description').fill('A source-owned executive action completed from Daily Attention');
+      await createForm.getByLabel('Priority').selectOption('HIGH');
+      const [createdInline] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path
+          && response.request().method() === 'POST'
+        )),
+        createForm.getByRole('button', {name: 'Create authorised work'}).click(),
+      ]);
+      expect(createdInline.status()).toBe(201);
+      const inlineWork = await createdInline.json();
+      expect(inlineWork.title).toBe(directTitle);
+      expect(inlineWork.tenant_id).toBe(state.tenant_id);
+
+      const inlineRow = panel.getByRole('button', {name: 'Inspect ' + directTitle});
+      await expect(inlineRow).toBeVisible();
+      await inlineRow.click();
+      const inlineRail = panel.getByRole('complementary', {name: 'Attention detail rail'});
+      await inlineRail.getByPlaceholder('Record what was completed and the evidence for this decision')
+        .fill('Executive source-owned completion with evidence');
+      const [completedInline] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path + '/' + inlineWork.work_item_id + '/complete'
+          && response.request().method() === 'POST'
+        )),
+        inlineRail.getByRole('button', {name: 'Confirm completion'}).click(),
+      ]);
+      expect(completedInline.status()).toBe(200);
+      const completedInlineBody = await completedInline.json();
+      expect(completedInlineBody.status).toBe('COMPLETED');
+      expect(completedInlineBody.work_item_id).toBe(inlineWork.work_item_id);
+      const afterInline = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
+      expect(afterInline.status()).toBe(200);
+      expect((await afterInline.json()).items.some(item =>
+        item.work_item_id === inlineWork.work_item_id)).toBe(false);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width + 1);
       expect(errors).toEqual([]);
     } finally {
@@ -355,7 +410,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT
+// VERSION: v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
