@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.3.0-SEMANTIC-SEVERITY-TRIAGE
+ * VERSION: v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.3.0-SEMANTIC-SEVERITY-TRIAGE presents source
+ * CHANGELOG: v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
+ *          identifies missing admitted-source command verification without
+ *          concealing healthy source actions or conflating denial with outage.
+ *          v2.3.0-SEMANTIC-SEVERITY-TRIAGE presents source
  *          priority and overdue urgency in labeled, distinct semantic
  *          colours across the inbox, legend and detail rail; no invented SLA.
  *          v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY adds
@@ -154,7 +157,7 @@ export default function DailyAttentionWorkspace({
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
   onCreateWork, creatingWork = false, creationError = '', creationNotice = '', workUpdating = false,
   onBulkComplete, bulkCompleting = false, bulkResult = '',
-  actionAvailabilityUnavailable = false,
+  actionAvailabilityUnavailable = false, unavailableActionSources = [],
 }) {
   const [mode, setMode] = useState('WORK');
   const [selectedId, setSelectedId] = useState(null);
@@ -389,9 +392,17 @@ export default function DailyAttentionWorkspace({
         </div>
         {creationNotice && <p role="status" className="mt-2 text-xs text-emerald-200">{creationNotice}</p>}
         {actionAvailabilityUnavailable && <p role="alert" className="mt-2 text-xs text-amber-200">
-          Source commands could not be verified. The authorised work list remains available.
+          {unavailableActionSources.length ? unavailableActionSources.map(label).join(', ') + ': ' : ''}
+          Some source commands could not be verified. Verified commands remain usable.
           <button type="button" onClick={onRefresh} className="ml-2 underline">Retry command verification</button>
         </p>}
+        {!actionAvailabilityUnavailable && sourceCoverage.length > 0
+          && creatableSources.length === 0 && (
+            <p role="status" className="mt-2 text-xs text-slate-400">
+              No create-work permission was admitted for this session. Existing work remains readable.
+              Ask your tenant administrator to review source-specific create permissions.
+            </p>
+          )}
         {createOpen && chosenCreateSource && (
           <form onSubmit={submitCreate}
             aria-label="Create source work"
@@ -857,7 +868,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.3.0-SEMANTIC-SEVERITY-TRIAGE
+// VERSION: v2.4.0-EXECUTIVE-SOURCE-COMMAND-DIAGNOSTICS
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
