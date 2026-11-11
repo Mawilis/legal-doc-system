@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT
+ * VERSION: v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT verifies
+ * CHANGELOG: v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
+ *          proves that a failing Operations capability service cannot
+ *          suppress independently verified CRM task actions.
+ *          v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT verifies
  *          CRM and module create/complete routes, exact tenant readback,
  *          and source-owned idempotency header forwarding.
  *          v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT checks
@@ -198,10 +201,43 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
     }, 'source-intent-once')).rejects.toThrow('ATTENTION_SOURCE_CREATE_READBACK_INVALID');
   });
 
+  it('keeps CRM create/complete available if Operations command verification fails', async () => {
+    api.get.mockImplementation((url) => {
+      if (url === '/attention/actions/crm') return Promise.resolve({ data: {
+        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+        tenantId, principalId, authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+        sourceActions: { CRM: ['CREATE', 'COMPLETE'] },
+      } });
+      if (url === '/attention/actions/operations') {
+        return Promise.reject(Object.assign(new Error('AUTHORITY_DEPENDENCY_UNAVAILABLE'), {
+          response: { status: 503 },
+        }));
+      }
+      throw new Error('UNEXPECTED_ATTENTION_ACTION_ROUTE');
+    });
+    const result = await readAttentionSourceActions(scope, ['CRM', 'OPERATIONS']);
+    expect(result).toEqual({
+      sourceActions: { CRM: ['CREATE', 'COMPLETE'] },
+      unavailableSources: ['OPERATIONS'],
+    });
+    expect(api.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('distinguishes canonical denial from command unavailability', async () => {
+    api.get.mockResolvedValue({ data: {
+      schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+      tenantId, principalId, authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+      sourceActions: {},
+    } });
+    expect(await readAttentionSourceActions(scope, ['CRM'])).toEqual({
+      sourceActions: {}, unavailableSources: [],
+    });
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT
+// VERSION: v1.3.0-INDEPENDENT-SOURCE-ADMISSION-CERT
 // AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.
