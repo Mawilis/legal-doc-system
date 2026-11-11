@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
+ * VERSION: v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
+ * CHANGELOG: v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
+ *          verifies an admitted module has a real create form even when
+ *          optional preflight cannot determine its source permission.
+ *          v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
  *          proves in-panel create/complete remains available for an
  *          admitted EOS source despite optional command-probe failures;
  *          the source service exclusively accepts or denies writes.
@@ -373,10 +376,32 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByText('LOW source priority · deadline passed')).toBeTruthy();
   });
   
+  it('exposes a real source command attempt when command preflight fails', () => {
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(0)}
+        calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        onCreateWork={vi.fn()}
+        authorisedActions={{}}
+        actionAvailabilityUnavailable
+        unavailableActionSources={['OPERATIONS']}
+        loadingMore={false} pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create Operations work' }));
+    expect(screen.getByRole('form', { name: 'Create source work' })).toBeTruthy();
+    expect(screen.getByText(/Source create permission is not preverified/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Submit task to EOS' })).toBeTruthy();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
+// VERSION: v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
