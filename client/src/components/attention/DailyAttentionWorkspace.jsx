@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.9.0-AUTHORISED-WORK-CREATION
+ * VERSION: v1.9.1-MOBILE-CREATION-BOUNDS
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,9 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.9.0-AUTHORISED-WORK-CREATION adds a
+ * CHANGELOG: v1.9.1-MOBILE-CREATION-BOUNDS keeps source
+ *          work creation scrollable and usable inside narrow device panels.
+ *          v1.9.0-AUTHORISED-WORK-CREATION adds a
  *          lightweight source-owned creation form for admitted CRM,
  *          Operations and Intelligence, with persistent intent idempotency.
  *          v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS adds x selection
@@ -219,8 +221,8 @@ export default function DailyAttentionWorkspace({
     if (!chosenCreateSource || !createTitle.trim() || creatingWork || workUpdating
       || typeof onCreateWork !== 'function') return;
     if (!createKeyRef.current) {
-      if (typeof crypto?.randomUUID !== 'function') return;
-      createKeyRef.current = crypto.randomUUID();
+      if (typeof globalThis.crypto?.randomUUID !== 'function') return;
+      createKeyRef.current = globalThis.crypto.randomUUID();
     }
     const due_at = createDue ? new Date(createDue).toISOString() : null;
     const accepted = await onCreateWork(chosenCreateSource, {
@@ -344,7 +346,7 @@ export default function DailyAttentionWorkspace({
         {createOpen && chosenCreateSource && (
           <form onSubmit={submitCreate}
             aria-label="Create source work"
-            className="mt-3 grid gap-2 rounded-lg border border-amber-300/20 bg-[#0a1628] p-3">
+            className="mt-3 grid max-h-[min(48vh,390px)] gap-2 overflow-y-auto rounded-lg border border-amber-300/20 bg-[#0a1628] p-3">
             <div className="grid grid-cols-2 gap-2">
               <label className="text-[11px] text-slate-300">Owning source
                 <select value={chosenCreateSource}
@@ -731,7 +733,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.9.0-AUTHORISED-WORK-CREATION
+// VERSION: v1.9.1-MOBILE-CREATION-BOUNDS
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
