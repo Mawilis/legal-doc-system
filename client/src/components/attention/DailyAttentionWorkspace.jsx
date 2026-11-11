@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS
+ * VERSION: v1.9.0-AUTHORISED-WORK-CREATION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS adds x selection
+ * CHANGELOG: v1.9.0-AUTHORISED-WORK-CREATION adds a
+ *          lightweight source-owned creation form for admitted CRM,
+ *          Operations and Intelligence, with persistent intent idempotency.
+ *          v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS adds x selection
  *          toggling and e evidence-entry focus for source-admitted work;
  *          no keyboard key directly executes an unverified mutation.
  *          v1.7.0-SOURCE-CONFIRMED-COMPLETION shows a
@@ -114,11 +117,19 @@ export default function DailyAttentionWorkspace({
   onRefresh, onOpenWork, onOpenOperations, onOpenWorkforce,
   onLoadMore, loadingMore, pageError,
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
+  onCreateWork, creatingWork = false, creationError = '', creationNotice = '', workUpdating = false,
 }) {
   const [mode, setMode] = useState('WORK');
   const [selectedId, setSelectedId] = useState(null);
   const [checkedIds, setCheckedIds] = useState([]);
   const [completionNote, setCompletionNote] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createSource, setCreateSource] = useState('');
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createPriority, setCreatePriority] = useState('NORMAL');
+  const [createDue, setCreateDue] = useState('');
+  const createKeyRef = useRef(null);
   const [showBriefing, setShowBriefing] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSourceDetails, setShowSourceDetails] = useState(false);
@@ -149,6 +160,10 @@ export default function DailyAttentionWorkspace({
   const checkedItems = page.filter((item) => checkedSet.has(item.id));
   const ranked = page.slice(0, 5);
   const sourceCoverage = feed.sources || [];
+  const creatableSources = Object.entries(authorisedActions)
+    .filter(([, actions]) => actions.includes('CREATE')).map(([moduleId]) => moduleId);
+  const chosenCreateSource = creatableSources.includes(createSource)
+    ? createSource : creatableSources[0];
   const missing = feed.coverage.notRepresentedSources || [];
   const allEmpty = feed.counts.active === 0 && !feed.nextCursor;
   const hasFiltered = filter !== 'ALL' || source !== 'ALL' || query.trim().length > 0;
@@ -198,6 +213,29 @@ export default function DailyAttentionWorkspace({
       return next.length === before.length ? before : next;
     });
   }, [page, selectedId]);
+
+  const submitCreate = async (event) => {
+    event.preventDefault();
+    if (!chosenCreateSource || !createTitle.trim() || creatingWork || workUpdating
+      || typeof onCreateWork !== 'function') return;
+    if (!createKeyRef.current) {
+      if (typeof crypto?.randomUUID !== 'function') return;
+      createKeyRef.current = crypto.randomUUID();
+    }
+    const due_at = createDue ? new Date(createDue).toISOString() : null;
+    const accepted = await onCreateWork(chosenCreateSource, {
+      title: createTitle.trim(), description: createDescription,
+      priority: createPriority, due_at,
+    }, createKeyRef.current);
+    if (accepted) {
+      setCreateOpen(false);
+      setCreateTitle('');
+      setCreateDescription('');
+      setCreatePriority('NORMAL');
+      setCreateDue('');
+      createKeyRef.current = null;
+    }
+  };
 
   const open = (item) => {
     if (!item) return;
@@ -286,6 +324,13 @@ export default function DailyAttentionWorkspace({
             </button>
           </div>
           <div className="flex items-center gap-1.5">
+            {creatableSources.length > 0 && typeof onCreateWork === 'function' && (
+              <button type="button" onClick={() => setCreateOpen((value) => !value)}
+                aria-expanded={createOpen}
+                className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950">
+                {createOpen ? 'Close new work' : 'Create work'}
+              </button>
+            )}
             <button type="button" onClick={() => setShowShortcuts((v) => !v)}
               aria-label="Daily attention keyboard shortcuts" aria-expanded={showShortcuts}
               className="rounded-lg border border-white/10 p-2 text-slate-300 hover:bg-white/10"><CircleHelp size={15}/></button>
@@ -295,6 +340,52 @@ export default function DailyAttentionWorkspace({
             </button>
           </div>
         </div>
+        {creationNotice && <p role="status" className="mt-2 text-xs text-emerald-200">{creationNotice}</p>}
+        {createOpen && chosenCreateSource && (
+          <form onSubmit={submitCreate}
+            aria-label="Create source work"
+            className="mt-3 grid gap-2 rounded-lg border border-amber-300/20 bg-[#0a1628] p-3">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-[11px] text-slate-300">Owning source
+                <select value={chosenCreateSource}
+                  onChange={(event) => { setCreateSource(event.target.value); createKeyRef.current = null; }}
+                  className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
+                  {creatableSources.map((moduleId) => <option key={moduleId} value={moduleId}>{label(moduleId)}</option>)}
+                </select>
+              </label>
+              <label className="text-[11px] text-slate-300">Priority
+                <select value={createPriority}
+                  onChange={(event) => { setCreatePriority(event.target.value); createKeyRef.current = null; }}
+                  className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
+                  {['NORMAL', 'LOW', 'HIGH', 'CRITICAL'].map((priority) =>
+                    <option key={priority} value={priority}>{priority}</option>)}
+                </select>
+              </label>
+            </div>
+            <label className="text-[11px] text-slate-300">Work title
+              <input value={createTitle} maxLength={240} required
+                onChange={(event) => { setCreateTitle(event.target.value); createKeyRef.current = null; }}
+                placeholder="What needs to be done?"
+                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+            </label>
+            <label className="text-[11px] text-slate-300">Description
+              <textarea value={createDescription} maxLength={4000} rows={2}
+                onChange={(event) => { setCreateDescription(event.target.value); createKeyRef.current = null; }}
+                placeholder="Outcome, owner context or instructions"
+                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+            </label>
+            <label className="text-[11px] text-slate-300">Deadline (optional)
+              <input type="datetime-local" value={createDue}
+                onChange={(event) => { setCreateDue(event.target.value); createKeyRef.current = null; }}
+                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+            </label>
+            {creationError && <p role="alert" className="text-xs text-rose-200">{creationError}</p>}
+            <button type="submit" disabled={creatingWork || workUpdating || !createTitle.trim()}
+              className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
+              {creatingWork ? 'Saving with EOS…' : 'Create authorised work'}
+            </button>
+          </form>
+        )}
         {showShortcuts && (
           <div role="note" className="mt-2 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-xs leading-5 text-slate-300">
             <strong className="text-amber-100">Shortcuts:</strong> j/k select work · Enter/o open
@@ -640,7 +731,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.8.0-KEYBOARD-EXECUTIVE-COMMANDS
+// VERSION: v1.9.0-AUTHORISED-WORK-CREATION
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
