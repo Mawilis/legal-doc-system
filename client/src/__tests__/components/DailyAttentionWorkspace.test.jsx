@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT
+ * VERSION: v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,11 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT checks
+ * CHANGELOG: v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
+ *          proves in-panel create/complete remains available for an
+ *          admitted EOS source despite optional command-probe failures;
+ *          the source service exclusively accepts or denies writes.
+ *          v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT checks
  *          source-priority colour labels, overdue override and detail
  *          semantics without fabricating urgency or financial authority.
  *          v1.7.0-MODULE-SPECIFIC-EMPTY-CERT asserts
@@ -261,7 +265,8 @@ describe('Daily Attention bounded inbox', () => {
     };
     const { rerender } = render(<DailyAttentionWorkspace {...base} authorisedActions={{}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
-    expect(screen.queryByRole('button', { name: 'Confirm completion' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Confirm completion' })).toBeTruthy();
+    expect(screen.getByText(/Completion permission not preverified/)).toBeTruthy();
     rerender(<DailyAttentionWorkspace {...base}
       authorisedActions={{ OPERATIONS: ['COMPLETE'] }} />);
     fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
@@ -371,7 +376,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT
+// VERSION: v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
