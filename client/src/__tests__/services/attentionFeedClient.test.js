@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT
+ * VERSION: v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT checks
+ * CHANGELOG: v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT verifies
+ *          CRM and module create/complete routes, exact tenant readback,
+ *          and source-owned idempotency header forwarding.
+ *          v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT checks
  *          exact-principal command availability and real module completion
  *          dispatch, while rejecting foreign and unsupported commands.
  *          v1.0.0-EXACT-EOS-ATTENTION-SCOPE-CERT verifies bounded
@@ -26,6 +29,7 @@ vi.mock('../../services/api.js', () => ({ default: api }));
 import {
   assertAttentionFeed, readAttentionFeed,
   readAttentionSourceActions, completeAttentionSourceWork,
+  createAttentionSourceWork,
 } from '../../services/attentionFeedClient.js';
 
 const tenantId = 'WILSY-ATTENTION-CLIENT-TENANT';
@@ -146,9 +150,9 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
   });
 
   it('delegates Operations completion to source IAM without optimistic mutation', async () => {
-    api.post.mockResolvedValue({ data: { work_item_id: 'WORK-1', status: 'COMPLETED' } });
+    api.post.mockResolvedValue({ data: { work_item_id: 'WORK-1', tenant_id: tenantId, status: 'COMPLETED' } });
     const record = await completeAttentionSourceWork({
-      sourceModule: 'OPERATIONS', sourceRecordId: 'WORK-1',
+      sourceModule: 'OPERATIONS', sourceRecordId: 'WORK-1', tenantId,
     }, 'Completed all verified assigned work');
     expect(record.status).toBe('COMPLETED');
     expect(api.post).toHaveBeenCalledWith(
@@ -162,10 +166,42 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('creates CRM source work with an exact-tenant idempotent EOS command', async () => {
+    api.post.mockResolvedValue({ data: {
+      work_item_id: 'CRM-1', tenant_id: tenantId, status: 'OPEN',
+    } });
+    const record = await createAttentionSourceWork('CRM', scope, {
+      title: 'Review customer contract',
+      description: 'Record customer decision',
+      priority: 'HIGH',
+    }, 'source-intent-once');
+    expect(record.work_item_id).toBe('CRM-1');
+    expect(api.post).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items',
+      { title: 'Review customer contract', description: 'Record customer decision',
+        kind: 'TASK', priority: 'HIGH', due_at: null },
+      { headers: { 'Idempotency-Key': 'source-intent-once' } },
+    );
+    api.post.mockClear();
+    await expect(createAttentionSourceWork('FINANCE', scope, {
+      title: 'Unauthorized source task',
+    }, 'source-intent')).rejects.toThrow('ATTENTION_SOURCE_CREATE_INPUT_INVALID');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('rejects foreign source mutation readback instead of showing fabricated success', async () => {
+    api.post.mockResolvedValue({ data: {
+      work_item_id: 'CRM-1', tenant_id: 'FOREIGN', status: 'OPEN',
+    } });
+    await expect(createAttentionSourceWork('CRM', scope, {
+      title: 'Review customer contract',
+    }, 'source-intent-once')).rejects.toThrow('ATTENTION_SOURCE_CREATE_READBACK_INVALID');
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT
+// VERSION: v1.2.0-IDEMPOTENT-SOURCE-CREATION-CERT
 // AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.
