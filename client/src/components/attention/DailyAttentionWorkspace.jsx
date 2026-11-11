@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY
+ * VERSION: v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,11 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY distinguishes
+ * CHANGELOG: v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY permits
+ *          operator-initiated create on a verified admitted source even
+ *          when optional preflight capability checks are unavailable;
+ *          EOS still refuses any unauthorized or unsubscribed source write.
+ *          v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY distinguishes
  *          source adapters not yet wired into inline create/complete from
  *          genuine current-session source IAM denial, without making
  *          claims about a tenant's subscription or employee privileges.
@@ -214,8 +218,16 @@ export default function DailyAttentionWorkspace({
   const sourceCoverage = feed.sources || [];
   const inlineCommandSources = ['CRM', 'OPERATIONS', 'INTELLIGENCE'];
   const unmappedSources = sourceCoverage.filter((entry) => !inlineCommandSources.includes(entry.moduleId));
-  const creatableSources = Object.entries(authorisedActions)
-    .filter(([, actions]) => actions.includes('CREATE')).map(([moduleId]) => moduleId);
+  // An optional action-status read is not the authorization decision.
+  // The source-owned POST independently authenticates, checks IAM/entitlement
+  // and persists; expose a real user-initiated attempt only for admitted work.
+  const creatableSources = sourceCoverage
+    .map((entry) => entry.moduleId)
+    .filter((moduleId) => inlineCommandSources.includes(moduleId));
+  const unverifiedCreateSources = creatableSources.filter((moduleId) =>
+    !authorisedActions[moduleId]?.includes('CREATE'));
+  const createPreflightUnverified = unverifiedCreateSources.includes(
+    creatableSources.includes(createSource) ? createSource : creatableSources[0]);
   const chosenCreateSource = creatableSources.includes(createSource)
     ? createSource : creatableSources[0];
   const missing = feed.coverage.notRepresentedSources || [];
@@ -452,10 +464,14 @@ export default function DailyAttentionWorkspace({
                 onChange={(event) => { setCreateDue(event.target.value); createKeyRef.current = null; }}
                 className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
             </label>
+            {createPreflightUnverified && <p className="text-[11px] text-amber-200">
+              Source create permission is not preverified. Submitting will ask EOS to authorize the action;
+              a denial will not create work.
+            </p>}
             {creationError && <p role="alert" className="text-xs text-rose-200">{creationError}</p>}
             <button type="submit" disabled={creatingWork || workUpdating || !createTitle.trim()}
               className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
-              {creatingWork ? 'Saving with EOS…' : 'Create authorised work'}
+              {creatingWork ? 'Saving with EOS…' : 'Submit task to EOS'}
             </button>
           </form>
         )}
@@ -879,7 +895,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.5.0-ENTITLED-MODULE-COMMAND-CLARITY
+// VERSION: v2.6.0-EXECUTABLE-SOURCE-CREATE-ENTRY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
