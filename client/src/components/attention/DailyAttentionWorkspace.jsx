@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION
+ * VERSION: v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION adds
+ * CHANGELOG: v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY makes
+ *          single-source empty queues identify their actual module and
+ *          offers a permitted create-work path instead of a passive zero.
+ *          v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION adds
  *          shared operator evidence and bounded 25-item source-owned
  *          completion with explicit partial-success reporting and no
  *          cross-source atomicity claim.
@@ -179,7 +182,9 @@ export default function DailyAttentionWorkspace({
   const allEmpty = feed.counts.active === 0 && !feed.nextCursor;
   const hasFiltered = filter !== 'ALL' || source !== 'ALL' || query.trim().length > 0;
   const filterEmpty = !page.length && hasFiltered;
-  const singleSource = source !== 'ALL' ? sourceCoverage.find((entry) => entry.moduleId === source) : null;
+  const singleSource = source !== 'ALL'
+    ? sourceCoverage.find((entry) => entry.moduleId === source)
+    : sourceCoverage.length === 1 ? sourceCoverage[0] : null;
 
   useEffect(() => {
     setSelectionIndex(0);
@@ -577,6 +582,16 @@ export default function DailyAttentionWorkspace({
                       : ' Every admitted source currently reports no active work.'}
                     {' '}No next SLA or completed-work count is available from this feed.
                   </p>
+                  {creatableSources.length > 0 && onCreateWork && (
+                    <button type="button" onClick={() => {
+                      setCreateSource(creatableSources.includes(singleSource?.moduleId)
+                        ? singleSource.moduleId : creatableSources[0]);
+                      setCreateOpen(true);
+                    }} className="mt-4 mr-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-950">
+                      Create {label(creatableSources.includes(singleSource?.moduleId)
+                        ? singleSource.moduleId : creatableSources[0])} work
+                    </button>
+                  )}
                   {sourceCoverage.some((entry) => entry.moduleId === 'OPERATIONS') && onOpenOperations && (
                     <button type="button" onClick={onOpenOperations}
                       className="mt-4 rounded-lg border border-amber-300/50 px-3 py-2 text-xs font-semibold text-amber-100">
@@ -714,6 +729,8 @@ export default function DailyAttentionWorkspace({
             <div><dt className="text-slate-400">Source status</dt><dd>{sourceStatus(selected)}</dd></div>
             <div><dt className="text-slate-400">SLA</dt><dd>{selected.slaBreachAt ? dueLabel(selected.slaBreachAt) : 'Not supplied by source'}</dd></div>
             <div><dt className="text-slate-400">Record</dt><dd className="break-all">{selected.sourceRecordId}</dd></div>
+            <div><dt className="text-slate-400">Requester</dt><dd className="break-all">{selected.requesterId || 'Not supplied by source'}</dd></div>
+            <div><dt className="text-slate-400">Assignee</dt><dd className="break-all">{selected.assigneeId || 'Not supplied by source'}</dd></div>
           </dl>
           {canComplete && (
             <form className="mt-4 space-y-2 rounded-lg border border-amber-300/20 bg-[#102034] p-3"
@@ -771,7 +788,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION
+// VERSION: v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
