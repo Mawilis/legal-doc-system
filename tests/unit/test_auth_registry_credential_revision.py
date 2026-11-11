@@ -1,7 +1,7 @@
 """Wilsy OS credential-revision direct certificate.
 
 TITLE: WILSY OS AuthRegistry Credential Revision Direct Certificate
-VERSION: v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT
+VERSION: v1.4.0-CONSOLIDATION-STRICT-IDENTITY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the AuthRegistry credential-revision
          persistence primitives plus caller-owned transactional registration
@@ -10,8 +10,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Test-only evidence; production AuthRegistry,
                            JWT, recovery, Node, and database lifecycles remain
                            read-only and caller-owned.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+CERTIFICATION / UPDATE DATE: 2026-11-10
 CHANGELOG:
+  v1.4.0-CONSOLIDATION-STRICT-IDENTITY-CERT — Certifies strict identity hydration, ObjectId-only compatibility, collision denial, sanitized gated diagnostics and pre-write failure without changing authority or credentials.
   v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT —
     Advances the production-version oracle to v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION, proves that
     register_user forwards the exact caller ClientSession into canonical
@@ -234,7 +235,7 @@ def _user_calls(collection: _RecordingCollection, operation: str) -> list[dict[s
 
 
 def test_public_api_signatures_and_certificate_version() -> None:
-    assert auth_registry_module.VERSION == 'v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION'
+    assert auth_registry_module.VERSION == 'v1.13.0-CONSOLIDATION-STRICT-IDENTITY-HYDRATION'
     assert list(inspect.signature(AuthRegistry.register_user).parameters) == [
         "self", "email", "password", "firstName", "lastName", "role", "tenantId", "session"
     ]
@@ -699,8 +700,122 @@ def test_certificate_is_offline_and_does_not_construct_clients() -> None:
     assert "httpx." not in source
 
 
+
+@pytest.mark.parametrize("identity", [None, False, 0, 7, "", "507f1f77bcf86cd799439011", {}, []])
+def test_missing_canonical_identity_rejects_non_bson_fallback_without_writes(
+    harness: tuple[AuthRegistry, _RecordingDatabase], identity: object,
+) -> None:
+    """Malformed Mongo identity cannot become a hydrated user or mutation key."""
+    registry, database = harness
+    document = _user_document(_id=identity)
+    document.pop("user_id")
+    before = dict(document)
+    with pytest.raises(AuthRegistryTenantError, match="^AUTH_PRINCIPAL_IDENTITY_INVALID$"):
+        registry._doc_to_user(document)
+    assert document == before
+    assert not any(call["operation"] != "find_one" for call in _users(database).calls)
+
+
+@pytest.mark.parametrize("identity", [False, 0, 7, "", "  ", " user-1", "user-1 ", "user\n1", {}, []])
+def test_present_corrupt_identity_never_downgrades_to_legacy_fallback(
+    harness: tuple[AuthRegistry, _RecordingDatabase], identity: object,
+) -> None:
+    """Present malformed canonical state fails even with a valid BSON ObjectId."""
+    registry, database = harness
+    document = _user_document(user_id=identity)
+    with pytest.raises(AuthRegistryTenantError, match="^AUTH_PRINCIPAL_IDENTITY_INVALID$"):
+        registry._doc_to_user(document)
+    assert _user_calls(_users(database), "update_one") == []
+
+
+def test_absent_and_historical_null_identity_preserve_same_objectid_and_caller_session(
+    harness: tuple[AuthRegistry, _RecordingDatabase], caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Compatibility does no repair and diagnostics are code-only and opt-in."""
+    registry, database = harness
+    document = _users(database).documents[0]
+    document.pop("user_id")
+    principal = str(document["_id"])
+    session = _RecordingSession()
+    monkeypatch.delenv("WILSY_MODEL_DEBUG", raising=False)
+    with caplog.at_level("WARNING", logger=auth_registry_module.__name__):
+        user = registry.get_user_by_id(principal, session=session)
+        assert user is not None and user.id == principal
+    assert caplog.records == []
+    assert "user_id" not in document
+    document["user_id"] = None
+    monkeypatch.setenv("WILSY_MODEL_DEBUG", "1")
+    with caplog.at_level("WARNING", logger=auth_registry_module.__name__):
+        user = registry.get_user_by_id(principal, session=session)
+        assert user is not None and user.id == principal
+    assert [record.getMessage() for record in caplog.records] == ["AUTH_LEGACY_OBJECT_ID_COMPATIBILITY"]
+    assert principal not in caplog.text
+    assert document["email"] not in caplog.text
+    assert document["passwordHash"] not in caplog.text
+    assert all(call["kwargs"].get("session") is session for call in _user_calls(_users(database), "find_one"))
+    assert document["user_id"] is None
+
+
+@pytest.mark.parametrize("tenant", ["TENANT-ONE", "TENANT-TWO"])
+def test_global_identity_collision_is_rejected_before_read_or_mfa_update(
+    harness: tuple[AuthRegistry, _RecordingDatabase], tenant: str,
+) -> None:
+    """Pre-tenant identity ambiguity discloses neither tenant and writes nothing."""
+    registry, database = harness
+    legacy = _user_document(user_id=None)
+    principal = str(legacy["_id"])
+    canonical = _user_document(user_id=principal, _id=ObjectId(), tenantId=tenant)
+    _users(database).documents = [canonical, legacy]
+    for operation in [lambda: registry.get_user_by_id(principal), lambda: registry.update_user(principal, mfaRegistered=True)]:
+        with pytest.raises(AuthRegistryTenantError, match="^AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS$"):
+            operation()
+    assert _user_calls(_users(database), "update_one") == []
+
+
+@pytest.mark.parametrize("tenant", ["TENANT-ONE", "TENANT-TWO"])
+def test_email_hydration_rejects_competing_identity_inside_proven_tenant(
+    harness: tuple[AuthRegistry, _RecordingDatabase], tenant: str,
+) -> None:
+    """Email lookup cannot bypass the canonical versus legacy collision gate."""
+    registry, database = harness
+    legacy = _user_document(user_id=None)
+    canonical = _user_document(user_id=str(legacy["_id"]), _id=ObjectId(), email="other@example.com", tenantId=tenant)
+    _users(database).documents = [legacy, canonical]
+    with pytest.raises(AuthRegistryTenantError, match="^AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS$"):
+        registry.get_user_by_email(legacy["email"])
+
+
+def test_legacy_lookup_cannot_redirect_to_a_different_canonical_identity(
+    harness: tuple[AuthRegistry, _RecordingDatabase],
+) -> None:
+    """An ObjectId is no longer an alias once a distinct user_id is persisted."""
+    registry, database = harness
+    principal = str(_users(database).documents[0]["_id"])
+    with pytest.raises(AuthRegistryTenantError, match="^AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS$"):
+        registry.update_user(principal, mfaRegistered=True)
+    assert _user_calls(_users(database), "update_one") == []
+
+
+def test_identity_fracture_logs_only_stable_code_even_with_debug_disabled(
+    harness: tuple[AuthRegistry, _RecordingDatabase], caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Integrity errors remain visible without leaking arbitrary identity material."""
+    registry, _database = harness
+    monkeypatch.delenv("WILSY_MODEL_DEBUG", raising=False)
+    document = _user_document(user_id={"private": "identity-secret-sentinel"})
+    with caplog.at_level("ERROR", logger=auth_registry_module.__name__):
+        with pytest.raises(AuthRegistryTenantError) as caught:
+            registry._doc_to_user(document)
+    assert str(caught.value) == "AUTH_PRINCIPAL_IDENTITY_INVALID"
+    assert [record.getMessage() for record in caplog.records] == ["AUTH_PRINCIPAL_IDENTITY_INVALID"]
+    assert "identity-secret-sentinel" not in caplog.text
+    assert document["email"] not in caplog.text
+
+
 # ARTIFACT: tests/unit/test_auth_registry_credential_revision.py
-# VERSION: v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT
+# VERSION: v1.4.0-CONSOLIDATION-STRICT-IDENTITY-CERT
 # AUTHORITY BOUNDARY: direct offline evidence for AuthRegistry credential, tenant-resolution, and caller-transaction registration seams
 # TENANT POSTURE: canonical tenant resolution and credential persistence preserve exact caller transaction scope
 # FAIL-CLOSED POSTURE: malformed state, races, count anomalies, readback drift, and transaction-boundary violations fail

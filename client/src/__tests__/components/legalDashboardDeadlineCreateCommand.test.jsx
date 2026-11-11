@@ -1,16 +1,20 @@
 /**
- * WILSY OS — LEGAL MATTER DEADLINE CREATE COMMAND CERTIFICATE
- * VERSION: v1.0.0-D4C-MATTER-DEADLINE-CREATE-COMMAND-CERT
+ * TITLE: WILSY OS Legal Matter Deadline Create Command Certificate
+ * VERSION: v1.0.2-D4C-AUTH-PROJECTION-CERT-SOVEREIGN-METADATA
+ * CHANGELOG: v1.0.2-D4C-AUTH-PROJECTION-CERT-SOVEREIGN-METADATA completes artifact ownership and privacy posture without changing certificate behavior.
+ * CHANGELOG: v1.0.1-D4C-AUTH-PROJECTION-CERT — supplies canonical server-authoritative deadline read and write permissions to the Partner fixture.
  * AUTHORITY: Browser presentation/command wiring evidence only.
  * EPITOME: Certifies write-gated evidenced deadline creation for Partner,
  *          Attorney and Paralegal while Secretary remains read-only.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardDeadlineCreateCommand.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-11
+ * COLLABORATION / OWNERSHIP: Legal workspace and deadline command test owners.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * TENANT BOUNDARY: Tenant authority remains server-derived.
  * AUTHORITY BOUNDARY: Browser captures explicit deadline evidence only; Python
  *                     EOS owns authorization, deadline semantics and persistence.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * SECURITY / PRIVACY POSTURE: Synthetic tenant and matter fixtures only.
  */
 
 import React from 'react';
@@ -77,6 +81,12 @@ vi.mock('../../contexts/authContext', () => ({
       email: 'operator@example.test',
       role: 'tenant_legal_partner',
       tenantId: 'tenant-law',
+      legalPermissionsAuthoritative: true,
+      permissions: [
+        'legal_operations:instruction:write',
+        'legal_operations:matter_deadline:read',
+        'legal_operations:matter_deadline:write',
+      ],
     },
     tenant: {
       tenantId: 'tenant-law',
@@ -302,7 +312,7 @@ describe('D4C Legal matter deadline create command', () => {
 
 /**
  * ARTIFACT: legalDashboardDeadlineCreateCommand.test.jsx
- * VERSION: v1.0.0-D4C-MATTER-DEADLINE-CREATE-COMMAND-CERT
+ * VERSION: v1.0.2-D4C-AUTH-PROJECTION-CERT-SOVEREIGN-METADATA
  * AUTHORITY BOUNDARY: write-gated deadline command presentation certificate only
  * TENANT POSTURE: tenant authority remains server-derived
  * FAIL-CLOSED POSTURE: denied, malformed or failed create never fabricates success

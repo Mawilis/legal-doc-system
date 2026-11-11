@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.42.0-ATTENTION-FEED-ROUTER-MOUNT
+VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -12,7 +12,9 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: 2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
+CHANGELOG: 2026-11-10 v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
+QR issue/verify IAM remains router-owned and no invoice or key mutation occurs.
+2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
 Daily Attention feed, counts, calendar and source-coverage read surfaces
 under /api without granting a second command or transaction authority.
 2026-11-03 v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP mounts the additive global login/selection/MFA/refresh/logout routes, installs global TOTP factor indexes, and accepts an injected platform KMS decryptor; absent KMS wiring keeps MFA completion unavailable.
@@ -92,7 +94,7 @@ from pymongo.write_concern import WriteConcern
 from .auth_router import router as auth_router
 from .global_principal_auth_router import router as global_principal_auth_router
 from .authority_bridge_router import router as authority_bridge_router
-from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
+from .billing_router import evaluate_all_tenant_dunning_lifecycles, qr_router, router as billing_router
 from .forensic_merkle_router import router as forensic_merkle_router
 from .artifact_pdf_router import router as artifact_pdf_router
 from .employee_router import router as employee_router
@@ -287,7 +289,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
+VERSION = "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -1132,6 +1134,8 @@ class WilsyAPIServer:
 
         app.include_router(billing_router)
         app.include_router(billing_router, prefix="/api")
+        app.include_router(qr_router)
+        app.include_router(qr_router, prefix="/api")
 
         app.include_router(employee_router)
         app.include_router(authority_bridge_router)
@@ -1158,7 +1162,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.42.0-ATTENTION-FEED-ROUTER-MOUNT
+# VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

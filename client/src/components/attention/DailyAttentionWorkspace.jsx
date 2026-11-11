@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE
+ * VERSION: v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,9 +10,12 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE
- *          makes Calendar consume the verified complete My Work snapshot,
- *          never only the currently filtered AttentionItem page.
+ * CHANGELOG: v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW adds fixed-height
+ *          inbox windowing with overscan for loaded source pages and visible
+ *          source priority/status labels. Commands remain OPEN-only.
+ *          v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE makes Calendar consume
+ *          the verified complete My Work snapshot, never only the currently
+ *          filtered AttentionItem page.
  *          v1.1.0-RESPONSIVE-CONTEXTUAL-DETAIL-RAIL mounts
  *          a 390px desktop detail rail beside the dense list and a bounded
  *          mobile inspection sheet without hiding source-owned record entry.
@@ -55,6 +58,9 @@ const FILTERS = [
   ['TODAY', 'Due today', 'dueToday'],
   ['HIGH', 'High priority', 'highPriority'],
 ];
+const ATTENTION_ROW_HEIGHT = 68;
+const ATTENTION_ROW_OVERSCAN = 10;
+const DEFAULT_VIEWPORT_HEIGHT = 560;
 const label = (source) => ({
   LEGAL: 'Legal', OPERATIONS: 'Operations', INTELLIGENCE: 'Intelligence',
   CRM: 'CRM', PEOPLE: 'People', FINANCE: 'Finance',
@@ -74,6 +80,8 @@ const toWorkItem = (item) => ({
   is_overdue: item.isOverdue,
 });
 const countLabel = (name, count) => name + ': ' + count;
+const sourceStatus = (item) => typeof item?.status === 'string'
+  && item.status.trim() ? item.status : 'Source status unavailable';
 
 /**
  * @description Authenticated attention presentation over one verified EOS page.
@@ -92,9 +100,22 @@ export default function DailyAttentionWorkspace({
   const [showBriefing, setShowBriefing] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [selectionIndex, setSelectionIndex] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(DEFAULT_VIEWPORT_HEIGHT);
   const searchRef = useRef(null);
   const listRef = useRef(null);
+  const inboxRef = useRef(null);
   const page = feed.items;
+  const inboxOffset = inboxRef.current?.offsetTop || 0;
+  const firstVisibleIndex = Math.floor(Math.max(0, scrollTop - inboxOffset)
+    / ATTENTION_ROW_HEIGHT);
+  const windowStart = Math.max(0, firstVisibleIndex - ATTENTION_ROW_OVERSCAN);
+  const windowSize = Math.ceil(viewportHeight / ATTENTION_ROW_HEIGHT)
+    + ATTENTION_ROW_OVERSCAN * 2;
+  const windowEnd = Math.min(page.length, windowStart + windowSize);
+  const visibleItems = page.slice(windowStart, windowEnd).map((item, offset) => ({
+    item, index: windowStart + offset,
+  }));
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
@@ -108,7 +129,26 @@ export default function DailyAttentionWorkspace({
   useEffect(() => {
     setSelectionIndex(0);
     setSelectedId(null);
+    if (listRef.current) listRef.current.scrollTop = 0;
+    setScrollTop(0);
   }, [filter, source, query]);
+
+  useEffect(() => {
+    const node = listRef.current;
+    if (!node || mode !== 'WORK') return undefined;
+    const measure = () => setViewportHeight(
+      node.clientHeight || DEFAULT_VIEWPORT_HEIGHT,
+    );
+    measure();
+    const observer = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(measure) : null;
+    observer?.observe(node);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [mode, page.length]);
   useEffect(() => {
     if (selectedId && !page.some((item) => item.id === selectedId)) setSelectedId(null);
   }, [page, selectedId]);
@@ -156,8 +196,10 @@ export default function DailyAttentionWorkspace({
         selectionIndex + (event.key === 'j' ? 1 : -1)));
       setSelectionIndex(next);
       setSelectedId(page[next].id);
-      listRef.current?.querySelectorAll('[data-attention-row]')[next]
-        ?.scrollIntoView?.({ block: 'nearest' });
+      listRef.current?.scrollTo?.({
+        top: (inboxRef.current?.offsetTop || 0) + next * ATTENTION_ROW_HEIGHT,
+        behavior: 'auto',
+      });
     } else if (event.key === 'Enter' && selected) {
       event.preventDefault();
       open(selected);
@@ -280,7 +322,9 @@ export default function DailyAttentionWorkspace({
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
-          <div className="min-h-0 flex-1 overflow-y-auto" ref={listRef}>
+          <div className="relative min-h-0 flex-1 overflow-y-auto" ref={listRef}
+            data-attention-scroll-container="true"
+            onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
           {ranked.length > 0 && showBriefing && filter === 'ALL' && !query.trim() && source === 'ALL' && (
             <section aria-label="Today's attention briefing" className="border-b border-white/10 bg-amber-300/[0.035] px-4 py-3">
               <div className="mb-2 flex items-center justify-between">
@@ -350,33 +394,39 @@ export default function DailyAttentionWorkspace({
             </section>
           )}
           {page.length > 0 && (
-            <section aria-label="Attention inbox" className="divide-y divide-white/[0.07]">
-              {page.map((item, index) => (
-                <article key={item.id} data-attention-row
-                  className={'flex items-center gap-2 border-l-[3px] px-3 py-2 transition-colors ' +
-                    (selectedId === item.id ? 'border-amber-300 bg-amber-300/[0.07]'
-                      : item.isOverdue ? 'border-rose-400/70 hover:bg-white/[0.04]'
-                        : 'border-transparent hover:bg-white/[0.04]')}>
-                  <button type="button" aria-label={'Inspect ' + item.title}
-                    aria-pressed={selectedId === item.id}
-                    onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
-                    className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                    <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
-                    <span className="mt-0.5 block truncate text-[11px] text-slate-400">
-                      {label(item.sourceModule)} · {item.sourceRecordId} · {dueLabel(item.dueAt)}
-                    </span>
-                    <span className={'mt-0.5 block text-[10px] ' +
-                      (item.isOverdue ? 'text-rose-200' : 'text-amber-100/70')}>
-                      {item.isOverdue ? 'Overdue · ' : ''}{item.whyRanked}
-                    </span>
-                  </button>
-                  <button type="button" aria-label={'Act on ' + item.title + ' in My Work'}
-                    onClick={() => open(item)}
-                    className="shrink-0 rounded-lg border border-amber-300/35 px-2.5 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/10">
-                    Open <ArrowRight size={13} className="ml-1 inline"/>
-                  </button>
-                </article>
-              ))}
+            <section aria-label="Attention inbox">
+              <div ref={inboxRef} role="list" data-attention-inbox-window="true"
+                style={{height: page.length * ATTENTION_ROW_HEIGHT, position: 'relative'}}>
+                {visibleItems.map(({item, index}) => (
+                  <article key={item.id} role="listitem" data-attention-row
+                    aria-setsize={page.length} aria-posinset={index + 1}
+                    style={{position: 'absolute', top: index * ATTENTION_ROW_HEIGHT,
+                      left: 0, right: 0, height: ATTENTION_ROW_HEIGHT}}
+                    className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-1.5 transition-colors ' +
+                      (selectedId === item.id ? 'border-l-amber-300 bg-amber-300/[0.07]'
+                        : item.isOverdue ? 'border-l-rose-400/70 hover:bg-white/[0.04]'
+                          : 'border-l-transparent hover:bg-white/[0.04]')}>
+                    <button type="button" aria-label={'Inspect ' + item.title}
+                      aria-pressed={selectedId === item.id}
+                      onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
+                      className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                      <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
+                      <span className="mt-0.5 block truncate text-[10px] text-slate-400">
+                        {label(item.sourceModule)} · {item.sourceRecordId} · {item.priority} · {sourceStatus(item)}
+                      </span>
+                      <span className={'mt-0.5 block truncate text-[10px] ' +
+                        (item.isOverdue ? 'text-rose-200' : 'text-amber-100/70')}>
+                        {dueLabel(item.dueAt)} · {item.isOverdue ? 'Overdue · ' : ''}{item.whyRanked}
+                      </span>
+                    </button>
+                    <button type="button" aria-label={'Act on ' + item.title + ' in My Work'}
+                      onClick={() => open(item)}
+                      className="shrink-0 rounded-lg border border-amber-300/35 px-2.5 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/10">
+                      Open <ArrowRight size={13} className="ml-1 inline"/>
+                    </button>
+                  </article>
+                ))}
+              </div>
             </section>
           )}
           {feed.nextCursor && (
@@ -406,7 +456,7 @@ export default function DailyAttentionWorkspace({
             <div><dt className="text-slate-400">Reason prioritised</dt><dd>{selected.whyRanked}</dd></div>
             <div><dt className="text-slate-400">Priority score</dt><dd>{selected.urgencyScore}/100</dd></div>
             <div><dt className="text-slate-400">Deadline</dt><dd>{dueLabel(selected.dueAt)}</dd></div>
-            <div><dt className="text-slate-400">Source status</dt><dd>{selected.status}</dd></div>
+            <div><dt className="text-slate-400">Source status</dt><dd>{sourceStatus(selected)}</dd></div>
             <div><dt className="text-slate-400">SLA</dt><dd>{selected.slaBreachAt ? dueLabel(selected.slaBreachAt) : 'Not supplied by source'}</dd></div>
             <div><dt className="text-slate-400">Record</dt><dd className="break-all">{selected.sourceRecordId}</dd></div>
           </dl>
@@ -444,7 +494,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE
+// VERSION: v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.

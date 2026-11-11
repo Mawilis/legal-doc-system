@@ -1,4 +1,19 @@
-"""EOS certificate for the single canonical WILSY tenant boundary."""
+"""WILSY OS Canonical Tenant Alias Retirement Certificate.
+TITLE: Canonical Tenant and Physical Node Retirement
+VERSION: v1.1.1-PYTHON-TENANT-AUTHORITY-ONLY-SOVEREIGN-METADATA
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Preserves exact dry-run/transaction tenant protections and rejects Node fallback resurrection.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_retire_legacy_root_aliases.py
+COLLABORATION / OWNERSHIP: EOS tenancy and authentication certificate owners.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: v1.1.1-PYTHON-TENANT-AUTHORITY-ONLY-SOVEREIGN-METADATA completes privacy posture without changing tenant retirement assertions.
+CHANGELOG: v1.1.0-PYTHON-TENANT-AUTHORITY-ONLY replaces retained Node middleware assertions with physical absence and canonical Python tenant gates; transaction and Founder invariants remain unchanged.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Read-only source inspection; no tenant records or credentials are read.
+TENANT BOUNDARY: Synthetic tenant assertions only; no tenant data is mutated.
+AUTHORITY BOUNDARY: Retirement regression evidence only; no migration or runtime authority.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
 from __future__ import annotations
 
 import ast
@@ -62,57 +77,28 @@ def test_dry_run_is_default_and_apply_is_explicit() -> None:
 
 
 def test_runtime_tenant_boundaries_have_no_synthetic_root_fallbacks() -> None:
+    """Only the Python tenant authorities survive; no Node fallback remains."""
     root = Path(".")
-    tenant_guard = (root / "server/middleware/tenantGuard.js").read_text(encoding="utf-8")
-    tenant_context = (root / "server/middleware/tenantContext.js").read_text(encoding="utf-8")
-    tenant_resolver = (root / "server/middleware/tenantResolver.js").read_text(encoding="utf-8")
-    tenant_scope = (root / "server/middleware/tenantScope.js").read_text(encoding="utf-8")
-    api_routes = (root / "server/routes/api.js").read_text(encoding="utf-8")
-    auth_controller = (root / "server/controllers/authController.js").read_text(encoding="utf-8")
-    auth_service = (root / "services/auth/authService.js").read_text(encoding="utf-8")
-    tenant_middleware = (root / "server/middleware/tenant.middleware.js").read_text(encoding="utf-8")
-    node_routes = (root / "server/routes/nodeRoutes.js").read_text(encoding="utf-8")
-
-    assert "SOVEREIGN_BYPASS_IDS" not in tenant_guard
-    assert "tenantId = 'GLOBAL_ROOT'" not in tenant_guard
-    assert "tenantId = 'wilsy-sovereign-root'" not in tenant_guard
-    assert "TENANT_CONTEXT_REQUIRED" in tenant_guard
-    assert "ROOT_DB_FALLBACK" not in tenant_context
-    assert "Re-anchoring to Sovereign Root" not in tenant_context
-    assert "TENANT_NOT_FOUND_OR_INACTIVE" in tenant_context
-    assert "TENANT_DATABASE_UNAVAILABLE" in tenant_context
-    assert "tenant_id: tenantId" in tenant_context
-    assert "return store?.tenantId || null" in tenant_context
-    assert "WILSYTENANT-4CD2FZ4O" in tenant_resolver
-    assert "TENANT_NOT_AUTHORIZED" in tenant_resolver
-    assert "retiredAliases" not in tenant_resolver
-    assert "req.tenantId || req.context?.tenantId || 'GLOBAL_ROOT'" not in tenant_scope
-    assert "'GLOBAL_ROOT'" not in api_routes
-    assert "wilsy-sovereign-root" not in auth_controller
-    assert "WILSY_ROOT" not in auth_service.split("const resolvedTenantId", 1)[0]
-    assert "tenantId || 'wilsy-sovereign-root'" not in tenant_middleware
-    assert "req.tenantId !== 'WILSY_ROOT'" not in node_routes
+    for path in ("server/middleware/tenantGuard.js", "server/middleware/tenantContext.js", "server/routes/api.js", "server/controllers/authController.js", "services/auth/authService.js"):
+        assert not (root / path).exists()
+    source = (root / "tools/eos/saas/auth/auth_registry.py").read_text()
+    assert "AUTH_TENANT_CANONICAL_INVALID" in source
+    assert "_require_canonical_tenant" in source
+    assert "DEFAULT_TENANT" not in source
 
 
-def test_retirement_uses_canonical_kernel_uri_resolution() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(encoding="utf-8")
-    assert "from tools.eos.kernel.db import resolve_mongo_uri" in source
-    assert "uri = resolve_mongo_uri()" in source
-    assert 'uri = os.getenv("MONGODB_URI")' not in source
-
-
-def test_every_request_boundary_admits_only_the_canonical_wilsy_tenant() -> None:
+def test_no_node_root_id_backfill_or_membership_inference_survives() -> None:
+    """Removal cannot be replaced with a synthetic tenant fallback in EOS."""
     root = Path(".")
-    guard = (root / "server/middleware/tenantGuard.js").read_text(encoding="utf-8")
-    context = (root / "server/middleware/tenantContext.js").read_text(encoding="utf-8")
-    scope = (root / "server/middleware/tenant.middleware.js").read_text(encoding="utf-8")
-    resolver = (root / "server/middleware/tenantResolver.js").read_text(encoding="utf-8")
+    source = (root / "tools/eos/auth/tenant_membership_repository.py").read_text()
+    assert '"principal_id": principal_id, "tenant_id": tenant_id' in source
+    for path in ("backfillRoles.js", "reset_admin.js", "server/middleware/tenant.middleware.js"):
+        assert not (root / path).exists()
 
-    for source in (guard, context, scope, resolver):
-        assert "WILSYTENANT-4CD2FZ4O" in source
-        assert "TENANT_NOT_AUTHORIZED" in source
-    assert "'MASTER'" not in guard
-    assert "RETIRED_TENANT_ALIASES" not in guard
-    assert "process.env.DEFAULT_TENANT" not in context
-    assert "canBypassTenant" not in guard
-    assert "tenantId || requestedTenantId" not in scope
+# ARTIFACT: Canonical Tenant Alias Retirement Certificate
+# VERSION: v1.1.1-PYTHON-TENANT-AUTHORITY-ONLY-SOVEREIGN-METADATA
+# AUTHORITY BOUNDARY: Offline source certification, no migration authority.
+# TENANT POSTURE: Founder and exact tenant protections remain mandatory.
+# FAIL-CLOSED POSTURE: No Node or synthetic root authority.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

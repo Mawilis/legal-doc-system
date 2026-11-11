@@ -1,7 +1,7 @@
 """Direct mount certificate for Legal Storefront public-intent admission.
 
 TITLE: Wilsy OS Legal Storefront Public Intent Server Mount Certificate
-VERSION: v1.0.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-SERVER-MOUNT-CERT
+VERSION: v1.0.2-L8-9C-SERVER-V1.43-DECLARATION-COUNT
 AUTHORITY: Wilsy OS Core Governance / application-composition certification.
 EPITOME: Prove server.py mounts the directly and Real-Mongo-certified L8-9C
          public-intent router exactly once under /api and bootstraps the L8-9B
@@ -11,6 +11,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Certificate owns only application-composition and
                             infrastructure-bootstrap observations.
 CERTIFICATION / UPDATE DATE: 2026-10-12
+CHANGELOG: 2026-11-10 v1.0.2-L8-9C-SERVER-V1.43-DECLARATION-COUNT aligns the four current server-version declarations in the certificate; route and index assertions are unchanged.
+CHANGELOG: 2026-11-10 v1.0.1-L8-9C-SERVER-V1.43-ALIGNMENT pins the composition certificate to the current v1.43 server; route and index assertions are unchanged.
 CHANGELOG: 2026-10-12 v1.0.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-SERVER-MOUNT-CERT
            establishes the exact effective POST route, one canonical /api mount,
            current server-version alignment, and both required Storefront index
@@ -39,11 +41,11 @@ from tools.eos.api.legal_storefront_public_intent_router import (
 
 
 VERSION = (
-    "v1.0.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-SERVER-MOUNT-CERT"
+    "v1.0.2-L8-9C-SERVER-V1.43-DECLARATION-COUNT"
 )
 
 EXPECTED_SERVER_VERSION = (
-    "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
+    "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
 )
 
 EXPECTED_PATH = "/api/legal-storefront/public-intents"
@@ -152,7 +154,7 @@ def test_server_version_surfaces_are_exactly_aligned() -> None:
     assert f'VERSION = "{EXPECTED_SERVER_VERSION}"' in source
     assert f"# VERSION: {EXPECTED_SERVER_VERSION}" in source
 
-    assert source.count(EXPECTED_SERVER_VERSION) == 3
+    assert source.count(EXPECTED_SERVER_VERSION) == 4
 
 
 def test_server_composition_does_not_copy_storefront_authority() -> None:
@@ -225,7 +227,7 @@ def test_storefront_mount_does_not_widen_method_or_route_surface() -> None:
 
 
 # ARTIFACT: test_legal_storefront_public_intent_server_mount.py
-# VERSION: v1.0.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-SERVER-MOUNT-CERT
+# VERSION: v1.0.2-L8-9C-SERVER-V1.43-DECLARATION-COUNT
 # AUTHORITY BOUNDARY: canonical server composition and bootstrap evidence only
 # TENANT POSTURE: explicitly pre-tenant; no tenant authority created by mount
 # AI POSTURE: no WILSY AI invocation, inference, entitlement or authority

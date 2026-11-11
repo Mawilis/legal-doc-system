@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Authorised Work Calendar Component Certification
- * VERSION: v1.1.0-CIVIL-DATE-KEYBOARD-CERTIFICATE
+ * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-CERTIFICATE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certify source-owned action handoff, civil dates, local instants,
- *          DST boundaries, keyboard focus and date/month/year navigation.
+ *          DST boundaries, keyboard focus, day/week/month views and navigation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyWorkDeadlineCalendar.jsx; client certification CI.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-CIVIL-DATE-KEYBOARD-CERTIFICATE retains all original cases
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v1.2.0-CIVIL-DATE-DAY-WEEK-CERTIFICATE proves single-day and
+ *            Monday-first week views use the selected dates and preserve
+ *            source-owned agenda handoff, while retaining month-view coverage.
+ *            v1.1.0-CIVIL-DATE-KEYBOARD-CERTIFICATE retains all original cases
  *            and adds malformed-date, date-only, timezone/DST, roving focus,
  *            month/year boundary, overdue and live source-readback coverage.
  *            v1.0.0-CALENDAR-DATE-ACTION-CERTIFICATE added actionable calendar
@@ -43,6 +46,16 @@ const items = [
     source: 'CRM', source_key: 'CRM:UNDATED-3', work_item_id: 'UNDATED-3',
     title: 'Contact account owner', priority: 'NORMAL',
     status: 'OPEN', is_overdue: false, due_at: null,
+  },
+];
+const datedWeekItems = [
+  {
+    ...items[0], source_key: 'OPERATIONS:WEEK-9', work_item_id: 'WEEK-9',
+    title: 'Prepare Monday dispatch', due_at: '2026-11-09',
+  },
+  {
+    ...items[1], source_key: 'LEGAL:WEEK-10', work_item_id: 'WEEK-10',
+    title: 'Review Tuesday contract', due_at: '2026-11-10T12:00:00+02:00',
   },
 ];
 
@@ -144,6 +157,34 @@ describe('EOS source-backed deadline calendar', () => {
     expect(screen.getByText('Approve supplier delivery')).toBeTruthy();
   });
 
+  it('shows the selected day and advances its agenda by one actual civil date', () => {
+    freezeToday();
+    render(<WilsyWorkDeadlineCalendar items={datedWeekItems} onOpenWork={vi.fn()}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Day view' }));
+    const dayGroup = within(screen.getByRole('group', { name: 'Choose work deadline date' }));
+    expect(dayGroup.getAllByRole('button')).toHaveLength(1);
+    expect(dateButton(2026, 11, 9, 1).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('Prepare Monday dispatch')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next day' }));
+    expect(dateButton(2026, 11, 10, 1).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('Review Tuesday contract')).toBeTruthy();
+    expect(screen.queryByText('Prepare Monday dispatch')).toBeNull();
+  });
+
+  it('shows one Monday-first week and advances by seven days without losing counts', () => {
+    freezeToday();
+    render(<WilsyWorkDeadlineCalendar items={datedWeekItems} onOpenWork={vi.fn()}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Week view' }));
+    const dayGroup = within(screen.getByRole('group', { name: 'Choose work deadline date' }));
+    expect(dayGroup.getAllByRole('button')).toHaveLength(7);
+    expect(dateButton(2026, 11, 9, 1)).toBeTruthy();
+    expect(dateButton(2026, 11, 15, 0)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    expect(dayGroup.getAllByRole('button')).toHaveLength(7);
+    expect(dateButton(2026, 11, 16, 0)).toBeTruthy();
+    expect(dateButton(2026, 11, 22, 0)).toBeTruthy();
+  });
+
   it('uses one tab stop and moves real focus by day and week', () => {
     freezeToday();
     render(<WilsyWorkDeadlineCalendar items={[]} onOpenWork={vi.fn()}/>);
@@ -209,9 +250,10 @@ describe('EOS source-backed deadline calendar', () => {
     expect(monthWorkDays(null)).toEqual([]);
   });
 });
+
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.test.jsx
- * VERSION: v1.1.0-CIVIL-DATE-KEYBOARD-CERTIFICATE
+ * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-CERTIFICATE
  * AUTHORITY BOUNDARY: Deterministic component certification, not runtime IAM.
  * TENANT POSTURE: Synthetic source-shaped work; no tenant persistence.
  * FAIL-CLOSED POSTURE: Invalid dates reject; source removal removes agenda work.

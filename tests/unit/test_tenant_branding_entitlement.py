@@ -1,15 +1,18 @@
 """Direct certificate for the D21B2 tenant branding entitlement domain.
 
 TITLE: Tenant Branding Entitlement Direct Certificate
-VERSION: v1.0.0-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT
+VERSION: v1.0.1-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact D21B1 policy binding, tenant isolation, source-evidence
          requirements, lifecycle integrity and brand-profile/authority firewalls.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_branding_entitlement.py
 COLLABORATION / OWNERSHIP: Evidence-only direct certificate for the D21B2
                             tenant branding entitlement domain.
-CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT establishes direct
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT verifies provider-SDK
+           import purity in a fresh interpreter so the result is independent
+           of imports performed by other tests.
+           v1.0.0-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT establishes direct
            evidence for exact four-tier D21B1 binding, pending/active/suspended/
            revoked lifecycle semantics, strict evidence/integrity handling and
            separation from brand-profile assets, IAM, subscription/commercial
@@ -383,14 +386,29 @@ def test_immutability_and_authority_firewalls() -> None:
 
 def test_no_runtime_side_effect_imports() -> None:
     """Pure domain import must not load network/provider SDK authority."""
+    import subprocess
     import sys
+    from pathlib import Path
 
-    assert "requests" not in sys.modules
-    assert "boto3" not in sys.modules
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.domain.tenant_branding_entitlement'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ARTIFACT: test_tenant_branding_entitlement.py
-# VERSION: v1.0.0-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT
+# VERSION: v1.0.1-D21B2-TENANT-BRANDING-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: direct entitlement-domain evidence only; no persistence, brand-profile approval or IAM
 # TENANT POSTURE: synthetic exact tenant/D21B1-tier bindings only
 # FAIL-CLOSED POSTURE: policy drift, malformed evidence, stale revisions, corruption and illegal transitions reject

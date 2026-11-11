@@ -1,4 +1,20 @@
-"""Tenant Legal Operating Model WilsyAPIServer mount certificate."""
+"""WILSY OS Tenant Legal Operating Model Server Mount Certificate.
+TITLE: Tenant Legal Operating Model Server Mount Certificate
+VERSION: v1.0.1-CX26-R3-SERVER-V1.43-ALIGNMENT
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Verifies the canonical tenant legal operating-model route mount and
+         current server version without creating legal or financial authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_legal_operating_model_server_mount.py
+COLLABORATION / OWNERSHIP: Python EOS API composition and tenant legal operating-model owners.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: v1.0.1-CX26-R3-SERVER-V1.43-ALIGNMENT completes the sovereign header and end seal and pins the mount certificate to the current v1.43 server; route assertions are unchanged.
+CHANGELOG: v1.0.0-CX26-R3-WILSY-API-SERVER-MOUNT-CERT established exact route and source-mount assertions.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Static route composition inspection only; no tenant records are accessed.
+TENANT BOUNDARY: The certificate grants no tenant access or operating-model authority.
+AUTHORITY BOUNDARY: Route mount evidence only; Python EOS remains the sole authorization source.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution and settlement.
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -71,7 +87,7 @@ def test_canonical_mount_source_occurs_once() -> None:
 def test_canonical_server_version_and_financial_boundary() -> None:
     assert (
         server_api.VERSION
-        == "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
+        == "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
     )
 
     source = Path(
@@ -88,5 +104,9 @@ def test_canonical_server_version_and_financial_boundary() -> None:
 
 
 # ARTIFACT: test_tenant_legal_operating_model_server_mount.py
-# VERSION: v1.0.0-CX26-R3-WILSY-API-SERVER-MOUNT-CERT
+# VERSION: v1.0.1-CX26-R3-SERVER-V1.43-ALIGNMENT
+# AUTHORITY BOUNDARY: Route mount evidence only; Python EOS owns authorization.
+# TENANT POSTURE: No tenant access or operating-model authority is created.
+# FAIL-CLOSED POSTURE: Missing, duplicate, or mismatched route/version fails.
+# FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT

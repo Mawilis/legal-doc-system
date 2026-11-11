@@ -1,7 +1,7 @@
 """Direct certificate for D21B4A tenant branding profile selection facts.
 
 TITLE: Tenant Branding Profile Selection Direct Certificate
-VERSION: v1.0.0-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT
+VERSION: v1.0.1-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove selection-time ACTIVE-entitlement/profile correlation, revision
          lineage, integrity and historical-only authority boundaries.
@@ -9,8 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Direct certificate for D21B4A immutable selection
                             facts; D21B4B will own persistence/current-pointer
                             CAS and runtime projection remains later.
-CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT establishes
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT verifies
+           provider-SDK import purity in a fresh interpreter, independent of
+           imports performed by other tests.
+           v1.0.0-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT establishes
            direct evidence for initial/subsequent selection lineage, exact
            D21B3 profile and current ACTIVE D21B2 correlation, cross-tenant/
            stale-provenance rejection, SHA3-512 integrity and strict exclusion
@@ -465,14 +468,29 @@ def test_immutability_and_financial_authority_firewall() -> None:
 
 def test_no_runtime_side_effect_imports() -> None:
     """Pure selection domain import must not load provider/network SDK authority."""
+    import subprocess
     import sys
+    from pathlib import Path
 
-    assert "requests" not in sys.modules
-    assert "boto3" not in sys.modules
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.domain.tenant_branding_profile_selection'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ARTIFACT: test_tenant_branding_profile_selection.py
-# VERSION: v1.0.0-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT
+# VERSION: v1.0.1-D21B4A-TENANT-BRANDING-PROFILE-SELECTION-CERT
 # AUTHORITY BOUNDARY: direct historical selection evidence only; no durable currentness, browser, asset resolution or IAM
 # TENANT POSTURE: synthetic exact tenant/profile/current-ACTIVE-entitlement composition only
 # FAIL-CLOSED POSTURE: inactive/mismatched entitlement, invalid lineage, malformed evidence, schema drift and corruption reject

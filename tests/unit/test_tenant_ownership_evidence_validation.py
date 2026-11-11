@@ -1,4 +1,22 @@
-"""Adversarial conformance tests for ownership evidence validators."""
+"""TITLE: Tenant Ownership Evidence Validation Certificate.
+VERSION: v1.0.1-P8-OWNERSHIP-EVIDENCE-VALIDATION-CERT
+AUTHORITY: Deterministic source-evidence validation and replay-ledger tests.
+EPITOME: Certifies registry-currentness, subject proofing, cryptographic
+         signing, independent recovery decisions, and transaction-bound replay
+         consumption without issuing tenant ownership or recovery authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_ownership_evidence_validation.py
+COLLABORATION / OWNERSHIP: Exercises canonical ownership evidence validation
+                           and provider-port contracts.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-P8-OWNERSHIP-EVIDENCE-VALIDATION-CERT creates the replay
+           validation window from the operation's current evaluation instant,
+           avoiding collection-time expiry during the full Python suite.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Ephemeral Ed25519 keys and synthetic opaque evidence.
+TENANT BOUNDARY: Replay keys and decisions remain exact-tenant scoped.
+AUTHORITY BOUNDARY: Validators and replay ledger grant no ownership or recovery action.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+"""
 from __future__ import annotations
 
 from dataclasses import replace
@@ -177,8 +195,9 @@ def test_signing_rejects_tampered_signature() -> None:
 
 
 def recovery_fixture(keys: Keys):
+    evaluated_at = datetime.now(timezone.utc)
     lookup = RecoveryDecisionLookup(
-        "tenant-1", "entity-1", "case-1", fp("case"), "successor-1", NOW,
+        "tenant-1", "entity-1", "case-1", fp("case"), "successor-1", evaluated_at,
     )
     receipt = RecoveryDecisionReceipt(
         authority_id="independent-recovery", trust_root_reference="recovery-root",
@@ -187,7 +206,8 @@ def recovery_fixture(keys: Keys):
         recovery_case_fingerprint=fp("case"), successor_principal_id="successor-1",
         quorum_fingerprint=fp("quorum"), conflict_check_fingerprint=fp("conflicts"),
         notice_and_objection_fingerprint=fp("notice"), appeal_status="RESOLVED",
-        issued_at=NOW - timedelta(minutes=2), valid_until=NOW + timedelta(hours=1),
+        issued_at=evaluated_at - timedelta(minutes=2),
+        valid_until=evaluated_at + timedelta(hours=1),
         revocation_reference="revocation-1",
     )
     message = recovery_decision_message(lookup, receipt, "key-1", 3, "nonce-1")
@@ -351,3 +371,13 @@ def test_signing_rejects_algorithm_downgrade() -> None:
     receipt = replace(signed_receipt(request, keys), algorithm="RSA-PSS")
     with pytest.raises(OwnershipEvidenceValidationError, match="SIGNING_ALGORITHM_UNSUPPORTED"):
         verify_signing_receipt(request, receipt, keys)
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_tenant_ownership_evidence_validation.py
+# VERSION: v1.0.1-P8-OWNERSHIP-EVIDENCE-VALIDATION-CERT
+# AUTHORITY BOUNDARY: evidence validation and replay persistence tests only
+# TENANT POSTURE: exact tenant-bound evidence and replay scopes
+# FAIL-CLOSED POSTURE: stale, invalid, replayed, or provider-unavailable evidence rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,7 +1,7 @@
 """Direct certificate for the D21B3 approved tenant branding profile domain.
 
 TITLE: Tenant Branding Profile Direct Certificate
-VERSION: v1.0.0-D21B3-TENANT-BRANDING-PROFILE-CERT
+VERSION: v1.0.1-D21B3-TENANT-BRANDING-PROFILE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove ACTIVE D21B2 binding, D21B1 capability gates, opaque asset
          evidence, profile integrity and legacy/financial authority firewalls.
@@ -9,8 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Evidence-only direct certificate for D21B3 profile
                             authority; persistence/current selection and asset
                             resolution remain deliberately outside this scope.
-CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D21B3-TENANT-BRANDING-PROFILE-CERT establishes direct
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-D21B3-TENANT-BRANDING-PROFILE-CERT verifies provider-SDK
+           import purity in a fresh interpreter so the result is independent
+           of imports performed by other tests.
+           v1.0.0-D21B3-TENANT-BRANDING-PROFILE-CERT establishes direct
            evidence for exact ACTIVE entitlement binding, tier-gated logo/
            colours/email-display/favicon material, mandatory WILSY trust mark,
            opaque asset-reference discipline, strict approval/source evidence,
@@ -415,14 +418,29 @@ def test_immutability_and_authority_firewalls() -> None:
 
 def test_no_runtime_side_effect_imports() -> None:
     """Pure profile domain import must not load network/provider SDK authority."""
+    import subprocess
     import sys
+    from pathlib import Path
 
-    assert "requests" not in sys.modules
-    assert "boto3" not in sys.modules
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.domain.tenant_branding_profile'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ARTIFACT: test_tenant_branding_profile.py
-# VERSION: v1.0.0-D21B3-TENANT-BRANDING-PROFILE-CERT
+# VERSION: v1.0.1-D21B3-TENANT-BRANDING-PROFILE-CERT
 # AUTHORITY BOUNDARY: direct approved-profile evidence only; no persistence/current selection, asset resolution, browser or IAM
 # TENANT POSTURE: synthetic exact tenant/ACTIVE-D21B2 bindings only
 # FAIL-CLOSED POSTURE: inactive entitlement, capability mismatch, raw asset location, malformed evidence and corruption reject

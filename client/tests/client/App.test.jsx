@@ -1,16 +1,17 @@
 /**
- * @file App.test.jsx
- * @module WilsyOS/Tests/MasterController
- * @author Wilson Khanyezi (Founder & Architect, Wilsy OS)
- * @description Institutional integration test suite verifying the 3FA authentication funnel,
- * sovereign discovery, and secure tenant session restoration with absolute precision, zero latency,
- * and cryptographic verification under billion-dollar production standards.
- * @epitome "Establish thou the work of our hands upon us; yea, the work of our hands establish thou it." (Psalm 90:17)
- * @collaboration-comments Production-ready integration suite featuring multi-strategy resilient DOM locators, fault-tolerant asynchronous assertions, complete environment isolation, and immutable audit trails.
- * @version 2.3.0-post-mfa-bootstrap-certificate
- * @changelog 2.3.0-post-mfa-bootstrap-certificate — Repairs the localStorage
- * harness and aligns persisted workspace fixtures with the fail-closed router.
- * @security POPIA/GDPR compliant session handling, timing-safe evaluations, and cryptographic integrity checks.
+ * TITLE: WILSY OS Authentication and Tenant Discovery Integration Certificate
+ * VERSION: v2.4.0-AUTH-TENANT-TRANSPORT-MOCK-CERT
+ * AUTHORITY: Python EOS owns authentication, membership, MFA and session truth.
+ * EPITOME: Certifies client discovery and tenant-context clearing without granting browser authority.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/App.test.jsx
+ * COLLABORATION / OWNERSHIP: App, AuthProvider, tenant transport and client test harness.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v2.4.0-AUTH-TENANT-TRANSPORT-MOCK-CERT adds the current tenant transport setter mock.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic identity only; no live network or credentials.
+ * TENANT BOUNDARY: Saved workspace is a selector only; EOS owns membership.
+ * AUTHORITY BOUNDARY: Client integration evidence only.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 
 import React from 'react';
@@ -35,6 +36,7 @@ vi.mock('../../src/services/api', () => ({
     delete: vi.fn().mockResolvedValue({ data: {} }),
   },
   discoverTenant: vi.fn().mockResolvedValue({ tenant: 'MASTER' }),
+  setActiveTenantTransportId: vi.fn(),
   getTelemetry: vi.fn().mockResolvedValue({ status: 'healthy' }),
   // Add any other API functions used by App.jsx here
 }));
@@ -155,7 +157,12 @@ describe('🏛️ Wilsy OS - Master Controller (App) Integrity', () => {
 });
 
 /**
- * @certification Wilsy OS Institutional Seal — App.test.jsx Integrity Verified
- * @status PRODUCTION_CERTIFIED
- * @audit-hash SHA-256:7c9e8f2b1a4d6c3e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e
+ * WILSY OS SOVEREIGN ARTIFACT SEAL
+ * ARTIFACT: client/tests/client/App.test.jsx
+ * VERSION: v2.4.0-AUTH-TENANT-TRANSPORT-MOCK-CERT
+ * AUTHORITY BOUNDARY: deterministic client integration evidence only
+ * TENANT POSTURE: saved tenant is a selector; Python EOS owns membership and admission
+ * FAIL-CLOSED POSTURE: mock changes cannot grant or persist authenticated authority
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

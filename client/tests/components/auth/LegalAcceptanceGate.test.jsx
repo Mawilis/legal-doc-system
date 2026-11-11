@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Legal Admission Interaction-Shell Direct Certificate
- * VERSION: v1.7.1-DOM-COMPATIBLE-RECORD-SCROLL-RESET-CERT
+ * VERSION: v1.7.2-SESSION-AND-ABORT-TRANSPORT-CERT
+ * CHANGELOG: v1.7.2-SESSION-AND-ABORT-TRANSPORT-CERT — certifies authenticated API abort propagation and the explicit 401 session-expired response.
  * AUTHORITY: Wilsy OS Core Governance; client projection evidence only
  * EPITOME: Certifies the legal gate as a compact, keyboard- and pointer-usable
  *           operating shell without duplicating Python EOS legal authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/auth/LegalAcceptanceGate.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises LegalAcceptanceGate against the
  *                            server-owned legal-acceptance HTTP contract.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * CHANGELOG: v1.7.1 certifies the DOM-compatible scrollTop/scrollLeft reset
  *            used by focus-mode record navigation without requiring scrollTo.
  *            v1.7.0 certified that focus-mode navigation resets the bounded
@@ -198,7 +199,10 @@ describe('LegalAcceptanceGate institutional interaction shell', () => {
     expect(api.post).toHaveBeenCalledWith('/legal-acceptance/accept', {
       document_id: 'charter-v1', document_version: '1.0.0-APPROVED', document_sha3_512: digest,
       acceptance_method: 'ACKNOWLEDGEMENT', locale: 'en-ZA',
-    }, { headers: { 'Idempotency-Key': expect.any(String) } });
+    }, expect.objectContaining({
+      headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }),
+      signal: expect.any(AbortSignal),
+    }));
   });
 
   it('does not optimistically mark a record before server confirmation', async () => {
@@ -324,12 +328,12 @@ describe('LegalAcceptanceGate institutional interaction shell', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('reports bounded server detail and HTTP status', async () => {
+  it('reports the authenticated session-expired state for an HTTP 401', async () => {
     api.get.mockRejectedValue({ response: { status: 401, data: { detail: 'LEGAL_ACCEPTANCE_STATUS_UNAVAILABLE' } } });
     render(<LegalAcceptanceGate />);
     const alert = (await screen.findAllByRole('alert'))[1];
-    expect(alert).toHaveTextContent('LEGAL_ACCEPTANCE_STATUS_UNAVAILABLE');
-    expect(alert).toHaveTextContent('HTTP 401');
+    expect(alert).toHaveTextContent('SESSION VERIFICATION REQUIRED');
+    expect(alert).toHaveTextContent('SESSION_EXPIRED · HTTP 401');
     expect(alert).not.toHaveTextContent('Request failed with status code');
   });
 
@@ -347,7 +351,7 @@ describe('LegalAcceptanceGate institutional interaction shell', () => {
 });
 
 // ARTIFACT: LegalAcceptanceGate.test.jsx
-// VERSION: v1.7.1-DOM-COMPATIBLE-RECORD-SCROLL-RESET-CERT
+// VERSION: v1.7.2-SESSION-AND-ABORT-TRANSPORT-CERT
 // AUTHORITY BOUNDARY: deterministic client projection certificate only
 // TENANT POSTURE: server-issued plan is displayed; no local legal truth
 // FAIL-CLOSED POSTURE: unavailable or incomplete status never opens workspace

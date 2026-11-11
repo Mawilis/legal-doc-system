@@ -1,12 +1,14 @@
 /**
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.6.0-AUTHENTICATED-OVERVIEW-SOURCE-SYNC
+ * VERSION: v1.6.2-HQ-WORKSPACE-COMPLETE-SEAL
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.6.2-HQ-WORKSPACE-COMPLETE-SEAL adds the required financial-execution authority end-seal field; certificate behavior is unchanged.
+ * CHANGELOG: v1.6.1-HQ-WORKSPACE-SOVEREIGN-POSTURE completes privacy, tenant, and financial-boundary metadata without changing certificate behavior.
  * CHANGELOG: v1.6.0-AUTHENTICATED-OVERVIEW-SOURCE-SYNC uses an exact
  *            authenticated tenant/principal fixture for Headquarters, full
  *            source-owned My Work coverage, and confirms the executive
@@ -19,6 +21,9 @@
  *            v1.2.0 covers explicit server refresh controls for My Work and HR requisitions.
  *            v1.1.0 covers P0 KPI source states and tenant-scoped HR requisition read presentation.
  * COMPLIANCE: POPIA section 19, GDPR Article 32, SOC 2 CC7.2
+ * SECURITY / PRIVACY POSTURE: Synthetic fixtures only; no credentials or production records are read.
+ * TENANT BOUNDARY: Test identities represent exact server-scoped tenant and principal projections.
+ * FINANCIAL AUTHORITY BOUNDARY: Presentation tests cannot authorize payment, execution, or settlement.
  * AUTHORITY BOUNDARY: Presentation evidence only; no authorization is granted by these tests.
  */
 import React from 'react';
@@ -278,9 +283,10 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.6.0-AUTHENTICATED-OVERVIEW-SOURCE-SYNC
+ * VERSION: v1.6.2-HQ-WORKSPACE-COMPLETE-SEAL
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
+ * FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively owns execution.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

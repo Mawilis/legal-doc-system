@@ -1,15 +1,17 @@
 """WILSY OS direct certificate for the F6 issuer seams.
 
 TITLE: AuthRegistry ACCESS and PRE_AUTH Issuer Direct Certificate
-VERSION: v1.0.0-R10C2F7-AUTH-REGISTRY-ACCESS-PREAUTH-ISSUER-CERT
+VERSION: v1.1.0-CONSOLIDATION-CURRENT-ISSUER-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the explicit AuthRegistry ACCESS and PRE_AUTH
          issuer boundaries without changing production or contacting MongoDB.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_auth_registry_access_pre_auth_issuer.py
 COLLABORATION / OWNERSHIP: Uses deterministic in-memory collections and the
                            frozen JWT provider; no external state is accessed.
-CERTIFICATION / UPDATE DATE: 2026-09-22
+CERTIFICATION / UPDATE DATE: 2026-11-10
 CHANGELOG:
+  v1.1.0-CONSOLIDATION-CURRENT-ISSUER-CERT — Advances tenant resolver doubles to the caller-session contract and preserves exact issuer/legacy scope assertions.
+
   v1.0.0-R10C2F7-AUTH-REGISTRY-ACCESS-PREAUTH-ISSUER-CERT — Certifies fresh
     durable credential-revision binding for ACCESS issuance, explicit PRE_AUTH
     issuance without a revision read, transitional generic compatibility,
@@ -94,7 +96,7 @@ class _RecordingDatabase:
 
 class _TenantRegistry:
     @staticmethod
-    def resolve_canonical_tenant(value: object, allow_alias: bool = False) -> SimpleNamespace:
+    def resolve_canonical_tenant(value: object, allow_alias: bool = False, session: Any = None) -> SimpleNamespace:
         if value not in {"TENANT-ONE", "TENANT-TWO"}:
             raise ValueError("tenant is not canonical")
         return SimpleNamespace(tenant_id=value)
@@ -165,9 +167,11 @@ def test_public_issuer_signatures_are_exact() -> None:
     pre_auth = inspect.signature(AuthRegistry.generate_pre_auth_jwt)
     generic = inspect.signature(AuthRegistry.generate_jwt)
     session_creation = inspect.signature(AuthRegistry.create_session)
-    assert list(access.parameters) == ["self", "user_id", "tenant_id", "role", "permissions", "session"]
+    assert list(access.parameters) == ["self", "user_id", "tenant_id", "role", "permissions", "session", "session_reference"]
     assert access.parameters["session"].kind is inspect.Parameter.KEYWORD_ONLY
     assert access.parameters["session"].default is None
+    assert access.parameters["session_reference"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert access.parameters["session_reference"].default is None
     assert list(pre_auth.parameters) == ["self", "user_id", "tenant_id", "role", "permissions"]
     assert list(generic.parameters) == ["self", "user_id", "tenant_id", "role", "permissions"]
     assert list(session_creation.parameters) == ["self", "user", "session"]
@@ -392,6 +396,8 @@ def test_create_session_uses_access_issuer_and_preserves_exact_session(
     assert claims is not None
     assert claims["token_purpose"] == "ACCESS"
     assert claims["credential_revision"] == 17
+    assert claims["session_reference"] == created.sessionReference
+    assert access_calls[0]["kwargs"]["session_reference"] == created.sessionReference
     assert len(access_calls) == 1
     assert access_calls[0]["kwargs"]["session"] is sentinel
     assert database.collections["sessions"].calls[-1][2]["session"] is sentinel
@@ -479,7 +485,7 @@ def test_certificate_self_identity_and_scope() -> None:
     module = inspect.getmodule(test_certificate_self_identity_and_scope)
     assert module is not None
     source = inspect.getsource(module)
-    version = "v1.0.0-R10C2F7-AUTH-REGISTRY-ACCESS-PREAUTH-ISSUER-CERT"
+    version = "v1.1.0-CONSOLIDATION-CURRENT-ISSUER-CERT"
     version_lines = [
         line for line in source.splitlines()
         if line.startswith("VERSION:") or line.lstrip().startswith(version)
@@ -492,7 +498,7 @@ def test_certificate_self_identity_and_scope() -> None:
 
 """
 ARTIFACT: tests/unit/test_auth_registry_access_pre_auth_issuer.py
-VERSION: v1.0.0-R10C2F7-AUTH-REGISTRY-ACCESS-PREAUTH-ISSUER-CERT
+VERSION: v1.1.0-CONSOLIDATION-CURRENT-ISSUER-CERT
 AUTHORITY BOUNDARY: Offline direct evidence for AuthRegistry issuer seams only
 TENANT POSTURE: Exact tenant and principal projections; durable admission remains downstream
 FAIL-CLOSED POSTURE: Malformed, absent, mismatched, or unavailable revision authority cannot issue ACCESS

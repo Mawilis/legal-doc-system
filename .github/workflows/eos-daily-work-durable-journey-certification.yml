@@ -1,13 +1,17 @@
 # TITLE: WILSY OS Real Mongo and Authenticated Daily Work Certification
-# VERSION: v1.1.1-COMPLETE-CERTIFICATION-PATH-TRIGGERS
+# VERSION: v1.2.0-CONSOLIDATION-AUTH-IDENTITY-CERT
 # AUTHORITY: Disposable GitHub test runtime, not production IAM or commerce.
 # EPITOME: Certify current EOS source-owned create/read/complete transactions
 #          through a real replica set and desktop/mobile authenticated browser.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-daily-work-durable-journey-certification.yml
 # COLLABORATION / OWNERSHIP: Python EOS /api/my-work, Operations source,
 #                           run-browser-cert.mjs, Playwright and Mongo fixtures.
-# CERTIFICATION / UPDATE DATE: 2026-11-09
-# CHANGELOG: v1.1.0-CONTINUOUS-BROWSER-OPERATIONS-CERT includes the session-scoped
+# CERTIFICATION / UPDATE DATE: 2026-11-10
+# CHANGELOG: v1.2.0-CONSOLIDATION-AUTH-IDENTITY-CERT extends this existing
+#            gate with strict identity, credential revision, legacy MFA, session
+#            and membership certificates on the exact integrated source.
+#            v1.1.1-COMPLETE-CERTIFICATION-PATH-TRIGGERS expanded path triggers.
+#            v1.1.0-CONTINUOUS-BROWSER-OPERATIONS-CERT includes the session-scoped
 #            read coordinator and its source-currentness regressions in the
 #            existing real-Mongo/browser gate. Weekday browser verification
 #            complements every PR change; human acceptance remains separate.
@@ -24,6 +28,13 @@ name: EOS Daily Work Durable Journey Certification
 on:
   pull_request:
     paths:
+      - "tools/eos/saas/auth/auth_registry.py"
+      - "tests/unit/test_auth_registry_credential_revision.py"
+      - "tests/unit/test_auth_registry_access_pre_auth_issuer.py"
+      - "tests/unit/test_auth_registry_tenant_bearing_refresh.py"
+      - "tests/integration/test_auth_registry_session_currentness_real_mongo.py"
+      - "tests/integration/test_privileged_factor_currentness_auth_http_real_mongo.py"
+      - "tests/integration/test_membership_selection_challenge_mongo.py"
       - "client/src/services/unifiedMyWorkProjection.js"
       - "client/src/services/unifiedMyWorkSync.js"
       - "client/src/__tests__/services/unifiedMyWorkSync.test.js"
@@ -61,6 +72,9 @@ jobs:
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
+      TEST_GLOBAL_PRINCIPAL_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
+      TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE: wilsy_global_principal_mfa_cert
+      TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET: wilsyVendorCertRS
     steps:
       - name: Checkout exact reviewed commit
         uses: actions/checkout@v4
@@ -87,6 +101,15 @@ jobs:
         run: |
           npm ci --legacy-peer-deps --no-audit --no-fund --progress=false
           npm --prefix client ci --no-audit --no-fund --progress=false
+
+      - name: Compile and type-check integrated identity contracts
+        run: |
+          python -m py_compile tools/eos/saas/auth/auth_registry.py tests/unit/test_auth_registry_credential_revision.py tests/unit/test_auth_registry_tenant_bearing_refresh.py tests/unit/test_auth_registry_access_pre_auth_issuer.py tests/integration/test_auth_registry_session_currentness_real_mongo.py tests/integration/test_privileged_factor_currentness_auth_http_real_mongo.py tests/integration/test_membership_selection_challenge_mongo.py
+          npx pyright --pythonpath "$(command -v python)" tools/eos/saas/auth/auth_registry.py tests/unit/test_auth_registry_credential_revision.py tests/unit/test_auth_registry_tenant_bearing_refresh.py tests/unit/test_auth_registry_access_pre_auth_issuer.py
+
+      - name: Certify strict identity and authentication compatibility
+        run: |
+          python -m pytest -q tests/unit/test_auth_registry_*.py tests/unit/test_auth_router_authoritative_mfa.py tests/unit/test_global_principal_access_token_currentness.py tests/unit/test_global_principal_mfa_legacy_migration_service.py
 
       - name: Certify exact-session read coordination before browser acceptance
         run: |
@@ -144,6 +167,18 @@ jobs:
           mkdir -p test-results
           python -m pytest -q -rs \
             --junitxml=test-results/daily-work-real-mongo.xml \
+            tests/integration/test_auth_registry_session_currentness_real_mongo.py \
+            tests/integration/test_privileged_factor_currentness_auth_http_real_mongo.py \
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
+            tests/integration/test_global_principal_totp_verifier_mongo.py \
+            tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_tenant_membership_access_mongo.py \
+            tests/integration/test_tenant_membership_repository_mongo.py \
+            tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_unified_my_work_real_mongo.py
 
       - name: Reject empty or skipped replica-set tests
@@ -195,7 +230,7 @@ jobs:
           retention-days: 7
 
 # ARTIFACT: eos-daily-work-durable-journey-certification.yml
-# VERSION: v1.1.0-CONTINUOUS-BROWSER-OPERATIONS-CERT
+# VERSION: v1.2.0-CONSOLIDATION-AUTH-IDENTITY-CERT
 # AUTHORITY BOUNDARY: GitHub disposable synthetic browser + EOS only.
 # TENANT POSTURE: UUID test database, never production or other tenants.
 # FAIL-CLOSED POSTURE: Absent, skipped or failed tests do not certify.

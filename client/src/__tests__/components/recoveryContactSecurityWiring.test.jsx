@@ -1,7 +1,8 @@
 /**
  * WILSY OS — RECOVERY SECURITY PRODUCT WIRING CERTIFICATE
  * TITLE: Account recovery-contact security wiring direct certificate
- * VERSION: v1.0.0-R10F2-RECOVERY-SECURITY-WIRING-CERT
+ * VERSION: v1.0.1-R10F2-ACCOUNT-VERSION-PARITY-CERT
+ * CHANGELOG: v1.0.1-R10F2-ACCOUNT-VERSION-PARITY-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies that authenticated recovery-email verification is reachable
  *          from Account Security while browser presentation cannot nominate
@@ -10,7 +11,7 @@
  * COLLABORATION / OWNERSHIP: Exercises RecoveryContactSecurityControl at the
  *                            client transport seam and certifies its bounded
  *                            WilsyAccountCommandCenter desktop/mobile wiring.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * CHANGELOG: v1.0.0-R10F2-RECOVERY-SECURITY-WIRING-CERT introduces direct evidence for zero-argument
  *            verification transport, bounded success/rate-limit presentation,
  *            desktop/mobile Security-panel mounting, and rejection of Account
@@ -145,9 +146,11 @@ describe('R10F recovery-contact security product wiring', () => {
 
   it('keeps Account Center sovereign version and recovery authority declarations aligned', () => {
     const source = readFileSync(ACCOUNT_SOURCE, 'utf8');
-    const currentVersion = 'v3.1.0-R10F1-RECOVERY-SECURITY-WIRING';
+    const currentVersion = 'v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER';
+    const recoveryChange = 'v3.1.0-R10F1-RECOVERY-SECURITY-WIRING';
 
     expect((source.match(new RegExp(currentVersion, 'g')) || [])).toHaveLength(3);
+    expect((source.match(new RegExp(recoveryChange, 'g')) || [])).toHaveLength(1);
     expect(source).toContain(
       'Python EOS re-reads durable authenticated principal/email truth',
     );
@@ -160,7 +163,7 @@ describe('R10F recovery-contact security product wiring', () => {
 /**
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: recoveryContactSecurityWiring.test.jsx
- * VERSION: v1.0.0-R10F2-RECOVERY-SECURITY-WIRING-CERT
+ * VERSION: v1.0.1-R10F2-ACCOUNT-VERSION-PARITY-CERT
  * AUTHORITY BOUNDARY: deterministic client presentation/wiring evidence only
  * TENANT POSTURE: no browser tenant/email authority admitted
  * FAIL-CLOSED POSTURE: transport/rate failures never create verified state

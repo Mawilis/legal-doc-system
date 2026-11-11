@@ -15,24 +15,17 @@
     ".wilsy_graph.json",
     ".yamllint",
     "AGENTS.md",
-    "algorithms",
     "ARCHITECTURE.md",
     "artifacts",
-    "backfillRoles.js",
     "bootstrap_wilsy_os.js",
     "build_orchestrator.js",
     "charts",
-    "cleanup-dev-files.sh",
     "client",
     "conftest.py",
     "craco.config.js",
     "CREATE_COMPLETE_PACKAGE.sh",
     "crypto-utils-evidence.json",
     "data",
-    "debug_users.js",
-    "debug-import.js",
-    "deep_scan.js",
-    "deploy-prod.sh",
     "deploy-production.sh",
     "DEPLOYMENT.md",
     "docker-compose.eos.yml",
@@ -61,10 +54,6 @@
     "FG188_Governance_Kernel_Milestone.pdf",
     "FG189_Sovereign_Mesh_Milestone.pdf",
     "FG218_Streaming_Gateway_Verification.pdf",
-    "final_reset.js",
-    "find_db.js",
-    "fix_admin.js",
-    "fix_identity.js",
     "fix_start_scripts.js",
     "fix-tests.patch",
     "fix-yaml.sh",
@@ -73,7 +62,6 @@
     "forensicMapper.js",
     "FRAGMENT_DEFINITION_MAP.txt",
     "generate_fg215_report.py",
-    "generate_wilsy_roadmap.sh",
     "Genesis_Ignition.sh",
     "GlobalLaunchSequence.sh",
     "GOVERNANCE.md",
@@ -114,12 +102,9 @@
     "grafana-sovereign-master-dashboard.json",
     "grafana-sustainability-dashboard.json",
     "grafana-telemetry-dashboard.json",
-    "hashPassword.js",
-    "idpService.js",
     "infra",
     "infrastructure",
     "investor-briefing-script.md",
-    "investor-summary.sh",
     "Jenkinsfile",
     "jest.config.js",
     "jest.debug.js",
@@ -128,10 +113,8 @@
     "knowledge-base",
     "main.py",
     "master_file_map.txt",
-    "middleware",
     "milvus.yaml",
     "mkdr",
-    "models",
     "monitor-production.sh",
     "monitoring",
     "nginx.conf",
@@ -144,9 +127,7 @@
     "package.json",
     "patch_fg190.py",
     "PLAYBOOK.md",
-    "production-ready.sh",
     "prometheus.yml",
-    "promote_me.js",
     "public",
     "pyproject.toml",
     "query_docs.py",
@@ -155,18 +136,12 @@
     "RELEASES.md",
     "repair_billing_syntax.js",
     "repair_launcher.js",
-    "repair_wilsy_json.js",
     "requirements.txt",
-    "reset_admin.js",
     "run_fg231a_pipeline.py",
     "run_sdk_verification.py",
-    "run-forensic-tests.sh",
     "run-mocha-tests.sh",
-    "run-production-audit.sh",
     "run-production-tests.sh",
-    "run-sars-tests.sh",
     "run-simple-tests.sh",
-    "run-test.sh",
     "run-tests.sh",
     "runbook_diagnostic.py",
     "runtime_api_all.txt",
@@ -185,23 +160,17 @@
     "scripts",
     "sdk",
     "SECURITY.md",
-    "seed_fix.js",
     "server",
-    "services",
     "setup_fg215_client.py",
     "setup-tests.sh",
-    "setup.sh",
     "Sovereign_Deployment_Automation.sh",
     "SOVEREIGN_DOCUMENTATION.md",
-    "Sovereign_Handover_Package.sh",
     "src",
     "start_all.sh",
     "start_wilsy_os.sh",
     "swagger",
     "test_sdk.py",
     "test-api.sh",
-    "test-fresh-require.js",
-    "test-model.js",
     "TESTING_PROTOCOL.md",
     "tests",
     "to",
@@ -209,11 +178,9 @@
     "UI_STRUCTURE_MAP.txt",
     "update_orchestrator.js",
     "useWilsyIntelligence.js",
-    "validate-env.sh",
     "var",
     "vector.toml",
     "verify_live_dashboard.py",
-    "verify-lpc-35.2.sh",
     "vitest.config.js",
     "webpack.config.js",
     "wilsy_deep_eos_discovery.py",
@@ -255,6 +222,562 @@
       "pattern": "tools/eos/**"
     },
     {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/controllers/businessArtifactPdfController.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/services/artifacts/wilsyEnterprisePdfRenderer.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/services/qr/qrGenerator.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/package.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/package-lock.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "client/server/**/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "middleware/**/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "models/**/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.mjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.cjs"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.jsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.tsx"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.ts"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "algorithms/**/*.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/package.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**/package-lock.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/config/cron-jobs.yml"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/package.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/package-lock.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/package.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "services/**/package-lock.json"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "Sovereign_Handover_Package.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "backfillRoles.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "cleanup-dev-files.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "debug-import.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "debug_users.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "deep_scan.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "deploy-prod.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "final_reset.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "find_db.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "fix_admin.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "fix_identity.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "generate_wilsy_roadmap.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "hashPassword.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "idpService.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "investor-summary.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "production-ready.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "promote_me.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "repair_wilsy_json.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "reset_admin.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "run-forensic-tests.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "run-production-audit.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "run-sars-tests.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "run-test.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "seed_fix.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "setup.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "test-fresh-require.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "test-model.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "validate-env.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "verify-lpc-35.2.sh"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "server/**"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/seed.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/test-queue-flow.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-account-command-center-production-gate.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-ai-*-proof-harness.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-crm-*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-generate-account-compliance-evidence.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-generate-playbook.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-r72*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "scripts/wilsy-r73*.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "tests/merkle.test.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "tests/unit/qrServices.test.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "tests/integration/qrPaymentFlow.test.js"
+    },
+    {
+      "class": "RETIRED_NODE_BACKEND",
+      "pattern": "tests/unit/subscriptionModel.test.js"
+    },
+    {
       "class": "RETAIN",
       "pattern": ".github/**"
     },
@@ -288,24 +811,81 @@
     },
     {
       "class": "RETAIN",
-      "pattern": "server/controllers/businessArtifactPdfController.js"
+      "pattern": "server/manifest.txt"
     },
     {
       "class": "RETAIN",
-      "pattern": "server/services/artifacts/wilsyEnterprisePdfRenderer.js"
+      "pattern": "server/scripts/rollback-migration-production.patch"
     },
     {
       "class": "RETAIN",
-      "pattern": "server/services/qr/qrGenerator.js"
+      "pattern": "server/scripts/finalize-migration.js"
     },
     {
       "class": "RETAIN",
-      "pattern": "server/package.json"
+      "pattern": "server/scripts/migrate-audit-legacy.js"
     },
     {
       "class": "RETAIN",
-      "pattern": "server/package-lock.json"
+      "pattern": "server/scripts/migrate-case-legacy.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/migrate-documents-tenancy.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/migrate-fixed.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/migrate.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/migration/DocumentMigrationEngine.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/migration/MigrationLogger.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/migration/MigrationRunner.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/rollback-migration.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/rollback-simple.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/verify-migration-state-diagnostic.js"
+    },
+    {
+      "class": "RETAIN",
+      "pattern": "server/scripts/verify-migration-state.js"
     }
   ],
+  "sovereign_artifact": {
+    "authority": "Wilsy OS Core Governance",
+    "authority_boundary": "Classification evidence; cannot authorize runtime, data mutation or financial execution.",
+    "canonical_path": "/Users/wilsonkhanyezi/legal-doc-system/tools/eos/governance/production_surface_policy.json",
+    "changelog": "v1.4.1-PYTHON-EOS-COMPLETE-RETIREMENT-CLASSIFICATION certifies the complete deleted backend surface and the changed-artifact contract metadata; exact historical migrations, server/manifest.txt and the production rollback patch remain RETAIN. Schema version remains 1.",
+    "compliance": "AGENTS.md v1.2.0; tenant-isolation and Python-only runtime governance.",
+    "epitome": "Classifies active Python EOS owners, retired Node runtime paths, and retained migration and institutional evidence without authorizing runtime activation.",
+    "fail_closed_posture": "Unclassified changed runtime surfaces and any resurrected retired Node business entrypoint fail repository integrity.",
+    "financial_authority_boundary": "No payment, execution or settlement authority; Kennel EOS exclusively owns financial execution.",
+    "ownership": "Python EOS runtime and repository governance owners.",
+    "security_privacy_posture": "Path and classification metadata only; no secrets, live tenant records or production systems are read.",
+    "seal": "ARTIFACT: production_surface_policy.json; VERSION: v1.4.1-PYTHON-EOS-COMPLETE-RETIREMENT-CLASSIFICATION; AUTHORITY BOUNDARY: Classification only; TENANT POSTURE: No tenant authority; FAIL-CLOSED POSTURE: Unclassified changed runtime surfaces fail; FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; END OF WILSY OS SOVEREIGN ARTIFACT",
+    "title": "WILSY OS Production Surface Policy",
+    "tenant_boundary": "No tenant records or tenant authority are accessed; classification does not grant cross-tenant capability.",
+    "updated": "2026-11-10",
+    "version": "v1.4.1-PYTHON-EOS-COMPLETE-RETIREMENT-CLASSIFICATION"
+  },
   "version": 1
 }

@@ -1,7 +1,27 @@
-"""Institutional signer HTTP runtime readiness and request-path DDL boundaries."""
+"""WILSY OS Institutional Signer Router Certification.
+
+TITLE: Institutional Signer Router Readiness and Provenance Certificate
+VERSION: v1.0.1-P12C-INSTITUTIONAL-SIGNER-PROVENANCE-CERT
+AUTHORITY: Deterministic HTTP readiness and provenance evidence only.
+EPITOME: Proves enrollment provenance requires current, exact identity-proofing
+         and signatory-mandate records bound to tenant, principal, certificate,
+         and the caller-supplied evidence references.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_institutional_signer_router.py
+COLLABORATION / OWNERSHIP: Exercises the canonical institutional signer router
+                           and enrollment registry contracts.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-P12C-INSTITUTIONAL-SIGNER-PROVENANCE-CERT makes provenance
+           fixtures current at the evaluation instant and supplies exact
+           identity and mandate evidence references to the required API.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic evidence references and fingerprints only.
+TENANT BOUNDARY: Exact tenant, subject principal, and certificate bindings are asserted.
+AUTHORITY BOUNDARY: Evidence provenance does not grant enrollment or signing authority.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+"""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -107,10 +127,10 @@ def _evidence_record(**overrides):
         "evidence_reference": "evidence://source/record-001",
         "status": "ACTIVE",
         "evidence_fingerprint_sha256": "e" * 64,
-        "valid_from": now.replace(year=now.year - 1),
+        "valid_from": now - timedelta(days=365),
         "valid_until": None,
         "revoked": False,
-        "verified_at": now,
+        "verified_at": now - timedelta(seconds=1),
         "tenant_id": "WILSYTENANT-4CD2FZ4O",
         "subject_principal_id": "PRINCIPAL-1",
         "certificate_fingerprint_sha256": "a" * 64,
@@ -130,6 +150,7 @@ def test_signer_route_builds_complete_identity_and_mandate_provenance():
         signatory_mandate=_evidence_record(
             source_system_id="wilsy-company-secretarial-register",
             source_record_id="board-resolution-009",
+            evidence_reference="evidence://source/mandate-009",
             evidence_kind="SIGNATORY_MANDATE",
             legal_entity_reference="WILSY-PTY-LTD",
             mandate_scope="INSTITUTIONAL_SIGNER",
@@ -141,7 +162,7 @@ def test_signer_route_builds_complete_identity_and_mandate_provenance():
         certificate_fingerprint_sha256="a" * 64,
         subject_principal_id="PRINCIPAL-1",
         identity_proofing_reference="evidence://source/record-001",
-        signatory_mandate_reference="evidence://source/record-001",
+        signatory_mandate_reference="evidence://source/mandate-009",
         evaluated_at=now,
     )
     assert snapshot["identity_proofing"]["source_system_id"] == "dha-npr-verification"
@@ -167,6 +188,7 @@ def test_signer_provenance_persists_assurance_and_legal_mandate_scope():
     result = SimpleNamespace(
         identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
         signatory_mandate=_evidence_record(
+            evidence_reference="evidence://source/mandate-009",
             evidence_kind="SIGNATORY_MANDATE",
             legal_entity_reference="WILSY-PTY-LTD",
             mandate_scope="INSTITUTIONAL_SIGNER",
@@ -175,7 +197,10 @@ def test_signer_provenance_persists_assurance_and_legal_mandate_scope():
     snapshot, _digest = router._enrollment_provenance(
         result, tenant_id="WILSYTENANT-4CD2FZ4O",
         certificate_fingerprint_sha256="a" * 64,
-        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+        subject_principal_id="PRINCIPAL-1",
+        identity_proofing_reference="evidence://source/record-001",
+        signatory_mandate_reference="evidence://source/mandate-009",
+        evaluated_at=now,
     )
     assert snapshot["identity_proofing"]["identity_assurance_level"] == "SUBSTANTIAL"
     assert snapshot["signatory_mandate"]["legal_entity_reference"] == "WILSY-PTY-LTD"
@@ -209,7 +234,10 @@ def test_signer_registry_rejects_caller_supplied_provenance_digest_mismatch():
     snapshot, _digest = router._enrollment_provenance(
         result, tenant_id="WILSYTENANT-4CD2FZ4O",
         certificate_fingerprint_sha256="a" * 64,
-        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+        subject_principal_id="PRINCIPAL-1",
+        identity_proofing_reference="evidence://source/record-001",
+        signatory_mandate_reference="evidence://source/record-001",
+        evaluated_at=now,
     )
 
     class _NeverRead:
@@ -234,3 +262,13 @@ def test_signer_registry_rejects_caller_supplied_provenance_digest_mismatch():
             evidence_provenance_snapshot=snapshot,
         )
     assert error.value.code == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH"
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_institutional_signer_router.py
+# VERSION: v1.0.1-P12C-INSTITUTIONAL-SIGNER-PROVENANCE-CERT
+# AUTHORITY BOUNDARY: direct signer HTTP readiness and provenance tests only
+# TENANT POSTURE: exact tenant and evidence subject bindings are required
+# FAIL-CLOSED POSTURE: unavailable, stale, mismatched, or incomplete evidence rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,13 +1,17 @@
 /**
- * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.12.0-PARTNER-CONFLICT-AUTHORITY-AND-EMPTY-STATE-CERT
+ * TITLE: WILSY OS Production Legal Operations Workspace Certificate
+ * VERSION: v1.12.3-PRACTICE-DENIAL-TRUTH-SUITE-LOAD-SOVEREIGN-METADATA
+ * CHANGELOG: v1.12.3-PRACTICE-DENIAL-TRUTH-SUITE-LOAD-SOVEREIGN-METADATA completes artifact ownership metadata without changing certificate behavior.
+ * CHANGELOG: v1.12.2-PRACTICE-DENIAL-TRUTH-SUITE-LOAD-CERT — keeps the two async conflict/attention integration checks within their real 15-second ceiling under full-suite concurrency; assertions are unchanged.
+ * CHANGELOG: v1.12.1-PRACTICE-DENIAL-TRUTH-CERT — asserts denied workspace evidence cannot expose a New instruction action.
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
  *          functional lifecycle navigation, governed intake, ReturnOfService generation, exact
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-30
+ * COLLABORATION / OWNERSHIP: Legal Operations workspace and Python EOS client contract test owners.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * CHANGELOG: 2026-10-30 v1.12.0-PARTNER-CONFLICT-AUTHORITY-AND-EMPTY-STATE-CERT supplies the exact authoritative conflict-review capability to the positive Partner failure-path fixture and verifies the empty runway does not advertise unsupported instruction creation. Negative permission-narrowing coverage remains intact; no production authority changes.
  * CHANGELOG: 2026-10-16 v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT proves Paralegal and Secretary retain the readable review queue without a mutation affordance and proves authoritative permission projection can further narrow Partner presentation.
  *            2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves the governed upload workspace appears only for the Partner presentation envelope and remains absent for Attorney without initiating transport.
@@ -905,7 +909,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Command toolbar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'New instruction' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New instruction' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Trust Center' })).not.toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getLegalClientMatters).not.toHaveBeenCalled();
@@ -1064,7 +1068,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     resolveReview(conflictReviewReceipt('ESCALATION_REQUIRED'));
     await screen.findByText(/Conflict review recorded as ESCALATION_REQUIRED/);
     expect(issueLegalConflictReview.mock.calls[0][0].reviewId).toBe(firstPayload.reviewId);
-  });
+  }, 15_000);
 
   it('retains the same command identity after a 409 and presents bounded server failure', async () => {
     getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
@@ -1141,7 +1145,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Matter Operating Room' }));
     expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
     expect(screen.getByLabelText('Matter Operating Room')).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('keeps the attention queue compact and truthful when certified workspace work is empty', async () => {
     const empty = practiceWorkspace();
@@ -1200,7 +1204,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT
+ * VERSION: v1.12.3-PRACTICE-DENIAL-TRUTH-SUITE-LOAD-SOVEREIGN-METADATA
  * CHANGELOG: 2026-10-16 v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT proves exact role-envelope and authoritative-permission narrowing for conflict-review mutation without removing readable screening truth.
  *            2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves Partner-only presentation without browser authority expansion.
  *            2026-09-28 v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT adds behavioral proof for the compact canonical attention queue, loaded-workspace matter quick view, Matter Operating Room handoff, zero-state truthfulness and Ctrl+K/Escape search behavior without widening browser authority or transport scope.

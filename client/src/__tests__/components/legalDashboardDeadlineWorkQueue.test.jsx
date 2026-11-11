@@ -1,16 +1,20 @@
 /**
- * WILSY OS — LEGAL MATTER DEADLINE WORK QUEUE CERTIFICATE
- * VERSION: v1.0.0-D4B-MATTER-DEADLINE-WORK-QUEUE-CERT
+ * TITLE: WILSY OS Legal Matter Deadline Work Queue Certificate
+ * VERSION: v1.0.2-D4B-AUTH-PROJECTION-CERT-SOVEREIGN-METADATA
+ * CHANGELOG: v1.0.2-D4B-AUTH-PROJECTION-CERT-SOVEREIGN-METADATA completes artifact ownership and privacy posture without changing certificate behavior.
+ * CHANGELOG: v1.0.1-D4B-AUTH-PROJECTION-CERT — supplies exact server-authoritative deadline permissions for Partner read tests.
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Certifies on-demand matter deadline reads in the Legal Practice
  *          workspace, exact matter correlation, frozen D4A rows, permission
  *          narrowing, and absence of browser legal-period/overdue inference.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardDeadlineWorkQueue.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-11
+ * COLLABORATION / OWNERSHIP: Legal workspace and deadline projection test owners.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * TENANT BOUNDARY: Deadline transport derives tenant authority on the server.
  * AUTHORITY BOUNDARY: UI presentation only; Python EOS remains sovereign.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * SECURITY / PRIVACY POSTURE: Synthetic tenant and matter fixtures only.
  */
 
 import React from 'react';
@@ -77,6 +81,11 @@ vi.mock('../../contexts/authContext', () => ({
       email: 'operator@example.test',
       role: 'tenant_legal_partner',
       tenantId: 'tenant-law',
+      legalPermissionsAuthoritative: true,
+      permissions: [
+        'legal_operations:matter_deadline:read',
+        'legal_operations:matter_deadline:write',
+      ],
     },
     tenant: {
       tenantId: 'tenant-law',
@@ -264,7 +273,7 @@ describe('D4B Legal matter deadline work queue', () => {
 
 /**
  * ARTIFACT: legalDashboardDeadlineWorkQueue.test.jsx
- * VERSION: v1.0.0-D4B-MATTER-DEADLINE-WORK-QUEUE-CERT
+ * VERSION: v1.0.2-D4B-AUTH-PROJECTION-CERT-SOVEREIGN-METADATA
  * AUTHORITY BOUNDARY: on-demand deadline presentation certificate only
  * TENANT POSTURE: tenant authority remains server-derived
  * FAIL-CLOSED POSTURE: denied/unavailable deadline evidence never falls back or invents posture
