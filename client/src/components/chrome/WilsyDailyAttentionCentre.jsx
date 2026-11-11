@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.5.0-BOUNDED-SOURCE-BULK-COMPLETION
+ * VERSION: v2.5.1-STABLE-ACTION-CAPABILITY-RECHECK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.5.0-BOUNDED-SOURCE-BULK-COMPLETION executes
+ * CHANGELOG: v2.5.1-STABLE-ACTION-CAPABILITY-RECHECK keeps
+ *            same-session command forms mounted during action IAM refresh,
+ *            disables writes until refreshed authorization returns, and
+ *            clears stale capabilities on scope change or denial.
+ *            v2.5.0-BOUNDED-SOURCE-BULK-COMPLETION executes
  *            at most 25 independently authorized source completions,
  *            records confirmed successes and individual failures, and
  *            revalidates shared work without inventing atomic bulk authority.
@@ -217,6 +221,7 @@ export default function WilsyDailyAttentionCentre({
   const [attentionError, setAttentionError] = useState('');
   const [sourceActions, setSourceActions] = useState({});
   const [sourceActionsScope, setSourceActionsScope] = useState(null);
+  const [sourceActionsStatus, setSourceActionsStatus] = useState('IDLE');
   const [completionId, setCompletionId] = useState(null);
   const [completionError, setCompletionError] = useState('');
   const [bulkCompleting, setBulkCompleting] = useState(false);
@@ -252,6 +257,7 @@ export default function WilsyDailyAttentionCentre({
     setAttentionError('');
     setSourceActions({});
     setSourceActionsScope(null);
+    setSourceActionsStatus('IDLE');
     setCompletionId(null);
     setCompletionError('');
     setBulkCompleting(false);
@@ -440,21 +446,27 @@ export default function WilsyDailyAttentionCentre({
     if (!open || !workScope || status !== 'READY' || !projection) {
       setSourceActions({});
       setSourceActionsScope(null);
+      setSourceActionsStatus('IDLE');
       return undefined;
     }
     let active = true;
-    setSourceActions({});
-    setSourceActionsScope(null);
+    if (sourceActionsScope !== liveScopeKey) {
+      setSourceActions({});
+      setSourceActionsScope(null);
+    }
+    setSourceActionsStatus('CHECKING');
     readAttentionSourceActions({ tenantId, principalId: auth.user.id })
       .then((actions) => {
         if (!active) return;
         setSourceActions(actions);
         setSourceActionsScope(liveScopeKey);
+        setSourceActionsStatus('READY');
       })
       .catch(() => {
         if (!active) return;
         setSourceActions({});
         setSourceActionsScope(null);
+        setSourceActionsStatus('UNAVAILABLE');
       });
     return () => { active = false; };
   }, [open, workScope, status, projection, tenantId, auth?.user?.id, liveScopeKey]);
@@ -462,7 +474,8 @@ export default function WilsyDailyAttentionCentre({
   const handleSourceCompletion = async (item, note) => {
     if (!workScope || attentionStatus !== 'READY' || status !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
-      || sourceActionsScope !== liveScopeKey
+      || sourceActionsScope !== liveScopeKey || sourceActionsStatus !== 'READY'
+      || bulkCompleting || creatingWork
       || !sourceActions[item?.sourceModule]?.includes('COMPLETE')
       || !attentionFeed?.items.some((row) => row.id === item.id)
       || completionId) return;
@@ -486,7 +499,7 @@ export default function WilsyDailyAttentionCentre({
   const handleBulkCompletion = async (items, note) => {
     if (!workScope || status !== 'READY' || attentionStatus !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
-      || sourceActionsScope !== liveScopeKey
+      || sourceActionsScope !== liveScopeKey || sourceActionsStatus !== 'READY'
       || bulkCompleting || completionId || creatingWork
       || !Array.isArray(items) || items.length < 1 || items.length > 25
       || typeof note !== 'string' || !note.trim() || note.length > 1000) return null;
@@ -525,9 +538,9 @@ export default function WilsyDailyAttentionCentre({
   const handleSourceCreate = async (moduleId, form, idempotencyKey) => {
     if (!workScope || status !== 'READY' || attentionStatus !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
-      || sourceActionsScope !== liveScopeKey
+      || sourceActionsScope !== liveScopeKey || sourceActionsStatus !== 'READY'
       || !sourceActions[moduleId]?.includes('CREATE')
-      || creatingWork) return false;
+      || creatingWork || bulkCompleting || completionId) return false;
     setCreationError('');
     setCreationNotice('');
     setCreatingWork(true);
@@ -892,7 +905,8 @@ export default function WilsyDailyAttentionCentre({
               bulkResult={bulkResult}
               onCreateWork={handleSourceCreate}
               creatingWork={creatingWork}
-              workUpdating={attentionStatus !== 'READY'}
+              workUpdating={attentionStatus !== 'READY' || sourceActionsStatus !== 'READY'}
+              actionAvailabilityUnavailable={sourceActionsStatus === 'UNAVAILABLE'}
               creationError={creationError}
               creationNotice={creationNotice}
               completingId={completionId}
@@ -1162,7 +1176,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.5.0-BOUNDED-SOURCE-BULK-COMPLETION
+ * VERSION: v2.5.1-STABLE-ACTION-CAPABILITY-RECHECK
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
