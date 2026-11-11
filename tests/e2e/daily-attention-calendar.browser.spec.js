@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.8.0-DURABLE-EXECUTIVE-BULK-CERT
+ * VERSION: v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v1.8.0-DURABLE-EXECUTIVE-BULK-CERT executes
+ * CHANGELOG: v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT verifies
+ *          the currently admitted Operations source independently
+ *          exposes executable IAM without a global module-command gate.
+ *          v1.8.0-DURABLE-EXECUTIVE-BULK-CERT executes
  *          two independently authorized Operations completions from the
  *          selected Daily Attention queue and verifies durable readback.
  *          v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT executes
@@ -362,6 +365,13 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(actionAvailability.principalId).toBe(actor.principal_id);
       expect(actionAvailability.sourceActions.OPERATIONS).toContain('CREATE');
       expect(actionAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
+      const scopedCommandResponse = await context.request.get('/api/attention/actions/operations', {headers});
+      expect(scopedCommandResponse.status()).toBe(200);
+      const scopedCommandAvailability = await scopedCommandResponse.json();
+      expect(scopedCommandAvailability.tenantId).toBe(state.tenant_id);
+      expect(scopedCommandAvailability.principalId).toBe(actor.principal_id);
+      expect(scopedCommandAvailability.sourceActions.OPERATIONS).toContain('CREATE');
+      expect(scopedCommandAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
 
       await panel.getByRole('tab', {name: 'Work list', exact: true}).click();
       await panel.getByRole('button', {name: 'Create work', exact: true}).click();
@@ -454,7 +464,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.8.0-DURABLE-EXECUTIVE-BULK-CERT
+// VERSION: v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
