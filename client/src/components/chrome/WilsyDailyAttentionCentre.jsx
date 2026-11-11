@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION
+ * VERSION: v2.4.1-SOURCE-MUTATION-REVALIDATION-GUARD
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION adds
+ * CHANGELOG: v2.4.1-SOURCE-MUTATION-REVALIDATION-GUARD disables
+ *            work creation and completion while the selected EOS read
+ *            is being revalidated, preserving source-command currentness.
+ *            v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION adds
  *            the authenticated, idempotent create action for existing CRM,
  *            Operations and Intelligence work, with verified EOS readback.
  *            v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION checks
@@ -839,6 +842,7 @@ export default function WilsyDailyAttentionCentre({
               onCompleteWork={handleSourceCompletion}
               onCreateWork={handleSourceCreate}
               creatingWork={creatingWork}
+              workUpdating={attentionStatus !== 'READY'}
               creationError={creationError}
               creationNotice={creationNotice}
               completingId={completionId}
@@ -1108,7 +1112,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION
+ * VERSION: v2.4.1-SOURCE-MUTATION-REVALIDATION-GUARD
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
