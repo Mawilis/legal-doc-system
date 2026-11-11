@@ -7,7 +7,8 @@ EPITOME: Verify existing IAM decisions and transactions while proving blocking
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization_http_workforce.py
 COLLABORATION / OWNERSHIP: EOS tenant_authorization_http; frozen IAM composer.
 CERTIFICATION / UPDATE DATE: 2026-11-11
-CHANGELOG: v1.1.0 tests event-loop isolation while retaining workforce
+CHANGELOG: v1.1.0-EVENT-LOOP-RESPONSIVENESS-CERT tests event-loop
+           isolation while retaining workforce
            transaction and fail-closed denial/outage certification.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic identities, no external credentials.
