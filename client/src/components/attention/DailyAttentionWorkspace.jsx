@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.7.0-SOURCE-EXECUTION-IN-PANEL
+ * VERSION: v2.8.0-EXECUTABLE-MOBILE-HEADER
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.7.0-SOURCE-EXECUTION-IN-PANEL enables
+ * CHANGELOG: v2.8.0-EXECUTABLE-MOBILE-HEADER bounds the
+ *          workspace control header on narrow screens and permits internal
+ *          scrolling so source work submission remains reachable at 390px.
+ *          v2.7.0-SOURCE-EXECUTION-IN-PANEL enables
  *          on-item completion evidence entry for a verified admitted work
  *          source even if optional command probing is unavailable; final
  *          success is exclusively the owning EOS POST/readback.
@@ -380,7 +383,7 @@ export default function DailyAttentionWorkspace({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden text-slate-100"
       data-attention-production-ui="true" onKeyDown={handleKey}>
-      <div className="shrink-0 border-b border-white/10 px-4 py-3">
+      <div className="max-h-[min(58vh,520px)] shrink-0 overflow-y-auto overscroll-contain border-b border-white/10 px-4 py-3 md:max-h-none md:overflow-visible">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div role="tablist" aria-label="Daily attention views"
             className="flex items-center gap-1 rounded-xl bg-[#0a1628] p-1">
@@ -904,7 +907,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.7.0-SOURCE-EXECUTION-IN-PANEL
+// VERSION: v2.8.0-EXECUTABLE-MOBILE-HEADER
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
