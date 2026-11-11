@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.5.0-SOURCE-COMPLETION-UI-CERT
+ * VERSION: v1.6.0-BOUNDED-BULK-EXECUTION-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.5.0-SOURCE-COMPLETION-UI-CERT verifies
+ * CHANGELOG: v1.6.0-BOUNDED-BULK-EXECUTION-CERT proves
+ *          capability-gated selection, source-owned result reconciliation,
+ *          and retention of unsuccessful selected work.
+ *          v1.5.0-SOURCE-COMPLETION-UI-CERT verifies
  *          capability-gated completion evidence and no uncontrolled mutation.
  *          v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT checks
  *          multi-select, inspection handoff and clear controls without
@@ -32,7 +35,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement evidence.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DailyAttentionWorkspace from '../../components/attention/DailyAttentionWorkspace.jsx';
 
@@ -265,10 +268,45 @@ describe('Daily Attention bounded inbox', () => {
     expect(onComplete.mock.calls[0][1]).toContain('Verified operational delivery');
   });
 
+  it('keeps failed selected work when independently confirmed bulk completions succeed', async () => {
+    const onBulkComplete = vi.fn().mockResolvedValue({
+      completedIds: ['OPERATIONS:attention-0', 'OPERATIONS:attention-1'],
+      failedIds: ['OPERATIONS:attention-2'],
+    });
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(3)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={vi.fn()}
+        source="ALL"
+        setSource={vi.fn()}
+        query=""
+        setQuery={vi.fn()}
+        onRefresh={vi.fn()}
+        onOpenWork={vi.fn()}
+        onLoadMore={vi.fn()}
+        authorisedActions={{ OPERATIONS: ['COMPLETE'] }}
+        onBulkComplete={onBulkComplete}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Bulk completion evidence' }), {
+      target: { value: 'All selected operations tasks verified and completed' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete up to 3' }));
+    await waitFor(() => expect(onBulkComplete).toHaveBeenCalledTimes(1));
+    expect(onBulkComplete.mock.calls[0][0]).toHaveLength(3);
+    await waitFor(() => expect(screen.getByText('1 selected · 1 permitted to complete')).toBeTruthy());
+    expect(screen.getByRole('checkbox', { name: 'Select Attention item 2' }).checked).toBe(true);
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.5.0-SOURCE-COMPLETION-UI-CERT
+// VERSION: v1.6.0-BOUNDED-BULK-EXECUTION-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
