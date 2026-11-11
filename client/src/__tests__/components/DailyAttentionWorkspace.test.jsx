@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT
+ * VERSION: v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT proves
+ * CHANGELOG: v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT checks
+ *          multi-select, inspection handoff and clear controls without
+ *          authorising a business mutation.
+ *          v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT proves
  *          existing rail selection survives same-page query edits.
  *          v1.2.0-DENSE-WINDOW-GEOMETRY-CERT verifies
  *          scroll access and bounded rendering with 44px executive rows.
@@ -209,10 +212,38 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
   });
 
+  it('selects and inspects multiple verified work rows without inventing a mutation', () => {
+    const inert = vi.fn();
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(3)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query=""
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
+    expect(screen.getByText('3 selected for triage')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect first selected' }));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(screen.queryByText('3 selected for triage')).toBeNull();
+    expect(inert).not.toHaveBeenCalled();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT
+// VERSION: v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
