@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.3.0-EXECUTIVE-SOURCE-CLARITY
+ * VERSION: v1.4.0-DENSE-EXECUTIVE-WORK-ROWS
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.3.0-EXECUTIVE-SOURCE-CLARITY adds verified-source
+ * CHANGELOG: v1.4.0-DENSE-EXECUTIVE-WORK-ROWS reduces task
+ *          row geometry to 44px and aligns virtualised scroll math and
+ *          compact priority/deadline/status labels for high-volume triage.
+ *          v1.3.0-EXECUTIVE-SOURCE-CLARITY adds verified-source
  *          inspection, truthful filtered and per-module empty states, and
  *          source-owned recovery without introducing unsupported commands.
  *          v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW adds fixed-height
@@ -61,7 +64,7 @@ const FILTERS = [
   ['TODAY', 'Due today', 'dueToday'],
   ['HIGH', 'High priority', 'highPriority'],
 ];
-const ATTENTION_ROW_HEIGHT = 68;
+const ATTENTION_ROW_HEIGHT = 44;
 const ATTENTION_ROW_OVERSCAN = 10;
 const DEFAULT_VIEWPORT_HEIGHT = 560;
 const label = (source) => ({
@@ -441,7 +444,7 @@ export default function DailyAttentionWorkspace({
                     aria-setsize={page.length} aria-posinset={index + 1}
                     style={{position: 'absolute', top: index * ATTENTION_ROW_HEIGHT,
                       left: 0, right: 0, height: ATTENTION_ROW_HEIGHT}}
-                    className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-1.5 transition-colors ' +
+                    className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-0.5 transition-colors ' +
                       (selectedId === item.id ? 'border-l-amber-300 bg-amber-300/[0.07]'
                         : item.isOverdue ? 'border-l-rose-400/70 hover:bg-white/[0.04]'
                           : 'border-l-transparent hover:bg-white/[0.04]')}>
@@ -450,12 +453,10 @@ export default function DailyAttentionWorkspace({
                       onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
                       className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
                       <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
-                      <span className="mt-0.5 block truncate text-[10px] text-slate-400">
-                        {label(item.sourceModule)} · {item.sourceRecordId} · {item.priority} · {sourceStatus(item)}
-                      </span>
-                      <span className={'mt-0.5 block truncate text-[10px] ' +
-                        (item.isOverdue ? 'text-rose-200' : 'text-amber-100/70')}>
-                        {dueLabel(item.dueAt)} · {item.isOverdue ? 'Overdue · ' : ''}{item.whyRanked}
+                      <span className={'mt-0.5 block truncate text-[10px] leading-4 ' +
+                        (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}>
+                        {label(item.sourceModule)} · {item.priority} · {sourceStatus(item)} · {dueLabel(item.dueAt)}
+                        {item.isOverdue ? ' · Overdue' : ''}
                       </span>
                     </button>
                     <button type="button" aria-label={'Act on ' + item.title + ' in My Work'}
@@ -533,7 +534,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.3.0-EXECUTIVE-SOURCE-CLARITY
+// VERSION: v1.4.0-DENSE-EXECUTIVE-WORK-ROWS
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
