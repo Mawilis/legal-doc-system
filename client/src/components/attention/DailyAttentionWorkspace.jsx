@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.4.0-DENSE-EXECUTIVE-WORK-ROWS
+ * VERSION: v1.5.0-EXECUTIVE-FOCUS-CONTINUITY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.4.0-DENSE-EXECUTIVE-WORK-ROWS reduces task
+ * CHANGELOG: v1.5.0-EXECUTIVE-FOCUS-CONTINUITY retains row
+ *          selection and scroll while executive search input changes and
+ *          clamps scroll only after a narrower verified page arrives.
+ *          v1.4.0-DENSE-EXECUTIVE-WORK-ROWS reduces task
  *          row geometry to 44px and aligns virtualised scroll math and
  *          compact priority/deadline/status labels for high-volume triage.
  *          v1.3.0-EXECUTIVE-SOURCE-CLARITY adds verified-source
@@ -136,10 +139,20 @@ export default function DailyAttentionWorkspace({
 
   useEffect(() => {
     setSelectionIndex(0);
-    setSelectedId(null);
     if (listRef.current) listRef.current.scrollTop = 0;
     setScrollTop(0);
-  }, [filter, source, query]);
+  }, [filter, source]);
+
+  useEffect(() => {
+    const node = listRef.current;
+    if (!node || page.length === 0) return;
+    const maximum = Math.max(0, page.length * ATTENTION_ROW_HEIGHT
+      - (node.clientHeight || DEFAULT_VIEWPORT_HEIGHT));
+    if (node.scrollTop > maximum) {
+      node.scrollTop = maximum;
+      setScrollTop(maximum);
+    }
+  }, [page.length]);
 
   useEffect(() => {
     const node = listRef.current;
@@ -534,7 +547,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.4.0-DENSE-EXECUTIVE-WORK-ROWS
+// VERSION: v1.5.0-EXECUTIVE-FOCUS-CONTINUITY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
