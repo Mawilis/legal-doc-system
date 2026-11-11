@@ -1,13 +1,16 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT
+VERSION: v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_attention_feed_projection.py
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
-CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT verifies deterministic
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT proves
+           source completion can be advertised only for matching read and
+           independently authorized command contexts; foreign scope denies.
+           v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT verifies deterministic
            500-item pagination with no overlap or fabricated totals.
            v1.0.2-EXACT-RULE-URGENCY-CERT corrects the expected
            rules-only score: overdue NORMAL is 80 + 10, not 100.
@@ -24,6 +27,10 @@ FAIL-CLOSED POSTURE: Invalid source, cursor, count and tenant fail tests.
 """
 from datetime import datetime, timedelta, timezone
 from copy import deepcopy
+import asyncio
+from types import SimpleNamespace
+from fastapi import HTTPException
+from tools.eos.api.attention_router import attention_authorised_actions
 
 import pytest
 
@@ -176,8 +183,48 @@ def test_no_authorised_source_cannot_be_presented_as_enterprise_clear():
     # This pure adapter does not grant a workspace or an authorization decision.
 
 
+
+def test_attention_actions_only_advertise_independently_authorized_source():
+    source = snapshot()
+    good = SimpleNamespace(
+        tenant_id=TENANT,
+        identity=SimpleNamespace(identity_id=PRINCIPAL),
+    )
+    response = asyncio.run(attention_authorised_actions(
+        source=source, operations_context=good, intelligence_context=None,
+    ))
+    assert response["schema"] == "WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1"
+    assert response["tenantId"] == TENANT
+    assert response["principalId"] == PRINCIPAL
+    assert response["sourceActions"] == {"OPERATIONS": ["COMPLETE"]}
+    assert response["authority"] == "SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE"
+
+    none = asyncio.run(attention_authorised_actions(
+        source=source, operations_context=None, intelligence_context=None,
+    ))
+    assert none["sourceActions"] == {}
+    # Intelligence is not in the admitted My Work scope for this fixture.
+    omitted = asyncio.run(attention_authorised_actions(
+        source=source, operations_context=None, intelligence_context=good,
+    ))
+    assert omitted["sourceActions"] == {}
+
+
+def test_attention_actions_reject_foreign_command_context_without_disclosing_records():
+    source = snapshot()
+    foreign = SimpleNamespace(
+        tenant_id="FOREIGN",
+        identity=SimpleNamespace(identity_id=PRINCIPAL),
+    )
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(attention_authorised_actions(
+            source=source, operations_context=foreign, intelligence_context=None,
+        ))
+    assert exc.value.status_code == 503
+    assert exc.value.detail == "ATTENTION_ACTION_CONTEXT_INCONSISTENT"
+
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.1.0-FIVE-HUNDRED-PAGE-READ-CERT
+# VERSION: v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
