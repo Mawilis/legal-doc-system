@@ -1,27 +1,31 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.0.0-EXACT-EOS-ATTENTION-SCOPE-CERT
+ * VERSION: v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.0-EXACT-EOS-ATTENTION-SCOPE-CERT verifies bounded
+ * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CHANGELOG: v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT checks
+ *          exact-principal command availability and real module completion
+ *          dispatch, while rejecting foreign and unsupported commands.
+ *          v1.0.0-EXACT-EOS-ATTENTION-SCOPE-CERT verifies bounded
  *          source-admitted list evidence and rejects fabricated client authority.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic tenant/work, no browser tokens stored.
  * TENANT BOUNDARY: Current tenant/principal required for every feed page.
- * AUTHORITY BOUNDARY: GET only; no completion/approval write.
+ * AUTHORITY BOUNDARY: EOS capability read; module IAM reauthorizes actual completion.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { api } = vi.hoisted(() => ({ api: { get: vi.fn() } }));
+const { api } = vi.hoisted(() => ({ api: { get: vi.fn(), post: vi.fn() } }));
 vi.mock('../../services/api.js', () => ({ default: api }));
 
 import {
   assertAttentionFeed, readAttentionFeed,
+  readAttentionSourceActions, completeAttentionSourceWork,
 } from '../../services/attentionFeedClient.js';
 
 const tenantId = 'WILSY-ATTENTION-CLIENT-TENANT';
@@ -62,7 +66,7 @@ const response = () => ({
   authority: { commandsOwnedBy: 'SOURCE_SERVICES', attentionCommandsEnabled: false },
 });
 
-beforeEach(() => api.get.mockReset());
+beforeEach(() => { api.get.mockReset(); api.post.mockReset(); });
 
 describe('EOS authoritative AttentionItem feed browser boundary', () => {
   it('requests exact authenticated filters and validates the source snapshot', async () => {
@@ -119,11 +123,50 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
       forceNetworkRetry: true,
     });
   });
+  it('accepts only exact-session EOS-authorised source completion availability', async () => {
+    api.get.mockResolvedValue({ data: {
+      schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+      tenantId, principalId, authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+      sourceActions: { OPERATIONS: ['COMPLETE'] },
+    } });
+    const actions = await readAttentionSourceActions(scope);
+    expect(actions).toEqual({ OPERATIONS: ['COMPLETE'] });
+    expect(api.get).toHaveBeenCalledWith('/attention/actions', { forceNetworkRetry: true });
+
+    api.get.mockResolvedValueOnce({ data: {
+      schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+      tenantId: 'FOREIGN', principalId,
+      authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+      sourceActions: { OPERATIONS: ['COMPLETE'] },
+    } });
+    await expect(readAttentionSourceActions(scope))
+      .rejects.toThrow('ATTENTION_ACTION_AVAILABILITY_INVALID');
+    await expect(readAttentionSourceActions({ tenantId, principalId: '' }))
+      .rejects.toThrow('ATTENTION_AUTHENTICATED_SCOPE_REQUIRED');
+  });
+
+  it('delegates Operations completion to source IAM without optimistic mutation', async () => {
+    api.post.mockResolvedValue({ data: { work_item_id: 'WORK-1', status: 'COMPLETED' } });
+    const record = await completeAttentionSourceWork({
+      sourceModule: 'OPERATIONS', sourceRecordId: 'WORK-1',
+    }, 'Completed all verified assigned work');
+    expect(record.status).toBe('COMPLETED');
+    expect(api.post).toHaveBeenCalledWith(
+      '/tenant-modules/operations/workspace/work-items/WORK-1/complete',
+      { completion_note: 'Completed all verified assigned work' },
+    );
+    api.post.mockClear();
+    await expect(completeAttentionSourceWork({
+      sourceModule: 'FINANCE', sourceRecordId: 'WORK-1',
+    }, 'Anything')).rejects.toThrow('ATTENTION_SOURCE_COMPLETION_INPUT_INVALID');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.0.0-EXACT-EOS-ATTENTION-SCOPE-CERT
-// AUTHORITY BOUNDARY: Verified HTTP read only; no browser command authority.
+// VERSION: v1.1.0-SOURCE-COMPLETION-TRANSPORT-CERT
+// AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
