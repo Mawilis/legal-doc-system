@@ -430,50 +430,50 @@ class RequireTenantAuthorization:
             workforce_required = False
 
         def evaluate_authority() -> TenantAuthorizationDecision:
-                if workforce_required:
-                    client = get_client()
-                    database = get_database()
-                    if client is None or database is None:
-                        _observe_terminal(
-                            outcome="DEPENDENCY_UNAVAILABLE",
-                            reason=TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
-                            tenant_id=tenant_id,
-                            principal_id=identity.identity_id,
-                            correlation_id=correlation_id,
-                            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                        )
-                        raise WilsyAPIException(
-                            "Authorization authority unavailable.",
-                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                        )
-                    workforce_collection = database[WORKFORCE_RELATIONSHIP_COLLECTION]
-                    with client.start_session() as session:
-                        with session.start_transaction():
-                            return authorize_tenant_operation(
-                                principal_id=identity.identity_id,
-                                tenant_id=tenant_id,
-                                permission_id=self.permission_id,
-                                operation=self.operation,
-                                principal_repository=principal_repository,
-                                membership_repository=membership_repository,
-                                business_role_repository=role_assignment_repository,
-                                role_assignment_repository=role_assignment_repository,
-                                session=session,
-                                workforce_relationship_collection=workforce_collection,
-                                selected_business_role=selected_business_role,
-                            )
-                else:
-                    return authorize_tenant_operation(
-                        principal_id=identity.identity_id,
+            if workforce_required:
+                client = get_client()
+                database = get_database()
+                if client is None or database is None:
+                    _observe_terminal(
+                        outcome="DEPENDENCY_UNAVAILABLE",
+                        reason=TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
                         tenant_id=tenant_id,
-                        permission_id=self.permission_id,
-                        operation=self.operation,
-                        principal_repository=principal_repository,
-                        membership_repository=membership_repository,
-                        business_role_repository=role_assignment_repository,
-                        role_assignment_repository=role_assignment_repository,
-                        selected_business_role=selected_business_role,
+                        principal_id=identity.identity_id,
+                        correlation_id=correlation_id,
+                        http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
                     )
+                    raise WilsyAPIException(
+                        "Authorization authority unavailable.",
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    )
+                workforce_collection = database[WORKFORCE_RELATIONSHIP_COLLECTION]
+                with client.start_session() as session:
+                    with session.start_transaction():
+                        return authorize_tenant_operation(
+                            principal_id=identity.identity_id,
+                            tenant_id=tenant_id,
+                            permission_id=self.permission_id,
+                            operation=self.operation,
+                            principal_repository=principal_repository,
+                            membership_repository=membership_repository,
+                            business_role_repository=role_assignment_repository,
+                            role_assignment_repository=role_assignment_repository,
+                            session=session,
+                            workforce_relationship_collection=workforce_collection,
+                            selected_business_role=selected_business_role,
+                        )
+            else:
+                return authorize_tenant_operation(
+                    principal_id=identity.identity_id,
+                    tenant_id=tenant_id,
+                    permission_id=self.permission_id,
+                    operation=self.operation,
+                    principal_repository=principal_repository,
+                    membership_repository=membership_repository,
+                    business_role_repository=role_assignment_repository,
+                    role_assignment_repository=role_assignment_repository,
+                    selected_business_role=selected_business_role,
+                )
 
         try:
             decision = await run_in_threadpool(evaluate_authority)
