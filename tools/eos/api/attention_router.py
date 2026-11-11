@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authenticated HTTP Read Surface
-VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
+VERSION: v1.2.0-THREE-SOURCE-EXECUTIVE-ACTIONS
 AUTHORITY: WILSY OS Core Governance; canonical source EOS service authority.
 EPITOME: Serve cursor-bounded attention feeds, counts, source coverage and
          deadline calendar from the existing independently authorised My Work.
@@ -8,7 +8,10 @@ COLLABORATION / OWNERSHIP: unified_my_work_router.read_my_work authorizes
          source reads and tenant/principal admission; attention_feed_projection
          normalizes read-only items; no second source/task registry is created.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.1.0-SOURCE-COMMAND-AVAILABILITY reports existing
+CHANGELOG: v1.2.0-THREE-SOURCE-EXECUTIVE-ACTIONS adds
+           independently authorized CREATE and COMPLETE availability for
+           existing CRM, Operations and Intelligence source commands.
+           v1.1.0-SOURCE-COMMAND-AVAILABILITY reports existing
            Operations and Intelligence completion capabilities only after
            independent current-tenant IAM evaluation; source APIs retain
            all command, persistence and audit authority.
@@ -50,6 +53,18 @@ _OPERATIONS_COMPLETE = OptionalTenantAuthorization(
 )
 _INTELLIGENCE_COMPLETE = OptionalTenantAuthorization(
     "intelligence:work_item:complete", "intelligence_work_item_complete"
+)
+_CRM_COMPLETE = OptionalTenantAuthorization(
+    "crm:work_item:complete", "crm_work_item_complete"
+)
+_OPERATIONS_CREATE = OptionalTenantAuthorization(
+    "operations:work_item:create", "operations_work_item_create"
+)
+_INTELLIGENCE_CREATE = OptionalTenantAuthorization(
+    "intelligence:work_item:create", "intelligence_work_item_create"
+)
+_CRM_CREATE = OptionalTenantAuthorization(
+    "crm:work_item:create", "crm_work_item_create"
 )
 
 
@@ -162,8 +177,12 @@ async def attention_authorised_actions(
     source: dict[str, Any] = Depends(read_my_work),
     operations_context: TenantAuthorizationContext | None = Depends(_OPERATIONS_COMPLETE),
     intelligence_context: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_COMPLETE),
+    crm_context: TenantAuthorizationContext | None = Depends(_CRM_COMPLETE),
+    operations_create: TenantAuthorizationContext | None = Depends(_OPERATIONS_CREATE),
+    intelligence_create: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_CREATE),
+    crm_create: TenantAuthorizationContext | None = Depends(_CRM_CREATE),
 ) -> dict[str, Any]:
-    """Return existing source command availability; never issue work authority.
+    """Report existing source CREATE/COMPLETE availability without granting it.
 
     The actual source endpoint re-authorizes every completion. A read-only
     admission cannot by itself authorize a write; both read and complete
@@ -173,20 +192,27 @@ async def attention_authorised_actions(
     principal_id = source["principal_id"]
     admitted = set(source["sources_included"])
     actions: dict[str, list[str]] = {}
-    for module, context in (
-        ("OPERATIONS", operations_context),
-        ("INTELLIGENCE", intelligence_context),
+    for module, pairs in (
+        ("OPERATIONS", (("CREATE", operations_create), ("COMPLETE", operations_context))),
+        ("INTELLIGENCE", (("CREATE", intelligence_create), ("COMPLETE", intelligence_context))),
+        ("CRM", (("CREATE", crm_create), ("COMPLETE", crm_context))),
     ):
-        if context is None or module not in admitted:
+        if module not in admitted:
             continue
-        if (
-            context.tenant_id != tenant_id
-            or context.identity.identity_id != principal_id
-        ):
-            raise HTTPException(
-                status_code=503, detail="ATTENTION_ACTION_CONTEXT_INCONSISTENT"
-            )
-        actions[module] = ["COMPLETE"]
+        admitted_actions: list[str] = []
+        for action, context in pairs:
+            if context is None:
+                continue
+            if (
+                context.tenant_id != tenant_id
+                or context.identity.identity_id != principal_id
+            ):
+                raise HTTPException(
+                    status_code=503, detail="ATTENTION_ACTION_CONTEXT_INCONSISTENT"
+                )
+            admitted_actions.append(action)
+        if admitted_actions:
+            actions[module] = admitted_actions
     return {
         "schema": "WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1",
         "tenantId": tenant_id,
@@ -221,7 +247,7 @@ __all__ = ["router", "attention_feed", "attention_counts",
            "attention_authorised_actions"]
 
 # ARTIFACT: tools/eos/api/attention_router.py
-# VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
+# VERSION: v1.2.0-THREE-SOURCE-EXECUTIVE-ACTIONS
 # AUTHORITY BOUNDARY: Authenticated source-owned reads; no attention commands.
 # TENANT POSTURE: Exact tenant/principal read_my_work dependency each request.
 # FAIL-CLOSED POSTURE: No inferred health, entitlement, access or cleared queue.
