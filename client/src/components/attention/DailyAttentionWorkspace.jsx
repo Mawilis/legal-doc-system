@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.1.1-ACTION-VERIFICATION-RECOVERY
+ * VERSION: v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.1.1-ACTION-VERIFICATION-RECOVERY exposes
+ * CHANGELOG: v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY adds
+ *          source-specific truthful zero-work explanations and denser
+ *          module/priority/body/deadline information in 44px work rows.
+ *          v2.1.1-ACTION-VERIFICATION-RECOVERY exposes
  *          failed command-availability verification and a source refresh,
  *          without erasing verified work or pretending commands exist.
  *          v2.1.0-SOURCE-SPECIFIC-EXECUTIVE-ENTRY makes
@@ -114,6 +117,14 @@ const toWorkItem = (item) => ({
   is_overdue: item.isOverdue,
 });
 const countLabel = (name, count) => name + ': ' + count;
+const EMPTY_SOURCE_COPY = Object.freeze({
+  CRM: 'Deals, follow-ups and commercial tasks appear when the CRM source has active work.',
+  LEGAL: 'Assigned legal reviews, matters and approved practice work appear when the Legal source reports them.',
+  FINANCE: 'Authorised financial approvals and exceptions appear only when a Finance source is admitted.',
+  PEOPLE: 'Assigned workforce requests and cases appear only when People is admitted.',
+  OPERATIONS: 'Operational jobs, reminders and exceptions appear when the Operations source reports them.',
+  INTELLIGENCE: 'Authorised alerts and review obligations appear when Intelligence raises them.',
+});
 const sourceStatus = (item) => typeof item?.status === 'string'
   && item.status.trim() ? item.status : 'Source status unavailable';
 
@@ -588,7 +599,7 @@ export default function DailyAttentionWorkspace({
                     {missing.length > 0
                       ? ` ${missing.map(label).join(', ')} ${missing.length === 1 ? 'was' : 'were'} not verified for this session.`
                       : ' Every admitted source currently reports no active work.'}
-                    {' '}No next SLA or completed-work count is available from this feed.
+                    {' '}{singleSource ? EMPTY_SOURCE_COPY[singleSource.moduleId] : 'No next SLA or completed-work count is available from this feed.'}
                   </p>
                   {creatableSources.length > 0 && onCreateWork && (
                     <button type="button" onClick={() => {
@@ -643,17 +654,28 @@ export default function DailyAttentionWorkspace({
                         ? [...before.filter((id) => id !== item.id), item.id]
                         : before.filter((id) => id !== item.id))}
                       className="h-4 w-4 shrink-0 accent-amber-300"/>
+                    <span className="hidden w-14 shrink-0 rounded-md border border-white/10 bg-white/[0.035] px-1.5 py-1 text-center text-[10px] font-semibold text-slate-300 sm:block">
+                      {label(item.sourceModule)}
+                    </span>
                     <button type="button" aria-label={'Inspect ' + item.title}
                       aria-pressed={selectedId === item.id}
+                      onDoubleClick={() => open(item)}
                       onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
                       className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
                       <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
                       <span className={'mt-0.5 block truncate text-[10px] leading-4 ' +
                         (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}>
-                        {label(item.sourceModule)} · {item.priority} · {sourceStatus(item)} · {dueLabel(item.dueAt)}
-                        {item.isOverdue ? ' · Overdue' : ''}
+                        <span className={item.priority === 'CRITICAL' ? 'text-rose-200'
+                          : item.priority === 'HIGH' ? 'text-amber-200' : ''}>{item.priority}</span>
+                        {' · '}{sourceStatus(item)}{' · '}
+                        <span>{item.summary || label(item.sourceModule)}</span>
                       </span>
                     </button>
+                    <span className={'hidden w-[112px] shrink-0 truncate text-right text-[10px] sm:block ' +
+                      (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}
+                      title={dueLabel(item.dueAt)}>
+                      {dueLabel(item.dueAt)}
+                    </span>
                     <button type="button" aria-label={'Act on ' + item.title + ' in My Work'}
                       onClick={() => open(item)}
                       className="shrink-0 rounded-lg border border-amber-300/35 px-2.5 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/10">
@@ -796,7 +818,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.1.1-ACTION-VERIFICATION-RECOVERY
+// VERSION: v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
