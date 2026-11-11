@@ -4,6 +4,9 @@ Each source is admitted by its own canonical permission-operation pair and is
 read through its owning module's existing service and transaction boundary.
 A source denial omits only that source; any authorization or persistence outage
 fails the request. This router owns no work-item persistence or commands.
+
+2026-11-11: Source-owned synchronous MongoDB transactions run in FastAPI's
+request threadpool so a slow tenant source cannot stall the ASGI event loop.
 """
 from __future__ import annotations
 
@@ -11,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from starlette.concurrency import run_in_threadpool
 
 from tools.eos.api.tenant_authorization_http import (
     OptionalTenantAuthorization,
@@ -145,49 +149,54 @@ async def read_my_work(
     if not any(context is not None for context in contexts):
         raise HTTPException(status_code=403, detail="MY_WORK_NO_AUTHORIZED_SOURCE")
 
-    # None means a canonical 403 for that source only. A 503 or any unexpected
-    # authorization failure is raised by the dependency and never becomes empty.
-    legal = (
-        _read_legal(tenant_id=tenant_id, principal_id=principal_id)
-        if legal_context is not None else None
-    )
-    operations = (
-        _read_module("operations", tenant_id=tenant_id)
-        if operations_context is not None else None
-    )
-    intelligence = (
-        _read_module("intelligence", tenant_id=tenant_id)
-        if intelligence_context is not None else None
-    )
-    crm = _read_crm(tenant_id=tenant_id) if crm_context is not None else None
-
-    try:
-        result = build_unified_my_work(
-            tenant_id=tenant_id,
-            principal_id=principal_id,
-            now=datetime.now(timezone.utc),
-            legal=legal,
-            operations=operations,
-            intelligence=intelligence,
-            crm=crm,
+    def compose_source_projection() -> dict[str, Any]:
+        # None means a canonical 403 for that source only. A 503 or any unexpected
+        # authorization failure is raised by the dependency and never becomes empty.
+        legal = (
+            _read_legal(tenant_id=tenant_id, principal_id=principal_id)
+            if legal_context is not None else None
         )
-    except UnifiedMyWorkProjectionError as error:
-        raise HTTPException(
-            status_code=503,
-            detail="MY_WORK_SOURCE_PROJECTION_INVALID",
-        ) from error
+        operations = (
+            _read_module("operations", tenant_id=tenant_id)
+            if operations_context is not None else None
+        )
+        intelligence = (
+            _read_module("intelligence", tenant_id=tenant_id)
+            if intelligence_context is not None else None
+        )
+        crm = _read_crm(tenant_id=tenant_id) if crm_context is not None else None
 
-    result["sources_included"] = [
-        source for source, payload in (
-            ("LEGAL", legal),
-            ("OPERATIONS", operations),
-            ("INTELLIGENCE", intelligence),
-            ("CRM", crm),
-        ) if payload is not None
-    ]
-    result["authority"]["permits_source_commands"] = False
-    result["authority"]["source_read_transactions"] = "INDEPENDENT_OWNER_BOUNDARIES"
-    return result
+        try:
+            result = build_unified_my_work(
+                tenant_id=tenant_id,
+                principal_id=principal_id,
+                now=datetime.now(timezone.utc),
+                legal=legal,
+                operations=operations,
+                intelligence=intelligence,
+                crm=crm,
+            )
+        except UnifiedMyWorkProjectionError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="MY_WORK_SOURCE_PROJECTION_INVALID",
+            ) from error
+
+        result["sources_included"] = [
+            source for source, payload in (
+                ("LEGAL", legal),
+                ("OPERATIONS", operations),
+                ("INTELLIGENCE", intelligence),
+                ("CRM", crm),
+            ) if payload is not None
+        ]
+        result["authority"]["permits_source_commands"] = False
+        result["authority"]["source_read_transactions"] = "INDEPENDENT_OWNER_BOUNDARIES"
+        return result
+
+    # Every source transaction uses synchronous PyMongo. Keep its whole read
+    # and projection in the bounded request threadpool, never the ASGI loop.
+    return await run_in_threadpool(compose_source_projection)
 
 
 __all__ = ["router", "read_my_work"]
