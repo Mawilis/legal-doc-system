@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT
+ * VERSION: v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT verifies
+ * CHANGELOG: v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT tests
+ *          the source-owned task form and durable completion from panel.
+ *          v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT verifies
  *          the currently admitted Operations source independently
  *          exposes executable IAM without a global module-command gate.
  *          v1.8.0-DURABLE-EXECUTIVE-BULK-CERT executes
@@ -386,7 +388,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
           new URL(response.url()).pathname === path
           && response.request().method() === 'POST'
         )),
-        createForm.getByRole('button', {name: 'Create authorised work'}).click(),
+        createForm.getByRole('button', {name: 'Submit task to EOS'}).click(),
       ]);
       expect(createdInline.status()).toBe(201);
       const inlineWork = await createdInline.json();
@@ -464,7 +466,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT
+// VERSION: v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
