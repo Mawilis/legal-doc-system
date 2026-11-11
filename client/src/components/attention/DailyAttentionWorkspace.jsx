@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY
+ * VERSION: v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,10 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY renders
+ * CHANGELOG: v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE places
+ *          the real EOS create form in the panel's primary scroll region
+ *          instead of nesting it inside clipped header and filter controls.
+ *          v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY renders
  *          all small admitted work queues directly for reliable mobile
  *          row selection; virtual windowing remains for large queues.
  *          v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
@@ -443,55 +446,6 @@ export default function DailyAttentionWorkspace({
           Source-owned commands outside this panel: {unmappedSources.map((item) => label(item.moduleId)).join(', ')}.
           A missing inline adapter does not imply a missing tenant subscription or permission.
         </p>}
-        {createOpen && chosenCreateSource && (
-          <form onSubmit={submitCreate}
-            aria-label="Create source work"
-            className="mt-3 grid max-h-[min(48vh,390px)] gap-2 overflow-y-auto rounded-lg border border-amber-300/20 bg-[#0a1628] p-3">
-            <div className="grid grid-cols-2 gap-2">
-              <label className="text-[11px] text-slate-300">Owning source
-                <select value={chosenCreateSource}
-                  onChange={(event) => { setCreateSource(event.target.value); createKeyRef.current = null; }}
-                  className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
-                  {creatableSources.map((moduleId) => <option key={moduleId} value={moduleId}>{label(moduleId)}</option>)}
-                </select>
-              </label>
-              <label className="text-[11px] text-slate-300">Priority
-                <select value={createPriority}
-                  onChange={(event) => { setCreatePriority(event.target.value); createKeyRef.current = null; }}
-                  className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
-                  {['NORMAL', 'LOW', 'HIGH', 'CRITICAL'].map((priority) =>
-                    <option key={priority} value={priority}>{priority}</option>)}
-                </select>
-              </label>
-            </div>
-            <label className="text-[11px] text-slate-300">Work title
-              <input value={createTitle} maxLength={240} required
-                onChange={(event) => { setCreateTitle(event.target.value); createKeyRef.current = null; }}
-                placeholder="What needs to be done?"
-                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
-            </label>
-            <label className="text-[11px] text-slate-300">Description
-              <textarea value={createDescription} maxLength={4000} rows={2}
-                onChange={(event) => { setCreateDescription(event.target.value); createKeyRef.current = null; }}
-                placeholder="Outcome, owner context or instructions"
-                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
-            </label>
-            <label className="text-[11px] text-slate-300">Deadline (optional)
-              <input type="datetime-local" value={createDue}
-                onChange={(event) => { setCreateDue(event.target.value); createKeyRef.current = null; }}
-                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
-            </label>
-            {createPreflightUnverified && <p className="text-[11px] text-amber-200">
-              Source create permission is not preverified. Submitting will ask EOS to authorize the action;
-              a denial will not create work.
-            </p>}
-            {creationError && <p role="alert" className="text-xs text-rose-200">{creationError}</p>}
-            <button type="submit" disabled={creatingWork || workUpdating || !createTitle.trim()}
-              className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
-              {creatingWork ? 'Saving with EOS…' : 'Submit task to EOS'}
-            </button>
-          </form>
-        )}
         {showShortcuts && (
           <div role="note" className="mt-2 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-xs leading-5 text-slate-300">
             <strong className="text-amber-100">Shortcuts:</strong> j/k select work · Enter/o open
@@ -603,7 +557,63 @@ export default function DailyAttentionWorkspace({
           </>
         )}
       </div>
-      {mode === 'CALENDAR' ? (
+      {createOpen && chosenCreateSource ? (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-6" aria-label="New source work editor">
+          <div className="mx-auto mb-3 max-w-3xl">
+            <h3 className="text-base font-semibold text-white">Create work in {label(chosenCreateSource)}</h3>
+            <p className="mt-1 text-xs text-slate-400">
+              EOS validates the task, records its owner and persists it in the source module.
+            </p>
+          </div>
+          <form onSubmit={submitCreate}
+            aria-label="Create source work"
+            className="mx-auto grid w-full max-w-3xl gap-3 rounded-xl border border-amber-300/25 bg-[#0a1628] p-4 sm:p-5">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-[11px] text-slate-300">Owning source
+                <select value={chosenCreateSource}
+                  onChange={(event) => { setCreateSource(event.target.value); createKeyRef.current = null; }}
+                  className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
+                  {creatableSources.map((moduleId) => <option key={moduleId} value={moduleId}>{label(moduleId)}</option>)}
+                </select>
+              </label>
+              <label className="text-[11px] text-slate-300">Priority
+                <select value={createPriority}
+                  onChange={(event) => { setCreatePriority(event.target.value); createKeyRef.current = null; }}
+                  className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
+                  {['NORMAL', 'LOW', 'HIGH', 'CRITICAL'].map((priority) =>
+                    <option key={priority} value={priority}>{priority}</option>)}
+                </select>
+              </label>
+            </div>
+            <label className="text-[11px] text-slate-300">Work title
+              <input value={createTitle} maxLength={240} required
+                onChange={(event) => { setCreateTitle(event.target.value); createKeyRef.current = null; }}
+                placeholder="What needs to be done?"
+                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+            </label>
+            <label className="text-[11px] text-slate-300">Description
+              <textarea value={createDescription} maxLength={4000} rows={2}
+                onChange={(event) => { setCreateDescription(event.target.value); createKeyRef.current = null; }}
+                placeholder="Outcome, owner context or instructions"
+                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+            </label>
+            <label className="text-[11px] text-slate-300">Deadline (optional)
+              <input type="datetime-local" value={createDue}
+                onChange={(event) => { setCreateDue(event.target.value); createKeyRef.current = null; }}
+                className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+            </label>
+            {createPreflightUnverified && <p className="text-[11px] text-amber-200">
+              Source create permission is not preverified. Submitting will ask EOS to authorize the action;
+              a denial will not create work.
+            </p>}
+            {creationError && <p role="alert" className="text-xs text-rose-200">{creationError}</p>}
+            <button type="submit" disabled={creatingWork || workUpdating || !createTitle.trim()}
+              className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
+              {creatingWork ? 'Saving with EOS…' : 'Submit task to EOS'}
+            </button>
+          </form>
+        </div>
+      ) : mode === 'CALENDAR' ? (
         <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
           <WilsyWorkDeadlineCalendar items={rows} onOpenWork={onOpenWork}
             onOpenWorkforce={onOpenWorkforce}/>
@@ -920,7 +930,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY
+// VERSION: v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
