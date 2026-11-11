@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW
+ * VERSION: v1.3.0-EXECUTIVE-SOURCE-CLARITY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -9,8 +9,11 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre owns current-session
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW adds fixed-height
+ * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CHANGELOG: v1.3.0-EXECUTIVE-SOURCE-CLARITY adds verified-source
+ *          inspection, truthful filtered and per-module empty states, and
+ *          source-owned recovery without introducing unsupported commands.
+ *          v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW adds fixed-height
  *          inbox windowing with overscan for loaded source pages and visible
  *          source priority/status labels. Commands remain OPEN-only.
  *          v1.1.1-CALENDAR-INDEPENDENT-AUTHORISED-SCOPE makes Calendar consume
@@ -99,6 +102,7 @@ export default function DailyAttentionWorkspace({
   const [selectedId, setSelectedId] = useState(null);
   const [showBriefing, setShowBriefing] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSourceDetails, setShowSourceDetails] = useState(false);
   const [selectionIndex, setSelectionIndex] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(DEFAULT_VIEWPORT_HEIGHT);
@@ -123,7 +127,8 @@ export default function DailyAttentionWorkspace({
   const sourceCoverage = feed.sources || [];
   const missing = feed.coverage.notRepresentedSources || [];
   const allEmpty = feed.counts.active === 0 && !feed.nextCursor;
-  const filterEmpty = !page.length && !allEmpty;
+  const filterEmpty = !page.length && hasFiltered;
+  const singleSource = source !== 'ALL' ? sourceCoverage.find((entry) => entry.moduleId === source) : null;
   const hasFiltered = filter !== 'ALL' || source !== 'ALL' || query.trim().length > 0;
 
   useEffect(() => {
@@ -265,13 +270,39 @@ export default function DailyAttentionWorkspace({
           ))}
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-          <span className="inline-flex items-center gap-1.5 text-emerald-200">
-            <ShieldCheck size={13}/> Verified from {sourceCoverage.length} admitted sources
-          </span>
+          <button type="button" onClick={() => setShowSourceDetails((value) => !value)}
+            aria-expanded={showSourceDetails} aria-controls="attention-source-evidence"
+            className="inline-flex items-center gap-1.5 rounded-md text-emerald-200 hover:text-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+            <ShieldCheck size={13}/> Verified from {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'}
+            <ChevronRight size={12} className={showSourceDetails ? 'rotate-90' : ''}/>
+          </button>
           <span className="text-slate-400" title={feed.syncedAt}>
             Synced {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
           </span>
         </div>
+        {showSourceDetails && (
+          <section id="attention-source-evidence" aria-label="Verified attention source details"
+            className="mt-2 rounded-lg border border-white/10 bg-[#0a1628] px-3 py-2 text-[11px] leading-5">
+            <p className="font-semibold text-slate-200">Source verification for this session</p>
+            {sourceCoverage.length === 0 && <p className="text-amber-200">No source has returned an admitted work projection.</p>}
+            {sourceCoverage.map((entry) => (
+              <div key={entry.moduleId} className="flex items-center justify-between gap-2 border-b border-white/5 py-1 last:border-0">
+                <span>{label(entry.moduleId)}</span>
+                <span className={entry.state === 'empty' ? 'text-slate-400' : 'text-emerald-200'}>
+                  {entry.state === 'empty' ? 'Verified · empty' : 'Verified · active'} · {entry.count} items
+                </span>
+              </div>
+            ))}
+            {missing.length > 0 && <p className="mt-2 text-amber-100/80">
+              Not verified in this session: {missing.map(label).join(', ')}.
+              Absence does not establish lack of entitlement, an outage or a cleared queue.
+            </p>}
+            <button type="button" onClick={onRefresh}
+              className="mt-2 rounded-md border border-white/15 px-2.5 py-1 text-amber-100 hover:bg-white/5">
+              Recheck authorised sources
+            </button>
+          </section>
+        )}
         {missing.length > 0 && (
           <p className="mt-1 text-[11px] leading-4 text-amber-100/75">
             Not represented in this session: {missing.map(label).join(', ')}.
@@ -357,8 +388,10 @@ export default function DailyAttentionWorkspace({
                   <FilterX size={23} className="text-slate-400"/>
                   <h3 className="mt-2 text-base font-semibold">No matches in this view</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-400">
-                    {feed.counts.active} source-authorised active items exist.
-                    Your view, search or source filter excludes them.
+                    No work matched your current search, source and priority filters.
+                    {feed.counts.active > 0
+                      ? ` ${feed.counts.active} active items exist in the verified source scope.`
+                      : ' The admitted source scope currently reports no active work.'}
                   </p>
                   {hasFiltered && <button type="button" onClick={() => {
                     setFilter('ALL'); setSource('ALL'); setQuery('');
@@ -377,11 +410,17 @@ export default function DailyAttentionWorkspace({
               ) : (
                 <>
                   <CheckCircle2 size={23} className="text-emerald-300"/>
-                  <h3 className="mt-2 text-base font-semibold">No active work in verified sources</h3>
+                  <h3 className="mt-2 text-base font-semibold">
+                    {singleSource ? `No active ${label(singleSource.moduleId)} work` : 'No active work in verified sources'}
+                  </h3>
                   <p className="mt-2 text-xs leading-5 text-slate-400">
-                    {sourceCoverage.map((entry) => label(entry.moduleId)).join(', ')} returned
-                    an empty active queue. Other business functions were not verified.
-                    No next SLA or completed-work count is available from this feed.
+                    {singleSource
+                      ? `${label(singleSource.moduleId)} returned an empty active queue.`
+                      : `${sourceCoverage.map((entry) => label(entry.moduleId)).join(', ')} returned an empty active queue.`}
+                    {missing.length > 0
+                      ? ` ${missing.map(label).join(', ')} ${missing.length === 1 ? 'was' : 'were'} not verified for this session.`
+                      : ' Every admitted source currently reports no active work.'}
+                    {' '}No next SLA or completed-work count is available from this feed.
                   </p>
                   {sourceCoverage.some((entry) => entry.moduleId === 'OPERATIONS') && onOpenOperations && (
                     <button type="button" onClick={onOpenOperations}
@@ -494,7 +533,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.2.0-BOUNDED-ATTENTION-INBOX-WINDOW
+// VERSION: v1.3.0-EXECUTIVE-SOURCE-CLARITY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
