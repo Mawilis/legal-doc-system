@@ -9,7 +9,7 @@ EPITOME: Binds an authenticated identity and explicit tenant scope to current
          an authorization authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/tenant_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering / Python EOS IAM.
-CERTIFICATION / UPDATE DATE: 2026-10-19
+CERTIFICATION / UPDATE DATE: 2026-11-11
 CHANGELOG:
     2026-11-11 v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER evaluates existing
     synchronous MongoDB authorization and its workforce transaction in
@@ -80,7 +80,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION"
+VERSION: Final[str] = "v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER"
 logger = logging.getLogger("WilsyOS.API.TenantAuthorization")
 _OBSERVATION_SCHEMA: Final[str] = "WILSY-TENANT-AUTHORIZATION-OBSERVATION/V1"
 _OBSERVATION_VERSION: Final[str] = "v1.0.0-P6-IAM-DENIAL-OBSERVABILITY"
