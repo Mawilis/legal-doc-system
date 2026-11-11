@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
+ * VERSION: v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,10 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
+ * CHANGELOG: v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY renders
+ *          all small admitted work queues directly for reliable mobile
+ *          row selection; virtual windowing remains for large queues.
+ *          v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
  *          closes the contextual rail only after EOS confirms a source
  *          completion; failed actions preserve evidence and selection.
  *          v2.8.0-EXECUTABLE-MOBILE-HEADER bounds the
@@ -203,10 +206,12 @@ export default function DailyAttentionWorkspace({
   const inboxOffset = inboxRef.current?.offsetTop || 0;
   const firstVisibleIndex = Math.floor(Math.max(0, scrollTop - inboxOffset)
     / ATTENTION_ROW_HEIGHT);
-  const windowStart = Math.max(0, firstVisibleIndex - ATTENTION_ROW_OVERSCAN);
+  const windowStart = page.length <= 50
+    ? 0 : Math.max(0, firstVisibleIndex - ATTENTION_ROW_OVERSCAN);
   const windowSize = Math.ceil(viewportHeight / ATTENTION_ROW_HEIGHT)
     + ATTENTION_ROW_OVERSCAN * 2;
-  const windowEnd = Math.min(page.length, windowStart + windowSize);
+  const windowEnd = page.length <= 50
+    ? page.length : Math.min(page.length, windowStart + windowSize);
   const visibleItems = page.slice(windowStart, windowEnd).map((item, offset) => ({
     item, index: windowStart + offset,
   }));
@@ -915,7 +920,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
+// VERSION: v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
