@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.6.0-ISOLATED-SOURCE-COMMAND-RECOVERY
+ * VERSION: v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -17,7 +17,10 @@
  * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
  *                     endpoints independently authorize every mutation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * CHANGELOG: v2.6.0-ISOLATED-SOURCE-COMMAND-RECOVERY admits
+ * CHANGELOG: v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT exposes
+ *            a user-initiated source create action despite optional IAM
+ *            probe failure; EOS remains the independent write authority.
+ *            v2.6.0-ISOLATED-SOURCE-COMMAND-RECOVERY admits
  *            independently verified actions for each available source,
  *            identifies unavailable source commands without hiding healthy
  *            CRM work execution, and preserves exact-scope write gating.
@@ -551,8 +554,8 @@ export default function WilsyDailyAttentionCentre({
   const handleSourceCreate = async (moduleId, form, idempotencyKey) => {
     if (!workScope || status !== 'READY' || attentionStatus !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
-      || sourceActionsScope !== liveScopeKey || sourceActionsStatus !== 'READY'
-      || !sourceActions[moduleId]?.includes('CREATE')
+      || !projection?.sources_included?.includes(moduleId)
+      || !['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(moduleId)
       || creatingWork || bulkCompleting || completionId) return false;
     setCreationError('');
     setCreationNotice('');
@@ -567,7 +570,9 @@ export default function WilsyDailyAttentionCentre({
       return true;
     } catch (error) {
       const http = error?.response?.status;
-      setCreationError(http === 403 ? 'Your session does not authorize creation for this source.'
+      setCreationError(http === 403 ? 'EOS denied this task creation. Verify subscription, membership and create permission.'
+        : http === 401 ? 'Your session expired. Sign in again before creating work.'
+          : http === 503 ? 'EOS command service unavailable; the task was not confirmed as created.'
         : http === 409 ? 'This work intent conflicts with existing source evidence.'
           : http === 422 ? 'The source rejected this work request. Review the fields.'
             : 'Creation could not be confirmed. Retry using the same intent key.');
@@ -918,7 +923,7 @@ export default function WilsyDailyAttentionCentre({
               bulkResult={bulkResult}
               onCreateWork={handleSourceCreate}
               creatingWork={creatingWork}
-              workUpdating={attentionStatus !== 'READY' || !['READY', 'PARTIAL'].includes(sourceActionsStatus)}
+              workUpdating={attentionStatus !== 'READY'}
               actionAvailabilityUnavailable={['UNAVAILABLE', 'PARTIAL'].includes(sourceActionsStatus)}
               unavailableActionSources={unavailableActionSources}
               creationError={creationError}
@@ -1190,7 +1195,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.6.0-ISOLATED-SOURCE-COMMAND-RECOVERY
+ * VERSION: v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
