@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.8.0-EXECUTABLE-MOBILE-HEADER
+ * VERSION: v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,10 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v2.8.0-EXECUTABLE-MOBILE-HEADER bounds the
+ * CHANGELOG: v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
+ *          closes the contextual rail only after EOS confirms a source
+ *          completion; failed actions preserve evidence and selection.
+ *          v2.8.0-EXECUTABLE-MOBILE-HEADER bounds the
  *          workspace control header on narrow screens and permits internal
  *          scrolling so source work submission remains reachable at 390px.
  *          v2.7.0-SOURCE-EXECUTION-IN-PANEL enables
@@ -850,9 +853,14 @@ export default function DailyAttentionWorkspace({
           </dl>
           {canComplete && (
             <form className="mt-4 space-y-2 rounded-lg border border-amber-300/20 bg-[#102034] p-3"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
-                if (completionNote.trim() && !completingId) onCompleteWork(selected, completionNote);
+                if (!completionNote.trim() || completingId) return;
+                const confirmed = await onCompleteWork(selected, completionNote);
+                if (confirmed === true) {
+                  setSelectedId(null);
+                  setCompletionNote('');
+                }
               }}>
               <label htmlFor="attention-completion-evidence" className="block text-xs font-semibold text-amber-100">
                 Complete source work
@@ -907,7 +915,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.8.0-EXECUTABLE-MOBILE-HEADER
+// VERSION: v2.9.0-ACTION-CONFIRMED-MOBILE-RAIL
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
