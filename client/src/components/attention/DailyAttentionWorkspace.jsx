@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY
+ * VERSION: v2.3.0-SEMANTIC-SEVERITY-TRIAGE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY adds
+ * CHANGELOG: v2.3.0-SEMANTIC-SEVERITY-TRIAGE presents source
+ *          priority and overdue urgency in labeled, distinct semantic
+ *          colours across the inbox, legend and detail rail; no invented SLA.
+ *          v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY adds
  *          source-specific truthful zero-work explanations and denser
  *          module/priority/body/deadline information in 44px work rows.
  *          v2.1.1-ACTION-VERIFICATION-RECOVERY exposes
@@ -125,6 +128,15 @@ const EMPTY_SOURCE_COPY = Object.freeze({
   OPERATIONS: 'Operational jobs, reminders and exceptions appear when the Operations source reports them.',
   INTELLIGENCE: 'Authorised alerts and review obligations appear when Intelligence raises them.',
 });
+const SEVERITY = Object.freeze({
+  CRITICAL: { label: 'Critical', chip: 'border-rose-400/70 bg-rose-500/20 text-rose-100', rail: 'border-rose-400', row: 'border-l-rose-500 bg-rose-500/[0.045]', dot: 'bg-rose-400' },
+  HIGH: { label: 'High', chip: 'border-orange-400/65 bg-orange-500/15 text-orange-100', rail: 'border-orange-400', row: 'border-l-orange-400 bg-orange-500/[0.035]', dot: 'bg-orange-400' },
+  NORMAL: { label: 'Normal', chip: 'border-sky-400/55 bg-sky-500/15 text-sky-100', rail: 'border-sky-400', row: 'border-l-sky-500', dot: 'bg-sky-400' },
+  LOW: { label: 'Low', chip: 'border-slate-400/50 bg-slate-400/10 text-slate-200', rail: 'border-slate-400', row: 'border-l-slate-500', dot: 'bg-slate-400' },
+});
+const severityFor = (item) => item.isOverdue
+  ? { label: 'Overdue', chip: 'border-red-400/70 bg-red-500/20 text-red-100', rail: 'border-red-400', row: 'border-l-red-500 bg-red-500/[0.06]', dot: 'bg-red-400' }
+  : SEVERITY[item.priority] || SEVERITY.NORMAL;
 const sourceStatus = (item) => typeof item?.status === 'string'
   && item.status.trim() ? item.status : 'Source status unavailable';
 
@@ -188,6 +200,10 @@ export default function DailyAttentionWorkspace({
     && authorisedActions[item.sourceModule]?.includes('COMPLETE'));
   const batchItems = bulkEligible.slice(0, 25);
   const ranked = page.slice(0, 5);
+  const visiblePriorityCounts = Object.fromEntries(
+    Object.keys(SEVERITY).map((level) => [level, page.filter((item) => item.priority === level).length]),
+  );
+  const visibleOverdueCount = page.filter((item) => item.isOverdue).length;
   const sourceCoverage = feed.sources || [];
   const creatableSources = Object.entries(authorisedActions)
     .filter(([, actions]) => actions.includes('CREATE')).map(([moduleId]) => moduleId);
@@ -500,6 +516,18 @@ export default function DailyAttentionWorkspace({
                       : 'border-white/15 text-slate-300 hover:bg-white/5')}>{name}</button>
               ))}
             </div>
+            <div role="group" aria-label="Severity of loaded work" className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+              <span className="mr-1 text-slate-400">Loaded work severity</span>
+              {Object.entries(SEVERITY).map(([level, visual]) => (
+                <span key={level} className={'inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium ' + visual.chip}>
+                  <span aria-hidden="true" className={'h-1.5 w-1.5 rounded-full ' + visual.dot}/>
+                  {visual.label} {visiblePriorityCounts[level]}
+                </span>
+              ))}
+              {visibleOverdueCount > 0 && <span className="rounded-md border border-red-400/70 bg-red-500/20 px-2 py-1 text-red-100">
+                Overdue {visibleOverdueCount}
+              </span>}
+            </div>
             <div className="mt-2 flex min-w-0 gap-2">
               <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/15 bg-[#0a1628] px-3">
                 <Search size={15} className="text-slate-400"/>
@@ -645,9 +673,8 @@ export default function DailyAttentionWorkspace({
                     style={{position: 'absolute', top: index * ATTENTION_ROW_HEIGHT,
                       left: 0, right: 0, height: ATTENTION_ROW_HEIGHT}}
                     className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-0.5 transition-colors ' +
-                      (selectedId === item.id ? 'border-l-amber-300 bg-amber-300/[0.07]'
-                        : item.isOverdue ? 'border-l-rose-400/70 hover:bg-white/[0.04]'
-                          : 'border-l-transparent hover:bg-white/[0.04]')}>
+                      severityFor(item).row + (selectedId === item.id
+                        ? ' ring-1 ring-inset ring-amber-300/60' : ' hover:bg-white/[0.06]')}>
                     <input type="checkbox" aria-label={'Select ' + item.title}
                       checked={checkedSet.has(item.id)}
                       onChange={(event) => setCheckedIds((before) => event.target.checked
@@ -657,6 +684,11 @@ export default function DailyAttentionWorkspace({
                     <span className="hidden w-14 shrink-0 rounded-md border border-white/10 bg-white/[0.035] px-1.5 py-1 text-center text-[10px] font-semibold text-slate-300 sm:block">
                       {label(item.sourceModule)}
                     </span>
+                    <span aria-label={'Severity ' + severityFor(item).label + '; priority ' + item.priority}
+                      className={'inline-flex w-[76px] shrink-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-[10px] font-bold ' + severityFor(item).chip}>
+                      <span aria-hidden="true" className={'h-1.5 w-1.5 rounded-full ' + severityFor(item).dot}/>
+                      {severityFor(item).label}
+                    </span>
                     <button type="button" aria-label={'Inspect ' + item.title}
                       aria-pressed={selectedId === item.id}
                       onDoubleClick={() => open(item)}
@@ -665,9 +697,7 @@ export default function DailyAttentionWorkspace({
                       <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
                       <span className={'mt-0.5 block truncate text-[10px] leading-4 ' +
                         (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}>
-                        <span className={item.priority === 'CRITICAL' ? 'text-rose-200'
-                          : item.priority === 'HIGH' ? 'text-amber-200' : ''}>{item.priority}</span>
-                        {' · '}{sourceStatus(item)}{' · '}
+                        <span>{label(item.sourceModule)} · {sourceStatus(item)}</span>{' · '}
                         <span>{item.summary || label(item.sourceModule)}</span>
                       </span>
                     </button>
@@ -750,6 +780,15 @@ export default function DailyAttentionWorkspace({
               <X size={16}/>
             </button>
           </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <span className={'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-bold ' + severityFor(selected).chip}>
+              <span aria-hidden="true" className={'h-1.5 w-1.5 rounded-full ' + severityFor(selected).dot}/>
+              {severityFor(selected).label} severity
+            </span>
+            {selected.isOverdue && <span className="rounded-md border border-orange-300/40 px-2 py-1 text-[11px] text-orange-100">
+              {selected.priority} source priority · deadline passed
+            </span>}
+          </div>
           <p className="mt-2 text-sm font-semibold">{selected.title}</p>
           {selected.summary && <p className="mt-1 text-xs leading-5 text-slate-300">{selected.summary}</p>}
           <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
@@ -818,7 +857,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v2.2.0-EXECUTIVE-SIX-MODULE-CLARITY
+// VERSION: v2.3.0-SEMANTIC-SEVERITY-TRIAGE
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
