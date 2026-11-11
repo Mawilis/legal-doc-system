@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION
+ * VERSION: v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION checks
+ * CHANGELOG: v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION adds
+ *            the authenticated, idempotent create action for existing CRM,
+ *            Operations and Intelligence work, with verified EOS readback.
+ *            v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION checks
  *            EOS action availability independently, delegates Operations
  *            and Intelligence completion to source-owned authenticated POSTs,
  *            and invalidates current My Work only after source confirmation.
@@ -110,6 +113,7 @@ import {
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
 import {
   readAttentionFeed, readAttentionSourceActions, completeAttentionSourceWork,
+  createAttentionSourceWork,
 } from '../../services/attentionFeedClient.js';
 import DailyAttentionWorkspace from '../attention/DailyAttentionWorkspace.jsx';
 
@@ -208,6 +212,9 @@ export default function WilsyDailyAttentionCentre({
   const [sourceActionsScope, setSourceActionsScope] = useState(null);
   const [completionId, setCompletionId] = useState(null);
   const [completionError, setCompletionError] = useState('');
+  const [creatingWork, setCreatingWork] = useState(false);
+  const [creationError, setCreationError] = useState('');
+  const [creationNotice, setCreationNotice] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const feedGenerationRef = useRef(0);
@@ -238,6 +245,9 @@ export default function WilsyDailyAttentionCentre({
     setSourceActionsScope(null);
     setCompletionId(null);
     setCompletionError('');
+    setCreatingWork(false);
+    setCreationError('');
+    setCreationNotice('');
     setLoadingMore(false);
     setFilter('ALL');
     setSource('ALL');
@@ -459,6 +469,35 @@ export default function WilsyDailyAttentionCentre({
             : 'Source completion could not be confirmed. Refresh before retrying.');
     } finally {
       setCompletionId(null);
+    }
+  };
+
+  const handleSourceCreate = async (moduleId, form, idempotencyKey) => {
+    if (!workScope || status !== 'READY' || attentionStatus !== 'READY'
+      || verifiedAttentionScopeRef.current !== liveScopeKey
+      || sourceActionsScope !== liveScopeKey
+      || !sourceActions[moduleId]?.includes('CREATE')
+      || creatingWork) return false;
+    setCreationError('');
+    setCreationNotice('');
+    setCreatingWork(true);
+    try {
+      const saved = await createAttentionSourceWork(
+        moduleId, { tenantId, principalId: auth.user.id }, form, idempotencyKey,
+      );
+      setCreationNotice('Source work created: ' + saved.work_item_id);
+      invalidateUnifiedMyWork(workScope);
+      setRefreshId((id) => id + 1);
+      return true;
+    } catch (error) {
+      const http = error?.response?.status;
+      setCreationError(http === 403 ? 'Your session does not authorize creation for this source.'
+        : http === 409 ? 'This work intent conflicts with existing source evidence.'
+          : http === 422 ? 'The source rejected this work request. Review the fields.'
+            : 'Creation could not be confirmed. Retry using the same intent key.');
+      return false;
+    } finally {
+      setCreatingWork(false);
     }
   };
 
@@ -798,6 +837,10 @@ export default function WilsyDailyAttentionCentre({
               onOpenWorkforce={onOpenWorkforce}
               authorisedActions={sourceActionsScope === liveScopeKey ? sourceActions : {}}
               onCompleteWork={handleSourceCompletion}
+              onCreateWork={handleSourceCreate}
+              creatingWork={creatingWork}
+              creationError={creationError}
+              creationNotice={creationNotice}
               completingId={completionId}
               completionError={completionError}
               onLoadMore={loadMoreAttention}
@@ -1065,7 +1108,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION
+ * VERSION: v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
