@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT
+ * VERSION: v1.2.0-DENSE-WINDOW-GEOMETRY-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,9 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT verifies
+ * CHANGELOG: v1.2.0-DENSE-WINDOW-GEOMETRY-CERT verifies
+ *          scroll access and bounded rendering with 44px executive rows.
+ *          v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT verifies
  *          admitted-source evidence expansion and honest partial-scope
  *          empty copy alongside bounded 500-item rendering.
  *          v1.0.0-500-ITEM-BOUNDED-RENDER-CERT proves a bounded DOM row
@@ -104,7 +106,7 @@ describe('Daily Attention bounded inbox', () => {
     Object.defineProperty(scroller, 'scrollTop', {
       configurable: true,
       writable: true,
-      value: 499 * 68,
+      value: 499 * 44,
     });
     fireEvent.scroll(scroller);
 
@@ -181,7 +183,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT
+// VERSION: v1.2.0-DENSE-WINDOW-GEOMETRY-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
