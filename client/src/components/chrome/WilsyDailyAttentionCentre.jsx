@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
+ * VERSION: v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -17,7 +17,11 @@
  * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
  *                     endpoints independently authorize every mutation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * CHANGELOG: v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
+ * CHANGELOG: v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT allows
+ *            user-initiated completion for current exact-source, verified
+ *            active work despite optional capability-probe outage;
+ *            authoritative EOS POST still rechecks permission and state.
+ *            v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
  *            returns successful source creation to unfiltered work,
  *            immediately refetches source work and retains EOS readback.
  *            v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT exposes
@@ -493,10 +497,12 @@ export default function WilsyDailyAttentionCentre({
   const handleSourceCompletion = async (item, note) => {
     if (!workScope || attentionStatus !== 'READY' || status !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
-      || sourceActionsScope !== liveScopeKey || !['READY', 'PARTIAL'].includes(sourceActionsStatus)
+      || !projection?.sources_included?.includes(item?.sourceModule)
+      || !['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(item?.sourceModule)
       || bulkCompleting || creatingWork
-      || !sourceActions[item?.sourceModule]?.includes('COMPLETE')
-      || !attentionFeed?.items.some((row) => row.id === item.id)
+      || item?.status !== 'OPEN'
+      || !attentionFeed?.items.some((row) => row.id === item.id
+        && row.sourceRecordId === item.sourceRecordId)
       || completionId) return;
     setCompletionError('');
     setCompletionId(item.id);
@@ -506,7 +512,9 @@ export default function WilsyDailyAttentionCentre({
       setRefreshId((id) => id + 1);
     } catch (error) {
       const http = error?.response?.status;
-      setCompletionError(http === 403 ? 'Source authorization denied this completion.'
+      setCompletionError(http === 403 ? 'EOS denied completion. Verify tenant membership, source entitlement and complete permission.'
+        : http === 401 ? 'Your session expired. Sign in again before completing work.'
+          : http === 503 ? 'EOS command service unavailable. Completion was not confirmed.'
         : http === 409 ? 'Work changed since inspection. Refresh and review again.'
           : http === 422 ? 'Completion evidence was rejected by its source.'
             : 'Source completion could not be confirmed. Refresh before retrying.');
@@ -1203,7 +1211,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
+ * VERSION: v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
