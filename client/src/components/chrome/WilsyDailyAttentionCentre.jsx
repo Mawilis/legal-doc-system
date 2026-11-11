@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT
+ * VERSION: v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -17,7 +17,10 @@
  * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
  *                     endpoints independently authorize every mutation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * CHANGELOG: v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT exposes
+ * CHANGELOG: v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
+ *            returns successful source creation to unfiltered work,
+ *            immediately refetches source work and retains EOS readback.
+ *            v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT exposes
  *            a user-initiated source create action despite optional IAM
  *            probe failure; EOS remains the independent write authority.
  *            v2.6.0-ISOLATED-SOURCE-COMMAND-RECOVERY admits
@@ -565,6 +568,11 @@ export default function WilsyDailyAttentionCentre({
         moduleId, { tenantId, principalId: auth.user.id }, form, idempotencyKey,
       );
       setCreationNotice('Source work created: ' + saved.work_item_id);
+      setFilter('ALL');
+      setSource('ALL');
+      setQuery('');
+      setDebouncedQuery('');
+      setView('WORK');
       invalidateUnifiedMyWork(workScope);
       setRefreshId((id) => id + 1);
       return true;
@@ -1195,7 +1203,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT
+ * VERSION: v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
