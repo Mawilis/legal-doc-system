@@ -207,6 +207,7 @@ export default function DailyAttentionWorkspace({
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
+  const sourceCoverage = feed.sources || [];
   const canComplete = selected && selected.status === 'OPEN'
     && ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(selected.sourceModule)
     && sourceCoverage.some((entry) => entry.moduleId === selected.sourceModule)
@@ -221,7 +222,6 @@ export default function DailyAttentionWorkspace({
     Object.keys(SEVERITY).map((level) => [level, page.filter((item) => item.priority === level).length]),
   );
   const visibleOverdueCount = page.filter((item) => item.isOverdue).length;
-  const sourceCoverage = feed.sources || [];
   const inlineCommandSources = ['CRM', 'OPERATIONS', 'INTELLIGENCE'];
   const unmappedSources = sourceCoverage.filter((entry) => !inlineCommandSources.includes(entry.moduleId));
   // An optional action-status read is not the authorization decision.
