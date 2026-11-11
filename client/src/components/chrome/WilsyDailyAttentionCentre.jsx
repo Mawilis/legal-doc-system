@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE
+ * VERSION: v3.1.0-SOURCE-CREATE-VALIDATION-EVIDENCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -17,7 +17,10 @@
  * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
  *                     endpoints independently authorize every mutation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * CHANGELOG: v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE returns
+ * CHANGELOG: v3.1.0-SOURCE-CREATE-VALIDATION-EVIDENCE
+ *            surfaces safe EOS 422 field codes rather than concealing
+ *            business-request failures behind generic validation copy.
+ *            v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE returns
  *            completion success to its presenting detail rail only after
  *            source EOS readback, releasing mobile bulk-triage controls;
  *            refusals retain the inspected record and evidence.
@@ -568,6 +571,28 @@ export default function WilsyDailyAttentionCentre({
     }
   };
 
+  const explainSourceValidation = (data) => {
+    const detail = data?.detail;
+    const safeFields = new Set([
+      'title', 'description', 'kind', 'priority', 'due_at',
+      'Idempotency-Key', 'idempotency-key', 'source_type', 'source_id',
+    ]);
+    if (Array.isArray(detail)) {
+      const parts = detail.slice(0, 3).map((error) => {
+        const loc = Array.isArray(error?.loc) ? error.loc : [];
+        const field = loc.find((part) => safeFields.has(part));
+        const reason = typeof error?.type === 'string'
+          && /^[a-z0-9_]{1,80}$/.test(error.type) ? error.type : 'invalid_value';
+        return field ? field + ' (' + reason + ')' : null;
+      }).filter(Boolean);
+      return parts.length ? 'EOS rejected: ' + parts.join(', ') + '.' : null;
+    }
+    if (typeof detail === 'string' && /^[A-Z][A-Z0-9_]{2,90}$/.test(detail)) {
+      return 'EOS rejected the task: ' + detail + '.';
+    }
+    return null;
+  };
+
   const handleSourceCreate = async (moduleId, form, idempotencyKey) => {
     if (!workScope || status !== 'READY' || attentionStatus !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
@@ -596,7 +621,8 @@ export default function WilsyDailyAttentionCentre({
         : http === 401 ? 'Your session expired. Sign in again before creating work.'
           : http === 503 ? 'EOS command service unavailable; the task was not confirmed as created.'
         : http === 409 ? 'This work intent conflicts with existing source evidence.'
-          : http === 422 ? 'The source rejected this work request. Review the fields.'
+          : http === 422 ? (explainSourceValidation(error?.response?.data)
+            || 'EOS returned 422. Open Network → work-items → Response to inspect the rejected field.')
             : 'Creation could not be confirmed. Retry using the same intent key.');
       return false;
     } finally {
@@ -1217,7 +1243,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE
+ * VERSION: v3.1.0-SOURCE-CREATE-VALIDATION-EVIDENCE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
