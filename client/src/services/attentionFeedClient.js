@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.0.0-EOS-ATTENTION-READ-CONTRACT
+ * VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -8,15 +8,19 @@
  * COLLABORATION / OWNERSHIP: AuthContext establishes the authenticated session;
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.0.0-EOS-ATTENTION-READ-CONTRACT establishes bounded read
+ * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CHANGELOG: v1.1.0-SOURCE-COMMAND-AVAILABILITY verifies
+ *          independent source-owned completion availability and delegates
+ *          actual commands to existing tenant-module routes; no browser IAM.
+ *          v1.0.0-EOS-ATTENTION-READ-CONTRACT establishes bounded read
  *          validation, explicit current-session scope, source coverage truth,
  *          server-side filters and cursor transport with no browser cache.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No persisted queue, no tokens in diagnostics,
  *          no confidential detail inference or self-granted action hints.
  * TENANT BOUNDARY: Every read checks exact EOS tenant and principal identity.
- * AUTHORITY BOUNDARY: GET only; OPEN is navigation, not command authority.
+ * AUTHORITY BOUNDARY: EOS reports available source commands; existing module
+ *          endpoints reauthorize every POST and own durable persistence.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes finances.
  */
 
@@ -149,9 +153,63 @@ export async function readAttentionFeed(scope, options = {}) {
   return verified;
 }
 
+/**
+ * @description Read exact current-tenant completion availability independently
+ *              verified by EOS's existing source IAM dependencies.
+ * @param {{tenantId:string,principalId:string}} scope Authenticated EOS identity.
+ * @returns {Promise<Object>} Validated availability only, never a grant.
+ * @authority The source command endpoint independently reauthorizes every write.
+ */
+export async function readAttentionSourceActions(scope) {
+  if (!scope?.tenantId || !scope?.principalId) {
+    throw new Error('ATTENTION_AUTHENTICATED_SCOPE_REQUIRED');
+  }
+  const response = await api.get('/attention/actions', { forceNetworkRetry: true });
+  const data = response?.data;
+  if (!data || data.schema !== 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1'
+    || data.tenantId !== scope.tenantId
+    || data.principalId !== scope.principalId
+    || data.authority !== 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE'
+    || !data.sourceActions || typeof data.sourceActions !== 'object'
+    || Array.isArray(data.sourceActions)
+    || Object.entries(data.sourceActions).some(([source, actions]) =>
+      !['OPERATIONS', 'INTELLIGENCE'].includes(source)
+      || !Array.isArray(actions) || actions.length !== 1 || actions[0] !== 'COMPLETE')) {
+    throw new Error('ATTENTION_ACTION_AVAILABILITY_INVALID');
+  }
+  return data.sourceActions;
+}
+
+/**
+ * @description Execute an existing, source-owned durable completion.
+ * @param {Object} item EOS-attested work identity.
+ * @param {string} completionNote User-supplied completion evidence.
+ * @returns {Promise<Object>} Actual source transaction response.
+ * @authority This request grants no permission; source IAM and Mongo transaction
+ *            independently verify tenant, item, entitlement and completion.
+ * @idempotency Source registry handles completed-work replay/conflict; client
+ *              does not fabricate optimistic terminal status.
+ */
+export async function completeAttentionSourceWork(item, completionNote) {
+  const slug = { OPERATIONS: 'operations', INTELLIGENCE: 'intelligence' }[item?.sourceModule];
+  if (!slug || !item?.sourceRecordId || typeof completionNote !== 'string'
+    || !completionNote.trim() || completionNote.length > 1000) {
+    throw new Error('ATTENTION_SOURCE_COMPLETION_INPUT_INVALID');
+  }
+  const response = await api.post(
+    '/tenant-modules/' + slug + '/workspace/work-items/'
+      + encodeURIComponent(item.sourceRecordId) + '/complete',
+    { completion_note: completionNote.trim() },
+  );
+  if (!response?.data || response.data.work_item_id !== item.sourceRecordId) {
+    throw new Error('ATTENTION_SOURCE_COMPLETION_READBACK_INVALID');
+  }
+  return response.data;
+}
+
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.0.0-EOS-ATTENTION-READ-CONTRACT
-// AUTHORITY BOUNDARY: Exact source-authorized GET only; OPEN is navigation.
+// VERSION: v1.1.0-SOURCE-COMMAND-AVAILABILITY
+// AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
