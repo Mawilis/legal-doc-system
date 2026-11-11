@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.2.0-THREE-SOURCE-ACTION-CONTRACTS
+ * VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-READS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -9,7 +9,10 @@
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.2.0-THREE-SOURCE-ACTION-CONTRACTS adds
+ * CHANGELOG: v1.3.0-ISOLATED-SOURCE-ACTION-READS reads
+ *          command capability separately for each admitted source,
+ *          retaining healthy actions despite unrelated source outages.
+ *          v1.2.0-THREE-SOURCE-ACTION-CONTRACTS adds
  *          CRM and module CREATE/COMPLETE routes using already-authorized
  *          source transactions and required durable create idempotency keys.
  *          v1.1.0-SOURCE-COMMAND-AVAILABILITY verifies
@@ -163,23 +166,50 @@ export async function readAttentionFeed(scope, options = {}) {
  * @returns {Promise<Object>} Validated availability only, never a grant.
  * @authority The source command endpoint independently reauthorizes every write.
  */
-export async function readAttentionSourceActions(scope) {
+function isAttentionActionResponse(data, scope, expectedSource = null) {
+  if (!data || data.schema !== 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1'
+    || data.tenantId !== scope.tenantId || data.principalId !== scope.principalId
+    || data.authority !== 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE'
+    || !data.sourceActions || typeof data.sourceActions !== 'object'
+    || Array.isArray(data.sourceActions)) return false;
+  return Object.entries(data.sourceActions).every(([source, actions]) =>
+    ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(source)
+    && (!expectedSource || source === expectedSource)
+    && Array.isArray(actions) && actions.length > 0 && actions.length <= 2
+    && actions.every((action) => ['CREATE', 'COMPLETE'].includes(action))
+    && new Set(actions).size === actions.length);
+}
+
+export async function readAttentionSourceActions(scope, admittedSources = null) {
   if (!scope?.tenantId || !scope?.principalId) {
     throw new Error('ATTENTION_AUTHENTICATED_SCOPE_REQUIRED');
   }
+  const admitted = Array.isArray(admittedSources) ? admittedSources.filter((source) =>
+    ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(source)) : null;
+  if (admitted && admitted.length) {
+    const settled = await Promise.allSettled(admitted.map((source) =>
+      api.get('/attention/actions/' + source.toLowerCase(), { forceNetworkRetry: true })));
+    const sourceActions = {};
+    const unavailableSources = [];
+    for (let i = 0; i < settled.length; i += 1) {
+      const result = settled[i];
+      const source = admitted[i];
+      if (result.status !== 'fulfilled') {
+        unavailableSources.push(source);
+        continue;
+      }
+      const data = result.value?.data;
+      if (!isAttentionActionResponse(data, scope, source)) {
+        unavailableSources.push(source);
+        continue;
+      }
+      if (data.sourceActions[source]) sourceActions[source] = data.sourceActions[source];
+    }
+    return { sourceActions, unavailableSources };
+  }
   const response = await api.get('/attention/actions', { forceNetworkRetry: true });
   const data = response?.data;
-  if (!data || data.schema !== 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1'
-    || data.tenantId !== scope.tenantId
-    || data.principalId !== scope.principalId
-    || data.authority !== 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE'
-    || !data.sourceActions || typeof data.sourceActions !== 'object'
-    || Array.isArray(data.sourceActions)
-    || Object.entries(data.sourceActions).some(([source, actions]) =>
-      !['OPERATIONS', 'INTELLIGENCE', 'CRM'].includes(source)
-      || !Array.isArray(actions) || actions.length < 1 || actions.length > 2
-      || actions.some((action) => !['CREATE', 'COMPLETE'].includes(action))
-      || new Set(actions).size !== actions.length)) {
+  if (!isAttentionActionResponse(data, scope)) {
     throw new Error('ATTENTION_ACTION_AVAILABILITY_INVALID');
   }
   return data.sourceActions;
@@ -259,7 +289,7 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
 }
 
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.2.0-THREE-SOURCE-ACTION-CONTRACTS
+// VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-READS
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
