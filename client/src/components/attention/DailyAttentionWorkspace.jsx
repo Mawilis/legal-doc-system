@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE
+ * VERSION: v1.7.0-SOURCE-CONFIRMED-COMPLETION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE adds checkbox
+ * CHANGELOG: v1.7.0-SOURCE-CONFIRMED-COMPLETION shows a
+ *          source-permitted completion form with operator evidence and
+ *          explicit success/failure revalidation, never optimistic mutation.
+ *          v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE adds checkbox
  *          selection, clear/select-visible controls and an explicit bulk
  *          inspection handoff; server-authorised mutations remain source-owned.
  *          v1.5.0-EXECUTIVE-FOCUS-CONTINUITY retains row
@@ -51,6 +54,7 @@
  *          every item is already checked against current tenant and source.
  * AUTHORITY BOUNDARY: OPEN delegates to existing EOS-authorised My Work.
  *          Selection is inspection only, not permission to bulk mutate.
+ *          Existing module completion POSTs independently reauthorize writes.
  * TRANSACTION / IDEMPOTENCY BOUNDARY: Presentation only; zero writes, source
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
@@ -106,10 +110,12 @@ export default function DailyAttentionWorkspace({
   feed, calendarItems, filter, setFilter, source, setSource, query, setQuery,
   onRefresh, onOpenWork, onOpenOperations, onOpenWorkforce,
   onLoadMore, loadingMore, pageError,
+  authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
 }) {
   const [mode, setMode] = useState('WORK');
   const [selectedId, setSelectedId] = useState(null);
   const [checkedIds, setCheckedIds] = useState([]);
+  const [completionNote, setCompletionNote] = useState('');
   const [showBriefing, setShowBriefing] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSourceDetails, setShowSourceDetails] = useState(false);
@@ -133,6 +139,8 @@ export default function DailyAttentionWorkspace({
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
+  const canComplete = selected && authorisedActions[selected.sourceModule]?.includes('COMPLETE')
+    && selected.status === 'OPEN' && typeof onCompleteWork === 'function';
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const checkedItems = page.filter((item) => checkedSet.has(item.id));
   const ranked = page.slice(0, 5);
@@ -148,6 +156,8 @@ export default function DailyAttentionWorkspace({
     if (listRef.current) listRef.current.scrollTop = 0;
     setScrollTop(0);
   }, [filter, source]);
+
+  useEffect(() => { setCompletionNote(''); }, [selectedId]);
 
   useEffect(() => {
     const node = listRef.current;
@@ -558,6 +568,28 @@ export default function DailyAttentionWorkspace({
             <div><dt className="text-slate-400">SLA</dt><dd>{selected.slaBreachAt ? dueLabel(selected.slaBreachAt) : 'Not supplied by source'}</dd></div>
             <div><dt className="text-slate-400">Record</dt><dd className="break-all">{selected.sourceRecordId}</dd></div>
           </dl>
+          {canComplete && (
+            <form className="mt-4 space-y-2 rounded-lg border border-amber-300/20 bg-[#102034] p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (completionNote.trim() && !completingId) onCompleteWork(selected, completionNote);
+              }}>
+              <label htmlFor="attention-completion-evidence" className="block text-xs font-semibold text-amber-100">
+                Complete source work
+              </label>
+              <textarea id="attention-completion-evidence" value={completionNote}
+                maxLength={1000} rows={2} required
+                onChange={(event) => setCompletionNote(event.target.value)}
+                placeholder="Record what was completed and the evidence for this decision"
+                className="w-full rounded-md border border-white/20 bg-[#09162a] px-2 py-1.5 text-xs text-white"/>
+              <button type="submit" disabled={!!completingId || !completionNote.trim()}
+                className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
+                {completingId === selected.id ? 'Confirming with EOS…' : 'Confirm completion'}
+              </button>
+              <p className="text-[10px] text-slate-400">EOS rechecks your permission and saves completion in the owning module.</p>
+            </form>
+          )}
+          {completionError && <p role="alert" className="mt-2 text-xs text-rose-200">{completionError}</p>}
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-3">
             <p className="text-[10px] text-slate-400">Only source-owned actions are authorised.</p>
             <button type="button" onClick={() => open(selected)}
@@ -592,7 +624,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE
+// VERSION: v1.7.0-SOURCE-CONFIRMED-COMPLETION
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
