@@ -9,6 +9,14 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: No browser-persisted queue, invented notices,
+ *                            unread receipts or browser-granted permissions.
+ * TENANT BOUNDARY: Current authenticated tenant/principal/session scoped;
+ *                  foreign or invalid source and command evidence fails closed.
+ * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
+ *                     endpoints independently authorize every mutation.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * CHANGELOG: v2.5.1-STABLE-ACTION-CAPABILITY-RECHECK keeps
  *            same-session command forms mounted during action IAM refresh,
  *            disables writes until refreshed authorization returns, and
@@ -94,14 +102,6 @@
  *            fetching, scoped validation, due/priority/source triage, search,
  *            keyboard/outside dismissal, safe refresh, detail expansion and
  *            source-owned action navigation.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * SECURITY / PRIVACY POSTURE: No browser-persisted queue, fabricated notices,
- *                            unread receipts, or client-derived permissions.
- * TENANT BOUNDARY: Rejects missing/mismatched tenant projections and stale
- *                  in-flight reads on authenticated scope changes.
- * AUTHORITY BOUNDARY: Read-only projection. Only EOS source services may
- *                     complete, approve, assign or acknowledge work.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
  */
 
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
