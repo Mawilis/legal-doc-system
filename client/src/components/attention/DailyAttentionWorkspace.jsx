@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.5.0-EXECUTIVE-FOCUS-CONTINUITY
+ * VERSION: v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.5.0-EXECUTIVE-FOCUS-CONTINUITY retains row
+ * CHANGELOG: v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE adds checkbox
+ *          selection, clear/select-visible controls and an explicit bulk
+ *          inspection handoff; server-authorised mutations remain source-owned.
+ *          v1.5.0-EXECUTIVE-FOCUS-CONTINUITY retains row
  *          selection and scroll while executive search input changes and
  *          clamps scroll only after a narrower verified page arrives.
  *          v1.4.0-DENSE-EXECUTIVE-WORK-ROWS reduces task
@@ -106,6 +109,7 @@ export default function DailyAttentionWorkspace({
 }) {
   const [mode, setMode] = useState('WORK');
   const [selectedId, setSelectedId] = useState(null);
+  const [checkedIds, setCheckedIds] = useState([]);
   const [showBriefing, setShowBriefing] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSourceDetails, setShowSourceDetails] = useState(false);
@@ -129,6 +133,8 @@ export default function DailyAttentionWorkspace({
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
+  const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
+  const checkedItems = page.filter((item) => checkedSet.has(item.id));
   const ranked = page.slice(0, 5);
   const sourceCoverage = feed.sources || [];
   const missing = feed.coverage.notRepresentedSources || [];
@@ -172,6 +178,11 @@ export default function DailyAttentionWorkspace({
   }, [mode, page.length]);
   useEffect(() => {
     if (selectedId && !page.some((item) => item.id === selectedId)) setSelectedId(null);
+    setCheckedIds((before) => {
+      const present = new Set(page.map((item) => item.id));
+      const next = before.filter((id) => present.has(id));
+      return next.length === before.length ? before : next;
+    });
   }, [page, selectedId]);
 
   const open = (item) => {
@@ -450,6 +461,20 @@ export default function DailyAttentionWorkspace({
           )}
           {page.length > 0 && (
             <section aria-label="Attention inbox">
+              <div className="sticky top-0 z-[1] flex items-center justify-between gap-2 border-b border-white/10 bg-[#101d32] px-3 py-1.5 text-[11px]">
+                <label className="inline-flex items-center gap-2 text-slate-300">
+                  <input type="checkbox" aria-label="Select all loaded work"
+                    checked={checkedItems.length === page.length && page.length > 0}
+                    onChange={(event) => setCheckedIds(event.target.checked
+                      ? page.map((item) => item.id) : [])}
+                    className="accent-amber-300"/>
+                  Select loaded · {checkedItems.length} selected
+                </label>
+                {checkedItems.length > 0 && (
+                  <button type="button" onClick={() => setCheckedIds([])}
+                    className="text-amber-200 hover:text-amber-100">Clear selection</button>
+                )}
+              </div>
               <div ref={inboxRef} role="list" data-attention-inbox-window="true"
                 style={{height: page.length * ATTENTION_ROW_HEIGHT, position: 'relative'}}>
                 {visibleItems.map(({item, index}) => (
@@ -461,6 +486,12 @@ export default function DailyAttentionWorkspace({
                       (selectedId === item.id ? 'border-l-amber-300 bg-amber-300/[0.07]'
                         : item.isOverdue ? 'border-l-rose-400/70 hover:bg-white/[0.04]'
                           : 'border-l-transparent hover:bg-white/[0.04]')}>
+                    <input type="checkbox" aria-label={'Select ' + item.title}
+                      checked={checkedSet.has(item.id)}
+                      onChange={(event) => setCheckedIds((before) => event.target.checked
+                        ? [...before.filter((id) => id !== item.id), item.id]
+                        : before.filter((id) => id !== item.id))}
+                      className="h-4 w-4 shrink-0 accent-amber-300"/>
                     <button type="button" aria-label={'Inspect ' + item.title}
                       aria-pressed={selectedId === item.id}
                       onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
@@ -481,6 +512,20 @@ export default function DailyAttentionWorkspace({
                 ))}
               </div>
             </section>
+          )}
+          {checkedItems.length > 0 && (
+            <div role="status" className="sticky bottom-0 z-[2] flex items-center justify-between gap-2 border-t border-amber-300/20 bg-[#15263e] px-3 py-2 text-[11px]">
+              <span className="text-amber-100">{checkedItems.length} selected for triage</span>
+              <span className="text-slate-300">
+                Batch source mutations require individually authorised EOS commands.
+                <button type="button" onClick={() => {
+                  setSelectedId(checkedItems[0]?.id || null);
+                  setSelectionIndex(page.findIndex((item) => item.id === checkedItems[0]?.id));
+                }} className="ml-2 rounded-md border border-amber-300/40 px-2 py-1 text-amber-100">
+                  Inspect first selected
+                </button>
+              </span>
+            </div>
           )}
           {feed.nextCursor && (
             <button type="button" onClick={onLoadMore} disabled={loadingMore}
@@ -547,7 +592,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.5.0-EXECUTIVE-FOCUS-CONTINUITY
+// VERSION: v1.6.0-EXECUTIVE-MULTI-ITEM-TRIAGE
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
