@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v1.9.1-MOBILE-CREATION-BOUNDS
+ * VERSION: v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,7 +10,11 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v1.9.1-MOBILE-CREATION-BOUNDS keeps source
+ * CHANGELOG: v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION adds
+ *          shared operator evidence and bounded 25-item source-owned
+ *          completion with explicit partial-success reporting and no
+ *          cross-source atomicity claim.
+ *          v1.9.1-MOBILE-CREATION-BOUNDS keeps source
  *          work creation scrollable and usable inside narrow device panels.
  *          v1.9.0-AUTHORISED-WORK-CREATION adds a
  *          lightweight source-owned creation form for admitted CRM,
@@ -120,11 +124,13 @@ export default function DailyAttentionWorkspace({
   onLoadMore, loadingMore, pageError,
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
   onCreateWork, creatingWork = false, creationError = '', creationNotice = '', workUpdating = false,
+  onBulkComplete, bulkCompleting = false, bulkResult = '',
 }) {
   const [mode, setMode] = useState('WORK');
   const [selectedId, setSelectedId] = useState(null);
   const [checkedIds, setCheckedIds] = useState([]);
   const [completionNote, setCompletionNote] = useState('');
+  const [bulkNote, setBulkNote] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [createSource, setCreateSource] = useState('');
   const [createTitle, setCreateTitle] = useState('');
@@ -160,6 +166,9 @@ export default function DailyAttentionWorkspace({
     && selected.status === 'OPEN' && typeof onCompleteWork === 'function';
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const checkedItems = page.filter((item) => checkedSet.has(item.id));
+  const bulkEligible = checkedItems.filter((item) => item.status === 'OPEN'
+    && authorisedActions[item.sourceModule]?.includes('COMPLETE'));
+  const batchItems = bulkEligible.slice(0, 25);
   const ranked = page.slice(0, 5);
   const sourceCoverage = feed.sources || [];
   const creatableSources = Object.entries(authorisedActions)
@@ -632,18 +641,47 @@ export default function DailyAttentionWorkspace({
               </div>
             </section>
           )}
+          {bulkResult && <p role="status" className="border-t border-emerald-300/20 bg-[#12302d] px-3 py-2 text-xs text-emerald-100">{bulkResult}</p>}
           {checkedItems.length > 0 && (
-            <div role="status" className="sticky bottom-0 z-[2] flex items-center justify-between gap-2 border-t border-amber-300/20 bg-[#15263e] px-3 py-2 text-[11px]">
-              <span className="text-amber-100">{checkedItems.length} selected for triage</span>
-              <span className="text-slate-300">
-                Batch source mutations require individually authorised EOS commands.
+            <div className="sticky bottom-0 z-[2] space-y-2 border-t border-amber-300/20 bg-[#15263e] px-3 py-2 text-[11px]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-amber-100">
+                  {checkedItems.length} selected · {bulkEligible.length} permitted to complete
+                </span>
                 <button type="button" onClick={() => {
                   setSelectedId(checkedItems[0]?.id || null);
                   setSelectionIndex(page.findIndex((item) => item.id === checkedItems[0]?.id));
-                }} className="ml-2 rounded-md border border-amber-300/40 px-2 py-1 text-amber-100">
+                }} className="rounded-md border border-amber-300/40 px-2 py-1 text-amber-100">
                   Inspect first selected
                 </button>
-              </span>
+              </div>
+              {batchItems.length > 0 && typeof onBulkComplete === 'function' && (
+                <form aria-label="Complete selected source work"
+                  className="flex flex-wrap items-center gap-2"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    if (!bulkNote.trim() || bulkCompleting || workUpdating) return;
+                    const result = await onBulkComplete(batchItems, bulkNote);
+                    if (result) {
+                      const done = new Set(result.completedIds);
+                      setCheckedIds((before) => before.filter((id) => !done.has(id)));
+                      if (!result.failedIds.length) setBulkNote('');
+                    }
+                  }}>
+                  <input aria-label="Bulk completion evidence" value={bulkNote}
+                    maxLength={1000} required
+                    onChange={(event) => setBulkNote(event.target.value)}
+                    placeholder="Evidence for each selected completion"
+                    className="min-w-[140px] flex-1 rounded-md border border-white/15 bg-[#0a1628] px-2 py-2 text-xs"/>
+                  <button type="submit" disabled={!bulkNote.trim() || workUpdating || bulkCompleting}
+                    className="rounded-md bg-amber-300 px-3 py-2 font-semibold text-slate-950 disabled:opacity-50">
+                    {bulkCompleting ? 'Confirming source work…' : 'Complete up to ' + batchItems.length}
+                  </button>
+                </form>
+              )}
+              <p className="text-[10px] text-slate-400">
+                Each source rechecks IAM and commits separately. Batch limit: 25; any failures remain selected.
+              </p>
             </div>
           )}
           {feed.nextCursor && (
@@ -733,7 +771,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v1.9.1-MOBILE-CREATION-BOUNDS
+// VERSION: v2.0.0-EXECUTIVE-BULK-SOURCE-COMPLETION
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
