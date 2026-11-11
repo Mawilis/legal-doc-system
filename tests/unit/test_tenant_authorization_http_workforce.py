@@ -1,8 +1,26 @@
 
-"""W3D-R8C direct conditional HTTP workforce authorization certificate."""
+"""TITLE: WILSY OS Tenant Authorization HTTP Workforce Certificate
+VERSION: v1.1.0-EVENT-LOOP-RESPONSIVENESS-CERT
+AUTHORITY: WILSY EOS unit-test authority; never grants tenant permissions.
+EPITOME: Verify existing IAM decisions and transactions while proving blocking
+         database-backed IAM evaluation is moved off the ASGI event loop.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization_http_workforce.py
+COLLABORATION / OWNERSHIP: EOS tenant_authorization_http; frozen IAM composer.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.1.0 tests event-loop isolation while retaining workforce
+           transaction and fail-closed denial/outage certification.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic identities, no external credentials.
+TENANT BOUNDARY: Assertions use only the synthetic test tenant.
+AUTHORITY BOUNDARY: Unit mocks never alter actual IAM.
+TRANSACTION / IDEMPOTENCY BOUNDARY: Fake sessions only; no durable writes.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+FAIL-CLOSED POSTURE: Errors remain rejected, not turned into granted work.
+"""
 
 from __future__ import annotations
 
+from threading import get_ident
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -194,6 +212,36 @@ async def test_non_workforce_permission_opens_no_database_or_session(
         "database": 0,
         "composer": 1,
     }
+
+
+@pytest.mark.anyio
+async def test_blocking_iam_composer_runs_off_asgi_event_loop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Slow synchronous IAM must not execute on the async request loop."""
+    request_loop_thread = get_ident()
+    composer_threads: list[int] = []
+
+    def compose(**kwargs: Any) -> TenantAuthorizationDecision:
+        composer_threads.append(get_ident())
+        return TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+            "tenant_auditor",
+        )
+
+    monkeypatch.setattr(subject, "authorize_tenant_operation", compose)
+    principal, membership, roles = _repositories()
+    result = await subject.RequireTenantAuthorization("audit:read", "audit_read")(
+        request=Request({"type": "http"}),
+        identity=_identity(),
+        tenant_id="tenant-r8c",
+        principal_repository=principal,
+        membership_repository=membership,
+        role_assignment_repository=roles,
+    )
+    assert result.decision.authorized is True
+    assert composer_threads and composer_threads[0] != request_loop_thread
 
 
 @pytest.mark.anyio
@@ -523,3 +571,12 @@ async def test_unknown_permission_preserves_existing_composer_semantics(
             membership_repository=membership,
             role_assignment_repository=roles,
         )
+
+
+# ARTIFACT: tests/unit/test_tenant_authorization_http_workforce.py
+# VERSION: v1.1.0-EVENT-LOOP-RESPONSIVENESS-CERT
+# AUTHORITY BOUNDARY: Unit-only IAM contract, no real permission grants.
+# TENANT POSTURE: Synthetic exact-tenant test scope.
+# FAIL-CLOSED POSTURE: Existing 403/503 outcomes remain certified.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
