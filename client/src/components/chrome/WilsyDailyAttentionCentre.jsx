@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v2.2.0-STABLE-ATTENTION-REVALIDATION
+ * VERSION: v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.2.0-STABLE-ATTENTION-REVALIDATION keeps verified
+ * CHANGELOG: v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION checks
+ *            EOS action availability independently, delegates Operations
+ *            and Intelligence completion to source-owned authenticated POSTs,
+ *            and invalidates current My Work only after source confirmation.
+ *            v2.2.0-STABLE-ATTENTION-REVALIDATION keeps verified
  *            same-session work visible during refresh and preserves search
  *            focus, row selection and the detail rail across reads.
  *            v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR passes the
@@ -97,14 +101,16 @@ import AuthContext from '../../contexts/authContext.jsx';
 import {
   currentUnifiedMyWorkScope,
   readUnifiedMyWork,
-  subscribeUnifiedMyWork,
+  subscribeUnifiedMyWork, invalidateUnifiedMyWork,
 } from '../../services/unifiedMyWorkSync.js';
 import {
   assertUnifiedMyWorkProjection,
   unifiedMyWorkSourceLabel,
 } from '../../services/unifiedMyWorkProjection.js';
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
-import { readAttentionFeed } from '../../services/attentionFeedClient.js';
+import {
+  readAttentionFeed, readAttentionSourceActions, completeAttentionSourceWork,
+} from '../../services/attentionFeedClient.js';
 import DailyAttentionWorkspace from '../attention/DailyAttentionWorkspace.jsx';
 
 const FILTERS = Object.freeze([
@@ -198,6 +204,10 @@ export default function WilsyDailyAttentionCentre({
   const [attentionFeed, setAttentionFeed] = useState(null);
   const [attentionStatus, setAttentionStatus] = useState('IDLE');
   const [attentionError, setAttentionError] = useState('');
+  const [sourceActions, setSourceActions] = useState({});
+  const [sourceActionsScope, setSourceActionsScope] = useState(null);
+  const [completionId, setCompletionId] = useState(null);
+  const [completionError, setCompletionError] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const feedGenerationRef = useRef(0);
@@ -224,6 +234,10 @@ export default function WilsyDailyAttentionCentre({
     setAttentionFeed(null);
     setAttentionStatus('IDLE');
     setAttentionError('');
+    setSourceActions({});
+    setSourceActionsScope(null);
+    setCompletionId(null);
+    setCompletionError('');
     setLoadingMore(false);
     setFilter('ALL');
     setSource('ALL');
@@ -398,6 +412,55 @@ export default function WilsyDailyAttentionCentre({
       document.removeEventListener('visibilitychange', visible);
     };
   }, [open, workScope, status, workError, attentionStatus, attentionError, recoveryAttempts]);
+
+  // Optional command-availability read is separate from source visibility.
+  // Its failure cannot confer an action or turn a verified work queue empty.
+  useEffect(() => {
+    if (!open || !workScope || status !== 'READY' || !projection) {
+      setSourceActions({});
+      setSourceActionsScope(null);
+      return undefined;
+    }
+    let active = true;
+    setSourceActions({});
+    setSourceActionsScope(null);
+    readAttentionSourceActions({ tenantId, principalId: auth.user.id })
+      .then((actions) => {
+        if (!active) return;
+        setSourceActions(actions);
+        setSourceActionsScope(liveScopeKey);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSourceActions({});
+        setSourceActionsScope(null);
+      });
+    return () => { active = false; };
+  }, [open, workScope, status, projection, tenantId, auth?.user?.id, liveScopeKey]);
+
+  const handleSourceCompletion = async (item, note) => {
+    if (!workScope || attentionStatus !== 'READY' || status !== 'READY'
+      || verifiedAttentionScopeRef.current !== liveScopeKey
+      || sourceActionsScope !== liveScopeKey
+      || !sourceActions[item?.sourceModule]?.includes('COMPLETE')
+      || !attentionFeed?.items.some((row) => row.id === item.id)
+      || completionId) return;
+    setCompletionError('');
+    setCompletionId(item.id);
+    try {
+      await completeAttentionSourceWork(item, note);
+      invalidateUnifiedMyWork(workScope);
+      setRefreshId((id) => id + 1);
+    } catch (error) {
+      const http = error?.response?.status;
+      setCompletionError(http === 403 ? 'Source authorization denied this completion.'
+        : http === 409 ? 'Work changed since inspection. Refresh and review again.'
+          : http === 422 ? 'Completion evidence was rejected by its source.'
+            : 'Source completion could not be confirmed. Refresh before retrying.');
+    } finally {
+      setCompletionId(null);
+    }
+  };
 
   const loadMoreAttention = () => {
     if (!workScope || !attentionFeed?.nextCursor || loadingMore) return;
@@ -733,6 +796,10 @@ export default function WilsyDailyAttentionCentre({
               onOpenWork={onOpenWork}
               onOpenOperations={onOpenOperations}
               onOpenWorkforce={onOpenWorkforce}
+              authorisedActions={sourceActionsScope === liveScopeKey ? sourceActions : {}}
+              onCompleteWork={handleSourceCompletion}
+              completingId={completionId}
+              completionError={completionError}
               onLoadMore={loadMoreAttention}
               loadingMore={loadingMore}
               pageError={attentionError === 'ATTENTION_PAGE_REVALIDATION_FAILED'}
@@ -998,7 +1065,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v2.2.0-STABLE-ATTENTION-REVALIDATION
+ * VERSION: v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
