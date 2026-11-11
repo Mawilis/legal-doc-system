@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v2.1.0-MOBILE-ACTION-STEP-EVIDENCE
+ * VERSION: v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v2.1.0-MOBILE-ACTION-STEP-EVIDENCE adds
+ * CHANGELOG: v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
+ *          requires source-confirmed detail rail dismissal before mobile
+ *          bulk-task selection, preventing overlay interception.
+ *          v2.1.0-MOBILE-ACTION-STEP-EVIDENCE adds
  *          bounded viewport-tagged stage markers for diagnosing a hanging
  *          real command journey without extending its failure timeout.
  *          v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT tests
@@ -419,6 +422,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const completedInlineBody = await completedInline.json();
       expect(completedInlineBody.status).toBe('COMPLETED');
       expect(completedInlineBody.work_item_id).toBe(inlineWork.work_item_id);
+      await expect(inlineRail).toHaveCount(0);
       console.log('[ATTENTION-STEP]', viewport.width, 'inline-completed');
       const afterInline = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
       expect(afterInline.status()).toBe(200);
@@ -476,7 +480,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v2.1.0-MOBILE-ACTION-STEP-EVIDENCE
+// VERSION: v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
