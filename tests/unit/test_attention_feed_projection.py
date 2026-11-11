@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.3.0-THREE-SOURCE-ACTION-IAM-CERT
+VERSION: v1.4.0-ISOLATED-SOURCE-COMMAND-IAM-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-11
-CHANGELOG: v1.3.0-THREE-SOURCE-ACTION-IAM-CERT certifies
+CHANGELOG: v1.4.0-ISOLATED-SOURCE-COMMAND-IAM-CERT ensures
+           CRM create and complete availability is derived only from
+           current exact-tenant CRM command context, never foreign sources.
+           v1.3.0-THREE-SOURCE-ACTION-IAM-CERT certifies
            source create/complete permissions independently, including CRM;
            denied/unadmitted sources do not gain command availability.
            v1.2.0-SOURCE-COMMAND-AVAILABILITY-CERT proves
@@ -33,7 +36,10 @@ from copy import deepcopy
 import asyncio
 from types import SimpleNamespace
 from fastapi import HTTPException
-from tools.eos.api.attention_router import attention_authorised_actions
+from tools.eos.api.attention_router import (
+    attention_authorised_actions, attention_crm_actions,
+    attention_operations_actions, attention_intelligence_actions,
+)
 
 import pytest
 
@@ -248,8 +254,39 @@ def test_attention_actions_reject_foreign_command_context_without_disclosing_rec
     assert exc.value.status_code == 503
     assert exc.value.detail == "ATTENTION_ACTION_CONTEXT_INCONSISTENT"
 
+
+def test_isolated_crm_commands_do_not_depend_on_other_module_authorization():
+    source = snapshot()
+    good = SimpleNamespace(
+        tenant_id=TENANT,
+        identity=SimpleNamespace(identity_id=PRINCIPAL),
+    )
+    allowed = asyncio.run(attention_crm_actions(source, create=good, complete=good))
+    assert allowed["sourceActions"] == {"CRM": ["CREATE", "COMPLETE"]}
+    denied = asyncio.run(attention_crm_actions(source, create=None, complete=None))
+    assert denied["sourceActions"] == {}
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(attention_crm_actions(source, create=SimpleNamespace(
+            tenant_id="FOREIGN",
+            identity=SimpleNamespace(identity_id=PRINCIPAL),
+        ), complete=None))
+    assert exc.value.status_code == 503
+
+
+def test_isolated_unadmitted_module_never_reports_command_capabilities():
+    source = snapshot()
+    good = SimpleNamespace(
+        tenant_id=TENANT,
+        identity=SimpleNamespace(identity_id=PRINCIPAL),
+    )
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(attention_intelligence_actions(source, create=good, complete=good))
+    assert exc.value.status_code == 403
+    allowed = asyncio.run(attention_operations_actions(source, create=good, complete=None))
+    assert allowed["sourceActions"] == {"OPERATIONS": ["CREATE"]}
+
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.3.0-THREE-SOURCE-ACTION-IAM-CERT
+# VERSION: v1.4.0-ISOLATED-SOURCE-COMMAND-IAM-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
