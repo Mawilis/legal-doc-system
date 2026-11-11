@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
+ * VERSION: v2.1.0-SOURCE-CONFIRMED-RAIL-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
+ * CHANGELOG: v2.1.0-SOURCE-CONFIRMED-RAIL-CERT ensures
+ *          successful source command closes the mobile rail and a denied
+ *          command retains the inspected item without false success.
+ *          v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
  *          verifies an admitted module has a real create form even when
  *          optional preflight cannot determine its source permission.
  *          v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
@@ -398,10 +401,38 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByRole('button', { name: 'Submit task to EOS' })).toBeTruthy();
   });
 
+  it('releases the detail rail only after source-owned completion confirmation', async () => {
+    const complete = vi.fn().mockResolvedValue(true);
+    const base = {
+      feed: fixtureFeed(1), calendarItems: [],
+      filter: 'ALL', setFilter: vi.fn(), source: 'ALL',
+      setSource: vi.fn(), query: '', setQuery: vi.fn(),
+      onRefresh: vi.fn(), onOpenWork: vi.fn(),
+      onLoadMore: vi.fn(), onCompleteWork: complete,
+      authorisedActions: {}, loadingMore: false, pageError: '',
+    };
+    const { rerender } = render(<DailyAttentionWorkspace {...base}/>);
+    fireEvent.click(screen.getByRole('button', {name: 'Inspect Attention item 0'}));
+    fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
+      target: {value: 'Verified source completion evidence'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Confirm completion'}));
+    await waitFor(() => expect(screen.queryByRole('complementary', {name: 'Attention detail rail'})).toBeNull());
+    complete.mockResolvedValue(false);
+    rerender(<DailyAttentionWorkspace {...base} onCompleteWork={complete}/>);
+    fireEvent.click(screen.getByRole('button', {name: 'Inspect Attention item 0'}));
+    fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
+      target: {value: 'Evidence for a denied completion'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Confirm completion'}));
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('complementary', {name: 'Attention detail rail'})).toBeTruthy();
+  });
+
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
+// VERSION: v2.1.0-SOURCE-CONFIRMED-RAIL-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
