@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.1.0-SOURCE-CONFIRMED-RAIL-CERT
+ * VERSION: v2.2.0-VERIFIED-RESULT-STATE-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -9,7 +9,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.1.0-SOURCE-CONFIRMED-RAIL-CERT ensures
+ * CHANGELOG: v2.2.0-VERIFIED-RESULT-STATE-CERT aligns the
+ *          assertions with explicit last-verified source evidence, current
+ *          selection feedback and the create form's mutually exclusive view.
+ *          v2.1.0-SOURCE-CONFIRMED-RAIL-CERT ensures
  *          successful source command closes the mobile rail and a denied
  *          command retains the inspected item without false success.
  *          v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
@@ -124,7 +127,8 @@ describe('Daily Attention bounded inbox', () => {
     expect(firstWindow.length).toBeLessThanOrEqual(32);
     expect(firstWindow[0].getAttribute('aria-setsize')).toBe('500');
     expect(firstWindow[0].getAttribute('aria-posinset')).toBe('1');
-    expect(firstWindow[0].textContent).toContain('HIGH');
+    expect(firstWindow[0].querySelector('[aria-label="Severity High; priority HIGH"]'))
+      .not.toBeNull();
     expect(firstWindow[0].textContent).toContain('OPEN');
 
     const scroller = container.querySelector('[data-attention-scroll-container="true"]');
@@ -168,8 +172,8 @@ describe('Daily Attention bounded inbox', () => {
 
     expect(screen.getByText('No active Operations work')).toBeTruthy();
     expect(screen.getByText(/were not verified for this session/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Verified from 1 admitted source/ }));
-    const evidence = screen.getByRole('region', { name: 'Verified attention source details' });
+    fireEvent.click(screen.getByRole('button', { name: /Last verified from 1 admitted source/ }));
+    const evidence = screen.getByRole('region', { name: 'Last verified attention source details' });
     expect(evidence.textContent).toContain('Operations');
     expect(evidence.textContent).toContain('Verified · empty');
     expect(evidence.textContent).toContain('Not verified in this session');
@@ -252,11 +256,11 @@ describe('Daily Attention bounded inbox', () => {
       />,
     );
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
-    expect(screen.getByText('3 selected for triage')).toBeTruthy();
+    expect(screen.getByText('3 selected · 0 permitted to complete')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect first selected' }));
     expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
-    expect(screen.queryByText('3 selected for triage')).toBeNull();
+    expect(screen.queryByText('3 selected · 0 permitted to complete')).toBeNull();
     expect(inert).not.toHaveBeenCalled();
   });
 
@@ -341,7 +345,7 @@ describe('Daily Attention bounded inbox', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Create Operations work' }));
     expect(screen.getByRole('form', { name: 'Create source work' })).toBeTruthy();
-    expect(screen.getByText('No active Operations work')).toBeTruthy();
+    expect(screen.getByRole('heading', {name: 'Create work in Operations'})).toBeTruthy();
   });
 
   it('presents each declared severity as labeled semantic visual triage and overrides overdue', () => {
@@ -432,7 +436,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.1.0-SOURCE-CONFIRMED-RAIL-CERT
+// VERSION: v2.2.0-VERIFIED-RESULT-STATE-CERT
 // AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.

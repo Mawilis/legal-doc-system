@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE
+ * VERSION: v3.4.0-MOBILE-SELECTED-LIST-SPACE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,18 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE places
+ * CHANGELOG: v3.4.0-MOBILE-SELECTED-LIST-SPACE reduces the
+ *          scrollable control header while rows are selected, preserving
+ *          a usable inbox viewport above the in-flow completion footer.
+ *          v3.3.0-MOBILE-BULK-FOOTER-FLOW keeps the
+ *          source-owned selection and completion controls in normal panel
+ *          flow outside the scrollable inbox, so they cannot cover mobile
+ *          work rows or intercept row selection.
+ *          v3.2.0-VERIFIED-RESULT-STATUS labels the exact criteria and time
+ *          for retained verified rows during revalidation, distinguishes
+ *          pending controls, preserves selection and scroll, and keeps large
+ *          queues within the established 32-row virtualization budget.
+ *          v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE places
  *          the real EOS create form in the panel's primary scroll region
  *          instead of nesting it inside clipped header and filter controls.
  *          v3.0.0-SMALL-QUEUE-ACTION-RELIABILITY renders
@@ -126,7 +137,7 @@ const FILTERS = [
   ['HIGH', 'High priority', 'highPriority'],
 ];
 const ATTENTION_ROW_HEIGHT = 44;
-const ATTENTION_ROW_OVERSCAN = 10;
+const ATTENTION_ROW_OVERSCAN = 9;
 const DEFAULT_VIEWPORT_HEIGHT = 560;
 const label = (source) => ({
   LEGAL: 'Legal', OPERATIONS: 'Operations', INTELLIGENCE: 'Intelligence',
@@ -166,6 +177,13 @@ const severityFor = (item) => item.isOverdue
   : SEVERITY[item.priority] || SEVERITY.NORMAL;
 const sourceStatus = (item) => typeof item?.status === 'string'
   && item.status.trim() ? item.status : 'Source status unavailable';
+const criteriaLabel = (criteria) => {
+  if (!criteria) return 'no prior verified filter';
+  const filterName = FILTERS.find(([id]) => id === criteria.filter)?.[1] || 'All work';
+  const sourceName = criteria.source === 'ALL' ? 'all admitted sources' : label(criteria.source);
+  const search = criteria.query ? ' · search “' + criteria.query + '”' : '';
+  return filterName + ' · ' + sourceName + search;
+};
 
 /**
  * @description Authenticated attention presentation over one verified EOS page.
@@ -180,6 +198,8 @@ export default function DailyAttentionWorkspace({
   onLoadMore, loadingMore, pageError,
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
   onCreateWork, creatingWork = false, creationError = '', creationNotice = '', workUpdating = false,
+  verifiedCriteria = null, requestedCriteria = null, resultsUpdating = false,
+  resultsUnavailable = false, resultFailureCode = '',
   onBulkComplete, bulkCompleting = false, bulkResult = '',
   actionAvailabilityUnavailable = false, unavailableActionSources = [],
 }) {
@@ -258,12 +278,6 @@ export default function DailyAttentionWorkspace({
     ? sourceCoverage.find((entry) => entry.moduleId === source)
     : sourceCoverage.length === 1 ? sourceCoverage[0] : null;
 
-  useEffect(() => {
-    setSelectionIndex(0);
-    if (listRef.current) listRef.current.scrollTop = 0;
-    setScrollTop(0);
-  }, [filter, source]);
-
   useEffect(() => { setCompletionNote(''); }, [selectedId]);
 
   useEffect(() => {
@@ -294,7 +308,12 @@ export default function DailyAttentionWorkspace({
     };
   }, [mode, page.length]);
   useEffect(() => {
-    if (selectedId && !page.some((item) => item.id === selectedId)) setSelectedId(null);
+    const selectedIndex = selectedId
+      ? page.findIndex((item) => item.id === selectedId) : -1;
+    if (selectedId && selectedIndex < 0) setSelectedId(null);
+    setSelectionIndex((before) => selectedIndex >= 0
+      ? selectedIndex
+      : Math.max(0, Math.min(before, Math.max(0, page.length - 1))));
     setCheckedIds((before) => {
       const present = new Set(page.map((item) => item.id));
       const next = before.filter((id) => present.has(id));
@@ -394,7 +413,9 @@ export default function DailyAttentionWorkspace({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden text-slate-100"
       data-attention-production-ui="true" onKeyDown={handleKey}>
-      <div className="max-h-[min(58vh,520px)] shrink-0 overflow-y-auto overscroll-contain border-b border-white/10 px-4 py-3 md:max-h-none md:overflow-visible">
+      <div className={'shrink-0 overflow-y-auto overscroll-contain border-b border-white/10 px-4 py-3 ' +
+        (checkedItems.length > 0 ? 'max-h-[min(46vh,420px)]' : 'max-h-[min(58vh,520px)]') +
+        ' md:max-h-none md:overflow-visible'}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div role="tablist" aria-label="Daily attention views"
             className="flex items-center gap-1 rounded-xl bg-[#0a1628] p-1">
@@ -428,6 +449,27 @@ export default function DailyAttentionWorkspace({
             </button>
           </div>
         </div>
+        {resultsUpdating && (
+          <p role="status" aria-live="polite" data-testid="attention-refresh-state"
+            data-attention-refresh-state="UPDATING"
+            className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-amber-300/15 bg-amber-300/[0.04] px-2.5 py-2 text-[11px] text-amber-100/90">
+            <RefreshCw size={12} className="animate-spin"/>
+            <span>Checking pending results: {criteriaLabel(requestedCriteria)}.</span>
+            <span className="text-slate-300">Showing last verified results: {criteriaLabel(verifiedCriteria)} · verified {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}.</span>
+          </p>
+        )}
+        {resultsUnavailable && (
+          <p role="alert" data-testid="attention-refresh-state"
+            data-attention-refresh-state="UNAVAILABLE"
+            className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-rose-300/15 bg-rose-300/[0.035] px-2.5 py-2 text-[11px] text-rose-100/90">
+            <AlertTriangle size={12}/>
+            <span>{resultFailureCode === 'ATTENTION_CONNECTION_UNAVAILABLE'
+              ? 'EOS could not reverify the requested view.'
+              : 'The requested view could not be verified.'}</span>
+            <span className="text-slate-300">Still showing last verified results: {criteriaLabel(verifiedCriteria)} · verified {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}. Pending: {criteriaLabel(requestedCriteria)}.</span>
+            <button type="button" onClick={onRefresh} className="underline underline-offset-2">Retry</button>
+          </p>
+        )}
         {creationNotice && <p role="status" className="mt-2 text-xs text-emerald-200">{creationNotice}</p>}
         {actionAvailabilityUnavailable && <p role="alert" className="mt-2 text-xs text-amber-200">
           {unavailableActionSources.length ? unavailableActionSources.map(label).join(', ') + ': ' : ''}
@@ -455,7 +497,9 @@ export default function DailyAttentionWorkspace({
             when their source-owned action APIs are certified.
           </div>
         )}
-        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Verified current-source workload">
+        <div className="mt-3 flex flex-wrap gap-1.5"
+          aria-label={resultsUpdating || resultsUnavailable
+            ? 'Last verified current-source workload' : 'Verified current-source workload'}>
           {[
             ['Active', feed.counts.active, 'ALL'],
             ['Overdue', feed.counts.overdue, 'OVERDUE'],
@@ -463,7 +507,8 @@ export default function DailyAttentionWorkspace({
             ['High priority', feed.counts.highPriority, 'HIGH'],
           ].map(([name, count, target]) => (
             <button key={name} type="button" onClick={() => setFilter(target)}
-              aria-label={countLabel(name, count)}
+              aria-label={(resultsUpdating || resultsUnavailable ? 'Last verified ' : '')
+                + countLabel(name, count)}
               aria-pressed={filter === target}
               className={'flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors ' +
                 (filter === target ? 'border-amber-300/70 bg-amber-300/10' : 'border-white/10 bg-white/[0.025]') +
@@ -477,7 +522,7 @@ export default function DailyAttentionWorkspace({
           <button type="button" onClick={() => setShowSourceDetails((value) => !value)}
             aria-expanded={showSourceDetails} aria-controls="attention-source-evidence"
             className="inline-flex items-center gap-1.5 rounded-md text-emerald-200 hover:text-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-            <ShieldCheck size={13}/> Verified from {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'}
+            <ShieldCheck size={13}/> Last verified from {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'}
             <ChevronRight size={12} className={showSourceDetails ? 'rotate-90' : ''}/>
           </button>
           <span className="text-slate-400" title={feed.syncedAt}>
@@ -485,9 +530,9 @@ export default function DailyAttentionWorkspace({
           </span>
         </div>
         {showSourceDetails && (
-          <section id="attention-source-evidence" aria-label="Verified attention source details"
+          <section id="attention-source-evidence" aria-label="Last verified attention source details"
             className="mt-2 rounded-lg border border-white/10 bg-[#0a1628] px-3 py-2 text-[11px] leading-5">
-            <p className="font-semibold text-slate-200">Source verification for this session</p>
+            <p className="font-semibold text-slate-200">Last verified source evidence for this session</p>
             {sourceCoverage.length === 0 && <p className="text-amber-200">No source has returned an admitted work projection.</p>}
             {sourceCoverage.map((entry) => (
               <div key={entry.moduleId} className="flex items-center justify-between gap-2 border-b border-white/5 py-1 last:border-0">
@@ -625,6 +670,7 @@ export default function DailyAttentionWorkspace({
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="relative min-h-0 flex-1 overflow-y-auto" ref={listRef}
             data-attention-scroll-container="true"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
@@ -653,7 +699,17 @@ export default function DailyAttentionWorkspace({
             <button type="button" onClick={() => setShowBriefing(true)}
               className="m-3 text-xs text-amber-200">Show ranked briefing</button>
           )}
-          {!page.length && (
+          {!page.length && (resultsUpdating || resultsUnavailable) && (
+            <section aria-label="Last verified attention results" className="px-6 py-8"
+              data-attention-verified-results="true">
+              <RefreshCw size={23} className={resultsUpdating ? 'animate-spin text-amber-200' : 'text-slate-400'}/>
+              <h3 className="mt-2 text-base font-semibold">No rows in the last verified result</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                The last verified criteria were {criteriaLabel(verifiedCriteria)}. The current request for {criteriaLabel(requestedCriteria)} has not been verified; no zero or empty status is asserted for it.
+              </p>
+            </section>
+          )}
+          {!page.length && !resultsUpdating && !resultsUnavailable && (
             <section aria-label="Attention empty state" className="px-6 py-8">
               {filterEmpty ? (
                 <>
@@ -715,7 +771,9 @@ export default function DailyAttentionWorkspace({
             </section>
           )}
           {page.length > 0 && (
-            <section aria-label="Attention inbox">
+            <section aria-label={resultsUpdating || resultsUnavailable
+              ? 'Last verified attention inbox' : 'Attention inbox'}
+              data-attention-verified-results="true">
               <div className="sticky top-0 z-[1] flex items-center justify-between gap-2 border-b border-white/10 bg-[#101d32] px-3 py-1.5 text-[11px]">
                 <label className="inline-flex items-center gap-2 text-slate-300">
                   <input type="checkbox" aria-label="Select all loaded work"
@@ -781,9 +839,18 @@ export default function DailyAttentionWorkspace({
               </div>
             </section>
           )}
+          {feed.nextCursor && (
+            <button type="button" onClick={onLoadMore} disabled={loadingMore || workUpdating}
+              className="m-3 w-[calc(100%-1.5rem)] rounded-lg border border-white/20 px-3 py-2 text-xs text-amber-100 disabled:opacity-50">
+              {loadingMore ? 'Loading verified work…' : 'Load more work'}
+            </button>
+          )}
+          {pageError && <p role="alert" className="px-4 py-2 text-xs text-rose-200">
+            Page verification failed. Refresh to reload EOS source truth.</p>}
+          </div>
           {bulkResult && <p role="status" className="border-t border-emerald-300/20 bg-[#12302d] px-3 py-2 text-xs text-emerald-100">{bulkResult}</p>}
           {checkedItems.length > 0 && (
-            <div className="sticky bottom-0 z-[2] space-y-2 border-t border-amber-300/20 bg-[#15263e] px-3 py-2 text-[11px]">
+            <div className="shrink-0 space-y-2 border-t border-amber-300/20 bg-[#15263e] px-3 py-2 text-[11px]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-amber-100">
                   {checkedItems.length} selected · {bulkEligible.length} permitted to complete
@@ -824,14 +891,6 @@ export default function DailyAttentionWorkspace({
               </p>
             </div>
           )}
-          {feed.nextCursor && (
-            <button type="button" onClick={onLoadMore} disabled={loadingMore}
-              className="m-3 w-[calc(100%-1.5rem)] rounded-lg border border-white/20 px-3 py-2 text-xs text-amber-100 disabled:opacity-50">
-              {loadingMore ? 'Loading verified work…' : 'Load more work'}
-            </button>
-          )}
-          {pageError && <p role="alert" className="px-4 py-2 text-xs text-rose-200">
-            Page verification failed. Refresh to reload EOS source truth.</p>}
           </div>
           {selected && (
             <aside aria-label="Attention detail rail"
@@ -909,7 +968,7 @@ export default function DailyAttentionWorkspace({
       )}
       <footer className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-          <span>{page.length} loaded · {feed.filteredTotal} matching · {feed.counts.active} active</span>
+          <span>{page.length} loaded · {feed.filteredTotal} matching in last verified view · {feed.counts.active} active in verified sources</span>
           <div className="flex items-center gap-3">
             {sourceCoverage.some((entry) => entry.moduleId === 'OPERATIONS')
               && onOpenOperations && (
@@ -930,7 +989,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.1.0-EXECUTIVE-TASK-COMPOSER-SURFACE
+// VERSION: v3.4.0-MOBILE-SELECTED-LIST-SPACE
 // AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
