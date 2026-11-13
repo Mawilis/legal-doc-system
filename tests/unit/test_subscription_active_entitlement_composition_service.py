@@ -1,7 +1,7 @@
 """D22B3 P42 subscription-active entitlement service direct certificate.
 
 TITLE: Subscription Active Entitlement Composition Service Direct Certificate
-VERSION: v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT
+VERSION: v1.2.0-D22B3-P42-ACTIVE-TERM-COMPOSITION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Directly certify exact Legal-only product authority, canonical runtime
          bindings, shared transaction ordering, deterministic lifecycle replay
@@ -10,8 +10,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Deterministic doubles certify the P42 service while
                             SubscriptionRegistry and D22B3 P25 retain their own
                             sealed direct certificates.
-CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT adds exact UPGRADE
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.2.0-D22B3-P42-ACTIVE-TERM-COMPOSITION-CERT uses a synthetic active subscription period that remains in the future independently of wall-clock date and a complete canonical identity fixture, preserving real expiration behavior while making transaction and entitlement assertions deterministic.
+           v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT adds exact UPGRADE
            audit validation, caller-transaction registry injection, positive
            Legal issuance, deterministic replay-key and failure-path coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -66,6 +67,7 @@ def identity() -> SovereignIdentity:
         roles=[],
         permissions=[],
         auth_method="synthetic",
+        session_reference="session-p42",
         status=PrincipalStatus.ACTIVE,
     )
 
@@ -102,7 +104,7 @@ def entity(
         billing_frequency=BillingFrequency.MONTHLY,
         start_date=NOW,
         current_period_start=NOW,
-        current_period_end=datetime(2026, 11, 9, 12, 0, tzinfo=timezone.utc),
+        current_period_end=datetime(9999, 11, 9, 12, 0, tzinfo=timezone.utc),
         idempotency_key="commercial-create-key",
         subscription_id="subscription-p42",
         plan_features=features,
@@ -657,7 +659,7 @@ def test_service_source_orders_issuance_before_commit_and_return() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_subscription_active_entitlement_composition_service.py
-# VERSION: v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT
+# VERSION: v1.2.0-D22B3-P42-ACTIVE-TERM-COMPOSITION-CERT
 # AUTHORITY BOUNDARY: deterministic direct unit certification only
 # TENANT POSTURE: synthetic exact SovereignIdentity tenant/principal evidence
 # FAIL-CLOSED POSTURE: every negative boundary asserts rejection or abort

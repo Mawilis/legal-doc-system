@@ -1,3 +1,17 @@
+# TITLE: WILSY OS Privileged Noninteractive Security Proof Registry Unit Certificate
+# VERSION: v1.1.0-EXACT-INDEX-STARTUP-READINESS-CERT
+# AUTHORITY: WILSY OS Core Governance
+# EPITOME: Certifies immutable proof lifecycle and read-only exact-index startup readiness.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_privileged_noninteractive_security_proof_registry.py
+# COLLABORATION / OWNERSHIP: Python EOS registry unit certificate; no real database writes.
+# CERTIFICATION / UPDATE DATE: 2026-11-13
+# CHANGELOG: v1.1.0-EXACT-INDEX-STARTUP-READINESS-CERT adds exact-existing-index no-write and incompatible-index denial checks.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Synthetic fixtures only; fail-closed metadata assertions.
+# TENANT BOUNDARY: No tenant grants or persistent data.
+# AUTHORITY BOUNDARY: Fixture proves index contracts, not actual IAM.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+
 """
 Direct certificate for P3-R3E durable noninteractive security-proof registry.
 """
@@ -24,6 +38,7 @@ from tools.eos.auth.privileged_noninteractive_security_proof_registry import (
     STATUS_CHANGED_TIMELINE_INDEX,
     PrivilegedNoninteractiveSecurityProofConflictError,
     PrivilegedNoninteractiveSecurityProofPersistedInvalidError,
+    PrivilegedNoninteractiveSecurityProofPersistenceError,
     PrivilegedNoninteractiveSecurityProofRegistry,
     PrivilegedNoninteractiveSecurityProofTransactionRequiredError,
 )
@@ -122,6 +137,21 @@ class _Collection:
             "partialFilterExpression":
                 partialFilterExpression,
         }
+
+    def list_indexes(self):
+        return [
+            {
+                "name": name,
+                "key": dict(keys),
+                **({"unique": True} if self.index_options[name]["unique"] else {}),
+                **(
+                    {"partialFilterExpression": self.index_options[name]["partialFilterExpression"]}
+                    if self.index_options[name]["partialFilterExpression"] is not None
+                    else {}
+                ),
+            }
+            for keys, unique, name in self.indexes
+        ]
 
     def find_one(
         self,
@@ -321,6 +351,33 @@ def test_exact_six_indexes_and_no_ttl() -> None:
             by_name[name][1]
             is True
         )
+
+
+def test_existing_exact_indexes_avoid_startup_writes() -> None:
+    collection, reg = registry()
+    reg.ensure_indexes()
+    original_count = len(collection.indexes)
+    assert original_count == 8
+
+    reg.ensure_indexes()
+
+    assert len(collection.indexes) == original_count
+
+
+def test_incompatible_existing_security_index_fails_closed() -> None:
+    collection, reg = registry()
+    reg.ensure_indexes()
+    original_count = len(collection.indexes)
+    collection.index_options[PROOF_REVISION_INDEX]["unique"] = False
+
+    # The registry must refuse to rewrite a mismatched security contract.
+    with pytest.raises(
+        PrivilegedNoninteractiveSecurityProofPersistenceError,
+        match="INDEX_SPECIFICATION_MISMATCH",
+    ):
+        reg.ensure_indexes()
+
+    assert len(collection.indexes) == original_count
 
 
 def test_missing_transaction_rejects_create() -> None:
@@ -909,3 +966,11 @@ def test_registry_owns_no_workload_verification_or_authority() -> None:
         "expireAfterSeconds",
     ):
         assert forbidden not in source
+
+# ARTIFACT: test_privileged_noninteractive_security_proof_registry.py
+# VERSION: v1.1.0-EXACT-INDEX-STARTUP-READINESS-CERT
+# AUTHORITY BOUNDARY: Unit verification only; grants no authority.
+# TENANT POSTURE: Synthetic test evidence only.
+# FAIL-CLOSED POSTURE: Mismatched security index must raise.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

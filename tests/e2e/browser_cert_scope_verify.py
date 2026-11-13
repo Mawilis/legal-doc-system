@@ -1,14 +1,18 @@
 """WILSY OS Suite-scoped durable browser certification verifier.
 
 TITLE: WILSY OS Suite-Scoped Durable Browser Certificate
-VERSION: v1.0.0-DAILY-SOURCE-PERSISTENCE-SCOPE
+VERSION: v1.1.0-REAL-UI-WORK-CREATION-EVIDENCE
 AUTHORITY: Disposable certification verifier; Python EOS owns business truth.
 EPITOME: Verify the durable consequences of independently selected test suites.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_scope_verify.py
 COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
                             existing Legal and SYSTEM certification suites.
 CERTIFICATION / UPDATE DATE: 2026-11-09
-CHANGELOG: v1.0.0 adds strict daily-work source-owned durable cardinality,
+CHANGELOG: v1.1.0-REAL-UI-WORK-CREATION-EVIDENCE binds the durable
+           desktop/mobile source records to real browser-generated idempotency
+           UUIDs and UI-created titles; it rejects fabricated API-only
+           commands while preserving exact ownership and completion evidence.
+           v1.0.0-DAILY-SOURCE-PERSISTENCE-SCOPE adds strict daily-work source-owned durable cardinality,
            idempotency keys, tenant/principal binding, and completed-record
            rehydration without weakening Legal or SYSTEM verification.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -23,6 +27,7 @@ import argparse
 import json
 from hashlib import sha3_256
 from pathlib import Path
+from uuid import UUID
 from pymongo import MongoClient
 from tools.eos.workspaces.persistence.tenant_module_work_registry import TenantModuleWorkRegistry
 from browser_cert_fixture import (
@@ -138,7 +143,7 @@ def verify_daily(database, state):
     collection = database["tenant_operations_work_items"]
     rows = list(collection.find({
         "tenant_id": tenant_id,
-        "description": "Disposable calendar acceptance",
+        "description": "",
         "title": {"$regex": "^Calendar source work calendar-browser-"},
     }))
     if len(rows) != 2:
@@ -146,11 +151,22 @@ def verify_daily(database, state):
 
     work_ids = {row.get("work_item_id") for row in rows}
     request_keys = {row.get("idempotency_key") for row in rows}
+
+    def is_v4_uuid(value):
+        """Require actual web-crypto UUID identifiers, not fixture constants."""
+        if not isinstance(value, str):
+            return False
+        try:
+            parsed = UUID(value)
+        except (ValueError, AttributeError):
+            return False
+        return parsed.version == 4 and str(parsed) == value.lower()
+
     if (
         len(work_ids) != 2
         or not all(isinstance(value, str) and value for value in work_ids)
         or len(request_keys) != 2
-        or not all(isinstance(value, str) and value.startswith("calendar-browser-") for value in request_keys)
+        or not all(is_v4_uuid(value) for value in request_keys)
     ):
         raise RuntimeError("BROWSER_CERT_DAILY_WORK_IDENTITY_INVALID")
 
@@ -162,7 +178,9 @@ def verify_daily(database, state):
                 if (
                     row.get("created_by_principal_id") != principal_id
                     or row.get("tenant_id") != tenant_id
-                    or row.get("idempotency_key") != row.get("title", "").removeprefix("Calendar source work ")
+                    or not is_v4_uuid(
+                        row.get("title", "").removeprefix("Calendar source work calendar-browser-")
+                    )
                 ):
                     raise RuntimeError("BROWSER_CERT_DAILY_WORK_OWNER_BINDING_INVALID")
                 current = reader.get(
@@ -352,7 +370,7 @@ if __name__ == "__main__":
     main()
 
 # ARTIFACT: tests/e2e/browser_cert_scope_verify.py
-# VERSION: v1.0.0-DAILY-SOURCE-PERSISTENCE-SCOPE
+# VERSION: v1.1.0-REAL-UI-WORK-CREATION-EVIDENCE
 # AUTHORITY BOUNDARY: Disposable read-only source verification only.
 # TENANT POSTURE: Exact tenant, principal, two durable source work records.
 # FAIL-CLOSED POSTURE: Missing/partial/foreign work never passes certification.

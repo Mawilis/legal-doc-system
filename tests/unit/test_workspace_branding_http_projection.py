@@ -1,7 +1,7 @@
 """Direct certificate for D21B7 workspace-branding HTTP projection.
 
 TITLE: Workspace Branding HTTP Projection Direct Certificate
-VERSION: v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+VERSION: v1.0.2-D21B7-WORKSPACE-CONTRACT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove authenticated workspace-bootstrap transports only D21B6 branding
          truth and owns a bounded fresh-session read-transaction/retry boundary.
@@ -9,8 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: D21B6 owns current-branding composition; auth_router
                             owns only HTTP/session orchestration and response
                             projection. This certificate grants no branding truth.
-CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT removes a Pyright-only fixture redeclaration by giving the
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.2-D21B7-WORKSPACE-CONTRACT-CERT supplies the server-owned workspace_id required by the current bootstrap contract and asserts its transport alongside branding.
+           v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT removes a Pyright-only fixture redeclaration by giving the
            success and failure branding readers distinct local names. Runtime
            assertions and production semantics are unchanged.
            v1.0.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT established exact collection wiring, same-session propagation,
@@ -258,6 +259,7 @@ def _http_client(
         principal_id=PRINCIPAL,
         email="principal@example.com",
         tenant_id=TENANT,
+        workspace_id="workspace-d21b7",
         business_role="tenant_legal_partner",
         membership_revision=7,
         business_role_revision=11,
@@ -343,6 +345,7 @@ def test_workspace_bootstrap_transports_exact_server_branding(
     body = response.json()
     assert body["status"] == "READY"
     assert body["workspace"]["tenantId"] == TENANT
+    assert body["workspace"]["workspaceId"] == "workspace-d21b7"
     assert body["workspace"]["branding"] == payload
     serialized = response.text
     assert "asset_bytes" not in serialized
@@ -385,7 +388,7 @@ def test_workspace_branding_authority_failure_is_bounded_503(
 
 
 # ARTIFACT: test_workspace_branding_http_projection.py
-# VERSION: v1.0.1-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+# VERSION: v1.0.2-D21B7-WORKSPACE-CONTRACT-CERT
 # AUTHORITY BOUNDARY: D21B7 HTTP/session orchestration evidence only; no branding, IAM, legal or financial authority
 # TENANT POSTURE: exact server-revalidated tenant forwarded to D21B6; no browser tenant-brand authority
 # FAIL-CLOSED POSTURE: configured-branding errors and retry exhaustion are never converted to lawful absence

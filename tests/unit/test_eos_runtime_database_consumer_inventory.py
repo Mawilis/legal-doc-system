@@ -1,9 +1,29 @@
-"""Static guard for the repository-defined EOS runtime database ownership graph."""
+"""WILSY OS EOS Runtime Database Ownership Certificate.
+TITLE: Python Runtime Database Ownership
+VERSION: v1.4.3-PYTHON-RETIRED-K8S-WORKLOAD-ABSENCE
+CHANGELOG: v1.4.3-PYTHON-RETIRED-K8S-WORKLOAD-ABSENCE asserts deployment, service, ingress, predictive deployment, and Kustomize workload manifests stay absent.
+CHANGELOG: v1.4.2-PYTHON-RETIRED-KUBERNETES-MANIFEST-ABSENCE asserts the retired server/k8s workload directory stays absent.
+CHANGELOG: v1.4.1-PYTHON-ENTRYPOINT-COMPLETE-SOVEREIGN-METADATA completes artifact privacy and authority posture without changing runtime ownership assertions.
+CHANGELOG: v1.4.0-PYTHON-ENTRYPOINT-COMPLETE-CLASSIFICATION — verifies retained migration history, Python-owned migration surfaces, and complete retired Node entrypoint/tool classification.
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Proves Kernel-owned persistence and physical Node backend retirement.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_runtime_database_consumer_inventory.py
+COLLABORATION / OWNERSHIP: Kernel DB, registry and runtime certification owners.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: v1.1.0-PHYSICAL-NODE-RETIREMENT replaces obsolete retained-file assertions with required absence; database ownership assertions remain intact.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Repository blob inspection only; no live records or credentials are read.
+TENANT BOUNDARY: No tenant records or tenant authority are accessed.
+AUTHORITY BOUNDARY: Repository ownership evidence only; no runtime or business authority.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
 from __future__ import annotations
 
 import ast
 import json
 from pathlib import Path
+
+from tools.eos.governance.repository_integrity_guard import classify
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +58,29 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py",
     "tools/eos/mongodb/read_only_index_verifier.py",
 }
+LEGACY_MIGRATION_HISTORY = (
+    "server/scripts/finalize-migration.js",
+    "server/scripts/migrate-audit-legacy.js",
+    "server/scripts/migrate-case-legacy.js",
+    "server/scripts/migrate-documents-tenancy.js",
+    "server/scripts/migrate-fixed.js",
+    "server/scripts/migrate.js",
+    "server/scripts/migration/DocumentMigrationEngine.js",
+    "server/scripts/migration/MigrationLogger.js",
+    "server/scripts/migration/MigrationRunner.js",
+    "server/scripts/rollback-migration.js",
+    "server/scripts/rollback-simple.js",
+    "server/scripts/verify-migration-state-diagnostic.js",
+    "server/scripts/verify-migration-state.js",
+)
+PYTHON_MIGRATION_OWNERS = (
+    "tools/eos/saas/auth/migrations/refresh_token_tenant_backfill.py",
+    "tools/eos/saas/auth/migrations/refresh_token_indexes.py",
+    "tools/eos/saas/auth/migrations/reconcile_legacy_principal_authority.py",
+    "tools/eos/saas/auth/migrations/reconcile_legacy_super_admin_tenant.py",
+    "tools/eos/saas/billing/migrations/tenant_inbound_provider_credential_security_authority_index_migration.py",
+    "tools/eos/saas/billing/migrations/tenant_inbound_merchant_configuration_lifecycle_idempotency_projection.py",
+)
 
 
 def _relative(path: Path) -> str:
@@ -163,61 +206,56 @@ def test_business_registry_consumers_use_kernel_or_caller_owned_same_client_grap
 
 
 def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
-    assert not (ROOT / "server/server.js").exists()
-    assert not (ROOT / "server/ecosystem.config.js").exists()
-    assert not (ROOT / "server/deploy.sh").exists()
-
-    worker = (ROOT / "server/worker.js").read_text(encoding="utf-8")
-    assert "export default null" in worker
-    assert "new Worker" not in worker
-    assert "app.listen" not in worker
-
-    scheduler = (ROOT / "server/jobs/scheduler.js").read_text(encoding="utf-8")
-    assert "LEGACY_NODE_SCHEDULER_RETIRED_USE_KENNEL_EOS" in scheduler
-    assert "new IORedis" not in scheduler
-    assert "mongoose.connect" not in scheduler
-    assert "setInterval" not in scheduler
-
-    for retired_script in ("server/deploy-production.sh", "server/deploy-investor-ready.sh"):
-        assert "legacy Node deployment path is retired" in (ROOT / retired_script).read_text(encoding="utf-8")
-
-    retired_k8s = (
+    """Physical absence is required; inert compatibility files are obsolete."""
+    for relative in (
+        "server/server.js",
+        "server/app.js",
+        "server/worker.js",
+        "server/jobs/scheduler.js",
+        "server/package.json",
+        "server/package-lock.json",
+        "server/pm2.config.js",
+        "server/pm2.config.mjs",
+        "server/Dockerfile",
+        "server/Dockerfile.worker",
+        "server/config/cron-jobs.yml",
+        "services/auth/package.json",
+        "services/billing/package.json",
+        "client/server/controllers/intelligenceController.js",
+    ):
+        assert not (ROOT / relative).exists()
+    for manifest in (
         "server/k8s/deployment.yaml",
         "server/k8s/service.yaml",
         "server/k8s/ingress.yaml",
         "server/k8s/predictive-deployment.yaml",
-    )
-    for manifest in retired_k8s:
-        source = (ROOT / manifest).read_text(encoding="utf-8")
-        assert "Retired legacy Node workload manifest" in source
-        assert "kind: Deployment" not in source
-        assert "kind: Ingress" not in source
-
-    kustomization = (ROOT / "server/k8s/kustomization.yaml").read_text(encoding="utf-8")
-    assert "resources: []" in kustomization
-
-    for pm2_path in ("server/pm2.config.js", "server/pm2.config.mjs"):
-        pm2 = (ROOT / pm2_path).read_text(encoding="utf-8")
-        assert "apps: []" in pm2
-        assert "script:" not in pm2
-        assert "deploy: {}" in pm2
-
-    server_package = json.loads((ROOT / "server/package.json").read_text(encoding="utf-8"))
-    assert not {"start", "dev", "predev"}.intersection(server_package["scripts"])
-    assert "main" not in server_package
-
-    for dockerfile in ("server/Dockerfile", "server/Dockerfile.worker"):
-        source = (ROOT / dockerfile).read_text(encoding="utf-8")
-        assert "FROM scratch" in source
-        assert "LEGACY_NODE_BACKEND_RETIRED" in source
-        assert "FROM node:" not in source.lower()
-
-    dev_stack = (ROOT / "scripts/start-dev-stack.sh").read_text(encoding="utf-8")
+        "server/k8s/kustomization.yaml",
+    ):
+        assert not (ROOT / manifest).exists(), manifest
+    dev_stack = (ROOT / "scripts/start-dev-stack.sh").read_text()
     assert "uvicorn tools.eos.api.server:app" in dev_stack
-    assert "server/app.js" not in dev_stack
-    assert "server/jobs/scheduler.js" not in dev_stack
-
-    package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    package = json.loads((ROOT / "package.json").read_text())
     assert package["scripts"]["dev"] == "bash scripts/start-dev-stack.sh"
     assert "uvicorn tools.eos.api.server:app" in package["scripts"]["dev:kernel"]
-    assert "scheduler" not in " ".join(package["scripts"].values()).lower()
+    for relative_path in LEGACY_MIGRATION_HISTORY:
+        assert (ROOT / relative_path).is_file(), relative_path
+        assert classify(relative_path) == "RETAIN", relative_path
+    for relative_path in PYTHON_MIGRATION_OWNERS:
+        assert (ROOT / relative_path).is_file(), relative_path
+    assert classify("server/.babelrc") == "RETIRED_NODE_BACKEND"
+    assert classify("scripts/wilsy-crm-r71a-terminal-evidence-summary-gate.js") == "RETIRED_NODE_BACKEND"
+    assert classify("tests/unit/qrServices.test.js") == "RETIRED_NODE_BACKEND"
+    assert classify("server/manifest.txt") == "RETAIN"
+    assert classify("server/scripts/rollback-migration-production.patch") == "RETAIN"
+    assert not any(
+        "server/scripts/migrate" in value
+        for value in (package["scripts"]["dev"], package["scripts"]["dev:kernel"])
+    )
+
+# ARTIFACT: EOS Runtime Database Ownership Certificate
+# VERSION: v1.4.3-PYTHON-RETIRED-K8S-WORKLOAD-ABSENCE
+# AUTHORITY BOUNDARY: Offline repository ownership evidence.
+# TENANT POSTURE: No data access or mutation.
+# FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

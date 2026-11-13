@@ -1,6 +1,0 @@
-# Legacy Node workload deployment is retired.
-# Do not apply this overlay. The canonical application manifest is
-# k8s/eos-api-production.yaml and requires its own deployment approval.
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources: []

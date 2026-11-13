@@ -1,10 +1,25 @@
 """WILSY OS P12C-R4L fail-closed practitioner-binding startup certificate.
 
-VERSION: v1.3.0-P12C-R4N-P4B-LIFECYCLE-FAIL-CLOSED
+VERSION: v1.4.1-P12C-R4N-STARTUP-INDEX-DOUBLE-CERT
 AUTHORITY: Canonical EOS startup lifecycle and P12C binding readiness.
 TEST POSTURE: No live database, service startup, index DDL or IAM grant.
 BOUNDARY: A failed database bootstrap cannot complete startup normally.
 PRIVACY: No tenant, matter, credential or protected system data.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_practitioner_binding_startup_readiness.py
+COLLABORATION / OWNERSHIP: Exercises the canonical EOS startup lifecycle and
+                           practitioner-binding readiness gate.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.4.1-P12C-R4N-STARTUP-INDEX-DOUBLE-CERT records the verified sovereign metadata correction; test and production behavior are unchanged.
+           v1.4.0-P12C-R4N-STARTUP-INDEX-DOUBLE-CERT gives the startup test
+           database doubles the collection index and database relationships
+           consumed by the actual EOS startup path.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic Mongo interface doubles only.
+TENANT POSTURE: No tenant records are read or written.
+AUTHORITY BOUNDARY: Startup readiness does not create IAM roles or permissions.
+FINANCIAL AUTHORITY: Kennel EOS exclusively.
+TITLE: WILSY OS Practitioner Binding Startup Readiness Certificate
+EPITOME: Certify the canonical EOS startup readiness gate without creating identity, tenant, database, or IAM authority.
 """
 
 from __future__ import annotations
@@ -213,10 +228,25 @@ def test_p12c_index_startup_atomic_readiness(
 ):
     """Readiness becomes true only after every required installer succeeds."""
     from types import SimpleNamespace
-
     class Database:
+        def __init__(self):
+            self.collections = {}
+
         def __getitem__(self, name):
-            return SimpleNamespace(name=name)
+            if name not in self.collections:
+                self.collections[name] = Collection(name, self)
+            return self.collections[name]
+
+        def get_collection(self, name):
+            return self[name]
+
+    class Collection:
+        def __init__(self, name, database):
+            self.name = name
+            self.database = database
+
+        def create_index(self, _keys, **_kwargs):
+            return "startup-test-index"
 
     class NoopRegistry:
         def __init__(self, *args, **kwargs):
@@ -355,8 +385,11 @@ def test_p12c_shutdown_clears_readiness(monkeypatch):
 
 
 # ARTIFACT: test_legal_practitioner_binding_startup_readiness.py
-# VERSION: v1.3.0-P12C-R4N-P4B-LIFECYCLE-FAIL-CLOSED
+# VERSION: v1.4.1-P12C-R4N-STARTUP-INDEX-DOUBLE-CERT
 # AUTHORITY: EOS startup certificate only
 # PHYSICAL DATABASE CONTACT: prohibited
 # FINANCIAL EXECUTION AUTHORITY: none
+# AUTHORITY BOUNDARY: Startup readiness certificate only; no identity or IAM grant
+# TENANT POSTURE: No tenant records are read or written
+# FAIL-CLOSED POSTURE: Failed database bootstrap or index readiness prevents normal startup
 # END OF WILSY OS SOVEREIGN ARTIFACT

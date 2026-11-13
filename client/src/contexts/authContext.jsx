@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.1.0-SESSION-OPERATION-CURRENTNESS
+ * VERSION: v58.1.1-LOGOUT-WORKSPACE-CONTINUITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: 2026-11-09 v58.1.0-SESSION-OPERATION-CURRENTNESS deduplicates
+ * CHANGELOG: 2026-11-10 v58.1.1-LOGOUT-WORKSPACE-CONTINUITY retains
+ *            the non-authoritative server-discovered tenant navigation context
+ *            after logout while invalidating every bearer and session authority.
+ *            2026-11-09 v58.1.0-SESSION-OPERATION-CURRENTNESS deduplicates
  *            current candidate bootstrap reads and invalidates superseded auth
  *            operations before logout, discovery, login or MFA can publish state.
  *            Explicit bearers remain candidates until EOS revalidation; session
@@ -1266,7 +1269,7 @@ export const AuthProvider = ({ children }) => {
     const previousToken = token;
     const path = user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout';
     invalidateSession();
-    setTenant(null);
+    setTenant(readPersistedDiscoveredTenant());
     setAuthStage(AUTH_STATES.IDLE);
     setLoading(false);
     setError(null);
@@ -1274,7 +1277,6 @@ export const AuthProvider = ({ children }) => {
     setQrCodeData(null);
     setMfaTempToken(null);
     setGlobalMfaChallenge(null);
-    localStorage.removeItem('discoveredTenant');
     emitAuthState(AUTH_STATES.IDLE);
     // Local invalidation precedes network I/O. A delayed logout response cannot
     // clear a later session; only the old explicit credential is submitted.
@@ -1350,12 +1352,15 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.1.0-SESSION-OPERATION-CURRENTNESS
+ * VERSION: v58.1.1-LOGOUT-WORKSPACE-CONTINUITY
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v58.1.0-SESSION-OPERATION-CURRENTNESS — Admits only the canonical server-projected conflict-review write permission into the closed Legal presentation set; browser state remains non-authorizing and malformed projections fail closed.
+ * CHANGELOG: v58.1.1-LOGOUT-WORKSPACE-CONTINUITY — Retains only the
+ * server-discovered tenant navigation context after bearer revocation; no
+ * tenant membership, business capacity or MFA authority survives logout.
+ *            v58.1.0-SESSION-OPERATION-CURRENTNESS — Admits only the canonical server-projected conflict-review write permission into the closed Legal presentation set; browser state remains non-authorizing and malformed projections fail closed.
  *            v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Refreshes exact READY workspace authority after a certified branding mutation request; management response fields never become AuthContext authority.
  *            v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Carries only exact READY workspace.branding into authenticated tenant state, requires explicit null/configured branding provenance, strictly validates the D21B6 schema, strips legacy branding aliases, and prevents discovery/login/MFA/persisted/JWT branding from becoming authenticated authority.
  *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.

@@ -1,9 +1,26 @@
-"""Authenticated My Work aggregation over independently authorized EOS sources.
-
-Each source is admitted by its own canonical permission-operation pair and is
-read through its owning module's existing service and transaction boundary.
-A source denial omits only that source; any authorization or persistence outage
-fails the request. This router owns no work-item persistence or commands.
+"""TITLE: WILSY OS Authenticated Unified My Work Source Aggregation
+VERSION: v1.1.0-NONBLOCKING-SOURCE-READ-TRANSACTIONS
+AUTHORITY: WILSY OS Python EOS; canonical source registries own business truth.
+EPITOME: Compose only independently authenticated and entitled module work in
+         exact tenant scope without blocking FastAPI's event loop on PyMongo.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/unified_my_work_router.py
+COLLABORATION / OWNERSHIP: TenantAuthorizationHTTP owns current IAM;
+         Legal Operations, CRM and tenant module source services own reads,
+         transactions and durable state; projection owns read shape.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.1.0-NONBLOCKING-SOURCE-READ-TRANSACTIONS runs synchronous
+           MongoDB source reads and projection in
+           FastAPI's request threadpool; source IAM, isolation and fail-closed
+           results remain unchanged. v1.0.0 composed independent module work.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No tokens, personal data or work bodies logged.
+TENANT BOUNDARY: Exact authenticated principal, tenant and source IAM required.
+AUTHORITY BOUNDARY: Read-only aggregator; no work creation, approval or grants.
+TRANSACTION / IDEMPOTENCY BOUNDARY: Source-owned independent transactions;
+         no cross-source transaction and no new write authority.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes finances.
+FAIL-CLOSED POSTURE: No authorization, malformed source or outage converts
+         into a fabricated cleared or successful enterprise queue.
 """
 from __future__ import annotations
 
@@ -11,6 +28,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from starlette.concurrency import run_in_threadpool
 
 from tools.eos.api.tenant_authorization_http import (
     OptionalTenantAuthorization,
@@ -145,49 +163,63 @@ async def read_my_work(
     if not any(context is not None for context in contexts):
         raise HTTPException(status_code=403, detail="MY_WORK_NO_AUTHORIZED_SOURCE")
 
-    # None means a canonical 403 for that source only. A 503 or any unexpected
-    # authorization failure is raised by the dependency and never becomes empty.
-    legal = (
-        _read_legal(tenant_id=tenant_id, principal_id=principal_id)
-        if legal_context is not None else None
-    )
-    operations = (
-        _read_module("operations", tenant_id=tenant_id)
-        if operations_context is not None else None
-    )
-    intelligence = (
-        _read_module("intelligence", tenant_id=tenant_id)
-        if intelligence_context is not None else None
-    )
-    crm = _read_crm(tenant_id=tenant_id) if crm_context is not None else None
-
-    try:
-        result = build_unified_my_work(
-            tenant_id=tenant_id,
-            principal_id=principal_id,
-            now=datetime.now(timezone.utc),
-            legal=legal,
-            operations=operations,
-            intelligence=intelligence,
-            crm=crm,
+    def compose_source_projection() -> dict[str, Any]:
+        # None means a canonical 403 for that source only. A 503 or any unexpected
+        # authorization failure is raised by the dependency and never becomes empty.
+        legal = (
+            _read_legal(tenant_id=tenant_id, principal_id=principal_id)
+            if legal_context is not None else None
         )
-    except UnifiedMyWorkProjectionError as error:
-        raise HTTPException(
-            status_code=503,
-            detail="MY_WORK_SOURCE_PROJECTION_INVALID",
-        ) from error
+        operations = (
+            _read_module("operations", tenant_id=tenant_id)
+            if operations_context is not None else None
+        )
+        intelligence = (
+            _read_module("intelligence", tenant_id=tenant_id)
+            if intelligence_context is not None else None
+        )
+        crm = _read_crm(tenant_id=tenant_id) if crm_context is not None else None
 
-    result["sources_included"] = [
-        source for source, payload in (
-            ("LEGAL", legal),
-            ("OPERATIONS", operations),
-            ("INTELLIGENCE", intelligence),
-            ("CRM", crm),
-        ) if payload is not None
-    ]
-    result["authority"]["permits_source_commands"] = False
-    result["authority"]["source_read_transactions"] = "INDEPENDENT_OWNER_BOUNDARIES"
-    return result
+        try:
+            result = build_unified_my_work(
+                tenant_id=tenant_id,
+                principal_id=principal_id,
+                now=datetime.now(timezone.utc),
+                legal=legal,
+                operations=operations,
+                intelligence=intelligence,
+                crm=crm,
+            )
+        except UnifiedMyWorkProjectionError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="MY_WORK_SOURCE_PROJECTION_INVALID",
+            ) from error
+
+        result["sources_included"] = [
+            source for source, payload in (
+                ("LEGAL", legal),
+                ("OPERATIONS", operations),
+                ("INTELLIGENCE", intelligence),
+                ("CRM", crm),
+            ) if payload is not None
+        ]
+        result["authority"]["permits_source_commands"] = False
+        result["authority"]["source_read_transactions"] = "INDEPENDENT_OWNER_BOUNDARIES"
+        return result
+
+    # Every source transaction uses synchronous PyMongo. Keep its whole read
+    # and projection in the bounded request threadpool, never the ASGI loop.
+    return await run_in_threadpool(compose_source_projection)
 
 
 __all__ = ["router", "read_my_work"]
+
+
+# ARTIFACT: tools/eos/api/unified_my_work_router.py
+# VERSION: v1.1.0-NONBLOCKING-SOURCE-READ-TRANSACTIONS
+# AUTHORITY BOUNDARY: Authenticated source reads only; no commands.
+# TENANT POSTURE: Exact IAM source admission required.
+# FAIL-CLOSED POSTURE: Denied or unavailable source never invents clearance.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,13 +1,22 @@
 /**
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.3.0-EOS-SOURCE-COVERAGE
+ * VERSION: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.3.0-EOS-SOURCE-COVERAGE verifies filters use only included
+ * CHANGELOG: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT proves counts and
+ *            source-verified next-action handoff in selected urgency queues.
+ *            v1.5.0-OPERATIONAL-ATTENTION-COMMAND-HANDOFF proves
+ *            source-filter feedback, visible one-click source-owned commands,
+ *            and Operations management from a genuinely empty EOS queue.
+ *            v1.4.0-VERIFIED-ZERO-ATTENTION-ACCESSIBILITY certifies
+ *            explicit EOS-verified zero work versus unavailable work count
+ *            in the accessible bell label; zero never generates an unread
+ *            badge. The projection remains source-owned and read-only.
+ *            v1.3.0-EOS-SOURCE-COVERAGE verifies filters use only included
  *            sources and distinguishes admitted-empty from no-source coverage.
  *            v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT asserts visible Close calendar action
  *            and two-stage Escape: calendar first and entire panel second.
@@ -105,6 +114,29 @@ describe('WILSY daily attention centre', () => {
     expect(screen.queryByText(/3 unread/)).toBeNull();
   });
 
+  it('announces verified zero work distinctly from an unavailable count', async () => {
+    const empty = projection();
+    empty.items = [];
+    empty.summary = {
+      active_count: 0, overdue_count: 0,
+      source_counts: { LEGAL: 0, CRM: 0 },
+    };
+    api.get.mockResolvedValueOnce({ data: empty });
+    renderCentre({ activeCount: 0 });
+    const bell = screen.getByRole('button', { name: 'Open daily attention: 0 active work items' });
+    expect(bell).toBeInTheDocument();
+    expect(screen.queryByLabelText('0 active work items, not unread notifications')).toBeNull();
+    expect(await screen.findByText('No active work in the included sources')).toBeInTheDocument();
+    expect(bell).toHaveAttribute('aria-label', 'Open daily attention: 0 active work items');
+  });
+
+  it('does not invent a verified zero when no count has been read', () => {
+    renderCentre({ open: false, activeCount: null });
+    expect(screen.getByRole('button', { name: 'Open daily attention' }))
+      .toHaveAttribute('aria-label', 'Open daily attention');
+    expect(api.get).not.toHaveBeenCalled();
+  });
+
   it('offers source filters only for sources included by EOS', async () => {
     renderCentre();
     await screen.findByText('Follow up with customer');
@@ -137,9 +169,35 @@ describe('WILSY daily attention centre', () => {
     expect(screen.queryByText('Follow up with customer')).toBeNull();
   });
 
+  it('explains executive triage and opens the next EOS-owned action', async () => {
+    const { onOpenWork } = renderCentre();
+    await screen.findByText('Follow up with customer');
+    expect(screen.getByRole('group', {name: 'Filter daily attention'})).toBeTruthy();
+    expect(screen.getByText('All work: 2 to review')).toBeTruthy();
+    expect(screen.getByText(/Next: Review governed contract/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {name: 'Overdue'}));
+    expect(screen.getByText('Overdue: 1 to review')).toBeTruthy();
+    expect(screen.getByText(/Address missed deadlines/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {name: 'Work next: Review governed contract'}));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'LEGAL:LEGAL-1',
+    }));
+  });
+
+  it('shows an actionable recovery intent when no work matches priority', async () => {
+    renderCentre();
+    await screen.findByText('Follow up with customer');
+    fireEvent.click(screen.getByRole('button', {name: 'Due today'}));
+    expect(screen.getByText('Due today: 0 to review')).toBeTruthy();
+    expect(screen.getByText(/No matching work in the current selection/)).toBeTruthy();
+    expect(screen.queryByRole('button', {name: /^Work next:/})).toBeNull();
+    fireEvent.click(screen.getByRole('button', {name: 'Clear filters'}));
+    expect(screen.getByText('All work: 2 to review')).toBeTruthy();
+  });
+
   it('expands governed work detail and delegates all commands to My Work', async () => {
     const { onOpenWork } = renderCentre();
-    fireEvent.click(await screen.findByRole('button', { name: /Review governed contract/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Review governed contract', exact: true }));
     const dialog = screen.getByRole('dialog', { name: 'Daily attention centre' });
     expect(within(dialog).getByText(/Verify source evidence/)).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Open in My Work' }));
@@ -237,6 +295,48 @@ describe('WILSY daily attention centre', () => {
     expect(screen.getByText(/not evidence that every business queue is empty/)).toBeTruthy();
   });
 
+  it('makes every authorised task actionable without a hidden expansion', async () => {
+    const { onOpenWork } = renderCentre();
+    await screen.findByText('Review governed contract');
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Act on Review governed contract in My Work',
+    }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'LEGAL:LEGAL-1',
+    }));
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens real Operations work management for an admitted empty queue', async () => {
+    const empty = projection();
+    empty.items = [];
+    empty.sources_included = ['OPERATIONS'];
+    empty.summary = {
+      active_count: 0, overdue_count: 0, source_counts: { OPERATIONS: 0 },
+    };
+    api.get.mockResolvedValueOnce({ data: empty });
+    const onOpenOperations = vi.fn();
+    renderCentre({ onOpenOperations, activeCount: 0 });
+    expect(await screen.findByText('No active work in the included sources')).toBeTruthy();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filter work by source' }), {
+      target: { value: 'OPERATIONS' },
+    });
+    expect(screen.getByText(/EOS has no active work in the admitted sources.*Showing Operations/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {
+      name: /Create or manage Operations work/,
+    }));
+    expect(onOpenOperations).toHaveBeenCalledTimes(1);
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('never presents an Operations management action without EOS Operations coverage', async () => {
+    const onOpenOperations = vi.fn();
+    renderCentre({ onOpenOperations });
+    await screen.findByText('Review governed contract');
+    expect(screen.queryByRole('button', { name: 'Manage Operations' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Create or manage Operations work/ })).toBeNull();
+  });
+
   it('never requests a tenant work queue for a system services workspace', async () => {
     renderCentre({ systemServicesWorkspace: true });
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -246,7 +346,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.3.0-EOS-SOURCE-COVERAGE
+ * VERSION: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.

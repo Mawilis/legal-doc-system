@@ -1,11 +1,19 @@
 # TITLE: WILSY EOS Tenant Module Workspace API and Transport Contract Tests
-# VERSION: v1.0.1-EOS-TENANT-MODULE-WORKSPACE-PYTHON-TRANSPORT
+# VERSION: v1.0.4-APIR0UTE-STATIC-CERTIFICATION
 # AUTHORITY: Static and in-process Python EOS route/transport certification only.
-# EPITOME: Verify authenticated Operations and Intelligence workspace routes, tenant-authority input rejection, canonical Python EOS mounting, direct frontend development proxying, distinct module persistence, and permission-operation separation.
+# EPITOME: Verify authenticated Operations and Intelligence workspace routes, tenant-authority input rejection, canonical Python EOS mounting, fixed loopback proxy defaults, isolated browser-runner rewriting, distinct module persistence, and permission-operation separation.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_module_workspace_server_mount.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns tenant module workspace API and durable work authority.
-# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CERTIFICATION OR UPDATE DATE: 2026-11-10
 # CHANGELOG:
+#   v1.0.4-APIR0UTE-STATIC-CERTIFICATION narrows Starlette BaseRoute values to
+#   FastAPI APIRoute before reading path, methods or dependency metadata so
+#   Pyright checks the existing route assertions without changing their scope.
+#   v1.0.3-CANONICAL-DEV-TRANSPORT removes assertions for unused alternate
+#   frontend/EOS environment overrides and verifies the single 5173/9095
+#   baseline plus the browser runner's disposable EOS-target rewrite.
+#   v1.0.2-VALIDATED-LOOPBACK-EOS-PROXY aligns the transport assertion with
+#   Vite's validated shared EOS target and verifies its canonical defaults.
 #   v1.0.1-EOS-TENANT-MODULE-WORKSPACE-PYTHON-TRANSPORT replaces the retired
 #   Node BFF source assertion with verification of the canonical Python EOS
 #   router mount and Vite's direct /api/tenant-modules proxy to port 9095.
@@ -21,14 +29,18 @@
 """Contract tests for canonical Python EOS tenant-module workspace transport.
 
 The retired Node BFF is intentionally absent. The browser development proxy
-forwards the canonical API path directly to Python EOS; it is not a backend or
-an authority boundary.
+forwards the canonical API path to Python EOS at loopback port 9095; the
+normal frontend listens at port 5173. Browser certification uses its own
+throwaway Vite config and selected loopback EOS port, not a second permanent
+application runtime.
 """
 
 import inspect
 from pathlib import Path
+from typing import cast
 
 import pytest
+from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
 from tools.eos.api import server
@@ -46,6 +58,7 @@ def test_operations_and_intelligence_workspace_routes_are_distinct_and_mounted_o
     routes = {
         (route.path, tuple(sorted(route.methods or ()))): route
         for route in router.routes
+        if isinstance(route, APIRoute)
     }
     expected = {
         ("/tenant-modules/operations/workspace", ("GET",)),
@@ -107,10 +120,11 @@ def test_browser_commands_cannot_author_tenant_product_principal_or_source_autho
         )
 
 
-def test_module_workspace_transport_targets_python_eos_through_dev_proxy():
-    """Vite forwards the API path directly to the canonical Python EOS server."""
+def test_module_workspace_transport_uses_one_canonical_dev_pair_and_isolated_runner():
+    """Vite uses one local default; browser certification owns temporary isolation."""
     eos_source = inspect.getsource(server)
     vite = Path("client/vite.config.js").read_text(encoding="utf-8")
+    browser_runner = Path("tests/e2e/run-browser-cert.mjs").read_text(encoding="utf-8")
 
     assert (
         eos_source.count(
@@ -118,13 +132,20 @@ def test_module_workspace_transport_targets_python_eos_through_dev_proxy():
         )
         == 1
     )
+    assert "port: 5173" in vite
+    assert "process.env.WILSY_EOS_DEV_TARGET" not in vite
+    assert "process.env.WILSY_VITE_PORT" not in vite
+    assert "target: 'http://127.0.0.1:9095'" in vite
+
     proxy_start = vite.index("      '/api/tenant-modules': {")
     proxy_end = vite.index("      },", proxy_start)
     proxy_block = vite[proxy_start:proxy_end]
 
-    assert "target: 'http://localhost:9095'" in proxy_block
+    assert "target: 'http://127.0.0.1:9095'" in proxy_block
     assert "changeOrigin: true" in proxy_block
     assert "rewrite:" not in proxy_block
+    assert "replaceAll('http://127.0.0.1:9095', eosBaseUrl)" in browser_runner
+    assert "BROWSER_CERT_BASE_URL: 'http://127.0.0.1:' + vitePort" in browser_runner
 
 
 def test_module_products_have_distinct_workspace_keys_and_persistence_collections():
@@ -142,7 +163,9 @@ def test_module_products_have_distinct_workspace_keys_and_persistence_collection
 
 def test_each_module_command_has_separate_permission_operation_pair():
     """Every module route uses its own exact permission and operation identity."""
-    routes = {route.path: route for route in router.routes}
+    routes = {
+        route.path: route for route in router.routes if isinstance(route, APIRoute)
+    }
     cases = {
         "/tenant-modules/operations/workspace": (
             "operations:work_item:read",
@@ -170,12 +193,15 @@ def test_each_module_command_has_separate_permission_operation_pair():
         ),
     }
     for path, expected in cases.items():
-        dependency = routes[path].dependant.dependencies[0].call
+        dependency = cast(
+            RequireTenantAuthorization,
+            routes[path].dependant.dependencies[0].call,
+        )
         assert (dependency.permission_id, dependency.operation) == expected
 
 
 # ARTIFACT: tests/unit/test_tenant_module_workspace_server_mount.py
-# VERSION: v1.0.1-EOS-TENANT-MODULE-WORKSPACE-PYTHON-TRANSPORT
+# VERSION: v1.0.4-APIR0UTE-STATIC-CERTIFICATION
 # AUTHORITY BOUNDARY: In-process API and frontend development transport tests only.
 # TENANT POSTURE: Forged tenant/principal inputs are rejected; no tenant records are mutated.
 # FAIL-CLOSED POSTURE: Missing EOS route mounts, invalid request boundaries or proxy drift fail the focused suite.

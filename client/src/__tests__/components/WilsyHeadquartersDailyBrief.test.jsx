@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Headquarters Daily Brief Client Contract Tests
- * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
+ * VERSION: v1.3.0-AUTHENTICATED-BRIEF-SOURCE-REFRESH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies shared source-metadata validation, exact tenant projection,
  *          truthful empty states, and item-specific read-only navigation.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: WilsyHeadquartersDailyBrief.jsx, the shared client
  *                            projection contract, and EOS /api/my-work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.2.0-SHARED-PROJECTION-CONTRACT verifies selected item context
+ * CHANGELOG: v1.3.0-AUTHENTICATED-BRIEF-SOURCE-REFRESH mounts a
+ *            real synthetic AuthContext, asserts cancellable exact-session
+ *            reads, and verifies source-confirmed invalidation causes a
+ *            new EOS snapshot and corrected Headquarters work summary.
+ *            v1.2.0-SHARED-PROJECTION-CONTRACT verifies selected item context
  *            reaches the callback and Headquarters uses the canonical EOS source
  *            coverage validator.
  *            v1.1.0-AUTHORISED-SOURCE-COVERAGE verifies that source options
@@ -24,8 +28,13 @@
  */
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
+import {
+  currentUnifiedMyWorkScope,
+  invalidateUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 import WilsyHeadquartersDailyBrief from '../../components/workspaces/WilsyHeadquartersDailyBrief.jsx';
 
 vi.mock('../../services/api.js', () => ({
@@ -33,6 +42,24 @@ vi.mock('../../services/api.js', () => ({
 }));
 
 const TENANT = 'TENANT-DAILY-TEST';
+const auth = {
+  isAuthenticated: true,
+  authStage: 'AUTHENTICATED',
+  token: 'synthetic-EOS-verified-session',
+  sessionGeneration: 15,
+  user: {
+    id: 'PRINCIPAL-DAILY-TEST',
+    tenantId: TENANT,
+    role: 'tenant_owner',
+    workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
+    businessRole: 'tenant_owner',
+    membershipRevision: 3,
+    businessRoleRevision: 7,
+  },
+};
+const renderBrief = (element) => render(
+  <AuthContext.Provider value={auth}>{element}</AuthContext.Provider>,
+);
 const valid = () => ({
   schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
   tenant_id: TENANT,
@@ -69,12 +96,15 @@ beforeEach(() => {
 describe('Headquarters daily execution', () => {
   it('renders source-backed work and offers only sources included by EOS', async () => {
     const onOpenWork = vi.fn();
-    render(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={onOpenWork}/>);
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={onOpenWork}/>);
     const section = screen.getByRole('region', { name: 'Headquarters daily execution' });
     expect(await within(section).findByText('Clear dispatch backlog')).toBeTruthy();
     expect(within(section).getByText('Follow up on renewal')).toBeTruthy();
     expect(within(section).getByText(/Included: Operations, CRM/)).toBeTruthy();
-    expect(api.get).toHaveBeenCalledWith('/my-work', { forceNetworkRetry: true });
+    expect(api.get).toHaveBeenCalledWith('/my-work', {
+      forceNetworkRetry: true,
+      signal: expect.any(AbortSignal),
+    });
 
     const sourceFilter = within(section).getByRole('combobox', {
       name: 'Filter headquarters by source',
@@ -97,7 +127,7 @@ describe('Headquarters daily execution', () => {
   });
 
   it('filters overdue work and searches within included sources', async () => {
-    render(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
     await screen.findByText('Clear dispatch backlog');
     fireEvent.click(screen.getByRole('button', { name: 'Overdue' }));
     expect(screen.queryByText('Follow up on renewal')).toBeNull();
@@ -119,7 +149,7 @@ describe('Headquarters daily execution', () => {
         source_counts: { OPERATIONS: 0, CRM: 0 },
       },
     } });
-    const { unmount } = render(
+    const { unmount } = renderBrief(
       <WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>,
     );
     expect(await screen.findByText('No active work in the included sources')).toBeTruthy();
@@ -132,7 +162,7 @@ describe('Headquarters daily execution', () => {
       summary: { active_count: 0, overdue_count: 0, source_counts: {} },
       sources_included: [],
     } });
-    render(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
     expect(await screen.findByText('No work source was included in this session')).toBeTruthy();
     expect(screen.getByText(/not evidence that every business queue is empty/)).toBeTruthy();
   });
@@ -147,7 +177,7 @@ describe('Headquarters daily execution', () => {
         source_counts: { LEGAL: 2 },
       },
     } });
-    render(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByText('Clear dispatch backlog')).toBeNull();
     expect(screen.queryByText('Follow up on renewal')).toBeNull();
@@ -155,7 +185,7 @@ describe('Headquarters daily execution', () => {
 
   it('rejects foreign tenant read and offers retry without invented metrics', async () => {
     api.get.mockResolvedValueOnce({ data: { ...valid(), tenant_id: 'FOREIGN' } });
-    render(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByText('Clear dispatch backlog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Retry source read' }));
@@ -163,8 +193,28 @@ describe('Headquarters daily execution', () => {
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
 
+  it('refreshes the authorized Headquarters brief after a confirmed source command', async () => {
+    const empty = valid();
+    empty.items = [];
+    empty.summary = {
+      active_count: 0, overdue_count: 0,
+      source_counts: { OPERATIONS: 0, CRM: 0 },
+    };
+    api.get.mockResolvedValueOnce({ data: valid() })
+      .mockResolvedValueOnce({ data: empty });
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={TENANT} onOpenWork={vi.fn()}/>);
+    expect(await screen.findByText('Clear dispatch backlog')).toBeTruthy();
+    const key = currentUnifiedMyWorkScope(auth, TENANT);
+    await act(async () => {
+      expect(invalidateUnifiedMyWork(key)).toBe(true);
+    });
+    expect(await screen.findByText('No active work in the included sources')).toBeTruthy();
+    expect(screen.queryByText('Clear dispatch backlog')).toBeNull();
+    expect(api.get).toHaveBeenCalledTimes(2);
+  });
+
   it('never fetches business data when no authenticated tenant is available', async () => {
-    render(<WilsyHeadquartersDailyBrief tenantId={null} onOpenWork={vi.fn()}/>);
+    renderBrief(<WilsyHeadquartersDailyBrief tenantId={null} onOpenWork={vi.fn()}/>);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(api.get).not.toHaveBeenCalled();
   });
@@ -172,7 +222,7 @@ describe('Headquarters daily execution', () => {
 
 /*
  * ARTIFACT: WilsyHeadquartersDailyBrief.test.jsx
- * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
+ * VERSION: v1.3.0-AUTHENTICATED-BRIEF-SOURCE-REFRESH
  * AUTHORITY BOUNDARY: Deterministic client test evidence only.
  * TENANT POSTURE: Synthetic exact-scope and foreign-scope checks.
  * FAIL-CLOSED POSTURE: Divergent source metadata cannot render a queue.

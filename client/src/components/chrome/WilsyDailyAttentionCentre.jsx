@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.4.0-EOS-SOURCE-COVERAGE
+ * VERSION: v3.2.0-EXPLICIT-VERIFIED-VIEW-CONTINUITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -8,8 +8,108 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyDailyAttentionCentre.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.4.0-EOS-SOURCE-COVERAGE uses the canonical projection contract
+ * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: No browser-persisted queue, invented notices,
+ *                            unread receipts or browser-granted permissions.
+ * TENANT BOUNDARY: Current authenticated tenant/principal/session scoped;
+ *                  foreign or invalid source and command evidence fails closed.
+ * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
+ *                     endpoints independently authorize every mutation.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
+ * CHANGELOG: v3.1.0-SOURCE-CREATE-VALIDATION-EVIDENCE
+ *            surfaces safe EOS 422 field codes rather than concealing
+ *            business-request failures behind generic validation copy.
+ *            v3.2.0-EXPLICIT-VERIFIED-VIEW-CONTINUITY keeps the exact-scope
+ *            verified workspace mounted during refresh, binds each result
+ *            page to its verified criteria, aborts superseded reads, and
+ *            clears rows on authorization or session invalidation.
+ *            v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE returns
+ *            completion success to its presenting detail rail only after
+ *            source EOS readback, releasing mobile bulk-triage controls;
+ *            refusals retain the inspected record and evidence.
+ *            v2.9.0-SOURCE-OWNED-COMPLETE-ATTEMPT allows
+ *            user-initiated completion for current exact-source, verified
+ *            active work despite optional capability-probe outage;
+ *            authoritative EOS POST still rechecks permission and state.
+ *            v2.8.0-CREATE-TO-LIVE-WORK-REVALIDATION
+ *            returns successful source creation to unfiltered work,
+ *            immediately refetches source work and retains EOS readback.
+ *            v2.7.0-SOURCE-OWNED-CREATE-ATTEMPT exposes
+ *            a user-initiated source create action despite optional IAM
+ *            probe failure; EOS remains the independent write authority.
+ *            v2.6.0-ISOLATED-SOURCE-COMMAND-RECOVERY admits
+ *            independently verified actions for each available source,
+ *            identifies unavailable source commands without hiding healthy
+ *            CRM work execution, and preserves exact-scope write gating.
+ *            v2.5.1-STABLE-ACTION-CAPABILITY-RECHECK keeps
+ *            same-session command forms mounted during action IAM refresh,
+ *            disables writes until refreshed authorization returns, and
+ *            clears stale capabilities on scope change or denial.
+ *            v2.5.0-BOUNDED-SOURCE-BULK-COMPLETION executes
+ *            at most 25 independently authorized source completions,
+ *            records confirmed successes and individual failures, and
+ *            revalidates shared work without inventing atomic bulk authority.
+ *            v2.4.1-SOURCE-MUTATION-REVALIDATION-GUARD disables
+ *            work creation and completion while the selected EOS read
+ *            is being revalidated, preserving source-command currentness.
+ *            v2.4.0-EXECUTIVE-SOURCE-WORK-CREATION adds
+ *            the authenticated, idempotent create action for existing CRM,
+ *            Operations and Intelligence work, with verified EOS readback.
+ *            v2.3.0-SOURCE-OWNED-EXECUTIVE-COMPLETION checks
+ *            EOS action availability independently, delegates Operations
+ *            and Intelligence completion to source-owned authenticated POSTs,
+ *            and invalidates current My Work only after source confirmation.
+ *            v2.2.0-STABLE-ATTENTION-REVALIDATION keeps verified
+ *            same-session work visible during refresh and preserves search
+ *            focus, row selection and the detail rail across reads.
+ *            v2.1.1-FULL-SCOPE-ATTENTION-CALENDAR passes the
+ *            independently verified current My Work snapshot into Calendar,
+ *            excluding filtered attention-page truncation from deadline view.
+ *            v2.1.0-WIDE-AUTHORISED-EXECUTIVE-COCKPIT gives
+ *            authenticated triage a responsive 920px cockpit with room for
+ *            a 390px detail rail; isolated historic fixtures keep 460px.
+ *            Floating clamp/docking uses actual matching panel width.
+ *            v2.0.0-AUTHENTICATED-ATTENTION-WORKSPACE mounts a
+ *            governed dense inbox/briefing/detail UI only after the authenticated
+ *            AttentionItem feed validates; isolated My Work fixtures retain
+ *            their historical verification seam and source-owned navigation.
+ *            v1.9.2-LEGACY-EMPTY-COPY-COMPATIBILITY retains
+ *            the proven isolated legacy empty-state copy, while real
+ *            authenticated feeds add explicit omitted-source context.
+ *            v1.9.1-FULL-FEED-RECOVERY-BACKOFF resets the retry
+ *            schedule only after BOTH source aggregation and the AttentionItem
+ *            read succeed, preventing repeated short retries on prolonged 503.
+ *            v1.9.0-SAFE-ATTENTION-READ-RECOVERY preserves the Mac recovery contract in the
+ *            integrated AttentionItem feed: transient failures recover via
+ *            bounded delayed revalidation, browser reconnect and visibility;
+ *            401/403 and malformed source evidence remain fail-closed.
+ *            v1.8.1-EXACT-ATTENTION-COVERAGE-RESET shows all non-represented sources
+ *            without inferring licence or permission, and clears obsolete
+ *            pagination state whenever the source or filter changes.
+ *            v1.8.0-SERVER-AUTHORISED-ATTENTION-TRIAGE consumes EOS-authorised cursor-paginated
+ *            AttentionItems for real server-side triage and source selection;
+ *            an unavailable feed cannot masquerade as a cleared enterprise
+ *            queue. Direct OPEN navigation retains source-owned authority.
+ *            v1.7.0-EXECUTIVE-TRIAGE-INTENT turns the four
+ *            EOS-backed filter controls into an explained triage decision:
+ *            per-filter verified counts, an explicit source-safe next action,
+ *            and an empty-state recovery path without fabricated work.
+ *            v1.6.0-OPERATIONAL-ATTENTION-HANDOFF gives zero-work
+ *            Operations sessions a real source-owned create/manage entry,
+ *            provides one-click work-item handoff without hidden expansion,
+ *            labels source selection as filtering (not an executable command),
+ *            and removes the unrelated HR shortcut from non-HR coverage.
+ *            v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE distinguishes
+ *            EOS-verified zero active work from a truly unavailable work
+ *            count in the accessible bell label; a zero count never draws
+ *            a decorative unread badge or invents notifications.
+ *            v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS gives the
+ *            independently source-confirmed current global count precedence
+ *            over a formerly open panel's stale snapshot, clears stale closed
+ *            projections and revalidates open panels on source invalidation
+ *            via the same authenticated EOS work-read coordinator.
+ *            v1.4.0-EOS-SOURCE-COVERAGE uses the canonical projection contract
  *            to derive source options and empty-state wording from EOS coverage;
  *            no empty queue is routed automatically into HR.
  *            v1.3.0-CALENDAR-EXPLICIT-DISMISSAL makes the date view explicitly dismissible
@@ -27,37 +127,56 @@
  *            fetching, scoped validation, due/priority/source triage, search,
  *            keyboard/outside dismissal, safe refresh, detail expansion and
  *            source-owned action navigation.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * SECURITY / PRIVACY POSTURE: No browser-persisted queue, fabricated notices,
- *                            unread receipts, or client-derived permissions.
- * TENANT BOUNDARY: Rejects missing/mismatched tenant projections and stale
- *                  in-flight reads on authenticated scope changes.
- * AUTHORITY BOUNDARY: Read-only projection. Only EOS source services may
- *                     complete, approve, assign or acknowledge work.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertTriangle, ArrowRight, Bell, CalendarDays, CheckCircle2,
   ChevronDown, Clock3, Grip, Pin, RefreshCw, Search, X,
 } from 'lucide-react';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
+import {
+  currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
+  subscribeUnifiedMyWork, invalidateUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 import {
   assertUnifiedMyWorkProjection,
   unifiedMyWorkSourceLabel,
 } from '../../services/unifiedMyWorkProjection.js';
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
+import {
+  readAttentionFeed, readAttentionSourceActions, completeAttentionSourceWork,
+  createAttentionSourceWork,
+} from '../../services/attentionFeedClient.js';
+import DailyAttentionWorkspace from '../attention/DailyAttentionWorkspace.jsx';
 
 const FILTERS = Object.freeze([
-  { id: 'ALL', label: 'All work' },
-  { id: 'OVERDUE', label: 'Overdue' },
-  { id: 'TODAY', label: 'Due today' },
-  { id: 'HIGH', label: 'High priority' },
+  { id: 'ALL', label: 'All work', purpose: 'Review every active item currently included by EOS.' },
+  { id: 'OVERDUE', label: 'Overdue', purpose: 'Address missed deadlines in the authorised queue.' },
+  { id: 'TODAY', label: 'Due today', purpose: 'Act on commitments due before the working day ends.' },
+  { id: 'HIGH', label: 'High priority', purpose: 'Review critical and high-priority work first.' },
 ]);
 
+const urgencyOrder = (item) => item.is_overdue ? 0
+  : ['CRITICAL', 'HIGH'].includes(item.priority) ? 1 : 2;
+const nextWorkItem = (items) => [...items].sort((a, b) => {
+  const urgency = urgencyOrder(a) - urgencyOrder(b);
+  if (urgency) return urgency;
+  const first = a.due_at ? Date.parse(a.due_at) : Number.POSITIVE_INFINITY;
+  const second = b.due_at ? Date.parse(b.due_at) : Number.POSITIVE_INFINITY;
+  const due = (Number.isFinite(first) ? first : Number.POSITIVE_INFINITY)
+    - (Number.isFinite(second) ? second : Number.POSITIVE_INFINITY);
+  return Number.isNaN(due) ? 0 : due;
+})[0] || null;
+
 const validCount = (value) => Number.isSafeInteger(value) && value >= 0;
+const sameAttentionCriteria = (left, right) => Boolean(left && right
+  && left.filter === right.filter
+  && left.source === right.source
+  && left.query === right.query);
 
 const dueToday = (dateValue) => {
   if (!dateValue) return false;
@@ -103,6 +222,7 @@ export function assertAttentionProjection(payload, tenantId) {
  * @param {Function} props.onClose Dismisses the panel.
  * @param {Function} props.onOpenWork Navigates to canonical My Work commands.
  * @param {Function} props.onOpenWorkforce Navigates into governed HR workspace.
+ * @param {Function} props.onOpenOperations Navigates to source-owned Operations work management.
  * @returns {JSX.Element} Accessible daily attention projection.
  */
 export default function WilsyDailyAttentionCentre({
@@ -114,12 +234,40 @@ export default function WilsyDailyAttentionCentre({
   onClose,
   onOpenWork,
   onOpenWorkforce,
+  onOpenOperations,
 }) {
+  const auth = useContext(AuthContext);
+  const workScope = currentUnifiedMyWorkScope(auth, tenantId);
   const rootRef = useRef(null);
   const panelRef = useRef(null);
   const dragRef = useRef(null);
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
+  const [workError, setWorkError] = useState('');
+  const [recoveryAttempts, setRecoveryAttempts] = useState(0);
+  const [attentionFeed, setAttentionFeed] = useState(null);
+  const [verifiedAttentionCriteria, setVerifiedAttentionCriteria] = useState(null);
+  const [attentionFailureCriteria, setAttentionFailureCriteria] = useState(null);
+  const [attentionStatus, setAttentionStatus] = useState('IDLE');
+  const [attentionError, setAttentionError] = useState('');
+  const [sourceActions, setSourceActions] = useState({});
+  const [sourceActionsScope, setSourceActionsScope] = useState(null);
+  const [sourceActionsStatus, setSourceActionsStatus] = useState('IDLE');
+  const [unavailableActionSources, setUnavailableActionSources] = useState([]);
+  const [completionId, setCompletionId] = useState(null);
+  const [completionError, setCompletionError] = useState('');
+  const [bulkCompleting, setBulkCompleting] = useState(false);
+  const [bulkResult, setBulkResult] = useState('');
+  const [creatingWork, setCreatingWork] = useState(false);
+  const [creationError, setCreationError] = useState('');
+  const [creationNotice, setCreationNotice] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const feedGenerationRef = useRef(0);
+  const verifiedProjectionScopeRef = useRef(null);
+  const verifiedAttentionScopeRef = useRef(null);
+  const liveScopeKey = workScope && tenantId && auth?.user?.id
+    ? [workScope, tenantId, auth.user.id].join('::') : null;
   const [refreshId, setRefreshId] = useState(0);
   const [filter, setFilter] = useState('ALL');
   const [source, setSource] = useState('ALL');
@@ -129,43 +277,496 @@ export default function WilsyDailyAttentionCentre({
   const [floating, setFloating] = useState(null);
   const [docked, setDocked] = useState({ right: 16, top: 72 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setProjection(null);
+    verifiedProjectionScopeRef.current = null;
+    verifiedAttentionScopeRef.current = null;
     setStatus('IDLE');
+    setWorkError('');
+    setRecoveryAttempts(0);
+    setAttentionFeed(null);
+    setVerifiedAttentionCriteria(null);
+    setAttentionFailureCriteria(null);
+    setAttentionStatus('IDLE');
+    setAttentionError('');
+    setSourceActions({});
+    setSourceActionsScope(null);
+    setSourceActionsStatus('IDLE');
+    setUnavailableActionSources([]);
+    setCompletionId(null);
+    setCompletionError('');
+    setBulkCompleting(false);
+    setBulkResult('');
+    setCreatingWork(false);
+    setCreationError('');
+    setCreationNotice('');
+    setLoadingMore(false);
     setFilter('ALL');
     setSource('ALL');
     setQuery('');
     setExpanded(null);
     setView('WORK');
     setFloating(null);
-  }, [tenantId, systemServicesWorkspace]);
+  }, [liveScopeKey, systemServicesWorkspace]);
 
   useEffect(() => {
-    if (!open) return undefined;
-    if (!tenantId || systemServicesWorkspace) {
+    if (!open) {
       setProjection(null);
+      verifiedProjectionScopeRef.current = null;
+      setAttentionFeed(null);
+      verifiedAttentionScopeRef.current = null;
+      setVerifiedAttentionCriteria(null);
+      setAttentionFailureCriteria(null);
+      setAttentionStatus('IDLE');
+      setStatus('IDLE');
+      return undefined;
+    }
+    if (!tenantId || systemServicesWorkspace || (auth && !workScope)) {
+      setProjection(null);
+      verifiedProjectionScopeRef.current = null;
+      setAttentionFeed(null);
+      verifiedAttentionScopeRef.current = null;
+      setVerifiedAttentionCriteria(null);
+      setAttentionFailureCriteria(null);
+      setAttentionStatus('IDLE');
       setStatus('UNAVAILABLE');
       return undefined;
     }
     let active = true;
-    setProjection(null);
-    setStatus('LOADING');
-    api.get('/my-work', { forceNetworkRetry: true })
-      .then((response) => {
-        const verified = assertAttentionProjection(response?.data, tenantId);
+    const controller = new AbortController();
+    const hasVerifiedProjectionInScope = Boolean(projection && liveScopeKey
+      && verifiedProjectionScopeRef.current === liveScopeKey);
+    if (!hasVerifiedProjectionInScope) {
+      setProjection(null);
+      setAttentionFeed(null);
+      verifiedAttentionScopeRef.current = null;
+      setVerifiedAttentionCriteria(null);
+      setStatus('LOADING');
+    } else {
+      // The exact session has not changed. Keep its last verified workspace
+      // mounted while this independent read revalidates in the background.
+      setStatus('LOADING');
+    }
+    setWorkError('');
+
+    // Authenticated production reads share the exact current session and
+    // source validator with global chrome. Isolated presentational fixtures
+    // without an AuthProvider retain their existing mocked read seam.
+    const request = workScope
+      ? readUnifiedMyWork(
+          workScope,
+          { tenantId, principalId: auth.user.id },
+          { signal: controller.signal, force: true },
+        )
+      : api.get('/my-work', { forceNetworkRetry: true })
+          .then((response) => assertAttentionProjection(response?.data, tenantId));
+    request
+      .then((verified) => {
         if (active) {
           setProjection(verified);
+          verifiedProjectionScopeRef.current = liveScopeKey;
+          setWorkError('');
+          if (!workScope) setRecoveryAttempts(0);
           setStatus('READY');
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (active) {
-          setProjection(null);
+          const http = error?.response?.status;
+          const authorizationInvalidated = http === 401 || http === 403;
+          const canRetainVerifiedScope = Boolean(projection && liveScopeKey
+            && verifiedProjectionScopeRef.current === liveScopeKey);
+          if (authorizationInvalidated || !canRetainVerifiedScope) {
+            setProjection(null);
+            setAttentionFeed(null);
+            verifiedProjectionScopeRef.current = null;
+            verifiedAttentionScopeRef.current = null;
+            setVerifiedAttentionCriteria(null);
+            setAttentionFailureCriteria(null);
+          }
+          setWorkError(http === 401 || http === 403
+            ? 'ATTENTION_ACCESS_DENIED'
+            : [502, 503, 504].includes(http)
+              || ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)
+              ? 'ATTENTION_CONNECTION_UNAVAILABLE'
+              : 'ATTENTION_PROJECTION_UNVERIFIED');
+          if (authorizationInvalidated) {
+            setAttentionError('ATTENTION_ACCESS_DENIED');
+            setAttentionStatus('UNAVAILABLE');
+          }
           setStatus('UNAVAILABLE');
         }
       });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [open, tenantId, systemServicesWorkspace, refreshId, workScope, liveScopeKey]);
+
+  useEffect(() => {
+    if (!open || !workScope) return undefined;
+    return subscribeUnifiedMyWork(workScope, () => {
+      setRefreshId((id) => id + 1);
+    });
+  }, [open, workScope]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 200);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  // Authenticated sessions use the EOS AttentionItem feed as the triage list.
+  // A filter refresh is delayed until the exact-scope projection read settles;
+  // the projection's identity change then causes one feed read with the latest
+  // controls. refreshId never directly fans out a second feed request.
+  useEffect(() => {
+    if (!open || !workScope || status !== 'READY' || !projection
+      || !liveScopeKey || verifiedProjectionScopeRef.current !== liveScopeKey) return undefined;
+    const controller = new AbortController();
+    const generation = ++feedGenerationRef.current;
+    const requestCriteria = {
+      filter, source, query: debouncedQuery.trim(),
+    };
+    if (verifiedAttentionScopeRef.current !== liveScopeKey) {
+      setAttentionFeed(null);
+      setVerifiedAttentionCriteria(null);
+    }
+    setLoadingMore(false);
+    setAttentionStatus('LOADING');
+    setAttentionError('');
+    setAttentionFailureCriteria(null);
+    const selectedView = {
+      ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+    }[filter];
+    readAttentionFeed(
+      { tenantId, principalId: auth.user.id },
+      {
+        view: selectedView,
+        sources: source !== 'ALL' ? source : undefined,
+        q: requestCriteria.query,
+        limit: 50,
+        signal: controller.signal,
+      },
+    ).then((verified) => {
+      if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
+      const included = projection.sources_included || [];
+      if (
+        verified.coverage.admittedSources.length !== included.length
+        || included.some((item) => !verified.coverage.admittedSources.includes(item))
+      ) throw new Error('ATTENTION_SOURCE_COVERAGE_MISMATCH');
+      setAttentionFeed(verified);
+      setVerifiedAttentionCriteria(requestCriteria);
+      verifiedAttentionScopeRef.current = liveScopeKey;
+      setRecoveryAttempts(0);
+      setAttentionStatus('READY');
+    }).catch((error) => {
+      if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
+      const http = error?.response?.status;
+      const authorizationInvalidated = http === 401 || http === 403;
+      if (authorizationInvalidated) {
+        setAttentionFeed(null);
+        setProjection(null);
+        setVerifiedAttentionCriteria(null);
+        setAttentionFailureCriteria(null);
+        verifiedAttentionScopeRef.current = null;
+        verifiedProjectionScopeRef.current = null;
+        setWorkError('ATTENTION_ACCESS_DENIED');
+        setStatus('UNAVAILABLE');
+      } else {
+        // Same-scope transient or malformed revalidation does not erase the
+        // last verified response; the view is explicitly marked unavailable.
+        setAttentionFailureCriteria(requestCriteria);
+      }
+      setAttentionError(http === 401 || http === 403
+        ? 'ATTENTION_ACCESS_DENIED'
+        : [502, 503, 504].includes(http)
+          || ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)
+            ? 'ATTENTION_CONNECTION_UNAVAILABLE'
+            : error?.message?.startsWith('ATTENTION_')
+              ? error.message : 'ATTENTION_SOURCE_READ_UNVERIFIED');
+      setAttentionStatus('UNAVAILABLE');
+    });
+    return () => {
+      controller.abort();
+      feedGenerationRef.current += 1;
+    };
+  }, [
+    open, workScope, status, projection, tenantId, auth?.user?.id,
+    filter, source, debouncedQuery, liveScopeKey,
+  ]);
+
+  // A failed source is never promoted to empty; revalidate transient outages
+  // only in the same current AuthProvider session. No auth denial is retried.
+  useEffect(() => {
+    if (!open || !workScope) return undefined;
+    const transientFailure = (status === 'UNAVAILABLE'
+      && workError === 'ATTENTION_CONNECTION_UNAVAILABLE')
+      || (attentionStatus === 'UNAVAILABLE'
+        && attentionError === 'ATTENTION_CONNECTION_UNAVAILABLE');
+    if (!transientFailure) return undefined;
+    const refresh = () => {
+      setRecoveryAttempts((previous) => previous + 1);
+      setRefreshId((previous) => previous + 1);
+    };
+    const visible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    const delay = recoveryAttempts === 0 ? 1500
+      : recoveryAttempts === 1 ? 5000 : 20000;
+    const timer = window.setTimeout(refresh, delay);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', visible);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', visible);
+    };
+  }, [open, workScope, status, workError, attentionStatus, attentionError, recoveryAttempts]);
+
+  // Optional command-availability read is separate from source visibility.
+  // Its failure cannot confer an action or turn a verified work queue empty.
+  useEffect(() => {
+    if (!open || !workScope || status !== 'READY' || !projection) {
+      setSourceActions({});
+      setSourceActionsScope(null);
+      setSourceActionsStatus('IDLE');
+      setUnavailableActionSources([]);
+      return undefined;
+    }
+    let active = true;
+    if (sourceActionsScope !== liveScopeKey) {
+      setSourceActions({});
+      setSourceActionsScope(null);
+    }
+    setSourceActionsStatus('CHECKING');
+    readAttentionSourceActions(
+      { tenantId, principalId: auth.user.id }, projection.sources_included,
+    )
+      .then((result) => {
+        if (!active) return;
+        const actions = result.sourceActions || result;
+        const unavailable = result.unavailableSources || [];
+        setSourceActions(actions);
+        setUnavailableActionSources(unavailable);
+        setSourceActionsScope(liveScopeKey);
+        setSourceActionsStatus(unavailable.length ? 'PARTIAL' : 'READY');
+      })
+      .catch(() => {
+        if (!active) return;
+        setSourceActions({});
+        setSourceActionsScope(null);
+        setUnavailableActionSources(projection.sources_included || []);
+        setSourceActionsStatus('UNAVAILABLE');
+      });
     return () => { active = false; };
-  }, [open, tenantId, systemServicesWorkspace, refreshId]);
+  }, [open, workScope, status, projection, tenantId, auth?.user?.id, liveScopeKey]);
+
+  const requestedAttentionCriteria = {
+    filter,
+    source,
+    query: query.trim(),
+  };
+  const criteriaNeedRevalidation = !sameAttentionCriteria(
+    verifiedAttentionCriteria,
+    requestedAttentionCriteria,
+  ) || query.trim() !== debouncedQuery.trim();
+  const failedCriteriaMatch = sameAttentionCriteria(
+    attentionFailureCriteria,
+    requestedAttentionCriteria,
+  );
+  const attentionCriteriaIsCurrent = Boolean(
+    !criteriaNeedRevalidation
+    && status === 'READY'
+    && attentionStatus === 'READY'
+    && verifiedAttentionScopeRef.current === liveScopeKey,
+  );
+  const hasCurrentVerifiedWorkspace = Boolean(
+    workScope
+    && projection
+    && attentionFeed
+    && verifiedProjectionScopeRef.current === liveScopeKey
+    && verifiedAttentionScopeRef.current === liveScopeKey,
+  );
+  const resultsUnavailable = Boolean(
+    hasCurrentVerifiedWorkspace
+    && (status === 'UNAVAILABLE'
+      || (attentionStatus === 'UNAVAILABLE' && failedCriteriaMatch)),
+  );
+  const resultsUpdating = Boolean(
+    hasCurrentVerifiedWorkspace
+    && (status === 'LOADING'
+      || attentionStatus === 'LOADING'
+      || (criteriaNeedRevalidation && !resultsUnavailable)),
+  );
+  const resultFailureCode = status === 'UNAVAILABLE'
+    ? workError
+    : attentionStatus === 'UNAVAILABLE' && failedCriteriaMatch ? attentionError : '';
+
+  const handleSourceCompletion = async (item, note) => {
+    if (!workScope || !attentionCriteriaIsCurrent || attentionStatus !== 'READY' || status !== 'READY'
+      || verifiedAttentionScopeRef.current !== liveScopeKey
+      || !projection?.sources_included?.includes(item?.sourceModule)
+      || !['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(item?.sourceModule)
+      || bulkCompleting || creatingWork
+      || item?.status !== 'OPEN'
+      || !attentionFeed?.items.some((row) => row.id === item.id
+        && row.sourceRecordId === item.sourceRecordId)
+      || completionId) return false;
+    setCompletionError('');
+    setCompletionId(item.id);
+    try {
+      await completeAttentionSourceWork(item, note);
+      invalidateUnifiedMyWork(workScope);
+      setRefreshId((id) => id + 1);
+      return true;
+    } catch (error) {
+      const http = error?.response?.status;
+      setCompletionError(http === 403 ? 'EOS denied completion. Verify tenant membership, source entitlement and complete permission.'
+        : http === 401 ? 'Your session expired. Sign in again before completing work.'
+          : http === 503 ? 'EOS command service unavailable. Completion was not confirmed.'
+        : http === 409 ? 'Work changed since inspection. Refresh and review again.'
+          : http === 422 ? 'Completion evidence was rejected by its source.'
+            : 'Source completion could not be confirmed. Refresh before retrying.');
+      return false;
+    } finally {
+      setCompletionId(null);
+    }
+  };
+
+  const handleBulkCompletion = async (items, note) => {
+    if (!workScope || !attentionCriteriaIsCurrent || status !== 'READY' || attentionStatus !== 'READY'
+      || verifiedAttentionScopeRef.current !== liveScopeKey
+      || sourceActionsScope !== liveScopeKey || sourceActionsStatus !== 'READY'
+      || bulkCompleting || completionId || creatingWork
+      || !Array.isArray(items) || items.length < 1 || items.length > 25
+      || typeof note !== 'string' || !note.trim() || note.length > 1000) return null;
+    const visible = new Map(attentionFeed?.items.map((item) => [item.id, item]) || []);
+    if (new Set(items.map((item) => item.id)).size !== items.length
+      || items.some((item) => !visible.has(item.id)
+        || !sourceActions[item.sourceModule]?.includes('COMPLETE')
+        || item.status !== 'OPEN')) return null;
+    setBulkCompleting(true);
+    setBulkResult('');
+    const completedIds = [];
+    const failedIds = [];
+    // Source transactions are intentionally separate: a partially completed
+    // batch must never claim all-or-nothing cross-module authority.
+    try {
+      for (const item of items) {
+        try {
+          await completeAttentionSourceWork(item, note);
+          completedIds.push(item.id);
+        } catch {
+          failedIds.push(item.id);
+        }
+      }
+      setBulkResult(completedIds.length + ' source completions confirmed; '
+        + failedIds.length + ' require review. No cross-source atomicity is claimed.');
+      if (completedIds.length) {
+        invalidateUnifiedMyWork(workScope);
+        setRefreshId((id) => id + 1);
+      }
+      return { completedIds, failedIds };
+    } finally {
+      setBulkCompleting(false);
+    }
+  };
+
+  const explainSourceValidation = (data) => {
+    const detail = data?.detail;
+    const safeFields = new Set([
+      'title', 'description', 'kind', 'priority', 'due_at',
+      'Idempotency-Key', 'idempotency-key', 'source_type', 'source_id',
+    ]);
+    if (Array.isArray(detail)) {
+      const parts = detail.slice(0, 3).map((error) => {
+        const loc = Array.isArray(error?.loc) ? error.loc : [];
+        const field = loc.find((part) => safeFields.has(part));
+        const reason = typeof error?.type === 'string'
+          && /^[a-z0-9_]{1,80}$/.test(error.type) ? error.type : 'invalid_value';
+        return field ? field + ' (' + reason + ')' : null;
+      }).filter(Boolean);
+      return parts.length ? 'EOS rejected: ' + parts.join(', ') + '.' : null;
+    }
+    if (typeof detail === 'string' && /^[A-Z][A-Z0-9_]{2,90}$/.test(detail)) {
+      return 'EOS rejected the task: ' + detail + '.';
+    }
+    return null;
+  };
+
+  const handleSourceCreate = async (moduleId, form, idempotencyKey) => {
+    if (!workScope || !attentionCriteriaIsCurrent || status !== 'READY' || attentionStatus !== 'READY'
+      || verifiedAttentionScopeRef.current !== liveScopeKey
+      || !projection?.sources_included?.includes(moduleId)
+      || !['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(moduleId)
+      || creatingWork || bulkCompleting || completionId) return false;
+    setCreationError('');
+    setCreationNotice('');
+    setCreatingWork(true);
+    try {
+      const saved = await createAttentionSourceWork(
+        moduleId, { tenantId, principalId: auth.user.id }, form, idempotencyKey,
+      );
+      setCreationNotice('Source work created: ' + saved.work_item_id);
+      setFilter('ALL');
+      setSource('ALL');
+      setQuery('');
+      setDebouncedQuery('');
+      setView('WORK');
+      invalidateUnifiedMyWork(workScope);
+      setRefreshId((id) => id + 1);
+      return true;
+    } catch (error) {
+      const http = error?.response?.status;
+      setCreationError(http === 403 ? 'EOS denied this task creation. Verify subscription, membership and create permission.'
+        : http === 401 ? 'Your session expired. Sign in again before creating work.'
+          : http === 503 ? 'EOS command service unavailable; the task was not confirmed as created.'
+        : http === 409 ? 'This work intent conflicts with existing source evidence.'
+          : http === 422 ? (explainSourceValidation(error?.response?.data)
+            || 'EOS returned 422. Open Network → work-items → Response to inspect the rejected field.')
+            : 'Creation could not be confirmed. Retry using the same intent key.');
+      return false;
+    } finally {
+      setCreatingWork(false);
+    }
+  };
+
+  const loadMoreAttention = () => {
+    if (!workScope || !attentionCriteriaIsCurrent || !attentionFeed?.nextCursor || loadingMore) return;
+    const generation = feedGenerationRef.current;
+    const prior = attentionFeed;
+    setLoadingMore(true);
+    const selectedView = {
+      ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+    }[filter];
+    readAttentionFeed(
+      { tenantId, principalId: auth.user.id },
+      {
+        view: selectedView,
+        sources: source !== 'ALL' ? source : undefined,
+        q: debouncedQuery,
+        cursor: prior.nextCursor,
+        limit: 50,
+      },
+    ).then((page) => {
+      if (generation !== feedGenerationRef.current) return;
+      if (
+        page.filteredTotal !== prior.filteredTotal
+        || page.counts.active !== prior.counts.active
+        || page.coverage.admittedSources.join() !== prior.coverage.admittedSources.join()
+      ) throw new Error('ATTENTION_PAGE_SOURCE_CHANGED');
+      const already = new Set(prior.items.map((item) => item.id));
+      if (page.items.some((item) => already.has(item.id))) {
+        throw new Error('ATTENTION_PAGE_DUPLICATE');
+      }
+      setAttentionFeed({ ...page, items: [...prior.items, ...page.items] });
+    }).catch(() => {
+      if (generation !== feedGenerationRef.current) return;
+      setAttentionError('ATTENTION_PAGE_REVALIDATION_FAILED');
+    }).finally(() => {
+      if (generation === feedGenerationRef.current) setLoadingMore(false);
+    });
+  };
 
   useEffect(() => {
     if (!open) return undefined;
@@ -190,14 +791,48 @@ export default function WilsyDailyAttentionCentre({
     };
   }, [open, onClose, view]);
 
-  const items = projection?.items || [];
+  const items = workScope
+    ? attentionFeed && verifiedAttentionScopeRef.current === liveScopeKey
+      ? attentionFeed.items.map((item) => ({
+          source_key: item.id,
+          source: item.sourceModule,
+          work_item_id: item.sourceRecordId,
+          title: item.title,
+          description: item.summary,
+          priority: item.priority,
+          status: item.status,
+          due_at: item.dueAt,
+          is_overdue: item.isOverdue,
+          urgencyScore: item.urgencyScore,
+          whyRanked: item.whyRanked,
+        }))
+      : []
+    : projection?.items || [];
   const sourceIds = projection?.sources_included || [];
   const sourceOptions = sourceIds.map((id) => [id, unifiedMyWorkSourceLabel(id)]);
   const sourceLabels = sourceOptions.map(([, label]) => label);
-  const verifiedCount = status === 'READY' ? projection.summary.active_count : activeCount;
+  const operationsAdmitted = sourceIds.includes('OPERATIONS');
+  const chosenSourceLabel = source === 'ALL' ? 'all admitted sources' : unifiedMyWorkSourceLabel(source);
+  // A previously opened panel's read cannot outrank current EOS source
+  // evidence received by the persistent global chrome.
+  const verifiedCount = validCount(activeCount)
+    ? activeCount
+    : open && status === 'READY' ? projection.summary.active_count : null;
   const badgeCount = validCount(verifiedCount) && verifiedCount > 0 ? verifiedCount : null;
-  const dueTodayCount = items.filter((item) => dueToday(item.due_at)).length;
-  const highCount = items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
+  const dueTodayCount = workScope && attentionFeed
+    ? attentionFeed.counts.dueToday
+    : items.filter((item) => dueToday(item.due_at)).length;
+  const highCount = workScope && attentionFeed
+    ? attentionFeed.counts.highPriority
+    : items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
+  const overdueCount = workScope && attentionFeed
+    ? attentionFeed.counts.overdue
+    : items.filter((item) => item.is_overdue).length;
+  const activeTotal = workScope && attentionFeed
+    ? attentionFeed.counts.active : items.length;
+  const filterCounts = {
+    ALL: activeTotal, OVERDUE: overdueCount, TODAY: dueTodayCount, HIGH: highCount,
+  };
 
   useEffect(() => {
     if (projection && source !== 'ALL' && !projection.sources_included.includes(source)) {
@@ -206,6 +841,7 @@ export default function WilsyDailyAttentionCentre({
   }, [projection, source]);
 
   const filteredItems = useMemo(() => {
+    if (workScope) return items;
     const phrase = query.trim().toLocaleLowerCase();
     return items.filter((item) => {
       if (filter === 'OVERDUE' && !item.is_overdue) return false;
@@ -219,7 +855,15 @@ export default function WilsyDailyAttentionCentre({
       ].some((value) => typeof value === 'string'
         && value.toLocaleLowerCase().includes(phrase));
     });
-  }, [items, filter, source, query]);
+  }, [items, filter, source, query, workScope]);
+  const selectedFilter = FILTERS.find(({ id }) => id === filter) || FILTERS[0];
+  const nextItem = nextWorkItem(filteredItems);
+  const triageResult = nextItem
+    ? 'Next: ' + nextItem.title + '. Source: ' + unifiedMyWorkSourceLabel(nextItem.source)
+      + '. Due: ' + dueLabel(nextItem.due_at) + '.'
+    : items.length === 0
+      ? 'EOS has no active work in the admitted sources. This does not certify every business function is clear.'
+      : 'No matching work in the current selection. Clear filters to review other authorised items.';
 
   // Render the movable surface outside header backdrop-filter/stacking contexts.
   useEffect(() => {
@@ -227,7 +871,7 @@ export default function WilsyDailyAttentionCentre({
     const updateAnchor = () => {
       const anchor = rootRef.current?.getBoundingClientRect();
       if (!anchor) return;
-      const width = Math.min(460, window.innerWidth - 32);
+      const width = Math.min(workScope ? 920 : 460, window.innerWidth - 32);
       setDocked({
         right: Math.max(8, Math.min(window.innerWidth - anchor.right,
           Math.max(8, window.innerWidth - width - 8))),
@@ -237,14 +881,14 @@ export default function WilsyDailyAttentionCentre({
     updateAnchor();
     window.addEventListener('resize', updateAnchor);
     return () => window.removeEventListener('resize', updateAnchor);
-  }, [open]);
+  }, [open, workScope]);
 
   // Floating position is a transient layout preference, not business state.
   const panelBounds = () => {
     const rect = panelRef.current?.getBoundingClientRect();
     return {
       x: rect?.left || 16, y: rect?.top || 72,
-      width: rect?.width || Math.min(460, window.innerWidth - 32),
+      width: rect?.width || Math.min(workScope ? 920 : 460, window.innerWidth - 32),
       height: rect?.height || Math.min(780, window.innerHeight - 80),
     };
   };
@@ -306,9 +950,9 @@ export default function WilsyDailyAttentionCentre({
     <div className="relative" ref={rootRef} data-wilsy-attention-centre="true">
       <button
         type="button"
-        aria-label={badgeCount === null
-          ? 'Open daily attention'
-          : 'Open daily attention: ' + badgeCount + ' active work items'}
+        aria-label={validCount(verifiedCount)
+          ? 'Open daily attention: ' + verifiedCount + ' active work items'
+          : 'Open daily attention'}
         aria-haspopup="dialog"
         aria-expanded={Boolean(open)}
         onClick={onToggle}
@@ -334,7 +978,8 @@ export default function WilsyDailyAttentionCentre({
           style={floating
             ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
             : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }}
-          className="fixed z-[90] flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60"
+          className={'fixed z-[90] flex max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60 ' +
+            (workScope ? 'w-[min(920px,calc(100vw-2rem))]' : 'w-[min(460px,calc(100vw-2rem))]')}
         >
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
@@ -365,20 +1010,27 @@ export default function WilsyDailyAttentionCentre({
             </div>
           </div>
 
-          {status === 'LOADING' && (
+          {!hasCurrentVerifiedWorkspace && (status === 'LOADING'
+            || (status === 'READY' && workScope && attentionStatus === 'LOADING')) && (
             <div role="status" className="flex items-center gap-2 px-5 py-8 text-sm text-amber-200">
               <RefreshCw size={16} className="animate-spin"/> Checking current work…
             </div>
           )}
 
-          {status === 'UNAVAILABLE' && (
+          {!hasCurrentVerifiedWorkspace && (status === 'UNAVAILABLE'
+            || (status === 'READY' && workScope && attentionStatus === 'UNAVAILABLE')) && (
             <div role="alert" className="space-y-3 px-5 py-6">
               <div className="flex items-center gap-2 font-medium text-rose-200">
                 <AlertTriangle size={17}/> Work source unavailable
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Current tenant authorisation or an EOS work source could not be verified.
-                No cached or invented work is shown.
+                {(attentionError || workError) === 'ATTENTION_ACCESS_DENIED'
+                  ? 'This session is not authorised for the requested attention source.'
+                  : (attentionError || workError) === 'ATTENTION_CONNECTION_UNAVAILABLE'
+                    ? 'EOS is temporarily unavailable. No current result is verified; recovery retries automatically.'
+                    : (attentionError || workError)
+                      ? 'The authorised attention feed could not be verified. No cached or invented work is shown.'
+                      : 'Current tenant authorisation or an EOS work source could not be verified. No cached or invented work is shown.'}
               </p>
               {!systemServicesWorkspace && tenantId && (
                 <button type="button" onClick={() => setRefreshId((id) => id + 1)}
@@ -389,7 +1041,48 @@ export default function WilsyDailyAttentionCentre({
             </div>
           )}
 
-          {status === 'READY' && (
+          {hasCurrentVerifiedWorkspace && (
+            <div aria-busy={resultsUpdating} className="min-h-0 flex flex-1 flex-col">
+            <DailyAttentionWorkspace
+              key={liveScopeKey}
+              feed={attentionFeed}
+              calendarItems={projection.items}
+              verifiedCriteria={verifiedAttentionCriteria}
+              requestedCriteria={requestedAttentionCriteria}
+              resultsUpdating={resultsUpdating}
+              resultsUnavailable={resultsUnavailable}
+              resultFailureCode={resultFailureCode}
+              filter={filter}
+              setFilter={setFilter}
+              source={source}
+              setSource={setSource}
+              query={query}
+              setQuery={setQuery}
+              onRefresh={() => setRefreshId((id) => id + 1)}
+              onOpenWork={onOpenWork}
+              onOpenOperations={onOpenOperations}
+              onOpenWorkforce={onOpenWorkforce}
+              authorisedActions={sourceActionsScope === liveScopeKey ? sourceActions : {}}
+              onCompleteWork={handleSourceCompletion}
+              onBulkComplete={handleBulkCompletion}
+              bulkCompleting={bulkCompleting}
+              bulkResult={bulkResult}
+              onCreateWork={handleSourceCreate}
+              creatingWork={creatingWork}
+              workUpdating={!attentionCriteriaIsCurrent}
+              actionAvailabilityUnavailable={['UNAVAILABLE', 'PARTIAL'].includes(sourceActionsStatus)}
+              unavailableActionSources={unavailableActionSources}
+              creationError={creationError}
+              creationNotice={creationNotice}
+              completingId={completionId}
+              completionError={completionError}
+              onLoadMore={loadMoreAttention}
+              loadingMore={loadingMore}
+              pageError={attentionError === 'ATTENTION_PAGE_REVALIDATION_FAILED'}
+            />
+            </div>
+          )}
+          {status === 'READY' && !workScope && (
             <>
               <div className="shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -415,13 +1108,23 @@ export default function WilsyDailyAttentionCentre({
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Stat label="Active" value={items.length} />
-                  <Stat label="Overdue" value={projection.summary.overdue_count} urgent={projection.summary.overdue_count > 0}/>
+                <div className="flex flex-wrap gap-2" aria-label="Verified current-source workload">
+                  <Stat label="Active" value={activeTotal} />
+                  <Stat label="Overdue" value={overdueCount} urgent={overdueCount > 0}/>
                   <Stat label="Due today" value={dueTodayCount}/>
+                  <Stat label="High priority" value={highCount}/>
                 </div>
+                {workScope && attentionFeed && (
+                  <p className="mt-2 text-[10px] leading-5 text-slate-400">
+                    Verified sources: {attentionFeed.sources.map((entry) =>
+                      entry.moduleId + ' (' + entry.state + ')').join(', ') || 'none'}.
+                    Not represented in this session: {attentionFeed.coverage.notRepresentedSources.join(', ') || 'none'}.
+                    No omitted source is assumed licensed or authorised.
+                    This is not an enterprise-wide clearance.
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] text-slate-400">{highCount} high-priority items</p>
+                  <p className="text-[11px] text-slate-400">{highCount} high-priority items in authorised sources</p>
                   <button type="button" onClick={() => setRefreshId((id) => id + 1)}
                     className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-amber-200 hover:bg-white/10">
                     <RefreshCw size={13}/> Refresh
@@ -431,12 +1134,13 @@ export default function WilsyDailyAttentionCentre({
                   <div role="group" aria-label="Filter daily attention" className="mt-3 flex flex-wrap gap-1.5">
                     {FILTERS.map(({ id, label }) => (
                       <button key={id} type="button" aria-pressed={filter === id}
-                        onClick={() => setFilter(id)}
+                        title={FILTERS.find((choice) => choice.id === id)?.purpose}
+                        onClick={() => { setFilter(id); setExpanded(null); }}
                         className={'rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition ' +
                           (filter === id
                             ? 'border-amber-300/40 bg-amber-300/15 text-amber-100'
                             : 'border-white/10 text-slate-300 hover:bg-white/10')}
-                      >{label}</button>
+                      >{label}<span aria-hidden="true" className="ml-1.5 tabular-nums opacity-70">{filterCounts[id]}</span></button>
                     ))}
                   </div>
                   <div className="mt-3 flex gap-2">
@@ -447,7 +1151,7 @@ export default function WilsyDailyAttentionCentre({
                         placeholder="Search your work"
                         className="h-9 w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"/>
                     </label>
-                    <label className="relative flex min-w-0 items-center rounded-lg border border-white/15 bg-[#0b1729]">
+                    <label className="relative flex min-w-0 items-center rounded-lg border border-white/15 bg-[#0b1729]" title="Filter existing EOS work; use an authorised work action to create or complete work">
                       <span className="sr-only">Work source</span>
                       <select aria-label="Filter work by source" value={source}
                         onChange={(event) => setSource(event.target.value)}
@@ -460,6 +1164,26 @@ export default function WilsyDailyAttentionCentre({
                       <ChevronDown size={12} className="pointer-events-none absolute right-2 text-slate-400"/>
                     </label>
                   </div>
+                  <section aria-label="Daily attention next decision" className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.055] px-3 py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs font-semibold text-amber-100">{selectedFilter.label}: {workScope && attentionFeed ? attentionFeed.filteredTotal : filteredItems.length} to review</h3>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-300">{selectedFilter.purpose}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-400" role="status">
+                          {triageResult} Showing {chosenSourceLabel}.
+                        </p>
+                      </div>
+                      {nextItem && (
+                        <button type="button" onClick={() => onOpenWork(nextItem)}
+                          aria-label={'Work next: ' + nextItem.title}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
+                          Work next <ArrowRight size={13}/>
+                        </button>
+                      )}
+
+                    </div>
+                  </section>
+                  <p className="mt-2 text-[10px] text-slate-500">The source menu filters existing work. EOS owns creation, assignment and completion.</p>
                 </>)}
               </div>
 
@@ -473,20 +1197,38 @@ export default function WilsyDailyAttentionCentre({
                     <p className="mt-3 text-sm font-medium text-white">
                       {items.length > 0
                         ? 'No work matches these filters'
-                        : sourceIds.length > 0
-                          ? 'No active work in the included sources'
-                          : 'No work source was included in this session'}
+                        : workScope && attentionFeed && attentionFeed.counts.active > 0
+                          ? 'No work matches this view'
+                          : workScope && attentionFeed && sourceIds.length > 0
+                            ? 'Queue clear in verified sources — not across all WILSY modules'
+                            : sourceIds.length > 0
+                              ? 'No active work in the included sources'
+                              : 'No work source was included in this session'}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       {items.length > 0
                         ? 'Try another filter or search term.'
-                        : sourceIds.length > 0
-                          ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '.'
-                          : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
+                        : workScope && attentionFeed && attentionFeed.counts.active > 0
+                          ? 'Other source-authorised active work exists. Clear filters to review it.'
+                          : sourceIds.length > 0
+                            ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '.'
+                            : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
                     </p>
+                    {(filter !== 'ALL' || source !== 'ALL' || query.trim()) && (
+                      <button type="button" onClick={() => { setFilter('ALL'); setSource('ALL'); setQuery(''); }}
+                        className="mt-4 rounded-lg border border-white/20 px-3 py-2 text-xs text-white hover:bg-white/10">
+                        Clear filters
+                      </button>
+                    )}
+                    {operationsAdmitted && onOpenOperations && (items.length === 0 || source === 'OPERATIONS' || (items.length > 0 && filteredItems.length === 0)) && (
+                      <button type="button" onClick={onOpenOperations}
+                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-4 py-2.5 text-xs font-semibold text-[#081326] hover:bg-amber-200">
+                        Create or manage Operations work <ArrowRight size={14}/>
+                      </button>
+                    )}
                   </div>
                 ) : filteredItems.map((item) => (
-                  <article key={item.source_key} className="mb-2 rounded-xl border border-white/10 bg-white/[0.035] p-3">
+                  <article key={item.source_key} className="mb-1 flex flex-col gap-1 rounded-lg border border-white/10 bg-white/[0.025] px-3 py-2">
                     <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.08em]">
                       <span className="font-semibold text-amber-200">{unifiedMyWorkSourceLabel(item.source)}</span>
                       <span className={item.is_overdue ? 'font-semibold text-rose-300' : 'text-slate-400'}>
@@ -500,10 +1242,20 @@ export default function WilsyDailyAttentionCentre({
                       <ChevronDown size={15} className={'mt-0.5 shrink-0 transition ' +
                         (expanded === item.source_key ? 'rotate-180' : '')}/>
                     </button>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                    {item.whyRanked && (
+                      <p className="mt-1 text-[11px] text-amber-100/80">
+                        Priority {item.urgencyScore}/100 · {item.whyRanked}
+                      </p>
+                    )}
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
                       <span className="inline-flex items-center gap-1"><Clock3 size={12}/>{dueLabel(item.due_at)}</span>
                       <span>{item.status}</span>
                     </div>
+                    <button type="button" onClick={() => onOpenWork(item)}
+                      aria-label={'Act on ' + item.title + ' in My Work'}
+                      className="mt-1 inline-flex w-fit items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
+                      Act in My Work <ArrowRight size={13}/>
+                    </button>
                     {expanded === item.source_key && (
                       <div className="mt-3 border-t border-white/10 pt-3">
                         {item.description && (
@@ -522,11 +1274,22 @@ export default function WilsyDailyAttentionCentre({
                     )}
                   </article>
                 ))}
+                {workScope && attentionFeed?.nextCursor && (
+                  <button type="button" disabled={loadingMore} onClick={loadMoreAttention}
+                    className="mb-2 w-full rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-white/10 disabled:opacity-50">
+                    {loadingMore ? 'Loading authorised work…' : 'Load more authorised work'}
+                  </button>
+                )}
+                {attentionError === 'ATTENTION_PAGE_REVALIDATION_FAILED' && (
+                  <p role="alert" className="p-2 text-xs text-rose-200">
+                    The current work page changed or failed verification. Refresh to reread EOS.
+                  </p>
+                )}
               </div>
 
               <div className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-3">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
-                  <span>{filteredItems.length} of {items.length} authorised items</span>
+                  <span>{items.length} of {activeTotal} active authorised items · {workScope && attentionFeed ? attentionFeed.filteredTotal + ' matching' : 'local projection'}</span>
                   <span>Included: {sourceLabels.length ? sourceLabels.join(', ') : 'no source projection'}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -545,10 +1308,10 @@ export default function WilsyDailyAttentionCentre({
                   </button>
                 </div>
                 <div className="mt-2 flex gap-2">
-                  {onOpenWorkforce && (
-                    <button type="button" onClick={onOpenWorkforce}
+                  {operationsAdmitted && onOpenOperations && (
+                    <button type="button" onClick={onOpenOperations}
                       className="min-w-0 flex-1 rounded-lg border border-amber-300/40 px-3 py-2.5 text-xs font-semibold text-amber-100 hover:bg-white/10">
-                      HR & workforce
+                      Manage Operations
                     </button>
                   )}
                   <button type="button" onClick={() => onOpenWork(null)}
@@ -568,7 +1331,7 @@ export default function WilsyDailyAttentionCentre({
 /** Read-only summary tile for EOS-authorised active work. */
 function Stat({ label, value, urgent = false }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+    <div className="min-w-[90px] flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5">
       <p className="text-[10px] text-slate-400">{label}</p>
       <p className={'mt-1 text-lg font-semibold tabular-nums ' +
         (urgent ? 'text-rose-200' : 'text-white')}>{value}</p>
@@ -578,7 +1341,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.4.0-EOS-SOURCE-COVERAGE
+ * VERSION: v3.2.0-EXPLICIT-VERIFIED-VIEW-CONTINUITY
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.

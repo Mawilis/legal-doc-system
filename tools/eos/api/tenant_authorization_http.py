@@ -1,7 +1,7 @@
 """Canonical tenant authorization HTTP composition and denial observation.
 
 TITLE: WILSY OS Tenant Authorization HTTP Boundary
-VERSION: v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION
+VERSION: v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER
 AUTHORITY: FastAPI dependency translation of frozen durable tenant authorization.
 EPITOME: Binds an authenticated identity and explicit tenant scope to current
          IAM truth, then emits one bounded terminal observation for admitted
@@ -9,8 +9,11 @@ EPITOME: Binds an authenticated identity and explicit tenant scope to current
          an authorization authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/tenant_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering / Python EOS IAM.
-CERTIFICATION / UPDATE DATE: 2026-10-19
+CERTIFICATION / UPDATE DATE: 2026-11-11
 CHANGELOG:
+    2026-11-11 v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER evaluates existing
+    synchronous MongoDB authorization and its workforce transaction in
+    FastAPI's bounded threadpool; 403/503 decisions are unchanged.
     2026-10-28 v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION exposes one exact-scope,
     single-read business-role lookup for the canonical resolver while preserving
     separate authorization-role reads and existing denial/outage classification.
@@ -43,6 +46,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from fastapi import Depends, Header, Request, status
+from starlette.concurrency import run_in_threadpool
 
 from tools.eos.api.exceptions import ForbiddenOperationException, WilsyAPIException
 from tools.eos.auth.authentication import (
@@ -76,7 +80,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION"
+VERSION: Final[str] = "v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER"
 logger = logging.getLogger("WilsyOS.API.TenantAuthorization")
 _OBSERVATION_SCHEMA: Final[str] = "WILSY-TENANT-AUTHORIZATION-OBSERVATION/V1"
 _OBSERVATION_VERSION: Final[str] = "v1.0.0-P6-IAM-DENIAL-OBSERVABILITY"
@@ -425,7 +429,7 @@ class RequireTenantAuthorization:
         except ValueError:
             workforce_required = False
 
-        try:
+        def evaluate_authority() -> TenantAuthorizationDecision:
             if workforce_required:
                 client = get_client()
                 database = get_database()
@@ -445,7 +449,7 @@ class RequireTenantAuthorization:
                 workforce_collection = database[WORKFORCE_RELATIONSHIP_COLLECTION]
                 with client.start_session() as session:
                     with session.start_transaction():
-                        decision = authorize_tenant_operation(
+                        return authorize_tenant_operation(
                             principal_id=identity.identity_id,
                             tenant_id=tenant_id,
                             permission_id=self.permission_id,
@@ -459,7 +463,7 @@ class RequireTenantAuthorization:
                             selected_business_role=selected_business_role,
                         )
             else:
-                decision = authorize_tenant_operation(
+                return authorize_tenant_operation(
                     principal_id=identity.identity_id,
                     tenant_id=tenant_id,
                     permission_id=self.permission_id,
@@ -470,6 +474,9 @@ class RequireTenantAuthorization:
                     role_assignment_repository=role_assignment_repository,
                     selected_business_role=selected_business_role,
                 )
+
+        try:
+            decision = await run_in_threadpool(evaluate_authority)
         except (ForbiddenOperationException, WilsyAPIException):
             raise
         except Exception as error:
@@ -591,7 +598,7 @@ __all__ = [
 
 
 # ARTIFACT: tenant_authorization_http.py
-# VERSION: v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION
+# VERSION: v1.4.0-NONBLOCKING-TENANT-IAM-ADAPTER
 # AUTHORITY BOUNDARY: existing HTTP IAM composition plus bounded post-decision observation only; no authentication, grant, deny, persistence, workflow, legal-decision, AI, notification, payment, execution, or settlement truth ownership
 # TENANT POSTURE: explicit X-Tenant-ID remains scope only; current durable membership and role evidence remain mandatory
 # FAIL-CLOSED POSTURE: only canonical AUTHORIZED succeeds; denied, unavailable, inconsistent, and unknown results remain bounded and telemetry failure cannot alter them

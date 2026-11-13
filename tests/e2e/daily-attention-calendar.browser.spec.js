@@ -1,14 +1,66 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION
+ * VERSION: v2.8.0-HEADQUARTERS-SPA-RETURN-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION requires the just-created
+ * CERTIFICATION / UPDATE DATE: 2026-11-11.
+ * CHANGELOG: v2.8.0-HEADQUARTERS-SPA-RETURN-CERT returns from the
+ *          real Operations handoff through the existing WILSY home route,
+ *          preserving the authenticated SPA instead of forcing a reload.
+ *          v2.7.0-MOBILE-MINIMUM-QUEUE-VIEWPORT requires at least
+ *          one 44px row to remain visible while bulk controls are open.
+ *          v2.6.0-MOBILE-QUEUE-FOOTER-GEOMETRY-CERT verifies the
+ *          mobile scroll viewport ends above, and remains clickable apart
+ *          from, the source-owned bulk completion footer.
+ *          v2.5.0-AUTHENTIC-SEARCH-FOCUS-CERT begins rapid search
+ *          input from the focused field after source selection, so focus
+ *          continuity is measured from an authentic browser interaction.
+ *          v2.4.0-VERIFIED-ATTENTION-CONTINUITY-CERT holds exact EOS reads
+ *          across refresh and rapid criteria changes, verifies retained rows,
+ *          focus, selection, calendar mode, failure recovery, authorization
+ *          clearing, session invalidation and 390px viewport behavior.
+ *          v2.3.0-BULK-ACTION-STAGE-CERT pinpoints the
+ *          real mobile queue refresh, checkbox selection and submit stage
+ *          without hiding a stuck workflow behind extended timeouts.
+ *          v2.2.0-MOBILE-RAIL-RELEASE-ACCEPTANCE
+ *          requires source-confirmed detail rail dismissal before mobile
+ *          bulk-task selection, preventing overlay interception.
+ *          v2.1.0-MOBILE-ACTION-STEP-EVIDENCE adds
+ *          bounded viewport-tagged stage markers for diagnosing a hanging
+ *          real command journey without extending its failure timeout.
+ *          v2.0.0-ACTUAL-SOURCE-TASK-ENTRY-CERT tests
+ *          the source-owned task form and durable completion from panel.
+ *          v1.9.0-PER-SOURCE-COMMAND-BROWSER-CERT verifies
+ *          the currently admitted Operations source independently
+ *          exposes executable IAM without a global module-command gate.
+ *          v1.8.0-DURABLE-EXECUTIVE-BULK-CERT executes
+ *          two independently authorized Operations completions from the
+ *          selected Daily Attention queue and verifies durable readback.
+ *          v1.7.0-INLINE-SOURCE-WORK-COMMAND-CERT executes
+ *          source-authorised create and complete directly within the
+ *          authenticated Daily Attention panel at desktop/mobile widths.
+ *          v1.6.0-RESPONSIVE-DETAIL-RAIL-CERT confirms
+ *          the desktop contextual rail uses 390px and the mobile rail stays
+ *          inside the viewport without compromising authorised work handoff.
+ *          v1.5.0-DENSE-INBOX-BROWSER-ACCEPTANCE certifies
+ *          actual authenticated replacement UI, named source coverage,
+ *          dense triage rows and contextual detail rail on both screen sizes.
+ *          v1.4.0-AUTHORISED-FEED-PERSISTENCE-READBACK adds real
+ *          authenticated attention feed/counts/calendar/coverage reads,
+ *          foreign scope rejection and post-completion count reconciliation.
+ *          v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK begins at the
+ *          global authenticated bell and exercises Operations handoff
+ *          before source-created durable work, calendar and EOS completion.
+ *          v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION creates source work using
+ *          the live Operations action form reached from My Work, then certifies
+ *          browser idempotent replay, calendar selection, EOS-owned completion,
+ *          durable registry rehydrate, aggregate counts and current global
+ *          badge refresh. No dummy UI action or API-only creation substitutes.
+ *          v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION requires the just-created
  *          Operations item in the exact tenant/principal aggregate snapshot,
  *          then demands current EOS active and source counts each decrement by
  *          exactly one after source-owned completion and durable rehydration.
@@ -35,6 +87,8 @@ const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
 if (!/^wilsy_l8_8m_r3_[a-zA-Z0-9_-]+$/.test(state.database_name || '')) {
   throw new Error('BROWSER_CERT_DISPOSABLE_DATABASE_REQUIRED');
 }
+const evidenceDirectory = process.env.WILSY_DAILY_ATTENTION_EVIDENCE_DIR || '';
+if (evidenceDirectory) fs.mkdirSync(evidenceDirectory, {recursive: true, mode: 0o700});
 
 for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}]) {
   test(`daily attention calendar executes source-owned work at ${viewport.width}px`, async ({browser}) => {
@@ -43,6 +97,20 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.name));
+    page.on('requestfailed', request => {
+      const url = new URL(request.url());
+      if (['/api/my-work', '/api/attention/feed'].includes(url.pathname)) {
+        console.info('[ATTENTION-READ-NETWORK] path=' + url.pathname
+          + ' failure=' + String(request.failure()?.errorText || 'UNKNOWN').slice(0, 100));
+      }
+    });
+    page.on('response', response => {
+      const url = new URL(response.url());
+      if (['/api/my-work', '/api/attention/feed'].includes(url.pathname)) {
+        console.info('[ATTENTION-READ-NETWORK] path=' + url.pathname
+          + ' status=' + response.status());
+      }
+    });
     const headers = {'Authorization': `Bearer ${actor.access_token}`, 'X-Tenant-ID': state.tenant_id};
     try {
       await page.addInitScript(({token}) => {
@@ -53,24 +121,61 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
         && response.request().method() === 'GET'
       ));
-      await page.goto('/my-work');
+      await page.goto('/headquarters');
       expect((await bootstrap).status()).toBe(200);
-      await expect(page.getByRole('heading', {name: 'My Work', exact: true})).toBeVisible();
+      // The first productive action begins at the authenticated global bell,
+      // including when EOS has not yet returned an active Operations item.
+      const entryBell = page.getByRole('button', {name: /^Open daily attention/});
+      await expect(entryBell).toBeVisible();
+      await entryBell.click();
+      const entryPanel = page.getByRole('dialog', {name: 'Daily attention centre'});
+      await expect(entryPanel).toBeVisible();
+      const entryWorkspace = entryPanel.locator('[data-attention-production-ui="true"]');
+      await expect(entryWorkspace).toBeVisible();
+      await expect(entryWorkspace.getByRole('button', {name: /^Active:/})).toBeVisible();
+      await expect(entryWorkspace.getByText('Not represented in this session:', {exact: false})).toBeVisible();
+      await expect(entryPanel.getByRole('button', {name: 'Manage Operations', exact: true})).toBeVisible();
+      console.log('[ATTENTION-STEP]', viewport.width, 'entry-ready');
 
-      const key = `calendar-browser-${randomUUID()}`;
-      const title = `Calendar source work ${key}`;
-      const dueAt = await page.evaluate(() => {
+      const title = `Calendar source work calendar-browser-${randomUUID()}`;
+      const due = await page.evaluate(() => {
         const today = new Date();
         today.setHours(12, 0, 0, 0);
-        return today.toISOString();
+        const pad = value => String(value).padStart(2, '0');
+        return {
+          iso: today.toISOString(),
+          local: `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T${pad(today.getHours())}:${pad(today.getMinutes())}`,
+        };
       });
       const path = '/api/tenant-modules/operations/workspace/work-items';
-      const command = {title, description: 'Disposable calendar acceptance', kind: 'TASK', priority: 'HIGH', due_at: dueAt};
-      const created = await context.request.post(path, {
-        headers: {...headers, 'Idempotency-Key': key}, data: command,
-      });
+
+      // Real workforce-facing creation UI. The click routes into the existing
+      // canonical Operations source, whose own IAM and entitlement gate owns
+      // the command and its durable Mongo transaction.
+      await entryPanel.getByRole('button', {name: 'Manage Operations', exact: true}).click();
+      await expect(entryPanel).toHaveCount(0);
+      const operations = page.getByRole('main', {name: 'Operations OS'});
+      await expect(operations).toBeVisible();
+      await operations.getByRole('textbox', {name: 'Action title'}).fill(title);
+      await operations.getByRole('combobox', {name: 'Priority'}).selectOption('HIGH');
+      await operations.getByLabel('Due date and time').fill(due.local);
+      const [created] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path
+          && response.request().method() === 'POST'
+        )),
+        operations.getByRole('button', {name: 'Create action'}).click(),
+      ]);
       expect(created.status()).toBe(201);
+      console.log('[ATTENTION-STEP]', viewport.width, 'source-created');
+      const command = created.request().postDataJSON();
+      expect(command).toEqual({
+        title, description: '', kind: 'TASK', priority: 'HIGH', due_at: due.iso,
+      });
+      const key = (await created.request().allHeaders())['idempotency-key'];
+      expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i);
       const work = await created.json();
+      await expect(operations.getByText(title, {exact: true})).toBeVisible();
       const replay = await context.request.post(path, {
         headers: {...headers, 'Idempotency-Key': key}, data: command,
       });
@@ -101,10 +206,147 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       ))).toHaveLength(1);
       expect(beforeAggregate.summary.source_counts.OPERATIONS).toBeGreaterThanOrEqual(1);
 
+      const attentionFeedResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(attentionFeedResponse.status()).toBe(200);
+      const attentionFeed = await attentionFeedResponse.json();
+      expect(attentionFeed.schema).toBe('WILSY-OS-ATTENTION-FEED/V1');
+      expect(attentionFeed.tenantId).toBe(state.tenant_id);
+      expect(attentionFeed.principalId).toBe(actor.principal_id);
+      expect(attentionFeed.counts.active).toBe(beforeAggregate.summary.active_count);
+      expect(attentionFeed.coverage.admittedSources).toContain('OPERATIONS');
+      expect(attentionFeed.coverage.completeEnterpriseCoverage).toBe(false);
+      expect(attentionFeed.items.some(item => (
+        item.id === 'OPERATIONS:' + work.work_item_id
+        && item.title === title
+        && item.actionHints.length === 1
+        && item.actionHints[0] === 'OPEN'
+        && item.authzScope === 'SOURCE_SERVICE_ONLY'
+      ))).toBe(true);
+
+      const attentionCounts = await context.request.get('/api/attention/counts', {headers});
+      expect(attentionCounts.status()).toBe(200);
+      expect((await attentionCounts.json()).counts.active).toBe(attentionFeed.counts.active);
+
+      const attentionCoverage = await context.request.get('/api/attention/sources/health', {headers});
+      expect(attentionCoverage.status()).toBe(200);
+      expect((await attentionCoverage.json()).sources.some(source => (
+        source.moduleId === 'OPERATIONS' && source.state === 'ok'
+      ))).toBe(true);
+
+      const start = new Date(new Date(due.iso).getTime() - 86400000).toISOString();
+      const end = new Date(new Date(due.iso).getTime() + 86400000).toISOString();
+      const calendarResponse = await context.request.get(
+        '/api/attention/calendar?' + new URLSearchParams({from: start, to: end}),
+        {headers},
+      );
+      expect(calendarResponse.status()).toBe(200);
+      expect((await calendarResponse.json()).items.some(item => (
+        item.id === 'OPERATIONS:' + work.work_item_id
+      ))).toBe(true);
+
+      const unauthorisedSource = await context.request.get('/api/attention/feed?sources=PEOPLE', {headers});
+      expect(unauthorisedSource.status()).toBe(403);
+      expect(await unauthorisedSource.text()).not.toContain(title);
+      const foreignAttention = await context.request.get('/api/attention/feed', {
+        headers: {...headers, 'X-Tenant-ID': state.foreign_tenant_id},
+      });
+      expect(foreignAttention.status()).toBe(403);
+      expect(await foreignAttention.text()).not.toContain(title);
+
+      await page.getByRole('button', {name: 'WILSY home'}).click();
+      await expect(page).toHaveURL(/\/headquarters$/);
       const bell = page.getByRole('button', {name: /^Open daily attention/});
+      await expect(bell).toBeVisible();
       await bell.click();
       const panel = page.getByRole('dialog', {name: 'Daily attention centre'});
       await expect(panel).toBeVisible();
+      const triage = panel.locator('[data-attention-production-ui="true"]');
+      await expect(triage).toBeVisible();
+      await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toBeVisible();
+      await expect(triage.getByRole('region', {name: 'Attention inbox'})).toBeVisible();
+      const row = triage.getByRole('button', {name: 'Inspect ' + title});
+      await expect(row).toBeVisible();
+
+      let holdProjectionReads = false;
+      let holdAttentionReads = false;
+      let failNextAttentionStatus = null;
+      const heldProjectionReads = [];
+      const heldAttentionReads = [];
+      const attentionRequestUrls = [];
+      await page.route('**/api/my-work', async route => {
+        if (!holdProjectionReads) return route.continue();
+        let release;
+        const gate = new Promise(resolve => { release = resolve; });
+        heldProjectionReads.push({release: () => release()});
+        await gate;
+        try { await route.continue(); } catch { /* Superseded reads are expected. */ }
+      });
+      await page.route('**/api/attention/feed*', async route => {
+        attentionRequestUrls.push(route.request().url());
+        if (failNextAttentionStatus !== null) {
+          const responseStatus = failNextAttentionStatus;
+          failNextAttentionStatus = null;
+          await route.fulfill({
+            status: responseStatus,
+            contentType: 'application/json',
+            body: JSON.stringify({detail: 'DISPOSABLE_ATTENTION_READ_REJECTED'}),
+          });
+          return;
+        }
+        if (!holdAttentionReads) return route.continue();
+        let release;
+        const gate = new Promise(resolve => { release = resolve; });
+        heldAttentionReads.push({url: route.request().url(), release: () => release()});
+        await gate;
+        try { await route.continue(); } catch { /* Superseded reads are expected. */ }
+      });
+      const releaseHeld = (heldReads) => {
+        for (const held of heldReads.splice(0)) held.release();
+      };
+
+      await row.click();
+      const rail = triage.getByRole('complementary', {name: 'Attention detail rail'});
+      await expect(rail).toBeVisible();
+      const railBounds = await rail.boundingBox();
+      expect(railBounds.width).toBeGreaterThan(300);
+      expect(railBounds.width).toBeLessThanOrEqual(420);
+      expect(railBounds.x).toBeGreaterThanOrEqual(0);
+      expect(railBounds.x + railBounds.width).toBeLessThanOrEqual(viewport.width);
+      await expect(triage.getByRole('button', {name: 'Open full record'})).toBeVisible();
+
+      const panelStyleBeforeRefresh = await panel.getAttribute('style');
+      const workListScroll = triage.locator('[data-attention-scroll-container="true"]');
+      const scrollBeforeRefresh = await workListScroll.evaluate(node => node.scrollTop);
+      const requestCountBeforeRefresh = attentionRequestUrls.length;
+      holdProjectionReads = true;
+      holdAttentionReads = true;
+      await triage.getByRole('button', {name: 'Refresh', exact: true}).click();
+      await expect.poll(() => heldProjectionReads.length).toBeGreaterThan(0);
+      await expect(triage).toBeVisible();
+      await expect(rail).toBeVisible();
+      releaseHeld(heldProjectionReads);
+      holdProjectionReads = false;
+      await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
+      await expect(triage.getByTestId('attention-refresh-state'))
+        .toHaveAttribute('data-attention-refresh-state', 'UPDATING');
+      await expect(row).toBeVisible();
+      await expect(rail).toBeVisible();
+      expect(await panel.getAttribute('style')).toBe(panelStyleBeforeRefresh);
+      expect(await workListScroll.evaluate(node => node.scrollTop)).toBe(scrollBeforeRefresh);
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/daily-attention-' + viewport.width + '-refresh-pending.png',
+          fullPage: false,
+        });
+      }
+      await page.waitForTimeout(250);
+      expect(attentionRequestUrls.length - requestCountBeforeRefresh).toBe(1);
+      releaseHeld(heldAttentionReads);
+      holdAttentionReads = false;
+      await expect(triage.getByTestId('attention-refresh-state')).toHaveCount(0);
+      await expect(rail).toBeVisible();
+
+      await triage.getByRole('button', {name: 'Close attention detail'}).click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       const dates = panel.getByRole('group', {name: 'Choose work deadline date'});
       await expect(dates).toBeVisible();
@@ -118,6 +360,22 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(agendaItem).toBeVisible();
       await panel.getByRole('button', {name: 'Next month'}).click();
       await panel.getByRole('button', {name: 'Today', exact: true}).click();
+      await expect(agendaItem).toBeVisible();
+
+      holdProjectionReads = true;
+      holdAttentionReads = true;
+      await triage.getByRole('button', {name: 'Refresh', exact: true}).click();
+      await expect.poll(() => heldProjectionReads.length).toBeGreaterThan(0);
+      await expect(panel.getByRole('tab', {name: 'Calendar', exact: true}))
+        .toHaveAttribute('aria-selected', 'true');
+      releaseHeld(heldProjectionReads);
+      holdProjectionReads = false;
+      await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
+      await expect(panel.getByRole('tab', {name: 'Calendar', exact: true}))
+        .toHaveAttribute('aria-selected', 'true');
+      releaseHeld(heldAttentionReads);
+      holdAttentionReads = false;
+      await expect(triage.getByTestId('attention-refresh-state')).toHaveCount(0);
       await expect(agendaItem).toBeVisible();
 
       await panel.getByRole('button', {name: 'Float daily attention panel'}).click();
@@ -134,6 +392,80 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await panel.getByRole('button', {name: 'Dock daily attention panel'}).click();
       await expect(panel).toHaveAttribute('data-floating', 'false');
       await panel.getByRole('button', {name: 'Close calendar and return to work list'}).click();
+
+      const search = triage.getByRole('searchbox', {name: 'Search authorised work'});
+      const initialRequestCount = attentionRequestUrls.length;
+      holdAttentionReads = true;
+      const filterGroup = triage.getByRole('group', {name: 'Filter daily attention'});
+      await filterGroup.getByRole('button', {name: 'High priority', exact: true}).click();
+      await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
+      const pendingLabel = triage.getByTestId('attention-refresh-state');
+      await expect(pendingLabel).toHaveAttribute('data-attention-refresh-state', 'UPDATING');
+      await expect(row).toBeVisible();
+      await expect(pendingLabel).toContainText('Checking pending results: High priority');
+      await expect(pendingLabel).toContainText('Showing last verified results: All work');
+      await triage.getByRole('combobox', {name: 'Filter work by source'}).selectOption('OPERATIONS');
+      await expect.poll(() => heldAttentionReads.length).toBeGreaterThanOrEqual(2);
+      await search.focus();
+      await search.evaluate((input, finalQuery) => {
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype, 'value',
+        ).set;
+        setter.call(input, 'not the final source title');
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+        setter.call(input, finalQuery);
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+      }, title);
+      await page.waitForTimeout(250);
+      await expect.poll(() => heldAttentionReads.length).toBeGreaterThanOrEqual(3);
+      await expect(search).toBeFocused();
+      await expect(row).toBeVisible();
+      await expect(pendingLabel).toContainText('Showing last verified results: All work');
+      const queryRequests = attentionRequestUrls.filter(url =>
+        new URL(url).searchParams.has('q'));
+      expect(queryRequests).toHaveLength(1);
+      const finalSearchUrl = new URL(queryRequests[0]);
+      expect(finalSearchUrl.searchParams.get('view')).toBe('high_priority');
+      expect(finalSearchUrl.searchParams.get('sources')).toBe('OPERATIONS');
+      expect(finalSearchUrl.searchParams.get('q')).toBe(title);
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/daily-attention-' + viewport.width + '-criteria-pending.png',
+          fullPage: false,
+        });
+      }
+      expect(attentionRequestUrls.slice(initialRequestCount)
+        .some(url => new URL(url).searchParams.get('q') === 'not the final source title')).toBe(false);
+      releaseHeld(heldAttentionReads);
+      holdAttentionReads = false;
+      await expect(triage.getByTestId('attention-refresh-state')).toHaveCount(0);
+      await expect(row).toBeVisible();
+      await expect(search).toBeFocused();
+
+      failNextAttentionStatus = 503;
+      await triage.getByRole('button', {name: 'Refresh', exact: true}).click();
+      const failedState = triage.getByTestId('attention-refresh-state');
+      await expect(failedState).toHaveAttribute('data-attention-refresh-state', 'UNAVAILABLE');
+      await expect(row).toBeVisible();
+      await expect(failedState).toContainText('Still showing last verified results');
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/daily-attention-' + viewport.width + '-revalidation-failed.png',
+          fullPage: false,
+        });
+      }
+      await failedState.getByRole('button', {name: 'Retry', exact: true}).click();
+      await expect(triage.getByTestId('attention-refresh-state')).toHaveCount(0);
+      await expect(row).toBeVisible();
+
+      failNextAttentionStatus = 403;
+      await triage.getByRole('button', {name: 'Refresh', exact: true}).click();
+      await expect(panel.getByRole('alert').filter({hasText: 'Work source unavailable'})).toBeVisible();
+      await expect(triage).toHaveCount(0);
+      await expect(panel.getByText(title, {exact: true})).toHaveCount(0);
+      await panel.getByRole('button', {name: 'Retry authorised read'}).click();
+      await expect(triage).toBeVisible();
+      await expect(triage.getByRole('button', {name: 'Inspect ' + title})).toBeVisible();
       await expect(panel.getByRole('tab', {name: 'Work list'})).toHaveAttribute('aria-selected', 'true');
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       await page.keyboard.press('Escape');
@@ -211,11 +543,155 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(afterAggregate.summary.source_counts.OPERATIONS).toBe(
         beforeAggregate.summary.source_counts.OPERATIONS - 1
       );
+
+      const afterAttentionResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(afterAttentionResponse.status()).toBe(200);
+      const afterAttention = await afterAttentionResponse.json();
+      expect(afterAttention.counts.active).toBe(attentionFeed.counts.active - 1);
+      console.log('[ATTENTION-STEP]', viewport.width, 'calendar-work-completed');
+      expect(afterAttention.items.some(item => (
+        item.id === 'OPERATIONS:' + work.work_item_id
+      ))).toBe(false);
+
+      // A verified source completion must refresh global chrome in the same
+      // authenticated browser session, not wait for the old periodic poll.
+      await expect(bell).toHaveAttribute(
+        'aria-label',
+        `Open daily attention: ${afterAggregate.summary.active_count} active work items`,
+      );
       await bell.click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       await expect(agendaItem).toHaveCount(0);
+
+      // Executive action parity: use the Daily Attention surface itself,
+      // not a routed Operations-only screen or fabricated in-memory status.
+      const actionResponse = await context.request.get('/api/attention/actions', {headers});
+      expect(actionResponse.status()).toBe(200);
+      const actionAvailability = await actionResponse.json();
+      expect(actionAvailability.tenantId).toBe(state.tenant_id);
+      expect(actionAvailability.principalId).toBe(actor.principal_id);
+      expect(actionAvailability.sourceActions.OPERATIONS).toContain('CREATE');
+      expect(actionAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
+      const scopedCommandResponse = await context.request.get('/api/attention/actions/operations', {headers});
+      expect(scopedCommandResponse.status()).toBe(200);
+      const scopedCommandAvailability = await scopedCommandResponse.json();
+      expect(scopedCommandAvailability.tenantId).toBe(state.tenant_id);
+      expect(scopedCommandAvailability.principalId).toBe(actor.principal_id);
+      expect(scopedCommandAvailability.sourceActions.OPERATIONS).toContain('CREATE');
+      expect(scopedCommandAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
+
+      await panel.getByRole('tab', {name: 'Work list', exact: true}).click();
+      await panel.getByRole('button', {name: 'Create work', exact: true}).click();
+      const createForm = panel.getByRole('form', {name: 'Create source work'});
+      await createForm.getByLabel('Owning source').selectOption('OPERATIONS');
+      const directTitle = 'Daily Attention executive source work ' + randomUUID();
+      await createForm.getByLabel('Work title').fill(directTitle);
+      await createForm.getByLabel('Description').fill('A source-owned executive action completed from Daily Attention');
+      await createForm.getByLabel('Priority').selectOption('HIGH');
+      const [createdInline] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path
+          && response.request().method() === 'POST'
+        )),
+        createForm.getByRole('button', {name: 'Submit task to EOS'}).click(),
+      ]);
+      expect(createdInline.status()).toBe(201);
+      const inlineWork = await createdInline.json();
+      expect(inlineWork.title).toBe(directTitle);
+      expect(inlineWork.tenant_id).toBe(state.tenant_id);
+      console.log('[ATTENTION-STEP]', viewport.width, 'inline-created');
+
+      const inlineRow = panel.getByRole('button', {name: 'Inspect ' + directTitle});
+      await expect(inlineRow).toBeVisible();
+      await inlineRow.click();
+      const inlineRail = panel.getByRole('complementary', {name: 'Attention detail rail'});
+      await inlineRail.getByPlaceholder('Record what was completed and the evidence for this decision')
+        .fill('Executive source-owned completion with evidence');
+      const [completedInline] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path + '/' + inlineWork.work_item_id + '/complete'
+          && response.request().method() === 'POST'
+        )),
+        inlineRail.getByRole('button', {name: 'Confirm completion'}).click(),
+      ]);
+      expect(completedInline.status()).toBe(200);
+      const completedInlineBody = await completedInline.json();
+      expect(completedInlineBody.status).toBe('COMPLETED');
+      expect(completedInlineBody.work_item_id).toBe(inlineWork.work_item_id);
+      await expect(inlineRail).toHaveCount(0);
+      console.log('[ATTENTION-STEP]', viewport.width, 'inline-completed');
+      const afterInline = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
+      expect(afterInline.status()).toBe(200);
+      expect((await afterInline.json()).items.some(item =>
+        item.work_item_id === inlineWork.work_item_id)).toBe(false);
+
+      // Batch triage uses two independently admitted source commands, not a
+      // synthetic attention-level mutation or unverifiable optimistic status.
+      const batchTitles = [
+        'Executive batch A ' + randomUUID(),
+        'Executive batch B ' + randomUUID(),
+      ];
+      const bulkWorks = [];
+      for (const batchTitle of batchTitles) {
+        const createdBatch = await context.request.post(path, {
+          headers: {...headers, 'Idempotency-Key': randomUUID()},
+          data: { title: batchTitle, description: 'Source-confirmed batch certificate',
+            kind: 'TASK', priority: 'HIGH', due_at: null },
+        });
+        expect(createdBatch.status()).toBe(201);
+        bulkWorks.push(await createdBatch.json());
+      }
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-source-created');
+      await panel.getByRole('button', {name: 'Refresh', exact: true}).click();
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-refresh-clicked');
+      for (const [batchIndex, batchTitle] of batchTitles.entries()) {
+        await expect(panel.getByRole('checkbox', {name: 'Select ' + batchTitle})).toBeVisible();
+        await panel.getByRole('checkbox', {name: 'Select ' + batchTitle}).check();
+        console.log('[ATTENTION-STEP]', viewport.width, 'bulk-row-selected');
+        if (viewport.width === 390 && batchIndex === 0) {
+          const inboxBounds = await panel.locator('[data-attention-scroll-container="true"]').boundingBox();
+          const bulkFooter = panel.getByRole('form', {name: 'Complete selected source work'}).locator('xpath=..');
+          const bulkFooterBounds = await bulkFooter.boundingBox();
+          expect(inboxBounds).not.toBeNull();
+          expect(inboxBounds.height).toBeGreaterThanOrEqual(44);
+          expect(bulkFooterBounds).not.toBeNull();
+          expect(inboxBounds.y + inboxBounds.height).toBeLessThanOrEqual(bulkFooterBounds.y + 1);
+        }
+      }
+      await panel.getByRole('textbox', {name: 'Bulk completion evidence'})
+        .fill('Two independently verified source tasks are complete');
+      const bulkConfirmations = bulkWorks.map((item) =>
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path + '/' + item.work_item_id + '/complete'
+          && response.request().method() === 'POST'
+        )));
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-evidence-entered');
+      await panel.getByRole('button', {name: 'Complete up to 2'}).click();
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-submit-clicked');
+      for (const result of await Promise.all(bulkConfirmations)) {
+        expect(result.status()).toBe(200);
+        expect((await result.json()).status).toBe('COMPLETED');
+      }
+      await expect(panel.getByText(/2 source completions confirmed; 0 require review/)).toBeVisible();
+      console.log('[ATTENTION-STEP]', viewport.width, 'bulk-completed');
+      const afterBulk = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
+      expect(afterBulk.status()).toBe(200);
+      const remainingBulk = (await afterBulk.json()).items;
+      for (const item of bulkWorks) {
+        expect(remainingBulk.some((row) => row.work_item_id === item.work_item_id)).toBe(false);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width + 1);
       expect(errors).toEqual([]);
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/daily-attention-' + viewport.width + '-verified.png',
+          fullPage: false,
+        });
+      }
+      await page.evaluate(() => window.dispatchEvent(new CustomEvent('wilsy:session-invalidated')));
+      await expect(page.getByRole('dialog', {name: 'Daily attention centre'})).toHaveCount(0);
+      await expect.poll(async () => page.evaluate(() => localStorage.getItem('wilsy_auth_token')))
+        .toBeNull();
     } finally {
       await context.close();
     }
@@ -223,7 +699,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION
+// VERSION: v2.8.0-HEADQUARTERS-SPA-RETURN-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.

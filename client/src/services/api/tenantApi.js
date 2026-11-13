@@ -1,12 +1,18 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - TENANT API CLIENT [V56.0.0-CANONICAL-AUTH-TRANSPORT]                                                                      ║
+ * ║ TITLE: WILSY OS Tenant API Client                                                                                                        ║
+ * ║ WILSY OS - TENANT API CLIENT [V57.0.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY]                                                                      ║
  * ║ [LATENCY TELEMETRY | SHA3-512 SEALS | COMPLIANCE HOOKS | ANOMALY DETECTION | EVIDENCE PACKAGES | CIRCUIT BREAKER]                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 56.0.0-CANONICAL-AUTH-TRANSPORT | PRODUCTION READY                                                                          ║
- * ║ EPITOME: Tenant operations delegated to the canonical authenticated API client; browser-compatible SHA3-512 evidence remains local. ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api/tenantApi.js                                            ║
+ * ║ VERSION: v57.0.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY                                                                                      ║
+ * ║ AUTHORITY: Wilsy OS Core Governance                                                                                                       ║
+ * ║ EPITOME: Tenant operations delegated to the canonical authenticated API client; browser-compatible SHA3-512 evidence remains local.     ║
+ * ║ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api/tenantApi.js                                      ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ COLLABORATION / OWNERSHIP: Client tenant transport owner; Python EOS owns tenant authorization and persistence.                           ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-11-10                                                                                                 ║
+ * ║ CHANGELOG: v57.0.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY completes sovereign metadata without changing authorization behavior.                ║
+ * ║ CHANGELOG: v57.0.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY – Denies global tenant listing, creation, and suspension before transport until explicit Python EOS C2 authority is governed. ║
  * ║ 🔧 CHANGE LOG:                                                                                                                       ║
  * ║   2026-09-17 v56.0.0-CANONICAL-AUTH-TRANSPORT – Removed the private Axios transport; all tenant calls share services/api bearer state and ║
  * ║   retry only explicitly transient failures (401/403 are terminal).                                                                  ║
@@ -14,6 +20,10 @@
  * ║   2026-08-06 v55.2.0-PHASE4 – Original version.                                                                                     ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                                        ║
+ * ║ SECURITY / PRIVACY POSTURE: Authenticated tenant transport only; no client-selected global authority.                                   ║
+ * ║ TENANT BOUNDARY: Tenant-scoped requests inherit the canonical authenticated API context.                                                 ║
+ * ║ AUTHORITY BOUNDARY: Client adapter only; global list/create/suspend reject pending governed Python EOS C2.                                ║
+ * ║ FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.                                             ║
  * ║ DEPENDENCIES:  js-sha3 (browser-compatible), canonical services/api client, telemetryHelper                                         ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
@@ -25,7 +35,7 @@ import { broadcastTelemetry } from '../../utils/telemetryHelper';
 /**
  * @class TenantApiClient
  * @memberof WILSY_OS_CORE
- * @description Sovereign API client for tenant lifecycle management.
+ * @description Authenticated tenant profile API adapter; ungoverned global listing, creation, and suspension are denied before transport.
  *              Features:
  *              - Latency telemetry per request
  *              - SHA3‑512 seals on payloads (browser-compatible)
@@ -199,29 +209,34 @@ class TenantApiClient {
     throw lastError || new Error('Request failed after retries.');
   }
 
+  /**
+   * @method _denyUngovernedC2Operation
+   * @private
+   * @description Rejects tenant-directory and lifecycle operations until Python EOS exposes a governed C2 capability.
+   * @param {string} operation - Denied operation name.
+   * @returns {never} Always throws a stable authorization error before network or retry handling.
+   * @throws {Error} GOVERNED_C2_CAPABILITY_REQUIRED when no explicit Python EOS authority is available.
+   * @collaboration TenantContext, TMS, BillingHUD, and route consumers must present the same unavailable state.
+   * @institutional A frontend role, ROOT sentinel, or legacy Node permission cannot grant cross-tenant authority.
+   */
+  _denyUngovernedC2Operation(operation) {
+    const error = new Error('Cross-tenant tenant lifecycle requires a governed Python EOS C2 capability.');
+    error.code = 'GOVERNED_C2_CAPABILITY_REQUIRED';
+    error.operation = operation;
+    throw error;
+  }
+
   // ---- Public API Methods ----
 
   /**
    * @method getTenants
-   * @description Fetch paginated list of tenants with filters.
+   * @description Deny global tenant directory reads before transport until Python EOS C2 governs an explicit capability.
    * @param {Object} params - { page, limit, search, status, plan, region }
    * @param {string} requestId - Optional request ID for evidence.
    * @returns {Promise<{data: Array, telemetry: Object, seal: string, evidence: Object}>}
    */
-  async getTenants(params = {}, requestId = null) {
-    const fn = () => this.client.get('/tenants', { params });
-    const result = await this._executeWithRetry(fn, 'getTenants', params, requestId);
-    // Add compliance metadata
-    return {
-      ...result,
-      compliance: {
-        popia: true,
-        gdpr: this._checkGDPR(result.data),
-        soc2: true,
-        iso27001: true,
-        lastChecked: new Date().toISOString(),
-      },
-    };
+  async getTenants(_params = {}, _requestId = null) {
+    return this._denyUngovernedC2Operation('tenant_directory_read');
   }
 
   /**
@@ -238,14 +253,13 @@ class TenantApiClient {
 
   /**
    * @method createTenant
-   * @description Provision a new tenant shard.
+   * @description Deny global tenant creation before transport until Python EOS C2 governs an explicit capability.
    * @param {Object} data - { name, industry, region, plan, ... }
    * @param {string} requestId
    * @returns {Promise<{data: Object, telemetry: Object, seal: string, evidence: Object}>}
    */
-  async createTenant(data, requestId = null) {
-    const fn = () => this.client.post('/tenants', data);
-    return this._executeWithRetry(fn, 'createTenant', data, requestId);
+  async createTenant(_data, _requestId = null) {
+    return this._denyUngovernedC2Operation('tenant_create');
   }
 
   /**
@@ -263,15 +277,14 @@ class TenantApiClient {
 
   /**
    * @method suspendTenant
-   * @description Suspend a tenant shard with a reason.
+   * @description Deny cross-tenant suspension before transport until Python EOS C2 governs an explicit capability.
    * @param {string} tenantId
    * @param {string} reason
    * @param {string} requestId
    * @returns {Promise<{data: Object, telemetry: Object, seal: string, evidence: Object}>}
    */
-  async suspendTenant(tenantId, reason = '', requestId = null) {
-    const fn = () => this.client.patch(`/tenants/${tenantId}/suspend`, { reason });
-    return this._executeWithRetry(fn, 'suspendTenant', { tenantId, reason }, requestId);
+  async suspendTenant(_tenantId, _reason = '', _requestId = null) {
+    return this._denyUngovernedC2Operation('tenant_lifecycle_suspend');
   }
 
   /**
@@ -393,19 +406,19 @@ export default tenantApiClient;
  * ║ • Circuit breaker with automatic reset after 30s in OPEN state.                                                                       ║
  * ║ • Anomaly detection based on failure count; severity LOW/MEDIUM/HIGH.                                                                 ║
  * ║ • Evidence package includes: action, requestId, timestamp, latency, breakerState, seal, anomalyScore.                                ║
- * ║ • Compliance metadata (POPIA, GDPR, SOC2, ISO27001) attached to getTenants and export.                                               ║
+ * ║ • Compliance metadata (POPIA, GDPR, SOC2, ISO27001) attached to supported tenant exports.                                               ║
  * ║ • Kennel EOS headers (X‑Kennel‑Shard, X‑Kennel‑Tenant) injected on every request.                                                     ║
  * ║ • Retry logic is bounded to network/timeouts, 408, 429, and 5xx; 401/403 are never retried.                                         ║
- * ║ • Version: 56.0.0-CANONICAL-AUTH-TRANSPORT | Last audit: 2026-09-17 | Certified by AI Engineering.                                  ║
+ * ║ • Version: 57.0.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY | Last audit: 2026-11-10 | Certified by AI Engineering.                                  ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
 /*
  * ARTIFACT: client/src/services/api/tenantApi.js
- * VERSION: 56.0.0-CANONICAL-AUTH-TRANSPORT
+ * VERSION: v57.0.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY
  * AUTHORITY BOUNDARY: tenant transport adapter only; server owns tenant authority
  * TENANT POSTURE: all calls inherit canonical API tenant scoping and bearer propagation
- * FAIL-CLOSED POSTURE: authentication/authorization failures are terminal and never retried
+ * FAIL-CLOSED POSTURE: global listing/create/suspend fail before transport pending governed Python EOS C2 authority; auth failures are terminal and never retried
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

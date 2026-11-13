@@ -1,19 +1,25 @@
 /**
- * WILSY OS — LEGAL ROLE EXPERIENCE MATRIX CERTIFICATE
- * VERSION: v1.3.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW-CERT
+ * TITLE: WILSY OS Legal Role Experience Matrix Certificate
+ * VERSION: v1.3.2-LEGAL-AUTH-MOCK-SOVEREIGN-METADATA
+ * CHANGELOG: v1.3.2-LEGAL-AUTH-MOCK-SOVEREIGN-METADATA completes artifact ownership, privacy and financial posture without changing certificate behavior.
+ * CHANGELOG: v1.3.1-LEGAL-AUTH-MOCK-CERT — mocks pending Deputy evidence synchronization and supplies an explicit server permission projection.
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Certifies that every published Legal persona renders from authenticated
  *          identity plus server-derived authority/capability projections, exposes
  *          only its current activities, and never falls back to another role's
  *          endpoint family.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * COLLABORATION / OWNERSHIP: Legal role presentation and client certificate owners.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic principal, tenant and role fixtures only.
  * CHANGELOG: 2026-09-25 v1.3.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW-CERT updates Legal Practice fixtures with the certified conflict-screening read projection; role identity/activity and permission posture assertions remain unchanged.
  *            v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT proves exact authenticated firstName/lastName presentation across Legal practice, finance, client, sheriff and deputy postures; email remains separately visible when distinct, while malformed names and forged legacy displayName/name fields cannot override the bounded fallback. Identity presentation creates no tenant, membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority.
  *            v1.0.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE-CERT established the multi-role Legal identity/activity and permission-posture matrix.
  * TENANT BOUNDARY: Every fixture is tenant-scoped and synthetic.
  * AUTHORITY BOUNDARY: UI posture is explanatory only; Python EOS owns legal
  *                     authorization and Kennel EOS owns financial execution.
+ * FINANCIAL AUTHORITY BOUNDARY: Client presentation does not authorize execution or settlement.
  * FAIL-CLOSED DECLARATION: Missing permissions/capabilities remove controls;
  *                          browser role labels never create authority.
  */
@@ -35,6 +41,7 @@ const {
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  syncPendingDeputyLocationEvidence,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -51,6 +58,7 @@ const {
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
+  syncPendingDeputyLocationEvidence: vi.fn().mockResolvedValue({ synchronized: 0 }),
   recordDeputyFieldOutcome: vi.fn(),
   registerLegalIntake: vi.fn(),
   transitionDeputyFieldAttempt: vi.fn(),
@@ -70,6 +78,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  syncPendingDeputyLocationEvidence,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -82,6 +91,18 @@ vi.mock('../../contexts/authContext', () => ({
       email: 'context@example.test',
       role: 'tenant_legal_partner',
       tenantId: 'tenant-law',
+      legalPermissionsAuthoritative: true,
+      permissions: [
+        'legal_operations:instruction:write',
+        'legal_operations:return:write',
+        'legal_operations:billing:read',
+        'legal_operations:invoice:read',
+        'legal_operations:matter_deadline:read',
+        'legal_operations:matter_deadline:write',
+        'legal_operations:evidence:write',
+        'legal_operations:productive_work:read',
+        'legal_operations:conflict_review:write',
+      ],
     },
     tenant: {
       tenantId: 'tenant-law',
@@ -605,7 +626,7 @@ describe('D20 Legal role experience matrix', () => {
 
 /**
  * ARTIFACT: legalDashboardRoleExperienceMatrix.test.jsx
- * VERSION: v1.3.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW-CERT
+ * VERSION: v1.3.2-LEGAL-AUTH-MOCK-SOVEREIGN-METADATA
  * AUTHORITY BOUNDARY: browser presentation evidence only; D24C person-name rendering is descriptive AuthContext projection and Python EOS owns authentication/authorization
  * TENANT POSTURE: synthetic exact tenant scopes only; no cross-tenant fallback
  * FAIL-CLOSED POSTURE: malformed/absent person names are never normalized or inferred, forged legacy name fields do not override bounded identity, permissions/capabilities narrow controls, and unresolved role is network-silent

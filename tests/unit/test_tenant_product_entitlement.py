@@ -1,15 +1,17 @@
 """Direct certificate for the D22B1 tenant product entitlement domain.
 
 TITLE: Tenant Product Entitlement Direct Certificate
-VERSION: v1.0.0-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT
+VERSION: v1.0.1-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact catalogue binding, tenant isolation, source-evidence
          requirements, lifecycle transitions, integrity and authority firewalls.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_product_entitlement.py
 COLLABORATION / OWNERSHIP: Evidence-only direct certificate for the D22B1
                             entitlement domain.
-CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.0.0-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT establishes direct
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT verifies provider-SDK
+           import purity in a fresh interpreter, independent of suite order.
+           v1.0.0-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT establishes direct
            evidence for pending/active/suspended/revoked lifecycle semantics,
            D22A catalogue fingerprint binding and strict separation from plan,
            subscription, VAS, IAM, workspace-routing and financial authority.
@@ -320,14 +322,29 @@ def test_immutability_and_authority_firewalls() -> None:
 
 
 def test_no_runtime_side_effect_imports() -> None:
+    import subprocess
     import sys
+    from pathlib import Path
 
-    assert "requests" not in sys.modules
-    assert "boto3" not in sys.modules
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.domain.tenant_product_entitlement'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ARTIFACT: test_tenant_product_entitlement.py
-# VERSION: v1.0.0-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT
+# VERSION: v1.0.1-D22B1-TENANT-PRODUCT-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: direct entitlement-domain evidence only; no persistence or IAM
 # TENANT POSTURE: synthetic tenant/product bindings only
 # FAIL-CLOSED POSTURE: catalogue drift, malformed evidence and illegal transitions reject

@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS
+ * VERSION: v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -10,8 +10,19 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
  * CHANGELOG:
+ *   v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK — Uses the user-approved
+ *     supplied WILSY OS square icon in the existing 48px emblem slot;
+ *     preserves the WILSY wordmark, Build. Operate. Grow. tagline and
+ *     authenticated global chrome. No session or business authority changes.
+ *   v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF — Routes existing authenticated
+ *     Daily Attention Operations entry to the source-owned Headquarters
+ *     Operations workspace, with no browser-owned business command.
+ *   v20.6.0-SESSION-SCOPED-ATTENTION-BADGE — Coordinates authenticated global work count
+ *     with current EOS My Work reads. The badge no longer runs an unrelated
+ *     weakly scoped query; exact-session source invalidation revalidates the
+ *     count, and logout or role revision cancels the former response.
  *   v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS — Owns one explicitly
  *     authenticated, scope-current platform-agreement read. Completed covenant
  *     URLs redirect to the authorized workspace; required agreements use the
@@ -88,6 +99,11 @@ import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import api from './services/api';
+import {
+  currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
+  subscribeUnifiedMyWork,
+} from './services/unifiedMyWorkSync.js';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
 
@@ -144,7 +160,8 @@ const ProtectedTmsRoute = ({ user, children }) => {
 export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceReleased = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, authStage, loading: authLoading } = useAuth();
+  const auth = useAuth();
+  const { isAuthenticated, authStage, loading: authLoading } = auth;
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -165,45 +182,48 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     && window.location.protocol === 'https:';
   const hasAuthenticatedSession = isAuthenticated && authStage === AUTH_STATES.AUTHENTICATED;
 
-  const currentWorkScope = [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole]
-    .map((part) => String(part || '')).join(':');
+  // The exact AuthProvider session generation, selected capacity and both role
+  // revisions partition this optional badge. It is active-work evidence, never
+  // an unread-notification count or browser permission authority.
+  const currentWorkScope = currentUnifiedMyWorkScope(auth, user?.tenantId);
 
   useEffect(() => {
-    if (!workspaceReleased || !hasAuthenticatedSession || authLoading || !user?.tenantId || user?.systemServicesWorkspace) {
+    if (!workspaceReleased || !hasAuthenticatedSession || authLoading || !currentWorkScope) {
       setWorkCountScope(null);
       setWorkCount(null);
       return undefined;
     }
     let active = true;
+    const controller = new AbortController();
+    const expectedScope = { tenantId: user.tenantId, principalId: user.id };
     const refresh = async () => {
       try {
-        const response = await api.get('/my-work');
-        const payload = response?.data;
-        if (
-          !payload
-          || payload.tenant_id !== user.tenantId
-          || !payload.summary
-          || !Number.isInteger(payload.summary.active_count)
-          || payload.summary.active_count < 0
-        ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
+        const payload = await readUnifiedMyWork(
+          currentWorkScope, expectedScope, { signal: controller.signal, force: true },
+        );
         if (active) {
           setWorkCountScope(currentWorkScope);
           setWorkCount(payload.summary.active_count);
         }
-      } catch {
-        if (active) {
+      } catch (error) {
+        if (active && error?.name !== 'AbortError') {
           setWorkCountScope(null);
           setWorkCount(null);
         }
       }
     };
+    const unsubscribe = subscribeUnifiedMyWork(currentWorkScope, () => {
+      void refresh();
+    });
     void refresh();
     const interval = window.setInterval(refresh, 60000);
     return () => {
       active = false;
+      controller.abort();
       window.clearInterval(interval);
+      unsubscribe();
     };
-  }, [workspaceReleased, hasAuthenticatedSession, authLoading, user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
+  }, [workspaceReleased, hasAuthenticatedSession, authLoading, currentWorkScope]);
 
   const openGlobalSearch = () => {
     const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
@@ -258,7 +278,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
       <header className="sticky top-0 z-40 flex h-16 w-full min-w-0 items-center gap-2 border-b border-white/10 bg-[#0b1830]/95 px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-6">
         <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[200px] xl:w-[240px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <img src="/brand/wilsy-gold-emblem.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
+          <img src="/icons/icon-192.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
           <span className="hidden min-w-0 leading-tight min-[360px]:block">
 
 
@@ -296,6 +316,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
             onOpenWorkforce={() => {
               setNotificationsOpen(false);
               navigate('/headquarters?section=hr-workspace');
+            }}
+            onOpenOperations={() => {
+              setNotificationsOpen(false);
+              navigate('/headquarters?section=operations');
             }}
           />}
           <div className="relative">
@@ -884,7 +908,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS
+ * VERSION: v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

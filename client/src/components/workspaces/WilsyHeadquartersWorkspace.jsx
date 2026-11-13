@@ -1,13 +1,26 @@
 /**
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.2.0-MY-WORK-ITEM-HANDOFF
+ * VERSION: v2.4.1-EXACT-SESSION-KPI-PRESENTATION
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents the authenticated company operating plane and a source-backed
  *          My Work snapshot without inventing enterprise metrics or commands.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.2.0-MY-WORK-ITEM-HANDOFF carries a selected daily source key into
+ * CHANGELOG: v2.4.1-EXACT-SESSION-KPI-PRESENTATION applies the same
+ *            exact-session guard to the executive KPI strip and provides
+ *            the authenticated current tenant to Daily Brief; no stale
+ *            prior-capacity counts may appear during scope transitions.
+ *            v2.4.0-CURRENT-SOURCE-HEADQUARTERS-KPI partitions the
+ *            Headquarters My Work summary by authenticated EOS identity and
+ *            source coverage. It deduplicates overview/brief reads and listens
+ *            for confirmed source-command invalidation; stale tenant results
+ *            are never presented as live company operating metrics.
+ *            v2.3.0-SOURCE-OWNED-OPERATIONS-DEEP-LINK routes an authenticated
+ *            operations-source work handoff to the existing EOS-backed create
+ *            and manage workspace instead of a dead-end overview. Only the
+ *            owning module's permission and entitlement checks admit commands.
+ *            v2.2.0-MY-WORK-ITEM-HANDOFF carries a selected daily source key into
  *            canonical My Work, where a fresh authorized read validates it.
  *            v2.1.0-URL-ROUTED-WORKFORCE-DUTIES supports the validated HR entry URL from
  *            global daily attention without inferring any new permissions.
@@ -37,6 +50,11 @@ import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
+import {
+  currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
+  subscribeUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 import { useKennelHealth } from '../../hooks/useKennelHealth.js';
 import {
   ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, ChevronRight,
@@ -89,18 +107,24 @@ function SourceBoundary({ title, description }) {
 export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const location = useLocation();
   const auth = useContext(AuthContext) || {};
-    const authUser = auth.user || {};
+  const authUser = auth.user || {};
+  const workTenantId = tenantId || authUser.tenantId;
+  const workScope = currentUnifiedMyWorkScope(auth, workTenantId);
+  // A deep-link selects a pre-existing workspace view, not IAM or module
+  // admission authority. The Operations form and API enforce their own grants.
+  const sectionFromUrl = new URLSearchParams(location.search).get('section');
   const [section, setSection] = useState(() =>
-    new URLSearchParams(location.search).get('section') === 'hr-workspace' ? 'hr-workspace' : 'overview');
+    ['hr-workspace', 'operations'].includes(sectionFromUrl) ? sectionFromUrl : 'overview');
   const [showMyWork, setShowMyWork] = useState(false);
   const [myWorkFocusItem, setMyWorkFocusItem] = useState(null);
   useEffect(() => {
     const requested = new URLSearchParams(location.search).get('section');
-    if (requested === 'hr-workspace') {
-      setSection('hr-workspace');
+    if (requested === 'hr-workspace' || requested === 'operations') {
+      setSection(requested);
       setShowMyWork(false);
     } else if (!requested) {
-      setSection((current) => current === 'hr-workspace' ? 'overview' : current);
+      setSection((current) =>
+        current === 'hr-workspace' || current === 'operations' ? 'overview' : current);
     }
   }, [location.search]);
   const [workforce, setWorkforce] = useState(null);
@@ -115,45 +139,56 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const [requisitionsRefresh, setRequisitionsRefresh] = useState(0);
   const kennelHealth = useKennelHealth({ pollInterval: 60000 });
   const [myWorkSnapshot, setMyWorkSnapshot] = useState(null);
+  const [myWorkSnapshotScope, setMyWorkSnapshotScope] = useState(null);
   const [myWorkLoading, setMyWorkLoading] = useState(false);
   const [myWorkError, setMyWorkError] = useState('');
   const [myWorkRefresh, setMyWorkRefresh] = useState(0);
   useEffect(() => {
     if (section !== 'overview' || showMyWork) return undefined;
+    if (!workScope) {
+      setMyWorkSnapshot(null);
+      setMyWorkSnapshotScope(null);
+      setMyWorkError('MY_WORK_AUTHENTICATED_SCOPE_REQUIRED');
+      setMyWorkLoading(false);
+      return undefined;
+    }
     let current = true;
+    const controller = new AbortController();
     setMyWorkLoading(true);
     setMyWorkError('');
-    api.get('/my-work', { forceNetworkRetry: true })
-      .then((response) => {
-        const payload = response?.data;
-        const summary = payload?.summary;
-        const asOf = payload?.as_of ? new Date(payload.as_of) : null;
-        if (
-          !payload
-          || !summary
-          || typeof summary !== 'object'
-          || !Number.isInteger(summary.active_count)
-          || !Number.isInteger(summary.overdue_count)
-          || !summary.source_counts
-          || typeof summary.source_counts !== 'object'
-          || !asOf
-          || Number.isNaN(asOf.getTime())
-        ) {
-          throw new Error('MY_WORK_SUMMARY_INVALID');
+    readUnifiedMyWork(
+      workScope,
+      { tenantId: workTenantId, principalId: authUser.id },
+      { signal: controller.signal, force: true },
+    )
+      .then((verified) => {
+        if (current) {
+          setMyWorkSnapshot(verified);
+          setMyWorkSnapshotScope(workScope);
         }
-        if (current) setMyWorkSnapshot(payload);
       })
       .catch((error) => {
-        if (current) {
+        if (current && error?.name !== 'AbortError') {
           setMyWorkSnapshot(null);
+          setMyWorkSnapshotScope(null);
           setMyWorkError(error?.response?.data?.detail || error?.message || 'MY_WORK_UNAVAILABLE');
         }
       })
       .finally(() => {
         if (current) setMyWorkLoading(false);
       });
-    return () => { current = false; };
-  }, [section, showMyWork, myWorkRefresh]);
+    return () => {
+      current = false;
+      controller.abort();
+    };
+  }, [section, showMyWork, myWorkRefresh, workScope, workTenantId]);
+
+  useEffect(() => {
+    if (!workScope || section !== 'overview' || showMyWork) return undefined;
+    return subscribeUnifiedMyWork(workScope, () => {
+      setMyWorkRefresh((value) => value + 1);
+    });
+  }, [workScope, section, showMyWork]);
   useEffect(() => {
     if (section !== 'people' && section !== 'overview') return undefined;
     let current = true;
@@ -255,9 +290,9 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
                 </div>
               </section>
 
-              <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshot} workforce={section === 'overview' ? workforce : null}/>
+              <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshotScope === workScope ? myWorkSnapshot : null} workforce={section === 'overview' ? workforce : null}/>
 
-              <WilsyHeadquartersDailyBrief tenantId={tenantId} onOpenWork={(item) => openMyWork(item)} />
+              <WilsyHeadquartersDailyBrief tenantId={workTenantId} onOpenWork={(item) => openMyWork(item)} />
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => openMyWork()} icon={CheckCircle2}/>
@@ -266,7 +301,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
                 <ActionCard title="Business portfolio" detail="Separate customer businesses and workspaces" onClick={() => setSection('products')} icon={Globe2}/>
               </div>
 
-              <MyWorkSnapshot loading={myWorkLoading} error={myWorkError} snapshot={myWorkSnapshot} onOpen={() => openMyWork()} onRefresh={() => setMyWorkRefresh((value) => value + 1)}/>
+              <MyWorkSnapshot loading={myWorkLoading} error={myWorkError} snapshot={myWorkSnapshotScope === workScope ? myWorkSnapshot : null} onOpen={() => openMyWork()} onRefresh={() => setMyWorkRefresh((value) => value + 1)}/>
 
               <div className="mt-8 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-2xl border border-white/10 bg-[#101a2a] p-5">
@@ -534,7 +569,7 @@ function RuntimeHealthFooter({ health }) {
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.2.0-MY-WORK-ITEM-HANDOFF
+ * VERSION: v2.4.1-EXACT-SESSION-KPI-PRESENTATION
  * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.

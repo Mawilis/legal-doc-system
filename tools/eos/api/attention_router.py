@@ -1,0 +1,317 @@
+"""TITLE: WILSY OS Daily Attention Authenticated HTTP Read Surface
+VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY
+AUTHORITY: WILSY OS Core Governance; canonical source EOS service authority.
+EPITOME: Serve cursor-bounded attention feeds, counts, source coverage and
+         deadline calendar from the existing independently authorised My Work.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/attention_router.py
+COLLABORATION / OWNERSHIP: unified_my_work_router.read_my_work authorizes
+         source reads and tenant/principal admission; attention_feed_projection
+         normalizes read-only items; no second source/task registry is created.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY adds
+           separate authenticated CRM, Operations and Intelligence action
+           reads to prevent unrelated command dependency failure from
+           concealing a healthy source's authorizations.
+           v1.2.0-THREE-SOURCE-EXECUTIVE-ACTIONS adds
+           independently authorized CREATE and COMPLETE availability for
+           existing CRM, Operations and Intelligence source commands.
+           v1.1.0-SOURCE-COMMAND-AVAILABILITY reports existing
+           Operations and Intelligence completion capabilities only after
+           independent current-tenant IAM evaluation; source APIs retain
+           all command, persistence and audit authority.
+           v1.0.0-EOS-SOURCE-AUTHORISED-FEED establishes GET /attention/feed,
+           /attention/counts, /attention/calendar, /attention/sources/health.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No unauthorised partial queue, no credentials or
+         work bodies in logs, no source actions offered as executable HTTP.
+TENANT BOUNDARY: Every endpoint depends on revalidated canonical read_my_work
+         including current bearer, tenant header and module/record authority.
+AUTHORITY BOUNDARY: Source services exclusively own task/approval commands;
+         these GET endpoints cannot create, alter or acknowledge work.
+TRANSACTION / IDEMPOTENCY BOUNDARY: All reads use source-owned transactions;
+         no cross-source transaction or durable idempotency is claimed.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes finances.
+FAIL-CLOSED POSTURE: Unauthorized, malformed or unavailable source rejects;
+         no false successful zero-queue, no partial source health inference.
+"""
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from tools.eos.api.unified_my_work_router import read_my_work
+from tools.eos.api.tenant_authorization_http import (
+    OptionalTenantAuthorization, TenantAuthorizationContext,
+)
+from tools.eos.workspaces.service.attention_feed_projection import (
+    AttentionFeedError,
+    build_attention_feed,
+)
+
+router = APIRouter(prefix="/attention", tags=["Daily Attention"])
+
+_OPERATIONS_COMPLETE = OptionalTenantAuthorization(
+    "operations:work_item:complete", "operations_work_item_complete"
+)
+_INTELLIGENCE_COMPLETE = OptionalTenantAuthorization(
+    "intelligence:work_item:complete", "intelligence_work_item_complete"
+)
+_CRM_COMPLETE = OptionalTenantAuthorization(
+    "crm:work_item:complete", "crm_work_item_complete"
+)
+_OPERATIONS_CREATE = OptionalTenantAuthorization(
+    "operations:work_item:create", "operations_work_item_create"
+)
+_INTELLIGENCE_CREATE = OptionalTenantAuthorization(
+    "intelligence:work_item:create", "intelligence_work_item_create"
+)
+_CRM_CREATE = OptionalTenantAuthorization(
+    "crm:work_item:create", "crm_work_item_create"
+)
+
+
+def _project(
+    source: dict[str, Any], *, view: str = "active",
+    sources: str | None = None, q: str = "",
+    cursor: str | None = None, limit: int = 50,
+) -> dict[str, Any]:
+    """Validate requested scope and adapt one freshly authorised read.
+
+    Source services own transactions and all business command authorization.
+    An explicitly chosen unknown/denied module rejects without disclosing
+    whether that module exists for another tenant.
+    """
+    chosen = tuple(v.strip().upper() for v in sources.split(",")) if sources else ()
+    if any(not v for v in chosen):
+        raise HTTPException(status_code=422, detail="ATTENTION_SOURCE_FILTER_INVALID")
+    try:
+        return build_attention_feed(
+            source, view=view, sources=chosen, query=q,
+            cursor=cursor, limit=limit,
+        )
+    except AttentionFeedError as error:
+        if error.code == "ATTENTION_SOURCE_NOT_AUTHORIZED":
+            raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED") from error
+        if error.code in {
+            "ATTENTION_FILTER_INVALID", "ATTENTION_PAGE_LIMIT_INVALID",
+            "ATTENTION_CURSOR_INVALID",
+        }:
+            raise HTTPException(status_code=422, detail=error.code) from error
+        raise HTTPException(status_code=503, detail=error.code) from error
+
+
+@router.get("/feed")
+async def attention_feed(
+    source: dict[str, Any] = Depends(read_my_work),
+    view: Literal["active", "overdue", "due_today", "high_priority"] = "active",
+    sources: str | None = Query(default=None, max_length=200),
+    q: str = Query(default="", max_length=200),
+    cursor: str | None = Query(default=None, max_length=256),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> dict[str, Any]:
+    """Read the bounded queue; the dependency rechecks EOS bearer and tenant."""
+    return _project(source, view=view, sources=sources, q=q,
+                    cursor=cursor, limit=limit)
+
+
+@router.get("/counts")
+async def attention_counts(
+    source: dict[str, Any] = Depends(read_my_work),
+    sources: str | None = Query(default=None, max_length=200),
+) -> dict[str, Any]:
+    """Return checked-source counts; no cached or invented enterprise totals."""
+    result = _project(source, sources=sources, limit=1)
+    return {
+        "schema": result["schema"],
+        "tenantId": result["tenantId"],
+        "principalId": result["principalId"],
+        "syncedAt": result["syncedAt"],
+        "counts": result["counts"],
+        "coverage": result["coverage"],
+    }
+
+
+@router.get("/calendar")
+async def attention_calendar(
+    source: dict[str, Any] = Depends(read_my_work),
+    from_at: datetime = Query(alias="from"),
+    to_at: datetime = Query(alias="to"),
+    sources: str | None = Query(default=None, max_length=200),
+) -> dict[str, Any]:
+    """Return due work inside caller's period from the same authorized feed.
+
+    Date bounds are aware and limited to 31 days. No meeting integration or
+    cross-module calendar event is inferred from an absent source adapter.
+    """
+    if (
+        from_at.tzinfo is None or to_at.tzinfo is None
+        or from_at >= to_at
+        or (to_at - from_at).total_seconds() > 31 * 86400
+    ):
+        raise HTTPException(status_code=422, detail="ATTENTION_CALENDAR_RANGE_INVALID")
+    # Read the complete authorised snapshot through bounded pages; no
+    # alternate unfiltered data authority is introduced.
+    snapshot = _project(source, sources=sources, limit=100)
+    items = list(snapshot["items"])
+    cursor = snapshot["nextCursor"]
+    while cursor is not None:
+        page = _project(source, sources=sources, cursor=cursor, limit=100)
+        items.extend(page["items"])
+        cursor = page["nextCursor"]
+    due_items = [
+        item for item in items
+        if item["dueAt"] is not None
+        and from_at <= datetime.fromisoformat(item["dueAt"]) < to_at
+    ]
+    return {
+        "schema": snapshot["schema"],
+        "tenantId": snapshot["tenantId"],
+        "principalId": snapshot["principalId"],
+        "syncedAt": snapshot["syncedAt"],
+        "items": due_items,
+        "coverage": snapshot["coverage"],
+        "sourceReadTransactions": "INDEPENDENT_OWNER_BOUNDARIES",
+    }
+
+
+@router.get("/actions")
+async def attention_authorised_actions(
+    source: dict[str, Any] = Depends(read_my_work),
+    operations_context: TenantAuthorizationContext | None = Depends(_OPERATIONS_COMPLETE),
+    intelligence_context: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_COMPLETE),
+    crm_context: TenantAuthorizationContext | None = Depends(_CRM_COMPLETE),
+    operations_create: TenantAuthorizationContext | None = Depends(_OPERATIONS_CREATE),
+    intelligence_create: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_CREATE),
+    crm_create: TenantAuthorizationContext | None = Depends(_CRM_CREATE),
+) -> dict[str, Any]:
+    """Report existing source CREATE/COMPLETE availability without granting it.
+
+    The actual source endpoint re-authorizes every completion. A read-only
+    admission cannot by itself authorize a write; both read and complete
+    capabilities must be current for this exact tenant and principal.
+    """
+    tenant_id = source["tenant_id"]
+    principal_id = source["principal_id"]
+    admitted = set(source["sources_included"])
+    actions: dict[str, list[str]] = {}
+    for module, pairs in (
+        ("OPERATIONS", (("CREATE", operations_create), ("COMPLETE", operations_context))),
+        ("INTELLIGENCE", (("CREATE", intelligence_create), ("COMPLETE", intelligence_context))),
+        ("CRM", (("CREATE", crm_create), ("COMPLETE", crm_context))),
+    ):
+        if module not in admitted:
+            continue
+        admitted_actions: list[str] = []
+        for action, context in pairs:
+            if context is None:
+                continue
+            if (
+                context.tenant_id != tenant_id
+                or context.identity.identity_id != principal_id
+            ):
+                raise HTTPException(
+                    status_code=503, detail="ATTENTION_ACTION_CONTEXT_INCONSISTENT"
+                )
+            admitted_actions.append(action)
+        if admitted_actions:
+            actions[module] = admitted_actions
+    return {
+        "schema": "WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1",
+        "tenantId": tenant_id,
+        "principalId": principal_id,
+        "sourceActions": actions,
+        "authority": "SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE",
+    }
+
+
+def _source_actions(
+    source: dict[str, Any],
+    module: str,
+    create: TenantAuthorizationContext | None,
+    complete: TenantAuthorizationContext | None,
+) -> dict[str, Any]:
+    """Keep read admission and each source command independent and fail-closed."""
+    tenant_id, principal_id = source["tenant_id"], source["principal_id"]
+    admitted = module in set(source["sources_included"])
+    if not admitted:
+        raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED")
+    actions: list[str] = []
+    for name, context in (("CREATE", create), ("COMPLETE", complete)):
+        if context is None:
+            continue
+        if context.tenant_id != tenant_id or context.identity.identity_id != principal_id:
+            raise HTTPException(status_code=503, detail="ATTENTION_ACTION_CONTEXT_INCONSISTENT")
+        actions.append(name)
+    return {
+        "schema": "WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1",
+        "tenantId": tenant_id,
+        "principalId": principal_id,
+        "sourceActions": {module: actions} if actions else {},
+        "authority": "SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE",
+    }
+
+
+@router.get("/actions/crm")
+async def attention_crm_actions(
+    source: dict[str, Any] = Depends(read_my_work),
+    create: TenantAuthorizationContext | None = Depends(_CRM_CREATE),
+    complete: TenantAuthorizationContext | None = Depends(_CRM_COMPLETE),
+) -> dict[str, Any]:
+    """Independently verify CRM task actions; other command systems do not gate it."""
+    return _source_actions(source, "CRM", create, complete)
+
+
+@router.get("/actions/operations")
+async def attention_operations_actions(
+    source: dict[str, Any] = Depends(read_my_work),
+    create: TenantAuthorizationContext | None = Depends(_OPERATIONS_CREATE),
+    complete: TenantAuthorizationContext | None = Depends(_OPERATIONS_COMPLETE),
+) -> dict[str, Any]:
+    """Independently verify Operations task actions."""
+    return _source_actions(source, "OPERATIONS", create, complete)
+
+
+@router.get("/actions/intelligence")
+async def attention_intelligence_actions(
+    source: dict[str, Any] = Depends(read_my_work),
+    create: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_CREATE),
+    complete: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_COMPLETE),
+) -> dict[str, Any]:
+    """Independently verify Intelligence task actions."""
+    return _source_actions(source, "INTELLIGENCE", create, complete)
+
+
+@router.get("/sources/health")
+async def attention_source_health(
+    source: dict[str, Any] = Depends(read_my_work),
+) -> dict[str, Any]:
+    """Expose admitted-source read evidence, not unverified module readiness.
+
+    An unavailable source read fails through the dependency instead of being
+    silently labelled empty, healthy or absent.
+    """
+    snapshot = _project(source, limit=1)
+    return {
+        "schema": snapshot["schema"],
+        "tenantId": snapshot["tenantId"],
+        "principalId": snapshot["principalId"],
+        "syncedAt": snapshot["syncedAt"],
+        "sources": snapshot["sources"],
+        "coverage": snapshot["coverage"],
+    }
+
+
+__all__ = ["router", "attention_feed", "attention_counts",
+           "attention_calendar", "attention_source_health",
+           "attention_authorised_actions", "attention_crm_actions",
+           "attention_operations_actions", "attention_intelligence_actions"]
+
+# ARTIFACT: tools/eos/api/attention_router.py
+# VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY
+# AUTHORITY BOUNDARY: Authenticated source-owned reads; no attention commands.
+# TENANT POSTURE: Exact tenant/principal read_my_work dependency each request.
+# FAIL-CLOSED POSTURE: No inferred health, entitlement, access or cleared queue.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

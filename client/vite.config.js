@@ -1,10 +1,25 @@
 /* eslint-disable */
 /**
- * WILSY OS — React/Vite frontend development configuration.
- * Application API authority: Python EOS only.
- * Browser responsibility: presentation and transport; EOS owns identity,
- * tenant membership, IAM, business operations and durable application state.
- * Vite is a frontend development/build tool, not an application backend.
+ * TITLE: WILSY OS Sovereign Frontend Development Transport
+ * VERSION: v2.6.0-CANONICAL-DEV-PORTS
+ * AUTHORITY: Wilsy OS Core Governance; Python EOS owns business truth.
+ * EPITOME: Preserve governed Vite proxy paths on the canonical development
+ *          endpoints, with test-only isolation owned by the browser runner.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js
+ * COLLABORATION / OWNERSHIP: Vite frontend transport; Python EOS owns
+ *          authentication, IAM, work lifecycle and source commands.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v2.6.0-CANONICAL-DEV-PORTS removes unused per-process port
+ *          overrides introduced for PR review. The authenticated browser
+ *          runner keeps its isolated temporary Vite config and runtime-selected
+ *          ports by replacing these literal loopback EOS proxy targets.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Application proxies use the fixed loopback EOS target.
+ * TENANT BOUNDARY: Transport cannot establish tenant entitlement.
+ * AUTHORITY BOUNDARY: No browser or proxy-based authentication grants.
+ * TRANSACTION / IDEMPOTENCY BOUNDARY: No persisted mutation.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
+ * FAIL-CLOSED POSTURE: Normal Vite startup uses port 5173 and EOS port 9095.
  */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -23,7 +38,7 @@ export default defineConfig({
     proxy: {
       // Python EOS owns the canonical /api/auth router. Preserve its /api prefix.
       '/api/auth': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         configure: (proxy, options) => {
@@ -57,13 +72,13 @@ export default defineConfig({
       // Keep these rules before the general /api EOS rule so compose/list reach EOS,
       // while EOS-owned application routes retain their canonical owner.
       '/api/billing/platform': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/api/billing/client': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
@@ -71,41 +86,41 @@ export default defineConfig({
       // EOS billing read models are mounted at /billing/*.
       // This explicit rule must remain ahead of /api so EOS routes retain their canonical ownership.
       '^/api/billing/(plans|summary|analytics|credit-scores|forensic-status)(?:/|$)': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Kernel is an EOS service and is explicitly mounted at /api/kernel.
       '/api/kernel': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
       },
       // Python EOS owns governed tenant-branding activation and workspace projection.
       // Preserve /api because the branding router is mounted under /api.
       '/api/tenant-branding': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
       },
       // Python EOS owns the tenant-owner commercial Legal workspace.
       // Preserve /api; this is transport only, never browser-side business logic.
       '/api/crm/owner-workspace': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
       },
       // Python EOS owns independent Operations and Intelligence work queues.
       '/api/tenant-modules': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
       },
       // Python EOS owns authenticated Legal Operations read/command authority.
       // Preserve /api because the EOS router is mounted under /api.
       '/api/legal-operations': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         configure: (proxy, options) => {
@@ -138,7 +153,7 @@ export default defineConfig({
       // Python EOS owns authenticated legal-acceptance authority.
       // Preserve /api because the EOS router is mounted under /api.
       '/api/legal-acceptance': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         configure: (proxy, options) => {
@@ -170,12 +185,12 @@ export default defineConfig({
 
       // EOS owns the tenant and employee directories used by workspace typeaheads.
       '/api/tenants': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
       },
       '/api/employees': {
-        target: 'http://localhost:9095',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
       },
@@ -197,20 +212,20 @@ export default defineConfig({
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER
+ * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION v2.6.0-CANONICAL-DEV-PORTS
  * ═══════════════════════════════════════════════════════════════════════════════════
- * Status: CERTIFIED PRODUCTION ARTIFACT
+ * Status: CERTIFIED DEVELOPMENT TRANSPORT ARTIFACT
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
- * Proxy Rules:
- *   /api/auth → http://localhost:9095 (Kennel auth router) – no rewrite
- *   /auth      → http://127.0.0.1:9095/api/auth (Python EOS)
- *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
- *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
- *   /api/kernel → http://localhost:9095/api/kernel
- *   /api/tenant-branding → http://localhost:9095/api/tenant-branding
- *   /api/legal-operations → http://localhost:9095/api/legal-operations
- *   /api/legal-acceptance → http://localhost:9095/api/legal-acceptance
- *   /api/tenants, /api/employees → http://localhost:9095
- *   /api       → http://127.0.0.1:9095 (Python EOS)
- * ═══════════════════════════════════════════════════════════════════════════════════
+ * Default application endpoints: frontend 5173; Python EOS 9095.
+ * Authenticated browser certification owns an isolated temporary config and
+ * replaces the fixed loopback EOS target with its disposable EOS listener.
+ * Proxy paths preserve their established API rewrites and ownership.
  */
+
+// ARTIFACT: client/vite.config.js
+// VERSION: v2.6.0-CANONICAL-DEV-PORTS
+// AUTHORITY BOUNDARY: Vite proxy only; Python EOS business authority.
+// TENANT POSTURE: Transport cannot establish tenant scope.
+// FAIL-CLOSED POSTURE: Fixed canonical dev target; runner isolation is disposable.
+// FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+// END OF WILSY OS SOVEREIGN ARTIFACT

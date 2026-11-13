@@ -1,32 +1,42 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – BILLINGHUD LIVE BINDINGS [V3.1.0-KENNEL-ALIGNED]                                                                         ║
+ * ║ TITLE: WILSY OS BillingHUD Live Bindings                                                                                               ║
+ * ║ WILSY OS – BILLINGHUD LIVE BINDINGS [V3.2.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY]                                                                         ║
  * ║ AUTHORITY: WILSY OS FINANCE & OPERATIONS | TERMINAL WORKFLOW COMPLIANT                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 3.1.0-KENNEL-ALIGNED | PRODUCTION HARDENED | TRILLION‑DOLLAR SPEC                                                           ║
- * ║ EPITOME: Provides live bindings for tenant lifecycle, subscriptions, telemetry, anomalies, forensic proof,                          ║
- * ║           and mutation handlers for status updates, partial payments, cancellations – all sealed with SHA3-512.                     ║
+ * ║ VERSION: v3.2.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY                                                                                      ║
+ * ║ EPITOME: Provides billing read projections and separately authorized tenant-scoped billing actions.                                   ║
+ * ║           Cross-tenant tenant status mutation fails before transport because governed Python EOS C2 authority is absent.            ║
  * ║           Now aligned with unified tenant context (useTenants) – legacy useTenantContext removed.                                   ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/BillingHUD.liveBindings.js                       ║
+ * ║ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/BillingHUD.liveBindings.js                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ COLLABORATION / OWNERSHIP: BillingHUD and Python EOS billing client owners.                                                             ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-11-10                                                                                                 ║
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated live bindings with mutation handlers and SHA3‑512 sealing.                         ║
  * ║ • AI Engineering (DeepSeek) – Implemented useLiveBindings hook with real‑time metrics, tenant context, and mutation handlers.       ║
  * ║ • Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001                                                                        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ CHANGELOG: v3.2.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY completes sovereign artifact metadata without changing transport behavior.            ║
+ * ║ CHANGELOG: v3.2.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY – updateTenantStatus rejects before transport pending explicit Python EOS C2 authority.║
  * ║ 🔧 CHANGE LOG:                                                                                                                       ║
  * ║   2026-08-19 v3.1.0-KENNEL-ALIGNED – Removed legacy useTenantContext; tenant resolution now uses only unified useTenants.           ║
  * ║   2026-08-06 v3.0.0-SOVEREIGN-COMPLETE – Original version.                                                                         ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔗 DEPENDENCIES:                                                                                                                    ║
- * ║   • crypto (Node) / browser fallback                                                                                                ║
+ * ║   • browser-compatible js-sha3                                                                                                      ║
  * ║   • sovereignClient (to be replaced with Kennel API clients in Phase 6)                                                             ║
  * ║   • useRealtimeMetrics (from BillingHUD.metrics)                                                                                    ║
  * ║   • useAuth (authContext)                                                                                                           ║
  * ║   • useTenants (unified tenant context)                                                                                            ║
  * ║   • telemetryHelper                                                                                                                 ║
  * ║   • billingLiveAdapter utilities                                                                                                    ║
+ * ║ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.                                                               ║
+ * ║ SECURITY / PRIVACY POSTURE: Browser evidence hashes only; Python EOS owns authorization and persistence.                              ║
+ * ║ TENANT BOUNDARY: Billing reads and commands retain authenticated workspace scope; global tenant mutation is denied.                     ║
+ * ║ AUTHORITY BOUNDARY: Client adapter only; no tenant status mutation authority is created.                                               ║
+ * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution and settlement.                                                     ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -84,7 +94,7 @@ function sealPayload(payload) {
 
 /**
  * @hook useLiveBindings
- * @description Provides live tenant/subscription data and mutation handlers for the BillingHUD.
+ * @description Provides billing projections, tenant-scoped subscription data, and separately authorized mutation handlers for BillingHUD.
  * @returns {Object} { ledgerRows, subscriptions, treasury, risk, updateTenantStatus, triggerPartialPayment, cancelSubscription, confirmSave }
  * @collaboration Wilson Khanyezi – mandated live bindings with actionable mutations.
  * @institutional Binds tenant lifecycle, subscriptions, treasury, risk, and forensic proof into the HUD.
@@ -167,40 +177,19 @@ export function useLiveBindings() {
 
   /**
    * @function updateTenantStatus
-   * @description Updates a tenant's status and seals the action with SHA3‑512 proof.
+   * @description Denies tenant status mutation before transport because no governed Python EOS C2 capability exists.
    * @param {string} targetTenantId - The tenant ID to update.
    * @param {string} newStatus - The new status (e.g., 'ACTIVE', 'SUSPENDED', 'PENDING').
-   * @returns {Promise<Object>} { success, tenantId, newStatus, proofHash }
+   * @returns {Promise<never>} Rejects with GOVERNED_C2_CAPABILITY_REQUIRED; no request, seal, or success evidence is produced.
    * @collaboration Wilson Khanyezi – mandated audit‑ready tenant status updates.
    * @institutional Every status change is sealed for regulatory scrutiny.
    * @epitome "Suspension is a measured retreat; every retreat is witnessed."
    */
-  async function updateTenantStatus(targetTenantId, newStatus) {
-    const payload = {
-      event: 'TENANT_STATUS_UPDATE',
-      tenantId: targetTenantId,
-      newStatus,
-      timestamp: new Date().toISOString()
-    };
-    const proofHash = sealPayload(payload);
-    try {
-      await sovereignClient.post('/tenants/status', {
-        tenantId: targetTenantId,
-        newStatus,
-        proofHash
-      }, {
-        headers: { 'X-Tenant-ID': tenantId }
-      });
-      broadcastTelemetry(tenantId, 'BILLING', 'TENANT_STATUS_UPDATE', 'BillingHUD', {
-        targetTenantId,
-        newStatus,
-        proofHash
-      });
-      return { success: true, ...payload, proofHash };
-    } catch (error) {
-      console.error('[LiveBindings] updateTenantStatus failed:', error);
-      throw error;
-    }
+  async function updateTenantStatus(_targetTenantId, _newStatus) {
+    const error = new Error('Cross-tenant tenant status changes require a governed Python EOS C2 capability.');
+    error.code = 'GOVERNED_C2_CAPABILITY_REQUIRED';
+    error.operation = 'tenant_lifecycle_status_update';
+    throw error;
   }
 
   /**
@@ -339,18 +328,27 @@ export function useLiveBindings() {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — BillingHUD.liveBindings v3.1.0‑KENNEL-ALIGNED
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — BillingHUD.liveBindings v3.2.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY
  * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          PRODUCTION READY — 10/10 SOVEREIGN GRADE
+ * Status:          LOCAL CERTIFICATE — tenant status mutation denied pending governed C2
  * Bindings:        ledgerRows, subscriptions, treasury, risk
- * Mutations:       updateTenantStatus, triggerPartialPayment, cancelSubscription, confirmSave
- * Sealing:         SHA3‑512 proofHash on every mutation
+ * Mutations:       updateTenantStatus rejects before transport; other billing mutations remain separately tenant-scoped and backend-authorized
+ * Sealing:         Existing billing mutation contracts only; denied tenant status updates produce no seal
  * Telemetry:       All mutations broadcast via broadcastTelemetry
  * Tenant Isolation: X-Tenant-ID header on all API calls
  * Context:         Unified useTenants (legacy useTenantContext removed)
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001
  * ────────────────────────────────────────────────────────────────────────────────
- * 🔒 This file is ready for deployment. The BillingHUD now uses the correct
- *    unified tenant context, paving the way for the upcoming billing API surface.
+ * 🔒 This file does not certify production deployment; Python EOS owns authorization and persistence.
  * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
+/**
+ * ARTIFACT: BillingHUD.liveBindings.js
+ * VERSION: v3.2.1-GOVERNED-C2-TENANT-LIFECYCLE-DENY
+ * AUTHORITY BOUNDARY: Billing client adapter only; Python EOS owns authorization.
+ * TENANT POSTURE: Exact authenticated workspace scope; no global tenant mutation.
+ * FAIL-CLOSED POSTURE: Tenant status changes reject before transport pending governed C2.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

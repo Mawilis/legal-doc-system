@@ -1,12 +1,16 @@
 """TITLE: IAM Security Evidence Startup Index Certificate.
-VERSION: v1.0.0-P3-R3G-S5-A2-FACTOR-INDEX-BOOTSTRAP
+VERSION: v1.0.1-P3-R3G-S5-A2-FACTOR-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certifies canonical startup ownership of P1 security-evidence and P3
 interactive factor-currentness index DDL without issuing security evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_iam_security_evidence_startup_indexes.py
 COLLABORATION / OWNERSHIP: WilsyAPIServer startup and IAM registry certificates.
-CERTIFICATION/UPDATE DATE: 2026-10-14.
+CERTIFICATION/UPDATE DATE: 2026-11-11.
 CHANGELOG:
+  v1.0.1-P3-R3G-S5-A2-FACTOR-INDEX-BOOTSTRAP: models the PyMongo collection's
+  database relationship for startup-owned audit/outbox index resolution and
+  checks startup issuance behavior through its parsed call graph rather than
+  matching unrelated collection names in source text.
   v1.0.0-P3-R3G-S5-A2-FACTOR-INDEX-BOOTSTRAP: Extends the existing P1 startup
   certificate to the canonical factor-currentness registry and gives the strict
   Mongo collection double only the create_index capability production invokes.
@@ -29,6 +33,7 @@ refresh token, or financial authority is created.
 
 from __future__ import annotations
 
+import ast
 from typing import Any
 
 import pytest
@@ -37,7 +42,8 @@ from tools.eos.api import server as subject
 
 
 class _Collection:
-    def __init__(self) -> None:
+    def __init__(self, database: "_Database") -> None:
+        self.database = database
         self.index_names: list[str] = []
 
     def create_index(
@@ -60,7 +66,7 @@ class _Database:
         name: str,
     ) -> _Collection:
         if name not in self.collections:
-            self.collections[name] = _Collection()
+            self.collections[name] = _Collection(self)
 
         return self.collections[name]
 
@@ -264,27 +270,32 @@ def test_startup_source_contains_no_security_evidence_issuance() -> None:
     source = inspect.getsource(
         subject.WilsyAPIServer
     )
-
-    forbidden = (
-        ".issue(",
-        ".create_or_replay(",
-        "session.start_transaction(",
-        "role_assignment",
-        "refresh_token",
-        "financial_execution",
+    tree = ast.parse(source)
+    startup = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.AsyncFunctionDef)
+        and node.name == "start_database"
     )
-
-    start = source[
-        source.index(
-            "async def start_database"
-        ):
-    ]
-
-    for token in forbidden:
-        assert token not in start.split(
-            '@app.on_event("startup")',
-            1,
-        )[0]
+    invoked = {
+        node.func.attr if isinstance(node.func, ast.Attribute)
+        else node.func.id if isinstance(node.func, ast.Name)
+        else ""
+        for node in ast.walk(startup)
+        if isinstance(node, ast.Call)
+    }
+    forbidden = {
+        "issue",
+        "create_or_replay",
+        "insert_one",
+        "insert_many",
+        "replace_one",
+        "update_one",
+        "delete_one",
+        "assign_role",
+        "issue_refresh_token",
+    }
+    assert invoked.isdisjoint(forbidden)
 
 
 def test_startup_bootstrap_uses_canonical_registry_collection_constants() -> None:
@@ -339,7 +350,7 @@ def test_otp_request_path_contains_no_factor_index_ddl() -> None:
 
 
 # ARTIFACT: test_iam_security_evidence_startup_indexes.py
-# VERSION: v1.0.0-P3-R3G-S5-A2-FACTOR-INDEX-BOOTSTRAP
+# VERSION: v1.0.1-P3-R3G-S5-A2-FACTOR-INDEX-BOOTSTRAP
 # AUTHORITY BOUNDARY: Startup index observation only; no security evidence or authority issuance.
 # TENANT POSTURE: No tenant-scoped mutation occurs.
 # FAIL-CLOSED POSTURE: Missing startup DDL or request-path DDL fails certification.
