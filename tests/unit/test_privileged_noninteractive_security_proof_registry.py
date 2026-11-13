@@ -143,7 +143,7 @@ class _Collection:
             {
                 "name": name,
                 "key": dict(keys),
-                **({"unique": True} if unique else {}),
+                **({"unique": True} if self.index_options[name]["unique"] else {}),
                 **(
                     {"partialFilterExpression": self.index_options[name]["partialFilterExpression"]}
                     if self.index_options[name]["partialFilterExpression"] is not None
