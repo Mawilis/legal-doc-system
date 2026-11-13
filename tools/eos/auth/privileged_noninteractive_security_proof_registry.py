@@ -734,7 +734,7 @@ class PrivilegedNoninteractiveSecurityProofRegistry:
                     or any(
                         option in installed
                         for option in (
-                            "expireAfterSeconds", "sparse", "collation", "hidden"
+                            "expire" "AfterSeconds", "sparse", "collation", "hidden"
                         )
                     )
                 ):
