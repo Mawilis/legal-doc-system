@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE
+VERSION: v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,6 +14,10 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS logs only bounded error
+  classes and stable source codes for failed project transactions, separating
+  corrupt audit/readback, entitlement and Mongo failures without exposing
+  tenant, principal, records, Mongo details or relaxing fail-closed responses.
   v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE — Generates stable
   tenant-scoped project codes from EOS identity when a caller omits a code,
   preserves legacy replay snapshots, and retains unique-index collision denial.
@@ -47,6 +51,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import hashlib
+import logging
 import re
 from typing import Any, Callable, Final, Mapping
 
@@ -109,7 +114,8 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE"
+VERSION: Final[str] = "v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS"
+logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
@@ -285,7 +291,9 @@ def _transaction(
                 write_concern=WriteConcern("majority", j=True),
                 read_preference=ReadPreference.PRIMARY,
             )
-    except HTTPException:
+    except HTTPException as error:
+        if error.status_code == 503:
+            logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
     except ProjectNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
@@ -294,10 +302,13 @@ def _transaction(
     except ProjectError as error:
         raise HTTPException(status_code=422, detail=error.code) from error
     except ProjectRegistryError as error:
+        logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=REGISTRY code=%s", error.code)
         raise HTTPException(status_code=503, detail=error.code) from error
     except PyMongoError as error:
+        logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=MONGO error_type=%s", type(error).__name__)
         raise HTTPException(status_code=503, detail="PROJECT_DATABASE_UNAVAILABLE") from error
     except Exception as error:
+        logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=UNEXPECTED error_type=%s", type(error).__name__)
         raise HTTPException(status_code=503, detail="PROJECT_TRANSACTION_UNAVAILABLE") from error
 
 
@@ -781,7 +792,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE
+# VERSION: v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: missing assignment, entitlement, current database, indexes, transaction, replay integrity, or readback denies or fails unavailable
