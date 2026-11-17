@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.5.0-MOVABLE-COMPANION-STATE-CERT
+ * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v1.5.0-MOVABLE-COMPANION-STATE-CERT certifies movement, minimization, retained drafts,
+ * CHANGELOG: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT proves kernel health
+ * is probed without waiting for unresolved optional finance evidence.
+ * v1.5.0-MOVABLE-COMPANION-STATE-CERT certifies movement, minimization, retained drafts,
  * reset controls and unchanged request behavior with prior source tests intact.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard access.
  * SECURITY / PRIVACY POSTURE: Synthetic subjects and transient UI only.
@@ -311,6 +313,25 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(
       mockApiGet.mock.calls.some(([path]) => path === '/billing/intelligence/evidence')
     ).toBe(false);
+  });
+
+  it('starts EOS health even when optional billing evidence is unresolved', async () => {
+    let finishBilling;
+    const pendingBilling = new Promise((resolve) => { finishBilling = resolve; });
+    mockApiGet.mockImplementation((path) => {
+      if (path === '/billing/intelligence/evidence') return pendingBilling;
+      if (path === '/kernel') return Promise.resolve({
+        status: 200, data: { status: 'OPERATIONAL' },
+      });
+      return Promise.resolve({ status: 200, data: {} });
+    });
+
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_FINANCE', tenantId: 'TEST_TENANT' }} />);
+    await waitFor(() => {
+      expect(mockApiGet).toHaveBeenCalledWith('/billing/intelligence/evidence', expect.anything());
+      expect(mockApiGet).toHaveBeenCalledWith('/kernel', expect.anything());
+    });
+    finishBilling({ status: 403, data: { detail: 'forbidden' } });
   });
 
   it('requests canonical billing evidence only for legal-finance authority with an aware ISO as_of boundary', async () => {
@@ -690,7 +711,7 @@ describe('WilsyOSIntelligenceDock', () => {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.5.0-MOVABLE-COMPANION-STATE-CERT
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Direct tests certify finance-only billing-intelligence probing, non-finance
  * exclusion, canonical generic operator transport, C1C legal-role routing, and
@@ -700,7 +721,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.5.0-MOVABLE-COMPANION-STATE-CERT
+ * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
