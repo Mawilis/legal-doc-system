@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.5.0-ACCESSIBLE-FLUID-PROJECT-DELIVERY replaces
+ *            low-contrast project presentation with scoped responsive
+ *            list/detail layout and accessible source-backed controls;
+ *            formats long project scope as safe text without modifying
+ *            EOS persistence, IAM, entitlement or command behavior.
  * CHANGELOG: v1.4.0-SCOPED-STRATEGY-PROJECT-FOCUS admits a Strategy handoff only after the
  *            project ID appears in a fresh exact-tenant EOS list, then loads
  *            source-authorized project detail and immutable audit events.
