@@ -722,7 +722,7 @@ export default function MyWorkWorkspace(props = {}) {
             <span className="text-[11px] text-slate-500">Only independently admitted sources appear here.</span>
           </section>
 
-          <section aria-label="Saved CRM draft work" className="space-y-3 border-b border-white/10 py-3">
+          {admittedSources.includes("CRM") && <section aria-label="Saved CRM draft work" className="space-y-3 border-b border-white/10 py-3">
             <button type="button" onClick={openDrafts} disabled={draftsBusy}
               className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold text-amber-100">
               {draftsBusy ? 'Verifying saved drafts…' : draftsVisible ? 'Hide saved drafts' : 'Saved CRM drafts'}
@@ -744,7 +744,7 @@ export default function MyWorkWorkspace(props = {}) {
                   </button>
                 </article>)}
             </div>}
-          </section>
+          </section>}
 
           <section className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
             <label className="sr-only" htmlFor="my-work-search">Search authorized work</label>
