@@ -1,6 +1,9 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
-VERSION: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION
+VERSION: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT
+CHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
+ existing _main() guarded operator entrypoint rather than incorrectly
+ requiring an unimplemented main() function; classification remains strict.
 CHANGELOG: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION categorizes
  the separately authorized, __main__-guarded development Founder admission
  operator as operator-only rather than a long-running EOS database consumer;
@@ -150,7 +153,8 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
     assert runtime_calls == {CANONICAL_CONNECTOR, ISOLATED_AUDIT_SINK}
     founder_cli = (ROOT / "tools/eos/auth/founder_development_admission.py").read_text(encoding="utf-8")
     assert 'if __name__ == "__main__":' in founder_cli
-    assert "def main()" in founder_cli
+    assert "def _main()" in founder_cli
+    assert "raise SystemExit(_main())" in founder_cli
     assert "MongoClient(" in founder_cli
 
     audit_source = (ROOT / ISOLATED_AUDIT_SINK).read_text(encoding="utf-8")
@@ -262,7 +266,7 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     )
 
 # ARTIFACT: EOS Runtime Database Ownership Certificate
-# VERSION: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION
+# VERSION: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT
 # AUTHORITY BOUNDARY: Offline repository ownership evidence.
 # TENANT POSTURE: No data access or mutation.
 # FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.
