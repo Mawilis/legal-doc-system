@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.8.0-EOS-PROJECT-CODE-READBACK
+ * VERSION: v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.8.0-EOS-PROJECT-CODE-READBACK removes mandatory
+ * CHANGELOG: v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY adds exact-tenant, EOS-verified
+ *            owner and department selectors, separately authorized department
+ *            provisioning and audited project assignment with fresh readback.
+ *            v1.8.0-EOS-PROJECT-CODE-READBACK removes mandatory
  *            manual code entry from new-project creation, documents EOS
  *            generation and permits verified one-click code assignment
  *            for legacy null-code projects via revision-guarded PATCH.
@@ -268,6 +271,136 @@ function assertProjectSummary(payload, tenantId, principalId) {
  * tenant and session generation supplied by the authenticated workspace owner.
  * @returns {JSX.Element} A source-backed Projects workspace.
  */
+
+function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHeaders, runCommand, refresh, openProject }) {
+  const [options, setOptions] = useState(null);
+  const [state, setState] = useState('LOADING');
+  const [owner, setOwner] = useState(project.owner_principal_id || '');
+  const [department, setDepartment] = useState(project.department_id || '');
+  const [newDepartmentName, setNewDepartmentName] = useState('');
+  const [localError, setLocalError] = useState('');
+
+  const loadOptions = useCallback(async () => {
+    const { data } = await api.get('/projects/assignment-options', { headers: tenantHeaders });
+    if (data?.schema !== 'WILSY-PROJECT-ASSIGNMENT-OPTIONS/V1'
+      || data?.tenant_id !== tenantId
+      || !Array.isArray(data.principals) || !Array.isArray(data.departments)
+      || data.principals.some(value => value.eligibility !== 'VERIFIED_CURRENT' || typeof value.principal_id !== 'string')
+      || data.departments.some(value => value.status !== 'ACTIVE' || typeof value.department_id !== 'string' || typeof value.name !== 'string')) {
+      throw new Error('PROJECT_ASSIGNMENT_SOURCE_INVALID');
+    }
+    return data;
+  }, [tenantId, tenantHeaders]);
+
+  useEffect(() => {
+    let live = true;
+    setState('LOADING');
+    setOptions(null);
+    setOwner(project.owner_principal_id || '');
+    setDepartment(project.department_id || '');
+    loadOptions().then(data => {
+      if (!live) return;
+      setOptions(data);
+      setState('READY');
+    }).catch(() => {
+      if (live) setState('UNAVAILABLE');
+    });
+    return () => { live = false; };
+  }, [loadOptions, project.project_id, project.revision]);
+
+  const newKey = () => {
+    if (typeof globalThis.crypto?.randomUUID !== 'function') throw new Error('IDEMPOTENCY_KEY_GENERATOR_UNAVAILABLE');
+    return globalThis.crypto.randomUUID();
+  };
+
+  const createDepartment = async (event) => {
+    event.preventDefault();
+    const name = newDepartmentName.trim();
+    if (name.length < 2) return;
+    setLocalError('');
+    const confirmed = await runCommand(async () => {
+      const { data } = await api.post('/projects/departments', { name }, {
+        headers: { ...tenantHeaders, 'Idempotency-Key': newKey() },
+      });
+      if (data?.tenant_id !== tenantId || data?.department?.name !== name
+        || data.department.status !== 'ACTIVE') throw new Error('PROJECT_DEPARTMENT_READBACK_INVALID');
+      const verified = await loadOptions();
+      if (!verified.departments.some(value => value.department_id === data.department.department_id)) {
+        throw new Error('PROJECT_DEPARTMENT_DIRECTORY_READBACK_UNAVAILABLE');
+      }
+      setOptions(verified);
+      setDepartment(data.department.department_id);
+      setNewDepartmentName('');
+    });
+    if (!confirmed) setLocalError('EOS did not authorize or verify department creation.');
+  };
+
+  const saveAssignment = async (event) => {
+    event.preventDefault();
+    if (!options?.principals.some(value => value.principal_id === owner)
+      || !options?.departments.some(value => value.department_id === department)) return;
+    setLocalError('');
+    const confirmed = await runCommand(async () => {
+      const { data } = await api.patch(
+        `/projects/${encodeURIComponent(project.project_id)}/assignment`,
+        { expected_revision: project.revision, owner_principal_id: owner, department_id: department },
+        { headers: { ...tenantHeaders, 'Idempotency-Key': newKey() } },
+      );
+      const next = assertProjectResult(data, tenantId, principalId, project.project_id, project.revision + 1).project;
+      if (next.owner_principal_id !== owner || next.department_id !== department
+        || next.status !== project.status) throw new Error('PROJECT_ASSIGNMENT_READBACK_INVALID');
+      const list = await refresh();
+      if (!list?.items.some(item => item.project_id === project.project_id && item.revision === next.revision)) {
+        throw new Error('PROJECT_ASSIGNMENT_LIST_READBACK_UNAVAILABLE');
+      }
+      if (!await openProject(project.project_id)) throw new Error('PROJECT_ASSIGNMENT_DETAIL_READBACK_UNAVAILABLE');
+    });
+    if (!confirmed) setLocalError('EOS did not confirm the assignment. The previous values remain authoritative.');
+  };
+
+  return <section aria-label="Project accountability" className="mb-5 border-t border-slate-200 pt-4">
+    <h3 className="font-semibold text-slate-900">Owner and department governance</h3>
+    <p className="mt-1 text-xs text-slate-600">Only current verified EOS identities and tenant departments are selectable. No role or employment is created.</p>
+    {state === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying authorized assignment sources…</p>}
+    {state === 'UNAVAILABLE' && <p role="alert" className="mt-2 text-sm text-rose-700">Assignment sources unavailable. <button type="button" onClick={() => {
+      setState('LOADING');
+      loadOptions().then(data => { setOptions(data); setState('READY'); }).catch(() => setState('UNAVAILABLE'));
+    }} className="underline">Retry</button></p>}
+    {state === 'READY' && <>
+      <form onSubmit={saveAssignment} className="mt-3 grid gap-3">
+        <label className="block text-xs font-semibold text-slate-700">Eligible project owner
+          <select aria-label="Eligible project owner" value={owner} onChange={event => setOwner(event.target.value)}
+            className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
+            <option value="">Select a verified principal</option>
+            {options.principals.map(value => <option key={value.principal_id} value={value.principal_id}>{value.principal_id}</option>)}
+          </select>
+        </label>
+        <label className="block text-xs font-semibold text-slate-700">Tenant department
+          <select aria-label="Tenant department" value={department} onChange={event => setDepartment(event.target.value)}
+            className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
+            <option value="">Select a verified department</option>
+            {options.departments.map(value => <option key={value.department_id} value={value.department_id}>{value.name}</option>)}
+          </select>
+        </label>
+        {(!options.principals.length || !options.departments.length) && <p className="text-xs text-amber-900">No eligible owner or active department is currently recorded. The project remains unassigned.</p>}
+        <button type="submit" disabled={!owner || !department}
+          className="min-h-11 rounded-lg bg-blue-900 px-4 text-sm font-semibold text-white disabled:opacity-50">Save audited assignment</button>
+      </form>
+      <form onSubmit={createDepartment} className="mt-4 grid gap-2 border-t border-slate-200 pt-3">
+        <label className="block text-xs font-semibold text-slate-700">Create governed tenant department
+          <input aria-label="Department name" value={newDepartmentName} onChange={event => setNewDepartmentName(event.target.value)}
+            minLength={2} maxLength={100} required placeholder="e.g. Platform Engineering"
+            className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm font-normal"/>
+        </label>
+        <button type="submit" disabled={newDepartmentName.trim().length < 2}
+          className="min-h-11 rounded-lg border border-blue-700 px-4 text-sm font-semibold text-blue-800 disabled:opacity-50">Create authorized department</button>
+        <p className="text-xs text-slate-500">Independent current tenant profile-write and Projects-create IAM are required.</p>
+      </form>
+    </>}
+    {localError && <p role="alert" className="mt-2 text-sm text-rose-700">{localError}</p>}
+  </section>;
+}
+
 export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -646,7 +779,10 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                 onClick={() => void assignGeneratedCode()}
                 disabled={commandState === 'PENDING' || sourceState !== 'READY'}
               >Generate and save code</button>}
-            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are unassigned until separately authorized assignment workflows are established.</p>
+            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
+            <ProjectAccountabilityPanel key={detail.project.project_id} project={detail.project} tenantId={tenantId}
+              principalId={principalId} tenantHeaders={tenantHeaders} runCommand={runCommand}
+              refresh={refresh} openProject={openProject}/>
             {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
             <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code <span className="wp-code-optional">(optional override)</span>
                 <input aria-label="Project code" maxLength={80} value={edit?.code || ''}
@@ -672,7 +808,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.8.0-EOS-PROJECT-CODE-READBACK
+// VERSION: v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
