@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session My Work Coordination Certification
- * VERSION: v1.0.1-CURRENT-SCOPE-CHANGELOG-ALIGNMENT
+ * VERSION: v1.1.0-BOUNDED-503-RECOVERY-CERT
  * AUTHORITY: WILSY OS Core Governance; only EOS authorizes business activity.
  * EPITOME: Proves scoped shared reads, actual EOS response verification,
  *          current session safety, source-confirmed invalidation and cleanup.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: unifiedMyWorkSync, AuthProvider session scope,
  *                            unifiedMyWorkProjection and source-owned commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.1-CURRENT-SCOPE-CHANGELOG-ALIGNMENT records the exact current certification version; assertions and runtime behavior are unchanged.
+ * CHANGELOG: v1.1.0-BOUNDED-503-RECOVERY-CERT verifies that source 503
+ *            failures reject consistently without reflooding the EOS route;
+ *            explicit source invalidation permits a newly authorized retry.
+ *            Previous exact-scope regression checks remain unchanged.
  * CHANGELOG: v1.0.0-EXACT-SCOPE-READ-CURRENTNESS-CERT covers overlapping reads, cancelled consumers, distinct
  *            tenant/principal/capacity partitions, stale network completion,
  *            session loss, source revision and corrupt payload rejection.
@@ -190,6 +193,33 @@ describe('one EOS source-owned My Work read for current authenticated scope', ()
     stop();
   });
 
+  it('bounds repeated 503 source reads without inventing empty work, including forced callers', async () => {
+    const key = scope();
+    const stop = subscribeUnifiedMyWork(key, () => {});
+    const unavailable = Object.assign(new Error('EOS unavailable'), {
+      response: { status: 503 },
+    });
+    api.get.mockRejectedValueOnce(unavailable);
+    await expect(readUnifiedMyWork(key, expected())).rejects.toBe(unavailable);
+    await expect(readUnifiedMyWork(key, expected(), { force: true })).rejects.toBe(unavailable);
+    expect(api.get).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('permits a fresh EOS 503 recovery read after source-confirmed invalidation', async () => {
+    const key = scope();
+    const stop = subscribeUnifiedMyWork(key, () => {});
+    const unavailable = Object.assign(new Error('EOS unavailable'), {
+      response: { status: 503 },
+    });
+    api.get.mockRejectedValueOnce(unavailable).mockResolvedValueOnce(response());
+    await expect(readUnifiedMyWork(key, expected())).rejects.toBe(unavailable);
+    expect(invalidateUnifiedMyWork(key)).toBe(true);
+    expect((await readUnifiedMyWork(key, expected())).summary.active_count).toBe(1);
+    expect(api.get).toHaveBeenCalledTimes(2);
+    stop();
+  });
+
   it('rejects an out-of-date response after the final consumer unmounts', async () => {
     const key = scope();
     const pending = deferred();
@@ -227,7 +257,7 @@ describe('one EOS source-owned My Work read for current authenticated scope', ()
 
 /*
  * ARTIFACT: unifiedMyWorkSync.test.js
- * VERSION: v1.0.1-CURRENT-SCOPE-CHANGELOG-ALIGNMENT
+ * VERSION: v1.1.0-BOUNDED-503-RECOVERY-CERT
  * AUTHORITY BOUNDARY: Synthetic client read-coordination certificate only.
  * TENANT POSTURE: Explicit principal, tenant and session revision isolation.
  * FAIL-CLOSED POSTURE: Unknown, stale or invalidated work is never accepted.
