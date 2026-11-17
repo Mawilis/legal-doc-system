@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.5.0-DYNAMIC-ACCOUNT-MENU-BROWSER-CERT
+ * VERSION: v3.6.0-EXPLICIT-BRIEFING-OPERATING-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,8 +13,11 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-15.
+ * CHANGELOG: v3.6.0-EXPLICIT-BRIEFING-OPERATING-CERT explicitly opens the verified
+ *          optional work briefing before asserting it renders. The
+ *          compact default and source-backed assertions are retained.
  * CHANGELOG: v3.3.0-SEARCH-OWNER-FOCUS-BROWSER-CERT verifies no-owner fallback open/Escape/backdrop focus and live Headquarters delegation at desktop/mobile.
- * CHANGELOG: v3.5.0-DYNAMIC-ACCOUNT-MENU-BROWSER-CERT verifies exact synthetic principal, tenant and selected capacity identity, unsupported-action omission, Escape focus return, and outside dismissal at desktop/mobile.
+ * CHANGELOG: v3.6.0-EXPLICIT-BRIEFING-OPERATING-CERT verifies exact synthetic principal, tenant and selected capacity identity, unsupported-action omission, Escape focus return, and outside dismissal at desktop/mobile.
  * CHANGELOG: v3.4.0-TOPBAR-IDENTITY-ACCOUNT-BROWSER-CERT verifies session-projected identity, transport wording, account-menu availability, no-owner fallback focus, and live Headquarters delegation at desktop/mobile.
  * CHANGELOG: v3.2.0-GLOBAL-SEARCH-DELEGATION-BROWSER-CERT verifies desktop/mobile header search delegates to the admitted Headquarters search owner.
  * CHANGELOG: v3.1.0-GLOBAL-SEARCH-FOCUS-BROWSER-CERT verifies authenticated desktop/mobile header search focus return.
@@ -350,6 +353,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(panel).toBeVisible();
       const triage = panel.locator('[data-attention-production-ui="true"]');
       await expect(triage).toBeVisible();
+      const showBriefing = triage.getByRole('button', {name: 'Show briefing'});
+      await expect(showBriefing).toBeVisible();
+      await showBriefing.click();
       await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toBeVisible();
       await expect(triage.getByRole('region', {name: 'Attention inbox'})).toBeVisible();
       const row = triage.getByRole('button', {name: 'Inspect ' + title});
@@ -838,7 +844,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.5.0-DYNAMIC-ACCOUNT-MENU-BROWSER-CERT
+// VERSION: v3.6.0-EXPLICIT-BRIEFING-OPERATING-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
