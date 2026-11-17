@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.7.0-ALIGNED-CALENDAR-PROJECT-EXECUTION
+ * VERSION: v1.8.0-EOS-PROJECT-CODE-READBACK
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.8.0-EOS-PROJECT-CODE-READBACK removes mandatory
+ *            manual code entry from new-project creation, documents EOS
+ *            generation and permits verified one-click code assignment
+ *            for legacy null-code projects via revision-guarded PATCH.
  * CHANGELOG: v1.7.0-ALIGNED-CALENDAR-PROJECT-EXECUTION makes both
  *            project panels a coordinated execution surface and provides
  *            explicit native date picker actions in create and edit flows.
@@ -125,6 +129,18 @@ function ProjectDateField({ label, value, onChange, disabled = false }) {
       </button>
     </span>
   </label>;
+}
+
+/**
+ * @description Derive the same user-facing code as Python EOS for an existing
+ * legacy project whose code was never assigned.
+ * @authority Client derivation is a proposal; only a revision-guarded EOS
+ * patch and independent list/detail readback establish saved code truth.
+ */
+function suggestedProjectCode(projectId) {
+  return typeof projectId === 'string' && /^prj-[0-9a-f]{48}$/.test(projectId)
+    ? 'PRJ-' + projectId.slice(-16).toUpperCase()
+    : null;
 }
 
 const PROJECT_STATUSES = ['planned', 'active', 'on_hold', 'done', 'cancelled'];
@@ -504,6 +520,32 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     });
   };
 
+  const assignGeneratedCode = async () => {
+    if (!detail?.project || !selectedId || detail.project.code || sourceState !== 'READY') return;
+    const current = detail.project;
+    const generated = suggestedProjectCode(current.project_id);
+    if (!generated) {
+      setCommandError('PROJECT_CODE_SOURCE_INVALID');
+      return;
+    }
+    await runCommand(async () => {
+      const response = await api.patch(`/projects/${encodeURIComponent(selectedId)}`, {
+        expected_revision: current.revision,
+        code: generated,
+      }, { headers: { ...tenantHeaders, 'Idempotency-Key': newIdempotencyKey() } });
+      const result = assertProjectResult(
+        response?.data, tenantId, principalId, selectedId, current.revision + 1,
+      );
+      if (result.project.code !== generated) throw new Error('PROJECT_CODE_COMMAND_READBACK_INVALID');
+      const projection = await refresh();
+      if (!projection?.items.some(item => item.project_id === selectedId
+        && item.revision === result.project.revision && item.code === generated)) {
+        throw new Error('PROJECT_CODE_LIST_READBACK_UNAVAILABLE');
+      }
+      if (!await openProject(selectedId)) throw new Error('PROJECT_CODE_DETAIL_READBACK_UNAVAILABLE');
+    });
+  };
+
   const transitionStatus = async (nextStatus) => {
     if (!detail?.project || !selectedId || !PROJECT_STATUSES.includes(nextStatus) || nextStatus === detail.project.status) return;
     const current = detail.project;
@@ -574,7 +616,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             <form onSubmit={submitCreate} className="wp-form space-y-4 p-4 sm:p-5" aria-labelledby="project-create-title">
               <div className="flex items-start justify-between gap-3"><div><h2 id="project-create-title" className="text-lg font-bold text-slate-900">Create project</h2><p className="mt-1 text-sm text-slate-600">EOS validates authority and confirms the persisted project before it appears in the list.</p></div><button type="button" aria-label="Cancel project creation" onClick={() => { setMode('LIST'); setCommandError(''); }} disabled={commandState === 'PENDING'} className="wp-close rounded-md p-2 text-slate-600 hover:bg-slate-100"><X size={18}/></button></div>
               <label className="block text-sm font-semibold text-slate-800">Project name<input required maxLength={180} value={draft.name} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, name: event.target.value }))} aria-invalid={commandError === 'PROJECT_NAME_REQUIRED' || commandError === 'PROJECT_INPUT_INVALID'} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/>{commandError === 'PROJECT_NAME_REQUIRED' && <span className="mt-1 block text-xs font-normal text-rose-700">Enter a project name.</span>}{commandError === 'PROJECT_INPUT_INVALID' && <span className="mt-1 block text-xs font-normal text-rose-700">Check the project name and date fields. Your draft is preserved.</span>}</label>
-              <label className="block text-sm font-semibold text-slate-800">Code <span className="font-normal text-slate-500">(optional)</span><input maxLength={80} value={draft.code} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, code: event.target.value }))} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/></label>
+              <p className="wp-code-hint" role="note">Project code: assigned automatically by Python EOS when the project is created. No manual code is required.</p>
               <label className="block text-sm font-semibold text-slate-800">Summary <span className="font-normal text-slate-500">(optional)</span><textarea maxLength={4000} rows={3} value={draft.summary} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, summary: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/></label>
               <div className="wp-form-grid">
                 <ProjectDateField label="Start" value={draft.start_date} disabled={commandState === 'PENDING'}
@@ -597,9 +639,22 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           {detailState === 'LOADING' && <p role="status" className="text-sm text-slate-600">Loading project and audit events…</p>}
           {detailState === 'ERROR' && <p role="alert" className="text-sm text-rose-700">{commandError === 'ACCESS_DENIED' ? 'EOS denied this project detail read.' : 'Project detail is unavailable. Retry the read.'}<button type="button" onClick={() => void openProject(selectedId)} className="ml-2 font-semibold underline">Retry</button></p>}
           {detailState === 'READY' && detail && <div className="wp-detail-inner">
-            <dl className="wp-facts mb-4 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-slate-200 pb-4 text-sm"><dt className="text-slate-500">Code</dt><dd className="break-words text-slate-900">{detail.project.code || 'Not recorded'}</dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are unassigned until separately authorized assignment workflows are established.</p>
+            <dl className="wp-facts mb-4 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-slate-200 pb-4 text-sm"><dt className="text-slate-500">Code</dt><dd className="break-words text-slate-900">
+              {detail.project.code || 'Not recorded'}
+              {!detail.project.code && <button type="button"
+                className="wp-code-action"
+                onClick={() => void assignGeneratedCode()}
+                disabled={commandState === 'PENDING' || sourceState !== 'READY'}
+              >Generate and save code</button>}
+            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are unassigned until separately authorized assignment workflows are established.</p>
             {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
-            <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code<input maxLength={80} value={edit?.code || ''} onChange={(event) => setEdit({ ...edit, code: event.target.value })} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
+            <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code <span className="wp-code-optional">(optional override)</span>
+                <input maxLength={80} value={edit?.code || ''}
+                  placeholder="Automatically assigned by EOS"
+                  onChange={event => setEdit({ ...edit, code: event.target.value })}
+                  className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/>
+                <small className="wp-code-hint">A stable project reference, not the system project ID. Existing legacy projects can generate one above; do not enter a code to activate the project.</small>
+              </label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
                 <ProjectDateField label="Start" value={edit?.start_date || ''} disabled={commandState === 'PENDING'}
                   onChange={value => setEdit(current => ({ ...current, start_date: value }))}/>
                 <ProjectDateField label="Target" value={edit?.target_date || ''} disabled={commandState === 'PENDING'}
@@ -617,7 +672,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.7.0-ALIGNED-CALENDAR-PROJECT-EXECUTION
+// VERSION: v1.8.0-EOS-PROJECT-CODE-READBACK
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
