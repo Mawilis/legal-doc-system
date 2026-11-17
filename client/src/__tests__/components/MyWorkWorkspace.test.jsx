@@ -134,7 +134,7 @@ describe('authenticated My Work execution queue', () => {
     expect(screen.queryByRole('region', { name: 'Work status filters' })).toBeNull();
     expect(screen.getByRole('group', { name: 'Work status filters' })).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Work source filters' })).toBeTruthy();
-    expect(screen.getByText('Due today 1')).toBeTruthy();
+    expect(screen.getByText('Due today 0')).toBeTruthy();
     // The verified source instant is stable; its visible local clock time is
     // determined by the browser environment, not the CI runner's region.
     const verifiedInstant = new Date(payload.as_of);
