@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.3.0-FOUNDER-APPROVED-CONTENT-ADMISSION
+ * VERSION: v1.4.0-APPROVED-SOURCE-READABLE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.4.0-APPROVED-SOURCE-READABLE exposes the already
+ *            Founder-approved v1.1.0 source text to EOS-authorized readers
+ *            while distinguishing EOS pending publication. Source-owned
+ *            author and publisher permissions remain unchanged.
  * CHANGELOG: v1.3.0-FOUNDER-APPROVED-CONTENT-ADMISSION maps the two supplied
  *            Founder-approved v1.1.0 PDFs into exact private draft proposals.
  *            The PDF fingerprints identify source files, never EOS publication.
@@ -314,7 +318,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
       <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button></div>
       <div className={styles.body}>
-        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{document && !error && !loading && tab === 'document' ? document.sections.map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
+        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
         <div className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
           {error && <section className={styles.notice} role="alert" data-document-state={error.kind}>
@@ -338,7 +342,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       : document?.state === 'PUBLISHED' ? 'Official publication'
                         : authorDraft ? 'Draft under review'
                           : submittedDraft ? 'Awaiting independent approval'
-                            : 'No official publication'}</strong>
+                            : 'Founder-approved source · EOS publication pending'}</strong>
                     <span>{editorOpen ? 'Unpublished · editing in your current session'
                       : query.review ? 'Private authorised source view'
                         : 'Public source view · verified by EOS'}</span>
@@ -363,13 +367,21 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   </div>
                   {!draftPermitted && !reviewPermitted && !actions.includes('SUBMIT')
                     && !actions.includes('PUBLISH') && <p className={styles.permissionNotice}>
-                      Current EOS permissions allow reading this source, not authoring or publishing.
+                      Your current EOS permission allows reading this Founder-approved source, not creating a revision or publishing it.
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
                 </nav>
                 <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
-                {!document ? <section className={styles.unpublished} data-document-state="NOT_YET_PUBLISHED"><BookOpen size={34}/><span className={styles.state}>VERIFIED SOURCE · NO APPROVED PUBLICATION</span><h2>Not yet published</h2><p>The verified company source currently has no approved {classification === 'MISSION' ? 'Mission' : 'Strategy'} publication available for this view. An authorized author may prepare a private draft; a different authorized approver must publish it before it becomes official.</p><p className={styles.boundaryNote}>{actions.includes('CREATE_DRAFT') ? 'Your current source permission permits draft preparation below.' : 'Draft preparation and publication controls appear only when EOS authorizes them for your current capacity.'}</p></section>
-                  : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
+                {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
+                  <div className={styles.documentIdentity}>
+                    <span>{classification} · FOUNDER-APPROVED SOURCE · VERSION {FOUNDER_APPROVED_SOURCE[classification].document_version}</span>
+                    <h2>{FOUNDER_APPROVED_SOURCE[classification].title}</h2>
+                    <p>WILSY (Pty) Ltd · Founder content approved · EOS publication pending</p>
+                    <p className={styles.boundaryNote}>This is the existing Founder-approved corporate document, not an EOS-published revision. Its wording comes from the supplied source PDF. Publication and independent publisher authority remain pending; no operational execution metrics are inferred.</p>
+                  </div>
+                  {FOUNDER_APPROVED_SOURCE[classification].sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p style={{ whiteSpace: 'pre-line' }}>{section.body}</p></section>)}
+                  <footer className={styles.fingerprint}><span>Founder-approved PDF source · SHA3-512 (not an EOS revision fingerprint)</span><code>{FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512}</code></footer>
+                </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
                 <section className={styles.execution}><h2>Business execution</h2><p>The document source does not yet publish governed objective, project or work-item relationships. No owners, objectives or progress percentages are inferred.</p><button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button></section>
                 {editorOpen && draftPermitted && <form className={styles.form}
                   aria-label="Company private draft editor"
@@ -443,7 +455,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.3.0-FOUNDER-APPROVED-CONTENT-ADMISSION
+// VERSION: v1.4.0-APPROVED-SOURCE-READABLE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
