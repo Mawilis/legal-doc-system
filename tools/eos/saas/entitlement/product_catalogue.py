@@ -4,7 +4,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS canonical tenant-selectable product catalogue.
 
 TITLE: Tenant Product Catalogue
-VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE
+VERSION: v1.2.0-PER-PRODUCT-FINGERPRINT-STABILITY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Own the immutable closed catalogue of tenant-selectable WILSY OS
          product modules without granting entitlement, IAM authority,
@@ -16,7 +16,12 @@ COLLABORATION / OWNERSHIP: Python EOS owns product identity/catalogue truth.
                             D22B1/D22B2 own tenant product entitlement lifecycle;
                             WILSY AI and Tenant Branding remain
                             separate VAS domains; IAM owns principal authority.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-PER-PRODUCT-FINGERPRINT-STABILITY pins each existing
+           product descriptor to its original v1.0.0 identity and Projects
+           to its v1.1.0 introduction identity. Adding catalogue entries
+           must not invalidate already-issued immutable tenant entitlements;
+           unknown/mismatched descriptor versions still reject.
 CHANGELOG: v1.1.0-PROJECTS-PRODUCT-CATALOGUE adds one canonical Projects product identity for independently entitled internal and customer-tenant workspaces; no tenant entitlement or permission is granted.
            v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE establishes the first closed
            tenant-selectable product catalogue for Legal Operations, Billing,
@@ -53,7 +58,22 @@ import json
 from typing import Any, Final, cast
 
 
-VERSION: Final[str] = "v1.1.0-PROJECTS-PRODUCT-CATALOGUE"
+VERSION: Final[str] = "v1.2.0-PER-PRODUCT-FINGERPRINT-STABILITY"
+_LEGACY_DESCRIPTOR_VERSION: Final[str] = "v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE"
+_PROJECTS_DESCRIPTOR_VERSION: Final[str] = "v1.1.0-PROJECTS-PRODUCT-CATALOGUE"
+
+
+def _descriptor_version(product_id: "TenantProductId") -> str:
+    """Pin immutable product identity to its issuance-era catalogue version.
+
+    New products get their own exact version; this pure mapping changes no
+    persisted entitlement, tenant, IAM or financial authority.
+    """
+    return (
+        _PROJECTS_DESCRIPTOR_VERSION
+        if product_id is TenantProductId.PROJECTS
+        else _LEGACY_DESCRIPTOR_VERSION
+    )
 SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-CATALOGUE/V1"
 CATALOGUE_IDENTITY: Final[str] = "WILSY_TENANT_PRODUCT_CATALOGUE"
 
@@ -162,6 +182,7 @@ def _digest(payload: Mapping[str, object]) -> str:
 
 def _canonical_payload(
     *,
+    catalogue_version: str,
     product_id: TenantProductId,
     label: str,
     workspace_key: str,
@@ -172,7 +193,7 @@ def _canonical_payload(
     return {
         "schema": SCHEMA,
         "catalogue_identity": CATALOGUE_IDENTITY,
-        "catalogue_version": VERSION,
+        "catalogue_version": catalogue_version,
         "product_id": product_id.value,
         "label": label,
         "workspace_key": workspace_key,
@@ -218,7 +239,7 @@ class TenantProductDescriptor:
         if (
             self.schema != SCHEMA
             or self.catalogue_identity != CATALOGUE_IDENTITY
-            or self.catalogue_version != VERSION
+            or self.catalogue_version != _descriptor_version(product_id)
         ):
             raise TenantProductCatalogueError("D22A_IDENTITY_INVALID")
 
@@ -240,6 +261,7 @@ class TenantProductDescriptor:
             raise TenantProductCatalogueError("D22A_CALLER_VALUE_OVERRIDE")
 
         payload = _canonical_payload(
+            catalogue_version=self.catalogue_version,
             product_id=product_id,
             label=label,
             workspace_key=workspace_key,
@@ -264,6 +286,7 @@ class TenantProductDescriptor:
     def to_dict(self) -> dict[str, object]:
         """Return the exact detached descriptor suitable for evidence transport."""
         payload = _canonical_payload(
+            catalogue_version=self.catalogue_version,
             product_id=cast(TenantProductId, self.product_id),
             label=self.label,
             workspace_key=self.workspace_key,
@@ -318,6 +341,7 @@ def hydrate_tenant_product(
 _CATALOGUE: Final[dict[TenantProductId, TenantProductDescriptor]] = {
     product_id: TenantProductDescriptor(
         product_id=product_id,
+        catalogue_version=_descriptor_version(product_id),
         label=cast(str, values["label"]),
         workspace_key=cast(str, values["workspace_key"]),
         required_products=cast(tuple[TenantProductId, ...], values["required_products"]),
@@ -339,7 +363,7 @@ __all__ = [
 ]
 
 # ARTIFACT: product_catalogue.py
-# VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE
+# VERSION: v1.2.0-PER-PRODUCT-FINGERPRINT-STABILITY
 # AUTHORITY BOUNDARY: product catalogue description only; no tenant entitlement or IAM authority
 # TENANT POSTURE: global catalogue facts only; no tenant identity is inferred or mutated
 # FAIL-CLOSED POSTURE: unknown products, descriptor drift and VAS leakage reject
