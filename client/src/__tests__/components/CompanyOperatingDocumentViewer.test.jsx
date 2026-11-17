@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.1.0-DOCUMENT-SESSION-FAILURE-CERT
+ * VERSION: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v1.1.0-DOCUMENT-SESSION-FAILURE-CERT covers classified source/auth failures,
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT verifies
+ *            EOS-authorized draft entry, multi-section reorder/remove,
+ *            unpublished private preview and denied-command exclusion.
+ * CHANGELOG: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT covers classified source/auth failures,
  * explicit recovery, stale capacity/tenant/session reads and unauthorized controls.
  * CHANGELOG: v1.0.0-COMPANY-DOCUMENT-VIEWER-CERT establishes focused regression gates.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -186,11 +189,50 @@ describe('governed company document experience', () => {
     expect(await screen.findByText('Synthetic source content only.')).toBeVisible();
     expect(screen.queryByText('No permitted revisions are available.')).not.toBeInTheDocument();
   });
+  it('brings source-admitted company document actions forward and edits an unpublished multi-section proposal', async () => {
+    api.get.mockResolvedValue({ data: view(null, ['READ_HISTORY', 'CREATE_DRAFT', 'REVIEW_DRAFTS']) });
+    render(wrap());
+    await screen.findByRole('heading', { name: 'Not yet published' });
+    const deck = screen.getByRole('navigation', { name: 'Company document actions' });
+    expect(deck).toBeVisible();
+    expect(deck).toHaveTextContent('No official publication');
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare draft' }));
+    const editor = screen.getByRole('form', { name: 'Company private draft editor' });
+    expect(editor).toBeVisible();
+    fireEvent.change(screen.getByLabelText('Document title'), { target: { value: 'Proposed mission' } });
+    fireEvent.change(screen.getByLabelText('Document version'), { target: { value: '1.0.0' } });
+    fireEvent.change(screen.getByLabelText('Section title'), { target: { value: 'Purpose' } });
+    fireEvent.change(screen.getByLabelText('Proposed content'), { target: { value: 'Serve customers with verified outcomes.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
+    expect(screen.getByText('2 sections', { exact: false })).toBeVisible();
+    const titles = screen.getAllByLabelText('Section title');
+    const bodies = screen.getAllByLabelText('Proposed content');
+    fireEvent.change(titles[1], { target: { value: 'Principles' } });
+    fireEvent.change(bodies[1], { target: { value: 'Accountability and clarity.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Move section 2 up' }));
+    expect(screen.getAllByLabelText('Section title')[0]).toHaveValue('Principles');
+    fireEvent.click(screen.getByRole('button', { name: 'Preview draft' }));
+    expect(screen.getByRole('region', { name: 'Unpublished draft preview' })).toHaveTextContent('Proposed mission');
+    expect(screen.getByText('UNPUBLISHED PREVIEW · NOT COMPANY POLICY')).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit document' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove section 2' }));
+    expect(screen.getAllByLabelText('Section title')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Save private draft to EOS' })).toBeEnabled();
+  });
+  it('keeps author and publisher commands absent when EOS admits only reading', async () => {
+    render(wrap());
+    await screen.findByRole('heading', { name: 'Not yet published' });
+    expect(screen.getByText(/Current EOS permissions allow reading this source/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Prepare draft' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save private draft to EOS' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
   it('uses stable commands, blocks duplicate clicks and claims success only after independent readback', async () => {
     api.get.mockResolvedValue({ data: view(null, ['READ_HISTORY', 'CREATE_DRAFT', 'REVIEW_DRAFTS']) });
     render(wrap()); await fillDraft();
     const ack = deferred(); api.post.mockImplementation(() => ack.promise);
-    fireEvent.click(screen.getByRole('button', { name: 'Save private draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save private draft to EOS' }));
     expect(screen.queryByText(/EOS confirmed the command/)).not.toBeInTheDocument();
     expect(api.post).toHaveBeenCalledTimes(1);
     const saved = record('MISSION', 'DRAFT', 1); api.get.mockResolvedValue({ data: view(saved, ['READ_HISTORY', 'SUBMIT'], true) });
@@ -204,7 +246,7 @@ describe('governed company document experience', () => {
     api.get.mockResolvedValue({ data: view(null, ['CREATE_DRAFT']) }); render(wrap()); await fillDraft();
     api.post.mockResolvedValue(receipt(record('MISSION', 'DRAFT', 1)));
     api.get.mockResolvedValue({ data: view(null, [], true) });
-    fireEvent.click(screen.getByRole('button', { name: 'Save private draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save private draft to EOS' }));
     expect(await screen.findByRole('heading', { name: 'Command recorded; current readback unverified' })).toBeVisible();
     expect(screen.queryByText(/EOS confirmed the command/)).not.toBeInTheDocument();
   });
@@ -238,7 +280,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.1.0-DOCUMENT-SESSION-FAILURE-CERT
+// VERSION: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
