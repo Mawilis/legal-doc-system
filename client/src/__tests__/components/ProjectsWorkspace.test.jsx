@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.3.0-FLUID-PROJECT-DETAIL-PRESENTATION-CERT
+ * VERSION: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT verifies
+ *            visible Start and Target native calendar picker actions
+ *            and ISO date-only values without premature EOS mutation.
  * CHANGELOG: v1.3.0-FLUID-PROJECT-DETAIL-PRESENTATION-CERT proves
  *            full-width list, selected detail layout, safe formatted scope
  *            in both collapsed and expanded modes, and sourced null values.
@@ -142,6 +145,42 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByLabelText('Project code')).toHaveValue('');
     fireEvent.click(screen.getByRole('button', { name: 'Close project details' }));
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
+  });
+
+  it('exposes native calendar pickers and preserves exact source-backed date drafts', async () => {
+    const current = project({ name: 'Scheduled milestone', target_date: null });
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([current]) };
+      if (path === '/projects/summary') return { data: summary([current]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(current) };
+      throw new Error('Unexpected EOS read');
+    });
+    const pickerSpy = vi.fn();
+    const originalShowPicker = HTMLInputElement.prototype.showPicker;
+    HTMLInputElement.prototype.showPicker = pickerSpy;
+    try {
+      const { container } = render(<ProjectsWorkspace tenantId={TENANT}
+        principalId={PRINCIPAL} sessionScope="date-picker-cert"/>);
+      await screen.findByText('1 shown · 1 verified');
+      fireEvent.click(screen.getByRole('button', { name: 'Persisted roadmap' }));
+      await screen.findByRole('heading', { name: 'Scheduled milestone' });
+      expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
+      const start = screen.getByLabelText('Start date');
+      const target = screen.getByLabelText('Target date');
+      expect(start).toHaveAttribute('type', 'date');
+      expect(target).toHaveAttribute('type', 'date');
+      fireEvent.click(screen.getByRole('button', { name: 'Choose start date' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Choose target date' }));
+      expect(pickerSpy).toHaveBeenCalledTimes(2);
+      fireEvent.change(start, { target: { value: '2026-11-18' } });
+      fireEvent.change(target, { target: { value: '2026-12-15' } });
+      expect(start).toHaveValue('2026-11-18');
+      expect(target).toHaveValue('2026-12-15');
+      expect(api.patch).not.toHaveBeenCalled();
+    } finally {
+      if (originalShowPicker) HTMLInputElement.prototype.showPicker = originalShowPicker;
+      else delete HTMLInputElement.prototype.showPicker;
+    }
   });
 
   it('creates, reads, updates, changes status, archives and reads back through EOS routes', async () => {
@@ -290,7 +329,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.3.0-FLUID-PROJECT-DETAIL-PRESENTATION-CERT
+ * VERSION: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
