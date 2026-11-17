@@ -3,6 +3,7 @@
  * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
  * VERSION: v1.22.0-WIDTH-RESPONSIVE-WORKBENCH-LAYOUT
  * AUTHORITY: Wilsy OS Core Governance
