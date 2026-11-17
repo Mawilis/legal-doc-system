@@ -33,6 +33,8 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
+import pytest
+
 from fastapi.routing import APIRoute
 
 from tools.eos.api import server
