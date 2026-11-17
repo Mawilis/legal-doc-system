@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.8.0-SOURCE-AUDITED-CANCEL-CERT
+ * VERSION: v1.9.0-SOURCE-AUDITED-PROGRESS-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.9.0-SOURCE-AUDITED-PROGRESS-CERT proves the
+ *            In Progress state changes only after source command, persisted
+ *            status audit and a fresh authenticated My Work projection.
  * CHANGELOG: v1.8.0-SOURCE-AUDITED-CANCEL-CERT verifies source-owned
  *            cancellation POST, mandatory reason, revision, idempotency,
  *            persisted cancellation event and fresh queue removal.
@@ -322,6 +325,76 @@ describe('authenticated My Work execution queue', () => {
     expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
   });
 
+
+  it('persists In Progress through source, status audit and refreshed active queue', async () => {
+    const item = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-progress',
+      work_item_id: 'crm-progress', title: 'Production follow-up',
+      status: 'OPEN',
+    };
+    const original = {
+      schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+      tenant_id: 'tenant-a', work_item_id: 'crm-progress',
+      title: item.title, description: item.description, kind: 'TASK',
+      status: 'OPEN', priority: 'HIGH', owner_principal_id: 'principal-a',
+      source_type: null, source_id: null, due_at: item.due_at,
+      created_at: '2026-11-01T10:00:00+00:00',
+      updated_at: '2026-11-06T10:00:00+00:00',
+      completed_at: null, completion_note: null,
+    };
+    const progressed = {
+      ...original, status: 'IN_PROGRESS',
+      updated_at: '2026-11-06T10:20:00+00:00',
+    };
+    const initial = {
+      ...payload, items: [item], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    let committed = false;
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: committed ? {
+        ...initial, items: [{ ...item, status: 'IN_PROGRESS' }],
+      } : initial };
+      if (path === '/crm/owner-workspace/work-items/crm-progress') {
+        return { data: committed ? progressed : original };
+      }
+      if (path.endsWith('/crm-progress/history')) return { data: {
+        schema: 'WILSY-OWNER-COMMERCIAL-WORK-HISTORY/V1',
+        tenant_id: 'tenant-a', work_item_id: 'crm-progress',
+        events: [{ operation: 'STATUS', actor_principal_id: 'principal-a',
+          before: original, after: progressed, recorded_at: progressed.updated_at }],
+      } };
+      throw new Error('UNEXPECTED_PROGRESS_READ');
+    });
+    readAttentionSourceActions.mockResolvedValue({
+      sourceActions: { CRM: ['UPDATE'] }, unavailableSources: [],
+    });
+    api.post.mockImplementation(async (path) => {
+      if (!path.endsWith('/crm-progress/status')) throw new Error('UNEXPECTED_PROGRESS_POST');
+      committed = true;
+      return { data: progressed };
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Production follow-up');
+    await screen.findByText('Persisted source record verified for this tenant');
+    const select = await screen.findByRole('combobox', { name: 'CRM work status' });
+    fireEvent.change(select, { target: { value: 'IN_PROGRESS' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update status' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items/crm-progress/status',
+      { status: 'IN_PROGRESS', expected_updated_at: original.updated_at },
+      expect.objectContaining({ headers: { 'Idempotency-Key': expect.any(String) } }),
+    ));
+    await waitFor(() => expect(screen.getByText('In Progress')).toBeTruthy());
+    expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
+  });
+
   it('never exposes CRM edit when current EOS source permission is absent', async () => {
     const item = {
       ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-denied',
@@ -568,7 +641,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.8.0-SOURCE-AUDITED-CANCEL-CERT
+ * VERSION: v1.9.0-SOURCE-AUDITED-PROGRESS-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
