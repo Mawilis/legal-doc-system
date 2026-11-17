@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS
+VERSION: v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,6 +14,9 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING binds department idempotency
+  evidence to the exact authorized actor and returns identical successful
+  command shape on replay; retained tenant, entitlement and CAS guards apply.
   v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS establishes independently
   authorized department provisioning, source-verified owner/department choices,
   and revision-guarded, immutable-event-backed owner assignment. No employee,
@@ -133,7 +136,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS"
+VERSION: Final[str] = "v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -827,7 +830,7 @@ def provision_project_department(
         (context.tenant_id + "\0" + name.casefold()).encode("utf-8"),
     ).hexdigest()[:32]
     digest = hashlib.sha3_512(
-        (context.tenant_id + "\0" + name + "\0" + idempotency_key).encode("utf-8"),
+        (context.tenant_id + "\0" + context.identity.identity_id + "\0" + name + "\0" + idempotency_key).encode("utf-8"),
     ).hexdigest()
     def create(_registry: ProjectRegistry, session: Any) -> dict[str, object]:
         database = kernel_db.get_database()
@@ -844,7 +847,7 @@ def provision_project_department(
                 if previous.get("request_fingerprint") != digest or previous.get("department_id") != department_id:
                     raise HTTPException(status_code=409, detail="PROJECT_DEPARTMENT_DIVERGENT_REPLAY")
                 value = _current_department(database, context.tenant_id, department_id, session)
-                return {"tenant_id": context.tenant_id, "department": value, "replayed": True}
+                return {"tenant_id": context.tenant_id, "department": value, "replayed": False}
             record = {
                 "_id": context.tenant_id + ":" + department_id,
                 "tenant_id": context.tenant_id, "department_id": department_id,
@@ -1072,7 +1075,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS
+# VERSION: v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
