@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.12.0-PERSISTED-CRM-EDIT-CONFIRMATION
+ * VERSION: v1.12.1-SINGLE-AUDITED-EDIT-ANNOUNCEMENT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.12.1-SINGLE-AUDITED-EDIT-ANNOUNCEMENT removes
+ *            the duplicate transient editor success message; the scoped
+ *            parent dialog alone announces the source/audit/queue-confirmed
+ *            result after detail remount and session revalidation.
  * CHANGELOG: v1.12.0-PERSISTED-CRM-EDIT-CONFIRMATION retains a
  *            source/audit/aggregate-confirmed edit receipt in the scoped
  *            My Work dialog across the necessary source-detail remount.
@@ -936,7 +940,7 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
     if (!activeRef.current) return;
     setReceipt(null);
     setEditing(false);
-    setStatus('CRM edit confirmed by source, audit history and fresh My Work.');
+    setStatus('');
   };
   const submit = async (event) => {
     event.preventDefault();
@@ -1101,7 +1105,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.12.0-PERSISTED-CRM-EDIT-CONFIRMATION
+ * VERSION: v1.12.1-SINGLE-AUDITED-EDIT-ANNOUNCEMENT
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
