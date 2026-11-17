@@ -1,12 +1,15 @@
 """TITLE: WILSY OS Tenant Module Manifest HTTP Certificate.
-VERSION: v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT
+VERSION: v1.2.1-PRIVACY-SAFE-MANIFEST-FAILURE-CERT
 AUTHORITY: Repository-owned isolated regression evidence only.
 EPITOME: Prove exact WILSY company separation while preserving customer Legal
 availability, entitlement validation and fail-closed source behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_workspace_module_manifest_http.py
 COLLABORATION / OWNERSHIP: Canonical tenant module projection and authenticated HTTP adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT pins the new
+CHANGELOG: v1.2.1-PRIVACY-SAFE-MANIFEST-FAILURE-CERT verifies stable
+           server-only manifest failure classification while preserving a
+           generic external 503 and exact IAM admission.
+           v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT pins the new
            Projects-aware policy version while requiring unchanged v1
            browser wire schema and independent tenant IAM.
 CHANGELOG: v1.1.0-WILSY-PLATFORM-OWNER-CERT retains all existing assertions and
@@ -262,6 +265,32 @@ def test_module_manifest_http_projection_rejects_foreign_tenant_evidence(monkeyp
     assert client.sessions[0].ended == 1
 
 
+def test_module_manifest_unavailable_reports_stable_server_class_only(monkeypatch, caplog):
+    """Unavailable entitlement source logs a code without exposing tenant data."""
+    import logging
+    from fastapi import HTTPException
+
+    monkeypatch.setattr(
+        auth_router, "build_workspace_bootstrap_projection",
+        lambda **_kwargs: SimpleNamespace(tenant_id=TENANT),
+    )
+    def failed_projection(_tenant_id):
+        raise auth_router.WorkspaceModuleManifestProjectionError(
+            "WORKSPACE_MODULE_MANIFEST_PRODUCT_AUTHORITY_UNAVAILABLE"
+        )
+    monkeypatch.setattr(auth_router, "_workspace_module_manifest_projection", failed_projection)
+    caplog.set_level(logging.ERROR, logger=auth_router.logger.name)
+    with pytest.raises(HTTPException) as rejected:
+        asyncio.run(auth_router.workspace_module_manifest(SimpleNamespace(identity_id="synthetic")))
+    assert rejected.value.status_code == 503
+    assert rejected.value.detail == "Workspace module availability is unavailable."
+    assert any(
+        "failure_class=WORKSPACE_MODULE_MANIFEST_PRODUCT_AUTHORITY_UNAVAILABLE" in record.message
+        for record in caplog.records
+    )
+    assert TENANT not in caplog.text
+
+
 def test_module_manifest_endpoint_revalidates_workspace_before_returning_modules(monkeypatch):
     monkeypatch.setattr(
         auth_router,
@@ -317,7 +346,7 @@ def test_policy_version_does_not_change_the_existing_manifest_wire_schema(monkey
     assert response["workspace"]["moduleManifestVersion"] == CONTRACT_VERSION == "v1.0.0-EOS-TENANT-MODULE-MANIFEST"
 
 # ARTIFACT: test_workspace_module_manifest_http.py
-# VERSION: v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT
+# VERSION: v1.2.1-PRIVACY-SAFE-MANIFEST-FAILURE-CERT
 # AUTHORITY BOUNDARY: Regression evidence only; no IAM/entitlement mutation.
 # TENANT POSTURE: Exact company exclusion and customer Legal preservation.
 # FAIL-CLOSED POSTURE: Foreign or malformed source evidence never passes.
