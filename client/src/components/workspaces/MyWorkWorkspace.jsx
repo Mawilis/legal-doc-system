@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.20.0-EXPLICIT-EOS-ACTION-ADMISSION
+ * VERSION: v1.21.0-MODELESS-INDEPENDENT-DESKTOP-WORKBENCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.21.0-MODELESS-INDEPENDENT-DESKTOP-WORKBENCH keeps
+ *            the draggable/resizable record independently operable without
+ *            blocking the desktop work queue; mobile retains a modal,
+ *            fullscreen focus-trapped detail view. Desktop focus, Escape and
+ *            background interaction remain bounded to the active workbench.
  * CHANGELOG: v1.20.0-EXPLICIT-EOS-ACTION-ADMISSION shows verification,
  *            denial and outage of CRM UPDATE permission instead of silently
  *            hiding status actions. A recheck calls the existing EOS source
@@ -586,13 +591,15 @@ export default function MyWorkWorkspace(props = {}) {
   useEffect(() => {
     if (!selectedKey) return undefined;
     const onKeyDown = (event) => {
+      const modeless = window.innerWidth >= 768;
+      const dialog = document.getElementById('my-work-detail-dialog');
+      if (modeless && !dialog?.contains(document.activeElement)) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         requestClose();
         return;
       }
-      if (event.key !== 'Tab') return;
-      const dialog = document.getElementById('my-work-detail-dialog');
+      if (event.key !== 'Tab' || modeless) return;
       const focusable = dialog?.querySelectorAll(
         'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
       );
@@ -909,16 +916,16 @@ export default function MyWorkWorkspace(props = {}) {
       </main>
 
       {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/55" onMouseDown={(event) => {
+        <div className="fixed inset-0 z-50 bg-black/55 md:pointer-events-none md:bg-transparent" onMouseDown={(event) => {
           if (event.target === event.currentTarget) requestClose();
         }}>
-          <aside id="my-work-detail-dialog" role="dialog" aria-modal="true"
+          <aside id="my-work-detail-dialog" role="dialog" aria-modal={typeof window === "undefined" || window.innerWidth < 768}
             aria-labelledby="my-work-detail-title" aria-describedby="my-work-detail-description"
             style={workbench && typeof window !== 'undefined' && window.innerWidth >= 768 ? {
               left: workbench.x, top: workbench.y,
               width: workbench.width, height: workbench.height,
             } : undefined}
-            className="absolute inset-0 flex w-full flex-col overflow-y-auto rounded-none border border-white/10 bg-[#101b2b] shadow-2xl outline-none md:inset-auto md:min-h-80 md:rounded-xl md:ring-1 md:ring-amber-300/20">
+            className="pointer-events-auto absolute inset-0 flex w-full flex-col overflow-y-auto rounded-none border border-white/10 bg-[#101b2b] shadow-2xl outline-none md:inset-auto md:min-h-80 md:rounded-xl md:ring-1 md:ring-amber-300/20">
             <div role="separator" aria-orientation="vertical" aria-label="Resize work details"
               tabIndex={0} title="Drag to resize the workbench"
               onPointerDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
@@ -1600,7 +1607,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.20.0-EXPLICIT-EOS-ACTION-ADMISSION
+ * VERSION: v1.21.0-MODELESS-INDEPENDENT-DESKTOP-WORKBENCH
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
