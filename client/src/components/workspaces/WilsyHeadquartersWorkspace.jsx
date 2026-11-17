@@ -1107,7 +1107,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
         <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue {snapshot ? '(' + overdueCount + ')' : ''}</button>
         <button type="button" aria-pressed={view === 'OPEN'} onClick={() => { setSource('ALL'); onViewChange(view === 'OPEN' ? 'ALL' : 'OPEN'); }}>Open {snapshot ? '(' + openCount + ')' : ''}</button>
         <button type="button" aria-pressed={view === 'IN_PROGRESS'} onClick={() => { setSource('ALL'); onViewChange(view === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS'); }}>In Progress {snapshot ? '(' + progressCount + ')' : ''}</button>
-        {snapshot?.sources_included.includes('CRM') && <button type="button" title="Saved drafts require a separate owner-scoped EOS read" onClick={() => onOpen()}>Saved drafts</button>
+        {snapshot?.sources_included.includes('CRM') && <button type="button" title="Saved drafts require a separate owner-scoped EOS read" onClick={() => onOpen()}>Saved drafts</button>}
       </div>
       <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>
       {snapshot && (loading || error) && (
