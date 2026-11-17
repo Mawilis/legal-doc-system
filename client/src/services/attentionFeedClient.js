@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.5.0-CANONICAL-SOURCE-WORK-TEXT
+ * VERSION: v1.6.0-GOVERNED-CRM-EDIT-CAPABILITY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: AuthContext establishes the authenticated session;
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.6.0-GOVERNED-CRM-EDIT-CAPABILITY validates optional
+ *          CRM UPDATE admission only for CRM, with at most three unique
+ *          source actions; no other module may invent edit authority.
  * CHANGELOG: v1.5.0-CANONICAL-SOURCE-WORK-TEXT trims
  *          optional source-task descriptions to match EOS strict domain
  *          text invariants before submitting the authoritative write.
@@ -182,8 +185,10 @@ function isAttentionActionResponse(data, scope, expectedSource = null) {
   return Object.entries(data.sourceActions).every(([source, actions]) =>
     ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(source)
     && (!expectedSource || source === expectedSource)
-    && Array.isArray(actions) && actions.length > 0 && actions.length <= 2
-    && actions.every((action) => ['CREATE', 'COMPLETE'].includes(action))
+    && Array.isArray(actions) && actions.length > 0
+    && actions.length <= (source === 'CRM' ? 3 : 2)
+    && actions.every((action) => ['CREATE', 'COMPLETE'].includes(action)
+      || (source === 'CRM' && action === 'UPDATE'))
     && new Set(actions).size === actions.length);
 }
 
@@ -297,7 +302,7 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
 }
 
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.5.0-CANONICAL-SOURCE-WORK-TEXT
+// VERSION: v1.6.0-GOVERNED-CRM-EDIT-CAPABILITY
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
