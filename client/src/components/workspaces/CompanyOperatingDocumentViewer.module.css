@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.1.1-DOCUMENT-SOURCE-RECOVERY-STATES
+ * VERSION: v1.2.0-FLUID-GLASS-DOCUMENT-STUDIO
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v1.1.1-DOCUMENT-SOURCE-RECOVERY-STATES provides legible source-status evidence
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.2.0-FLUID-GLASS-DOCUMENT-STUDIO brings glass
+ *            source-state and author controls to the forefront; the
+ *            responsive private document editor has preview, rearrange,
+ *            contextual character counts and reduced empty-state height.
+ * CHANGELOG: v1.2.0-FLUID-GLASS-DOCUMENT-STUDIO provides legible source-status evidence
  * and next steps in the existing drawer without changing its layout contract.
  * CHANGELOG: v1.1.0-OFFICIAL-SQUARE-BRAND-SCALE increases the shared
  * official mark without cropping, distortion or changing document scroll/focus.
@@ -39,8 +43,43 @@
 .revisionRow{display:flex;align-items:center;gap:12px;width:100%;padding:16px 0;border:0;border-bottom:1px solid #e4e7ee;background:transparent;color:#1c365a;text-align:left}.revisionRow>span{flex:1;min-width:0}.revisionRow strong{font-size:12px;display:block}.revisionRow small{display:block;font-size:10px;margin-top:5px}.footer{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #ffffff18;padding:12px 24px;background:#09172d}.footer>span{display:flex;align-items:center;gap:6px;color:#91a6c3;font-size:9px}.footer button{border:1px solid #d3b36566;border-radius:7px;background:#ffffff05;color:#e5ce92;font-size:11px;padding:8px 12px}
 @media(max-width:650px){.viewer{width:100%}.header{padding:15px;gap:10px}.header img{width:52px;height:52px}.header span{font-size:7px;letter-spacing:.07em}.header h1{font-size:22px}.toolbar{padding:9px 12px;gap:6px}.toolbar button{font-size:10px;min-height:35px}.body{display:block;overflow:auto}.contents{border-right:0;border-bottom:1px solid #ffffff15;padding:13px 15px;display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap}.contents>p{margin:0 7px 0 0;font-size:9px}.contents>button{width:auto;margin:0;padding:8px;font-size:10px;white-space:nowrap}.sourceBoundary{display:none}.scroll{overflow:visible;padding:15px}.paper{padding:21px 17px}.documentIdentity h2{font-size:23px}.documentIdentity dl{grid-template-columns:1fr;gap:11px}.documentSection h3{font-size:18px}.documentSection p{font-size:12px;line-height:1.9}.unpublished{padding:25px;min-height:250px}.unpublished h2{font-size:25px}.unpublished p{font-size:12px}.form{padding:17px}.footer{padding:10px 15px}.footer>span{font-size:8px;max-width:65%;line-height:1.7}}
 @media(prefers-reduced-motion:reduce){.spin{animation:none}}
+
+/* Fluid-glass work surfaces remain subordinate to audited EOS source state. */
+.viewer{width:min(1340px,100%);background:linear-gradient(145deg,#0c213a 0%,#09182c 48%,#101d31 100%);box-shadow:-28px 0 100px #010713aa}
+.body{grid-template-columns:minmax(150px,185px) minmax(0,1fr)}
+.scroll{padding:clamp(14px,2.4vw,28px)}
+.commandDeck{position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;margin-bottom:17px;border:1px solid #d7c58b48;border-radius:16px;background:linear-gradient(125deg,#d4e5ff13,#8db4e006 50%,#b7a27315);box-shadow:inset 0 1px #ffffff24,0 18px 32px #02081438;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.commandStatus{display:grid;gap:4px;min-width:160px}.commandStatus strong{font-size:15px;color:#f3f6ff!important}.commandStatus span{font-size:11px;color:#a7bad2}.commandButtons{display:flex;gap:8px;flex-wrap:wrap}
+.commandButtons button{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;background:linear-gradient(150deg,#e0bf7330,#ffffff09);color:#f7dfa2;border:1px solid #d2ac5b68;border-radius:9px;font-size:12px;font-weight:600;transition:background .16s ease,transform .16s ease}
+.commandButtons button:hover:not(:disabled){background:#d7b76f35;transform:translateY(-1px)}
+.permissionNotice{flex-basis:100%;color:#b8c5d8;font-size:11px;line-height:1.7;margin:0}
+.unpublished{min-height:190px;padding:25px 28px;border-color:#b4c9ee37;background:linear-gradient(110deg,#d9e9ff0e,#e6c16c0b);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.unpublished svg{width:26px;height:26px;margin-bottom:12px}
+.unpublished h2{font-size:22px}.unpublished p{line-height:1.7}
+.form{margin-top:14px;border-radius:17px;background:linear-gradient(145deg,#c2d8ff10,#091729ee 70%);border:1px solid #cbdcf43d;box-shadow:inset 0 1px #ffffff20,0 18px 50px #01091848;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.editorHeading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.editorHeading h2{font-size:22px;margin:7px 0!important}.editorHeading p{font-size:12px;line-height:1.6;color:#a8bad3;max-width:540px;margin:0}
+.eyebrow{display:block;letter-spacing:.13em;font-size:10px;font-weight:700;color:#e6c67e}
+.editorHeading>button{border:1px solid #d6bd745c;background:#ffffff0b;color:#f3d99a;border-radius:9px;padding:10px 12px;font-size:11px;white-space:nowrap}
+.editorMeta{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(145px,.5fr);gap:14px;margin-top:18px}
+.editorMeta label{margin:0!important}
+.sectionList fieldset{background:#0b1d31a8;border:1px solid #b3cbe72e;border-radius:12px;padding:17px;margin:14px 0}
+.sectionControls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:8px}
+.sectionControls span{margin-right:auto;font-size:11px;color:#9eb3d0}
+.sectionControls button{border:1px solid #ffffff26;border-radius:7px;background:#ffffff06;color:#cbdcf1;padding:6px 8px;font-size:10px}
+.form textarea{min-height:138px;line-height:1.75;background:#091a2e}
+.editorFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid #ffffff1e;padding-top:12px;margin-top:14px}
+.editorFooter>span{font-size:11px;color:#a9bad0}.editorFooter .actions{margin:0}
+.preview{margin-top:18px;border:1px solid #e8dbb778;border-radius:12px;padding:24px;background:#fffef8;color:#21344c}
+.preview .eyebrow{color:#98702c}.preview h3{font-size:24px;color:#1b304b!important;margin:8px 0}.preview>p{color:#68768b;font-size:11px}
+.preview section{padding:16px 0;border-top:1px solid #dadde2;margin-top:16px}
+.preview h4{font-size:16px;font-weight:700;margin:0 0 10px}.preview section p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.8}
+@media(max-width:800px){.body{grid-template-columns:minmax(125px,155px) minmax(0,1fr)}.commandDeck{align-items:stretch}.editorMeta{grid-template-columns:1fr}.commandButtons{width:100%}}
+@media(max-width:650px){.viewer{width:100%}.commandDeck{padding:13px}.commandButtons button{flex:1;justify-content:center}.editorHeading{flex-direction:column}.editorFooter .actions{width:100%}.editorFooter .actions button{flex:1}.preview{padding:16px}}
+@media(prefers-reduced-motion:reduce){.commandButtons button{transition:none}.commandButtons button:hover:not(:disabled){transform:none}}
+
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.1.1-DOCUMENT-SOURCE-RECOVERY-STATES
+ * VERSION: v1.2.0-FLUID-GLASS-DOCUMENT-STUDIO
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
