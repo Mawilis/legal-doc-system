@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.16.0-RETRIEVABLE-SAVED-DRAFTS
+ * VERSION: v1.17.0-HUMAN-READABLE-WORK-STATUS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.17.0-HUMAN-READABLE-WORK-STATUS renders Draft,
+ *            Open and In Progress as legible source-backed lifecycle states;
+ *            unknown statuses remain unverified rather than invented.
  * CHANGELOG: v1.16.0-RETRIEVABLE-SAVED-DRAFTS lists exact-owner saved
  *            CRM drafts from their source, resumes under independently
  *            verified CRM UPDATE IAM, and reconciles source record, audit
@@ -148,9 +151,14 @@ const formatVerified = (value) => {
     : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 };
 
-const statusLabel = (item) => (
-  typeof item.status === 'string' && item.status.trim() ? item.status : 'Status unavailable'
-);
+const statusLabel = (item) => {
+  const labels = {
+    DRAFT: 'Draft', OPEN: 'Open', IN_PROGRESS: 'In Progress',
+    BLOCKED: 'Blocked', COMPLETED: 'Completed', CANCELLED: 'Cancelled',
+  };
+  return typeof item.status === 'string'
+    ? labels[item.status] || 'Status unavailable' : 'Status unavailable';
+};
 const kindLabel = (item) => (
   typeof item.kind === 'string' && item.kind.trim() ? item.kind : 'Type unavailable'
 );
@@ -1446,7 +1454,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.16.0-RETRIEVABLE-SAVED-DRAFTS
+ * VERSION: v1.17.0-HUMAN-READABLE-WORK-STATUS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
