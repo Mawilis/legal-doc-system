@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.6.0-GOVERNED-CRM-EDIT-CAPABILITY
+ * VERSION: v1.7.0-SOURCE-SAVED-DRAFT-CREATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -9,6 +9,10 @@
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.0-SOURCE-SAVED-DRAFT-CREATION validates explicit
+ *          CRM-only DRAFT initial status and forwards it to the real EOS
+ *          source create endpoint. No other module's create contract changes;
+ *          returned source status is checked, not optimistically fabricated.
  * CHANGELOG: v1.6.0-GOVERNED-CRM-EDIT-CAPABILITY validates optional
  *          CRM UPDATE admission only for CRM, with at most three unique
  *          source actions; no other module may invent edit authority.
@@ -280,7 +284,9 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
     || form.title.length > 240
     || typeof (form.description || '') !== 'string'
     || (form.description || '').length > 4000
-    || !['CRITICAL', 'HIGH', 'NORMAL', 'LOW'].includes(form.priority || 'NORMAL')) {
+    || !['CRITICAL', 'HIGH', 'NORMAL', 'LOW'].includes(form.priority || 'NORMAL')
+    || !['OPEN', 'DRAFT'].includes(form.initial_status || 'OPEN')
+    || (moduleId !== 'CRM' && form.initial_status === 'DRAFT')) {
     throw new Error('ATTENTION_SOURCE_CREATE_INPUT_INVALID');
   }
   const body = {
@@ -289,20 +295,22 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
     kind: 'TASK',
     priority: form.priority || 'NORMAL',
     due_at: form.due_at || null,
+    ...(moduleId === 'CRM' ? { initial_status: form.initial_status || 'OPEN' } : {}),
   };
   const response = await api.post(base + '/work-items', body, {
     headers: { 'Idempotency-Key': idempotencyKey },
   });
   if (!response?.data || response.data.tenant_id !== scope.tenantId
     || typeof response.data.work_item_id !== 'string'
-    || !response.data.work_item_id) {
+    || !response.data.work_item_id
+    || (moduleId === 'CRM' && response.data.status !== (form.initial_status || 'OPEN'))) {
     throw new Error('ATTENTION_SOURCE_CREATE_READBACK_INVALID');
   }
   return response.data;
 }
 
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.6.0-GOVERNED-CRM-EDIT-CAPABILITY
+// VERSION: v1.7.0-SOURCE-SAVED-DRAFT-CREATION
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.
