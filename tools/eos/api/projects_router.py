@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.1.0-PROJECTS-INDEX-READINESS-AND-INPUT-GUARDS
+VERSION: v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. It does not
@@ -15,7 +15,7 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-16.
 CHANGELOG:
-  v1.1.0-PROJECTS-INDEX-READINESS-AND-INPUT-GUARDS — Gates the API on startup index readiness, bounds list/path/idempotency inputs, and maps invalid domain construction to 422. Existing tenant, entitlement, IAM, transaction and readback rules remain intact.
+  v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION — Gates the API on startup index readiness, bounds list/path/idempotency inputs, and maps invalid domain construction to 422. Existing tenant, entitlement, IAM, transaction and readback rules remain intact.
   v1.0.0-PROJECTS-GOVERNED-API — Adds authenticated list, summary, detail,
   create, update/status-transition and soft-archive HTTP operations with exact
   session tenant matching, ACTIVE Projects entitlement, current permission /
@@ -57,6 +57,20 @@ from tools.eos.api.tenant_authorization_http import (
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
+from tools.eos.auth.invitation_creation import create_invitation, InvitationCreationError
+from tools.eos.auth.invited_member_admission import admit_invited_member, InvitedMemberAdmissionError
+from tools.eos.auth.role_assignment_repository import (
+    RoleAssignmentRepository, RoleAssignmentNotFoundError, RoleAssignmentRepositoryError,
+)
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
+from tools.eos.auth.tenant_authorization_decision_evidence_registry import TenantAuthorizationDecisionEvidenceRegistry
+from tools.eos.saas.entitlement.tenant_product_entitlement_issuance_orchestrator import (
+    issue_tenant_product_entitlement, TenantProductEntitlementIssuanceOrchestratorError,
+)
+from datetime import timedelta
+
 from tools.eos.kernel import db as kernel_db
 from tools.eos.saas.domain.project import (
     Project,
@@ -88,12 +102,15 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-PROJECTS-INDEX-READINESS-AND-INPUT-GUARDS"
+VERSION: Final[str] = "v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION"
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
 _UPDATE = RequireTenantAuthorization("project:update", "project_update")
 _ARCHIVE = RequireTenantAuthorization("project:archive", "project_archive")
+_FOUNDER_ROLE_GRANT = RequireTenantAuthorization("tenant:role_assignment:write", "role_grant")
+_FOUNDER_PRODUCT_ISSUE = RequireTenantAuthorization("tenant_product_entitlement:issue", "tenant_product_entitlement_issue")
+
 
 
 class ProjectCreateRequest(BaseModel):
@@ -302,6 +319,139 @@ def _result(
         "project": project.to_dict(),
         "events": list(events),
         "authority": {"source": "PYTHON_EOS_PROJECT_REGISTRY", "financial_execution": False},
+    }
+
+
+@router.post("/founder-projects-admission")
+def admit_founder_projects(
+    grant_context: TenantAuthorizationContext = Depends(_FOUNDER_ROLE_GRANT),
+    issue_context: TenantAuthorizationContext = Depends(_FOUNDER_PRODUCT_ISSUE),
+) -> dict[str, object]:
+    """Execute the explicitly requested, canonical Founder Projects admission.
+
+    A current tenant_owner with an ACTIVE ENTERPRISE_ADMIN assignment must
+    independently pass role-grant and entitlement-issue IAM. An additional
+    PROJECTS_PLATFORM_OWNER role is accepted through the existing digest-only
+    invitation service, not inserted directly. The source subscription-backed
+    issuance orchestrator owns commercial evidence, and the caller-owned
+    majority transaction owns its commit. Response follows durable readback.
+
+    Two source transactions are necessarily separate: an accepted invitation
+    may precede an entitlement failure. Retrying this explicit command safely
+    reuses the already ACTIVE role and re-evaluates the missing entitlement.
+    No production/customer tenant, generic role, plan mutation or financial
+    execution is admitted.
+    """
+    tenant_id = WILSY_COMPANY_TENANT_ID
+    principal_id = grant_context.identity.identity_id
+    if (
+        grant_context.tenant_id != tenant_id
+        or issue_context.tenant_id != tenant_id
+        or issue_context.identity.identity_id != principal_id
+        or grant_context.decision.business_role != "tenant_owner"
+        or issue_context.decision.business_role != "tenant_owner"
+        or grant_context.decision.authorization_role != "ENTERPRISE_ADMIN"
+        or issue_context.decision.authorization_role != "ENTERPRISE_ADMIN"
+    ):
+        raise HTTPException(status_code=403, detail="FOUNDER_PROJECTS_AUTHORITY_REQUIRED")
+    client, database = kernel_db.get_client(), kernel_db.get_database()
+    if client is None or database is None:
+        raise HTTPException(status_code=503, detail="PROJECT_DATABASE_UNAVAILABLE")
+
+    # Source role admission is explicitly governed by an inviter assignment,
+    # recipient principal currentness, short-lived digest-only invitation,
+    # capability acceptance and the ACTIVE existing membership gate.
+    try:
+        try:
+            assigned = RoleAssignmentRepository.resolve(
+                principal_id, tenant_id, "PROJECTS_PLATFORM_OWNER",
+                collection=database["role_assignments"],
+            )
+        except RoleAssignmentNotFoundError:
+            assigned = None
+        if assigned is None:
+            invitation = create_invitation(
+                identity=grant_context.identity, tenant_id=tenant_id,
+                recipient_principal_id=principal_id,
+                authorization_role_id="PROJECTS_PLATFORM_OWNER",
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+            )
+            admit_invited_member(
+                identity=grant_context.identity,
+                invitation_id=invitation.invitation.invitation_id,
+                capability=invitation.capability,
+            )
+        elif assigned.status.value != "ACTIVE":
+            raise HTTPException(status_code=409, detail="PROJECTS_ROLE_NOT_ACTIVE")
+    except (InvitationCreationError, InvitedMemberAdmissionError, RoleAssignmentRepositoryError) as error:
+        raise HTTPException(status_code=409, detail="PROJECTS_ROLE_ADMISSION_UNVERIFIED") from error
+
+    # Never bypass active subscription/commercial checks or create indexes in a
+    # request. Index provisioning is an explicit administrative prerequisite.
+    evidence = TenantAuthorizationDecisionEvidenceRegistry(
+        database["tenant_authorization_decision_evidence"],
+        principal_repository=PrincipalAuthorityRepository,
+        membership_repository=TenantMembershipRepository,
+        role_assignment_repository=RoleAssignmentRepository,
+        business_role_repository=TenantBusinessRoleRepository,
+    )
+    entitlement_id = derive_tenant_product_entitlement_id(tenant_id, TenantProductId.PROJECTS)
+
+    def issue(current: Any) -> None:
+        try:
+            existing = get_current_entitlement(
+                tenant_id, entitlement_id,
+                database[ENTITLEMENT_HISTORY_COLLECTION],
+                database[ENTITLEMENT_CURRENT_COLLECTION],
+                session=current,
+            )
+        except TenantProductEntitlementRegistryNotFoundError:
+            existing = None
+        if existing is not None:
+            if existing.lifecycle_state is not TenantProductEntitlementState.ACTIVE:
+                raise HTTPException(status_code=409, detail="PROJECTS_ENTITLEMENT_NOT_ACTIVE")
+            return
+        issue_tenant_product_entitlement(
+            identity=issue_context.identity,
+            product_id=TenantProductId.PROJECTS,
+            idempotency_key="wilsy-founder-projects-internal-20261117",
+            occurred_at=datetime.now(timezone.utc),
+            subscription_collection=database["subscriptions"],
+            entitlement_history_collection=database[ENTITLEMENT_HISTORY_COLLECTION],
+            entitlement_current_collection=database[ENTITLEMENT_CURRENT_COLLECTION],
+            authorization_evidence_registry=evidence,
+            session=current,
+        )
+
+    try:
+        with client.start_session() as session:
+            session.with_transaction(
+                issue, read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern(w="majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+            with session.start_transaction(read_concern=ReadConcern("snapshot")):
+                entitlement = get_current_entitlement(
+                    tenant_id, entitlement_id, database[ENTITLEMENT_HISTORY_COLLECTION],
+                    database[ENTITLEMENT_CURRENT_COLLECTION], session=session,
+                )
+                assigned = RoleAssignmentRepository.resolve(
+                    principal_id, tenant_id, "PROJECTS_PLATFORM_OWNER",
+                    collection=database["role_assignments"], session=session,
+                )
+                if (entitlement.lifecycle_state is not TenantProductEntitlementState.ACTIVE
+                    or assigned.status.value != "ACTIVE"):
+                    raise HTTPException(status_code=503, detail="PROJECTS_ADMISSION_READBACK_UNVERIFIED")
+    except HTTPException:
+        raise
+    except (TenantProductEntitlementIssuanceOrchestratorError, TenantProductEntitlementRegistryError, PyMongoError) as error:
+        raise HTTPException(status_code=503, detail="PROJECTS_ENTITLEMENT_ISSUANCE_UNVERIFIED") from error
+    return {
+        "schema": "WILSY-FOUNDER-PROJECTS-ADMISSION/V1",
+        "tenant_id": tenant_id,
+        "principal_id": principal_id,
+        "project_role": "ACTIVE",
+        "projects_entitlement": "ACTIVE",
     }
 
 
@@ -603,7 +753,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.1.0-PROJECTS-INDEX-READINESS-AND-INPUT-GUARDS
+# VERSION: v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: missing assignment, entitlement, current database, indexes, transaction, replay integrity, or readback denies or fails unavailable
