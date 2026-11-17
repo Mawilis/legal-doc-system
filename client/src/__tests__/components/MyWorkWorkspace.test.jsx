@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.10.0-FLOATING-RESIZE-AND-AUTHORITY-CERT
+ * VERSION: v1.11.0-INTERACTIVE-RESIZE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.11.0-INTERACTIVE-RESIZE-CERT simulates real pointer
+ *            resizing and keyboard width reduction, not merely existence
+ *            of the workbench resize handle.
  * CHANGELOG: v1.10.0-FLOATING-RESIZE-AND-AUTHORITY-CERT checks
  *            the independent resizable dialog handle and explicit EOS
  *            denied-UPDATE disclosure, without displaying unauthorized
@@ -159,8 +162,19 @@ describe('authenticated My Work execution queue', () => {
     );
     await openRow('Prepare CRM launch plan');
     expect(await screen.findByText('Persisted source record verified for this tenant')).toBeTruthy();
-    expect(screen.getByRole('separator', { name: 'Resize work details' })).toBeTruthy();
-    expect(screen.getByRole('dialog', { name: 'Prepare CRM launch plan' })).toBeTruthy();
+    const resize = screen.getByRole('separator', { name: 'Resize work details' });
+    const dialog = screen.getByRole('dialog', { name: 'Prepare CRM launch plan' });
+    expect(resize).toBeTruthy();
+    expect(dialog).toBeTruthy();
+    await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(500));
+    const originalWidth = parseFloat(dialog.style.width);
+    fireEvent.pointerDown(resize, { button: 0, clientX: 600, clientY: 170 });
+    fireEvent.pointerMove(window, { clientX: 680, clientY: 170 });
+    fireEvent.pointerUp(window);
+    await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(originalWidth));
+    const expandedWidth = parseFloat(dialog.style.width);
+    fireEvent.keyDown(resize, { key: 'ArrowLeft' });
+    await waitFor(() => expect(parseFloat(dialog.style.width)).toBeLessThan(expandedWidth));
     expect(screen.getByText('Principal recorded; human-readable name unavailable from this source')).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith(
       '/crm/owner-workspace/work-items/crm-1',
@@ -649,7 +663,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.10.0-FLOATING-RESIZE-AND-AUTHORITY-CERT
+ * VERSION: v1.11.0-INTERACTIVE-RESIZE-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
