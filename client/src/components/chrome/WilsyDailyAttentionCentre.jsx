@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.6.0-ACCEPTED-RECEIPT-RECONCILIATION
+ * VERSION: v3.7.0-DRAFT-CREATION-TRUTH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -8,7 +8,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyDailyAttentionCentre.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.7.0-DRAFT-CREATION-TRUTH differentiates a
+ *            persisted CRM draft receipt from published active work,
+ *            retaining source-verified creation and refreshing real feeds.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No browser-persisted queue, invented notices,
  *                            unread receipts or browser-granted permissions.
@@ -874,7 +877,9 @@ export default function WilsyDailyAttentionCentre({
       const saved = await createAttentionSourceWork(
         moduleId, { tenantId, principalId: auth.user.id }, form, idempotencyKey,
       );
-      setCreationNotice('Source work created: ' + saved.work_item_id);
+      setCreationNotice(form.initial_status === 'DRAFT'
+        ? 'CRM draft saved in EOS. Open My Work → Saved CRM drafts to resume.'
+        : 'Source work created: ' + saved.work_item_id);
       setFilter('ALL');
       setSource('ALL');
       setQuery('');
@@ -1519,7 +1524,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.6.0-ACCEPTED-RECEIPT-RECONCILIATION
+ * VERSION: v3.7.0-DRAFT-CREATION-TRUTH
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
