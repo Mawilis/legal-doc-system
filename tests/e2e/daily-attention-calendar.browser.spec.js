@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.11.0-MY-WORK-EXECUTION-DIALOG-CERT
+ * VERSION: v3.12.0-AUTHENTICATED-CRM-EDIT-JOURNEY
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,11 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v3.12.0-AUTHENTICATED-CRM-EDIT-JOURNEY certifies
+ *          real CRM source creation, My Work editing through the permission-
+ *          gated production UI, HTTP PATCH, persisted source audit and exact-
+ *          tenant readback at desktop/mobile widths, followed by authorized
+ *          source cleanup completion. No in-browser synthetic task mutation.
  * CHANGELOG: v3.11.0-MY-WORK-EXECUTION-DIALOG-CERT verifies
  *          Calendar-to-My-Work handoff through the real focused, source-owned
  *          execution detail dialog and its authorized completion evidence form.
@@ -805,6 +810,82 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(completedAttention.counts.active).toBe(beforeCrmAttention.counts.active);
       expect(completedAttention.counts.highPriority).toBe(beforeCrmAttention.counts.highPriority);
 
+
+      // Source-owned CRM revision is exercised through the actual My Work UI,
+      // not a mocked widget, while EOS and Mongo remain the only authorities.
+      const revisionOriginal = 'Founder CRM revision ' + randomUUID();
+      const revisionChanged = revisionOriginal + ' verified';
+      const createdRevision = await context.request.post(crmPath, {
+        headers: {...headers, 'Idempotency-Key': randomUUID()},
+        data: { title: revisionOriginal, description: 'Before audited revision',
+          kind: 'TASK', priority: 'NORMAL', due_at: null },
+      });
+      expect(createdRevision.status()).toBe(201);
+      const revisionWork = await createdRevision.json();
+      await panel.getByRole('button', {name: 'Open My Work'}).click();
+      await expect(panel).toHaveCount(0);
+      const revisionRow = page.getByRole('button', {name: new RegExp(revisionOriginal)});
+      await expect(revisionRow).toBeVisible();
+      await revisionRow.click();
+      const revisionDialog = page.getByRole('dialog', {name: revisionOriginal});
+      await expect(revisionDialog).toBeVisible();
+      const sourceEdit = revisionDialog.getByRole('button', {name: 'Edit CRM task'});
+      await expect(sourceEdit).toBeVisible();
+      await sourceEdit.click();
+      await revisionDialog.getByRole('textbox', {name: 'Edit CRM title'}).fill(revisionChanged);
+      await revisionDialog.getByRole('textbox', {name: 'Edit CRM description'})
+        .fill('Edited in authenticated My Work and persisted by CRM');
+      await revisionDialog.getByRole('combobox', {name: 'Edit CRM priority'})
+        .selectOption('HIGH');
+      const [patchedRevision] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === crmPath + '/' + revisionWork.work_item_id
+          && response.request().method() === 'PATCH'
+        )),
+        revisionDialog.getByRole('button', {name: 'Save audited edit'}).click(),
+      ]);
+      expect(patchedRevision.status()).toBe(200);
+      const patchReceipt = await patchedRevision.json();
+      expect(patchReceipt.work_item_id).toBe(revisionWork.work_item_id);
+      expect(patchReceipt.title).toBe(revisionChanged);
+      await expect(revisionRow).toContainText(revisionChanged);
+      const persistedRevision = await context.request.get(
+        crmPath + '/' + revisionWork.work_item_id, {headers},
+      );
+      expect(persistedRevision.status()).toBe(200);
+      const persistedRevisionData = await persistedRevision.json();
+      expect(persistedRevisionData.title).toBe(revisionChanged);
+      expect(persistedRevisionData.priority).toBe('HIGH');
+      const revisionHistory = await context.request.get(
+        crmPath + '/' + revisionWork.work_item_id + '/history', {headers},
+      );
+      expect(revisionHistory.status()).toBe(200);
+      const revisionHistoryData = await revisionHistory.json();
+      expect(revisionHistoryData.tenant_id).toBe(state.tenant_id);
+      expect(revisionHistoryData.events).toHaveLength(1);
+      expect(revisionHistoryData.events[0].before.title).toBe(revisionOriginal);
+      expect(revisionHistoryData.events[0].after.title).toBe(revisionChanged);
+      expect(revisionHistoryData.events[0].actor_principal_id).toBe(actor.principal_id);
+      console.log('[ATTENTION-STEP]', viewport.width, 'crm-audited-edit-verified');
+
+      await revisionDialog.getByRole('button', {name: 'Close work details'}).click();
+      const revisionComplete = await context.request.post(
+        crmPath + '/' + revisionWork.work_item_id + '/complete', {
+          headers, data: { completion_note: 'Audited revision browser certificate complete' },
+        },
+      );
+      expect(revisionComplete.status()).toBe(200);
+      expect((await revisionComplete.json()).status).toBe('COMPLETED');
+      const revisionPostCompletion = await context.request.get(
+        crmPath + '/' + revisionWork.work_item_id, {headers},
+      );
+      expect(revisionPostCompletion.status()).toBe(200);
+      expect((await revisionPostCompletion.json()).status).toBe('COMPLETED');
+      await page.getByRole('button', {name: 'WILSY home'}).click();
+      await expect(page).toHaveURL(/\/headquarters$/);
+      await bell.click();
+      await expect(panel).toBeVisible();
+
       // Batch triage uses two independently admitted source commands, not a
       // synthetic attention-level mutation or unverifiable optimistic status.
       const batchTitles = [
@@ -882,7 +963,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.11.0-MY-WORK-EXECUTION-DIALOG-CERT
+// VERSION: v3.12.0-AUTHENTICATED-CRM-EDIT-JOURNEY
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
