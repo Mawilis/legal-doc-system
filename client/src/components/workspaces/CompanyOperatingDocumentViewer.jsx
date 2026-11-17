@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION
+ * VERSION: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS distinguishes
+ *            canonical Projects entitlement denial from project IAM denial
+ *            and unavailable infrastructure using bounded EOS codes.
  * CHANGELOG: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION adds a tenant/
  *            session-scoped live Projects list and explicit, idempotent project
  *            create plus list/detail readback inside the Strategy document.
@@ -68,11 +71,22 @@ const validProjectList = (value, tenantId, principalId) => Boolean(
 );
 const projectFailure = failure => {
   const status = failure?.response?.status;
-  return status === 401 ? 'Project session authentication required.'
-    : status === 403 ? 'Current EOS authority or Projects entitlement does not permit this operation.'
-      : status === 409 ? 'A conflicting Projects revision or idempotency request was rejected.'
-        : status === 422 ? 'EOS rejected the project fields; check the name and description.'
-          : 'Projects source unavailable or source readback could not be verified.';
+  const detail = failure?.response?.data?.detail;
+  // Only EOS's closed machine codes enter the UI; never arbitrary diagnostic
+  // strings, database details, credentials or nested exception objects.
+  const code = typeof detail === 'string' && /^[A-Z][A-Z0-9_]{1,90}$/.test(detail) ? detail : null;
+  if (status === 403 && code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
+    return 'PROJECTS_ENTITLEMENT_REQUIRED · WILSY needs a verified ACTIVE Projects product entitlement. Check the canonical tenant entitlement and its current revision; no client bypass is permitted.';
+  }
+  if (status === 403 && code === 'PROJECT_PLATFORM_OWNER_TENANT_DENIED') {
+    return 'PROJECT_PLATFORM_OWNER_TENANT_DENIED · The dedicated platform-owner assignment is valid only in the canonical WILSY company tenant.';
+  }
+  return status === 401 ? 'HTTP 401 · Project session authentication required.'
+    : status === 403 ? 'HTTP 403 · Current EOS IAM or selected company capacity denies project access. Verify ACTIVE project:read and project:create assignments; this is distinct from the Projects entitlement.'
+      : status === 409 ? 'HTTP 409 · A conflicting Projects revision or idempotency request was rejected.'
+        : status === 422 ? 'HTTP 422 · EOS rejected the project fields; check the name and description.'
+          : status === 503 ? 'HTTP 503 · Projects dependency, index readiness or entitlement source unavailable.'
+            : 'Projects source unavailable or source readback could not be verified.';
 };
 
 const labelFor = classification => classification === 'MISSION' ? 'Our Mission' : 'Our Strategy';
@@ -627,7 +641,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION
+// VERSION: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
