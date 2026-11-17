@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.6.1-BOUNDED-ADMISSION-HTTP-STATUS
+ * VERSION: v1.6.2-PROJECT-VALIDATION-DIAGNOSTICS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.6.2-PROJECT-VALIDATION-DIAGNOSTICS extracts only
+ *            bounded project machine codes and recognized field names from
+ *            EOS 422 responses; never displays submitted or sensitive values.
  * CHANGELOG: v1.6.1-BOUNDED-ADMISSION-HTTP-STATUS maps known HTTP
  *            outcomes to bounded IAM/transport/readiness classifications
  *            even when the EOS error envelope lacks a simple detail string.
@@ -84,12 +87,30 @@ const projectFailure = failure => {
   if (status === 403 && code === 'PROJECT_PLATFORM_OWNER_TENANT_DENIED') {
     return 'PROJECT_PLATFORM_OWNER_TENANT_DENIED · The dedicated platform-owner assignment is valid only in the canonical WILSY company tenant.';
   }
+  if (status === 422) {
+    const body = failure?.response?.data;
+    // A gateway may emit structured errors rather than FastAPI's detail.
+    // Surface ONLY approved machine codes and known project form field names.
+    const codes = [
+      code, body?.error_code, body?.code, body?.detail?.error, body?.detail?.code,
+    ];
+    const machineCode = codes.find(value => typeof value === 'string'
+      && /^PROJECT_[A-Z0-9_]{2,90}$/.test(value));
+    const validationRows = Array.isArray(body?.detail) ? body.detail
+      : Array.isArray(body?.details) ? body.details : [];
+    const fields = [...new Set(validationRows.flatMap(item => {
+      const loc = Array.isArray(item?.loc) ? item.loc : [];
+      return loc.filter(field => ['name', 'summary', 'code', 'start_date', 'target_date'].includes(field));
+    }))].slice(0, 5);
+    return 'HTTP 422 · ' + (machineCode || (fields.length ? 'Invalid fields: ' + fields.join(', ')
+      : 'EOS rejected the request body or Idempotency-Key.'))
+      + ' · No project creation was verified.';
+  }
   return status === 401 ? 'HTTP 401 · Project session authentication required.'
     : status === 403 ? 'HTTP 403 · Current EOS IAM or selected company capacity denies project access. Verify ACTIVE project:read and project:create assignments; this is distinct from the Projects entitlement.'
       : status === 409 ? 'HTTP 409 · A conflicting Projects revision or idempotency request was rejected.'
-        : status === 422 ? 'HTTP 422 · EOS rejected the project fields; check the name and description.'
-          : status === 503 ? 'HTTP 503 · Projects dependency, index readiness or entitlement source unavailable.'
-            : 'Projects source unavailable or source readback could not be verified.';
+        : status === 503 ? 'HTTP 503 · Projects dependency, index readiness or entitlement source unavailable.'
+          : 'Projects source unavailable or source readback could not be verified.';
 };
 
 const labelFor = classification => classification === 'MISSION' ? 'Our Mission' : 'Our Strategy';
@@ -687,7 +708,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.6.1-BOUNDED-ADMISSION-HTTP-STATUS
+// VERSION: v1.6.2-PROJECT-VALIDATION-DIAGNOSTICS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
