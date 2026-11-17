@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.7.1-UNAVAILABLE-DRAFT-RETENTION
+ * VERSION: v1.7.2-PROJECTS-DELIVERY-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.2-PROJECTS-DELIVERY-HANDOFF links source-verified Strategy project rows
+ *            to the existing authenticated EOS Projects delivery lifecycle.
+ *            No strategic linkage, IAM grant, or ownership is inferred.
  * CHANGELOG: v1.7.1-UNAVAILABLE-DRAFT-RETENTION keeps editable project
  *            descriptions and formatted preview visible when EOS Projects
  *            is unavailable, but blocks mutation until a verified fresh read.
@@ -262,10 +265,10 @@ const sourceError = failure => {
  * private to separately authorized users. Commands use stable retry keys and a
  * second source read before any success claim. No transaction or permission is
  * owned by this component; closing discards transient unsaved proposals.
- * @param {{classification:'MISSION'|'STRATEGY',onClose:Function,onOpenWork:Function}} props
+ * @param {{classification:'MISSION'|'STRATEGY',onClose:Function,onOpenWork:Function,onOpenProject?:Function}} props
  * @returns {JSX.Element} Accessible responsive source-backed document drawer.
  */
-export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork }) {
+export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject }) {
   const auth = useContext(AuthContext) || {};
   const baseScope = currentUnifiedMyWorkScope(auth, auth.user?.tenantId);
   const credential = useRef({ token: auth.token, revision: 0 });
@@ -436,7 +439,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       }
       projectReplay.current = { intent: '', key: null };
       setProjectName(''); setProjectDescription('');
-      setProjectSuccess('EOS confirmed project creation and durable list/detail readback. Strategic linkage and ownership are not yet governed.');
+      setProjectSuccess('EOS confirmed project creation and durable list/detail readback. Open project delivery to update its lifecycle and review audit events; strategic linkage and ownership are not yet governed.');
     } catch (failure) {
       if (active(key) && projectMutation.current === nonce) setProjectError(projectFailure(failure));
     } finally {
@@ -656,8 +659,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       ? 'No projects returned by EOS on the first page.'
                       : projectItems.length + ' source-confirmed project(s) on the first page.'}</div>}
                     {projectState === 'READY' && projectItems.length > 0 && <ul aria-label="EOS project list">
-                      {projectItems.map(item => <li key={item.project_id}><strong>{item.name}</strong>
-                        {' · '}{item.status}{' · revision '}{item.revision}</li>)}
+                      {projectItems.map(item => <li key={item.project_id}>
+                        <strong>{item.name}</strong>{' · '}{item.status}{' · revision '}{item.revision}
+                        {typeof onOpenProject === 'function' && <button type="button"
+                          aria-label={'Open project delivery for ' + item.name}
+                          onClick={() => onOpenProject(item.project_id)}>
+                          Open project delivery <ArrowUpRight size={14}/>
+                        </button>}
+                      </li>)}
                     </ul>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
@@ -773,7 +782,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.7.1-UNAVAILABLE-DRAFT-RETENTION
+// VERSION: v1.7.2-PROJECTS-DELIVERY-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
