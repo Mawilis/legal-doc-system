@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Unified My Work router authorization certification.
-VERSION: v1.1.0-HR-SOURCE-OWNED-ACTIONS-CERT
+VERSION: v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certifies independently admitted, source-owned My Work aggregation,
          including privacy-minimal HR action projection handoff.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_unified_my_work_router.py
 COLLABORATION / OWNERSHIP: unified_my_work_router and existing source routers.
-CERTIFICATION / UPDATE DATE: 2026-11-15.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
+CHANGELOG: v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT omits CRM only on
+           exact canonical not-entitled evidence and proves CRM entitlement
+           uncertainty still raises, preserving other source truth.
 CHANGELOG: v1.1.0-HR-SOURCE-OWNED-ACTIONS-CERT adds denied-HR, safe-HR-action
            and dependency-wiring coverage without creating a role or record.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -280,12 +283,23 @@ def test_module_product_entitlement_denial_omits_only_that_source(monkeypatch):
     assert route._read_module("operations", tenant_id="tenant-a") is None
 
 
-def test_crm_legal_entitlement_denial_omits_only_crm_source(monkeypatch):
+def test_crm_core_entitlement_denial_omits_only_crm_source(monkeypatch):
     def not_entitled(*_args, **_kwargs):
-        raise HTTPException(status_code=403, detail="OWNER_WORK_LEGAL_NOT_ENTITLED")
+        raise HTTPException(status_code=403, detail="OWNER_WORK_CRM_NOT_ENTITLED")
 
     monkeypatch.setattr(route.crm_source, "_transaction", not_entitled)
     assert route._read_crm(tenant_id="tenant-a") is None
+
+
+def test_uncertain_crm_entitlement_does_not_become_verified_empty_work(monkeypatch):
+    def unavailable(*_args, **_kwargs):
+        raise HTTPException(status_code=503, detail="OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE")
+
+    monkeypatch.setattr(route.crm_source, "_transaction", unavailable)
+    with pytest.raises(HTTPException) as error:
+        route._read_crm(tenant_id="tenant-a")
+    assert error.value.status_code == 503
+    assert error.value.detail == "OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE"
 
 
 def test_unknown_source_forbidden_and_source_outage_are_not_silently_omitted(monkeypatch):
@@ -404,7 +418,7 @@ def test_hr_source_owners_emit_only_action_metadata_not_administrative_records(m
 
 
 # ARTIFACT: test_unified_my_work_router.py
-# VERSION: v1.1.0-HR-SOURCE-OWNED-ACTIONS-CERT
+# VERSION: v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT
 # AUTHORITY BOUNDARY: Source read admission and metadata projection only.
 # TENANT POSTURE: Exact tenant and principal contexts are mandatory in each case.
 # FAIL-CLOSED POSTURE: Denial and source errors never become an empty success.
