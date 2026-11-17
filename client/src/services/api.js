@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES
+ * VERSION: v74.14.0-STRICT-PROJECTS-COMMAND-BODIES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,6 +16,10 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v74.14.0-STRICT-PROJECTS-COMMAND-BODIES preserves EOS
+ *            Projects POST/PATCH/Archive command payloads without inserting
+ *            a forbidden timestamp field. Existing forensic timestamp,
+ *            nonce, trace and request seal headers are unchanged.
  * CHANGELOG: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES keeps
  *            EOS /status and /cancel commands free of injected timestamp
  *            JSON. Forensic time and seal remain in request headers, not
@@ -502,6 +506,10 @@ api.interceptors.request.use(
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
         || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/(?:complete|status|cancel))?)?$/i.test(config.url)
         || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
+        // Python EOS Projects uses strict Pydantic command payloads. Keep
+        // create/update/archive body exact; forensic time remains in headers.
+        || (/^\/(?:projects)(?:\/[^/]+(?:\/archive)?)?$/i.test(config.url)
+          && ['POST', 'PATCH'].includes((config.method || '').toUpperCase()))
       );
       const isMultipartBody = typeof FormData !== 'undefined'
         && config.data instanceof FormData;
@@ -824,7 +832,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES
+ * VERSION: v74.14.0-STRICT-PROJECTS-COMMAND-BODIES
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
