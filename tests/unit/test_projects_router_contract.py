@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT
+VERSION: v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,10 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT checks source-backed directory,
+  v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT checks source-backed\n  assignee currentness, rejects stale department and certifies audited CAS\n  readback without changing the real role/entitlement contract.\n  v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT checks source-backed directory,
   conjunctive department provisioning IAM and isolated assignment commands;
   original project CRUD and Founder gates remain mandatory.
-  v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT validates exact
+  v1.2.0-DETERMINISTIC-PROJECT-CODE-CERT validates exact
   deterministic project-code derivation and malformed ID denial.
   v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT pins the eligible
   membership_invite admission gate and independent entitlement issuance pair.
@@ -32,9 +32,10 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
@@ -42,6 +43,8 @@ from tools.eos.api import projects_router, server
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.tenant_membership import TenantMembershipStatus
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 from tools.eos.auth.tenant_authorization import (
     TenantAuthorizationDecision,
     TenantAuthorizationReason,
@@ -49,7 +52,94 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT"
+VERSION = "v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT"
+
+
+def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
+    """No workforce profile, browser role or foreign membership grants eligibility."""
+    principal = SimpleNamespace(status=PrincipalStatus.ACTIVE)
+    membership = SimpleNamespace(status=TenantMembershipStatus.ACTIVE)
+    roles = (SimpleNamespace(status=TenantBusinessRoleStatus.ACTIVE, business_role="tenant_owner"),)
+    monkeypatch.setattr(projects_router.PrincipalAuthorityRepository, "get", lambda *_a, **_k: principal)
+    monkeypatch.setattr(projects_router.TenantMembershipRepository, "resolve", lambda *_a, **_k: membership)
+    monkeypatch.setattr(projects_router.TenantBusinessRoleRepository, "resolve_all", lambda *_a, **_k: roles)
+    db = {
+        "principal_authorities": object(), "tenant_memberships": object(),
+        "tenant_business_roles": object(),
+    }
+    assert projects_router._project_owner_eligible(db, "tenant-a", "principal-a", object())
+    principal.status = PrincipalStatus.SUSPENDED
+    assert not projects_router._project_owner_eligible(db, "tenant-a", "principal-a", object())
+    principal.status = PrincipalStatus.ACTIVE
+    membership.status = TenantMembershipStatus.REVOKED
+    assert not projects_router._project_owner_eligible(db, "tenant-a", "principal-a", object())
+    membership.status = TenantMembershipStatus.ACTIVE
+    roles = (SimpleNamespace(status=TenantBusinessRoleStatus.ACTIVE, business_role="tenant_manager"),)
+    assert not projects_router._project_owner_eligible(db, "tenant-a", "principal-a", object())
+
+
+def test_department_read_requires_exact_tenant_active_record():
+    """Unknown, cross-tenant and retired departments never become selectable."""
+    class Collection:
+        def __init__(self, row):
+            self.row = row
+        def find_one(self, predicate, session=None):
+            assert predicate == {"tenant_id": "tenant-a", "department_id": "dept-" + "a" * 32}
+            return self.row if self.row and self.row.get("tenant_id") == predicate["tenant_id"] else None
+    identity = "dept-" + "a" * 32
+    row = {"tenant_id": "tenant-a", "department_id": identity,
+           "name": "Engineering", "status": "ACTIVE", "revision": 1}
+    assert projects_router._current_department(
+        {"wilsy_tenant_departments": Collection(row)}, "tenant-a", identity, object(),
+    )["name"] == "Engineering"
+    for invalid in ({**row, "tenant_id": "tenant-b"}, {**row, "status": "RETIRED"}):
+        with pytest.raises(HTTPException) as denied:
+            projects_router._current_department(
+                {"wilsy_tenant_departments": Collection(invalid)}, "tenant-a", identity, object(),
+            )
+        assert denied.value.status_code == 409
+
+
+def test_assignment_command_uses_cas_audit_and_fresh_readback(monkeypatch):
+    """Only a verified owner/department pair can advance project revision."""
+    project_id = "prj-" + "a" * 48
+    department_id = "dept-" + "b" * 32
+    context = SimpleNamespace(tenant_id="tenant-a", identity=SimpleNamespace(identity_id="principal-actor"))
+    final_project = SimpleNamespace(
+        fingerprint="fingerprint", owner_principal_id="principal-owner",
+        department_id=department_id, revision=3, status="PLANNED",
+        to_dict=lambda: {"project_id": project_id, "tenant_id": "tenant-a"},
+    )
+    calls = []
+    class Registry:
+        def update(self, **kwargs):
+            calls.append(kwargs)
+            return final_project
+        def get(self, **kwargs):
+            return final_project
+        def list_events(self, **kwargs):
+            return ({"event_type": "PROJECT_UPDATED"},)
+    registry = Registry()
+    session = object()
+    monkeypatch.setattr(projects_router.kernel_db, "get_database", lambda: {})
+    monkeypatch.setattr(projects_router, "_project_owner_eligible", lambda *_args: True)
+    monkeypatch.setattr(projects_router, "_current_department", lambda *_args: {"status": "ACTIVE"})
+    monkeypatch.setattr(projects_router, "_transaction", lambda _context, callback, **kwargs: callback(registry, session))
+    result = projects_router.assign_project_accountability(
+        projects_router.ProjectAssignmentRequest(
+            expected_revision=2, owner_principal_id="principal-owner",
+            department_id=department_id,
+        ), Response(), project_id, "request-id", context,
+    )
+    assert result["project"]["tenant_id"] == "tenant-a"
+    assert len(calls) == 1
+    assert calls[0]["expected_revision"] == 2
+    assert calls[0]["session"] is session
+    assert calls[0]["tenant_id"] == "tenant-a"
+    assert calls[0]["changes"] == {
+        "owner_principal_id": "principal-owner", "department_id": department_id,
+    }
+    assert result["events"][0]["event_type"] == "PROJECT_UPDATED"
 
 
 def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
@@ -250,7 +340,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT
+# VERSION: v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
