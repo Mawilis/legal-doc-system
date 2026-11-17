@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.21.0-CRM-WORK-EDIT-CANON-CERT
+VERSION: v1.21.1-CRM-WORK-EDIT-INVENTORY-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -15,7 +15,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-2026-11-17 v1.21.0-CRM-WORK-EDIT-CANON-CERT pins the independently
+2026-11-17 v1.21.1-CRM-WORK-EDIT-INVENTORY-CERT pins the independently
 scoped CRM work-edit permission, preserves separate possession and
 business-role admission, and verifies 203 canonical permissions.
 2026-11-16 v1.20.0-PROJECT-PERMISSION-CERT verifies four exact own-tenant project permissions and confirms no existing authorization role receives them. Canonical source count becomes 202 permissions / 205 total rows.
@@ -489,7 +489,7 @@ def test_permission_canon_properties() -> None:
         ]
     ) == 203
 
-    assert len(rows) == 205
+    assert len(rows) == 206
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1248,7 +1248,7 @@ def test_platform_employer_capabilities_are_exact_non_authorizing_tenant_metadat
 
 
 # ARTIFACT: tests/unit/test_permission_namespace.py
-# VERSION: v1.21.0-CRM-WORK-EDIT-CANON-CERT
+# VERSION: v1.21.1-CRM-WORK-EDIT-INVENTORY-CERT
 # AUTHORITY BOUNDARY: certifies permission metadata and designated static role definitions only; assignments and current authorization remain separate
 # TENANT POSTURE: exact WILSY employer tenant enforcement and customer HR entitlement checks remain independent runtime gates
 # FAIL-CLOSED POSTURE: offer acceptance is absent; employee admission has one unassigned role and no operation binding or route
