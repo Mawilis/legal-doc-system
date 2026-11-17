@@ -391,7 +391,7 @@ describe('authenticated My Work execution queue', () => {
       { status: 'IN_PROGRESS', expected_updated_at: original.updated_at },
       expect.objectContaining({ headers: { 'Idempotency-Key': expect.any(String) } }),
     ));
-    await waitFor(() => expect(screen.getByText('In Progress')).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText('IN_PROGRESS').length).toBeGreaterThan(0));
     expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
   });
 
