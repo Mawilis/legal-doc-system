@@ -824,7 +824,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
+ * VERSION: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
