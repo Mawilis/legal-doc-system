@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace HTTP Router
-VERSION: v1.1.0-AUTHORIZED-CRM-WORK-DETAIL-READ
+VERSION: v1.2.0-EXACT-CRM-WORK-EDIT-HTTP
 AUTHORITY: WILSY OS Python EOS institutional CRM API.
 EPITOME: Expose source-owned CRM owner work reads and commands through exact
          tenant authorization, entitlement admission and Mongo transactions.
@@ -7,6 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/ow
 COLLABORATION / OWNERSHIP: Tenant IAM dependency, CRM owner source service,
          tenant-scoped work registry and Python EOS API gateway.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-EXACT-CRM-WORK-EDIT-HTTP adds a dedicated PATCH
+           command gated by crm:work_item:update, active entitlement, strict
+           request shape, exact actor, idempotency key and source-owned CAS;
+           the source edit history is read-only and shares CRM read authority.
+           Existing create/complete and denial contracts are unchanged.
 CHANGELOG: v1.1.0-AUTHORIZED-CRM-WORK-DETAIL-READ exposes GET /work-items/{work_item_id}
            through existing CRM read permission for active or completed source
            records; absence returns 404 without disclosing foreign tenants.
@@ -39,7 +44,7 @@ from tools.eos.api.tenant_authorization_http import (
 )
 from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority, OwnerWorkItemError
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
-    COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError, OwnerWorkRegistryConflict, OwnerWorkRegistryNotFound, ensure_indexes,
+    COLLECTION, EVENTS_COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError, OwnerWorkRegistryConflict, OwnerWorkRegistryNotFound, ensure_indexes,
 )
 from tools.eos.crm.service.owner_commercial_workspace_service import (
     OwnerCommercialWorkspaceError, OwnerCommercialWorkspaceService,
@@ -57,11 +62,27 @@ logger = logging.getLogger("WilsyOS.API.OwnerCommercialWorkspace")
 _READ = RequireTenantAuthorization("crm:work_item:read", "crm_work_item_read")
 _CREATE = RequireTenantAuthorization("crm:work_item:create", "crm_work_item_create")
 _COMPLETE = RequireTenantAuthorization("crm:work_item:complete", "crm_work_item_complete")
+_UPDATE = RequireTenantAuthorization("crm:work_item:update", "crm_work_item_update")
 
 
 class OwnerWorkCompleteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     completion_note: str = Field(min_length=1, max_length=1000)
+
+
+class OwnerWorkReviseRequest(BaseModel):
+    """Only source-owned editable fields and optimistic revision evidence.
+
+    Tenant, actor and assignment are never accepted from the caller. HTTP
+    requires separate CRM edit IAM and current entitlement, and the registry
+    enforces transactional compare-and-set and idempotent audit.
+    """
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(min_length=1, max_length=240)
+    description: str = Field(default="", max_length=4000)
+    priority: Literal["CRITICAL", "HIGH", "NORMAL", "LOW"] = "NORMAL"
+    due_at: datetime | None = None
+    expected_updated_at: datetime
 
 
 class OwnerWorkCreateRequest(BaseModel):
@@ -77,11 +98,16 @@ class OwnerWorkCreateRequest(BaseModel):
 
 def _service(database: Any) -> OwnerCommercialWorkspaceService:
     return OwnerCommercialWorkspaceService(
-        OwnerCommercialWorkRegistry(database.get_collection(
-            COLLECTION,
-            write_concern=WriteConcern(w="majority", j=True),
-            read_concern=ReadConcern("majority"),
-        )),
+        OwnerCommercialWorkRegistry(
+            database.get_collection(
+                COLLECTION, write_concern=WriteConcern(w="majority", j=True),
+                read_concern=ReadConcern("majority"),
+            ),
+            database.get_collection(
+                EVENTS_COLLECTION, write_concern=WriteConcern(w="majority", j=True),
+                read_concern=ReadConcern("majority"),
+            ),
+        ),
         subscription_registry_module.subscriptions_collection,
         database.get_collection(HISTORY_COLLECTION),
         database.get_collection(CURRENT_COLLECTION),
@@ -93,7 +119,7 @@ def _transaction(callback):
     if client is None or database is None:
         raise HTTPException(status_code=503, detail="OWNER_WORK_DATABASE_UNAVAILABLE")
     try:
-        ensure_indexes(database.get_collection(COLLECTION))
+        ensure_indexes(database.get_collection(COLLECTION), database.get_collection(EVENTS_COLLECTION))
         with client.start_session() as session:
             return session.with_transaction(
                 lambda current: callback(_service(database), current),
@@ -204,6 +230,62 @@ async def read_owner_work_item(
     return _transaction(read)
 
 
+
+@router.patch("/work-items/{work_item_id}")
+async def revise_owner_work_item(
+    work_item_id: str,
+    body: OwnerWorkReviseRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Edit only source-owned fields after independent CRM update permission.
+
+    The token-bound actor and tenant are supplied by EOS, not request data.
+    Current entitlement is checked inside the transaction. Stale revisions,
+    terminal work, changed replay payloads and foreign tenants fail closed;
+    a successful source edit and audit event commit atomically.
+    """
+    def revise(service: OwnerCommercialWorkspaceService, session: Any):
+        for instant in (body.expected_updated_at, body.due_at):
+            if instant is not None and (instant.tzinfo is None or instant.utcoffset() is None):
+                raise HTTPException(status_code=422, detail="WORK_TIMESTAMP_MUST_BE_TIMEZONE_AWARE")
+        item = service.revise(
+            tenant_id=context.tenant_id, work_item_id=work_item_id,
+            actor_principal_id=context.identity.identity_id,
+            title=body.title, description=body.description,
+            priority=OwnerWorkPriority(body.priority), due_at=body.due_at,
+            expected_updated_at=body.expected_updated_at,
+            idempotency_key=idempotency_key,
+            now=datetime.now(timezone.utc), session=session,
+        )
+        return item.to_dict()
+    return _transaction(revise)
+
+
+@router.get("/work-items/{work_item_id}/history")
+async def read_owner_work_item_history(
+    work_item_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, object]:
+    """Return only persisted own-tenant CRM edit evidence under current read IAM.
+
+    Legacy records with no edit events have an empty edit history; no
+    synthetic history or workforce actor name is supplied. The source
+    registry and entitlement service enforce exact tenant reads.
+    """
+    def history(service: OwnerCommercialWorkspaceService, session: Any):
+        return {
+            "schema": "WILSY-OWNER-COMMERCIAL-WORK-HISTORY/V1",
+            "tenant_id": context.tenant_id,
+            "work_item_id": work_item_id,
+            "events": list(service.revision_history(
+                tenant_id=context.tenant_id, work_item_id=work_item_id,
+                session=session,
+            )),
+        }
+    return _transaction(history)
+
+
 @router.post("/work-items/{work_item_id}/complete")
 async def complete_owner_work_item(
     work_item_id: str,
@@ -221,10 +303,10 @@ async def complete_owner_work_item(
     return _transaction(complete)
 
 
-__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkCompleteRequest", "read_owner_work_item"]
+__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item"]
 
 # ARTIFACT: tools/eos/api/owner_commercial_workspace_router.py
-# VERSION: v1.1.0-AUTHORIZED-CRM-WORK-DETAIL-READ
+# VERSION: v1.2.0-EXACT-CRM-WORK-EDIT-HTTP
 # AUTHORITY BOUNDARY: Existing CRM read IAM and owner source entitlement.
 # TENANT POSTURE: Authorized tenant only; foreign work is indistinguishable from absent.
 # FAIL-CLOSED POSTURE: 401/403/404/503 remain distinct without fabricated evidence.
