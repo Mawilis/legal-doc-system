@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.13.0-SOURCE-IDENTITY-DISCLOSURE
+ * VERSION: v3.14.0-CRM-DIRECT-SAVED-DRAFT
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre owns current-session
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.14.0-CRM-DIRECT-SAVED-DRAFT adds an explicit
+ *          Save Draft action for CRM source creation, with distinct
+ *          same-intent idempotency keys and source-owned persisted status.
+ *          Existing Operations/Intelligence create semantics remain OPEN.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No cached work, storage, unsourced PII, fabricated
  *          status/SLAs, approval controls, or browser-side authority.
@@ -319,6 +323,7 @@ export default function DailyAttentionWorkspace({
   const [createPriority, setCreatePriority] = useState('NORMAL');
   const [createDue, setCreateDue] = useState('');
   const createKeyRef = useRef(null);
+  const createIntentStatusRef = useRef(null);
   const createFieldErrors = sourceFieldErrors(creationError);
   const createTitleRef = useRef(null);
   const createTriggerRef = useRef(null);
@@ -458,8 +463,12 @@ export default function DailyAttentionWorkspace({
     setMode('LIST');
   };
 
-  const submitCreate = async (event) => {
+  const submitCreate = async (event, requestedStatus = 'OPEN') => {
     event.preventDefault();
+    const initialStatus = chosenCreateSource === 'CRM' && requestedStatus === 'DRAFT'
+      ? 'DRAFT' : 'OPEN';
+    if (createIntentStatusRef.current !== initialStatus) createKeyRef.current = null;
+    createIntentStatusRef.current = initialStatus;
     if (!chosenCreateSource || creatingWork || workUpdating
       || typeof onCreateWork !== 'function') return;
     if (!createTitle.trim()) {
@@ -476,6 +485,7 @@ export default function DailyAttentionWorkspace({
     const accepted = await onCreateWork(chosenCreateSource, {
       title: createTitle.trim(), description: createDescription,
       priority: createPriority, due_at,
+      ...(chosenCreateSource === 'CRM' ? { initial_status: initialStatus } : {}),
     }, createKeyRef.current);
     if (accepted) {
       setMode('LIST');
@@ -485,6 +495,7 @@ export default function DailyAttentionWorkspace({
       setCreatePriority('NORMAL');
       setCreateDue('');
       createKeyRef.current = null;
+      createIntentStatusRef.current = null;
     }
   };
 
@@ -837,6 +848,12 @@ export default function DailyAttentionWorkspace({
                 className="rounded-md border border-white/20 px-4 py-3 text-sm font-semibold text-slate-100 disabled:opacity-50 sm:py-2">
                 Cancel
               </button>
+              {chosenCreateSource === 'CRM' && <button type="button"
+                disabled={creatingWork || workUpdating}
+                onClick={(event) => submitCreate(event, 'DRAFT')}
+                className="rounded-md border border-amber-300/40 px-4 py-3 text-sm font-semibold text-amber-100 disabled:opacity-50 sm:py-2">
+                Save draft
+              </button>}
               <button type="submit" disabled={creatingWork || workUpdating}
                 className="rounded-md bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 disabled:opacity-50 sm:py-2">
                 {creatingWork ? 'Saving with EOS…' : 'Submit task to EOS'}
@@ -1215,7 +1232,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.13.0-SOURCE-IDENTITY-DISCLOSURE
+// VERSION: v3.14.0-CRM-DIRECT-SAVED-DRAFT
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
