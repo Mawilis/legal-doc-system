@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.2.0-SCOPED-MY-WORK-RECOVERY
+ * VERSION: v4.3.0-VERIFIED-STATUS-COUNT-FILTERS
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.3.0-VERIFIED-STATUS-COUNT-FILTERS surfaces overdue,
+ *            Open and In Progress counts from the exact verified My Work
+ *            snapshot and makes them actionable filters. Drafts route to
+ *            separate owner-scoped reads without inventing draft counts.
  * CHANGELOG: v4.2.0-SCOPED-MY-WORK-RECOVERY shares authenticated EOS reads
  *            with Daily Attention; transient failure preserves only the same-
  *            session last-verified snapshot with explicit stale status and
@@ -1021,6 +1025,9 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
   const commandRef = useRef(null);
   const readbackRef = useRef(null);
   const items = snapshot?.items || [];
+  const openCount = items.filter((item) => item.status === 'OPEN').length;
+  const progressCount = items.filter((item) => item.status === 'IN_PROGRESS').length;
+  const overdueCount = snapshot?.summary?.overdue_count ?? 0;
   const includedKey = (snapshot?.sources_included || []).join(',');
   const selected = items.find((item) => item.source_key === selectedKey);
   useEffect(() => {
@@ -1041,6 +1048,8 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
   const visibleItems = items.filter((item) => (
     (source === 'ALL' || source === item.source)
     && (view !== 'OVERDUE' || item.is_overdue)
+    && (view !== 'OPEN' || item.status === 'OPEN')
+    && (view !== 'IN_PROGRESS' || item.status === 'IN_PROGRESS')
     && (!query.trim() || [item.title, item.description, item.status,
       unifiedMyWorkSourceLabel(item.source)].some((value) => (
       typeof value === 'string' && value.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
@@ -1095,7 +1104,10 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
       <div className="hq-work-tabs" role="group" aria-label="Filter Headquarters work by source">
         <button type="button" aria-pressed={source === 'ALL' && view === 'ALL'} onClick={() => { setSource('ALL'); onViewChange('ALL'); }}>All{snapshot ? ` (${snapshot.summary.active_count})` : ''}</button>
         {(snapshot?.sources_included || []).map((id) => <button key={id} type="button" aria-pressed={source === id} onClick={() => { setSource(id); onViewChange('ALL'); }}>{unifiedMyWorkSourceLabel(id)} ({snapshot.summary.source_counts[id]})</button>)}
-        <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue</button>
+        <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue {snapshot ? '(' + overdueCount + ')' : ''}</button>
+        <button type="button" aria-pressed={view === 'OPEN'} onClick={() => { setSource('ALL'); onViewChange(view === 'OPEN' ? 'ALL' : 'OPEN'); }}>Open {snapshot ? '(' + openCount + ')' : ''}</button>
+        <button type="button" aria-pressed={view === 'IN_PROGRESS'} onClick={() => { setSource('ALL'); onViewChange(view === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS'); }}>In Progress {snapshot ? '(' + progressCount + ')' : ''}</button>
+        {snapshot?.sources_included.includes('CRM') && <button type="button" title="Saved drafts require a separate owner-scoped EOS read" onClick={() => onOpen()}>Saved drafts</button>
       </div>
       <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>
       {snapshot && (loading || error) && (
