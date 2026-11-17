@@ -1,13 +1,26 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT
+ * VERSION: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT proves counts and
+ * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CHANGELOG: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT proves explicit rejection preservation and accepted-but-unverified readback recovery without issuing a second command.
+ *            v1.9.0-COMPLETION-READBACK-GATE-CERT proves source receipt, fresh exact-scope reads, projection removal and stale-readback preservation.
+ *            v1.8.0-SINGLE-SOURCE-ROW-PRESENTATION-CERT proves an active work
+ *            record is not duplicated in the default list by the optional
+ *            ranked briefing. Source conflict reconciliation remains intact.
+ *            v1.7.0-SOURCE-CONFLICT-RECONCILIATION proves an authenticated
+ *            source-create conflict preserves the draft and triggers exact-scope
+ *            projection/feed revalidation without claiming persistence.
+ *            v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT proves counts and
  *            source-verified next-action handoff in selected urgency queues.
  *            v1.5.0-OPERATIONAL-ATTENTION-COMMAND-HANDOFF proves
  *            source-filter feedback, visible one-click source-owned commands,
@@ -34,12 +47,13 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
 import WilsyDailyAttentionCentre, {
   assertAttentionProjection,
 } from '../../components/chrome/WilsyDailyAttentionCentre.jsx';
 
 vi.mock('../../services/api.js', () => ({
-  default: { get: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn() },
 }));
 
 const TENANT = 'WILSYTENANT-TEST-A';
@@ -83,6 +97,62 @@ const projection = () => ({
   authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
 });
 
+const attentionFeedFor = (payload) => {
+  const items = payload.items.map((item) => ({
+    id: item.source_key,
+    tenantId: payload.tenant_id,
+    sourceModule: item.source,
+    sourceType: item.kind,
+    sourceRecordId: item.work_item_id,
+    title: item.title,
+    summary: item.description || '',
+    priority: item.priority,
+    urgencyScore: item.is_overdue ? 90 : 40,
+    whyRanked: 'Source priority',
+    dueAt: item.due_at,
+    slaBreachAt: null,
+    assigneeId: payload.principal_id,
+    requesterId: payload.principal_id,
+    status: item.status,
+    actionHints: ['OPEN'],
+    deepLink: '/my-work',
+    authzScope: 'SOURCE_SERVICE_ONLY',
+    updatedAt: payload.as_of,
+    isOverdue: item.is_overdue,
+  }));
+  const included = payload.sources_included;
+  return {
+    schema: 'WILSY-OS-ATTENTION-FEED/V1', tenantId: payload.tenant_id,
+    principalId: payload.principal_id, syncedAt: payload.as_of, view: 'active', items,
+    counts: {
+      active: payload.summary.active_count, overdue: payload.summary.overdue_count,
+      dueToday: 0,
+      highPriority: items.filter((item) => ['HIGH', 'CRITICAL'].includes(item.priority)).length,
+    },
+    sources: included.map((moduleId) => ({
+      moduleId, state: payload.summary.source_counts[moduleId] === 0 ? 'empty' : 'ok',
+      count: payload.summary.source_counts[moduleId],
+    })),
+    coverage: {
+      admittedSources: included,
+      notRepresentedSources: ['OPERATIONS', 'INTELLIGENCE', 'FINANCE', 'PEOPLE'],
+      completeEnterpriseCoverage: false,
+    },
+    filteredTotal: items.length, nextCursor: null,
+    authority: { commandsOwnedBy: 'SOURCE_SERVICES', attentionCommandsEnabled: false },
+  };
+};
+
+const authenticatedFounderTestSession = {
+  isAuthenticated: true, authStage: 'AUTHENTICATED', token: 'synthetic-test-session',
+  sessionGeneration: 1,
+  user: {
+    id: 'WILSYPRINCIPAL-TEST', tenantId: TENANT, role: 'OWNER',
+    workspaceId: 'TEST-WORKSPACE', businessRole: 'owner',
+    membershipRevision: 1, businessRoleRevision: 1,
+  },
+};
+
 const renderCentre = (props = {}) => {
   const callbacks = {
     onToggle: vi.fn(),
@@ -105,6 +175,251 @@ beforeEach(() => {
 });
 
 describe('WILSY daily attention centre', () => {
+  it('reconciles an authenticated CRM create conflict and preserves the draft', async () => {
+    const currentProjection = projection();
+    const principalId = currentProjection.principal_id;
+    const sourceItems = currentProjection.items.map((item) => ({
+      id: item.source_key,
+      tenantId: TENANT,
+      sourceModule: item.source,
+      sourceType: item.kind,
+      sourceRecordId: item.work_item_id,
+      title: item.title,
+      summary: item.description || '',
+      priority: item.priority,
+      urgencyScore: item.is_overdue ? 90 : 40,
+      whyRanked: 'Source priority',
+      dueAt: item.due_at,
+      slaBreachAt: null,
+      assigneeId: principalId,
+      requesterId: principalId,
+      status: item.status,
+      actionHints: ['OPEN'],
+      deepLink: '/my-work',
+      authzScope: 'SOURCE_SERVICE_ONLY',
+      updatedAt: currentProjection.as_of,
+      isOverdue: item.is_overdue,
+    }));
+    const sourceFeed = {
+      schema: 'WILSY-OS-ATTENTION-FEED/V1',
+      tenantId: TENANT,
+      principalId,
+      syncedAt: currentProjection.as_of,
+      view: 'active',
+      items: sourceItems,
+      counts: {
+        active: sourceItems.length,
+        overdue: sourceItems.filter((item) => item.isOverdue).length,
+        dueToday: 0,
+        highPriority: sourceItems.filter((item) => ['HIGH', 'CRITICAL'].includes(item.priority)).length,
+      },
+      sources: ['LEGAL', 'CRM'].map((moduleId) => ({
+        moduleId,
+        state: 'ok',
+        count: sourceItems.filter((item) => item.sourceModule === moduleId).length,
+      })),
+      coverage: {
+        admittedSources: ['LEGAL', 'CRM'],
+        notRepresentedSources: ['OPERATIONS', 'INTELLIGENCE', 'FINANCE', 'PEOPLE'],
+        completeEnterpriseCoverage: false,
+      },
+      filteredTotal: sourceItems.length,
+      nextCursor: null,
+      authority: { commandsOwnedBy: 'SOURCE_SERVICES', attentionCommandsEnabled: false },
+    };
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: currentProjection };
+      if (path === '/attention/feed') return { data: sourceFeed };
+      if (path === '/attention/actions/crm') return { data: {
+        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+        tenantId: TENANT,
+        principalId,
+        authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+        sourceActions: { CRM: ['CREATE', 'COMPLETE'] },
+      } };
+      throw new Error('Unexpected test read route');
+    });
+    const conflict = Object.assign(new Error('conflict'), { response: { status: 409 } });
+    api.post.mockRejectedValueOnce(conflict);
+    const authValue = {
+      isAuthenticated: true,
+      authStage: 'AUTHENTICATED',
+      token: 'synthetic-test-session',
+      sessionGeneration: 1,
+      user: {
+        id: principalId,
+        tenantId: TENANT,
+        role: 'OWNER',
+        workspaceId: 'TEST-WORKSPACE',
+        businessRole: 'owner',
+        membershipRevision: 1,
+        businessRoleRevision: 1,
+      },
+    };
+
+    render(<AuthContext.Provider value={authValue}>
+      <WilsyDailyAttentionCentre tenantId={TENANT} open activeCount={2}
+        onToggle={vi.fn()} onClose={vi.fn()} onOpenWork={vi.fn()}/>
+    </AuthContext.Provider>);
+
+    expect(await screen.findAllByText('Follow up with customer')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Create work' }));
+    const title = screen.getByPlaceholderText('What needs to be done?');
+    fireEvent.change(title, { target: { value: 'Retain this task after conflict' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit task to EOS' }));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith('/crm/owner-workspace/work-items', expect.objectContaining({
+      title: 'Retain this task after conflict',
+      kind: 'TASK',
+    }), expect.objectContaining({ headers: { 'Idempotency-Key': expect.any(String) } }));
+    expect(await screen.findByText('This work intent conflicts with existing source evidence.')).toBeInTheDocument();
+    expect(title).toHaveValue('Retain this task after conflict');
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/my-work').length)
+      .toBeGreaterThanOrEqual(2));
+    expect(document.querySelector('[data-attention-mode="CREATE"]')).toBeInTheDocument();
+  });
+  it('confirms CRM completion only after fresh unified and attention readbacks remove the item', async () => {
+    const active = projection();
+    const fresh = {
+      ...active,
+      items: [active.items[0]],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { LEGAL: 1, CRM: 0 } },
+    };
+    let completionPersisted = false;
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: completionPersisted ? fresh : active };
+      if (path === '/attention/feed') return {
+        data: attentionFeedFor(completionPersisted ? fresh : active),
+      };
+      if (path === '/attention/actions/crm') return { data: {
+        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+        tenantId: TENANT, principalId: 'WILSYPRINCIPAL-TEST',
+        authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+        sourceActions: { CRM: ['COMPLETE'] },
+      } };
+      throw new Error('Unexpected test read route');
+    });
+    api.post.mockImplementation(async () => {
+      completionPersisted = true;
+      return { data: { work_item_id: 'CRM-2', tenant_id: TENANT, status: 'COMPLETED' } };
+    });
+    render(<AuthContext.Provider value={authenticatedFounderTestSession}>
+      <WilsyDailyAttentionCentre tenantId={TENANT} open activeCount={2}
+        onToggle={vi.fn()} onClose={vi.fn()} onOpenWork={vi.fn()}/>
+    </AuthContext.Provider>);
+    await screen.findByText('Follow up with customer');
+    fireEvent.click(screen.getByRole('button', { name: 'Complete Follow up with customer' }));
+    const evidence = screen.getByPlaceholderText('Record what was completed and the evidence for this decision');
+    await waitFor(() => expect(evidence).toHaveFocus());
+    fireEvent.change(evidence, { target: { value: 'Customer follow-up completed and recorded' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm completion' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items/CRM-2/complete',
+      { completion_note: 'Customer follow-up completed and recorded' },
+    );
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/my-work').length)
+      .toBeGreaterThanOrEqual(2));
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/attention/feed').length)
+      .toBeGreaterThanOrEqual(2));
+    await waitFor(() => expect(screen.queryByRole('button', {
+      name: 'Complete Follow up with customer',
+    })).toBeNull());
+  });
+
+  it('retains a valid EOS receipt after failed readback and reconciles without a second command', async () => {
+    const active = projection();
+    const fresh = {
+      ...active,
+      items: [active.items[0]],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { LEGAL: 1, CRM: 0 } },
+    };
+    let failFirstPostRead = true;
+    let completionPersisted = false;
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') {
+        if (api.post.mock.calls.length > 0 && failFirstPostRead) {
+          throw new Error('disposable readback unavailable');
+        }
+        return { data: completionPersisted ? fresh : active };
+      }
+      if (path === '/attention/feed') {
+        return { data: attentionFeedFor(completionPersisted ? fresh : active) };
+      }
+      if (path === '/attention/actions/crm') return { data: {
+        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+        tenantId: TENANT, principalId: 'WILSYPRINCIPAL-TEST',
+        authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+        sourceActions: { CRM: ['COMPLETE'] },
+      } };
+      throw new Error('Unexpected test read route');
+    });
+    api.post.mockResolvedValue({ data: {
+      work_item_id: 'CRM-2', tenant_id: TENANT, status: 'COMPLETED',
+      completion_note: 'Evidence retained after accepted completion',
+    } });
+    render(<AuthContext.Provider value={authenticatedFounderTestSession}>
+      <WilsyDailyAttentionCentre tenantId={TENANT} open activeCount={2}
+        onToggle={vi.fn()} onClose={vi.fn()} onOpenWork={vi.fn()}/>
+    </AuthContext.Provider>);
+    await screen.findByText('Follow up with customer');
+    fireEvent.click(screen.getByRole('button', { name: 'Complete Follow up with customer' }));
+    const evidence = screen.getByPlaceholderText('Record what was completed and the evidence for this decision');
+    fireEvent.change(evidence, { target: { value: 'Evidence retained after accepted completion' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm completion' }));
+    expect(await screen.findByText(/EOS accepted completion.*fresh authorized readback could not be verified/)).toBeTruthy();
+    const retainedEvidence = screen.getByPlaceholderText('Record what was completed and the evidence for this decision');
+    expect(retainedEvidence).toHaveValue('Evidence retained after accepted completion');
+    expect(retainedEvidence).toHaveAttribute('readonly');
+    expect(screen.getByRole('button', { name: 'Awaiting source readback' })).toBeDisabled();
+    expect(api.post).toHaveBeenCalledTimes(1);
+
+    failFirstPostRead = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByRole('button', { name: 'Reconcile completion' })).toBeEnabled();
+    completionPersisted = true;
+    fireEvent.click(screen.getByRole('button', { name: 'Reconcile completion' }));
+    expect(await screen.findByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeTruthy();
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.get.mock.calls.filter(([path]) => path === '/my-work').length).toBeGreaterThanOrEqual(4);
+    expect(api.get.mock.calls.filter(([path]) => path === '/attention/feed').length).toBeGreaterThanOrEqual(4);
+    expect(screen.queryByRole('button', { name: 'Complete Follow up with customer' })).toBeNull();
+  });
+
+  it('preserves CRM work and reports the actual EOS validation rejection', async () => {
+    const active = projection();
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: active };
+      if (path === '/attention/feed') return { data: attentionFeedFor(active) };
+      if (path === '/attention/actions/crm') return { data: {
+        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1',
+        tenantId: TENANT, principalId: 'WILSYPRINCIPAL-TEST',
+        authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
+        sourceActions: { CRM: ['COMPLETE'] },
+      } };
+      throw new Error('Unexpected test read route');
+    });
+    api.post.mockRejectedValue(Object.assign(new Error('rejected'), {
+      response: { status: 422, data: { detail: 'COMPLETION_NOTE_INVALID' } },
+    }));
+    render(<AuthContext.Provider value={authenticatedFounderTestSession}>
+      <WilsyDailyAttentionCentre tenantId={TENANT} open activeCount={2}
+        onToggle={vi.fn()} onClose={vi.fn()} onOpenWork={vi.fn()}/>
+    </AuthContext.Provider>);
+    await screen.findByText('Follow up with customer');
+    fireEvent.click(screen.getByRole('button', { name: 'Complete Follow up with customer' }));
+    const evidence = screen.getByPlaceholderText('Record what was completed and the evidence for this decision');
+    fireEvent.change(evidence, { target: { value: 'Retain rejected evidence' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm completion' }));
+    expect(await screen.findByText('EOS rejected completion evidence (COMPLETION_NOTE_INVALID).')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'))
+      .toHaveValue('Retain rejected evidence');
+    expect(screen.getByRole('button', { name: 'Confirm completion' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Reconcile completion' })).toBeNull();
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
   it('displays EOS-authorised work, not fabricated unread notifications', async () => {
     renderCentre();
     expect(await screen.findByText('Review governed contract')).toBeTruthy();
@@ -346,7 +661,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT
+ * VERSION: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.

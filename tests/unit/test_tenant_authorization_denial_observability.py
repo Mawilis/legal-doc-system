@@ -1,14 +1,18 @@
 """Direct certificate for canonical tenant-authorization denial observation.
 
 TITLE: WILSY OS Tenant Authorization Denial Observability Certificate
-VERSION: v1.0.0-P6-IAM-DENIAL-OBSERVABILITY-CERT
+VERSION: v1.2.0-SCOPED-REQUEST-TIMING-CERT
 AUTHORITY: Test-only verification of the existing shared HTTP IAM dependency.
 EPITOME: Proves bounded post-decision denial and outage observations without
          changing authentication, authorization, tenant, or persistence truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization_denial_observability.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Governance and Python EOS IAM.
-CERTIFICATION / UPDATE DATE: 2026-10-19
-CHANGELOG: 2026-10-19 v1.0.0 establishes RED-first denial, outage, privacy,
+CERTIFICATION / UPDATE DATE: 2026-11-15
+CHANGELOG: 2026-11-15 v1.2.0-SCOPED-REQUEST-TIMING-CERT verifies opt-in,
+           trace-correlated timing excludes tenant, principal, permission, and
+           credential material while leaving authorization outcomes unchanged.
+2026-11-14 v1.1.0-PLAIN-LOG-CORRELATION-CERT verifies closed message-only logs preserve safe structured references.
+Prior v1.0.0 establishes RED-first denial, outage, privacy,
            correlation, concurrency, sink-failure, and authority-boundary proof.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 controls.
 SECURITY / PRIVACY POSTURE: Synthetic identities only; secrets and raw identity
@@ -21,6 +25,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 from __future__ import annotations
 
 import inspect
+import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
@@ -52,6 +57,7 @@ def _identity() -> SovereignIdentity:
         roles=["projected-role"],
         permissions=["projected-permission"],
         auth_method="test",
+        session_reference=None,
         status=PrincipalStatus.ACTIVE,
     )
 
@@ -177,6 +183,45 @@ def test_dependency_outage_is_not_misreported_as_permission_denial(
     assert events[0]["decision_class"] == "MEMBERSHIP"
 
 
+def test_opt_in_timing_observes_existing_authorization_without_private_data(
+    caplog: Any,
+    monkeypatch: Any,
+) -> None:
+    caplog.set_level(logging.INFO)
+    monkeypatch.setenv("WILSY_MY_WORK_TIMING", "1")
+    _set_decision(
+        monkeypatch,
+        TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+            "tenant_auditor",
+            "AUDITOR",
+        ),
+    )
+    with TestClient(_app()) as client:
+        response = client.get(
+            "/cert",
+            headers={
+                "X-Tenant-ID": _TENANT,
+                "X-Trace-ID": "TRC-MWHCMCDJ-HR4HXJ",
+                "Authorization": "Bearer secret-must-not-appear",
+            },
+        )
+
+    assert response.status_code == 200
+    messages = [
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("WILSY_REQUEST_TIMING")
+    ]
+    assert any("trace_id=TRC-MWHCMCDJ-HR4HXJ" in message for message in messages)
+    assert any("stage=TENANT_OTHER_THREADPOOL_QUEUE" in message for message in messages)
+    assert any("stage=TENANT_OTHER_CURRENTNESS" in message for message in messages)
+    serialized = "\n".join(messages)
+    for private_value in (_TENANT, _PRINCIPAL, _PERMISSION, _OPERATION, "secret-must-not-appear"):
+        assert private_value not in serialized
+
+
 def test_authorized_verdict_and_denied_verdict_survive_logger_failure(
     monkeypatch: Any,
 ) -> None:
@@ -292,13 +337,6 @@ def test_observation_adds_no_authority_or_persistence() -> None:
         assert forbidden not in source
 
 
-# ARTIFACT: test_tenant_authorization_denial_observability.py
-# VERSION: v1.0.0-P6-IAM-DENIAL-OBSERVABILITY-CERT
-# AUTHORITY BOUNDARY: direct observation verification only; existing IAM decides
-# TENANT POSTURE: raw tenant and principal identities are forbidden from events
-# FAIL-CLOSED POSTURE: telemetry failure never alters authorization verdicts
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 def test_observation_pseudonym_failure_is_isolated(monkeypatch):
@@ -322,3 +360,28 @@ def test_observation_pseudonym_failure_is_isolated(monkeypatch):
             correlation_id="server-generated-test",
             http_status=http_status,
         )
+
+
+def test_default_message_formatter_preserves_only_existing_closed_observation(caplog, monkeypatch):
+    """Terminal formatters render the same non-secret references as structured sinks."""
+    caplog.set_level(logging.INFO)
+    _set_decision(monkeypatch, TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NOT_GRANTED))
+    with TestClient(_app()) as client:
+        assert client.get("/cert", headers={"X-Tenant-ID": _TENANT,
+            "Authorization": "Bearer synthetic-secret"}).status_code == 403
+    records = [record for record in caplog.records if hasattr(record, "wilsy_authorization_observation")]
+    assert len(records) == 1
+    rendered = logging.Formatter("%(message)s").format(records[0])
+    prefix = "TENANT_AUTHORIZATION_HTTP_TERMINAL "
+    assert rendered.startswith(prefix)
+    assert json.loads(rendered[len(prefix):]) == records[0].wilsy_authorization_observation
+    for forbidden in (_TENANT, _PRINCIPAL, "synthetic-secret", "private@example.test", _PERMISSION, _OPERATION):
+        assert forbidden not in rendered
+
+# ARTIFACT: test_tenant_authorization_denial_observability.py
+# VERSION: v1.2.0-SCOPED-REQUEST-TIMING-CERT
+# AUTHORITY BOUNDARY: direct observation verification only; existing IAM decides
+# TENANT POSTURE: raw tenant and principal identities are forbidden from events
+# FAIL-CLOSED POSTURE: telemetry failure never alters authorization verdicts
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

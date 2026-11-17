@@ -1,8 +1,19 @@
-"""WILSY OS explicit commercial-offer catalogue.
+"""
+EPITOME: Defines explicit commercial offer compositions without issuing entitlements or payments.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/entitlement/commercial_offer_catalogue.py
+COLLABORATION / OWNERSHIP: WILSY OS Core Engineering; canonical commercial authorities remain separate.
+CERTIFICATION / UPDATE DATE: 2026-11-17
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Static catalogue metadata only; no customer records, credentials or secrets.
+TENANT BOUNDARY: Catalogue metadata grants no tenant entitlement, membership or access.
+AUTHORITY BOUNDARY: Offer packaging does not authorize subscription activation, IAM, or workspace admission.
+FINANCIAL AUTHORITY BOUNDARY: No pricing or financial execution; Kennel EOS remains exclusive.
+WILSY OS explicit commercial-offer catalogue.
 
 TITLE: Commercial Offer Catalogue
-VERSION: v1.0.0-WILSY-COMMERCIAL-OFFER-CATALOGUE
+VERSION: v1.1.0-PROJECTS-STANDALONE-OFFER
 AUTHORITY: Global commercial packaging metadata only.
+CHANGELOG: v1.1.0-PROJECTS-STANDALONE-OFFER adds an explicit standalone Projects offer; no existing bundle composition or tenant entitlement changes.
 PURPOSE: Describe standalone and explicitly composed multi-product offers while
          keeping product identity, subscription lifecycle, entitlement issuance,
          IAM, pricing and financial execution in their existing authorities.
@@ -36,7 +47,7 @@ from tools.eos.saas.entitlement.product_catalogue import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-WILSY-COMMERCIAL-OFFER-CATALOGUE"
+VERSION: Final[str] = "v1.1.0-PROJECTS-STANDALONE-OFFER"
 SCHEMA: Final[str] = "WILSY-COMMERCIAL-OFFER-CATALOGUE/V1"
 CATALOGUE_IDENTITY: Final[str] = "WILSY_COMMERCIAL_OFFER_CATALOGUE"
 
@@ -72,6 +83,7 @@ class CommercialOfferId(StrEnum):
     OPERATIONS = "OPERATIONS_STANDALONE"
     INTELLIGENCE = "INTELLIGENCE_STANDALONE"
     POS = "POS_STANDALONE"
+    PROJECTS = "PROJECTS_STANDALONE"
     PROFESSIONAL_SERVICES = "PROFESSIONAL_SERVICES_BUNDLE"
     BUSINESS_OPERATIONS = "BUSINESS_OPERATIONS_BUNDLE"
     ENTERPRISE_OPERATIONS = "ENTERPRISE_OPERATIONS_BUNDLE"
@@ -120,6 +132,12 @@ _CANONICAL_OFFERS: Final[dict[CommercialOfferId, dict[str, object]]] = {
         "kind": CommercialOfferKind.STANDALONE,
         "product_ids": (TenantProductId.POS,),
         "description": "Standalone Point of Sale product offer; not included in existing bundles.",
+    },
+    CommercialOfferId.PROJECTS: {
+        "label": "Projects",
+        "kind": CommercialOfferKind.STANDALONE,
+        "product_ids": (TenantProductId.PROJECTS,),
+        "description": "Standalone Projects product offer; entitlement remains tenant-specific.",
     },
     CommercialOfferId.PROFESSIONAL_SERVICES: {
         "label": "Professional Services",
@@ -400,7 +418,12 @@ __all__ = [
     "list_commercial_offers",
 ]
 
+# ARTIFACT: commercial_offer_catalogue.py
+# VERSION: v1.1.0-PROJECTS-STANDALONE-OFFER
 # AUTHORITY BOUNDARY: static offer composition only; no subscription, entitlement, IAM or workspace authority
 # FINANCIAL BOUNDARY: no price, invoice, payment, settlement or execution truth
 # BUNDLE RULE: every included product is explicit and remains independently entitled
-# END OF WILSY OS COMMERCIAL OFFER CATALOGUE
+# TENANT POSTURE: offer metadata does not bind a tenant
+# FAIL-CLOSED POSTURE: exact catalogue identities and fingerprints required
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

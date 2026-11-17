@@ -1,4 +1,10 @@
-"""WILSY OS sovereign Python API server composition root.
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
 VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
@@ -11,8 +17,10 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: 2026-11-10 v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
+CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: 2026-11-16 v1.45.0-PROJECTS-ROUTER-AND-INDEX-BOOTSTRAP mounts the authenticated Projects router once under /api and provisions only the project registry unique indexes before route readiness; no business records, permissions, assignments or entitlements are created.
+2026-11-13 v1.44.0-COMPANY-OPERATING-DOCUMENT-ROUTER mounts the exact-company Mission/Strategy router once under /api, without automatic indexes, content publication, IAM assignments or employment changes.
+2026-11-10 v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
 QR issue/verify IAM remains router-owned and no invoice or key mutation occurs.
 2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
 Daily Attention feed, counts, calendar and source-coverage read surfaces
@@ -166,6 +174,13 @@ from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
 from .hr_workforce_directory_router import router as hr_workforce_directory_router
+from .company_operating_document_router import router as company_operating_document_router
+from .projects_router import router as projects_router
+from tools.eos.saas.projects.project_registry import (
+    COLLECTION as PROJECT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_EVENT_COLLECTION,
+    ProjectRegistry,
+)
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
@@ -355,6 +370,7 @@ class WilsyAPIServer:
         app.state.wilsy_ai_legal_services_orchestrator = None
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
+        app.state.projects_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
         app.state.global_principal_session_indexes_ready = False
         app.state.global_principal_system_session_indexes_ready = False
@@ -546,6 +562,7 @@ class WilsyAPIServer:
             except InstitutionalPKIError as error:
                 logger.warning("[INSTITUTIONAL_PKI] Verification unavailable: %s", error.code)
             app.state.p12c_binding_indexes_ready = False
+            app.state.projects_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
             app.state.global_principal_system_session_indexes_ready = False
@@ -583,6 +600,21 @@ class WilsyAPIServer:
             database, client = get_database(), get_client()
             if database is None:
                 return
+            # Project identity, code and immutable-event uniqueness must be
+            # established before any Projects HTTP operation is admitted.
+            # This is metadata-only DDL; startup creates no project or event data.
+            try:
+                ProjectRegistry.ensure_indexes(
+                    database[PROJECT_COLLECTION],
+                    database[PROJECT_EVENT_COLLECTION],
+                )
+                app.state.projects_indexes_ready = True
+            except Exception as error:
+                app.state.projects_indexes_ready = False
+                logger.error(
+                    "[PROJECTS] Canonical index bootstrap unavailable: %s",
+                    type(error).__name__,
+                )
             try:
                 InstitutionalSignerEnrollmentRegistry.ensure_indexes(
                     database[INSTITUTIONAL_SIGNER_COLLECTION],
@@ -1145,6 +1177,8 @@ class WilsyAPIServer:
         app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
         app.include_router(hr_workforce_directory_router)
+        app.include_router(company_operating_document_router, prefix="/api")
+        app.include_router(projects_router, prefix="/api")
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "

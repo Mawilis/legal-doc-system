@@ -1,7 +1,10 @@
-"""WILSY OS canonical tenant-selectable product catalogue.
+"""
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+WILSY OS canonical tenant-selectable product catalogue.
 
 TITLE: Tenant Product Catalogue
-VERSION: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE
+VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Own the immutable closed catalogue of tenant-selectable WILSY OS
          product modules without granting entitlement, IAM authority,
@@ -14,7 +17,8 @@ COLLABORATION / OWNERSHIP: Python EOS owns product identity/catalogue truth.
                             WILSY AI and Tenant Branding remain
                             separate VAS domains; IAM owns principal authority.
 CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE establishes the first closed
+CHANGELOG: v1.1.0-PROJECTS-PRODUCT-CATALOGUE adds one canonical Projects product identity for independently entitled internal and customer-tenant workspaces; no tenant entitlement or permission is granted.
+           v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE establishes the first closed
            tenant-selectable product catalogue for Legal Operations, Billing,
            CRM, HR, Operations and Intelligence. The original four product
            descriptors retain their exact identity, workspace keys and
@@ -49,7 +53,7 @@ import json
 from typing import Any, Final, cast
 
 
-VERSION: Final[str] = "v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE"
+VERSION: Final[str] = "v1.1.0-PROJECTS-PRODUCT-CATALOGUE"
 SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-CATALOGUE/V1"
 CATALOGUE_IDENTITY: Final[str] = "WILSY_TENANT_PRODUCT_CATALOGUE"
 
@@ -68,6 +72,7 @@ class TenantProductId(str, Enum):
     HR = "HR"
     OPERATIONS = "OPERATIONS"
     INTELLIGENCE = "INTELLIGENCE"
+    PROJECTS = "PROJECTS"
 
 
 _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
@@ -112,6 +117,12 @@ _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
         "workspace_key": "INTELLIGENCE_DASHBOARD",
         "required_products": (),
         "description": "Tenant analytics, evidence-backed insights and decision-support workspace.",
+    },
+    TenantProductId.PROJECTS: {
+        "label": "Projects",
+        "workspace_key": "PROJECTS_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant-scoped project planning, delivery status and auditable project lifecycle workspace.",
     },
 }
 
@@ -328,7 +339,7 @@ __all__ = [
 ]
 
 # ARTIFACT: product_catalogue.py
-# VERSION: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE
+# VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE
 # AUTHORITY BOUNDARY: product catalogue description only; no tenant entitlement or IAM authority
 # TENANT POSTURE: global catalogue facts only; no tenant identity is inferred or mutated
 # FAIL-CLOSED POSTURE: unknown products, descriptor drift and VAS leakage reject

@@ -1,7 +1,13 @@
-"""Wilsy OS credential-revision direct certificate.
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+Wilsy OS credential-revision direct certificate.
 
 TITLE: WILSY OS AuthRegistry Credential Revision Direct Certificate
-VERSION: v1.4.0-CONSOLIDATION-STRICT-IDENTITY-CERT
+VERSION: v1.8.0-COMBINED-LEGACY-IDENTITY-CERTIFICATE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the AuthRegistry credential-revision
          persistence primitives plus caller-owned transactional registration
@@ -10,8 +16,21 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Test-only evidence; production AuthRegistry,
                            JWT, recovery, Node, and database lifecycles remain
                            read-only and caller-owned.
-CERTIFICATION / UPDATE DATE: 2026-11-10
+CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
+  v1.8.0-COMBINED-LEGACY-IDENTITY-CERTIFICATE proves ObjectId-shaped
+    currentness uses one tenant-scoped bounded $or read, detects identity
+    collisions, and propagates the exact caller ClientSession.
+  v1.7.0-CORRELATED-MONGO-READ-CERTIFICATE verifies that only validated opaque
+    traces and fixed tenant/canonical/legacy read labels enter the Kernel Mongo
+    timing scope, while setup and teardown faults preserve the credential read.
+  v1.6.0-VALIDATED-TENANT-HYDRATION-CERT verifies exact currentness reads
+  reuse the already-validated tenant and collision checks, preserve one canonical
+  lookup or the two required canonical/ObjectId lookups, and forward the exact
+  caller ClientSession without changing independent hydration callers.
+  v1.5.0-CREDENTIAL-CURRENTNESS-TIMING-CERT — Verifies fixed-stage safe
+  currentness timing for canonical and applicable legacy identity paths,
+  including invalid trace suppression and telemetry fault isolation.
   v1.4.0-CONSOLIDATION-STRICT-IDENTITY-CERT — Certifies strict identity hydration, ObjectId-only compatibility, collision denial, sanitized gated diagnostics and pre-write failure without changing authority or credentials.
   v1.3.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION-CERT —
     Advances the production-version oracle to v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION, proves that
@@ -51,6 +70,7 @@ FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusively financial.
 from __future__ import annotations
 
 import ast
+from contextlib import contextmanager
 import inspect
 from datetime import datetime
 from types import SimpleNamespace
@@ -58,7 +78,9 @@ from typing import Any, cast
 
 import pytest
 from bson import ObjectId
+from starlette.requests import Request
 
+from tools.eos.auth import authentication as authentication_module
 from tools.eos.saas.auth import auth_registry as auth_registry_module
 from tools.eos.saas.auth.auth_registry import (
     CREDENTIAL_REVISION_MAX,
@@ -91,6 +113,21 @@ class _RecordingSession:
         self.retry_calls = 0
 
 
+class _RecordingCursor:
+    """Small bounded cursor substitute that preserves find/limit semantics."""
+
+    def __init__(self, documents: list[dict[str, Any]]) -> None:
+        self.documents = documents
+        self.maximum: int | None = None
+
+    def limit(self, maximum: int) -> "_RecordingCursor":
+        self.maximum = maximum
+        return self
+
+    def __iter__(self):
+        return iter(self.documents[: self.maximum])
+
+
 class _RecordingCollection:
     def __init__(self, documents: list[dict[str, Any]] | None = None) -> None:
         self.documents = [dict(document) for document in (documents or [])]
@@ -103,6 +140,10 @@ class _RecordingCollection:
     @staticmethod
     def _matches(document: dict[str, Any], query: dict[str, Any]) -> bool:
         for key, expected in query.items():
+            if key == "$or":
+                if not any(_RecordingCollection._matches(document, branch) for branch in expected):
+                    return False
+                continue
             if isinstance(expected, dict) and "$exists" in expected:
                 if (key in document) != bool(expected["$exists"]):
                     return False
@@ -110,6 +151,12 @@ class _RecordingCollection:
             if document.get(key) != expected:
                 return False
         return True
+
+    def find(self, query: dict[str, Any], **kwargs: Any) -> "_RecordingCursor":
+        self.calls.append({"operation": "find", "query": dict(query), "kwargs": dict(kwargs)})
+        return _RecordingCursor(
+            [dict(document) for document in self.documents if self._matches(document, query)]
+        )
 
     def find_one(
         self, query: dict[str, Any], **kwargs: Any
@@ -235,7 +282,7 @@ def _user_calls(collection: _RecordingCollection, operation: str) -> list[dict[s
 
 
 def test_public_api_signatures_and_certificate_version() -> None:
-    assert auth_registry_module.VERSION == 'v1.13.0-CONSOLIDATION-STRICT-IDENTITY-HYDRATION'
+    assert auth_registry_module.VERSION == 'v1.17.0-COMBINED-LEGACY-IDENTITY-READ'
     assert list(inspect.signature(AuthRegistry.register_user).parameters) == [
         "self", "email", "password", "firstName", "lastName", "role", "tenantId", "session"
     ]
@@ -357,6 +404,100 @@ def test_missing_revision_hydrates_zero_without_write_on_read(
     assert "credential_revision" not in database.collections["users"].documents[0]
 
 
+def test_credential_currentness_timing_is_trace_bound_and_fault_isolated(
+    harness: tuple[AuthRegistry, _RecordingDatabase],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Canonical and legacy revision reads expose only fixed timing fields."""
+    registry, database = harness
+    observations: list[dict[str, Any]] = []
+    monkeypatch.setenv("WILSY_MY_WORK_TIMING", "1")
+    monkeypatch.setattr(
+        authentication_module,
+        "emit_request_timing",
+        lambda **kwargs: observations.append(kwargs),
+    )
+    trace_id = "TRC-ABCDEFGH-123456"
+    established = authentication_module.establish_request_timing_correlation(
+        Request(
+            {
+                "type": "http",
+                "headers": [(b"x-trace-id", trace_id.encode("ascii"))],
+            }
+        )
+    )
+    assert established == trace_id
+    mongo_scopes: list[dict[str, str]] = []
+
+    @contextmanager
+    def recording_mongo_scope(*, stage: str, correlation: str):
+        mongo_scopes.append({"stage": stage, "correlation": correlation})
+        yield
+
+    monkeypatch.setattr(
+        auth_registry_module.kernel_db,
+        "mongo_timing_scope",
+        recording_mongo_scope,
+    )
+
+    assert registry.get_credential_revision("TENANT-ONE", "user-1") == 0
+    legacy_document = _users(database).documents[0]
+    legacy_document.pop("user_id")
+    legacy_principal = str(legacy_document["_id"])
+    assert registry.get_credential_revision("TENANT-ONE", legacy_principal) == 0
+    assert [scope["stage"] for scope in mongo_scopes] == [
+        "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+        "AUTH_CREDENTIAL_EXACT_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+        "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
+    ]
+    assert all(scope["correlation"] == trace_id for scope in mongo_scopes)
+
+    expected = {
+        "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+        "AUTH_CREDENTIAL_EXACT_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_COLLISION_VERIFICATION",
+        "AUTH_CREDENTIAL_RECORD_HYDRATION_VALIDATION",
+    }
+    assert {event["stage"] for event in observations} == expected
+    assert all(event["outcome"] == "OK" for event in observations)
+    assert all(event["correlation"] == trace_id for event in observations)
+    assert all(isinstance(event["started_ns"], int) for event in observations)
+    serialized = repr(observations)
+    assert "user-1" not in serialized
+    assert "TENANT-ONE" not in serialized
+    assert legacy_principal not in serialized
+
+    count_with_valid_trace = len(observations)
+    scope_count_with_valid_trace = len(mongo_scopes)
+    correlation_token = authentication_module._TIMING_CORRELATION.set("invalid-trace")
+    assert registry.get_credential_revision("TENANT-ONE", legacy_principal) == 0
+    assert len(observations) == count_with_valid_trace
+    assert len(mongo_scopes) == scope_count_with_valid_trace
+    authentication_module._TIMING_CORRELATION.reset(correlation_token)
+
+    monkeypatch.setattr(
+        authentication_module,
+        "emit_request_timing",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("diagnostic fault")),
+    )
+    assert registry.get_credential_revision("TENANT-ONE", legacy_principal) == 0
+
+    @contextmanager
+    def teardown_fault_scope(*, stage: str, correlation: str):
+        del stage, correlation
+        yield
+        raise RuntimeError("diagnostic teardown fault")
+
+    monkeypatch.setattr(
+        auth_registry_module.kernel_db,
+        "mongo_timing_scope",
+        teardown_fault_scope,
+    )
+    assert registry.get_credential_revision("TENANT-ONE", legacy_principal) == 0
+
+
 @pytest.mark.parametrize("revision", [0, 1, 17, CREDENTIAL_REVISION_MAX])
 def test_valid_revision_values_are_returned_exactly(
     monkeypatch: pytest.MonkeyPatch, revision: int
@@ -406,10 +547,31 @@ def test_exact_canonical_revision_read_is_tenant_bound_and_session_propagated(
 ) -> None:
     registry, database = harness
     session = _RecordingSession()
+    tenant_reads: list[dict[str, Any]] = []
+
+    def resolve_tenant(
+        value: object,
+        *,
+        allow_alias: bool = False,
+        session: Any = None,
+    ) -> SimpleNamespace:
+        tenant_reads.append(
+            {"value": value, "allow_alias": allow_alias, "session": session}
+        )
+        return SimpleNamespace(tenant_id=value)
+
+    registry.tenant_registry = cast(
+        Any,
+        SimpleNamespace(resolve_canonical_tenant=resolve_tenant),
+    )
     assert registry.get_credential_revision("TENANT-ONE", "user-1", session=session) == 0
     reads = _user_calls(_users(database), "find_one")
+    assert len(reads) == 1
     assert reads[0]["query"] == {"user_id": "user-1", "tenantId": "TENANT-ONE"}
     assert reads[0]["kwargs"]["session"] is session
+    assert tenant_reads == [
+        {"value": "TENANT-ONE", "allow_alias": False, "session": session}
+    ]
 
 
 def test_legacy_id_revision_read_is_exact_tenant_bound_and_session_propagated(
@@ -421,11 +583,63 @@ def test_legacy_id_revision_read_is_exact_tenant_bound_and_session_propagated(
     monkeypatch.setattr(auth_registry_module.kernel_db, "get_database", lambda: database)
     registry = AuthRegistry(cast(Any, _TenantRegistry))
     session = _RecordingSession()
+    tenant_reads: list[dict[str, Any]] = []
+
+    def resolve_tenant(
+        value: object,
+        *,
+        allow_alias: bool = False,
+        session: Any = None,
+    ) -> SimpleNamespace:
+        tenant_reads.append(
+            {"value": value, "allow_alias": allow_alias, "session": session}
+        )
+        return SimpleNamespace(tenant_id=value)
+
+    registry.tenant_registry = cast(
+        Any,
+        SimpleNamespace(resolve_canonical_tenant=resolve_tenant),
+    )
     assert registry.get_credential_revision("TENANT-ONE", str(legacy_id), session=session) == 0
-    reads = _user_calls(_users(database), "find_one")
-    assert reads[0]["query"] == {"user_id": str(legacy_id), "tenantId": "TENANT-ONE"}
-    assert reads[1]["query"] == {"_id": legacy_id, "tenantId": "TENANT-ONE"}
-    assert all(call["kwargs"]["session"] is session for call in reads)
+    reads = _user_calls(_users(database), "find")
+    assert len(reads) == 1
+    assert reads[0]["query"] == {
+        "tenantId": "TENANT-ONE",
+        "$or": [{"user_id": str(legacy_id)}, {"_id": legacy_id}],
+    }
+    assert reads[0]["kwargs"]["session"] is session
+    assert tenant_reads == [
+        {"value": "TENANT-ONE", "allow_alias": False, "session": session}
+    ]
+
+
+@pytest.mark.parametrize("user_id_field", ["absent", "null"])
+def test_legacy_object_id_revision_read_preserves_missing_or_null_user_id(
+    monkeypatch: pytest.MonkeyPatch,
+    user_id_field: str,
+) -> None:
+    legacy_id = ObjectId("507f1f77bcf86cd799439011")
+    document = _user_document(_id=legacy_id)
+    if user_id_field == "absent":
+        document.pop("user_id")
+    else:
+        document["user_id"] = None
+    document.pop("credential_revision")
+    database = _RecordingDatabase([document])
+    monkeypatch.setattr(auth_registry_module.kernel_db, "get_database", lambda: database)
+    registry = AuthRegistry(cast(Any, _TenantRegistry))
+    session = _RecordingSession()
+
+    assert registry.get_credential_revision("TENANT-ONE", str(legacy_id), session=session) == 0
+
+    reads = _user_calls(_users(database), "find")
+    assert [call["query"] for call in reads] == [
+        {
+            "tenantId": "TENANT-ONE",
+            "$or": [{"user_id": str(legacy_id)}, {"_id": legacy_id}],
+        }
+    ]
+    assert reads[0]["kwargs"]["session"] is session
 
 
 def test_tenant_mismatch_and_missing_user_fail_closed(
@@ -455,6 +669,15 @@ def test_identity_collision_fails_closed() -> None:
     try:
         with pytest.raises(AuthRegistryTenantError):
             registry.get_credential_revision("TENANT-ONE", collision_text)
+        reads = _user_calls(_users(database), "find")
+        assert len(reads) == 1
+        assert reads[0]["query"] == {
+            "tenantId": "TENANT-ONE",
+            "$or": [
+                {"user_id": collision_text},
+                {"_id": ObjectId(collision_text)},
+            ],
+        }
     finally:
         auth_registry_module.kernel_db.get_database = original
 
@@ -742,6 +965,14 @@ def test_absent_and_historical_null_identity_preserve_same_objectid_and_caller_s
     with caplog.at_level("WARNING", logger=auth_registry_module.__name__):
         user = registry.get_user_by_id(principal, session=session)
         assert user is not None and user.id == principal
+    first_read_queries = [
+        call["query"] for call in _user_calls(_users(database), "find_one")
+    ]
+    assert len(first_read_queries) == 3
+    assert first_read_queries[-1] == {
+        "user_id": principal,
+        "tenantId": "TENANT-ONE",
+    }
     assert caplog.records == []
     assert "user_id" not in document
     document["user_id"] = None
@@ -749,6 +980,15 @@ def test_absent_and_historical_null_identity_preserve_same_objectid_and_caller_s
     with caplog.at_level("WARNING", logger=auth_registry_module.__name__):
         user = registry.get_user_by_id(principal, session=session)
         assert user is not None and user.id == principal
+    all_read_queries = [
+        call["query"] for call in _user_calls(_users(database), "find_one")
+    ]
+    assert len(all_read_queries) == 6
+    assert all_read_queries[3:5] == first_read_queries[:2]
+    assert all_read_queries[5] == {
+        "user_id": principal,
+        "tenantId": "TENANT-ONE",
+    }
     assert [record.getMessage() for record in caplog.records] == ["AUTH_LEGACY_OBJECT_ID_COMPATIBILITY"]
     assert principal not in caplog.text
     assert document["email"] not in caplog.text
@@ -815,7 +1055,7 @@ def test_identity_fracture_logs_only_stable_code_even_with_debug_disabled(
 
 
 # ARTIFACT: tests/unit/test_auth_registry_credential_revision.py
-# VERSION: v1.4.0-CONSOLIDATION-STRICT-IDENTITY-CERT
+# VERSION: v1.8.0-COMBINED-LEGACY-IDENTITY-CERTIFICATE
 # AUTHORITY BOUNDARY: direct offline evidence for AuthRegistry credential, tenant-resolution, and caller-transaction registration seams
 # TENANT POSTURE: canonical tenant resolution and credential persistence preserve exact caller transaction scope
 # FAIL-CLOSED POSTURE: malformed state, races, count anomalies, readback drift, and transaction-boundary violations fail

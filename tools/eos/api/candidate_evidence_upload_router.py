@@ -1,8 +1,21 @@
-"""Authenticated streaming ingress for candidate and signed-offer evidence.
-
-The request identity and tenant come only from canonical EOS authorization.
-The body is streamed to the provider; Mongo transactions never span S3 I/O.
-Provider verification and custody registration are separate explicit gates.
+"""TITLE: WILSY EOS authenticated candidate and offer evidence transport.
+VERSION: v1.0.2-PLATFORM-EMPLOYER-EVIDENCE-AUTHORITY-TYPE-CERT
+AUTHORITY: Python EOS tenant IAM, evidence custody registries, and verified S3 provider adapter.
+EPITOME: Streams tenant-scoped candidate and offer evidence, verifies provider
+         bytes, and records immutable custody without making evidence itself
+         proof of candidate identity or accepted employment.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/candidate_evidence_upload_router.py
+COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py under /api; consumed by authenticated candidate and offer workflows.
+CERTIFICATION / UPDATE DATE: 2026-11-12.
+CHANGELOG:
+  v1.0.2-PLATFORM-EMPLOYER-EVIDENCE-AUTHORITY-TYPE-CERT — Corrects the release marker so the header, current changelog and end seal agree exactly; transport and authority behavior are unchanged.
+  v1.0.1-PLATFORM-EMPLOYER-EVIDENCE-AUTHORITY-TYPE-CERT — Repeats the signed-offer id guard inside the transaction closure so the exact offer scope is statically and dynamically non-null before registry lookup; tenant authorization, evidence transport, custody and failure semantics are unchanged.
+  v1.0.0-PLATFORM-EMPLOYER-EVIDENCE-AUTHORITY — Adds exact-WILSY platform-employer IAM pairs for evidence upload/read while retaining customer HR entitlement gates and source-owned custody behavior.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Evidence bytes use configured KMS-backed S3 custody; downloads require authenticated tenant IAM, verify content, and disable browser caching. Logs and responses exclude raw contents.
+TENANT BOUNDARY: Candidate, offer, attempt, evidence, and provider references are bound to the exact authenticated tenant. Platform-employer pairs are selected only for canonical WILSY.
+AUTHORITY BOUNDARY: Customer HR evidence access requires exact-tenant HR entitlement and tenant IAM. Canonical WILSY evidence operations use separately assigned platform-employer capability through the same EOS resolver. Evidence custody is not identity proof; offer acceptance and employee admission remain blocked pending candidate identity binding.
+FINANCIAL AUTHORITY BOUNDARY: No payroll, payment, execution, settlement, or commercial entitlement authority.
 """
 from __future__ import annotations
 
@@ -70,10 +83,14 @@ router = APIRouter(prefix="/hr/hiring", tags=["Candidate Evidence"])
 _UPLOAD = RequireTenantAuthorization(
     "hr:hiring_candidate_evidence:upload",
     "hr_hiring_candidate_evidence_upload",
+    platform_employer_permission_id="platform_employer:hiring_candidate_evidence:upload",
+    platform_employer_operation="platform_employer_hiring_candidate_evidence_upload",
 )
 _READ = RequireTenantAuthorization(
     "hr:hiring_candidate_evidence:read",
     "hr_hiring_candidate_evidence_read",
+    platform_employer_permission_id="platform_employer:hiring_candidate_evidence:read",
+    platform_employer_operation="platform_employer_hiring_candidate_evidence_read",
 )
 
 _ALLOWED_MEDIA_PREFIXES = ("application/pdf", "image/", "application/msword",
@@ -208,6 +225,11 @@ async def upload_candidate_evidence(
         else:
             raise HTTPException(status_code=409, detail="CANDIDATE_EVIDENCE_VERSION_ALREADY_REGISTERED")
         if evidence_kind is CandidateEvidenceKind.SIGNED_OFFER:
+            if not isinstance(offer_id, str) or not offer_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="CANDIDATE_EVIDENCE_SIGNED_OFFER_SCOPE_REQUIRED",
+                )
             offer = hiring.get_offer(tenant_id=tenant_id, offer_id=offer_id, session=tx)
             if offer.candidate_id != candidate_id:
                 raise HTTPException(status_code=404, detail="HIRING_OFFER_NOT_FOUND")
@@ -357,3 +379,12 @@ async def read_candidate_evidence(
 
 
 __all__ = ["router", "upload_candidate_evidence", "read_candidate_evidence"]
+
+
+# ARTIFACT: candidate_evidence_upload_router.py
+# VERSION: v1.0.2-PLATFORM-EMPLOYER-EVIDENCE-AUTHORITY-TYPE-CERT
+# AUTHORITY BOUNDARY: Existing exact-tenant EOS IAM and evidence custody only; candidate evidence is not candidate identity proof or accepted employment.
+# TENANT POSTURE: Candidate, offer, evidence, attempt and provider scopes are exact-tenant bound; employer alternates apply only to canonical WILSY.
+# FAIL-CLOSED POSTURE: Missing authorization, provider configuration, verified bytes, transaction or custody evidence never reports successful registration.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

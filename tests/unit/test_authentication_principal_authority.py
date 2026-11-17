@@ -1,19 +1,22 @@
 """Unit certification for fail-closed authentication authority projection.
 
 TITLE: Authentication Principal Authority Certificate
-VERSION: v1.0.0-R10C2F9A-AUTHENTICATION-PRINCIPAL-AUTHORITY-CERT-RECONCILIATION
+VERSION: v1.1.0-SCOPED-REQUEST-TIMING-CERT
 AUTHORITY: Test-only evidence for canonical principal and durable revision gates.
 EPITOME: Certifies that protected authentication reaches canonical principal
     authority and exact durable credential-revision comparison.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authentication_principal_authority.py
 COLLABORATION / OWNERSHIP: Test-only certificate; authentication.py and its
     canonical AuthRegistry dependency remain read-only in this gate.
-CERTIFICATION / UPDATE DATE: 2026-09-22
+CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
+    2026-11-15 v1.1.0-SCOPED-REQUEST-TIMING-CERT verifies disabled diagnostic
+    silence and enabled privacy-safe authentication timing without changing
+    credential or principal authority outcomes.
     v1.0.0-R10C2F9A-AUTHENTICATION-PRINCIPAL-AUTHORITY-CERT-RECONCILIATION
     reconciles existing principal-authority fixtures with the protected ACCESS
     token contract and records the durable credential-revision read.
-SECURITY/PRIVACY POSTURE: Synthetic identifiers only; no secrets or durable data.
+SECURITY / PRIVACY POSTURE: Synthetic identifiers only; no secrets or durable data.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Synthetic tenant context is passed only to the durable-read seam.
 AUTHORITY BOUNDARY: This certificate observes production authentication seams; it
@@ -21,6 +24,7 @@ AUTHORITY BOUNDARY: This certificate observes production authentication seams; i
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
 """
 import asyncio
+import logging
 from typing import Any, cast
 from types import SimpleNamespace
 from fastapi import HTTPException
@@ -87,6 +91,57 @@ def test_active_requires_durable_authority_and_projects_status(monkeypatch):
     assert value.session_reference == "WILSYSESSION-test"
     assert authority_calls == ["p"]
     assert durable_calls == [("t", "p")]
+
+
+def test_request_timing_is_opt_in_and_excludes_credential_and_identity_data(
+    caplog, monkeypatch
+):
+    payload = access_payload(
+        identity_id="principal-private",
+        tenant_id="tenant-private",
+        session_reference="WILSYSESSION-private",
+    )
+    repository = Repository(PrincipalStatus.ACTIVE)
+    monkeypatch.setattr(authentication, "verify_access_token", lambda _: payload)
+    monkeypatch.setattr(authentication, "AuthRegistry", lambda: CredentialRegistry([]))
+    request = Request({
+        "type": "http",
+        "method": "GET",
+        "path": "/",
+        "headers": [(b"x-trace-id", b"TRC-MWHCMCDJ-HR4HXJ")],
+    })
+    caplog.set_level(logging.INFO, logger="WilsyOS.Auth.Authentication")
+
+    value = asyncio.run(
+        authentication.get_current_identity(request, credentials(), None, repository)
+    )
+    assert value.identity_id == "principal-private"
+    assert not [
+        record for record in caplog.records
+        if record.getMessage().startswith("WILSY_REQUEST_TIMING")
+    ]
+
+    monkeypatch.setenv("WILSY_MY_WORK_TIMING", "1")
+    value = asyncio.run(
+        authentication.get_current_identity(request, credentials(), None, repository)
+    )
+    assert value.identity_id == "principal-private"
+    events = [
+        record.getMessage() for record in caplog.records
+        if record.getMessage().startswith("WILSY_REQUEST_TIMING")
+    ]
+    assert any("trace_id=TRC-MWHCMCDJ-HR4HXJ" in event for event in events)
+    assert any("stage=AUTH_ACCESS_TOKEN_VERIFICATION" in event for event in events)
+    assert any("stage=AUTH_PRINCIPAL_CURRENTNESS" in event for event in events)
+    assert any("stage=AUTHENTICATION_TOTAL" in event for event in events)
+    serialized = "\n".join(events)
+    for private_value in (
+        "principal-private",
+        "tenant-private",
+        "WILSYSESSION-private",
+        "Bearer token",
+    ):
+        assert private_value not in serialized
 
 @pytest.mark.parametrize("status", [PrincipalStatus.SUSPENDED, PrincipalStatus.REVOKED, None])
 def test_non_active_or_absent_principal_denied(status, monkeypatch):
@@ -258,7 +313,7 @@ def test_system_session_rejection_remains_401_and_aborts(monkeypatch):
     assert not session.committed
 
 # ARTIFACT: test_authentication_principal_authority.py
-# VERSION: v1.0.0-R10C2F9A-AUTHENTICATION-PRINCIPAL-AUTHORITY-CERT-RECONCILIATION
+# VERSION: v1.1.0-SCOPED-REQUEST-TIMING-CERT
 # AUTHORITY BOUNDARY: principal authority and durable credential-revision evidence only
 # TENANT POSTURE: synthetic tenant context; no persistence or cross-tenant access
 # FAIL-CLOSED POSTURE: invalid, non-ACCESS, non-active, absent, and bypass attempts deny

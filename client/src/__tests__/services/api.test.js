@@ -1,12 +1,14 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.1.0-MFA-BOOTSTRAP-503-CURRENTNESS
+ * VERSION: v1.2.0-COMPANY-DOCUMENT-TRANSPORT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.2.0-COMPANY-DOCUMENT-TRANSPORT-CERT verifies six exact
+ *            company-document mutation paths retain caller fields and forensic headers.
  * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
  *            covenant status, normal dashboard backoff and 403 separation.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -211,6 +213,24 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers['x-request-seal']).toEqual(
         expect.any(String),
       );
+    });
+
+    it('preserves both classifications and all three strict company-document commands', async () => {
+      bindAuthenticatedTransport();
+      for (const classification of ['MISSION', 'STRATEGY']) {
+        for (const action of ['drafts', 'submit', 'publish']) {
+          const payload = { expected_revision: 1, synthetic_field: 'transport preservation only' };
+          const sealed = await requestInterceptorCapture.fulfilled({
+            url: '/company-operating-documents/' + classification + '/' + action,
+            method: 'post', data: { ...payload }, headers: { 'Idempotency-Key': 'synthetic-key' },
+          });
+          expect(sealed.data).toEqual(payload);
+          expect(sealed.data).not.toHaveProperty('timestamp');
+          expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+          expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
+          expect(sealed.headers['Idempotency-Key']).toBe('synthetic-key');
+        }
+      }
     });
 
     it('preserves exact EOS responder decision bodies while retaining forensic headers', async () => {
@@ -518,7 +538,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.1.0-MFA-BOOTSTRAP-503-CURRENTNESS
+ * VERSION: v1.2.0-COMPANY-DOCUMENT-TRANSPORT-CERT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.

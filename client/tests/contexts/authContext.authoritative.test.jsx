@@ -1,12 +1,19 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.9.0-LOGOUT-DISCOVERY-CONTINUITY-CERT
+ * VERSION: v1.11.0-ACCOUNT-EMAIL-PROVENANCE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: 2026-11-15 v1.11.0-ACCOUNT-EMAIL-PROVENANCE-CERT proves account-only workspaceEmail is EOS sourced while legacy authenticated email compatibility remains unchanged.
+ * CHANGELOG: 2026-11-15 v1.10.0-EOS-ONLY-ACCOUNT-EMAIL-CERT proves account menu identity cannot fall back to login or persisted email candidates when EOS omits email.
  * CHANGELOG: 2026-11-10 v1.9.0-LOGOUT-DISCOVERY-CONTINUITY-CERT
  *            confirms logout destroys bearer authority while retaining only
  *            the previously discovered tenant navigation context.
@@ -102,6 +109,7 @@ const workspaceBootstrap = ({
   legalPermissions,
   firstName = 'Canonical',
   lastName = 'Principal',
+  email = 'person@example.com',
   branding = null,
   includeBranding = true,
   tenantOverrides = {},
@@ -110,7 +118,7 @@ const workspaceBootstrap = ({
     status: 'READY',
     user: {
       id: 'WILSYAUTH-browser-user',
-      email: 'person@example.com',
+      ...(email === undefined ? {} : { email }),
       firstName,
       lastName,
     },
@@ -418,6 +426,7 @@ describe('authoritative authentication state machine', () => {
       mfaRegistered: true,
     }));
     api.get.mockResolvedValueOnce(workspaceBootstrap({
+      email: null,
       businessRole: 'tenant_legal_partner',
       legalPermissions: [
         'legal_operations:instruction:write',
@@ -457,6 +466,8 @@ describe('authoritative authentication state machine', () => {
       tenantId: 'TENANT-BROWSER',
       role: 'tenant_legal_partner',
     });
+    expect(persistedUser.email).toBe('person@example.com');
+    expect(persistedUser.workspaceEmail).toBeNull();
     expect(persistedUser.firstName).not.toBe('FORGED STORED FIRST');
     expect(persistedUser.lastName).not.toBe('FORGED STORED LAST');
     expect(persistedUser.permissions).toEqual([
@@ -1098,10 +1109,11 @@ describe('authoritative authentication state machine', () => {
     );
     expect(persistedUser).toMatchObject({
       id: 'WILSYAUTH-browser-user',
-      email: 'person@example.com',
       role: 'SYSTEM_SERVICES',
       workspaceId: 'SYSTEM_SERVICES',
     });
+    expect(persistedUser.email).toBe('person@example.com');
+    expect(persistedUser.workspaceEmail).toBeUndefined();
     expect(persistedUser.tenantId).toBeUndefined();
     expect(persistedUser.permissions || []).not.toContain('*');
   });
@@ -1110,7 +1122,7 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.9.0-LOGOUT-DISCOVERY-CONTINUITY-CERT
+ * VERSION: v1.11.0-ACCOUNT-EMAIL-PROVENANCE-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection certificate only; D21B8 branding, workspace principal names and Legal permission provenance are presentation-only and never browser authorization authority
  * CHANGELOG: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT proves explicit bearer routing and
  * abort/currentness while rejecting an unverified MFA candidate as browser

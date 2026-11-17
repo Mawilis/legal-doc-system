@@ -1,14 +1,30 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v2.8.0-HEADQUARTERS-SPA-RETURN-CERT
+ * VERSION: v3.5.0-DYNAMIC-ACCOUNT-MENU-BROWSER-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-11.
- * CHANGELOG: v2.8.0-HEADQUARTERS-SPA-RETURN-CERT returns from the
+ * CERTIFICATION / UPDATE DATE: 2026-11-15.
+ * CHANGELOG: v3.3.0-SEARCH-OWNER-FOCUS-BROWSER-CERT verifies no-owner fallback open/Escape/backdrop focus and live Headquarters delegation at desktop/mobile.
+ * CHANGELOG: v3.5.0-DYNAMIC-ACCOUNT-MENU-BROWSER-CERT verifies exact synthetic principal, tenant and selected capacity identity, unsupported-action omission, Escape focus return, and outside dismissal at desktop/mobile.
+ * CHANGELOG: v3.4.0-TOPBAR-IDENTITY-ACCOUNT-BROWSER-CERT verifies session-projected identity, transport wording, account-menu availability, no-owner fallback focus, and live Headquarters delegation at desktop/mobile.
+ * CHANGELOG: v3.2.0-GLOBAL-SEARCH-DELEGATION-BROWSER-CERT verifies desktop/mobile header search delegates to the admitted Headquarters search owner.
+ * CHANGELOG: v3.1.0-GLOBAL-SEARCH-FOCUS-BROWSER-CERT verifies authenticated desktop/mobile header search focus return.
+ * CHANGELOG: v3.0.0-CRM-ATTENTION-LIFECYCLE-CERT proves
+ *          CRM create/persist/readback/complete/readback through Daily Attention,
+ *          including authorised projection count changes at desktop/mobile.
+ *          v2.9.0-EXCLUSIVE-CREATE-MODE-BROWSER-CERT proves
+ *          the create form replaces list controls, receives focus, and
+ *          Cancel returns to LIST at desktop and mobile widths.
+ *          v2.8.0-HEADQUARTERS-SPA-RETURN-CERT returns from the
  *          real Operations handoff through the existing WILSY home route,
  *          preserving the authenticated SPA instead of forcing a reload.
  *          v2.7.0-MOBILE-MINIMUM-QUEUE-VIEWPORT requires at least
@@ -123,6 +139,78 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       ));
       await page.goto('/headquarters');
       expect((await bootstrap).status()).toBe(200);
+      const transportStatus = page.getByRole('status', {
+        name: 'Authenticated; secure transport not confirmed',
+      });
+      await expect(transportStatus).toBeVisible();
+      const accountTrigger = page.getByRole('button', {name: 'Open account menu'});
+      await accountTrigger.click();
+      const accountMenu = page.getByRole('menu', {name: 'Account menu'});
+      await expect(accountMenu.getByText('Synthetic Owner', {exact: true})).toBeVisible();
+      await expect(accountMenu.getByText(state.actors.tenant_owner.email, {exact: true})).toHaveCount(0);
+      await expect(accountMenu.getByText(/@example\.com/)).toHaveCount(0);
+      await expect(accountMenu.getByText('Synthetic Browser Certification Tenant', {exact: true})).toBeVisible();
+      await expect(accountMenu.getByText('Selected capacity: Owner', {exact: true})).toBeVisible();
+      await expect(accountMenu.getByRole('menuitem', {name: 'Sign out'})).toBeEnabled();
+      await expect(accountMenu.getByRole('menuitem', {name: /Kernel diagnostics|Profile|Preferences|Security & sessions/})).toHaveCount(0);
+      await expect(accountMenu.getByText('Unavailable', {exact: true})).toHaveCount(0);
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/topbar-account-' + viewport.width + '.png',
+          fullPage: false,
+        });
+      }
+      await page.keyboard.press('Escape');
+      await expect(accountMenu).toBeHidden();
+      await expect(accountTrigger).toBeFocused();
+      await accountTrigger.click();
+      await page.getByRole('button', {name: 'WILSY home'}).click();
+      await expect(accountMenu).toBeHidden();
+      await expect(page.getByRole('heading', {name: 'WILSY Headquarters'})).toBeVisible();
+
+      const workspaceSearch = page.getByRole('button', {name: 'Open workspace navigation'});
+      await page.evaluate(() => {
+        const dispatch = window.dispatchEvent.bind(window);
+        window.restoreCommandSearchDispatch = () => { window.dispatchEvent = dispatch; };
+        window.dispatchEvent = (event) => (
+          event.type === 'wilsy:open-command-search' ? true : dispatch(event)
+        );
+      });
+      await workspaceSearch.focus();
+      await workspaceSearch.click();
+      let fallbackDialog = page.getByRole('dialog', {name: 'Workspace navigation'});
+      await expect(fallbackDialog).toBeVisible();
+      await expect(fallbackDialog.getByRole('textbox', {name: 'Workspace destination'})).toBeFocused();
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/topbar-fallback-search-' + viewport.width + '.png',
+          fullPage: false,
+        });
+      }
+      await page.keyboard.press('Escape');
+      await expect(fallbackDialog).toHaveCount(0);
+      await expect(workspaceSearch).toBeFocused();
+
+      await workspaceSearch.click();
+      fallbackDialog = page.getByRole('dialog', {name: 'Workspace navigation'});
+      await expect(fallbackDialog).toBeVisible();
+      await fallbackDialog.locator('xpath=..').click({position: {x: 2, y: 2}});
+      await expect(fallbackDialog).toHaveCount(0);
+      await expect(workspaceSearch).toBeFocused();
+      await page.evaluate(() => window.restoreCommandSearchDispatch());
+
+      await workspaceSearch.click();
+      const headquartersWorkSearch = page.locator('#hq-work-search');
+      await expect(headquartersWorkSearch).toBeFocused();
+      await expect(page.getByRole('dialog', {name: 'Workspace navigation'})).toHaveCount(0);
+      if (evidenceDirectory) {
+        await page.screenshot({
+          path: evidenceDirectory + '/topbar-headquarters-search-' + viewport.width + '.png',
+          fullPage: false,
+        });
+      }
+      await page.keyboard.press('Escape');
+      await expect(headquartersWorkSearch).toBeFocused();
       // The first productive action begins at the authenticated global bell,
       // including when EOS has not yet returned an active Operations item.
       const entryBell = page.getByRole('button', {name: /^Open daily attention/});
@@ -572,6 +660,8 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(actionAvailability.principalId).toBe(actor.principal_id);
       expect(actionAvailability.sourceActions.OPERATIONS).toContain('CREATE');
       expect(actionAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
+      expect(actionAvailability.sourceActions.CRM).toContain('CREATE');
+      expect(actionAvailability.sourceActions.CRM).toContain('COMPLETE');
       const scopedCommandResponse = await context.request.get('/api/attention/actions/operations', {headers});
       expect(scopedCommandResponse.status()).toBe(200);
       const scopedCommandAvailability = await scopedCommandResponse.json();
@@ -582,15 +672,37 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 
       await panel.getByRole('tab', {name: 'Work list', exact: true}).click();
       await panel.getByRole('button', {name: 'Create work', exact: true}).click();
-      const createForm = panel.getByRole('form', {name: 'Create source work'});
-      await createForm.getByLabel('Owning source').selectOption('OPERATIONS');
-      const directTitle = 'Daily Attention executive source work ' + randomUUID();
+      let createForm = panel.getByRole('form', {name: 'Create source work'});
+      await expect(createForm).toBeVisible();
+      await expect(createForm.getByRole('textbox', {name: 'Work title'})).toBeFocused();
+      await expect(triage.getByRole('group', {name: 'Filter daily attention'})).toHaveCount(0);
+      await expect(triage.getByRole('group', {name: 'Severity of loaded work'})).toHaveCount(0);
+      await expect(triage.getByRole('searchbox', {name: 'Search authorised work'})).toHaveCount(0);
+      await expect(triage.getByRole('group', {name: 'Verified current-source workload'})).toHaveCount(0);
+      await expect(panel.getByText('Create', {exact: true})).toHaveCount(0);
+      await createForm.getByRole('button', {name: 'Submit task to EOS'}).click();
+      await expect(createForm.getByText('Enter a work title.', {exact: true})).toBeVisible();
+      await expect(createForm.getByLabel('Work title')).toHaveAttribute('aria-invalid', 'true');
+      await createForm.getByRole('button', {name: 'Cancel'}).click();
+      await expect(triage.getByRole('group', {name: 'Filter daily attention'})).toBeVisible();
+      await panel.getByRole('button', {name: 'Create work', exact: true}).click();
+      createForm = panel.getByRole('form', {name: 'Create source work'});
+      await createForm.getByLabel('Owning source').selectOption('CRM');
+      const crmPath = '/api/crm/owner-workspace/work-items';
+      const directTitle = 'Daily Attention executive CRM work ' + randomUUID();
+      const beforeCrmProjectionResponse = await context.request.get('/api/my-work', {headers});
+      expect(beforeCrmProjectionResponse.status()).toBe(200);
+      const beforeCrmProjection = await beforeCrmProjectionResponse.json();
+      expect(beforeCrmProjection.sources_included).toContain('CRM');
+      const beforeCrmAttentionResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(beforeCrmAttentionResponse.status()).toBe(200);
+      const beforeCrmAttention = await beforeCrmAttentionResponse.json();
       await createForm.getByLabel('Work title').fill(directTitle);
       await createForm.getByLabel('Description').fill('A source-owned executive action completed from Daily Attention');
       await createForm.getByLabel('Priority').selectOption('HIGH');
       const [createdInline] = await Promise.all([
         page.waitForResponse(response => (
-          new URL(response.url()).pathname === path
+          new URL(response.url()).pathname === crmPath
           && response.request().method() === 'POST'
         )),
         createForm.getByRole('button', {name: 'Submit task to EOS'}).click(),
@@ -599,7 +711,23 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const inlineWork = await createdInline.json();
       expect(inlineWork.title).toBe(directTitle);
       expect(inlineWork.tenant_id).toBe(state.tenant_id);
-      console.log('[ATTENTION-STEP]', viewport.width, 'inline-created');
+      expect(inlineWork.work_item_id).toMatch(/^owk_/);
+      console.log('[ATTENTION-STEP]', viewport.width, 'crm-inline-created');
+
+      const crmReadbackResponse = await context.request.get('/api/crm/owner-workspace', {headers});
+      expect(crmReadbackResponse.status()).toBe(200);
+      const crmReadback = await crmReadbackResponse.json();
+      expect(crmReadback.items.some(item => item.work_item_id === inlineWork.work_item_id)).toBe(true);
+      const createdProjectionResponse = await context.request.get('/api/my-work', {headers});
+      expect(createdProjectionResponse.status()).toBe(200);
+      const createdProjection = await createdProjectionResponse.json();
+      expect(createdProjection.summary.active_count).toBe(beforeCrmProjection.summary.active_count + 1);
+      expect(createdProjection.items.filter(item => item.source_key === 'CRM:' + inlineWork.work_item_id)).toHaveLength(1);
+      const createdAttentionResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(createdAttentionResponse.status()).toBe(200);
+      const createdAttention = await createdAttentionResponse.json();
+      expect(createdAttention.counts.active).toBe(beforeCrmAttention.counts.active + 1);
+      expect(createdAttention.counts.highPriority).toBe(beforeCrmAttention.counts.highPriority + 1);
 
       const inlineRow = panel.getByRole('button', {name: 'Inspect ' + directTitle});
       await expect(inlineRow).toBeVisible();
@@ -609,7 +737,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         .fill('Executive source-owned completion with evidence');
       const [completedInline] = await Promise.all([
         page.waitForResponse(response => (
-          new URL(response.url()).pathname === path + '/' + inlineWork.work_item_id + '/complete'
+          new URL(response.url()).pathname === crmPath + '/' + inlineWork.work_item_id + '/complete'
           && response.request().method() === 'POST'
         )),
         inlineRail.getByRole('button', {name: 'Confirm completion'}).click(),
@@ -619,11 +747,22 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(completedInlineBody.status).toBe('COMPLETED');
       expect(completedInlineBody.work_item_id).toBe(inlineWork.work_item_id);
       await expect(inlineRail).toHaveCount(0);
-      console.log('[ATTENTION-STEP]', viewport.width, 'inline-completed');
-      const afterInline = await context.request.get('/api/tenant-modules/operations/workspace', {headers});
-      expect(afterInline.status()).toBe(200);
-      expect((await afterInline.json()).items.some(item =>
+      console.log('[ATTENTION-STEP]', viewport.width, 'crm-inline-completed');
+      const afterInlineCrm = await context.request.get('/api/crm/owner-workspace', {headers});
+      expect(afterInlineCrm.status()).toBe(200);
+      expect((await afterInlineCrm.json()).items.some(item =>
         item.work_item_id === inlineWork.work_item_id)).toBe(false);
+      const afterInlineProjectionResponse = await context.request.get('/api/my-work', {headers});
+      expect(afterInlineProjectionResponse.status()).toBe(200);
+      const afterInlineProjection = await afterInlineProjectionResponse.json();
+      expect(afterInlineProjection.summary.active_count).toBe(beforeCrmProjection.summary.active_count);
+      expect(afterInlineProjection.items.some(item =>
+        item.source_key === 'CRM:' + inlineWork.work_item_id)).toBe(false);
+      const completedAttentionResponse = await context.request.get('/api/attention/feed?limit=100', {headers});
+      expect(completedAttentionResponse.status()).toBe(200);
+      const completedAttention = await completedAttentionResponse.json();
+      expect(completedAttention.counts.active).toBe(beforeCrmAttention.counts.active);
+      expect(completedAttention.counts.highPriority).toBe(beforeCrmAttention.counts.highPriority);
 
       // Batch triage uses two independently admitted source commands, not a
       // synthetic attention-level mutation or unverifiable optimistic status.
@@ -699,7 +838,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v2.8.0-HEADQUARTERS-SPA-RETURN-CERT
+// VERSION: v3.5.0-DYNAMIC-ACCOUNT-MENU-BROWSER-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.

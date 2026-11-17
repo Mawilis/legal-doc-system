@@ -1,7 +1,7 @@
 """Direct certificate for the D22A tenant product catalogue.
 
 TITLE: Tenant Product Catalogue Direct Certificate
-VERSION: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE-CERT
+VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact product identities, VAS separation, deterministic
          descriptor integrity and absence of entitlement/IAM/financial truth.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Evidence-only direct certificate for the D22A
                             product catalogue owner.
 CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE-CERT establishes direct
+CHANGELOG: v1.1.0-PROJECTS-PRODUCT-CATALOGUE-CERT pins the Projects product identity and confirms it remains catalogue metadata only.
+           v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE-CERT establishes direct
            evidence for Legal Operations, Billing, CRM and HR product identity
            while excluding WILSY AI, Tenant Branding and Full Enterprise
            wildcard semantics.
@@ -45,8 +46,9 @@ def test_exact_closed_product_catalogue() -> None:
         "HR",
         "OPERATIONS",
         "INTELLIGENCE",
+        "PROJECTS",
     ]
-    assert len(products) == len(TenantProductId) == 7
+    assert len(products) == len(TenantProductId) == 8
 
 
 def test_legal_operations_descriptor_is_exact_and_non_financial() -> None:
@@ -85,6 +87,16 @@ def test_pos_is_an_independent_non_financial_product() -> None:
     assert value.required_products == ()
     assert "kennel eos" in value.description.lower()
     assert "financial execution remains" in value.description.lower()
+
+
+def test_projects_catalogue_identity_is_tenant_scoped_and_non_authorizing() -> None:
+    """Projects is a distinct product identity, not generic Products access."""
+    value = get_tenant_product(TenantProductId.PROJECTS)
+    assert value.label == "Projects"
+    assert value.workspace_key == "PROJECTS_DASHBOARD"
+    assert value.required_products == ()
+    assert "tenant-scoped project" in value.description.lower()
+    assert not {"tenant_id", "entitlement_id", "permission"}.intersection(value.to_dict())
 
 
 def test_vas_and_bundle_tokens_are_not_products() -> None:
@@ -205,7 +217,7 @@ def test_full_enterprise_must_be_future_explicit_composition_not_wildcard() -> N
 
 
 # ARTIFACT: test_tenant_product_catalogue.py
-# VERSION: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE-CERT
+# VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE-CERT
 # AUTHORITY BOUNDARY: direct product-catalogue evidence only
 # TENANT POSTURE: synthetic global catalogue facts only
 # FAIL-CLOSED POSTURE: unknown products, descriptor drift and VAS leakage reject

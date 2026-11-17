@@ -1,14 +1,23 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.1.1-LOGOUT-WORKSPACE-CONTINUITY
+ * VERSION: v58.4.0-ACCOUNT-EMAIL-PROVENANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/authContext.jsx
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: 2026-11-10 v58.1.1-LOGOUT-WORKSPACE-CONTINUITY retains
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: 2026-11-15 v58.4.0-ACCOUNT-EMAIL-PROVENANCE adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
+ * CHANGELOG: 2026-11-14 v58.2.0-CURRENT-EOS-SESSION-REFRESH adds one in-flight
+ *            provider-owned EOS refresh and same-workspace revalidation;
+ *            superseded refreshes cannot publish or clear another session.
+ *            2026-11-10 v58.1.1-LOGOUT-WORKSPACE-CONTINUITY retains
  *            the non-authoritative server-discovered tenant navigation context
  *            after logout while invalidating every bearer and session authority.
  *            2026-11-09 v58.1.0-SESSION-OPERATION-CURRENTNESS deduplicates
@@ -281,6 +290,21 @@ const exactOptionalWorkspaceName = (value) => {
   return value;
 };
 
+const exactOptionalWorkspaceEmail = (value) => {
+  if (value === null || value === undefined) return null;
+  if (
+    typeof value !== 'string'
+    || !value
+    || value !== value.trim()
+    || value.length > 254
+    || /[\u0000-\u001f\u007f\s]/.test(value)
+    || !/^[^@]+@[^@]+\.[^@]+$/.test(value)
+  ) {
+    throw new Error('AUTHENTICATED_WORKSPACE_PROJECTION_INVALID');
+  }
+  return value;
+};
+
 const exactBrandingText = (value) => {
   if (
     typeof value !== 'string'
@@ -537,6 +561,7 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const principalId = String(principal?.id || '').trim();
   const firstName = exactOptionalWorkspaceName(principal?.firstName);
   const lastName = exactOptionalWorkspaceName(principal?.lastName);
+  const email = exactOptionalWorkspaceEmail(principal?.email);
   const tenantId = String(workspace?.tenantId || '').trim();
   const tenantProjectionId = String(tenantProjection?.tenantId || '').trim();
   const businessRole = String(workspace?.businessRole || '').trim();
@@ -590,7 +615,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   return {
     user: {
       id: principalId,
-      email: principal?.email || fallbackEmail,
+      email: email || fallbackEmail,
+      workspaceEmail: email,
       firstName,
       lastName,
       tenantId,
@@ -703,6 +729,10 @@ export const AuthProvider = ({ children }) => {
   const mountedRef = useRef(true);
   const bootstrapReadsRef = useRef(new Map());
   const [sessionGeneration, setSessionGeneration] = useState(0);
+  const sessionSnapshotRef = useRef(null);
+  sessionSnapshotRef.current = { token, user, tenant };
+  const refreshFlightRef = useRef(null);
+
 
   // One in-flight read per exact credential/path; settled results are never
   // cached as session authority. Strict Mode reuses the pending request only.
@@ -1022,50 +1052,107 @@ export const AuthProvider = ({ children }) => {
     return authoritative;
   }, [ensureCurrent, readWorkspace, tenant, token, user?.id, user?.email]);
 
-  useEffect(() => {
-    if (!token || !user?.systemServicesWorkspace) return undefined;
-    let active = true;
+  /**
+   * @description Rotate only the exact current session through EOS, then re-read
+   * its same principal/tenant/capacity workspace before promoting credentials.
+   * @collaboration Canonical api.js retries one failed authenticated request;
+   * SYSTEM timer shares this single in-flight refresh owner.
+   * @institutional Refresh is transport continuity, never IAM admission. EOS
+   * owns rotation/currentness; an unsupported legacy refresh fails closed.
+   * Superseded results cannot publish credentials or invalidate a later login.
+   * @param {string} failedBearer Exact failed current Authorization value.
+   * @returns {Promise<string>} EOS-issued, workspace-revalidated access token.
+   * @throws {Error} On absent/rejected refresh, changed scope or supersession.
+   */
+  const refreshSession = useCallback((failedBearer) => {
+    const snapshot = sessionSnapshotRef.current;
     const epoch = authEpochRef.current;
-    let refreshing = false;
-    const refreshSystemSession = async () => {
-      if (refreshing) return;
-      const refreshToken = localStorage.getItem('wilsy_refresh_token');
-      if (!refreshToken) return;
-      refreshing = true;
+    if (!snapshot?.token || !snapshot.user || failedBearer !== 'Bearer ' + snapshot.token) {
+      return Promise.reject(new Error('SESSION_REFRESH_SUPERSEDED'));
+    }
+    const pending = refreshFlightRef.current;
+    if (pending?.epoch === epoch && pending.bearer === failedBearer) return pending.promise;
+    const entry = { epoch, bearer: failedBearer, promise: null };
+    const promise = (async () => {
       try {
-        const response = await api.post(
-          '/auth/global/refresh',
-          { refresh_token: refreshToken },
-          { skipAuth: true, skipAuthRedirect: true },
-        );
+        const refreshToken = localStorage.getItem('wilsy_refresh_token');
+        if (!refreshToken) throw new Error('SESSION_REFRESH_CREDENTIAL_REQUIRED');
+        const response = await api.post('/auth/global/refresh', { refresh_token: refreshToken }, {
+          skipAuth: true, skipAuthRedirect: true, headers: { Authorization: '' },
+        });
+        ensureCurrent(epoch);
         const data = response?.data || {};
-        if (
-          !active
-          || epoch !== authEpochRef.current
-          || data.status !== 'REFRESHED'
-          || data.scope !== 'SYSTEM'
-          || typeof data.access_token !== 'string'
-          || typeof data.refresh_token !== 'string'
-        ) throw new Error('SYSTEM_SESSION_REFRESH_PROJECTION_INVALID');
+        if (data.status !== 'REFRESHED' || data.token_type !== 'Bearer'
+            || typeof data.access_token !== 'string' || !data.access_token.trim()
+            || typeof data.refresh_token !== 'string' || !data.refresh_token.trim()) {
+          throw new Error('SESSION_REFRESH_RESPONSE_INVALID');
+        }
+        const system = Boolean(snapshot.user.systemServicesWorkspace);
+        if (system && (data.scope !== 'SYSTEM' || data.principal_id !== snapshot.user.id)) {
+          throw new Error('SESSION_REFRESH_SCOPE_MISMATCH');
+        }
+        if (!system && data.scope === 'SYSTEM') throw new Error('SESSION_REFRESH_SCOPE_MISMATCH');
+        const workspace = await readWorkspace(data.access_token,
+          system ? '/system-services/workspace-bootstrap' : '/auth/workspace-bootstrap');
+        ensureCurrent(epoch);
+        const projection = system
+          ? boundedSystemServicesWorkspaceProjection(
+            workspace?.data || {}, snapshot.user.id, snapshot.user.email || '',
+          )
+          : boundedWorkspaceProjection(workspace?.data || {}, snapshot.user.email || '');
+        if (projection.user.id !== snapshot.user.id
+            || projection.user.tenantId !== snapshot.user.tenantId
+            || projection.user.role !== snapshot.user.role
+            || projection.user.workspaceId !== snapshot.user.workspaceId
+            || localStorage.getItem('wilsy_auth_token') !== snapshot.token) {
+          throw new Error('SESSION_REFRESH_SCOPE_MISMATCH');
+        }
         anchorCanonicalBearer(data.access_token);
         localStorage.setItem('wilsy_auth_token', data.access_token);
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('wilsy_refresh_token', data.refresh_token);
-        setToken(data.access_token);
-      } catch (refreshError) {
-        if (active && epoch === authEpochRef.current) {
-          setError(refreshError?.response?.data?.detail || refreshError.message || 'SYSTEM_SESSION_REFRESH_FAILED');
+        localStorage.setItem('wilsy_sovereign_user', JSON.stringify(projection.user));
+        if (!system) {
+          localStorage.setItem('wilsy_active_tenant', JSON.stringify(projection.tenant));
+          setTenant(projection.tenant);
         }
+        setActiveTenantTransportId(system ? null : projection.user.tenantId);
+        setToken(data.access_token);
+        setUser(projection.user);
+        setSessionGeneration((generation) => generation + 1);
+        return data.access_token;
+      } catch (failure) {
+        if (mountedRef.current && epoch === authEpochRef.current) {
+          invalidateSession();
+          setAuthStage(AUTH_STATES.IDLE);
+          setLoading(false);
+          setError('SESSION_EXPIRED');
+          emitAuthState(AUTH_STATES.IDLE);
+        }
+        throw failure;
       } finally {
-        refreshing = false;
+        if (refreshFlightRef.current === entry) refreshFlightRef.current = null;
       }
-    };
-    const interval = window.setInterval(refreshSystemSession, 10 * 60 * 1000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [token, user?.systemServicesWorkspace]);
+    })();
+    entry.promise = promise;
+    refreshFlightRef.current = entry;
+    return promise;
+  }, [ensureCurrent, invalidateSession, readWorkspace]);
+
+  useEffect(() => {
+    // The canonical transport supplies owner-safe lifecycle registration;
+    // injected transports without refresh support retain fail-closed 401 handling.
+    if (typeof api.registerSessionRefreshHandler !== 'function') return undefined;
+    return api.registerSessionRefreshHandler(refreshSession);
+  }, [refreshSession]);
+
+  useEffect(() => {
+    if (!token || !user?.systemServicesWorkspace) return undefined;
+    const interval = window.setInterval(() => {
+      void refreshSession('Bearer ' + token).catch(() => {});
+    }, 10 * 60 * 1000);
+    return () => window.clearInterval(interval);
+  }, [refreshSession, token, user?.systemServicesWorkspace]);
 
   useEffect(() => {
     const handleBrandingAuthorityRefresh = () => {
@@ -1352,12 +1439,14 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.1.1-LOGOUT-WORKSPACE-CONTINUITY
+ * VERSION: v58.4.0-ACCOUNT-EMAIL-PROVENANCE
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v58.1.1-LOGOUT-WORKSPACE-CONTINUITY — Retains only the
+ * CHANGELOG: v58.2.0-CURRENT-EOS-SESSION-REFRESH — Provider owns rotation,
+ * same-workspace validation, exact-session coalescing and fail-closed denial.
+ * v58.1.1-LOGOUT-WORKSPACE-CONTINUITY — Retains only the
  * server-discovered tenant navigation context after bearer revocation; no
  * tenant membership, business capacity or MFA authority survives logout.
  *            v58.1.0-SESSION-OPERATION-CURRENTNESS — Admits only the canonical server-projected conflict-review write permission into the closed Legal presentation set; browser state remains non-authorizing and malformed projections fail closed.
@@ -1369,6 +1458,6 @@ export default AuthContext;
  * browser/JWT/login permission claims.
  *            v52.0.0-SERVER-REVALIDATED-SESSION-RESTORE — Persisted bearer
  * candidates are restored only after Python EOS workspace-bootstrap revalidates
- * current principal, tenant membership, business role and canonical tenant.
+ * current principal, tenant membership, business role and canonical tenant; workspaceEmail is accepted only from current EOS workspace bootstrap; the compatibility email field retains its former fallback behavior and is not an account-menu identity source.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

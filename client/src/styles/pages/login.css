@@ -1,3 +1,20 @@
+/**
+ * TITLE: WILSY OS Authentication Presentation
+ * VERSION: v28.52.2-OFFICIAL-PLATFORM-BRAND
+ * AUTHORITY: Wilsy OS Core Governance; presentation only.
+ * EPITOME: Preserve existing layout and interaction styling while identifying
+ * the public platform as WILSY OS rather than a single customer product.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/styles/pages/login.css
+ * COLLABORATION / OWNERSHIP: Existing global and authentication page consumers.
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v28.52.2-OFFICIAL-PLATFORM-BRAND uses the approved platform tagline in
+ * the decorative footer; all selectors and non-brand declarations are preserved.
+ * COMPLIANCE: Static presentation; no personal data processing.
+ * SECURITY / PRIVACY POSTURE: No credentials, external content or diagnostics.
+ * TENANT BOUNDARY: Platform wording does not infer tenant identity or membership.
+ * AUTHORITY BOUNDARY: CSS grants no permission, product or business capability.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -224,7 +241,7 @@
 
 /* 📜 Footer Sovereign Seal */
 .login-container::after {
-  content: "WILSY OS — LEGAL SOVEREIGN STANDARD";
+  content: "WILSY OS — Build. Operate. Grow.";
   position: absolute;
   bottom: 18px;
   right: 28px;
@@ -254,3 +271,12 @@
   .auth-card { padding: 2rem 1.5rem; }
   .stat-item { padding: 0.8rem 1.5rem; }
 }
+
+/* ARTIFACT: login.css
+ * VERSION: v28.52.2-OFFICIAL-PLATFORM-BRAND
+ * AUTHORITY BOUNDARY: Presentation only.
+ * TENANT POSTURE: Platform-neutral branding; no identity authority.
+ * FAIL-CLOSED POSTURE: No security or source-state decision in styling.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

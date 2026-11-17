@@ -1,5 +1,7 @@
-"""TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+"""
+CHANGELOG: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE — Consolidated sovereign documentation without executable changes.
+TITLE: WILSY OS Role Definition Policy.
+VERSION: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -9,12 +11,51 @@ field-service outcome/return commands, sheriff-only process-service directory
 provisioning, sheriff-only office-receipt authority, and least-privilege
 law-firm client-matter visibility provisioning plus one least-privilege
 LEGAL_CLIENT projection-read grant and exact Partner/Attorney Engagement
-firm-decision grant without creating tenant-wide matter reads, deputy
-possession, service, or financial authority.
+firm-decision grant, granular WILSY platform-employer HR permissions, and a
+dedicated, separately assignable employee-admission authorization role without
+creating tenant-wide matter reads, deputy possession, service, or financial
+authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-20
+CERTIFICATION / UPDATE DATE: 2026-11-15
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Contains no credentials, principal records,
+memberships or runtime secrets. A role definition never proves possession.
+TENANT BOUNDARY: Current principal/tenant possession requires governed
+RoleAssignmentAuthority after ACTIVE tenant membership admission; WILSY AI
+usage-capacity and billing-intelligence evidence are read-only and remain
+own-tenant scoped.
+AUTHORITY BOUNDARY: Owns only deterministic role-to-permission policy.
+Authentication, membership, role assignment, WILSY AI capacity derivation and
+final authorization remain separate authorities.
+FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue management and
+WILSY AI usage-capacity and billing-intelligence evidence reads are non-financial policy capabilities;
+they cannot authorize, release, execute, collect, or settle payment. Kennel EOS
+remains exclusive.
 CHANGELOG:
+    2026-11-16 v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE defines one dedicated, separately assignable Projects role with exact read/create/update/archive permissions. No existing role or principal assignment is expanded.
+    2026-11-15 v1.55.0-ENTERPRISE-ADMIN-COMPANY-DOCUMENT-READ grants the
+    exact existing company-document read permission to ENTERPRISE_ADMIN only.
+    The central authorization composer still requires an ACTIVE same-tenant
+    assignment, principal, membership and eligible business capacity, and
+    hard-fences this permission to the canonical WILSY company tenant. No
+    assignment, reader grant, authoring, submission, review, publication,
+    delegation, ownership, entitlement, financial or wildcard authority is
+    created.
+    2026-11-13 v1.54.0-COMPANY-DOCUMENT-SEPARATE-ROLES adds independent exact-company document metadata only; all existing employment and other grants, eligibility and operation bindings remain unchanged. No principal assignment is created.
+    2026-11-12 v1.53.0-PLATFORM-EMPLOYEE-ADMISSION-OFFICER defines one
+    dedicated authorization role with only
+    platform_employer:employee_admission:create. It creates no principal role
+    assignment, business capacity, operation binding, admission route, employee,
+    acceptance, IAM provisioning, entitlement, payroll or financial authority.
+    The role remains unusable until separately assigned, eligible business-role
+    and operation gates exist.
+    2026-11-12 v1.52.0-PLATFORM-EMPLOYER-ROLE-GRANTS adds static potential
+    grants for exact WILSY platform-employer operations to existing HR Manager,
+    HR Director and tenant-owner authorization roles. Static definitions create
+    no principal, membership, business-role, capacity or permission assignment;
+    exact WILSY tenant scope remains enforced by tenant_authorization. No offer
+    acceptance or employee-admission grant is defined.
     2026-10-21 v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Partner-only static issuer permission; current role assignment and matter clearance remain separate.
     2026-10-21 v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
@@ -203,20 +244,7 @@ CHANGELOG:
     SOVEREIGN_ARCHITECT.
     v1.1.0-WILSY-TENANT-PERMISSION-GRANTS migrated the canonical tenant
     profile, membership and role-assignment permissions.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY / PRIVACY POSTURE: Contains no credentials, principal records,
-memberships or runtime secrets. A role definition never proves possession.
-TENANT BOUNDARY: Current principal/tenant possession requires governed
-RoleAssignmentAuthority after ACTIVE tenant membership admission; WILSY AI
-usage-capacity and billing-intelligence evidence are read-only and remain
-own-tenant scoped.
-AUTHORITY BOUNDARY: Owns only deterministic role-to-permission policy.
-Authentication, membership, role assignment, WILSY AI capacity derivation and
-final authorization remain separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription and plan catalogue management and
-WILSY AI usage-capacity and billing-intelligence evidence reads are non-financial policy capabilities;
-they cannot authorize, release, execute, collect, or settle payment. Kennel EOS
-remains exclusive.
+
 """
 
 from __future__ import annotations
@@ -224,7 +252,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
+VERSION = "v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -496,6 +524,46 @@ ROLE_PERMISSIONS_MAP["HR_MANAGER"].extend([
 ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].append("hr:hiring_candidate_evidence:read")
 
 
+# WILSY platform-employer static possession vocabulary. These grants are only
+# available to exact permission-assignment governance; the authorization
+# composer confines use to the canonical WILSY company tenant. Maker/decider
+# separation follows existing HR Manager, HR Director and tenant-owner roles.
+ROLE_PERMISSIONS_MAP["HR_MANAGER"].extend((
+    "platform_employer:employee_directory:read",
+    "platform_employer:headcount_requisition:read",
+    "platform_employer:headcount_requisition:create",
+    "platform_employer:hiring_candidate:read",
+    "platform_employer:hiring_candidate:create",
+    "platform_employer:hiring_candidate:transition",
+    "platform_employer:hiring_candidate_evidence:upload",
+    "platform_employer:hiring_candidate_evidence:read",
+    "platform_employer:hiring_offer:read",
+    "platform_employer:hiring_offer:create",
+    "platform_employer:hiring_offer:submit",
+    "platform_employer:hiring_offer:send",
+))
+ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend((
+    "platform_employer:employee_directory:read",
+    "platform_employer:headcount_requisition:read",
+    "platform_employer:headcount_requisition:decide",
+    "platform_employer:hiring_candidate:read",
+    "platform_employer:hiring_candidate_evidence:read",
+    "platform_employer:hiring_offer:read",
+    "platform_employer:hiring_offer:decide",
+))
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].append(
+    "platform_employer:hiring_offer:sign",
+)
+
+# Employee admission is an independently assigned, single-purpose role. The
+# shared tenant authorization composer still requires exact WILSY scope, active
+# membership, a separately eligible employer business role, and an operation
+# binding; none of those facts or assignments is created by this definition.
+ROLE_PERMISSIONS_MAP["PLATFORM_EMPLOYEE_ADMISSION_OFFICER"] = [
+    "platform_employer:employee_admission:create",
+]
+
+
 # P0-C12F7B sensitivity-specific single-purpose HR document grants.
 _HR_DOCUMENT_AUTH_ROLE_PERMISSIONS = {
     "HR_DOCUMENT_STANDARD_EMPLOYMENT_WRITE":
@@ -627,13 +695,6 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
     "legal_operations:operational_matter_access:issue"
 )
 
-# ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
-# AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
-# FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 # Owner-commercial work queue: static possession vocabulary only.
@@ -695,3 +756,35 @@ ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
 # The tenant owner may request a signature manifest; cryptographic signature
 # verification and active signer enrollment remain mandatory at acceptance.
 ROLE_PERMISSIONS_MAP["TENANT_OWNER"].append("hr:hiring_offer:sign")
+
+# Company-document reading is a narrowly scoped existing ENTERPRISE_ADMIN
+# permission. The central composer enforces the canonical WILSY tenant fence,
+# current ACTIVE identity/membership/assignment and an eligible business role.
+# It creates no assignment and grants neither draft review nor lifecycle rights.
+ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].append(
+    "company_operating_document:read"
+)
+
+# These are separately assignable authorization roles, not business capacities.
+# They remain necessary for non-administrator reader, author and publisher paths.
+ROLE_PERMISSIONS_MAP["COMPANY_DOCUMENT_READER"] = ["company_operating_document:read"]
+ROLE_PERMISSIONS_MAP["COMPANY_DOCUMENT_AUTHOR"] = [
+    "company_operating_document:read", "company_operating_document:author",
+]
+ROLE_PERMISSIONS_MAP["COMPANY_DOCUMENT_PUBLISHER"] = [
+    "company_operating_document:read", "company_operating_document:publish",
+]
+
+# Projects access is separately assignable through canonical IAM. This dedicated
+# role is not attached to an existing role and creates no principal assignment.
+ROLE_PERMISSIONS_MAP["PROJECTS_PLATFORM_OWNER"] = [
+    "project:read", "project:create", "project:update", "project:archive",
+]
+
+# ARTIFACT: tools/eos/auth/roles.py
+# VERSION: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE
+# AUTHORITY BOUNDARY: static read permission only; current assignment and operation authorization remain separate
+# TENANT POSTURE: company-document reading is hard-fenced to the canonical WILSY company tenant after separately governed active assignments
+# FAIL-CLOSED POSTURE: unknown, inactive, foreign, unpublished-review, author and publisher paths deny; this definition creates no assignment, route, admission, IAM, payroll, or entitlement authority
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

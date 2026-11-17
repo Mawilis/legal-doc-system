@@ -1,6 +1,12 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+ * TITLE: WILSY OS Workspace Sign-In
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.9.0-R10E12-RECOVERY-REQUEST-ENTRYPOINT
+ * VERSION: v3.9.1-OFFICIAL-SQUARE-BRAND
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
@@ -8,6 +14,9 @@
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CHANGELOG: v3.9.1-OFFICIAL-SQUARE-BRAND uses the same official
+ * square platform mark. Credential, discovery, MFA and customer identity
+ * contracts are preserved; no client-owned authentication authority is added.
  * CHANGELOG: v3.9.0-R10E12-RECOVERY-REQUEST-ENTRYPOINT — Routes the
  *            pre-authentication Forgot password? action to the governed
  *            recovery-request surface, forwarding only ephemeral selected
@@ -65,12 +74,21 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
+import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
 import React, { useState } from 'react';
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
 
+/**
+ * @description Render the existing source-governed authentication surface.
+ * @collaboration AuthProvider and Python EOS retain all discovery/session authority.
+ * @institutional Branding is presentation only. No tenant, credential, permission,
+ * transaction, idempotency or financial execution authority is created here.
+ * @param {Object} props Existing server-state presentation callbacks.
+ * @returns {JSX.Element} The original guarded interaction with official branding.
+ */
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -104,7 +122,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
     <main style={pageStyle}>
       <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel" data-auth-stage={authStage}>
         <header style={brandRow}>
-          <img src="/brand/wilsy-os-master.png" alt="WILSY OS platform mark" style={platformMarkStyle} />
+          <img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS platform mark" style={platformMarkStyle} />
           <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
         </header>
         <div style={headingStyle} data-testid="login-page-heading">
@@ -174,7 +192,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
 const pageStyle = { minHeight: '100dvh', width: '100%', boxSizing: 'border-box', display: 'grid', justifyItems: 'center', alignItems: 'start', padding: 'clamp(24px, 3.2vh, 32px) clamp(20px, 3vw, 48px) max(clamp(48px, 7vh, 80px), calc(env(safe-area-inset-bottom) + 28px))', overflowX: 'hidden', overflowY: 'auto', background: '#101112', color: '#f5f1e8', fontFamily: 'Inter, system-ui, sans-serif' };
 const panelStyle = { width: 'min(1080px, 100%)', minHeight: 0, height: 'auto', boxSizing: 'border-box', padding: 'clamp(24px, 3vh, 30px) clamp(24px, 4vh, 38px) 24px', background: 'linear-gradient(145deg, #1c1e20, #141617)', border: '1px solid rgba(213,176,79,.3)', borderRadius: '16px', boxShadow: '0 30px 90px rgba(0,0,0,.42)' };
 const brandRow = { display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '14px', borderBottom: '1px solid rgba(245,241,232,.1)', color: '#d5b04f' };
-const platformMarkStyle = { width: '46px', height: '46px', objectFit: 'cover', objectPosition: '50% 13%', borderRadius: '8px', background: '#fff' };
+const platformMarkStyle = { width: '64px', height: '64px', objectFit: 'contain', borderRadius: '8px', background: '#06152b' };
 const brandCopyStyle = { display: 'grid', gap: '3px' };
 const contentGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', alignItems: 'start', columnGap: 'clamp(36px, 5vw, 64px)', rowGap: 'clamp(28px, 5vw, 48px)', padding: '22px 0 20px' };
 const identityZoneStyle = { display: 'grid', alignContent: 'start', width: '100%', boxSizing: 'border-box', padding: '22px 24px 20px', border: '1px solid rgba(213,176,79,.18)', borderRadius: '12px', background: 'linear-gradient(145deg, rgba(37,38,38,.34), rgba(19,21,22,.18))', alignSelf: 'start' };
@@ -198,7 +216,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.9.0-R10E12-RECOVERY-REQUEST-ENTRYPOINT
+ * VERSION: v3.9.1-OFFICIAL-SQUARE-BRAND
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated

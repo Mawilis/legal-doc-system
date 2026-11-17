@@ -1,8 +1,15 @@
-"""TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: WILSY OS Tenant Business Authority Policy Canon.
+VERSION: v1.58.0-PROJECT-OWNER-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
-own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
+own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility, explicit HR headcount initiation/decision separation and WILSY platform-employer
+operation eligibility, and dedicated
 inbound-collection, merchant-configuration, provider-policy, field-service
 outcome/return roles, sheriff-only process-service directory provisioning, and
 sheriff-only acceptance/office-receipt eligibility, plus an exact
@@ -10,8 +17,24 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-20
+CERTIFICATION / UPDATE DATE: 2026-11-13
 CHANGELOG:
+    2026-11-16 v1.58.0-PROJECT-OWNER-ELIGIBILITY makes the existing tenant_owner business capacity eligible for exact Projects operations. Other capacities remain denied; eligibility is not a role grant, entitlement, route admission, or principal assignment.
+    2026-11-13 v1.56.0-COMPANY-DOCUMENT-ELIGIBILITY adds independent exact-company document metadata only; all existing employment and other grants, eligibility and operation bindings remain unchanged. No principal assignment is created.
+    2026-11-12 v1.55.0-PLATFORM-EMPLOYEE-ADMISSION-ELIGIBILITY adds the
+    employee-admission operation mapping and permits only the existing HR
+    Director business capacity. Admission still requires the separately assigned
+    PLATFORM_EMPLOYEE_ADMISSION_OFFICER authorization role and the exact WILSY
+    tenant authorization fence. This policy creates no assignment, route, command,
+    acceptance, employee record, or admission evidence; identity proofing and
+    complete verified employee data remain external blockers.
+    2026-11-12 v1.53.0-MUTABLE-POLICY-MAP-TYPES
+    Removes inaccurate Final annotations from policy mappings that the
+    module extends through immutable replacement layers. Runtime policy
+    behavior is unchanged; static typing now matches the established
+    construction pattern and preserves immutable MappingProxyType values.
+    2026-11-12 v1.53.0-MUTABLE-POLICY-MAP-TYPES
+    Adds the existing headcount read/create/decide operation bindings and permits only HR Manager read/create and HR Director read/decide eligibility. This remains non-authorizing and preserves exact permission possession, membership, workforce currentness, and transaction boundaries.
     2026-10-21 v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Partner-only operational issuer eligibility; active IAM and confidentiality clearance remain separate.
     2026-10-21 v1.49.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY
@@ -219,13 +242,13 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.58.0-PROJECT-OWNER-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
     UNKNOWN = "UNKNOWN"
 ELIGIBLE, DENY = "ELIGIBLE", "DENY"
-BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     "business_role_read": "tenant:business_role:read",
     "business_role_assign": "tenant:business_role:write",
     "business_role_change": "tenant:business_role:write",
@@ -289,7 +312,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
     "legal_work_item_reassign": "legal_operations:work_item:reassign",
 })
-TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
+TENANT_ROLES: FrozenSet[str] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
 OPERATIONS: FrozenSet[str] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "business_role_read", "business_role_assign", "business_role_change", "business_role_revoke", "platform_billing_provider_policy_create", "platform_billing_provider_policy_revise", "platform_billing_provider_policy_activate", "platform_billing_provider_policy_revoke", "inbound_collection_authorization_create", "tenant_inbound_merchant_configuration_register", "tenant_inbound_merchant_configuration_lifecycle_transition", "tenant_inbound_merchant_configuration_compromise", "tenant_inbound_merchant_configuration_remediate", "tenant_inbound_provider_policy_create", "tenant_inbound_provider_policy_revise", "tenant_inbound_provider_policy_activate", "tenant_inbound_provider_policy_deactivate", "tenant_inbound_provider_policy_emergency_disable", "tenant_inbound_provider_credential_security_eligibility_issue", "tenant_inbound_provider_credential_security_revoke", "tenant_inbound_provider_credential_security_compromise", "tenant_inbound_provider_credential_security_rotate", "wilsy_ai_usage_capacity_read", "wilsy_ai_reasoning_execute", "wilsy_ai_legal_services_execute", "billing_intelligence_evidence_read", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_return_read", "legal_billing_read", "legal_invoice_read", "audit_read", "artifact_read", "platform_billing_release", "plan_read", "plan_create", "plan_update", "plan_archive", "subscription_read", "subscription_audit_read", "subscription_metrics_read", "subscription_create", "subscription_update", "subscription_archive", "subscription_pause", "subscription_resume", "subscription_cancel", "subscription_upgrade", "subscription_downgrade", "subscription_reactivate", "cross_tenant", "financial_execution"})
 ELIGIBILITY = MappingProxyType({
     "tenant_owner": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "profile_read": ELIGIBLE, "profile_update": ELIGIBLE, "lifecycle_archive": ELIGIBLE, "membership_read": ELIGIBLE, "membership_invite": ELIGIBLE, "membership_deactivate": ELIGIBLE, "role_assignment_read": ELIGIBLE, "business_role_read": ELIGIBLE, "business_role_assign": ELIGIBLE, "business_role_change": ELIGIBLE, "business_role_revoke": ELIGIBLE, "audit_read": ELIGIBLE, "platform_billing_release": ELIGIBLE, "plan_read": ELIGIBLE, "plan_create": ELIGIBLE, "plan_update": ELIGIBLE, "plan_archive": ELIGIBLE, "subscription_read": ELIGIBLE, "subscription_audit_read": ELIGIBLE, "subscription_metrics_read": ELIGIBLE, "subscription_create": ELIGIBLE, "subscription_update": ELIGIBLE, "subscription_archive": ELIGIBLE, "subscription_pause": ELIGIBLE, "subscription_resume": ELIGIBLE, "subscription_cancel": ELIGIBLE, "subscription_upgrade": ELIGIBLE, "subscription_downgrade": ELIGIBLE, "subscription_reactivate": ELIGIBLE, "wilsy_ai_usage_capacity_read": ELIGIBLE, "billing_intelligence_evidence_read": ELIGIBLE}),
@@ -1018,7 +1041,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
     if operation in OPERATIONS or operation == "lifecycle_archive": return SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
     return SystemAuthorityClassification.UNKNOWN
 
-__all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
+__all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PLATFORM_EMPLOYER_OPERATIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # P47-R87: Partner-only business eligibility; not an IAM decision.
 OPERATIONS = frozenset((*OPERATIONS, "legal_practitioner_matter_access_policy_issue"))
@@ -1073,15 +1096,6 @@ _agreement_auditor = dict(_agreement_eligibility["tenant_auditor"])
 _agreement_auditor["commercial_agreement_read"] = ELIGIBLE
 _agreement_eligibility["tenant_auditor"] = MappingProxyType(_agreement_auditor)
 ELIGIBILITY = MappingProxyType(_agreement_eligibility)
-
-
-# ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
-# AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
-# TENANT POSTURE: own-tenant eligibility requires separate ACTIVE membership, current role assignment, matter scope and exact permission binding
-# FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 # POS business eligibility is separate from permission possession and the
@@ -1241,3 +1255,171 @@ _offer_sign_owner = dict(_offer_sign_eligibility["tenant_owner"])
 _offer_sign_owner[OFFER_SIGNATURE_OPERATION] = ELIGIBLE
 _offer_sign_eligibility["tenant_owner"] = MappingProxyType(_offer_sign_owner)
 ELIGIBILITY = MappingProxyType(_offer_sign_eligibility)
+
+# Headcount eligibility is distinct from IAM possession and current workforce
+# evidence. Creation/submission is HR Manager work; the independent decision is
+# HR Director work. All three HTTP operations remain tenant scoped, require the
+# existing durable permission assignment, and retain workforce currentness.
+HEADCOUNT_OPERATIONS = (
+    "hr_headcount_requisition_read",
+    "hr_headcount_requisition_create",
+    "hr_headcount_requisition_decide",
+)
+OPERATIONS = frozenset((*OPERATIONS, *HEADCOUNT_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "hr_headcount_requisition_read": "hr:headcount_requisition:read",
+    "hr_headcount_requisition_create": "hr:headcount_requisition:create",
+    "hr_headcount_requisition_decide": "hr:headcount_requisition:decide",
+})
+_headcount_eligibility = dict(ELIGIBILITY)
+_headcount_manager = dict(_headcount_eligibility["tenant_hr_manager"])
+_headcount_manager.update({
+    "hr_headcount_requisition_read": ELIGIBLE,
+    "hr_headcount_requisition_create": ELIGIBLE,
+})
+_headcount_eligibility["tenant_hr_manager"] = MappingProxyType(_headcount_manager)
+_headcount_director = dict(_headcount_eligibility["tenant_hr_director"])
+_headcount_director.update({
+    "hr_headcount_requisition_read": ELIGIBLE,
+    "hr_headcount_requisition_decide": ELIGIBLE,
+})
+_headcount_eligibility["tenant_hr_director"] = MappingProxyType(_headcount_director)
+ELIGIBILITY = MappingProxyType(_headcount_eligibility)
+
+# WILSY platform-employer operations reuse existing tenant HR role identities,
+# while exact company-tenant enforcement is performed by the authorization
+# composer. Eligibility remains only one conjunct; no role or permission is
+# assigned by this matrix.
+PLATFORM_EMPLOYER_OPERATIONS = (
+    "platform_employer_employee_directory_read",
+    "platform_employer_headcount_requisition_read",
+    "platform_employer_headcount_requisition_create",
+    "platform_employer_headcount_requisition_decide",
+    "platform_employer_hiring_candidate_read",
+    "platform_employer_hiring_candidate_create",
+    "platform_employer_hiring_candidate_transition",
+    "platform_employer_hiring_candidate_evidence_upload",
+    "platform_employer_hiring_candidate_evidence_read",
+    "platform_employer_hiring_offer_read",
+    "platform_employer_hiring_offer_create",
+    "platform_employer_hiring_offer_submit",
+    "platform_employer_hiring_offer_decide",
+    "platform_employer_hiring_offer_send",
+    "platform_employer_hiring_offer_sign",
+    "platform_employer_employee_admission_create",
+)
+OPERATIONS = frozenset((*OPERATIONS, *PLATFORM_EMPLOYER_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "platform_employer_employee_directory_read": "platform_employer:employee_directory:read",
+    "platform_employer_headcount_requisition_read": "platform_employer:headcount_requisition:read",
+    "platform_employer_headcount_requisition_create": "platform_employer:headcount_requisition:create",
+    "platform_employer_headcount_requisition_decide": "platform_employer:headcount_requisition:decide",
+    "platform_employer_hiring_candidate_read": "platform_employer:hiring_candidate:read",
+    "platform_employer_hiring_candidate_create": "platform_employer:hiring_candidate:create",
+    "platform_employer_hiring_candidate_transition": "platform_employer:hiring_candidate:transition",
+    "platform_employer_hiring_candidate_evidence_upload": "platform_employer:hiring_candidate_evidence:upload",
+    "platform_employer_hiring_candidate_evidence_read": "platform_employer:hiring_candidate_evidence:read",
+    "platform_employer_hiring_offer_read": "platform_employer:hiring_offer:read",
+    "platform_employer_hiring_offer_create": "platform_employer:hiring_offer:create",
+    "platform_employer_hiring_offer_submit": "platform_employer:hiring_offer:submit",
+    "platform_employer_hiring_offer_decide": "platform_employer:hiring_offer:decide",
+    "platform_employer_hiring_offer_send": "platform_employer:hiring_offer:send",
+    "platform_employer_hiring_offer_sign": "platform_employer:hiring_offer:sign",
+    "platform_employer_employee_admission_create":
+        "platform_employer:employee_admission:create",
+})
+_pfe_eligibility = dict(ELIGIBILITY)
+_pfe_role_operations = {
+    "tenant_hr_manager": (
+        "platform_employer_employee_directory_read",
+        "platform_employer_headcount_requisition_read",
+        "platform_employer_headcount_requisition_create",
+        "platform_employer_hiring_candidate_read",
+        "platform_employer_hiring_candidate_create",
+        "platform_employer_hiring_candidate_transition",
+        "platform_employer_hiring_candidate_evidence_upload",
+        "platform_employer_hiring_candidate_evidence_read",
+        "platform_employer_hiring_offer_read",
+        "platform_employer_hiring_offer_create",
+        "platform_employer_hiring_offer_submit",
+        "platform_employer_hiring_offer_send",
+    ),
+    "tenant_hr_director": (
+        "platform_employer_employee_directory_read",
+        "platform_employer_headcount_requisition_read",
+        "platform_employer_headcount_requisition_decide",
+        "platform_employer_hiring_candidate_read",
+        "platform_employer_hiring_candidate_evidence_read",
+        "platform_employer_hiring_offer_read",
+        "platform_employer_hiring_offer_decide",
+        "platform_employer_employee_admission_create",
+    ),
+    "tenant_owner": (
+        "platform_employer_hiring_offer_sign",
+    ),
+}
+for _role, _operations in _pfe_role_operations.items():
+    _role_eligibility = dict(_pfe_eligibility[_role])
+    _role_eligibility.update({operation: ELIGIBLE for operation in _operations})
+    _pfe_eligibility[_role] = MappingProxyType(_role_eligibility)
+ELIGIBILITY = MappingProxyType(_pfe_eligibility)
+
+
+# Dedicated company-document eligibility is additive and non-possessory.
+# Every existing operation retains exactly its prior eligibility value.
+_COMPANY_DOCUMENT_OPERATIONS = {
+    "company_operating_document_read": "company_operating_document:read",
+    "company_operating_document_author": "company_operating_document:author",
+    "company_operating_document_publish": "company_operating_document:publish",
+}
+OPERATIONS = frozenset((*OPERATIONS, *_COMPANY_DOCUMENT_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS, **_COMPANY_DOCUMENT_OPERATIONS,
+})
+_company_document_eligibility = {}
+for _company_role, _existing in ELIGIBILITY.items():
+    _entry = dict(_existing)
+    _entry.update({
+        "company_operating_document_read": ELIGIBLE if _company_role in TENANT_ROLES else DENY,
+        "company_operating_document_author": ELIGIBLE if _company_role in {"tenant_owner", "tenant_admin"} else DENY,
+        "company_operating_document_publish": ELIGIBLE if _company_role in {"tenant_owner", "tenant_admin"} else DENY,
+    })
+    _company_document_eligibility[_company_role] = MappingProxyType(_entry)
+ELIGIBILITY = MappingProxyType(_company_document_eligibility)
+
+# Projects business-capacity eligibility is limited to the established tenant
+# owner capacity. This is not a permission assignment: the dedicated Projects
+# authorization role, current membership, and active Projects entitlement remain
+# independent mandatory conjuncts in the shared authorization composer.
+_PROJECT_OPERATIONS = {
+    "project_list": "project:read",
+    "project_detail": "project:read",
+    "project_create": "project:create",
+    "project_update": "project:update",
+    "project_archive": "project:archive",
+}
+OPERATIONS = frozenset((*OPERATIONS, *_PROJECT_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    **_PROJECT_OPERATIONS,
+})
+_project_eligibility = {
+    role: dict(operations) for role, operations in ELIGIBILITY.items()
+}
+for _role, _operations in _project_eligibility.items():
+    for _operation in _PROJECT_OPERATIONS:
+        _operations[_operation] = ELIGIBLE if _role == "tenant_owner" else DENY
+ELIGIBILITY = MappingProxyType({
+    role: MappingProxyType(operations)
+    for role, operations in _project_eligibility.items()
+})
+
+# ARTIFACT: tools/eos/auth/tenant_authority_policy.py
+# VERSION: v1.58.0-PROJECT-OWNER-ELIGIBILITY
+# AUTHORITY BOUNDARY: business eligibility facts and exact operation mappings only; no authorization or mutation
+# TENANT POSTURE: platform-employer eligibility is usable only inside the canonical WILSY company tenant; active membership and assigned permission remain mandatory
+# FAIL-CLOSED POSTURE: unknown roles and operations deny; Projects eligibility is tenant_owner only and still requires separately assigned Projects role and active product entitlement
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

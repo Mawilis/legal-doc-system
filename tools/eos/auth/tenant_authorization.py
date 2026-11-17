@@ -1,16 +1,36 @@
-"""TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: WILSY OS Tenant Authorization Composition.
+VERSION: v1.53.0-PROJECTS-PLATFORM-ROLE-TENANT-FENCE
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
 evidence read bindings, authenticated field-service command bindings, sheriff
 Legal Operations controls, the dedicated law-firm client-visibility
 provisioning binding, and the explicit LEGAL_CLIENT matter-projection read
-binding; it does not mutate or transport.
+binding, exact WILSY platform-employer tenant restriction, and governed platform-employer operation bindings; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-20
+CERTIFICATION / UPDATE DATE: 2026-11-13
 CHANGELOG:
+    2026-11-16 v1.53.0-PROJECTS-PLATFORM-ROLE-TENANT-FENCE limits the separately assignable PROJECTS_PLATFORM_OWNER grant to the canonical WILSY company tenant before reading that assignment. Customer Projects roles remain independent; no permission or entitlement is granted.
+    2026-11-13 v1.51.0-COMPANY-DOCUMENT-EXACT-TENANT-BINDING adds independent exact-company document metadata only; all existing employment and other grants, eligibility and operation bindings remain unchanged. No principal assignment is created.
+    2026-11-12 v1.50.0-PLATFORM-EMPLOYEE-ADMISSION-BINDING binds the 16
+    governed platform-employer operations to exact canonical permission IDs,
+    including employee admission. Admission additionally requires the existing
+    HR Director business capacity and the separately assigned
+    PLATFORM_EMPLOYEE_ADMISSION_OFFICER role. Exact WILSY tenant, active
+    membership, principal, assignment and financial gates remain conjunctive.
+    Offer acceptance remains unbound; no admission route or command exists.
+    2026-11-12 v1.48.0-PLATFORM-EMPLOYER-TENANT-SCOPE-GATE rejects every
+    platform_employer permission outside the canonical WILSY company tenant
+    before principal, membership, role or permission repository reads. The check
+    uses the existing workspace-bootstrap tenant identity and grants no route,
+    role, assignment, acceptance, admission, customer entitlement or IAM authority.
     2026-10-21 v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Exact issuer operation-permission binding; no access read or financial execution.
 2026-10-21 v1.45.0-P47-R94-WORK-ASSIGNMENT-IAM-BINDING binds the exact
@@ -204,6 +224,7 @@ from tools.eos.auth.tenant_membership_repository import TenantMembershipNotFound
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
 from tools.eos.auth.tenant_business_role_authority import BusinessRoleResolution, resolve_current_tenant_business_role
 from tools.eos.auth.tenant_authority_policy import ELIGIBLE, TENANT_ROLES, tenant_role_operation_eligibility, requires_system_authority, SystemAuthorityClassification
+from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 from tools.eos.auth.workforce_admission_policy import (
     WorkforceAdmissionDisposition,
@@ -221,7 +242,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.53.0-PROJECTS-PLATFORM-ROLE-TENANT-FENCE"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; NO_ELIGIBLE_TENANT_BUSINESS_ROLE="NO_ELIGIBLE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -236,6 +257,8 @@ class MembershipReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, *, session: Any = None) -> object: ...
 class AssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
+_PLATFORM_EMPLOYER_PERMISSION_PREFIX = "platform_employer:"
+
 _BINDINGS = MappingProxyType({"profile_read":"tenant:profile:read","profile_update":"tenant:profile:write","lifecycle_archive":"tenant:lifecycle:archive","membership_read":"tenant:membership:read","membership_invite":"tenant:membership:write","membership_deactivate":"tenant:membership:write","role_assignment_read":"tenant:role_assignment:read","role_grant":"tenant:role_assignment:write","role_revoke":"tenant:role_assignment:write","audit_read":"audit:read","plan_read":"plan:read","plan_create":"plan:manage","plan_update":"plan:manage","plan_archive":"plan:manage","subscription_read":"subscription:read","subscription_audit_read":"subscription:read","subscription_metrics_read":"subscription:read","subscription_create":"subscription:manage","subscription_update":"subscription:manage","subscription_archive":"subscription:manage","subscription_pause":"subscription:manage","subscription_resume":"subscription:manage","subscription_cancel":"subscription:manage","subscription_upgrade":"subscription:manage","subscription_downgrade":"subscription:manage","subscription_reactivate":"subscription:manage","platform_billing_release":"platform_billing:release","platform_billing_provider_policy_create":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revise":"platform_billing:provider_policy:admin","platform_billing_provider_policy_activate":"platform_billing:provider_policy:admin","platform_billing_provider_policy_revoke":"platform_billing:provider_policy:admin","inbound_collection_authorization_create":"inbound_collection:authorization:create","tenant_inbound_merchant_configuration_register":"inbound_merchant_configuration:register","tenant_inbound_merchant_configuration_lifecycle_transition":"inbound_merchant_configuration:lifecycle","tenant_inbound_merchant_configuration_compromise":"inbound_merchant_configuration:security","tenant_inbound_merchant_configuration_remediate":"inbound_merchant_configuration:remediate","tenant_inbound_provider_policy_create":"inbound_provider_policy:author","tenant_inbound_provider_policy_revise":"inbound_provider_policy:author","tenant_inbound_provider_policy_activate":"inbound_provider_policy:activate","tenant_inbound_provider_policy_deactivate":"inbound_provider_policy:deactivate","tenant_inbound_provider_policy_emergency_disable":"inbound_provider_policy:emergency_disable","tenant_inbound_provider_credential_security_eligibility_issue":"inbound_provider_credential_security:eligibility_issue","tenant_inbound_provider_credential_security_revoke":"inbound_provider_credential_security:revoke","tenant_inbound_provider_credential_security_compromise":"inbound_provider_credential_security:compromise","tenant_inbound_provider_credential_security_rotate":"inbound_provider_credential_security:rotate","wilsy_ai_usage_capacity_read":"wilsy_ai:usage_capacity:read","billing_intelligence_evidence_read":"billing_intelligence:evidence:read","billing_dunning_projection_read":"billing_dunning:projection:read","billing_dunning_projection_evaluate":"billing_dunning:projection:evaluate","legal_instruction_read":"legal_operations:instruction:read","legal_instruction_write":"legal_operations:instruction:write","legal_directory_write":"legal_operations:directory:write","legal_receipt_write":"legal_operations:receipt:write","legal_queue_read":"legal_operations:queue:read","legal_deputy_queue_read":"legal_operations:deputy_queue:read","legal_client_visibility_write":"legal_operations:client_visibility:write","legal_client_matter_read":"legal_operations:client_matter:read","legal_conflict_review_write":"legal_operations:conflict_review:write","legal_client_acceptance_write":"legal_operations:client_acceptance:write","legal_matter_acceptance_instrument_write":"legal_operations:matter_acceptance_instrument:write","legal_matter_acceptance_instrument_approval_write":"legal_operations:matter_acceptance_instrument_approval:write","legal_allocation_read":"legal_operations:allocation:read","legal_allocation_write":"legal_operations:allocation:write","legal_attempt_read":"legal_operations:attempt:read","legal_attempt_write":"legal_operations:attempt:write","legal_attempt_outcome_write":"legal_operations:attempt_outcome:write","legal_return_read":"legal_operations:return:read","legal_return_write":"legal_operations:return:write","legal_billing_read":"legal_operations:billing:read","legal_invoice_read":"legal_operations:invoice:read", 'legal_matter_workflow_transition': 'legal_operations:matter_workflow:transition'})
 _BINDINGS = MappingProxyType({**_BINDINGS, "wilsy_ai_legal_tool_read": "wilsy_ai:legal_tool:read", "wilsy_ai_reasoning_execute": "wilsy_ai:reasoning:execute", "wilsy_ai_legal_services_execute": "wilsy_ai:legal_services:execute", "wilsy_ai_legal_advisory_generate": "wilsy_ai:legal_advisory:generate", "wilsy_ai_legal_advisory_read": "wilsy_ai:legal_advisory:read"})
 _BINDINGS = MappingProxyType({**_BINDINGS, "legal_matter_mandate_acknowledgment_write": "legal_operations:matter_mandate_acknowledgment:write"})
@@ -348,11 +371,32 @@ _BINDINGS = MappingProxyType({
     "legal_work_item_reassign": "legal_operations:work_item:reassign",
 })
 
+
+# Projects use one read capability for list/detail and distinct mutation pairs.
+# This binding grants no role possession, capacity eligibility, entitlement,
+# tenant selection, route admission, or command execution authority.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "project_list": "project:read",
+    "project_detail": "project:read",
+    "project_create": "project:create",
+    "project_update": "project:update",
+    "project_archive": "project:archive",
+})
+
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None, selected_business_role: object = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
         return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT)
     pid, tid, perm, op = cast(str, principal_id), cast(str, tenant_id), cast(str, permission_id), cast(str, operation)
+    if (
+        perm.startswith((_PLATFORM_EMPLOYER_PERMISSION_PREFIX, "company_operating_document:"))
+        and tid != WILSY_COMPANY_TENANT_ID
+    ):
+        return TenantAuthorizationDecision(
+            False,
+            TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH,
+        )
     try: principal = principal_repository.resolve(pid) if session is None else principal_repository.resolve(pid, session=session)
     except PrincipalAuthorityNotFoundError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PRINCIPAL_NOT_FOUND)
     except PrincipalAuthorityRepositoryError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE)
@@ -459,6 +503,10 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     inactive_seen = False
     active_role: str | None = None
     for auth_role in get_roles_granting_permission(perm):
+        # This role is governed as WILSY-internal. A stale or manually migrated
+        # assignment outside the company tenant cannot authorize Projects.
+        if auth_role == "PROJECTS_PLATFORM_OWNER" and tid != WILSY_COMPANY_TENANT_ID:
+            continue
         try: assignment = role_assignment_repository.resolve(pid, tid, auth_role) if session is None else role_assignment_repository.resolve(pid, tid, auth_role, session=session)
         except RoleAssignmentNotFoundError: continue
         except RoleAssignmentRepositoryError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE, role_result.role)
@@ -498,13 +546,6 @@ _BINDINGS = MappingProxyType({
     "commercial_agreement_activate": "tenant:commercial_agreement:activate",
 })
 
-# ARTIFACT: tenant_authorization.py
-# VERSION: v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
-# AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
-# TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required
-# FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 # POS permissions bind to exact own-tenant operations. The POS service still
@@ -536,3 +577,60 @@ _BINDINGS = MappingProxyType({**_BINDINGS,
     "hr_hiring_candidate_evidence_upload": "hr:hiring_candidate_evidence:upload",
     "hr_hiring_candidate_evidence_read": "hr:hiring_candidate_evidence:read",
 })
+
+# Platform-employer operation pairs are exact and remain subject to the
+# canonical WILSY tenant fence plus existing current-truth assignment gates.
+# Candidate identity acceptance and employee admission are intentionally absent.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "platform_employer_employee_directory_read":
+        "platform_employer:employee_directory:read",
+    "platform_employer_headcount_requisition_read":
+        "platform_employer:headcount_requisition:read",
+    "platform_employer_headcount_requisition_create":
+        "platform_employer:headcount_requisition:create",
+    "platform_employer_headcount_requisition_decide":
+        "platform_employer:headcount_requisition:decide",
+    "platform_employer_hiring_candidate_read":
+        "platform_employer:hiring_candidate:read",
+    "platform_employer_hiring_candidate_create":
+        "platform_employer:hiring_candidate:create",
+    "platform_employer_hiring_candidate_transition":
+        "platform_employer:hiring_candidate:transition",
+    "platform_employer_hiring_candidate_evidence_upload":
+        "platform_employer:hiring_candidate_evidence:upload",
+    "platform_employer_hiring_candidate_evidence_read":
+        "platform_employer:hiring_candidate_evidence:read",
+    "platform_employer_hiring_offer_read":
+        "platform_employer:hiring_offer:read",
+    "platform_employer_hiring_offer_create":
+        "platform_employer:hiring_offer:create",
+    "platform_employer_hiring_offer_submit":
+        "platform_employer:hiring_offer:submit",
+    "platform_employer_hiring_offer_decide":
+        "platform_employer:hiring_offer:decide",
+    "platform_employer_hiring_offer_send":
+        "platform_employer:hiring_offer:send",
+    "platform_employer_hiring_offer_sign":
+        "platform_employer:hiring_offer:sign",
+    "platform_employer_employee_admission_create":
+        "platform_employer:employee_admission:create",
+})
+
+
+# Exact company-document pairs still require ACTIVE current assignments,
+# canonical company scope and independently eligible business capacity.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "company_operating_document_read": "company_operating_document:read",
+    "company_operating_document_author": "company_operating_document:author",
+    "company_operating_document_publish": "company_operating_document:publish",
+})
+
+# ARTIFACT: tools/eos/auth/tenant_authorization.py
+# VERSION: v1.53.0-PROJECTS-PLATFORM-ROLE-TENANT-FENCE
+# AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
+# TENANT POSTURE: platform_employer and the internal Projects Platform Owner grant are restricted to the canonical WILSY company tenant; all operations still require exact active membership, eligible business role, exact permission-operation pair, and active granting role
+# FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, out-of-scope, mismatched, or financial requests deny; admission has no route or command and offer acceptance remains unbound
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

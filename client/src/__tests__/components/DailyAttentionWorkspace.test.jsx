@@ -1,6 +1,11 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.2.0-VERIFIED-RESULT-STATE-CERT
+ * VERSION: v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -8,8 +13,13 @@
  * COLLABORATION / OWNERSHIP: DailyAttentionWorkspace owns display/windowing;
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
- * CERTIFICATION / UPDATE DATE: 2026-11-11
- * CHANGELOG: v2.2.0-VERIFIED-RESULT-STATE-CERT aligns the
+ * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CHANGELOG: v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT asserts success is visible only after the source owner confirms completion and the parent receives fresh-readback confirmation.
+ *          v2.4.0-IN-PANEL-SOURCE-COMPLETION-CERT verifies action gating, direct row-to-evidence focus, and failed completion preservation.
+ *          v2.3.0-COMPACT-EXECUTION-BAR-CERT verifies one compact control
+ *          toolbar, collapsed source details, canonical default ordering, and
+ *          source-priority labels on rows without a duplicate severity legend.
+ *          v2.2.0-VERIFIED-RESULT-STATE-CERT aligns the
  *          assertions with explicit last-verified source evidence, current
  *          selection feedback and the create form's mutually exclusive view.
  *          v2.1.0-SOURCE-CONFIRMED-RAIL-CERT ensures
@@ -172,7 +182,7 @@ describe('Daily Attention bounded inbox', () => {
 
     expect(screen.getByText('No active Operations work')).toBeTruthy();
     expect(screen.getByText(/were not verified for this session/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Last verified from 1 admitted source/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Source details' }));
     const evidence = screen.getByRole('region', { name: 'Last verified attention source details' });
     expect(evidence.textContent).toContain('Operations');
     expect(evidence.textContent).toContain('Verified · empty');
@@ -264,7 +274,7 @@ describe('Daily Attention bounded inbox', () => {
     expect(inert).not.toHaveBeenCalled();
   });
 
-  it('exposes source completion only for EOS-admitted commands and submits operator evidence', () => {
+  it('gates completion on verified source action and opens the evidence form from the row', async () => {
     const onComplete = vi.fn();
     const feed = fixtureFeed(1);
     const base = {
@@ -274,12 +284,17 @@ describe('Daily Attention bounded inbox', () => {
       loadingMore: false, pageError: '', onCompleteWork: onComplete,
     };
     const { rerender } = render(<DailyAttentionWorkspace {...base} authorisedActions={{}} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
-    expect(screen.getByRole('button', { name: 'Confirm completion' })).toBeTruthy();
-    expect(screen.getByText(/Completion permission not preverified/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Complete Attention item 0' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open details for Attention item 0' }));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Confirm completion' })).toBeNull();
+
     rerender(<DailyAttentionWorkspace {...base}
       authorisedActions={{ OPERATIONS: ['COMPLETE'] }} />);
-    fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Complete Attention item 0' }));
+    const evidence = screen.getByPlaceholderText('Record what was completed and the evidence for this decision');
+    await waitFor(() => expect(evidence).toHaveFocus());
+    fireEvent.change(evidence, {
       target: { value: 'Verified operational delivery and recorded completion evidence' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm completion' }));
@@ -348,7 +363,7 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByRole('heading', {name: 'Create work in Operations'})).toBeTruthy();
   });
 
-  it('presents each declared severity as labeled semantic visual triage and overrides overdue', () => {
+  it('keeps priority and overdue semantics on source rows without duplicate legend controls', () => {
     const feed = fixtureFeed(5);
     feed.items[0].priority = 'CRITICAL';
     feed.items[1].priority = 'HIGH';
@@ -368,12 +383,9 @@ describe('Daily Attention bounded inbox', () => {
         loadingMore={false} pageError=""
       />,
     );
-    const legend = screen.getByRole('group', { name: 'Severity of loaded work' });
-    expect(legend.textContent).toContain('Critical 1');
-    expect(legend.textContent).toContain('High 1');
-    expect(legend.textContent).toContain('Normal 1');
-    expect(legend.textContent).toContain('Low 2');
-    expect(legend.textContent).toContain('Overdue 1');
+    expect(screen.queryByRole('group', { name: 'Severity of loaded work' })).toBeNull();
+    expect(screen.getByLabelText('Verified current-source workload').textContent)
+      .toContain('Overdue1');
     for (const level of ['Critical', 'High', 'Normal', 'Low']) {
       expect(screen.getByLabelText('Severity ' + level + '; priority ' + level.toUpperCase())).toBeTruthy();
     }
@@ -413,7 +425,8 @@ describe('Daily Attention bounded inbox', () => {
       setSource: vi.fn(), query: '', setQuery: vi.fn(),
       onRefresh: vi.fn(), onOpenWork: vi.fn(),
       onLoadMore: vi.fn(), onCompleteWork: complete,
-      authorisedActions: {}, loadingMore: false, pageError: '',
+      authorisedActions: { OPERATIONS: ['COMPLETE'] },
+      loadingMore: false, pageError: '',
     };
     const { rerender } = render(<DailyAttentionWorkspace {...base}/>);
     fireEvent.click(screen.getByRole('button', {name: 'Inspect Attention item 0'}));
@@ -422,6 +435,7 @@ describe('Daily Attention bounded inbox', () => {
     });
     fireEvent.click(screen.getByRole('button', {name: 'Confirm completion'}));
     await waitFor(() => expect(screen.queryByRole('complementary', {name: 'Attention detail rail'})).toBeNull());
+    expect(await screen.findByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeTruthy();
     complete.mockResolvedValue(false);
     rerender(<DailyAttentionWorkspace {...base} onCompleteWork={complete}/>);
     fireEvent.click(screen.getByRole('button', {name: 'Inspect Attention item 0'}));
@@ -436,9 +450,9 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.2.0-VERIFIED-RESULT-STATE-CERT
-// AUTHORITY BOUNDARY: Client rendering evidence only; no commands or persistence.
+// VERSION: v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT
+// AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
-// FAIL-CLOSED POSTURE: Window must expose accurate size and absolute item position.
+// FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 // END OF WILSY OS SOVEREIGN ARTIFACT

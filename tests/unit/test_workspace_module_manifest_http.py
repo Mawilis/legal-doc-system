@@ -1,4 +1,19 @@
-"""HTTP projection certificate for the authenticated EOS tenant module manifest."""
+"""TITLE: WILSY OS Tenant Module Manifest HTTP Certificate.
+VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+AUTHORITY: Repository-owned isolated regression evidence only.
+EPITOME: Prove exact WILSY company separation while preserving customer Legal
+availability, entitlement validation and fail-closed source behavior.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_workspace_module_manifest_http.py
+COLLABORATION / OWNERSHIP: Canonical tenant module projection and authenticated HTTP adapter.
+CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: v1.1.0-WILSY-PLATFORM-OWNER-CERT retains all existing assertions and
+adds exact-company, customer preservation and legacy entitlement negative gates.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic typed records only; no production data.
+TENANT BOUNDARY: Exact company and customer fixtures; foreign evidence rejects.
+AUTHORITY BOUNDARY: Projection tests grant no role, permission or entitlement.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
 import asyncio
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -269,3 +284,39 @@ def test_module_manifest_endpoint_revalidates_workspace_before_returning_modules
     assert response["workspace"]["modules"][0]["moduleId"] == "LEGAL_OS"
     assert "businessRole" not in response["workspace"]
     assert "permissions" not in response["workspace"]
+
+
+def test_company_http_projection_keeps_legal_customer_state_outside_internal_navigation(monkeypatch):
+    """The real HTTP source composer applies company policy within its scoped read."""
+    from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID as company
+    client = _bind_runtime(monkeypatch)
+    legal = _active_product(TenantProductId.LEGAL_OPERATIONS, company)
+    operations = _active_product(TenantProductId.OPERATIONS, company)
+    evidence = {item.entitlement_id: item for item in (legal, operations)}
+    def read(tenant_id, entitlement_id, *_args, session=None, **_kwargs):
+        assert tenant_id == company and session is client.sessions[-1]
+        if entitlement_id not in evidence:
+            raise registry.TenantProductEntitlementRegistryNotFoundError()
+        return evidence[entitlement_id]
+    monkeypatch.setattr(registry, "get_current", read)
+    result = auth_router._workspace_module_manifest_projection(company)
+    assert [item["moduleId"] for item in result] == ["OPERATIONS"]
+    assert client.sessions[0].aborted == client.sessions[0].ended == 1
+
+
+def test_policy_version_does_not_change_the_existing_manifest_wire_schema(monkeypatch):
+    """A policy repair must not break customer clients sharing the v1 schema."""
+    from tools.eos.auth.tenant_module_manifest import CONTRACT_VERSION, VERSION
+    monkeypatch.setattr(auth_router, "build_workspace_bootstrap_projection", lambda **_kwargs: SimpleNamespace(tenant_id=TENANT))
+    monkeypatch.setattr(auth_router, "_workspace_module_manifest_projection", lambda tenant_id: ())
+    response = asyncio.run(auth_router.workspace_module_manifest(SimpleNamespace(identity_id="synthetic-principal")))
+    assert VERSION == "v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST"
+    assert response["workspace"]["moduleManifestVersion"] == CONTRACT_VERSION == "v1.0.0-EOS-TENANT-MODULE-MANIFEST"
+
+# ARTIFACT: test_workspace_module_manifest_http.py
+# VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+# AUTHORITY BOUNDARY: Regression evidence only; no IAM/entitlement mutation.
+# TENANT POSTURE: Exact company exclusion and customer Legal preservation.
+# FAIL-CLOSED POSTURE: Foreign or malformed source evidence never passes.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

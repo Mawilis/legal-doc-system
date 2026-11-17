@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.2.0-EXPLICIT-VERIFIED-VIEW-CONTINUITY
+ * VERSION: v3.6.0-ACCEPTED-RECEIPT-RECONCILIATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -8,7 +8,7 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyDailyAttentionCentre.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
- * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CERTIFICATION / UPDATE DATE: 2026-11-16
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No browser-persisted queue, invented notices,
  *                            unread receipts or browser-granted permissions.
@@ -17,13 +17,29 @@
  * AUTHORITY BOUNDARY: Read-only EOS projection; source-owned Python EOS
  *                     endpoints independently authorize every mutation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
- * CHANGELOG: v3.1.0-SOURCE-CREATE-VALIDATION-EVIDENCE
+ * CHANGELOG: v3.6.0-ACCEPTED-RECEIPT-RECONCILIATION retains a validated
+ *            source completion receipt with exact tenant/session/item/note
+ *            context when fresh readback is pending or unavailable. Subsequent
+ *            attempts reconcile with reads only and never resubmit the command.
+ *            The detail form labels accepted-but-unverified work accurately.
+ *            v3.5.0-COMPLETION-READBACK-GATE waits for a verified source
+ *            completion receipt and fresh exact-scope unified and attention
+ *            reads before returning success; the item must be absent from both
+ *            active projections. Failed readback preserves the prior row and
+ *            evidence, marked unavailable where appropriate.
+ *            v3.4.0-SOURCE-CONFLICT-RECONCILIATION refreshes the current exact-scope
+ *            projection after source create or completion returns HTTP 409;
+ *            the existing draft/row remains visible and no success is claimed.
+ *            v3.1.0-SOURCE-CREATE-VALIDATION-EVIDENCE
  *            surfaces safe EOS 422 field codes rather than concealing
  *            business-request failures behind generic validation copy.
  *            v3.2.0-EXPLICIT-VERIFIED-VIEW-CONTINUITY keeps the exact-scope
  *            verified workspace mounted during refresh, binds each result
  *            page to its verified criteria, aborts superseded reads, and
  *            clears rows on authorization or session invalidation.
+ *            v3.3.0-DEADLINE-BOUNDARY-REVALIDATION schedules an exact-scope
+ *            source revalidation when the next active absolute deadline passes
+ *            and rechecks on tab visibility; counts and rows remain EOS-derived.
  *            v3.0.0-SOURCE-CONFIRMED-RAIL-RELEASE returns
  *            completion success to its presenting detail rail only after
  *            source EOS readback, releasing mobile bulk-triage controls;
@@ -256,6 +272,7 @@ export default function WilsyDailyAttentionCentre({
   const [unavailableActionSources, setUnavailableActionSources] = useState([]);
   const [completionId, setCompletionId] = useState(null);
   const [completionError, setCompletionError] = useState('');
+  const [completionReceipts, setCompletionReceipts] = useState(() => new Map());
   const [bulkCompleting, setBulkCompleting] = useState(false);
   const [bulkResult, setBulkResult] = useState('');
   const [creatingWork, setCreatingWork] = useState(false);
@@ -266,6 +283,7 @@ export default function WilsyDailyAttentionCentre({
   const feedGenerationRef = useRef(0);
   const verifiedProjectionScopeRef = useRef(null);
   const verifiedAttentionScopeRef = useRef(null);
+  const skipSelfInvalidationRefreshRef = useRef(false);
   const liveScopeKey = workScope && tenantId && auth?.user?.id
     ? [workScope, tenantId, auth.user.id].join('::') : null;
   const [refreshId, setRefreshId] = useState(0);
@@ -406,9 +424,50 @@ export default function WilsyDailyAttentionCentre({
   useEffect(() => {
     if (!open || !workScope) return undefined;
     return subscribeUnifiedMyWork(workScope, () => {
+      if (skipSelfInvalidationRefreshRef.current) {
+        skipSelfInvalidationRefreshRef.current = false;
+        return;
+      }
       setRefreshId((id) => id + 1);
     });
   }, [open, workScope]);
+
+  // Source overdue state is evaluated against EOS's aware UTC `as_of` instant.
+  // Re-read at the next source deadline so the row, aggregate pills and filter
+  // advance together without a manual refresh. This timer grants no authority;
+  // the refreshed EOS projection remains the only source of deadline state.
+  useEffect(() => {
+    if (!open || !workScope || status !== 'READY' || !projection
+      || !liveScopeKey || verifiedProjectionScopeRef.current !== liveScopeKey) {
+      return undefined;
+    }
+    const serverAsOf = Date.parse(projection.as_of);
+    if (!Number.isFinite(serverAsOf)) return undefined;
+    const now = Date.now();
+    const futureDeadlines = projection.items
+      .map((item) => Date.parse(item.due_at))
+      .filter((deadline) => Number.isFinite(deadline) && deadline > serverAsOf)
+      .sort((left, right) => left - right);
+    const nextDeadline = futureDeadlines[0];
+    if (nextDeadline === undefined) return undefined;
+
+    let refreshed = false;
+    const revalidateAfterDeadline = () => {
+      if (refreshed || Date.now() <= nextDeadline) return;
+      refreshed = true;
+      setRefreshId((id) => id + 1);
+    };
+    const delay = Math.max(1, nextDeadline - Date.now() + 1);
+    const timer = window.setTimeout(revalidateAfterDeadline, delay);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') revalidateAfterDeadline();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [open, workScope, status, projection, liveScopeKey]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 200);
@@ -602,7 +661,19 @@ export default function WilsyDailyAttentionCentre({
     ? workError
     : attentionStatus === 'UNAVAILABLE' && failedCriteriaMatch ? attentionError : '';
 
+  const completionReceiptKey = (item) => JSON.stringify([
+    tenantId, item?.sourceModule, item?.sourceRecordId,
+  ]);
+
   const handleSourceCompletion = async (item, note) => {
+    const receiptKey = completionReceiptKey(item);
+    const priorReceipt = completionReceipts.get(receiptKey) || null;
+    if (priorReceipt && priorReceipt.scopeKey !== liveScopeKey) {
+      setCompletionError(
+        'An accepted completion from another authenticated session scope is awaiting reconciliation. Return to that exact session; no new command was sent.',
+      );
+      return false;
+    }
     if (!workScope || !attentionCriteriaIsCurrent || attentionStatus !== 'READY' || status !== 'READY'
       || verifiedAttentionScopeRef.current !== liveScopeKey
       || !projection?.sources_included?.includes(item?.sourceModule)
@@ -611,24 +682,120 @@ export default function WilsyDailyAttentionCentre({
       || item?.status !== 'OPEN'
       || !attentionFeed?.items.some((row) => row.id === item.id
         && row.sourceRecordId === item.sourceRecordId)
-      || completionId) return false;
+      || completionId
+      || (!priorReceipt && !note.trim())) return false;
+    const requestCriteria = { filter, source, query: debouncedQuery.trim() };
+    const selectedView = {
+      ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+    }[filter];
+    let acceptedReceipt = priorReceipt;
+    let readbackLoaded = false;
     setCompletionError('');
     setCompletionId(item.id);
     try {
-      await completeAttentionSourceWork(item, note);
-      invalidateUnifiedMyWork(workScope);
-      setRefreshId((id) => id + 1);
+      if (!acceptedReceipt) {
+        const receipt = await completeAttentionSourceWork(item, note);
+        acceptedReceipt = {
+          scopeKey: liveScopeKey,
+          tenantId,
+          principalId: auth.user.id,
+          sourceModule: item.sourceModule,
+          sourceRecordId: item.sourceRecordId,
+          completionNote: note.trim(),
+          receipt,
+        };
+        setCompletionReceipts((current) => new Map(current).set(receiptKey, acceptedReceipt));
+      }
+
+      // An accepted receipt is retained until both fresh EOS projections prove
+      // the active work is absent. Re-entering this handler with that receipt
+      // performs reads only; it never sends another source command.
+      skipSelfInvalidationRefreshRef.current = true;
+      if (!invalidateUnifiedMyWork(workScope)) {
+        skipSelfInvalidationRefreshRef.current = false;
+      }
+      const expectedScope = { tenantId, principalId: auth.user.id };
+      const [freshProjection, freshFeed] = await Promise.all([
+        readUnifiedMyWork(workScope, expectedScope, { force: true }),
+        readAttentionFeed(expectedScope, {
+          view: selectedView,
+          sources: source === 'ALL' ? undefined : source,
+          q: requestCriteria.query,
+          limit: 50,
+        }),
+      ]);
+      const includedSources = freshProjection.sources_included || [];
+      const admittedSources = freshFeed.coverage.admittedSources;
+      if (admittedSources.length !== includedSources.length
+        || includedSources.some((entry) => !admittedSources.includes(entry))) {
+        throw new Error('ATTENTION_SOURCE_COVERAGE_MISMATCH');
+      }
+      setProjection(freshProjection);
+      verifiedProjectionScopeRef.current = liveScopeKey;
+      setAttentionFeed(freshFeed);
+      setVerifiedAttentionCriteria(requestCriteria);
+      setAttentionFailureCriteria(null);
+      verifiedAttentionScopeRef.current = liveScopeKey;
+      setWorkError('');
+      setAttentionError('');
+      setStatus('READY');
+      setAttentionStatus('READY');
+      setRecoveryAttempts(0);
+      readbackLoaded = true;
+      const sourceKey = item.sourceModule + ':' + item.sourceRecordId;
+      if (freshProjection.items.some((row) => row.source_key === sourceKey)
+        || freshFeed.items.some((row) => row.id === item.id)) {
+        throw new Error('ATTENTION_COMPLETION_READBACK_PENDING');
+      }
+      setCompletionReceipts((current) => {
+        const next = new Map(current);
+        next.delete(receiptKey);
+        return next;
+      });
       return true;
     } catch (error) {
       const http = error?.response?.status;
-      setCompletionError(http === 403 ? 'EOS denied completion. Verify tenant membership, source entitlement and complete permission.'
-        : http === 401 ? 'Your session expired. Sign in again before completing work.'
-          : http === 503 ? 'EOS command service unavailable. Completion was not confirmed.'
-        : http === 409 ? 'Work changed since inspection. Refresh and review again.'
-          : http === 422 ? 'Completion evidence was rejected by its source.'
-            : 'Source completion could not be confirmed. Refresh before retrying.');
+      if (http === 409) {
+        invalidateUnifiedMyWork(workScope);
+        setRefreshId((id) => id + 1);
+      }
+      if (acceptedReceipt && !readbackLoaded) {
+        if (http === 401 || http === 403) {
+          setProjection(null);
+          setAttentionFeed(null);
+          verifiedProjectionScopeRef.current = null;
+          verifiedAttentionScopeRef.current = null;
+          setStatus('UNAVAILABLE');
+          setAttentionStatus('UNAVAILABLE');
+          setWorkError('ATTENTION_ACCESS_DENIED');
+          setAttentionError('ATTENTION_ACCESS_DENIED');
+        } else {
+          setAttentionFailureCriteria(requestCriteria);
+          setAttentionStatus('UNAVAILABLE');
+          setAttentionError('ATTENTION_COMPLETION_READBACK_UNAVAILABLE');
+        }
+      }
+      const responseDetail = error?.response?.data?.detail;
+      const responseCode = typeof responseDetail === 'string'
+        ? responseDetail
+        : responseDetail?.error || responseDetail?.code;
+      const safeResponseCode = typeof responseCode === 'string'
+        && /^[A-Z0-9][A-Z0-9_.:-]{0,119}$/.test(responseCode)
+        ? ' (' + responseCode + ')' : '';
+      setCompletionError(acceptedReceipt
+        ? error?.message === 'ATTENTION_COMPLETION_READBACK_PENDING'
+          ? 'EOS accepted completion' + safeResponseCode + ', but a fresh source read still shows this item active. The receipt and note are retained. Reconcile completion to read again; no command will be resent.'
+          : 'EOS accepted completion' + safeResponseCode + ', but fresh authorized readback could not be verified. The receipt and note are retained; reconcile with source reads only.'
+        : http === 403 ? 'EOS rejected completion' + safeResponseCode + ' for your current business capacity.'
+          : http === 401 ? 'EOS rejected completion' + safeResponseCode + '; sign in again before submitting work.'
+            : http === 409 ? 'EOS rejected completion' + safeResponseCode + '; the source reports a conflict. Refresh the record before retrying.'
+              : http === 422 ? 'EOS rejected completion evidence' + safeResponseCode + '.'
+                : Number.isInteger(http)
+                  ? 'EOS rejected completion' + safeResponseCode + ' with HTTP ' + http + '.'
+                  : 'No valid EOS completion receipt was received. The command outcome is unverified; refresh and reconcile the source before deciding on another attempt.');
       return false;
     } finally {
+      skipSelfInvalidationRefreshRef.current = false;
       setCompletionId(null);
     }
   };
@@ -718,6 +885,10 @@ export default function WilsyDailyAttentionCentre({
       return true;
     } catch (error) {
       const http = error?.response?.status;
+      if (http === 409) {
+        invalidateUnifiedMyWork(workScope);
+        setRefreshId((id) => id + 1);
+      }
       setCreationError(http === 403 ? 'EOS denied this task creation. Verify subscription, membership and create permission.'
         : http === 401 ? 'Your session expired. Sign in again before creating work.'
           : http === 503 ? 'EOS command service unavailable; the task was not confirmed as created.'
@@ -1064,6 +1235,13 @@ export default function WilsyDailyAttentionCentre({
               onOpenWorkforce={onOpenWorkforce}
               authorisedActions={sourceActionsScope === liveScopeKey ? sourceActions : {}}
               onCompleteWork={handleSourceCompletion}
+              getCompletionReceipt={(item) => {
+                const receiptKey = completionReceiptKey(item);
+                const entry = completionReceipts.get(receiptKey);
+                return entry?.scopeKey === liveScopeKey ? entry : null;
+              }}
+              completionReadbackReady={status === 'READY' && attentionStatus === 'READY'
+                && attentionCriteriaIsCurrent && verifiedAttentionScopeRef.current === liveScopeKey}
               onBulkComplete={handleBulkCompletion}
               bulkCompleting={bulkCompleting}
               bulkResult={bulkResult}
@@ -1341,7 +1519,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.2.0-EXPLICIT-VERIFIED-VIEW-CONTINUITY
+ * VERSION: v3.6.0-ACCEPTED-RECEIPT-RECONCILIATION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.

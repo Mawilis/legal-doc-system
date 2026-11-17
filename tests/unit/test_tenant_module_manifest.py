@@ -1,4 +1,19 @@
-"""Direct certificate for the EOS tenant module manifest."""
+"""TITLE: WILSY OS Tenant Module Manifest Contract Certificate.
+VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+AUTHORITY: Repository-owned isolated regression evidence only.
+EPITOME: Prove exact WILSY company separation while preserving customer Legal
+availability, entitlement validation and fail-closed source behavior.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_module_manifest.py
+COLLABORATION / OWNERSHIP: Canonical tenant module projection and authenticated HTTP adapter.
+CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: v1.1.0-WILSY-PLATFORM-OWNER-CERT retains all existing assertions and
+adds exact-company, customer preservation and legacy entitlement negative gates.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic typed records only; no production data.
+TENANT BOUNDARY: Exact company and customer fixtures; foreign evidence rejects.
+AUTHORITY BOUNDARY: Projection tests grant no role, permission or entitlement.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
 from datetime import datetime, timezone
 
 import pytest
@@ -192,3 +207,40 @@ def test_operations_and_intelligence_require_separate_active_product_evidence():
     assert intelligence[0].workspace_key == "INTELLIGENCE_DASHBOARD"
     assert operations[0].product_id is not intelligence[0].product_id
     assert operations[0].entitlement_id != intelligence[0].entitlement_id
+
+
+def test_wilsy_platform_owner_excludes_legal_but_retains_internal_tools():
+    """Owning WILSY OS is distinct from consuming its customer Legal product."""
+    from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID as company
+    legal = _active_product(TenantProductId.LEGAL_OPERATIONS, company)
+    operations = _active_product(TenantProductId.OPERATIONS, company)
+    evidence_before = (legal.fingerprint, operations.fingerprint)
+    result = build_tenant_module_manifest(tenant_id=company, entitlements=[legal, operations])
+    assert [item.module_id for item in result] == [TenantModuleId.OPERATIONS]
+    assert evidence_before == (legal.fingerprint, operations.fingerprint)
+    assert build_tenant_module_manifest(tenant_id=company, entitlements=[legal]) == ()
+
+
+@pytest.mark.parametrize("tenant", ["WILSYTENANT-OTHER", "wilsytenant-4cd2fz4o", "CUSTOMER-LAW-FIRM"])
+def test_noncompany_tenants_keep_their_exact_legal_product_projection(tenant):
+    """Names, similar identifiers and role labels cannot select company policy."""
+    result = build_tenant_module_manifest(tenant_id=tenant, entitlements=[_active_product(TenantProductId.LEGAL_OPERATIONS, tenant)])
+    assert [item.module_id for item in result] == [TenantModuleId.LEGAL_OS]
+
+
+def test_company_exclusion_does_not_skip_foreign_or_duplicate_evidence_validation():
+    """Even a hidden Legal module must pass exact scope and evidence integrity."""
+    from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID as company
+    with pytest.raises(TenantModuleManifestError, match="TENANT_MISMATCH"):
+        build_tenant_module_manifest(tenant_id=company, entitlements=[_active_product(TenantProductId.LEGAL_OPERATIONS)])
+    legal = _active_product(TenantProductId.LEGAL_OPERATIONS, company)
+    with pytest.raises(TenantModuleManifestError, match="DUPLICATE_PRODUCT_EVIDENCE"):
+        build_tenant_module_manifest(tenant_id=company, entitlements=[legal, legal])
+
+# ARTIFACT: test_tenant_module_manifest.py
+# VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+# AUTHORITY BOUNDARY: Regression evidence only; no IAM/entitlement mutation.
+# TENANT POSTURE: Exact company exclusion and customer Legal preservation.
+# FAIL-CLOSED POSTURE: Foreign or malformed source evidence never passes.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

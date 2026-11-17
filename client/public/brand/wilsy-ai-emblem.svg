@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+TITLE: WILSY AI Neural Core Emblem
+VERSION: v1.0.0-FOUNDER-CREATIVE-AI-IDENTITY
+AUTHORITY: Founder directive for a distinctive WILSY AI symbol.
+EPITOME: A faceted intelligence core and connected neural orbit express contextual
+reasoning within WILSY's navy and gold identity at launcher and panel scales.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/public/brand/wilsy-ai-emblem.svg
+COLLABORATION / OWNERSHIP: Existing Intelligence Dock launcher and companion panel.
+CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: v1.0.0-FOUNDER-CREATIVE-AI-IDENTITY introduces original native vector artwork
+for the AI companion; it does not replace the authorized corporate ribbon/logo.
+COMPLIANCE: Decorative UI artwork; no personal data, external scripts or fonts.
+SECURITY / PRIVACY POSTURE: Self-contained gradients and vector geometry only.
+TENANT BOUNDARY: No identity, entitlement, session or tenant meaning is inferred.
+AUTHORITY BOUNDARY: Brand symbol only; not proof of a model response or permission.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Wilsy AI neural core</title>
+  <defs>
+    <linearGradient id="gold" x1="12" y1="9" x2="50" y2="55" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff0b3"/><stop offset=".44" stop-color="#f4cc6c"/><stop offset="1" stop-color="#b8892e"/>
+    </linearGradient>
+    <linearGradient id="facet" x1="24" y1="17" x2="40" y2="46" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff4ce"/><stop offset="1" stop-color="#dba640"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 5 54 18v27L32 59 10 46V19Z" stroke="#cfb46d" stroke-opacity=".5" stroke-width="1.2"/>
+  <path d="m32 15 15 8.5v17L32 49l-15-8.5v-17Z" fill="url(#gold)"/>
+  <path d="m32 15 15 8.5L32 32 17 23.5Z" fill="#fff2bc" fill-opacity=".6"/>
+  <path d="M32 32v17l15-8.5v-17Z" fill="#bc8b2f" fill-opacity=".56"/>
+  <path d="m32 23 8 9-8 9-8-9Z" fill="#0b213e"/>
+  <path d="m32 27 4.5 5-4.5 5-4.5-5Z" fill="url(#facet)"/>
+  <path d="M32 5v10m22 3-7 5.5m7 21.5-7-4.5M32 49v10M17 40.5 10 46m7-22.5L10 19" stroke="url(#gold)" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M19 9.5C9 13 4.5 22 5 31m40 23.5C55 51 59.5 42 59 33" stroke="#f6d681" stroke-width="1.8" stroke-linecap="round"/>
+  <g fill="url(#gold)" stroke="#0a1d35" stroke-width="1.5">
+    <circle cx="32" cy="5" r="3.4"/><circle cx="54" cy="18" r="3.4"/>
+    <circle cx="54" cy="45" r="3.4"/><circle cx="32" cy="59" r="3.4"/>
+    <circle cx="10" cy="46" r="3.4"/><circle cx="10" cy="19" r="3.4"/>
+  </g>
+</svg>
+<!--
+ARTIFACT: wilsy-ai-emblem.svg
+VERSION: v1.0.0-FOUNDER-CREATIVE-AI-IDENTITY
+AUTHORITY BOUNDARY: Original AI companion artwork only; no runtime authority.
+TENANT POSTURE: No identity or permission conveyed by this symbol.
+FAIL-CLOSED POSTURE: Static artwork cannot fabricate intelligence or source truth.
+FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+END OF WILSY OS SOVEREIGN ARTIFACT
+-->

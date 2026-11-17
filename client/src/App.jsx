@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK
+ * VERSION: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -10,8 +10,53 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: Client routing consumes only bounded server
+ *                             projections. Authentication tokens, tenant
+ *                             membership, legal evidence and legal release
+ *                             remain server-owned authorities.
+ * TENANT BOUNDARY: A persisted or discovered tenant is routing context only;
+ *                  protected runtime still requires authenticated server
+ *                  workspace bootstrap with an exact tenant match.
+ * AUTHORITY BOUNDARY: Presentation and route composition only. Python EOS owns
+ *                     authentication, membership, business-role, tenant and
+ *                     legal-acceptance decisions.
+ * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
+ *                               execution and settlement authority.
+ * CHANGELOG: v20.10.2-GLOBAL-SEARCH-FOCUS-RETURN returns keyboard focus to the element that opened global search after Escape, dismissal, or navigation. Search routing, auth, and authority are unchanged.
+ * CHANGELOG: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
+ * CHANGELOG: v20.11.0-AUTHENTICATED-ACCOUNT-IDENTITY binds account identity to the exact active AuthProvider principal and tenant, removes unsupported personal links and diagnostics, and restores keyboard focus on menu dismissal. Search, session authority, and logout ownership are unchanged.
+ * CHANGELOG: v20.10.3-GLOBAL-SEARCH-POINTER-DISMISS-FOCUS defers opener focus restoration until the browser completes pointer dismissal, preventing backdrop default behavior from stealing focus.
+ * CHANGELOG: v20.10.1-FOUNDER-SQUARE-CORPORATE-IDENTITY preserves the Founder-supplied square WILSY OS identity
+ * and current session capacity when no sourced job title is present. Authentication,
+ * notifications, search ownership and route behavior are unchanged.
+ * CHANGELOG: v20.9.0-OFFICIAL-SQUARE-BRAND-CHROME enlarges the official
+ * square logo to 64px inside a 72px shared header, aligned with the existing
+ * wordmark/tagline; authentication, identity and notification owners are intact.
  * CHANGELOG:
+ *   v20.8.2-SUPPLIED-LOGO-PLATFORM-OWNER-CHROME — Preserves the Founder-selected square
+ *     navy WILSY OS bitmap through the shared brand asset constant. Exact authenticated WILSY
+ *     company scope suppresses the inherited Legal footer identifier.
+ *   v20.8.1-FOUNDER-SUPPLIED-SQUARE-LOGO — Restores the supplied square navy
+ *     WILSY OS logo following the Founder's explicit asset selection. Retains
+ *     the wordmark, tagline, compact header, protected routes and source owners.
+ *   v20.8.0-REFERENCE-GOLD-BRAND-COMPACT-CHROME — Uses the existing original
+ *     gold ribbon PNG selected by the Founder reference, preserving its
+ *     proportions and the wordmark/tagline. Aligns the shared header to the
+ *     64px Headquarters workspace; session, search and notification owners
+ *     remain unchanged. Direct Headquarters routes reuse the canonical
+ *     dashboard controller so authenticated product switching stays accessible.
+ *     No generated or simplified logo is substituted.
+ *   v20.7.1-RESTORED-SUPPLIED-WILSY-OS-TOPBAR-MARK — Restores the
+ *     user-supplied /icons/icon-192.png logo in its original 48px square slot
+ *     and removes the substituted gold W import. Preserves the wordmark,
+ *     tagline, navigation, session projection and existing workspace behavior.
+ *   v20.7.0-FOUNDER-HEADQUARTERS-CHROME — Uses the existing approved gold W
+ *     header emblem at the correct proportions, labels the working navigation
+ *     shortcuts honestly, and routes the account diagnostics entry to the
+ *     authenticated Headquarters kernel probe. Authentication, notification
+ *     projection and tenant authorization are unchanged.
  *   v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK — Uses the user-approved
  *     supplied WILSY OS square icon in the existing 48px emblem slot;
  *     preserves the WILSY wordmark, Build. Operate. Grow. tagline and
@@ -61,28 +106,16 @@
  *     recovery-contact verification route.
  *   v19.0.0-R1D-B0F-B4-PRODUCTION-LEGAL-ACCEPTANCE — Established the
  *     server-owned versioned legal-acceptance boundary.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Client routing consumes only bounded server
- *                             projections. Authentication tokens, tenant
- *                             membership, legal evidence and legal release
- *                             remain server-owned authorities.
- * TENANT BOUNDARY: A persisted or discovered tenant is routing context only;
- *                  protected runtime still requires authenticated server
- *                  workspace bootstrap with an exact tenant match.
- * AUTHORITY BOUNDARY: Presentation and route composition only. Python EOS owns
- *                     authentication, membership, business-role, tenant and
- *                     legal-acceptance decisions.
- * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
- *                               execution and settlement authority.
  */
 
 /* eslint-disable */
 import React, { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
+import { isWilsyPlatformTenant, WILSY_PLATFORM_LOGO_SRC } from './components/os/wilsyDashboardChromeConfig.js';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
 
 
@@ -97,7 +130,6 @@ import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
-import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import api from './services/api';
 import {
   currentUnifiedMyWorkScope,
@@ -157,35 +189,108 @@ const ProtectedTmsRoute = ({ user, children }) => {
  *          work visibility, notifications, and runtime health. This component
  *          renders only server-revalidated projections and never grants access.
  */
+const exactChromeText = (value) => {
+  if (typeof value !== 'string') return '';
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 254 || /[\u0000-\u001f\u007f]/.test(normalized)) return '';
+  return normalized;
+};
+
+const safeAccountEmail = (value) => {
+  const email = exactChromeText(value);
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '';
+  return email;
+};
+
+const accountInitials = (name) => name
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((part) => Array.from(part)[0]?.toLocaleUpperCase() || '')
+  .join('');
+
+const capacityLabel = (value) => {
+  const capacity = exactChromeText(value);
+  if (!capacity || !/^[A-Za-z0-9_-]+$/.test(capacity)) return '';
+  const words = capacity.replace(/^tenant_/i, '').replace(/[_-]+/g, ' ').toLocaleLowerCase();
+  return words ? words[0].toLocaleUpperCase() + words.slice(1) : '';
+};
+
 export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceReleased = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useAuth();
   const { isAuthenticated, authStage, loading: authLoading } = auth;
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchReturnFocusRef = useRef(null);
+  const searchWasOpenRef = useRef(false);
   const [searchValue, setSearchValue] = useState('');
+  const [searchNotice, setSearchNotice] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const accountTriggerRef = useRef(null);
+  const accountMenuRef = useRef(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [workCount, setWorkCount] = useState(null);
   const [workCountScope, setWorkCountScope] = useState(null);
 
-  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
-    || user?.email
-    || 'Authenticated user';
-  // Operating titles are presentation-only and must come from the authenticated
-  // session projection; never substitute an ACL role such as TENANT_OWNER.
-  const operatingTitle = user?.operatingTitle || user?.jobTitle || user?.displayTitle || 'Account';
-  const avatarUrl = user?.avatarUrl || user?.avatar_url || user?.profileImageUrl || null;
-  const initials = (user?.firstName || user?.email || 'W').slice(0, 1).toUpperCase()
-    + (user?.lastName || '').slice(0, 1).toUpperCase();
+  const hasAuthenticatedSession = isAuthenticated && authStage === AUTH_STATES.AUTHENTICATED;
+  const activePrincipal = auth?.user;
+  const activeTenant = auth?.tenant;
+  const exactPrincipal = Boolean(
+    hasAuthenticatedSession
+    && activePrincipal?.id
+    && String(activePrincipal.id) === String(user?.id || '')
+    && (
+      activePrincipal.systemServicesWorkspace
+        ? activePrincipal.systemServicesWorkspace.principalId === activePrincipal.id
+        : Boolean(activePrincipal.tenantId)
+          && String(activePrincipal.tenantId) === String(user?.tenantId || '')
+      )
+  );
+  const sessionUser = exactPrincipal ? activePrincipal : null;
+  const displayName = sessionUser
+    ? [exactChromeText(sessionUser.firstName), exactChromeText(sessionUser.lastName)].filter(Boolean).join(' ')
+    : '';
+  const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
+  const tenantIdentity = sessionUser?.tenantId
+    && String(activeTenant?.tenantId || '') === String(sessionUser.tenantId)
+    ? activeTenant
+    : null;
+  const organisationName = exactChromeText(tenantIdentity?.legalName)
+    || exactChromeText(tenantIdentity?.name);
+  const currentCapacity = sessionUser?.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION'
+    ? exactChromeText(sessionUser.businessRole || sessionUser.role)
+    : '';
+  const selectedCapacityLabel = capacityLabel(currentCapacity);
+  const identityLabel = displayName || accountEmail || '';
+  const initials = accountInitials(displayName);
+  const accountScope = sessionUser
+    ? `${sessionUser.id}:${sessionUser.tenantId || 'SYSTEM'}:${currentCapacity}:${auth.sessionGeneration ?? ''}`
+    : '';
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
-  const hasAuthenticatedSession = isAuthenticated && authStage === AUTH_STATES.AUTHENTICATED;
 
   // The exact AuthProvider session generation, selected capacity and both role
   // revisions partition this optional badge. It is active-work evidence, never
   // an unread-notification count or browser permission authority.
-  const currentWorkScope = currentUnifiedMyWorkScope(auth, user?.tenantId);
+  const currentWorkScope = currentUnifiedMyWorkScope(auth, sessionUser?.tenantId);
+  const isPlatformOwnerWorkspace = Boolean(currentWorkScope && isWilsyPlatformTenant(sessionUser?.tenantId));
+
+  useEffect(() => {
+    setUserMenuOpen(false);
+    setNotificationsOpen(false);
+  }, [accountScope]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return undefined;
+    const firstMenuItem = accountMenuRef.current?.querySelector('[role="menuitem"]');
+    firstMenuItem?.focus();
+    const dismissOutside = (event) => {
+      if (!accountMenuRef.current?.contains(event.target)) setUserMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', dismissOutside);
+    return () => document.removeEventListener('pointerdown', dismissOutside);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     if (!workspaceReleased || !hasAuthenticatedSession || authLoading || !currentWorkScope) {
@@ -195,7 +300,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     }
     let active = true;
     const controller = new AbortController();
-    const expectedScope = { tenantId: user.tenantId, principalId: user.id };
+    const expectedScope = { tenantId: sessionUser.tenantId, principalId: sessionUser.id };
     const refresh = async () => {
       try {
         const payload = await readUnifiedMyWork(
@@ -223,12 +328,15 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       window.clearInterval(interval);
       unsubscribe();
     };
-  }, [workspaceReleased, hasAuthenticatedSession, authLoading, currentWorkScope]);
+  }, [workspaceReleased, hasAuthenticatedSession, authLoading, currentWorkScope, sessionUser?.id, sessionUser?.tenantId]);
 
   const openGlobalSearch = () => {
+    const returnFocus = document.activeElement;
     const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
     const unclaimed = window.dispatchEvent(request);
+    if (unclaimed) searchReturnFocusRef.current = returnFocus;
     setSearchOpen(unclaimed);
+    setSearchNotice('');
     setUserMenuOpen(false);
     setNotificationsOpen(false);
   };
@@ -238,8 +346,12 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       if (event.defaultPrevented) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
+        const returnFocus = document.activeElement;
         const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
-        setSearchOpen(window.dispatchEvent(request));
+        const unclaimed = window.dispatchEvent(request);
+        if (unclaimed) searchReturnFocusRef.current = returnFocus;
+        setSearchOpen(unclaimed);
+        setSearchNotice('');
         setUserMenuOpen(false);
         setNotificationsOpen(false);
       }
@@ -255,9 +367,24 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
 
   useEffect(() => {
     if (searchOpen) {
+      searchWasOpenRef.current = true;
       const input = document.getElementById('wilsy-global-search-input');
       input?.focus();
+      return;
     }
+    if (!searchWasOpenRef.current) return;
+    searchWasOpenRef.current = false;
+    const returnFocus = searchReturnFocusRef.current;
+    searchReturnFocusRef.current = null;
+    if (!returnFocus?.isConnected || typeof returnFocus.focus !== 'function') return;
+
+    // Backdrop pointer dismissal can run the browser's default focus behavior
+    // after React commits this close. Deferring one task lets that behavior
+    // finish before focus returns to the actual header opener.
+    const focusTimer = window.setTimeout(() => {
+      if (returnFocus.isConnected) returnFocus.focus();
+    }, 0);
+    return () => window.clearTimeout(focusTimer);
   }, [searchOpen]);
 
   const submitSearch = (event) => {
@@ -267,32 +394,35 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       navigate('/headquarters');
       setSearchOpen(false);
       setSearchValue('');
+      setSearchNotice('');
     } else if (query === 'my work' || query === 'tasks') {
       navigate('/my-work');
       setSearchOpen(false);
       setSearchValue('');
+      setSearchNotice('');
+    } else {
+      setSearchNotice('No matching workspace shortcut. Choose Headquarters or My Work.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-40 flex h-16 w-full min-w-0 items-center gap-2 border-b border-white/10 bg-[#0b1830]/95 px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-6">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[200px] xl:w-[240px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <img src="/icons/icon-192.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
+    <div className="min-h-screen bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
+      {isPlatformOwnerWorkspace && <style>{'body:has([data-wilsy-platform-owner="true"])::after{display:none!important}'}</style>}
+      <header className="sticky top-0 z-40 flex h-[72px] w-full min-w-0 items-center gap-2 border-b border-white/10 bg-gradient-to-r from-[#0b1830] via-[#112444] to-[#0b1830] px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-4 xl:px-5">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
+          <img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo" className="h-14 w-14 shrink-0 object-contain md:h-16 md:w-16" />
           <span className="hidden min-w-0 leading-tight min-[360px]:block">
-
-
-            <span className="block text-lg font-semibold tracking-[0.025em] text-white">WILSY</span>
-            <span className="block whitespace-nowrap text-[10px] font-medium text-[#f0dca5]">Build. Operate. Grow.</span>
+            <span className="block text-[23px] font-bold tracking-[0.045em] md:text-[30px] text-white">WILSY</span>
+            <span className="block whitespace-nowrap text-[9px] font-medium text-[#f0dca5] md:text-[11px]">Build. Operate. Grow.</span>
           </span>
         </button>
 
-        <button type="button" onClick={openGlobalSearch} aria-label="Open global search" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
+        <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
           <Search size={16} className="text-[#435575]"/>
-          <span className="flex-1">Search people, projects, tasks, or anything…</span>
+          <span className="flex-1">Search authorized work or navigate…</span>
           <kbd className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] text-slate-500">⌘ K / Ctrl K</kbd>
         </button>
-        <button type="button" onClick={openGlobalSearch} aria-label="Open global search" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
+        <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
         <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-3">
           {hasAuthenticatedSession && !authLoading && (
@@ -301,10 +431,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               <span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
             </div>
           )}
-          {workspaceReleased && <WilsyDailyAttentionCentre
+          {workspaceReleased && sessionUser && <WilsyDailyAttentionCentre
             key={currentWorkScope}
-            tenantId={user?.tenantId}
-            systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
+            tenantId={sessionUser?.tenantId}
+            systemServicesWorkspace={Boolean(sessionUser?.systemServicesWorkspace)}
             activeCount={workCountScope === currentWorkScope ? workCount : null}
             open={notificationsOpen}
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
@@ -322,29 +452,41 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               navigate('/headquarters?section=operations');
             }}
           />}
-          <div className="relative">
-            <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
-              {avatarUrl ? <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full border border-amber-300/30 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>}
+          {sessionUser && <div ref={accountMenuRef} className="relative">
+            <button ref={accountTriggerRef} type="button" aria-label="Open account menu" aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]">
+              <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200" aria-hidden="true">{initials || <UserRound size={17}/>}</span>
               <span className="hidden max-w-[150px] text-left leading-tight xl:block">
-                <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
-                <span className="block truncate text-[10px] text-slate-400">{operatingTitle}</span>
+                <span className="block truncate text-xs font-semibold text-white">{identityLabel || 'Account identity unavailable'}</span>
+                {selectedCapacityLabel && <span className="block truncate text-[10px] text-slate-400">{selectedCapacityLabel} capacity</span>}
               </span>
               <ChevronDown size={14} className="hidden text-slate-400 xl:block"/>
             </button>
             {userMenuOpen && (
-              <div role="menu" aria-label="User account" className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-white/10 bg-[#101d32] p-3 shadow-2xl">
+              <div role="menu" aria-label="Account menu" onKeyDown={(event) => {
+                const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitem"]'));
+                const index = items.indexOf(document.activeElement);
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setUserMenuOpen(false);
+                  accountTriggerRef.current?.focus();
+                  event.stopPropagation();
+                } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+                  event.preventDefault();
+                  const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+                    : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+                  items[next]?.focus();
+                }
+              }} className="absolute right-0 top-12 z-50 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-white/10 bg-[#101d32] p-3 shadow-2xl">
                 <div className="border-b border-white/10 px-2 pb-3">
-                  <p className="font-semibold text-white">{displayName}</p>
-                  <p className="mt-1 break-all text-xs text-slate-400">{user?.email || 'Email not provided by session'}</p>
-                  <p className="mt-2 text-xs text-amber-200">{operatingTitle}</p>
+                  <p className="font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
+                  {accountEmail && <p className="mt-1 break-all text-xs text-slate-400">{accountEmail}</p>}
+                  {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
+                  {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-300">Selected capacity: {selectedCapacityLabel}</p>}
                 </div>
-                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate("/system-status"); }} className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-200 hover:bg-white/5">System status</button>
-                <button type="button" role="menuitem" disabled className="w-full cursor-not-allowed rounded-lg px-2 py-2 text-left text-sm text-slate-500" title="Profile route is not yet connected">Profile <span className="float-right text-[10px]">Unavailable</span></button>
-                <button type="button" role="menuitem" disabled className="w-full cursor-not-allowed rounded-lg px-2 py-2 text-left text-sm text-slate-500" title="Preferences route is not yet connected">Preferences <span className="float-right text-[10px]">Unavailable</span></button>
-                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg border-t border-white/10 px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10"><LogOut size={15}/> Sign out</button>
+                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </header>
 
@@ -353,20 +495,20 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       {searchOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="wilsy-global-search-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#101d32] shadow-2xl">
-            <h2 id="wilsy-global-search-title" className="sr-only">Global search</h2>
+            <h2 id="wilsy-global-search-title" className="sr-only">Workspace navigation</h2>
             <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#d7ad43]">
               <Search size={19} className="text-amber-300"/>
-              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search people, projects, tasks, or anything…" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
+              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} aria-label="Workspace destination" placeholder="Headquarters or My Work" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
               <kbd className="rounded border border-white/10 px-2 py-1 text-[10px] text-slate-400">ESC</kbd>
               <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}><X size={17}/></button>
             </form>
             <div className="p-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Quick navigation</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <button type="button" onClick={() => { navigate('/headquarters'); setSearchOpen(false); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><Home size={17} className="text-amber-300"/> Headquarters</button>
-                <button type="button" onClick={() => { navigate('/my-work'); setSearchOpen(false); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><CheckCircle2 size={17} className="text-amber-300"/> My Work</button>
+                <button type="button" onClick={() => { navigate('/headquarters'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><Home size={17} className="text-amber-300"/> Headquarters</button>
+                <button type="button" onClick={() => { navigate('/my-work'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><CheckCircle2 size={17} className="text-amber-300"/> My Work</button>
               </div>
-              <p className="mt-4 text-xs leading-5 text-slate-400">Search across people, projects, tasks, departments and documents will appear here when the permission-filtered EOS search service is connected. No unfiltered or synthetic results are shown.</p>
+              <p role={searchNotice ? 'status' : undefined} className="mt-4 text-xs leading-5 text-slate-400">{searchNotice || 'Only Headquarters and My Work shortcuts are available here. Permission-filtered record search is not connected.'}</p>
             </div>
           </section>
         </div>
@@ -543,7 +685,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<Navigate to="/" replace />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><WilsyHeadquartersWorkspace key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} tenantId={user.tenantId} /></ErrorBoundary>
+          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole, location.key].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -908,7 +1050,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.6.2-SUPPLIED-WILSY-OS-TOPBAR-MARK
+ * VERSION: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

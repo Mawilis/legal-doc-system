@@ -1,13 +1,29 @@
-"""TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: WILSY OS Role Definition Policy Unit Contract.
+VERSION: v1.12.0-PROJECTS-OWNER-ROLE-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-20.
+CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
+2026-11-16 v1.12.0-PROJECTS-OWNER-ROLE-CERT pins the current v1.56 role source, certifies the unassigned dedicated Projects role, deny-by-absence for every existing role, and aligns the company-document read matrix with the current source.
+2026-11-13 v1.11.0-COMPANY-DOCUMENT-ROLE-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
+    2026-11-12 v1.10.0-PLATFORM-EMPLOYEE-ADMISSION-ROLE-CERT
+    Certifies employee admission is statically available only through the
+    dedicated PLATFORM_EMPLOYEE_ADMISSION_OFFICER role, with no principal
+    assignment, business-role eligibility, operation binding, or route.
+    2026-11-12 v1.9.0-PLATFORM-EMPLOYER-ROLE-GRANTS-CERT
+    Certifies exact static WILSY platform-employer role grants, keeps
+    offer acceptance and employee admission ungranted, and pins the
+    canonical role policy source version. Grants do not create assignments.
     2026-10-21 v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT
     Certifies the exact Partner/Attorney assignment-write static grant and
     deny-by-absence for every other authorization role.
@@ -113,7 +129,7 @@ updates the closed ENTERPRISE_ADMIN matrix with the sole issuance grant.
     2026-08-30 v1.1.0-WILSY-TENANT-PERMISSION-GRANTS-UNIT-CONTRACT
     certified the bounded ENTERPRISE_ADMIN/AUDITOR tenant-permission migration.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Pure policy tests with no credentials, principal
+SECURITY / PRIVACY POSTURE: Pure policy tests with no credentials, principal
 data, tenant records, persistence, secrets, or external IO.
 TENANT BOUNDARY: Role definitions remain tenant-agnostic policy; current
 tenant-scoped possession and WILSY AI capacity reads still require governed
@@ -140,9 +156,38 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
+    assert POLICY_VERSION == "v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE"
 
-VERSION = "v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT"
+def test_platform_employer_role_grants_are_exact_and_nonpossessory() -> None:
+    """Verify exact HR, owner-signing, and dedicated admission-role grants."""
+    expected_roles = {
+        "platform_employer:employee_directory:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:headcount_requisition:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:headcount_requisition:create": {"HR_MANAGER"},
+        "platform_employer:headcount_requisition:decide": {"HR_DIRECTOR"},
+        "platform_employer:hiring_candidate:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:hiring_candidate:create": {"HR_MANAGER"},
+        "platform_employer:hiring_candidate:transition": {"HR_MANAGER"},
+        "platform_employer:hiring_candidate_evidence:upload": {"HR_MANAGER"},
+        "platform_employer:hiring_candidate_evidence:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:hiring_offer:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:hiring_offer:create": {"HR_MANAGER"},
+        "platform_employer:hiring_offer:submit": {"HR_MANAGER"},
+        "platform_employer:hiring_offer:decide": {"HR_DIRECTOR"},
+        "platform_employer:hiring_offer:send": {"HR_MANAGER"},
+        "platform_employer:hiring_offer:sign": {"TENANT_OWNER"},
+        "platform_employer:employee_admission:create": {"PLATFORM_EMPLOYEE_ADMISSION_OFFICER"},
+    }
+    assert len(expected_roles) == 16
+    for permission, expected in expected_roles.items():
+        assert set(get_roles_granting_permission(permission)) == expected
+        for role, grants in ROLE_PERMISSIONS_MAP.items():
+            assert grants.count(permission) == (1 if role in expected else 0)
+
+    assert get_roles_granting_permission("platform_employer:hiring_offer:accept") == ()
+
+
+VERSION = "v1.12.0-PROJECTS-OWNER-ROLE-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -235,9 +280,24 @@ TENANT_PERMISSIONS = {
 }
 
 
+def test_projects_platform_owner_is_separately_assignable_and_exact() -> None:
+    """Projects static authority is isolated to one role and creates no assignment."""
+    permissions = (
+        "project:read", "project:create", "project:update", "project:archive",
+    )
+    assert ROLE_PERMISSIONS_MAP["PROJECTS_PLATFORM_OWNER"] == list(permissions)
+    for permission in permissions:
+        assert get_roles_granting_permission(permission) == ("PROJECTS_PLATFORM_OWNER",)
+        for role, grants in ROLE_PERMISSIONS_MAP.items():
+            assert grants.count(permission) == (
+                1 if role == "PROJECTS_PLATFORM_OWNER" else 0
+            )
+    assert get_permissions_for_roles(["PROJECTS_PLATFORM_OWNER"]) == sorted(permissions)
+
+
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "billing_dunning:projection:evaluate", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "telemetry:event:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "operations:work_item:read", "operations:work_item:create", "operations:work_item:complete", "intelligence:work_item:read", "intelligence:work_item:create", "intelligence:work_item:complete", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute", "crm:work_item:read", "crm:work_item:create", "crm:work_item:complete", "tenant:commercial_agreement:read", "tenant:commercial_agreement:draft:create", "tenant:commercial_agreement:execute", "tenant:commercial_agreement:activate"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "billing_dunning:projection:evaluate", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "telemetry:event:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "operations:work_item:read", "operations:work_item:create", "operations:work_item:complete", "intelligence:work_item:read", "intelligence:work_item:create", "intelligence:work_item:complete", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute", "crm:work_item:read", "crm:work_item:create", "crm:work_item:complete", "tenant:commercial_agreement:read", "tenant:commercial_agreement:draft:create", "tenant:commercial_agreement:execute", "tenant:commercial_agreement:activate", "company_operating_document:read"]
     assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "tenant:business_role:read", "tenant_branding:read", "crm:lead:read", "crm:email_template:read", "operations:work_item:read", "intelligence:work_item:read", "crm:work_item:read", "tenant:commercial_agreement:read"]
 
 
@@ -886,9 +946,9 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT
-# AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
-# TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
-# FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
+# VERSION: v1.12.0-PROJECTS-OWNER-ROLE-CERT
+# AUTHORITY BOUNDARY: deterministic verification of static role definitions only; no assignment or current authorization is created
+# TENANT POSTURE: platform-employer use is restricted by the separate exact WILSY tenant authorization gate; customer HR authority remains separate
+# FAIL-CLOSED POSTURE: offer acceptance stays ungranted; admission has one unassigned role and no operation binding; unknown permissions deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

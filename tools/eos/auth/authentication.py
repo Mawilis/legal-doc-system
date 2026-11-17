@@ -1,35 +1,53 @@
-"""Wilsy OS authentication projection guarded by durable principal authority.
+"""
+COLLABORATION / OWNERSHIP: WILSY OS Core Engineering; adjacent authorities remain independent.
+Wilsy OS authentication projection guarded by durable principal authority.
 
 TITLE: WILSY OS Authentication Projection
-VERSION: v1.2.0-R10C2F9-ACCESS-PURPOSE-DURABLE-REVISION-ENFORCEMENT
+VERSION: v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES
 AUTHORITY: Cryptographic credential verification and current PrincipalAuthority gating.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authentication.py
+CERTIFICATION / UPDATE DATE: 2026-11-15
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 CHANGELOG:
+    2026-11-15 v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES emits an overall
+    credential-currentness observation for both success and failure outcomes;
+    AuthRegistry emits bounded read-stage timing under the same safe trace.
+    Telemetry adds no authority, persistence, caching, or bypass behavior.
+    2026-11-15 v1.3.0-SCOPED-REQUEST-TIMING adds opt-in, trace-correlated,
+    privacy-safe timing for ACCESS-token verification, durable principal
+    currentness, and GLOBAL session currentness. The observation has no
+    authentication, authorization, persistence, output, or caching authority.
     v1.2.0-R10C2F9-ACCESS-PURPOSE-DURABLE-REVISION-ENFORCEMENT requires
     ACCESS purpose and a fresh exact durable credential revision before any
     protected identity projection; PRE_AUTH and legacy-purpose tokens fail
     closed without changing router, provider, or AuthRegistry authority.
     v1.1.0 removes synthetic identity/API-key authority and requires durable ACTIVE status.
-SECURITY/PRIVACY POSTURE: Missing or malformed credentials fail closed; secrets are never logged.
+SECURITY / PRIVACY POSTURE: Missing or malformed credentials fail closed; secrets are never logged.
 TENANT BOUNDARY: Tenant claims remain non-authoritative request context; membership is a later contract.
 AUTHORITY BOUNDARY: SovereignIdentity is a projection, not lifecycle, credential, tenant, role, or financial authority.
 FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS exclusively owns financial execution.
 
-Epitome:
+EPITOME:
     Authentication verifies a credential, resolves the exact durable principal,
     and only then returns a projection for downstream authorization.
 
 Biblical Anchor:
     "And he shall be like a tree planted by the rivers of water..." — Psalm 1:3
 
-Collaboration & Ownership:
+COLLABORATION / OWNERSHIP:
     Founder & Chief Architect: Wilson Khanyezi (Wilsy (Pty) Ltd)
     AI Collaborator: Core Systems Engineering Agent
     File Path: tools/eos/auth/authentication.py
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+import logging
+import os
+import re
+import time
+import uuid
+from contextvars import ContextVar
+from typing import Any, Final, Optional
 
 from pymongo.errors import PyMongoError
 from fastapi import Depends, HTTPException, Request, Security
@@ -53,6 +71,91 @@ from tools.eos.saas.auth.auth_registry import AuthRegistry
 
 security_scheme = HTTPBearer(auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+VERSION: Final[str] = "v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES"
+logger = logging.getLogger("WilsyOS.Auth.Authentication")
+_TIMING_ENVIRONMENT_VARIABLE: Final[str] = "WILSY_MY_WORK_TIMING"
+_TRACE_IDENTIFIER: Final[re.Pattern[str]] = re.compile(
+    r"TRC-[A-Z0-9]{8}-[A-Z0-9]{6}"
+)
+_TIMING_CORRELATION: ContextVar[str] = ContextVar(
+    "wilsy_request_timing_correlation",
+    default="TRACE_UNAVAILABLE",
+)
+
+
+def request_timing_enabled() -> bool:
+    """Return whether the explicit My Work latency diagnostic is enabled.
+
+    @institutional The switch observes latency only. It never changes token
+    verification, currentness, authorization, response content, or caching.
+    """
+
+    return os.getenv(_TIMING_ENVIRONMENT_VARIABLE, "").strip() == "1"
+
+
+def establish_request_timing_correlation(request: Request) -> str:
+    """Bind one safe existing trace reference to the current request context.
+
+    @institutional Only canonical ``TRC-`` trace identifiers are logged. Any
+    absent or malformed caller value is replaced by a server-generated opaque
+    reference, preventing headers, tokens, cookies, identities, and tenant
+    values from entering timing telemetry.
+    """
+
+    try:
+        candidate = request.headers.get("x-trace-id", "")
+    except (AttributeError, KeyError):
+        # Direct dependency callers and narrow test scopes may intentionally
+        # omit ASGI headers. Diagnostics must remain inert in that posture.
+        candidate = ""
+    correlation = (
+        candidate
+        if isinstance(candidate, str) and _TRACE_IDENTIFIER.fullmatch(candidate)
+        else f"TRC-SERVER-{uuid.uuid4().hex[:12].upper()}"
+    )
+    _TIMING_CORRELATION.set(correlation)
+    return correlation
+
+
+def current_request_timing_correlation() -> str:
+    """Return the request-local opaque diagnostic correlation reference.
+
+    @institutional This is request-context diagnostic metadata only; it is not
+    authentication, tenant, session, role, or command authority.
+    """
+
+    return _TIMING_CORRELATION.get()
+
+
+def emit_request_timing(
+    *,
+    stage: str,
+    outcome: str,
+    started_ns: int,
+    correlation: str | None = None,
+    duration_ms: float | None = None,
+) -> None:
+    """Emit one bounded opt-in timing event without affecting request truth.
+
+    @institutional Callers provide closed, source-owned stage/outcome labels.
+    Raw credentials, headers other than a validated trace identifier, tenant
+    identifiers, principal identifiers, work records, and exception messages
+    are intentionally excluded.
+    """
+
+    if not request_timing_enabled():
+        return
+    logger.info(
+        "WILSY_REQUEST_TIMING trace_id=%s stage=%s outcome=%s duration_ms=%.3f",
+        correlation or current_request_timing_correlation(),
+        stage,
+        outcome,
+        (
+            max(0.0, duration_ms)
+            if isinstance(duration_ms, float)
+            else max(0, time.perf_counter_ns() - started_ns) / 1_000_000
+        ),
+    )
 
 def get_principal_authority_repository() -> PrincipalAuthorityRepository:
     """Provide the durable authority repository through FastAPI dependency injection."""
@@ -95,13 +198,27 @@ async def get_current_identity(
     legacy-purpose, stale, future, malformed, missing, and unavailable states
     fail closed without exposing revision values or owning persistence.
     """
+    authentication_started_ns = time.perf_counter_ns()
+    correlation = establish_request_timing_correlation(request)
     if api_key:
         log_auth_event("API_KEY_AUTH", "unresolved", False, {"reason": "principal_resolution_required"})
         raise UnauthorizedAccessException("API-key principal is not mapped to durable authority.")
     if not credentials or not credentials.credentials:
         log_auth_event("MISSING_CREDENTIALS", "unresolved", False, {})
         raise UnauthorizedAccessException("Missing authentication credentials.")
-    payload = verify_access_token(credentials.credentials)
+    verification_started_ns = time.perf_counter_ns()
+    verification_outcome = "INVALID"
+    try:
+        payload = verify_access_token(credentials.credentials)
+        if payload:
+            verification_outcome = "VERIFIED"
+    finally:
+        emit_request_timing(
+            stage="AUTH_ACCESS_TOKEN_VERIFICATION",
+            outcome=verification_outcome,
+            started_ns=verification_started_ns,
+            correlation=correlation,
+        )
     if not payload:
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "invalid_credential"})
         raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
@@ -118,7 +235,18 @@ async def get_current_identity(
     if principal_id is None:
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "missing_principal_reference"})
         raise UnauthorizedAccessException("Authentication principal is required.")
-    authority = _resolve_authority(repository, principal_id)
+    authority_started_ns = time.perf_counter_ns()
+    authority_outcome = "UNAVAILABLE"
+    try:
+        authority = _resolve_authority(repository, principal_id)
+        authority_outcome = "ACTIVE" if authority.status is PrincipalStatus.ACTIVE else "NOT_ACTIVE"
+    finally:
+        emit_request_timing(
+            stage="AUTH_PRINCIPAL_CURRENTNESS",
+            outcome=authority_outcome,
+            started_ns=authority_started_ns,
+            correlation=correlation,
+        )
     if authority.status is not PrincipalStatus.ACTIVE:
         log_auth_event("JWT_AUTH", principal_id, False, {"reason": "principal_not_active"})
         raise UnauthorizedAccessException("Authentication principal is not active.")
@@ -145,6 +273,8 @@ async def get_current_identity(
         session = client.start_session()
         try:
             session.start_transaction()
+            session_currentness_started_ns = time.perf_counter_ns()
+            session_currentness_outcome = "UNAVAILABLE"
             current = GlobalPrincipalSystemSessionAuthority(
                 sessions=database[SYSTEM_SESSION_COLLECTION],
                 authorizer=authorizer,
@@ -153,6 +283,13 @@ async def get_current_identity(
                 session_reference=session_reference,
                 expected_credential_revision=token_revision,
                 session=session,
+            )
+            session_currentness_outcome = "CURRENT" if current else "NOT_CURRENT"
+            emit_request_timing(
+                stage="AUTH_SYSTEM_SESSION_CURRENTNESS",
+                outcome=session_currentness_outcome,
+                started_ns=session_currentness_started_ns,
+                correlation=correlation,
             )
             if not current:
                 session.abort_transaction()
@@ -193,6 +330,12 @@ async def get_current_identity(
             capacity_revision=None,
         )
         log_auth_event("SYSTEM_JWT_AUTH", authority.principal_id, True, {"scope": "SYSTEM"})
+        emit_request_timing(
+            stage="AUTHENTICATION_TOTAL",
+            outcome="AUTHORIZED",
+            started_ns=authentication_started_ns,
+            correlation=correlation,
+        )
         return identity
 
     tenant_id = _claim(payload, "tenant_id")
@@ -218,6 +361,8 @@ async def get_current_identity(
             or not _valid_access_revision(capacity_revision)
         ):
             raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        session_currentness_started_ns = time.perf_counter_ns()
+        session_currentness_outcome = "UNAVAILABLE"
         current = GlobalPrincipalSessionAuthority().is_session_current(
             principal_id=authority.principal_id,
             tenant_id=tenant_id,
@@ -227,6 +372,13 @@ async def get_current_identity(
             expected_credential_revision=token_revision,
             expected_membership_revision=membership_revision,
             expected_capacity_revision=capacity_revision,
+        )
+        session_currentness_outcome = "CURRENT" if current else "NOT_CURRENT"
+        emit_request_timing(
+            stage="AUTH_GLOBAL_SESSION_CURRENTNESS",
+            outcome=session_currentness_outcome,
+            started_ns=session_currentness_started_ns,
+            correlation=correlation,
         )
         if not current:
             raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
@@ -246,15 +398,24 @@ async def get_current_identity(
             capacity_revision=capacity_revision,
         )
         log_auth_event("GLOBAL_JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
+        emit_request_timing(
+            stage="AUTHENTICATION_TOTAL",
+            outcome="AUTHORIZED",
+            started_ns=authentication_started_ns,
+            correlation=correlation,
+        )
         return identity
     if principal_scope not in (None, "TENANT"):
         raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
 
+    credential_currentness_started_ns = time.perf_counter_ns()
+    credential_currentness_outcome = "UNAVAILABLE"
     try:
         durable_revision = AuthRegistry().get_credential_revision(
             tenant_id,
             authority.principal_id,
         )
+        credential_currentness_outcome = "CURRENT" if token_revision == durable_revision else "NOT_CURRENT"
     except Exception as error:
         log_auth_event(
             "JWT_AUTH",
@@ -263,6 +424,13 @@ async def get_current_identity(
             {"reason": "credential_revision_unavailable"},
         )
         raise UnauthorizedAccessException("Authentication authority is unavailable.") from error
+    finally:
+        emit_request_timing(
+            stage="AUTH_TENANT_CREDENTIAL_CURRENTNESS",
+            outcome=credential_currentness_outcome,
+            started_ns=credential_currentness_started_ns,
+            correlation=correlation,
+        )
     if token_revision != durable_revision:
         log_auth_event(
             "JWT_AUTH",
@@ -287,12 +455,28 @@ async def get_current_identity(
         capacity_revision=None,
     )
     log_auth_event("JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
+    emit_request_timing(
+        stage="AUTHENTICATION_TOTAL",
+        outcome="AUTHORIZED",
+        started_ns=authentication_started_ns,
+        correlation=correlation,
+    )
     return identity
 
-__all__ = ["get_current_identity", "get_principal_authority_repository", "security_scheme", "api_key_header"]
+__all__ = [
+    "VERSION",
+    "get_current_identity",
+    "get_principal_authority_repository",
+    "request_timing_enabled",
+    "establish_request_timing_correlation",
+    "current_request_timing_correlation",
+    "emit_request_timing",
+    "security_scheme",
+    "api_key_header",
+]
 
 # ARTIFACT: authentication.py
-# VERSION: v1.2.0-R10C2F9-ACCESS-PURPOSE-DURABLE-REVISION-ENFORCEMENT
+# VERSION: v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES
 # AUTHORITY BOUNDARY: credential verification plus durable ACTIVE principal gate
 # TENANT POSTURE: tenant claim is context only; membership authority is separate
 # FAIL-CLOSED POSTURE: missing, invalid, absent, unavailable, suspended, and revoked authority denies

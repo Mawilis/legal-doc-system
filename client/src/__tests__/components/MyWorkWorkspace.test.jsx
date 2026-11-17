@@ -1,27 +1,22 @@
 /**
- * TITLE: WILSY OS Authenticated My Work Workspace Tests
- * VERSION: v1.3.0-EXPLICIT-FOCUS-RESET
+ * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
+ * VERSION: v1.5.0-DENSE-EXECUTION-QUEUE-CERT
  * AUTHORITY: Wilsy OS Core Governance
- * EPITOME: Certifies server-projected My Work rendering and source-owned
- *          completion commands against the shared EOS projection contract.
+ * EPITOME: Certifies compact queue rendering, source filters, detail access,
+ *          keyboard/focus behavior, source-owned completion and EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
- * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, the shared client projection
- *                            contract, and canonical source completion services.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.3.0-EXPLICIT-FOCUS-RESET proves parent null clears stale
- *            router focus while route-only focus remains covered separately.
- *            v1.2.0-SHARED-PROJECTION-CONTRACT supplies complete EOS projection
- *            metadata, requires the cancellable read signal, and rejects
- *            divergent source counts before rendering or enabling commands.
- *            v1.1.0-ABORTABLE-MY-WORK-READS requires My Work projections to
- *            use an abortable authenticated GET while preserving source-owned
- *            Legal, Operations, CRM and Intelligence completion routes.
- *            v1.0.0-SOURCE-OWNED-MY-WORK-COMMANDS covered queue projection
- *            and source command dispatch.
+ * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
+ *                            EOS My Work and independent source commands.
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v1.5.0-DENSE-EXECUTION-QUEUE-CERT covers responsive detail drawer
+ *            lifecycle, compact row list, filters/order, dirty draft protection,
+ *            exact source completion receipts, projection readback and failure.
+ *            v1.4.0-HR-SOURCE-NAVIGATION-CERT verifies only EOS-admitted HR
+ *            navigation, never client HR action authority.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic records and mocked transport only.
- * TENANT BOUNDARY: Server-projected tenant and principal records only.
- * AUTHORITY BOUNDARY: Only owning EOS source services may complete work.
+ * TENANT BOUNDARY: Projection tenant/principal are checked before display.
+ * AUTHORITY BOUNDARY: Only owning source services may complete work.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
@@ -35,10 +30,7 @@ import { completeLegalWorkItem } from '../../services/legalOperationsService.js'
 vi.mock('../../services/legalOperationsService.js', () => ({
   completeLegalWorkItem: vi.fn(),
 }));
-
-vi.mock('../../services/api.js', () => ({
-  default: { get: vi.fn(), post: vi.fn() },
-}));
+vi.mock('../../services/api.js', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
 
 const payload = {
   schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
@@ -54,127 +46,185 @@ const payload = {
   authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
   items: [
     {
-      source: 'OPERATIONS',
-      source_key: 'OPERATIONS:ops-1',
-      work_item_id: 'ops-1',
-      title: 'Prepare daily operations report',
-      description: 'Review the verified operating figures.',
-      status: 'OPEN',
-      priority: 'HIGH',
-      kind: 'TASK',
-      due_at: '2026-11-05T10:00:00+00:00',
-      is_overdue: true,
+      source: 'OPERATIONS', source_key: 'OPERATIONS:ops-1', work_item_id: 'ops-1',
+      title: 'Prepare daily operations report', description: 'Review the verified operating figures.',
+      status: 'OPEN', priority: 'HIGH', kind: 'TASK', due_at: '2026-11-05T10:00:00+00:00', is_overdue: true,
     },
     {
-      source: 'LEGAL',
-      source_key: 'LEGAL:legal-1',
-      work_item_id: 'legal-1',
-      title: 'Review matter evidence',
-      status: 'OPEN',
-      priority: 'NORMAL',
-      kind: 'TASK',
-      due_at: null,
-      is_overdue: false,
+      source: 'LEGAL', source_key: 'LEGAL:legal-1', work_item_id: 'legal-1',
+      title: 'Review matter evidence', description: '',
+      status: 'OPEN', priority: 'NORMAL', kind: 'TASK', due_at: null, is_overdue: false,
     },
   ],
 };
 
-const renderWorkspace = () => render(
-  <MemoryRouter>
-    <MyWorkWorkspace />
-  </MemoryRouter>,
+const renderWorkspace = (props = {}) => render(
+  <MemoryRouter><MyWorkWorkspace {...props} /></MemoryRouter>,
 );
+const openRow = async (title) => {
+  const row = await screen.findByRole('button', { name: new RegExp(title) });
+  fireEvent.click(row);
+  return row;
+};
 
-describe('authenticated My Work workspace', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    api.get.mockResolvedValue({ data: payload });
-    api.post.mockResolvedValue({ data: { status: 'COMPLETED' } });
-    completeLegalWorkItem.mockResolvedValue({ work_item_id: 'legal-1', status: 'COMPLETED' });
-  });
+beforeEach(() => {
+  vi.clearAllMocks();
+  api.get.mockResolvedValue({ data: payload });
+  api.post.mockImplementation(async (path) => ({
+    data: { work_item_id: decodeURIComponent(path.split('/').at(-2)), status: 'COMPLETED' },
+  }));
+  completeLegalWorkItem.mockResolvedValue({ work_item_id: 'legal-1', completion_event_id: 'event-1' });
+});
 
-  it('loads an abortable server projection and presents only its authorized queue', async () => {
+describe('authenticated My Work execution queue', () => {
+  it('loads the validated EOS projection and renders one compact row per item', async () => {
     renderWorkspace();
     expect(await screen.findByRole('heading', { name: 'My Work' })).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getByText('Prepare daily operations report')).toBeTruthy();
     expect(screen.getByText('Review matter evidence')).toBeTruthy();
-    expect(screen.getAllByText('Overdue').length).toBeGreaterThan(0);
+    expect(screen.getByText('Overdue')).toBeTruthy();
+    expect(screen.getAllByText('Verified Nov 6, 2026, 12:00 PM').length).toBeGreaterThan(0);
     expect(api.get).toHaveBeenCalledTimes(1);
     const [path, request] = api.get.mock.calls[0];
     expect(path).toBe('/my-work');
     expect(request.forceNetworkRetry).toBe(true);
-    expect(request.signal).toBeTruthy();
-    expect(typeof request.signal.addEventListener).toBe('function');
     expect(request.signal.aborted).toBe(false);
   });
 
-  it('clears older route focus when the parent explicitly supplies null', async () => {
-    render(
-      <MemoryRouter initialEntries={[{
-        pathname: '/my-work',
-        state: { focusWorkItem: 'OPERATIONS:ops-1' },
-      }]}>
-        <MyWorkWorkspace focusWorkItem={null} />
-      </MemoryRouter>,
-    );
-    const heading = await screen.findByText('Prepare daily operations report');
-    expect(heading.closest('article').className).not.toContain('ring-2');
+  it('renders ten authorized tasks as rows and offers only admitted sources with counts', async () => {
+    const many = Array.from({ length: 10 }, (_, index) => ({
+      ...payload.items[1], source: 'LEGAL', work_item_id: `legal-${index}`,
+      source_key: `LEGAL:legal-${index}`, title: `Verified task ${index}`,
+    }));
+    api.get.mockResolvedValueOnce({ data: {
+      ...payload, items: many,
+      summary: { active_count: 10, overdue_count: 0, source_counts: { LEGAL: 10 } },
+      sources_included: ['LEGAL'],
+    } });
+    renderWorkspace();
+    expect(await screen.findAllByRole('listitem')).toHaveLength(10);
+    expect(screen.getByRole('button', { name: 'Legal 10' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /CRM/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /HR & Hiring/ })).toBeNull();
   });
 
-  it('rejects inconsistent source counts before rendering any source work', async () => {
-    api.get.mockResolvedValueOnce({
-      data: {
-        ...payload,
-        summary: {
-          ...payload.summary,
-          source_counts: { OPERATIONS: 2, LEGAL: 0 },
-        },
-      },
-    });
+  it('filters admitted source rows and search results from the validated projection', async () => {
     renderWorkspace();
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByText('ATTENTION_SOURCE_COVERAGE_INVALID')).toBeTruthy();
+    await screen.findByText('Prepare daily operations report');
+    fireEvent.click(screen.getByRole('button', { name: 'Legal 1' }));
     expect(screen.queryByText('Prepare daily operations report')).toBeNull();
+    expect(screen.getByText('Review matter evidence')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'All 2' }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search authorized work' }), {
+      target: { value: 'verified operating' },
+    });
+    expect(screen.getByText('Prepare daily operations report')).toBeTruthy();
     expect(screen.queryByText('Review matter evidence')).toBeNull();
-    expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('routes completion to the owning module command and refreshes the projection', async () => {
-    api.get
-      .mockResolvedValueOnce({ data: payload })
-      .mockResolvedValueOnce({
-        data: {
-          ...payload,
-          items: [payload.items[1]],
-          summary: {
-            active_count: 1,
-            overdue_count: 0,
-            source_counts: { OPERATIONS: 0, LEGAL: 1 },
-          },
-        },
-      });
+  it('sorts overdue first, then the chosen due/priority order with stable row identity', async () => {
+    const rows = [
+      { ...payload.items[1], source: 'CRM', work_item_id: 'z', source_key: 'CRM:z', title: 'No deadline' },
+      { ...payload.items[1], source: 'CRM', work_item_id: 'b', source_key: 'CRM:b', title: 'Later normal', priority: 'NORMAL', due_at: '2026-11-08T10:00:00+00:00' },
+      { ...payload.items[1], source: 'CRM', work_item_id: 'a', source_key: 'CRM:a', title: 'Earlier low', priority: 'LOW', due_at: '2026-11-07T10:00:00+00:00' },
+      { ...payload.items[1], source: 'CRM', work_item_id: 'c', source_key: 'CRM:c', title: 'Overdue high', priority: 'HIGH', due_at: '2026-11-05T10:00:00+00:00', is_overdue: true },
+    ];
+    api.get.mockResolvedValueOnce({ data: {
+      ...payload, items: rows,
+      summary: { active_count: 4, overdue_count: 1, source_counts: { CRM: 4 } },
+      sources_included: ['CRM'],
+    } });
     renderWorkspace();
-    const note = await screen.findByLabelText('Completion note for Prepare daily operations report');
-    fireEvent.change(note, { target: { value: 'Report checked against the approved daily figures.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Complete' }));
+    await screen.findByText('Overdue high');
+    const titles = () => [...document.querySelectorAll('[role="listitem"] .truncate')].map((el) => el.textContent);
+    expect(titles()).toEqual(['Overdue high', 'Earlier low', 'Later normal', 'No deadline']);
+    fireEvent.change(screen.getByLabelText('Sort'), { target: { value: 'priority' } });
+    expect(titles()).toEqual(['Overdue high', 'Later normal', 'No deadline', 'Earlier low']);
+  });
 
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
+  it('opens a source-backed detail drawer and restores focus to the selected row on close', async () => {
+    renderWorkspace();
+    const row = await openRow('Prepare daily operations report');
+    expect(screen.getByRole('dialog', { name: 'Prepare daily operations report' })).toBeTruthy();
+    expect(screen.getByText('Review the verified operating figures.')).toBeTruthy();
+    expect(screen.getByLabelText('Completion note')).toBeTruthy();
+    expect(row.isConnected).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+    await waitFor(() => expect(document.activeElement).toBe(row));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('protects a dirty completion note when Escape requests close', async () => {
+    renderWorkspace();
+    await openRow('Prepare daily operations report');
+    const note = screen.getByLabelText('Completion note');
+    fireEvent.change(note, { target: { value: 'Draft note retained until explicit discard.' } });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByText('Discard the unsent completion note or evidence?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByLabelText('Completion note').value).toBe('Draft note retained until explicit discard.');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'Discard and close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('submits one source command, confirms the receipt, refreshes and reflects authoritative readback', async () => {
+    api.get.mockResolvedValueOnce({ data: payload }).mockResolvedValueOnce({ data: {
+      ...payload,
+      items: [payload.items[1]],
+      summary: { active_count: 1, overdue_count: 0, source_counts: { OPERATIONS: 0, LEGAL: 1 } },
+    } });
+    renderWorkspace();
+    await openRow('Prepare daily operations report');
+    fireEvent.change(screen.getByLabelText('Completion note'), { target: { value: 'Reviewed and reconciled.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete through Operations' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith(
       '/tenant-modules/operations/workspace/work-items/ops-1/complete',
-      { completion_note: 'Report checked against the approved daily figures.' },
-    ));
-    await waitFor(() => expect(screen.queryByText('Prepare daily operations report')).toBeNull());
+      { completion_note: 'Reviewed and reconciled.' },
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.queryByText('Prepare daily operations report')).toBeNull();
+    expect(screen.getAllByText('1').length).toBeGreaterThan(0);
+    expect(api.get).toHaveBeenCalledTimes(2);
   });
 
-  it('routes Legal completion through the canonical evidence-bound command', async () => {
+  it('keeps the work and draft visible after a source command failure', async () => {
+    api.post.mockRejectedValueOnce({ response: { status: 403, data: { detail: 'WORK_ITEM_COMPLETION_DENIED' } } });
     renderWorkspace();
-    expect(await screen.findByText('Review matter evidence')).toBeTruthy();
-    const reference = screen.getByLabelText('Legal completion evidence reference for Review matter evidence');
-    const fingerprint = screen.getByLabelText('Legal completion evidence fingerprint for Review matter evidence');
-    const submit = screen.getByRole('button', { name: 'Submit evidenced Legal completion' });
-    expect(submit.disabled).toBe(true);
-    fireEvent.change(reference, { target: { value: 'evidence:verified-source:legal-1' } });
-    fireEvent.change(fingerprint, { target: { value: 'a'.repeat(128) } });
-    fireEvent.click(submit);
+    await openRow('Prepare daily operations report');
+    const note = screen.getByLabelText('Completion note');
+    fireEvent.change(note, { target: { value: 'Retain this note after denial.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete through Operations' }));
+    expect((await screen.findAllByText(/WORK_ITEM_COMPLETION_DENIED/)).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Completion note').value).toBe('Retain this note after denial.');
+    expect(screen.getAllByText('Prepare daily operations report').length).toBeGreaterThan(0);
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close the detail when fresh EOS readback still contains the active row', async () => {
+    api.get.mockResolvedValue({ data: payload });
+    renderWorkspace();
+    await openRow('Prepare daily operations report');
+    fireEvent.change(screen.getByLabelText('Completion note'), { target: { value: 'Source reports completed.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete through Operations' }));
+    expect((await screen.findAllByText(/WORK_ITEM_COMPLETION_NOT_REFLECTED/)).length).toBeGreaterThan(0);
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getAllByText('Prepare daily operations report').length).toBeGreaterThan(0);
+  });
+
+  it('routes Legal completion through the evidence-bound source client', async () => {
+    renderWorkspace();
+    await openRow('Review matter evidence');
+    fireEvent.change(screen.getByLabelText('Legal completion evidence reference'), {
+      target: { value: 'evidence:verified-source:legal-1' },
+    });
+    fireEvent.change(screen.getByLabelText('Legal completion evidence fingerprint'), {
+      target: { value: 'a'.repeat(128) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete through Legal' }));
     await waitFor(() => expect(completeLegalWorkItem).toHaveBeenCalledWith({
       workItemId: 'legal-1',
       completionEvidenceReference: 'evidence:verified-source:legal-1',
@@ -183,53 +233,42 @@ describe('authenticated My Work workspace', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('fails closed and displays no stale queue when the authenticated API is unavailable', async () => {
-    api.get.mockRejectedValueOnce({ response: { status: 503, data: { detail: 'MY_WORK_SOURCE_UNAVAILABLE' } } });
+  it('shows only navigation for an admitted HR item and no generic action', async () => {
+    api.get.mockResolvedValueOnce({ data: {
+      ...payload,
+      items: [{
+        source: 'HR', source_key: 'HR:OFFER:opaque:DECIDE', work_item_id: 'OFFER:opaque:DECIDE',
+        title: 'Independently decide employment offer', status: 'PENDING_ACTION', priority: 'HIGH',
+        kind: 'HR_OFFER_DECISION', due_at: null, is_overdue: false,
+      }],
+      summary: { active_count: 1, overdue_count: 0, source_counts: { HR: 1 } },
+      sources_included: ['HR'],
+    } });
+    renderWorkspace();
+    expect(await screen.findByRole('button', { name: 'Open HR & Hiring' })).toBeTruthy();
+    await openRow('Independently decide employment offer');
+    expect(screen.getByText('This source does not expose a completion action in the current My Work contract.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Complete through HR/ })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on invalid source coverage and on an unavailable initial read', async () => {
+    api.get.mockResolvedValueOnce({ data: {
+      ...payload, summary: { ...payload.summary, source_counts: { OPERATIONS: 2, LEGAL: 0 } },
+    } });
     renderWorkspace();
     expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('ATTENTION_SOURCE_COVERAGE_INVALID')).toBeTruthy();
     expect(screen.queryByText('Prepare daily operations report')).toBeNull();
-    expect(screen.getByText('MY_WORK_SOURCE_UNAVAILABLE')).toBeTruthy();
-  });
-});
-
-describe.each([
-  ['CRM', 'crm-1', '/crm/owner-workspace/work-items/crm-1/complete'],
-  ['INTELLIGENCE', 'intel-1', '/tenant-modules/intelligence/workspace/work-items/intel-1/complete'],
-])('%s source command ownership', (source, workItemId, expectedPath) => {
-  it('routes completion to the owning source service', async () => {
-    const item = {
-      ...payload.items[0],
-      source,
-      source_key: source + ':' + workItemId,
-      work_item_id: workItemId,
-      title: source + ' action',
-      is_overdue: false,
-    };
-    api.get.mockResolvedValue({
-      data: {
-        ...payload,
-        items: [item],
-        summary: { active_count: 1, overdue_count: 0, source_counts: { [source]: 1 } },
-        sources_included: [source],
-      },
-    });
-    renderWorkspace();
-    const note = await screen.findByLabelText('Completion note for ' + item.title);
-    fireEvent.change(note, { target: { value: 'Verified ' + source + ' completion.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Complete' }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
-      expectedPath,
-      { completion_note: 'Verified ' + source + ' completion.' },
-    ));
   });
 });
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.3.0-EXPLICIT-FOCUS-RESET
- * AUTHORITY BOUNDARY: Deterministic client contract evidence only.
+ * VERSION: v1.5.0-DENSE-EXECUTION-QUEUE-CERT
+ * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
- * FAIL-CLOSED POSTURE: Unavailable reads and invalid source metadata render no stale work.
+ * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

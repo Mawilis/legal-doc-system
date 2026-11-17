@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.4.0-MOBILE-SELECTED-LIST-SPACE
+ * VERSION: v3.10.0-RECEIPT-RECONCILIATION-CONTROL
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -9,20 +9,48 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre owns current-session
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
- * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CERTIFICATION / UPDATE DATE: 2026-11-16
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No cached work, storage, unsourced PII, fabricated
  *          status/SLAs, approval controls, or browser-side authority.
  * TENANT BOUNDARY: Receives only validated exact-session EOS AttentionItem feed;
  *          every item is already checked against current tenant and source.
- * AUTHORITY BOUNDARY: OPEN delegates to existing EOS-authorised My Work.
- *          Selection is inspection only, not permission to bulk mutate.
- *          Existing module completion POSTs independently reauthorize writes.
+ * AUTHORITY BOUNDARY: Row Complete stages the existing evidence form in the
+ *          detail rail; source POSTs independently reauthorize. Bulk completion
+ *          submits separately per source item and reports partial outcomes.
  * TRANSACTION / IDEMPOTENCY BOUNDARY: Presentation only; zero writes, source
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v3.4.0-MOBILE-SELECTED-LIST-SPACE reduces the
+ * CHANGELOG: v3.10.0-RECEIPT-RECONCILIATION-CONTROL displays an accepted
+ *          completion note read-only and offers a readback-only reconciliation
+ *          action while EOS receipt verification is pending.
+ *          v3.9.0-READBACK-SUCCESS-FEEDBACK announces completion only
+ *          after the parent confirms fresh authorized projection removal.
+ *          v3.8.0-IN-PANEL-SOURCE-COMPLETION makes an admitted, EOS-
+ *          preverified Complete command the primary row action, opens the
+ *          existing detail evidence form in-place, focuses required evidence,
+ *          and keeps a separate Details action. Unauthorized or unavailable
+ *          source actions are omitted; the source controller and EOS receipt
+ *          remain authoritative. Existing bounded sequential bulk semantics
+ *          remain per-item and partial, never atomic.
+ *          v3.7.0-COMPACT-EXECUTION-BAR compresses the list controls into
+ *          one primary header, one data-driven summary row, and one toolbar;
+ *          removes duplicate filter/severity rows; makes the ranked briefing
+ *          opt-in; and adds deterministic local sorting only for fields in
+ *          the validated AttentionItem contract. Creation, source commands,
+ *          readback, authorization and audit ownership are unchanged.
+ *          v3.6.0-CREATE-VALIDATION-AND-ACTION-CLARITY removes
+ *          the mode badge that resembled a duplicate Create action, adds
+ *          inline title and safe server-field validation, and keeps one submit.
+ *          v3.5.1-CREATE-FOCUS-RESTORATION returns focus to the
+ *          re-mounted LIST trigger after Cancel or Escape and prevents Escape
+ *          from closing an in-flight source command.
+ *          v3.5.0-EXCLUSIVE-CREATE-MODE makes LIST and CREATE mutually exclusive,
+ *          hides list metrics and controls during creation, focuses the form,
+ *          preserves failed submissions, and returns focus on cancel or success.
+ *          Source commands, field contracts, My Work reads and authority remain unchanged.
+ *          v3.4.0-MOBILE-SELECTED-LIST-SPACE reduces the
  *          scrollable control header while rows are selected, preserving
  *          a usable inbox viewport above the in-flow completion footer.
  *          v3.3.0-MOBILE-BULK-FOOTER-FLOW keeps the
@@ -124,8 +152,8 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ChevronRight,
-  CircleHelp, Clock3, ExternalLink, FilterX, ListTodo, RefreshCw, Search,
+  AlertTriangle, ArrowRight, CheckCircle2, ChevronRight,
+  CircleHelp, Clock3, ExternalLink, FilterX, RefreshCw, Search,
   ShieldCheck, X,
 } from 'lucide-react';
 import WilsyWorkDeadlineCalendar from '../chrome/WilsyWorkDeadlineCalendar.jsx';
@@ -136,6 +164,16 @@ const FILTERS = [
   ['TODAY', 'Due today', 'dueToday'],
   ['HIGH', 'High priority', 'highPriority'],
 ];
+const SORT_MODES = [
+  ['URGENCY', 'Urgency first'],
+  ['DUE_ASC', 'Due date · earliest'],
+  ['DUE_DESC', 'Due date · latest'],
+  ['PRIORITY_DESC', 'Priority · highest'],
+  ['PRIORITY_ASC', 'Priority · lowest'],
+  ['TITLE', 'Title · A to Z'],
+  ['SOURCE', 'Source · grouped'],
+];
+const PRIORITY_RANK = Object.freeze({ LOW: 1, NORMAL: 2, HIGH: 3, CRITICAL: 4 });
 const ATTENTION_ROW_HEIGHT = 44;
 const ATTENTION_ROW_OVERSCAN = 9;
 const DEFAULT_VIEWPORT_HEIGHT = 560;
@@ -157,7 +195,59 @@ const toWorkItem = (item) => ({
   due_at: item.dueAt,
   is_overdue: item.isOverdue,
 });
-const countLabel = (name, count) => name + ': ' + count;
+const compareStable = (items, compare) => items
+  .map((item, index) => ({ item, index }))
+  .sort((left, right) => compare(left.item, right.item)
+    || left.item.id.localeCompare(right.item.id)
+    || left.index - right.index)
+  .map(({ item }) => item);
+const sortAttentionItems = (items, mode) => {
+  // EOS already returns the AttentionItem page in canonical urgency order.
+  // Preserve it verbatim so pagination and stable server tie-breaking remain
+  // authoritative; client sorts below are explicit local presentation modes.
+  if (mode === 'URGENCY') return items;
+  if (mode === 'DUE_ASC' || mode === 'DUE_DESC') {
+    const direction = mode === 'DUE_ASC' ? 1 : -1;
+    return compareStable(items, (a, b) => {
+      const left = a.dueAt ? Date.parse(a.dueAt) : null;
+      const right = b.dueAt ? Date.parse(b.dueAt) : null;
+      if (left === null || right === null) {
+        return left === right ? 0 : left === null ? 1 : -1;
+      }
+      return (left - right) * direction;
+    });
+  }
+  if (mode === 'PRIORITY_DESC' || mode === 'PRIORITY_ASC') {
+    const direction = mode === 'PRIORITY_DESC' ? -1 : 1;
+    return compareStable(items, (a, b) =>
+      (PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]) * direction);
+  }
+  if (mode === 'TITLE') {
+    return compareStable(items, (a, b) => a.title.localeCompare(b.title, undefined, {
+      sensitivity: 'base', numeric: true,
+    }));
+  }
+  if (mode === 'SOURCE') {
+    return compareStable(items, (a, b) => a.sourceModule.localeCompare(b.sourceModule)
+      || b.urgencyScore - a.urgencyScore);
+  }
+  return items;
+};
+const SOURCE_FIELD_NAMES = new Set(['title', 'description', 'priority', 'due_at']);
+const sourceFieldErrors = (message) => {
+  const errors = {};
+  if (typeof message !== 'string') return errors;
+  for (const match of message.matchAll(/(?:^|[, ])(title|description|priority|due_at) \(([a-z0-9_]{1,80})\)/g)) {
+    if (SOURCE_FIELD_NAMES.has(match[1])) errors[match[1]] = match[2];
+  }
+  return errors;
+};
+const fieldErrorCopy = (field, reason) => {
+  const label = field === 'due_at' ? 'deadline' : field;
+  if (reason === 'missing' || reason === 'string_too_short') return 'Enter a valid ' + label + '.';
+  if (reason === 'string_too_long') return 'Shorten the ' + label + ' to meet the source limit.';
+  return 'EOS rejected the ' + label + '. Review it and retry.';
+};
 const EMPTY_SOURCE_COPY = Object.freeze({
   CRM: 'Deals, follow-ups and commercial tasks appear when the CRM source has active work.',
   LEGAL: 'Assigned legal reviews, matters and approved practice work appear when the Legal source reports them.',
@@ -197,35 +287,43 @@ export default function DailyAttentionWorkspace({
   onRefresh, onOpenWork, onOpenOperations, onOpenWorkforce,
   onLoadMore, loadingMore, pageError,
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
+  getCompletionReceipt = () => null, completionReadbackReady = false,
   onCreateWork, creatingWork = false, creationError = '', creationNotice = '', workUpdating = false,
   verifiedCriteria = null, requestedCriteria = null, resultsUpdating = false,
   resultsUnavailable = false, resultFailureCode = '',
   onBulkComplete, bulkCompleting = false, bulkResult = '',
   actionAvailabilityUnavailable = false, unavailableActionSources = [],
 }) {
-  const [mode, setMode] = useState('WORK');
+  const [mode, setMode] = useState('LIST');
   const [selectedId, setSelectedId] = useState(null);
+  const completionFocusIdRef = useRef(null);
   const [checkedIds, setCheckedIds] = useState([]);
   const [completionNote, setCompletionNote] = useState('');
+  const [completionNotice, setCompletionNotice] = useState('');
   const [bulkNote, setBulkNote] = useState('');
-  const [createOpen, setCreateOpen] = useState(false);
   const [createSource, setCreateSource] = useState('');
   const [createTitle, setCreateTitle] = useState('');
+  const [createTitleError, setCreateTitleError] = useState('');
   const [createDescription, setCreateDescription] = useState('');
   const [createPriority, setCreatePriority] = useState('NORMAL');
   const [createDue, setCreateDue] = useState('');
   const createKeyRef = useRef(null);
-  const [showBriefing, setShowBriefing] = useState(true);
+  const createFieldErrors = sourceFieldErrors(creationError);
+  const createTitleRef = useRef(null);
+  const createTriggerRef = useRef(null);
+  const previousModeRef = useRef(mode);
+  const [showBriefing, setShowBriefing] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSourceDetails, setShowSourceDetails] = useState(false);
   const [selectionIndex, setSelectionIndex] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(DEFAULT_VIEWPORT_HEIGHT);
+  const [sortMode, setSortMode] = useState('URGENCY');
   const searchRef = useRef(null);
   const completionRef = useRef(null);
   const listRef = useRef(null);
   const inboxRef = useRef(null);
-  const page = feed.items;
+  const page = useMemo(() => sortAttentionItems(feed.items, sortMode), [feed.items, sortMode]);
   const inboxOffset = inboxRef.current?.offsetTop || 0;
   const firstVisibleIndex = Math.floor(Math.max(0, scrollTop - inboxOffset)
     / ATTENTION_ROW_HEIGHT);
@@ -241,21 +339,21 @@ export default function DailyAttentionWorkspace({
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
+  const selectedCompletionReceipt = selected ? getCompletionReceipt(selected) : null;
   const sourceCoverage = feed.sources || [];
-  const canComplete = selected && selected.status === 'OPEN'
-    && ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(selected.sourceModule)
-    && sourceCoverage.some((entry) => entry.moduleId === selected.sourceModule)
-    && typeof onCompleteWork === 'function';
+  const canCompleteItem = (item) => Boolean(item
+    && item.status === 'OPEN'
+    && ['CRM', 'OPERATIONS', 'INTELLIGENCE'].includes(item.sourceModule)
+    && sourceCoverage.some((entry) => entry.moduleId === item.sourceModule)
+    && authorisedActions[item.sourceModule]?.includes('COMPLETE')
+    && typeof onCompleteWork === 'function');
+  const canComplete = canCompleteItem(selected);
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const checkedItems = page.filter((item) => checkedSet.has(item.id));
   const bulkEligible = checkedItems.filter((item) => item.status === 'OPEN'
     && authorisedActions[item.sourceModule]?.includes('COMPLETE'));
   const batchItems = bulkEligible.slice(0, 25);
   const ranked = page.slice(0, 5);
-  const visiblePriorityCounts = Object.fromEntries(
-    Object.keys(SEVERITY).map((level) => [level, page.filter((item) => item.priority === level).length]),
-  );
-  const visibleOverdueCount = page.filter((item) => item.isOverdue).length;
   const inlineCommandSources = ['CRM', 'OPERATIONS', 'INTELLIGENCE'];
   const unmappedSources = sourceCoverage.filter((entry) => !inlineCommandSources.includes(entry.moduleId));
   // An optional action-status read is not the authorization decision.
@@ -281,6 +379,23 @@ export default function DailyAttentionWorkspace({
   useEffect(() => { setCompletionNote(''); }, [selectedId]);
 
   useEffect(() => {
+    if (completionFocusIdRef.current && selected?.id === completionFocusIdRef.current
+      && canComplete) {
+      completionRef.current?.focus();
+      completionFocusIdRef.current = null;
+    }
+  }, [selectedId, selected?.id, canComplete]);
+
+  useEffect(() => {
+    if (mode === 'CREATE') {
+      createTitleRef.current?.focus();
+    } else if (previousModeRef.current === 'CREATE') {
+      createTriggerRef.current?.focus();
+    }
+    previousModeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
     const node = listRef.current;
     if (!node || page.length === 0) return;
     const maximum = Math.max(0, page.length * ATTENTION_ROW_HEIGHT
@@ -293,7 +408,7 @@ export default function DailyAttentionWorkspace({
 
   useEffect(() => {
     const node = listRef.current;
-    if (!node || mode !== 'WORK') return undefined;
+    if (!node || mode !== 'LIST') return undefined;
     const measure = () => setViewportHeight(
       node.clientHeight || DEFAULT_VIEWPORT_HEIGHT,
     );
@@ -321,10 +436,27 @@ export default function DailyAttentionWorkspace({
     });
   }, [page, selectedId]);
 
+  const openCreate = (moduleId) => {
+    if (!moduleId || typeof onCreateWork !== 'function' || creatingWork || workUpdating) return;
+    setCreateSource(moduleId);
+    setMode('CREATE');
+  };
+
+  const cancelCreate = () => {
+    if (creatingWork) return;
+    setMode('LIST');
+  };
+
   const submitCreate = async (event) => {
     event.preventDefault();
-    if (!chosenCreateSource || !createTitle.trim() || creatingWork || workUpdating
+    if (!chosenCreateSource || creatingWork || workUpdating
       || typeof onCreateWork !== 'function') return;
+    if (!createTitle.trim()) {
+      setCreateTitleError('Enter a work title.');
+      createTitleRef.current?.focus();
+      return;
+    }
+    setCreateTitleError('');
     if (!createKeyRef.current) {
       if (typeof globalThis.crypto?.randomUUID !== 'function') return;
       createKeyRef.current = globalThis.crypto.randomUUID();
@@ -335,8 +467,9 @@ export default function DailyAttentionWorkspace({
       priority: createPriority, due_at,
     }, createKeyRef.current);
     if (accepted) {
-      setCreateOpen(false);
+      setMode('LIST');
       setCreateTitle('');
+      setCreateTitleError('');
       setCreateDescription('');
       setCreatePriority('NORMAL');
       setCreateDue('');
@@ -349,9 +482,28 @@ export default function DailyAttentionWorkspace({
     onOpenWork?.(toWorkItem(item));
   };
 
+  const prepareCompletion = (item, index) => {
+    if (!canCompleteItem(item) || completingId || workUpdating) return;
+    setCompletionNotice('');
+    completionFocusIdRef.current = item.id;
+    setSelectionIndex(index);
+    setSelectedId(item.id);
+    if (selectedId === item.id) {
+      completionRef.current?.focus();
+      completionFocusIdRef.current = null;
+    }
+  };
+
   // Scoped shortcuts: never hijack a text field, modal, or other workspace.
   const handleKey = (event) => {
     const target = event.target;
+    if (event.key === 'Escape' && mode === 'CREATE') {
+      event.preventDefault();
+      event.stopPropagation();
+      cancelCreate();
+      return;
+    }
+    if (mode === 'CREATE') return;
     if (event.altKey || event.metaKey || event.ctrlKey
       || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || '')
       || target?.isContentEditable) return;
@@ -360,7 +512,7 @@ export default function DailyAttentionWorkspace({
         event.preventDefault();
         event.stopPropagation();
         if (showShortcuts) setShowShortcuts(false);
-        else if (mode === 'CALENDAR') setMode('WORK');
+        else if (mode === 'CALENDAR') setMode('LIST');
         else setSelectedId(null);
       }
       return;
@@ -380,7 +532,7 @@ export default function DailyAttentionWorkspace({
       setFilter(FILTERS[Number(event.key) - 1][0]);
       return;
     }
-    if (mode !== 'WORK' || page.length === 0) return;
+    if (mode !== 'LIST' || page.length === 0) return;
     if (event.key === 'x' && selected) {
       event.preventDefault();
       setCheckedIds((before) => before.includes(selected.id)
@@ -412,47 +564,47 @@ export default function DailyAttentionWorkspace({
   };
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden text-slate-100"
-      data-attention-production-ui="true" onKeyDown={handleKey}>
-      <div className={'shrink-0 overflow-y-auto overscroll-contain border-b border-white/10 px-4 py-3 ' +
-        (checkedItems.length > 0 ? 'max-h-[min(46vh,420px)]' : 'max-h-[min(58vh,520px)]') +
-        ' md:max-h-none md:overflow-visible'}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div role="tablist" aria-label="Daily attention views"
-            className="flex items-center gap-1 rounded-xl bg-[#0a1628] p-1">
-            <button type="button" role="tab" aria-selected={mode === 'WORK'}
-              onClick={() => setMode('WORK')}
-              className={'rounded-lg px-3 py-2 text-xs font-semibold ' +
-                (mode === 'WORK' ? 'bg-amber-300 text-slate-950' : 'text-slate-300 hover:bg-white/10')}>
-              <ListTodo size={14} className="mr-1.5 inline"/>Work list
-            </button>
-            <button type="button" role="tab" aria-selected={mode === 'CALENDAR'}
-              onClick={() => setMode('CALENDAR')}
-              className={'rounded-lg px-3 py-2 text-xs font-semibold ' +
-                (mode === 'CALENDAR' ? 'bg-amber-300 text-slate-950' : 'text-slate-300 hover:bg-white/10')}>
-              <CalendarDays size={14} className="mr-1.5 inline"/>Calendar
-            </button>
+      data-attention-production-ui="true" data-attention-mode={mode} onKeyDown={handleKey}>
+      <div className="shrink-0 border-b border-white/10 bg-[#14243d] px-3 py-2 sm:px-4">
+        {mode === 'CREATE' ? (
+          <div className="flex min-h-12 items-center justify-between gap-3" aria-label="Create mode toolbar">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">Create work in {label(chosenCreateSource)}</p>
+              <p className="mt-1 text-xs text-slate-400">The source service confirms persistence before this work appears in the list.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h2 className="shrink-0 text-sm font-bold text-white">Daily Attention</h2>
+            <span className="truncate text-[10px] text-slate-400">
+              {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'} · verified {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             {creatableSources.length > 0 && typeof onCreateWork === 'function' && (
-              <button type="button" onClick={() => setCreateOpen((value) => !value)}
-                aria-expanded={createOpen}
+              <button type="button" data-attention-create-trigger="true"
+                ref={createTriggerRef}
+                disabled={creatingWork || workUpdating}
+                onClick={() => openCreate(chosenCreateSource)}
                 className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950">
-                {createOpen ? 'Close new work' : 'Create work'}
+                Create work
               </button>
             )}
             <button type="button" onClick={() => setShowShortcuts((v) => !v)}
               aria-label="Daily attention keyboard shortcuts" aria-expanded={showShortcuts}
-              className="rounded-lg border border-white/10 p-2 text-slate-300 hover:bg-white/10"><CircleHelp size={15}/></button>
+              className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:bg-white/10"><CircleHelp size={14}/></button>
             <button type="button" onClick={onRefresh} title={'Last synced: ' + feed.syncedAt}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-2 text-xs text-slate-300 hover:bg-white/10">
-              <RefreshCw size={14}/>Refresh
+              className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-slate-300 hover:bg-white/10">
+              <RefreshCw size={13}/>Refresh
             </button>
           </div>
         </div>
         {resultsUpdating && (
           <p role="status" aria-live="polite" data-testid="attention-refresh-state"
             data-attention-refresh-state="UPDATING"
-            className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-amber-300/15 bg-amber-300/[0.04] px-2.5 py-2 text-[11px] text-amber-100/90">
+            className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-amber-300/15 bg-amber-300/[0.04] px-2 py-1.5 text-[10px] text-amber-100/90">
             <RefreshCw size={12} className="animate-spin"/>
             <span>Checking pending results: {criteriaLabel(requestedCriteria)}.</span>
             <span className="text-slate-300">Showing last verified results: {criteriaLabel(verifiedCriteria)} · verified {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}.</span>
@@ -461,7 +613,7 @@ export default function DailyAttentionWorkspace({
         {resultsUnavailable && (
           <p role="alert" data-testid="attention-refresh-state"
             data-attention-refresh-state="UNAVAILABLE"
-            className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-rose-300/15 bg-rose-300/[0.035] px-2.5 py-2 text-[11px] text-rose-100/90">
+            className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-rose-300/15 bg-rose-300/[0.035] px-2 py-1.5 text-[10px] text-rose-100/90">
             <AlertTriangle size={12}/>
             <span>{resultFailureCode === 'ATTENTION_CONNECTION_UNAVAILABLE'
               ? 'EOS could not reverify the requested view.'
@@ -471,25 +623,13 @@ export default function DailyAttentionWorkspace({
           </p>
         )}
         {creationNotice && <p role="status" className="mt-2 text-xs text-emerald-200">{creationNotice}</p>}
-        {actionAvailabilityUnavailable && <p role="alert" className="mt-2 text-xs text-amber-200">
+        {actionAvailabilityUnavailable && <p role="alert" className="mt-1 text-[10px] text-amber-200">
           {unavailableActionSources.length ? unavailableActionSources.map(label).join(', ') + ': ' : ''}
           Some source commands could not be verified. Verified commands remain usable.
           <button type="button" onClick={onRefresh} className="ml-2 underline">Retry command verification</button>
         </p>}
-        {!actionAvailabilityUnavailable && sourceCoverage.length > 0
-          && creatableSources.length === 0 && (
-            <p role="status" className="mt-2 text-xs text-slate-400">
-              {sourceCoverage.some((entry) => inlineCommandSources.includes(entry.moduleId))
-                ? 'No inline create-work permission was verified for the admitted sources. Existing work remains readable.'
-                : 'No inline create-work adapter is available for the admitted work sources. Use their governed source workspaces for commands.'}
-            </p>
-          )}
-        {unmappedSources.length > 0 && <p className="mt-1 text-[11px] text-slate-400">
-          Source-owned commands outside this panel: {unmappedSources.map((item) => label(item.moduleId)).join(', ')}.
-          A missing inline adapter does not imply a missing tenant subscription or permission.
-        </p>}
         {showShortcuts && (
-          <div role="note" className="mt-2 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-xs leading-5 text-slate-300">
+          <div role="note" className="mt-1 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-[10px] leading-4 text-slate-300">
             <strong className="text-amber-100">Shortcuts:</strong> j/k select work · Enter/o open
             · / search · 1–4 filters · x select · e complete evidence when permitted
             · Esc clear detail · ? toggle help.
@@ -497,42 +637,72 @@ export default function DailyAttentionWorkspace({
             when their source-owned action APIs are certified.
           </div>
         )}
-        <div className="mt-3 flex flex-wrap gap-1.5"
-          aria-label={resultsUpdating || resultsUnavailable
-            ? 'Last verified current-source workload' : 'Verified current-source workload'}>
+        {mode === 'LIST' && <div className="mt-2 flex flex-wrap gap-2 text-[10px]" aria-label={resultsUpdating || resultsUnavailable
+          ? 'Last verified current-source workload' : 'Verified current-source workload'}>
           {[
-            ['Active', feed.counts.active, 'ALL'],
-            ['Overdue', feed.counts.overdue, 'OVERDUE'],
-            ['Due today', feed.counts.dueToday, 'TODAY'],
-            ['High priority', feed.counts.highPriority, 'HIGH'],
-          ].map(([name, count, target]) => (
-            <button key={name} type="button" onClick={() => setFilter(target)}
-              aria-label={(resultsUpdating || resultsUnavailable ? 'Last verified ' : '')
-                + countLabel(name, count)}
-              aria-pressed={filter === target}
-              className={'flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors ' +
-                (filter === target ? 'border-amber-300/70 bg-amber-300/10' : 'border-white/10 bg-white/[0.025]') +
-                (name === 'Overdue' && count > 0 ? ' text-rose-200' : ' text-slate-200')}>
+            ['Active', feed.counts.active], ['Overdue', feed.counts.overdue],
+            ['Due today', feed.counts.dueToday], ['High priority', feed.counts.highPriority],
+          ].map(([name, count]) => (
+            <span key={name} className={'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 ' +
+              (name === 'Overdue' && count > 0
+                ? 'border-rose-300/30 bg-rose-300/[0.05] text-rose-200'
+                : 'border-white/10 bg-white/[0.025] text-slate-300')}>
               <span className="text-slate-400">{name}</span>
               <strong className="font-semibold tabular-nums">{count}</strong>
-            </button>
+            </span>
           ))}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          {(resultsUpdating || resultsUnavailable) && <span className="self-center text-amber-100/80">Last verified</span>}
+        </div>}
+        {mode === 'LIST' && <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Daily attention toolbar">
+          <label className="flex min-w-[180px] flex-1 items-center gap-2 rounded-md border border-white/15 bg-[#0a1628] px-2.5">
+            <Search size={14} className="shrink-0 text-slate-400"/>
+            <input ref={searchRef} type="search" aria-label="Search authorised work"
+              placeholder="Search work…" value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="h-8 min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-slate-500"/>
+          </label>
+          <label className="sr-only" htmlFor="attention-work-view">Work view</label>
+          <select id="attention-work-view" aria-label="Work view" value={mode}
+            onChange={(event) => setMode(event.target.value)}
+            className="h-8 rounded-md border border-white/15 bg-[#0a1628] px-2 text-[10px] text-slate-200">
+            <option value="LIST">Work list</option><option value="CALENDAR">Calendar</option>
+          </select>
+          <label className="sr-only" htmlFor="attention-filter">Filter</label>
+          <select id="attention-filter" aria-label="Filter daily attention" value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            className="h-8 rounded-md border border-white/15 bg-[#0a1628] px-2 text-[10px] text-slate-200">
+            {FILTERS.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          <label className="sr-only" htmlFor="attention-source-filter">Source</label>
+          <select id="attention-source-filter" aria-label="Filter work by source" value={source}
+            onChange={(event) => setSource(event.target.value)}
+            className="h-8 max-w-[140px] rounded-md border border-white/15 bg-[#0a1628] px-2 text-[10px] text-slate-200">
+            <option value="ALL">All sources</option>
+            {sourceCoverage.map((entry) => <option key={entry.moduleId} value={entry.moduleId}>{label(entry.moduleId)}</option>)}
+          </select>
+          <label className="sr-only" htmlFor="attention-sort">Sort</label>
+          <select id="attention-sort" aria-label="Sort attention work" value={sortMode}
+            onChange={(event) => setSortMode(event.target.value)}
+            className="h-8 max-w-[160px] rounded-md border border-white/15 bg-[#0a1628] px-2 text-[10px] text-slate-200">
+            {SORT_MODES.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+        </div>}
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]">
           <button type="button" onClick={() => setShowSourceDetails((value) => !value)}
             aria-expanded={showSourceDetails} aria-controls="attention-source-evidence"
-            className="inline-flex items-center gap-1.5 rounded-md text-emerald-200 hover:text-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-            <ShieldCheck size={13}/> Last verified from {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'}
+            className="inline-flex items-center gap-1.5 rounded-md text-slate-400 hover:text-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+            <ShieldCheck size={12}/> Source details
             <ChevronRight size={12} className={showSourceDetails ? 'rotate-90' : ''}/>
           </button>
-          <span className="text-slate-400" title={feed.syncedAt}>
-            Synced {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-          </span>
+          {ranked.length > 0 && <button type="button" onClick={() => setShowBriefing((value) => !value)}
+            aria-expanded={showBriefing} className="text-slate-400 hover:text-amber-100">
+            {showBriefing ? 'Hide' : 'Show'} briefing
+          </button>}
         </div>
         {showSourceDetails && (
           <section id="attention-source-evidence" aria-label="Last verified attention source details"
             className="mt-2 rounded-lg border border-white/10 bg-[#0a1628] px-3 py-2 text-[11px] leading-5">
-            <p className="font-semibold text-slate-200">Last verified source evidence for this session</p>
+            <p className="font-semibold text-slate-200">Last verified source evidence for this session · {sourceCoverage.length} admitted · synced {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</p>
             {sourceCoverage.length === 0 && <p className="text-amber-200">No source has returned an admitted work projection.</p>}
             {sourceCoverage.map((entry) => (
               <div key={entry.moduleId} className="flex items-center justify-between gap-2 border-b border-white/5 py-1 last:border-0">
@@ -546,74 +716,40 @@ export default function DailyAttentionWorkspace({
               Not verified in this session: {missing.map(label).join(', ')}.
               Absence does not establish lack of entitlement, an outage or a cleared queue.
             </p>}
+            {unmappedSources.length > 0 && <p className="mt-2 text-slate-300">
+              Source-owned commands outside this panel: {unmappedSources.map((item) => label(item.moduleId)).join(', ')}.
+              A missing inline adapter does not imply a missing tenant subscription or permission.
+            </p>}
+            {!actionAvailabilityUnavailable && sourceCoverage.length > 0
+              && creatableSources.length === 0 && <p className="mt-2 text-slate-300">
+                {sourceCoverage.some((entry) => inlineCommandSources.includes(entry.moduleId))
+                  ? 'No inline create-work permission was verified for admitted sources. Existing work remains readable.'
+                  : 'No inline create-work adapter is available for admitted sources. Use their governed source workspaces for commands.'}
+              </p>}
             <button type="button" onClick={onRefresh}
               className="mt-2 rounded-md border border-white/15 px-2.5 py-1 text-amber-100 hover:bg-white/5">
               Recheck authorised sources
             </button>
           </section>
         )}
-        {missing.length > 0 && (
-          <p className="mt-1 text-[11px] leading-4 text-amber-100/75">
-            Not represented in this session: {missing.map(label).join(', ')}.
-            No module access or cleared status is inferred.
-          </p>
-        )}
-        {mode === 'WORK' && (
-          <>
-            <div role="group" aria-label="Filter daily attention"
-              className="mt-3 flex flex-wrap gap-1.5">
-              {FILTERS.map(([id, name]) => (
-                <button key={id} type="button" aria-pressed={filter === id}
-                  onClick={() => setFilter(id)}
-                  className={'rounded-full border px-2.5 py-1.5 text-[11px] ' +
-                    (filter === id ? 'border-amber-300/50 bg-amber-300/15 text-amber-100'
-                      : 'border-white/15 text-slate-300 hover:bg-white/5')}>{name}</button>
-              ))}
-            </div>
-            <div role="group" aria-label="Severity of loaded work" className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
-              <span className="mr-1 text-slate-400">Loaded work severity</span>
-              {Object.entries(SEVERITY).map(([level, visual]) => (
-                <span key={level} className={'inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium ' + visual.chip}>
-                  <span aria-hidden="true" className={'h-1.5 w-1.5 rounded-full ' + visual.dot}/>
-                  {visual.label} {visiblePriorityCounts[level]}
-                </span>
-              ))}
-              {visibleOverdueCount > 0 && <span className="rounded-md border border-red-400/70 bg-red-500/20 px-2 py-1 text-red-100">
-                Overdue {visibleOverdueCount}
-              </span>}
-            </div>
-            <div className="mt-2 flex min-w-0 gap-2">
-              <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/15 bg-[#0a1628] px-3">
-                <Search size={15} className="text-slate-400"/>
-                <input ref={searchRef} type="search" aria-label="Search authorised work"
-                  placeholder="Search title, record, source…" value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="h-9 min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-slate-500"/>
-              </label>
-              <select aria-label="Filter work by source" value={source}
-                onChange={(event) => setSource(event.target.value)}
-                className="max-w-[38%] rounded-lg border border-white/15 bg-[#0a1628] px-2 text-xs">
-                <option value="ALL">All included sources</option>
-                {sourceCoverage.map((entry) => (
-                  <option key={entry.moduleId} value={entry.moduleId}>{label(entry.moduleId)}</option>
-                ))}
-              </select>
-            </div>
+        {missing.length > 0 && showSourceDetails && <p className="mt-2 px-2 text-[10px] leading-4 text-amber-100/75">
+          Not represented in this session: {missing.map(label).join(', ')}. No module access or cleared status is inferred.
+        </p>}
           </>
         )}
       </div>
-      {createOpen && chosenCreateSource ? (
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-6" aria-label="New source work editor">
+      {mode === 'CREATE' && chosenCreateSource ? (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-6" aria-label="New source work editor" data-attention-create-form="true">
           <div className="mx-auto mb-3 max-w-3xl">
             <h3 className="text-base font-semibold text-white">Create work in {label(chosenCreateSource)}</h3>
             <p className="mt-1 text-xs text-slate-400">
               EOS validates the task, records its owner and persists it in the source module.
             </p>
           </div>
-          <form onSubmit={submitCreate}
+          <form onSubmit={submitCreate} noValidate aria-busy={creatingWork}
             aria-label="Create source work"
             className="mx-auto grid w-full max-w-3xl gap-3 rounded-xl border border-amber-300/25 bg-[#0a1628] p-4 sm:p-5">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="text-[11px] text-slate-300">Owning source
                 <select value={chosenCreateSource}
                   onChange={(event) => { setCreateSource(event.target.value); createKeyRef.current = null; }}
@@ -622,47 +758,69 @@ export default function DailyAttentionWorkspace({
                 </select>
               </label>
               <label className="text-[11px] text-slate-300">Priority
-                <select value={createPriority}
+                <select value={createPriority} aria-invalid={Boolean(createFieldErrors.priority)}
+                  aria-describedby={createFieldErrors.priority ? 'attention-priority-error' : undefined}
                   onChange={(event) => { setCreatePriority(event.target.value); createKeyRef.current = null; }}
                   className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2">
                   {['NORMAL', 'LOW', 'HIGH', 'CRITICAL'].map((priority) =>
                     <option key={priority} value={priority}>{priority}</option>)}
                 </select>
+                {createFieldErrors.priority && <span id="attention-priority-error" role="alert" className="mt-1 block text-[11px] text-rose-200">{fieldErrorCopy('priority', createFieldErrors.priority)}</span>}
               </label>
             </div>
             <label className="text-[11px] text-slate-300">Work title
-              <input value={createTitle} maxLength={240} required
-                onChange={(event) => { setCreateTitle(event.target.value); createKeyRef.current = null; }}
+              <input ref={createTitleRef} value={createTitle} maxLength={240} required
+                aria-invalid={Boolean(createTitleError || createFieldErrors.title)}
+                aria-describedby={createTitleError || createFieldErrors.title ? 'attention-title-error' : undefined}
+                onChange={(event) => {
+                  setCreateTitle(event.target.value);
+                  if (event.target.value.trim()) setCreateTitleError('');
+                  createKeyRef.current = null;
+                }}
                 placeholder="What needs to be done?"
                 className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+              {(createTitleError || createFieldErrors.title) && <span id="attention-title-error" role="alert" className="mt-1 block text-[11px] text-rose-200">{createTitleError || fieldErrorCopy('title', createFieldErrors.title)}</span>}
             </label>
             <label className="text-[11px] text-slate-300">Description
               <textarea value={createDescription} maxLength={4000} rows={2}
+                aria-invalid={Boolean(createFieldErrors.description)}
+                aria-describedby={createFieldErrors.description ? 'attention-description-error' : undefined}
                 onChange={(event) => { setCreateDescription(event.target.value); createKeyRef.current = null; }}
                 placeholder="Outcome, owner context or instructions"
                 className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+              {createFieldErrors.description && <span id="attention-description-error" role="alert" className="mt-1 block text-[11px] text-rose-200">{fieldErrorCopy('description', createFieldErrors.description)}</span>}
             </label>
             <label className="text-[11px] text-slate-300">Deadline (optional)
               <input type="datetime-local" value={createDue}
+                aria-invalid={Boolean(createFieldErrors.due_at)}
+                aria-describedby={createFieldErrors.due_at ? 'attention-deadline-error' : undefined}
                 onChange={(event) => { setCreateDue(event.target.value); createKeyRef.current = null; }}
                 className="mt-1 block w-full rounded-md border border-white/15 bg-[#14243d] p-2 text-xs"/>
+              {createFieldErrors.due_at && <span id="attention-deadline-error" role="alert" className="mt-1 block text-[11px] text-rose-200">{fieldErrorCopy('due_at', createFieldErrors.due_at)}</span>}
             </label>
             {createPreflightUnverified && <p className="text-[11px] text-amber-200">
               Source create permission is not preverified. Submitting will ask EOS to authorize the action;
               a denial will not create work.
             </p>}
             {creationError && <p role="alert" className="text-xs text-rose-200">{creationError}</p>}
-            <button type="submit" disabled={creatingWork || workUpdating || !createTitle.trim()}
-              className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
-              {creatingWork ? 'Saving with EOS…' : 'Submit task to EOS'}
-            </button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" disabled={creatingWork}
+                onClick={cancelCreate}
+                className="rounded-md border border-white/20 px-4 py-3 text-sm font-semibold text-slate-100 disabled:opacity-50 sm:py-2">
+                Cancel
+              </button>
+              <button type="submit" disabled={creatingWork || workUpdating}
+                className="rounded-md bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 disabled:opacity-50 sm:py-2">
+                {creatingWork ? 'Saving with EOS…' : 'Submit task to EOS'}
+              </button>
+            </div>
           </form>
         </div>
       ) : mode === 'CALENDAR' ? (
         <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
           <WilsyWorkDeadlineCalendar items={rows} onOpenWork={onOpenWork}
             onOpenWorkforce={onOpenWorkforce}/>
-          <button type="button" onClick={() => setMode('WORK')}
+          <button type="button" onClick={() => setMode('LIST')}
             aria-label="Close calendar and return to work list"
             className="mt-2 rounded-lg border border-amber-300/30 px-3 py-2 text-xs text-amber-100">
             Return to work list
@@ -694,10 +852,6 @@ export default function DailyAttentionWorkspace({
                 ))}
               </div>
             </section>
-          )}
-          {!showBriefing && page.length > 0 && (
-            <button type="button" onClick={() => setShowBriefing(true)}
-              className="m-3 text-xs text-amber-200">Show ranked briefing</button>
           )}
           {!page.length && (resultsUpdating || resultsUnavailable) && (
             <section aria-label="Last verified attention results" className="px-6 py-8"
@@ -751,11 +905,10 @@ export default function DailyAttentionWorkspace({
                     {' '}{singleSource ? EMPTY_SOURCE_COPY[singleSource.moduleId] : 'No next SLA or completed-work count is available from this feed.'}
                   </p>
                   {creatableSources.length > 0 && onCreateWork && (
-                    <button type="button" onClick={() => {
-                      setCreateSource(creatableSources.includes(singleSource?.moduleId)
-                        ? singleSource.moduleId : creatableSources[0]);
-                      setCreateOpen(true);
-                    }} className="mt-4 mr-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-950">
+                    <button type="button" onClick={() => openCreate(
+                      creatableSources.includes(singleSource?.moduleId)
+                        ? singleSource.moduleId : creatableSources[0],
+                    )} className="mt-4 mr-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-950">
                       Create {label(creatableSources.includes(singleSource?.moduleId)
                         ? singleSource.moduleId : creatableSources[0])} work
                     </button>
@@ -814,7 +967,6 @@ export default function DailyAttentionWorkspace({
                     </span>
                     <button type="button" aria-label={'Inspect ' + item.title}
                       aria-pressed={selectedId === item.id}
-                      onDoubleClick={() => open(item)}
                       onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
                       className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
                       <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
@@ -829,11 +981,21 @@ export default function DailyAttentionWorkspace({
                       title={dueLabel(item.dueAt)}>
                       {dueLabel(item.dueAt)}
                     </span>
-                    <button type="button" aria-label={'Act on ' + item.title + ' in My Work'}
-                      onClick={() => open(item)}
-                      className="shrink-0 rounded-lg border border-amber-300/35 px-2.5 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/10">
-                      Open <ArrowRight size={13} className="ml-1 inline"/>
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {canCompleteItem(item) && <button type="button"
+                        aria-label={'Complete ' + item.title}
+                        onClick={() => prepareCompletion(item, index)}
+                        disabled={Boolean(completingId) || workUpdating}
+                        className="rounded-md bg-amber-300 px-2 py-1.5 text-[10px] font-bold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50">
+                        Complete
+                      </button>}
+                      <button type="button" aria-label={'Open details for ' + item.title}
+                        aria-pressed={selectedId === item.id}
+                        onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
+                        className="rounded-md border border-white/20 px-2 py-1.5 text-[10px] font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                        Details
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>
@@ -929,29 +1091,45 @@ export default function DailyAttentionWorkspace({
             <form className="mt-4 space-y-2 rounded-lg border border-amber-300/20 bg-[#102034] p-3"
               onSubmit={async (event) => {
                 event.preventDefault();
-                if (!completionNote.trim() || completingId) return;
-                const confirmed = await onCompleteWork(selected, completionNote);
+                const receiptPending = Boolean(selectedCompletionReceipt);
+                if ((!receiptPending && !completionNote.trim()) || completingId
+                  || (receiptPending && !completionReadbackReady)) return;
+                const note = receiptPending
+                  ? selectedCompletionReceipt.completionNote : completionNote;
+                const confirmed = await onCompleteWork(selected, note);
                 if (confirmed === true) {
+                  setCompletionNotice('Completion confirmed by EOS and a fresh authorized work readback.');
                   setSelectedId(null);
                   setCompletionNote('');
                 }
               }}>
               <label htmlFor="attention-completion-evidence" className="block text-xs font-semibold text-amber-100">
-                Complete source work
+                {selectedCompletionReceipt ? 'Accepted completion evidence' : 'Complete source work'}
               </label>
-              {!authorisedActions[selected.sourceModule]?.includes('COMPLETE') &&
-                <p className="text-[11px] text-amber-200">Completion permission not preverified.
-                  EOS independently authorizes the actual action; a denial leaves this work open.</p>}
-              <textarea ref={completionRef} id="attention-completion-evidence" value={completionNote}
-                maxLength={1000} rows={2} required
+              <textarea ref={completionRef} id="attention-completion-evidence"
+                value={selectedCompletionReceipt
+                  ? selectedCompletionReceipt.completionNote : completionNote}
+                maxLength={1000} rows={2} required={!selectedCompletionReceipt}
+                readOnly={!!selectedCompletionReceipt}
+                disabled={!!completingId}
                 onChange={(event) => setCompletionNote(event.target.value)}
                 placeholder="Record what was completed and the evidence for this decision"
                 className="w-full rounded-md border border-white/20 bg-[#09162a] px-2 py-1.5 text-xs text-white"/>
-              <button type="submit" disabled={!!completingId || workUpdating || !completionNote.trim()}
+              <button type="submit"
+                disabled={!!completingId || workUpdating
+                  || (selectedCompletionReceipt ? !completionReadbackReady : !completionNote.trim())}
                 className="rounded-md bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
-                {completingId === selected.id ? 'Confirming with EOS…' : 'Confirm completion'}
+                {completingId === selected.id
+                  ? selectedCompletionReceipt ? 'Checking source readback…' : 'Confirming with EOS…'
+                  : selectedCompletionReceipt
+                    ? completionReadbackReady ? 'Reconcile completion' : 'Awaiting source readback'
+                    : 'Confirm completion'}
               </button>
-              <p className="text-[10px] text-slate-400">EOS rechecks your permission and saves completion in the owning module.</p>
+              <p className="text-[10px] text-slate-400">
+                {selectedCompletionReceipt
+                  ? 'EOS already accepted this evidence. Reconciliation reads source state only; it will not send another command.'
+                  : 'EOS rechecks your permission and saves completion in the owning module.'}
+              </p>
             </form>
           )}
           {completionError && <p role="alert" className="mt-2 text-xs text-rose-200">{completionError}</p>}
@@ -966,6 +1144,8 @@ export default function DailyAttentionWorkspace({
           )}
         </div>
       )}
+      {mode === 'LIST' && completionNotice && <p role="status" className="shrink-0 border-t border-emerald-300/20 bg-[#12302d] px-4 py-2 text-xs text-emerald-100">{completionNotice}</p>}
+      {mode !== 'CREATE' && (
       <footer className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
           <span>{page.length} loaded · {feed.filteredTotal} matching in last verified view · {feed.counts.active} active in verified sources</span>
@@ -984,13 +1164,14 @@ export default function DailyAttentionWorkspace({
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.4.0-MOBILE-SELECTED-LIST-SPACE
-// AUTHORITY BOUNDARY: Read-only EOS-attested items; OPEN delegates to source.
+// VERSION: v3.10.0-RECEIPT-RECONCILIATION-CONTROL
+// AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
  // FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.

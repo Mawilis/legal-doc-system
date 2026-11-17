@@ -1,7 +1,11 @@
 /* eslint-disable */
 /**
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Shared Dashboard Chrome Identity + Branding Resolver
- * VERSION: v2.0.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION
+ * VERSION: v2.3.1-FOUNDER-SQUARE-IDENTITY-LOCK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Resolve descriptive tenant/operator chrome identity while accepting
  *          tenant branding only from the authenticated D21B8 tenant projection.
@@ -11,7 +15,16 @@
  *                            owns presentation only. Individual dashboards may
  *                            provide descriptive tenant/operator labels but may
  *                            not introduce branding authority.
- * CERTIFICATION / UPDATE DATE: 2026-09-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v2.3.1-FOUNDER-SQUARE-IDENTITY-LOCK anchors the original Founder-supplied square logo for the
+ * authenticated header per the latest Founder directive. Square source, document,
+ * authentication and favicon artwork remain intact; tenant authority is unchanged.
+ * CHANGELOG: v2.2.0-OFFICIAL-SQUARE-BRAND-PRESENTATION uses the latest
+ * Founder-supplied square artwork through one bounded presentation derivative.
+ * Original master/icons are preserved; customer branding authority is unchanged.
+ * CHANGELOG: v2.1.1-FOUNDER-SUPPLIED-LOGO-AUTHORITY anchors the Founder-selected square
+ * navy WILSY OS asset for all shared company surfaces. Retains exact company
+ * matching and authenticated customer branding without IAM authority.
  * CHANGELOG: v2.0.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION removes legacy
  *            logo/logoUrl path authority from shared chrome and projects only
  *            the already-bounded authenticatedTenant.branding object. Approved
@@ -30,7 +43,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
  */
 
-const VERSION = 'v2.1.0-D21B9-WILSY-PLATFORM-TENANT-MARK';
+const VERSION = 'v2.3.1-FOUNDER-SQUARE-IDENTITY-LOCK';
 
 function firstNonEmpty(...candidates) {
   for (const candidate of candidates) {
@@ -103,7 +116,11 @@ function boundedAuthenticatedBranding(authenticatedTenant) {
 }
 
 /**
- * Resolve descriptive tenant/operator identity plus authenticated branding.
+ * @description Resolve descriptive identity plus authenticated tenant branding.
+ * @collaboration Shared dashboard chrome and exact authenticated tenant projection.
+ * @institutional Read-only presentation; no mutation, permission, transaction or financial authority.
+ * @param {Object} input Bounded descriptive and authenticated projections.
+ * @returns {Object} Display identity and bounded branding descriptors.
  *
  * Explicit tenant/operator props may control descriptive labels only. Branding
  * is consumed solely from authenticatedTenant.branding, which D21B8 admitted
@@ -248,7 +265,19 @@ export function resolveWilsyChromeIdentitySources({
 
 export const WILSY_PLATFORM_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
 
+/** Founder-provided source stays byte-identical; the presentation trims exterior
+ * navy canvas only and retains the whole frame, WILSY and OS without distortion. */
+export const WILSY_PLATFORM_LOGO_SOURCE_SRC = '/brand/wilsy-os-official-source.png';
+export const WILSY_PLATFORM_LOGO_SRC = '/brand/wilsy-os-official.png';
+
+
+
 /**
+ * @description Match only the canonical WILSY company tenant.
+ * @collaboration Shared chrome, Headquarters and module navigation presentation.
+ * @institutional Exact comparison grants no IAM, membership or entitlement.
+ * @param {unknown} tenantId Candidate presentation selector.
+ * @returns {boolean} Exact canonical identifier match.
  * Use the first-party platform mark as the tenant mark only for WILSY's own
  * platform tenant. Other tenants continue to use their authenticated branding.
  */
@@ -261,7 +290,7 @@ export default { resolveWilsyChromeIdentitySources };
 
 
 // ARTIFACT: wilsyDashboardChromeConfig.js
-// VERSION: v2.0.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION
+// VERSION: v2.3.1-FOUNDER-SQUARE-IDENTITY-LOCK
 // AUTHORITY BOUNDARY: presentation only; branding accepted solely from D21B8 authenticatedTenant.branding
 // TENANT POSTURE: branding tenant must exactly match authenticated tenant; legacy/raw logo paths are ignored
 // FAIL-CLOSED POSTURE: malformed/foreign branding suppresses tenant branding rather than inventing fallback authority

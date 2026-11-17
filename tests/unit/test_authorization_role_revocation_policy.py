@@ -1,13 +1,19 @@
 """Direct certificate for the P1-R3A pure authorization-role revocation policy.
 
 TITLE: Authorization Role Revocation Policy Direct Certificate
-VERSION: v1.0.0-P1-R3A-PURE-AUTHORIZATION-ROLE-REVOCATION-CERT
+VERSION: v1.2.0-COMPANY-READER-REVOCATION-CERT
 AUTHORITY: Wilsy OS Core Governance / Sovereign IAM Design
-EPITOME: Prove the exact two-edge allowlist and categorical denial boundaries.
+EPITOME: Prove the existing revocation allowlist and the WILSY-only admission-officer revocation lifecycle.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authorization_role_revocation_policy.py
 COLLABORATION / OWNERSHIP: Certifies only authorization_role_revocation_policy.py.
-CERTIFICATION / UPDATE DATE: 2026-10-13
-CHANGELOG: v1.0.0-P1-R3A establishes direct pure-domain and dependency-boundary proof.
+CERTIFICATION / UPDATE DATE: 2026-11-14
+CHANGELOG:
+    v1.2.0-COMPANY-READER-REVOCATION-CERT certifies the exact company reader edge
+    while preserving prior root, admission, tenant and inactive-role denials.
+    2026-11-12 v1.2.0-COMPANY-READER-REVOCATION-CERT certifies
+    Enterprise Admin revocation of an ACTIVE admission-officer assignment only
+    for the exact WILSY company tenant; no assignment is created by this test.
+    v1.0.0-P1-R3A certifies the original two-edge allowlist.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identities; no credentials or PII.
 TENANT BOUNDARY: Same-tenant allowlist and cross-tenant denial are explicit.
@@ -25,11 +31,13 @@ import pytest
 from tools.eos.auth.authorization_role_revocation_policy import (
     AuthorizationRoleRevocationDecision,
     AuthorizationRoleRevocationDenialCode as Denial,
+    PLATFORM_EMPLOYEE_ADMISSION_OFFICER,
     evaluate_authorization_role_revocation,
 )
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
+from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
-VERSION = "v1.0.0-P1-R3A-PURE-AUTHORIZATION-ROLE-REVOCATION-CERT"
+VERSION = "v1.2.0-COMPANY-READER-REVOCATION-CERT"
 PRODUCTION = Path("tools/eos/auth/authorization_role_revocation_policy.py")
 
 
@@ -154,9 +162,15 @@ def test_identical_input_is_deterministic_and_decision_is_immutable() -> None:
         first.allowed = False  # type: ignore[misc]
 
 
-def test_complete_role_cross_product_has_only_two_allowed_edges() -> None:
-    """ALL_NON_ALLOWLIST_EDGES_DENIED=YES across the frozen role vocabulary."""
-    roles = ("ENTERPRISE_ADMIN", "SOVEREIGN_ARCHITECT", "AUDITOR", "SERVICE_WORKER")
+def test_complete_role_cross_product_denies_out_of_scope_admission_role() -> None:
+    """Only the two legacy edges work outside WILSY; admission stays scoped."""
+    roles = (
+        "ENTERPRISE_ADMIN",
+        "SOVEREIGN_ARCHITECT",
+        "AUDITOR",
+        "SERVICE_WORKER",
+        PLATFORM_EMPLOYEE_ADMISSION_OFFICER,
+    )
     allowed = {
         (actor, target)
         for actor in roles
@@ -167,6 +181,25 @@ def test_complete_role_cross_product_has_only_two_allowed_edges() -> None:
         ("ENTERPRISE_ADMIN", "AUDITOR"),
         ("ENTERPRISE_ADMIN", "SERVICE_WORKER"),
     }
+
+
+def test_admission_officer_revocation_is_wilsy_tenant_only() -> None:
+    """An active admission-officer role can be revoked only in WILSY scope."""
+    allowed = evaluate(
+        actor_tenant_id=WILSY_COMPANY_TENANT_ID,
+        target_tenant_id=WILSY_COMPANY_TENANT_ID,
+        target_authorization_role=PLATFORM_EMPLOYEE_ADMISSION_OFFICER,
+    )
+    assert allowed.allowed is True
+    assert allowed.denial_code is None
+
+    outside_scope = evaluate(
+        actor_tenant_id="customer-tenant",
+        target_tenant_id="customer-tenant",
+        target_authorization_role=PLATFORM_EMPLOYEE_ADMISSION_OFFICER,
+    )
+    assert outside_scope.allowed is False
+    assert outside_scope.denial_code is Denial.TARGET_ROLE_NOT_REVOCABLE
 
 
 def test_production_module_is_pure_iam_and_non_financial() -> None:
@@ -189,6 +222,7 @@ def test_production_module_is_pure_iam_and_non_financial() -> None:
         "enum",
         "typing",
         "tools.eos.auth.role_assignment",
+        "tools.eos.auth.workspace_bootstrap_projection",
     }
     forbidden_calls = {"insert_one", "update_one", "delete_one", "compare_and_swap", "start_session", "start_transaction"}
     called = {
@@ -204,10 +238,18 @@ def test_production_module_is_pure_iam_and_non_financial() -> None:
     assert "financial execution authority: none" in lowered
 
 
+
+def test_company_reader_revocation_reuses_the_explicit_company_edge():
+    from tools.eos.auth.authorization_role_revocation_policy import COMPANY_DOCUMENT_READER
+    from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
+    assert evaluate(actor_tenant_id=WILSY_COMPANY_TENANT_ID, target_tenant_id=WILSY_COMPANY_TENANT_ID,
+                    target_authorization_role=COMPANY_DOCUMENT_READER).allowed
+    assert not evaluate(target_authorization_role=COMPANY_DOCUMENT_READER).allowed
+
 # ARTIFACT: test_authorization_role_revocation_policy.py
-# VERSION: v1.0.0-P1-R3A-PURE-AUTHORIZATION-ROLE-REVOCATION-CERT
-# AUTHORITY BOUNDARY: direct pure-policy verification only; no production authority
-# TENANT POSTURE: exact same-tenant allowlist and cross-tenant denial certified
-# FAIL-CLOSED POSTURE: all non-allowlisted edges, malformed facts, inactive targets, and root targets deny
+# VERSION: v1.2.0-COMPANY-READER-REVOCATION-CERT
+# AUTHORITY BOUNDARY: direct pure-policy verification only; no production authority or assignment
+# TENANT POSTURE: exact same-tenant allowlist and WILSY-only admission-officer revocation certified
+# FAIL-CLOSED POSTURE: all non-allowlisted edges, malformed facts, inactive targets, foreign scopes and root targets deny
 # FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

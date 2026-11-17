@@ -1,7 +1,20 @@
 """Direct certificate for the explicit commercial-offer catalogue.
 
-The offer catalogue must describe standalone products and explicit bundles
-without creating tenant purchases, entitlements, subscriptions, IAM or pricing.
+TITLE: Commercial Offer Catalogue Direct Certificate
+VERSION: v1.1.0-PROJECTS-COMMERCIAL-OFFER-CERT
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Verify closed standalone and explicit bundle metadata without
+         creating a tenant purchase, entitlement, IAM assignment or price.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_commercial_offer_catalogue.py
+COLLABORATION / OWNERSHIP: Pure certificate for commercial offer metadata.
+CERTIFICATION / UPDATE DATE: 2026-11-16
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+CHANGELOG: v1.1.0-PROJECTS-COMMERCIAL-OFFER-CERT adds the standalone Projects offer and confirms it remains outside existing bundles.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic global catalogue facts only.
+TENANT BOUNDARY: No tenant record or entitlement is created.
+AUTHORITY BOUNDARY: Catalogue metadata only; no purchase or permission authority.
+FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 """
 from dataclasses import FrozenInstanceError, replace
 import re
@@ -20,10 +33,10 @@ from tools.eos.saas.entitlement.commercial_offer_catalogue import (
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 
 
-def test_catalogue_contains_seven_standalone_offers_and_three_explicit_bundles() -> None:
+def test_catalogue_contains_eight_standalone_offers_and_three_explicit_bundles() -> None:
     offers = list_commercial_offers()
-    assert len(offers) == 10
-    assert sum(item.kind is CommercialOfferKind.STANDALONE for item in offers) == 7
+    assert len(offers) == 11
+    assert sum(item.kind is CommercialOfferKind.STANDALONE for item in offers) == 8
     assert sum(item.kind is CommercialOfferKind.BUNDLE for item in offers) == 3
 
     standalone = {
@@ -43,6 +56,17 @@ def test_pos_is_standalone_and_excluded_from_every_existing_bundle() -> None:
         if item.kind is CommercialOfferKind.BUNDLE
         for product in item.product_ids
     }
+
+
+def test_projects_is_standalone_and_not_added_to_existing_bundles() -> None:
+    offer = get_commercial_offer(CommercialOfferId.PROJECTS)
+    assert offer.kind is CommercialOfferKind.STANDALONE
+    assert offer.product_ids == (TenantProductId.PROJECTS,)
+    assert all(
+        TenantProductId.PROJECTS not in bundle.product_ids
+        for bundle in list_commercial_offers()
+        if bundle.kind is CommercialOfferKind.BUNDLE
+    )
 
 
 def test_bundle_composition_is_explicit_and_uses_only_catalogued_products() -> None:
@@ -168,3 +192,11 @@ def test_offer_does_not_inherit_product_activation_authority() -> None:
     # issuance. In particular, bundles cannot be passed as TenantProductIds.
     for offer in list_commercial_offers():
         assert offer.offer_id not in {item.value for item in TenantProductId}
+
+# ARTIFACT: test_commercial_offer_catalogue.py
+# VERSION: v1.1.0-PROJECTS-COMMERCIAL-OFFER-CERT
+# AUTHORITY BOUNDARY: static offer composition evidence only
+# TENANT POSTURE: synthetic catalogue only; no tenant entitlement or assignment
+# FAIL-CLOSED POSTURE: explicit bundles and exact product identities only
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
