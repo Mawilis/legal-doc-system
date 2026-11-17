@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.5.0-DENSE-EXECUTION-QUEUE-CERT
+ * VERSION: v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
- * CHANGELOG: v1.5.0-DENSE-EXECUTION-QUEUE-CERT covers responsive detail drawer
+ * CHANGELOG: v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT certifies the exact EOS as_of instant
+ *            in the runner's browser-local timezone, retaining a real
+ *            timestamp assertion across Johannesburg and UTC environments.
+ *            v1.5.0-DENSE-EXECUTION-QUEUE-CERT covers responsive detail drawer
  *            lifecycle, compact row list, filters/order, dirty draft protection,
  *            exact source completion receipts, projection readback and failure.
  *            v1.4.0-HR-SOURCE-NAVIGATION-CERT verifies only EOS-admitted HR
@@ -84,7 +87,14 @@ describe('authenticated My Work execution queue', () => {
     expect(screen.getByText('Prepare daily operations report')).toBeTruthy();
     expect(screen.getByText('Review matter evidence')).toBeTruthy();
     expect(screen.getByText('Overdue')).toBeTruthy();
-    expect(screen.getAllByText('Verified Nov 6, 2026, 12:00 PM').length).toBeGreaterThan(0);
+    // The verified source instant is stable; its visible local clock time is
+    // determined by the browser environment, not the CI runner's region.
+    const verifiedInstant = new Date(payload.as_of);
+    expect(verifiedInstant.toISOString()).toBe('2026-11-06T10:00:00.000Z');
+    const localVerifiedTime = verifiedInstant.toLocaleString(undefined, {
+      dateStyle: 'medium', timeStyle: 'short',
+    });
+    expect(screen.getAllByText('Verified ' + localVerifiedTime).length).toBeGreaterThan(0);
     expect(api.get).toHaveBeenCalledTimes(1);
     const [path, request] = api.get.mock.calls[0];
     expect(path).toBe('/my-work');
@@ -265,7 +275,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.5.0-DENSE-EXECUTION-QUEUE-CERT
+ * VERSION: v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
