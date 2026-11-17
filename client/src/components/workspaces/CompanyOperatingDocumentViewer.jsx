@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.2.1-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
+ * VERSION: v1.3.0-FOUNDER-APPROVED-CONTENT-ADMISSION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.3.0-FOUNDER-APPROVED-CONTENT-ADMISSION maps the two supplied
+ *            Founder-approved v1.1.0 PDFs into exact private draft proposals.
+ *            The PDF fingerprints identify source files, never EOS publication.
  * CHANGELOG: v1.2.1-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO fixes draft-version validation,
  *            HTML input matching and section word counts so valid proposals
  *            can be submitted to existing EOS author commands.
@@ -43,6 +46,50 @@ import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
 
 const labelFor = classification => classification === 'MISSION' ? 'Our Mission' : 'Our Strategy';
 const displayDate = value => value ? new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Not effective';
+
+// Source-transcribed Founder-approved documents, v1.1.0. These are proposal
+// inputs, never EOS publication state or independent publisher authorization.
+// Document digests identify the supplied PDF files; they are not EOS revision
+// fingerprints. Publication remains pending until EOS confirms it.
+const FOUNDER_APPROVED_SOURCE = Object.freeze({
+  MISSION: {
+    pdf_sha3_512: 'e7d4621d54079730c68d0169c1760c6064e48a37d3b517545fadf06ed98a8db0e25a32f8d45cf8fb9fc1d6a433970a31415df8bf96b3a19bc166687d3ab4d051',
+    title: 'WILSY (PTY) LTD — OFFICIAL MISSION',
+    document_version: '1.1.0',
+    sections: [
+      { section_id: 'our-mission', title: 'Our Mission', body: 'To empower businesses of every size and industry to build, operate and grow through one intelligent, secure and unified operating platform.\nWILSY OS exists to eliminate fragmented business systems by bringing people, processes, information, decisions and execution together in a single governed environment.\nWe are committed to making enterprise-grade technology accessible, practical and valuable to businesses—enabling them to manage everyday operations with confidence, accountability, efficiency and intelligence.' },
+      { section_id: 'one-intelligent-platform', title: 'One Intelligent Platform', body: 'Unite essential business functions without unnecessary fragmentation.' },
+      { section_id: 'business-empowerment', title: 'Business Empowerment', body: 'Equip owners, directors, managers and employees with the tools required to perform meaningful work.' },
+      { section_id: 'intelligent-operations', title: 'Intelligent Operations', body: 'Transform reliable business information into actionable insights, accountable decisions and measurable outcomes.' },
+      { section_id: 'trust-and-governance', title: 'Trust and Governance', body: 'Protect organizational information through strong security, appropriate authority, transparent records and auditable operations.' },
+      { section_id: 'industry-flexibility', title: 'Industry Flexibility', body: 'Support diverse industries through configurable, integrated business capabilities.' },
+      { section_id: 'sustainable-growth', title: 'Sustainable Growth', body: 'Help businesses reduce operational friction, improve productivity and create lasting economic value.' },
+      { section_id: 'our-promise', title: 'Our Promise', body: 'Build. Operate. Grow.\nWILSY OS — One Intelligent Platform.' },
+    ],
+  },
+  STRATEGY: {
+    pdf_sha3_512: '7ab326851ef307a9cd398406fb80e1fadeeec161be3a95d2f3e60c76d252ebe66aa90108f41cf524858a0edbe45b03992a536865d00dd38570dfe9d90b955610',
+    title: 'WILSY (PTY) LTD — OFFICIAL CORPORATE STRATEGY',
+    document_version: '1.1.0',
+    sections: [
+      { section_id: 'strategic-vision', title: 'Strategic Vision', body: 'To establish WILSY OS as a trusted, intelligent and comprehensive operating platform through which businesses can manage their organizations, coordinate their workforce, govern their operations and pursue sustainable growth.' },
+      { section_id: 'pillar-one', title: 'Strategic Pillar 1 — One Unified Operating System', body: 'Develop a cohesive business operating environment that integrates the essential capabilities of an organization. Our platform will connect Headquarters, Human Resources, Customer Relationships, Finance, Legal Operations, Procurement, Inventory, Point of Sale, Workflow and other business capabilities through shared identity, governance and source-backed information.\nStrategic outcome: Businesses operate through an integrated environment rather than disconnected applications.' },
+      { section_id: 'pillar-two', title: 'Strategic Pillar 2 — Effortless Business Adoption', body: 'Make WILSY OS accessible to organizations with different sizes, structures and operating requirements. Support straightforward onboarding, appropriate subscription and entitlement management, workforce administration, industry configuration and progressive adoption of capabilities.\nStrategic outcome: Customers can begin operating efficiently and expand without rebuilding their underlying business systems.' },
+      { section_id: 'pillar-three', title: 'Strategic Pillar 3 — Intelligent Business Execution', body: 'Embed practical, governed intelligence into everyday work. Connect business objectives, projects, responsibilities, approvals, deadlines and measurable outcomes. Develop AI-assisted capabilities that help people understand information, identify priorities and make better decisions, while preserving human accountability and established authorization boundaries.\nStrategic outcome: Intelligence contributes to real operational value rather than isolated demonstrations.' },
+      { section_id: 'pillar-four', title: 'Strategic Pillar 4 — Institutional Trust and Security', body: 'Build a platform founded on verifiable authority, tenant isolation, data protection, reliable evidence and accountable execution. Preserve clear distinctions between proposals, approvals, authorizations, execution and verified results.\nStrategic outcome: Businesses can rely on WILSY OS for trustworthy operational records and controlled processes.' },
+      { section_id: 'pillar-five', title: 'Strategic Pillar 5 — Industry Expansion', body: 'Develop configurable operating capabilities for industries including: Legal and professional services; Healthcare practices, clinics and related providers; Vehicle imports, automotive parts and repair services; Wholesale, retail and general trading; Agriculture and other operationally intensive sectors.\nStrategic outcome: One adaptable operating foundation serves multiple industries without duplicating core business authority.' },
+      { section_id: 'pillar-six', title: 'Strategic Pillar 6 — Sustainable Commercial Growth', body: 'Establish a scalable commercial model built around customer value, reliable service, sustainable subscriptions and measurable adoption. Prioritize product quality, customer retention, business continuity and operational effectiveness over superficial feature expansion.\nStrategic outcome: WILSY (Pty) Ltd develops a durable, commercially sustainable software business.' },
+      { section_id: 'execution-principles', title: 'Execution Principles', body: 'Our strategy shall be implemented through governed business objectives, accountable ownership, measurable milestones and verified work outcomes.\nApproved strategic objectives may be linked to projects and work items only through authorized WILSY OS business workflows.\nProgress must reflect genuine operational evidence, not invented performance measurements.' },
+      { section_id: 'strategic-commitment', title: 'Strategic Commitment', body: 'WILSY (Pty) Ltd will pursue its vision through disciplined engineering, responsible governance, practical innovation and a commitment to helping businesses succeed.\nWILSY OS — One Intelligent Platform. Build. Operate. Grow.' },
+    ],
+  },
+});
+const founderApprovedProposal = classification => {
+  const source = FOUNDER_APPROVED_SOURCE[classification];
+  return { title: source.title, document_version: source.document_version,
+    sections: source.sections.map(section => ({ ...section })) };
+};
+
 const emptyProposal = () => ({ title: '', document_version: '', sections: [{ section_id: 'section-1', title: '', body: '' }] });
 // The API has both FastAPI detail envelopes and institutional exception
 // envelopes. Only bounded machine codes enter the UI; never server messages,
@@ -298,8 +345,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   </div>
                   <div className={styles.commandButtons}>
                     {draftPermitted && !editorOpen && <button type="button" disabled={busy}
-                      onClick={() => { setProposal(emptyProposal()); setPreviewOpen(false); setEditorOpen(true); }}>
-                      <FileText size={16}/> Prepare draft
+                      onClick={() => { setProposal(founderApprovedProposal(classification)); setPreviewOpen(false); setEditorOpen(true); }}>
+                      <FileText size={16}/> Prepare approved v1.1.0
                     </button>}
                     {reviewPermitted && !query.review && <button type="button" disabled={busy}
                       onClick={() => changeQuery({ review: true, revision: null })}>
@@ -330,7 +377,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   <div className={styles.editorHeading}>
                     <div><span className={styles.eyebrow}>AUTHOR WORKSPACE · PRIVATE</span>
                       <h2>Prepare {classification === 'MISSION' ? 'Our Mission' : 'Our Strategy'}</h2>
-                      <p>Compose real source content, then save to Python EOS. Saving does not publish or approve it.</p>
+                      <p>Review the Founder-approved v1.1.0 wording from the supplied PDF. Save only through authorized Python EOS; content approval does not imply EOS publication.</p>
                     </div>
                     <button type="button" disabled={busy} onClick={() => setPreviewOpen(value => !value)}
                       aria-pressed={previewOpen}>{previewOpen ? 'Edit document' : 'Preview draft'}</button>
@@ -374,7 +421,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </>}
                   <div className={styles.editorFooter}>
-                    <span>{proposal.sections.length} sections · {proposalCharacters.toLocaleString()} / 100,000 characters</span>
+                    <span>{proposal.sections.length} sections · {proposalCharacters.toLocaleString()} / 100,000 characters · Founder PDF SHA3-512: {FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512.slice(0, 16)}…</span>
                     <div className={styles.actions}>
                       <button type="button" disabled={busy || proposal.sections.length >= 24 || previewOpen}
                         onClick={addSection}>Add section</button>
@@ -396,7 +443,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.2.1-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
+// VERSION: v1.3.0-FOUNDER-APPROVED-CONTENT-ADMISSION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
