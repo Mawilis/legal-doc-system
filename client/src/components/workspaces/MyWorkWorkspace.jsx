@@ -243,6 +243,7 @@ export default function MyWorkWorkspace(props = {}) {
   const requestRef = useRef(0);
   const requestControllerRef = useRef(null);
   const rowRefs = useRef(new Map());
+  const [selectedKey, setSelectedKey] = useState(null);
   const closeButtonRef = useRef(null);
   const [workbench, setWorkbench] = useState(null);
   const splitWorkbench = (workbench?.width ?? 0) >= 880 && typeof window !== "undefined" && window.innerWidth >= 768;
@@ -331,7 +332,6 @@ export default function MyWorkWorkspace(props = {}) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [errorStatus, setErrorStatus] = useState(null);
-  const [selectedKey, setSelectedKey] = useState(null);
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState('due');
