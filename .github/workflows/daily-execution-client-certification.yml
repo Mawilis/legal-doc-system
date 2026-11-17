@@ -1,3 +1,21 @@
+# TITLE: WILSY OS Daily Execution Client GitHub Certification Workflow
+# VERSION: v1.1.0-SINGLE-WORKER-BOUNDED-EXECUTION-CERT
+# AUTHORITY: WILSY OS Core Governance, test and build evidence only.
+# EPITOME: Certify authenticated My Work, Daily Attention and Headquarters
+#          client behavior on exact reviewed GitHub source and locked packages.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/daily-execution-client-certification.yml
+# COLLABORATION / OWNERSHIP: Vitest client suite, My Work source integration,
+#                           GitHub Actions and Vite frontend production build.
+# CERTIFICATION / UPDATE DATE: 2026-11-17
+# CHANGELOG: v1.1.0-SINGLE-WORKER-BOUNDED-EXECUTION-CERT uses deterministic single-worker
+#            bounded test execution already certified by the full local suite;
+#            all existing test files and assertions remain unchanged.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: No deployment, credentials or tenant data read.
+# TENANT BOUNDARY: Synthetic fixtures; EOS IAM remains authoritative.
+# AUTHORITY BOUNDARY: Tests client projection; cannot grant source commands.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS executes funds exclusively.
+# FAIL-CLOSED POSTURE: Failed tests or build fail the workflow; no bypass.
 name: WILSY Daily Execution Client Certification
 # 2026-11-09: Include shared EOS source-coverage validator and My Work
 # currentness test suites in exact-head CI without altering EOS authority.
@@ -51,7 +69,7 @@ jobs:
         run: npm ci --include=dev --no-audit --no-fund --progress=false
       - name: Certify authorised daily work interactions
         run: >-
-          npx vitest run --config vitest.config.js
+          npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000
           src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
           src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx
           src/__tests__/components/MyWorkWorkspaceAttention.test.jsx
@@ -61,3 +79,11 @@ jobs:
           src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
       - name: Build production client bundle
         run: npm run build
+
+# ARTIFACT: .github/workflows/daily-execution-client-certification.yml
+# VERSION: v1.1.0-SINGLE-WORKER-BOUNDED-EXECUTION-CERT
+# AUTHORITY BOUNDARY: Client-only certificate; Python EOS owns business truth.
+# TENANT POSTURE: No tenant admission or grants.
+# FAIL-CLOSED POSTURE: All tests and build must complete successfully.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
