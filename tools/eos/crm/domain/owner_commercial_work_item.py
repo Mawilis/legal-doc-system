@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Owner Commercial Work Item Domain.
-VERSION: v1.2.0-DRAFT-AND-PROGRESS-LIFECYCLE
+VERSION: v1.3.0-DRAFT-AT-CREATE
 AUTHORITY: Python EOS CRM owner-commercial domain.
 EPITOME: Defines immutable, tenant-owned CRM task evidence, deterministic
          queue projection, canonical serialization, and retry fingerprints.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/domain/owner_commercial_work_item.py
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceService and OwnerCommercialWorkRegistry.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.3.0-DRAFT-AT-CREATE enables a new task to be saved
+           as DRAFT immediately, without transient admission to the active
+           attention queue. Existing creates remain OPEN by default.
 CHANGELOG: v1.2.0-DRAFT-AND-PROGRESS-LIFECYCLE adds a canonical
            persisted DRAFT state excluded from active attention, while
            IN_PROGRESS remains a source-backed active work state.
@@ -157,18 +160,20 @@ class OwnerCommercialWorkItem:
         priority: OwnerWorkPriority = OwnerWorkPriority.NORMAL,
         owner_principal_id: str, due_at: datetime | None = None,
         source_type: str | None = None, source_id: str | None = None,
-        now: datetime,
+        now: datetime, initial_status: OwnerWorkStatus = OwnerWorkStatus.OPEN,
     ) -> "OwnerCommercialWorkItem":
         """Create a new open item; caller owns authorization and persistence.
 
         Tenant scope is preserved exactly. The generated item identity and times
         are server-owned; the caller's transaction/session belongs to the registry.
         """
+        if initial_status not in (OwnerWorkStatus.OPEN, OwnerWorkStatus.DRAFT):
+            raise OwnerWorkItemError("INITIAL_STATUS_INVALID")
         instant = _time(now, "CREATED_AT_INVALID")
         return cls(
             work_item_id="owk_" + uuid4().hex,
             tenant_id=tenant_id, title=title, description=description,
-            kind=kind, status=OwnerWorkStatus.OPEN, priority=priority,
+            kind=kind, status=initial_status, priority=priority,
             owner_principal_id=owner_principal_id, due_at=due_at,
             source_type=source_type, source_id=source_id,
             created_at=instant, updated_at=instant,
@@ -325,7 +330,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/crm/domain/owner_commercial_work_item.py
-# VERSION: v1.2.0-DRAFT-AND-PROGRESS-LIFECYCLE
+# VERSION: v1.3.0-DRAFT-AT-CREATE
 # AUTHORITY BOUNDARY: Domain validation and projection only; CRM services authorize commands.
 # TENANT POSTURE: Exact tenant retained; global-root tenant values are rejected.
 # FAIL-CLOSED POSTURE: Malformed persistence documents and invalid transitions reject.
