@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.2.0-COORDINATED-PANELS-NATIVE-DATE-PICKER
+ * VERSION: v1.3.0-GOVERNED-CODE-ASSIGNMENT-AFFORDANCE
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.3.0-GOVERNED-CODE-ASSIGNMENT-AFFORDANCE adds
+ *            discoverable, accessible auto-code and readback affordances;
+ *            no persisted or role-based state is represented in styling.
  * CHANGELOG: v1.2.0-COORDINATED-PANELS-NATIVE-DATE-PICKER aligns
  *            list/detail heights during selection and exposes accessible
  *            native calendar controls for EOS date-only schedule drafts.
@@ -197,6 +200,20 @@
 .wilsy-projects .wp-form label {font-size:12px;font-weight:750;color:#2a4365 !important;display:block;}
 .wilsy-projects .wp-form label :is(input,textarea) {margin-top:7px;font-weight:450;}
 .wilsy-projects .wp-form-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.wilsy-projects .wp-code-action {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:36px;margin:8px 0 0;padding:7px 11px;
+  border:1px solid #5681b3;border-radius:9px;
+  background:#e9f3ff;color:#164477 !important;
+  font-size:12px;font-weight:800;cursor:pointer;
+}
+.wilsy-projects .wp-code-action:hover:not(:disabled){background:#d5e8ff;}
+.wilsy-projects .wp-code-action:disabled{opacity:.55;cursor:not-allowed;}
+.wilsy-projects .wp-code-hint {
+  display:block;margin:6px 0 13px;color:#355776 !important;
+  font-size:12px;line-height:1.55;font-weight:500;
+}
+.wilsy-projects .wp-code-optional {color:#4f6280 !important;font-weight:500;}
 .wilsy-projects .wp-date-field {
   display:block;min-width:0;color:#2a4365 !important;
   font-size:12px;font-weight:750;
@@ -264,7 +281,7 @@
   .wilsy-projects .wp-button {transition:none;}
 }
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.2.0-COORDINATED-PANELS-NATIVE-DATE-PICKER
+ * VERSION: v1.3.0-GOVERNED-CODE-ASSIGNMENT-AFFORDANCE
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
