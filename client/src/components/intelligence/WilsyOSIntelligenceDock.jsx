@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.7.0-MOVABLE-MINIMIZABLE-AI-COMPANION
+ * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v4.7.0-MOVABLE-MINIMIZABLE-AI-COMPANION adds a distinct vector AI identity, pointer/keyboard
+ * CHANGELOG: v4.7.1-INDEPENDENT-KERNEL-HEALTH starts EOS kernel health independently
+ * of optional finance evidence, publishes verified health immediately, and
+ * enriches context only after independently verified optional evidence.
+ * v4.7.0-MOVABLE-MINIMIZABLE-AI-COMPANION adds a distinct vector AI identity, pointer/keyboard
  * movement, viewport clamping, compact minimization and reset without navigation,
  * source commands, background modal interference or conversation resets.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; accessible controls.
@@ -419,27 +422,20 @@ export function WilsyOSIntelligenceDock({
       && healthGenerationRef.current === generation
       && dockScopeRef.current === dockScope
     );
-    let billingIntelligenceEvidence;
-    if (canProbeBillingIntelligence(authUser?.role)) {
-      try {
-        const asOf = new Date().toISOString();
-        const billingRes = await api.get('/billing/intelligence/evidence', {
-          params: { as_of: asOf },
-          timeout: 8000,
-          signal: controller.signal,
-        });
-        if (!isCurrent()) return;
-        if (
-          billingRes?.status === 200
-          && billingRes?.data
-          && typeof billingRes.data === 'object'
-        ) {
-          billingIntelligenceEvidence = billingRes.data;
-        }
-      } catch {
-        // Optional finance evidence remains server-authorized and fail-quiet.
-      }
-    }
+    // Optional finance evidence must never serialize or delay kernel health.
+    // Its own EOS IAM remains authoritative; a failure yields no finance facts.
+    const billingEvidenceRead = canProbeBillingIntelligence(authUser?.role)
+      ? api.get('/billing/intelligence/evidence', {
+        params: { as_of: new Date().toISOString() },
+        timeout: 8000,
+        signal: controller.signal,
+      }).then((response) => (
+        response?.status === 200
+        && response?.data
+        && typeof response.data === 'object'
+          ? response.data : null
+      )).catch(() => null)
+      : Promise.resolve(null);
 
     try {
       // Optional EOS health reads never authorize or block Headquarters.
@@ -461,11 +457,18 @@ export function WilsyOSIntelligenceDock({
           tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
         },
       });
-      if (billingIntelligenceEvidence) {
-        normalizedDockContext.billingIntelligenceEvidence = billingIntelligenceEvidence;
-      }
       if (!isCurrent()) return;
       setDockContext(normalizedDockContext);
+      // Publish the independent verified kernel result before optional finance
+      // completion; late responses may enrich only the same live auth scope.
+      const billingIntelligenceEvidence = await billingEvidenceRead;
+      if (!isCurrent()) return;
+      if (billingIntelligenceEvidence) {
+        setDockContext({
+          ...normalizedDockContext,
+          billingIntelligenceEvidence,
+        });
+      }
     } catch (err) {
       if (!isCurrent()) return;
       // Absence of verified EOS health is not successful advisory context.
@@ -1351,7 +1354,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.7.0-MOVABLE-MINIMIZABLE-AI-COMPANION
+ * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
