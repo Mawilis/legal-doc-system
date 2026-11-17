@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.17.0-HUMAN-READABLE-WORK-STATUS
+ * VERSION: v1.18.0-ACTIVE-WORK-COUNT-SEMANTICS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.18.0-ACTIVE-WORK-COUNT-SEMANTICS labels the
+ *            source-verified Open plus In Progress aggregate as Active,
+ *            never incorrectly claiming all active work is still Open.
  * CHANGELOG: v1.17.0-HUMAN-READABLE-WORK-STATUS renders Draft,
  *            Open and In Progress as legible source-backed lifecycle states;
  *            unknown statuses remain unverified rather than invented.
@@ -689,7 +692,7 @@ export default function MyWorkWorkspace(props = {}) {
           </header>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/10 py-2 text-xs sm:hidden">
-            <span>{projection.summary.active_count} open</span>
+            <span>{projection.summary.active_count} active</span>
             <span className="text-rose-200">{projection.summary.overdue_count} overdue</span>
             <span className="text-slate-400">Verified {formatVerified(projection.as_of)}</span>
           </div>
@@ -699,7 +702,7 @@ export default function MyWorkWorkspace(props = {}) {
           {actionError && <div role="alert" className="mt-3 rounded-lg border border-rose-400/25 bg-rose-950/20 px-3 py-2 text-sm text-rose-200">The source action was not confirmed in the current queue: {actionError}</div>}
 
           <section aria-label="Work queue summary" className="flex flex-wrap gap-2 border-b border-white/10 py-3 text-xs">
-            <Summary label="Open" value={projection.summary.active_count} />
+            <Summary label="Active" value={projection.summary.active_count} />
             <Summary label="Overdue count" value={projection.summary.overdue_count} tone="rose" />
             <Summary label="Due today" value={dueTodayCount} tone="amber" />
           </section>
@@ -1454,7 +1457,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.17.0-HUMAN-READABLE-WORK-STATUS
+ * VERSION: v1.18.0-ACTIVE-WORK-COUNT-SEMANTICS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
