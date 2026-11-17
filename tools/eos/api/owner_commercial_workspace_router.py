@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace HTTP Router
-VERSION: v1.5.0-DRAFT-PROGRESS-HTTP
+VERSION: v1.6.0-DIRECT-DRAFT-CREATE-HTTP
 AUTHORITY: WILSY OS Python EOS institutional CRM API.
 EPITOME: Expose source-owned CRM owner work reads and commands through exact
          tenant authorization, entitlement admission and Mongo transactions.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/ow
 COLLABORATION / OWNERSHIP: Tenant IAM dependency, CRM owner source service,
          tenant-scoped work registry and Python EOS API gateway.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.6.0-DIRECT-DRAFT-CREATE-HTTP accepts optional initial
+           OPEN or DRAFT status on source create, without inventing active
+           queue admission or changing canonical create IAM.
 CHANGELOG: v1.5.0-DRAFT-PROGRESS-HTTP adds exact-owner draft listing
            under CRM READ and audited Draft/Open/In Progress status changes
            under CRM UPDATE, never elevating IAM or exposing foreign drafts.
@@ -117,6 +120,7 @@ class OwnerWorkCreateRequest(BaseModel):
     title: str = Field(min_length=1, max_length=240)
     description: str = Field(default="", max_length=4000)
     kind: Literal["TASK", "REMINDER", "FOLLOW_UP"] = "TASK"
+    initial_status: Literal["OPEN", "DRAFT"] = "OPEN"
     priority: Literal["CRITICAL", "HIGH", "NORMAL", "LOW"] = "NORMAL"
     due_at: datetime | None = None
     source_type: str | None = Field(default=None, max_length=80)
@@ -230,6 +234,7 @@ async def create_owner_work_item(
             due_at=body.due_at, source_type=body.source_type, source_id=body.source_id,
             idempotency_key=idempotency_key,
             now=datetime.now(timezone.utc), session=session,
+            initial_status=OwnerWorkStatus(body.initial_status),
         )
         return item.to_dict()
     return _transaction(create)
@@ -405,7 +410,7 @@ async def complete_owner_work_item(
 __all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCancelRequest", "OwnerWorkStatusRequest", "read_owner_work_drafts", "transition_owner_work_status", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item", "cancel_owner_work_item"]
 
 # ARTIFACT: tools/eos/api/owner_commercial_workspace_router.py
-# VERSION: v1.5.0-DRAFT-PROGRESS-HTTP
+# VERSION: v1.6.0-DIRECT-DRAFT-CREATE-HTTP
 # AUTHORITY BOUNDARY: Existing CRM read IAM and owner source entitlement.
 # TENANT POSTURE: Authorized tenant only; foreign work is indistinguishable from absent.
 # FAIL-CLOSED POSTURE: 401/403/404/503 remain distinct without fabricated evidence.
