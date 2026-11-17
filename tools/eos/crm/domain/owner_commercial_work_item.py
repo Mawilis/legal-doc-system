@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Owner Commercial Work Item Domain.
-VERSION: v1.1.0-STRICT-TYPED-READBACK
+VERSION: v1.2.0-DRAFT-AND-PROGRESS-LIFECYCLE
 AUTHORITY: Python EOS CRM owner-commercial domain.
 EPITOME: Defines immutable, tenant-owned CRM task evidence, deterministic
          queue projection, canonical serialization, and retry fingerprints.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/domain/owner_commercial_work_item.py
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceService and OwnerCommercialWorkRegistry.
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-DRAFT-AND-PROGRESS-LIFECYCLE adds a canonical
+           persisted DRAFT state excluded from active attention, while
+           IN_PROGRESS remains a source-backed active work state.
 CHANGELOG: v1.1.0-STRICT-TYPED-READBACK narrows every persisted field before
            domain construction and separates optional from required timestamps;
            serialized contract and authorization behavior are unchanged.
@@ -58,6 +61,7 @@ class OwnerWorkKind(StrEnum):
 class OwnerWorkStatus(StrEnum):
     """Source-owned work lifecycle; terminal status requires source evidence."""
 
+    DRAFT = "DRAFT"
     OPEN = "OPEN"
     IN_PROGRESS = "IN_PROGRESS"
     BLOCKED = "BLOCKED"
@@ -291,7 +295,7 @@ def build_daily_queue(
             raise OwnerWorkItemError("WORK_ITEM_INVALID")
         if item.tenant_id != tenant:
             continue
-        if item.status in (OwnerWorkStatus.COMPLETED, OwnerWorkStatus.CANCELLED):
+        if item.status in (OwnerWorkStatus.DRAFT, OwnerWorkStatus.COMPLETED, OwnerWorkStatus.CANCELLED):
             continue
         due = item.due_at
         overdue = due is not None and due < instant
@@ -321,7 +325,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/crm/domain/owner_commercial_work_item.py
-# VERSION: v1.1.0-STRICT-TYPED-READBACK
+# VERSION: v1.2.0-DRAFT-AND-PROGRESS-LIFECYCLE
 # AUTHORITY BOUNDARY: Domain validation and projection only; CRM services authorize commands.
 # TENANT POSTURE: Exact tenant retained; global-root tenant values are rejected.
 # FAIL-CLOSED POSTURE: Malformed persistence documents and invalid transitions reject.
