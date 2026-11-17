@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION
+ * VERSION: v3.12.0-RESPONSIVE-OPERATING-WORKSPACE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,10 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION provides clickable
+ * CHANGELOG: v3.12.0-RESPONSIVE-OPERATING-WORKSPACE combines the
+ *          38/62 independently scrollable desktop work/detail panes with
+ *          full-workspace mobile detail and retains functional source triage.
+ *          v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION provides clickable
  *          EOS-backed workload filters, compact absent-source warning,
  *          optional bulk-selection controls and detail-open row density.
  *          v3.10.0-RECEIPT-RECONCILIATION-CONTROL displays an accepted
@@ -848,8 +851,12 @@ export default function DailyAttentionWorkspace({
           </button>
         </div>
       ) : (
-        <div className="relative flex min-h-0 flex-1 overflow-hidden">
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div data-attention-detail-layout={selected ? "split" : "list"}
+           className={selected
+             ? "relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)]"
+             : "relative flex min-h-0 min-w-0 flex-1 overflow-hidden"}>
+           <div data-attention-work-list="true"
+             className={"relative min-h-0 min-w-0 flex-col overflow-hidden " + (selected ? "hidden md:flex" : "flex flex-1")}>
           <div className="relative min-h-0 flex-1 overflow-y-auto" ref={listRef}
             data-attention-scroll-container="true"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
@@ -1078,7 +1085,7 @@ export default function DailyAttentionWorkspace({
           </div>
           {selected && (
             <aside aria-label="Attention detail rail"
-              className="absolute inset-x-0 bottom-0 z-10 max-h-[75%] shrink-0 overflow-auto border-t border-amber-300/25 bg-[#182842] px-4 py-3 shadow-2xl md:static md:inset-auto md:w-[390px] md:max-h-full md:border-l md:border-t-0 md:shadow-none">
+              className="relative h-full min-h-0 min-w-0 w-full overflow-y-auto overscroll-contain border-t border-amber-300/25 bg-[#182842] px-4 py-3 md:border-l md:border-t-0 md:px-5 md:py-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200">
               Work detail · {label(selected.sourceModule)}
@@ -1192,7 +1199,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION
+// VERSION: v3.12.0-RESPONSIVE-OPERATING-WORKSPACE
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
