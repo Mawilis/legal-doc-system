@@ -1,3 +1,20 @@
+# TITLE: WILSY OS Headquarters Workforce Directory Certification
+# VERSION: v1.0.0-BOUNDED-CLIENT-RUNNER
+# AUTHORITY: WILSY OS Core Governance; certification only.
+# EPITOME: Certifies workforce authorization, synthetic UI, and disposable Mongo
+#          without expanding real tenant or project assignment authority.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/headquarters-workforce-directory-certification.yml
+# COLLABORATION / OWNERSHIP: Python EOS workforce authority and Headquarters client.
+# CERTIFICATION / UPDATE DATE: 2026-11-17
+# CHANGELOG: v1.0.0-BOUNDED-CLIENT-RUNNER bounds the existing Vitest
+#            certificate to one worker and 15-second individual test deadlines,
+#            matching certified Daily Execution runner; assertions are unchanged.
+# COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Synthetic fixtures and disposable database only.
+# TENANT BOUNDARY: No tenant records are created or authorized.
+# AUTHORITY BOUNDARY: Read-only certification; no IAM grants or admission.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
+# FAIL-CLOSED POSTURE: Any failing assertion, timeout or build blocks success.
 name: WILSY Headquarters Workforce Directory Certification
 
 on:
@@ -90,7 +107,15 @@ jobs:
         run: npm ci --include=dev
       - name: Run Headquarters authenticated workspace component tests
         working-directory: client
-        run: npx vitest run --config vitest.config.js src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
+        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
       - name: Build authenticated client
         working-directory: client
         run: npm run build
+
+# ARTIFACT: headquarters-workforce-directory-certification.yml
+# VERSION: v1.0.0-BOUNDED-CLIENT-RUNNER
+# AUTHORITY BOUNDARY: Workflow asserts existing IAM and UI; no grants.
+# TENANT POSTURE: Synthetic tests and disposable Mongo only.
+# FAIL-CLOSED POSTURE: Tests and build remain mandatory.
+# FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
