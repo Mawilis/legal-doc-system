@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Work Real Mongo Persistence Certificate
-VERSION: v1.2.0-CANCELLATION-REAL-MONGO-CERT
+VERSION: v1.3.0-DRAFT-PROGRESS-REAL-MONGO-CERT
 AUTHORITY: WILSY OS CRM source persistence certification.
 EPITOME: Certify tenant-scoped source commands, idempotent completion,
          independent persisted readback and exact tenant isolation.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkRegistry and CRM source domain;
          requires an explicitly configured disposable Mongo replica set.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.3.0-DRAFT-PROGRESS-REAL-MONGO-CERT proves
+           direct Draft persistence, hidden active queue, audited activation,
+           In Progress retention and foreign tenant denial across sessions.
 CHANGELOG: v1.2.0-CANCELLATION-REAL-MONGO-CERT verifies durable
            CANCELLED terminal status, source audit, idempotent replay and
            independent readback in an isolated replica-set transaction.
@@ -241,8 +244,65 @@ def test_real_mongo_owner_cancellation_is_atomic_and_visible_after_new_session(r
         separate.with_transaction(read)
 
 
+
+def test_real_mongo_draft_create_activate_and_progress_with_exact_audit(registry):
+    """Save Draft directly, activate it, then verify In Progress across sessions."""
+    client, collection, store = registry
+    draft = OwnerCommercialWorkItem.create(
+        tenant_id=TENANT, title="Governed draft task",
+        owner_principal_id="principal-owner", now=NOW,
+        initial_status=OwnerWorkStatus.DRAFT,
+    )
+    with client.start_session() as session:
+        session.with_transaction(lambda active: store.create_or_replay(
+            draft, idempotency_key="draft-create", session=active,
+        ))
+        assert session.with_transaction(lambda active: store.daily_queue(
+            tenant_id=TENANT, now=NOW, session=active,
+        )) == ()
+        assert len(session.with_transaction(lambda active: store.drafts_for_owner(
+            tenant_id=TENANT, owner_principal_id="principal-owner",
+            session=active,
+        ))) == 1
+        activated = session.with_transaction(lambda active: store.transition_status(
+            tenant_id=TENANT, work_item_id=draft.work_item_id,
+            actor_principal_id="principal-owner", target_status=OwnerWorkStatus.OPEN,
+            expected_updated_at=draft.updated_at, idempotency_key="draft-activate",
+            now=NOW + timedelta(minutes=1), session=active,
+        ))
+        progressed = session.with_transaction(lambda active: store.transition_status(
+            tenant_id=TENANT, work_item_id=draft.work_item_id,
+            actor_principal_id="principal-owner", target_status=OwnerWorkStatus.IN_PROGRESS,
+            expected_updated_at=activated.updated_at, idempotency_key="draft-progress",
+            now=NOW + timedelta(minutes=2), session=active,
+        ))
+        assert progressed.status is OwnerWorkStatus.IN_PROGRESS
+    with client.start_session() as independent:
+        def verify(active):
+            assert store.get(
+                tenant_id=TENANT, work_item_id=draft.work_item_id,
+                session=active,
+            ).status is OwnerWorkStatus.IN_PROGRESS
+            assert store.drafts_for_owner(
+                tenant_id=TENANT, owner_principal_id="principal-owner", session=active,
+            ) == ()
+            assert len(store.daily_queue(
+                tenant_id=TENANT, now=NOW, session=active,
+            )) == 1
+            history = store.revision_history(
+                tenant_id=TENANT, work_item_id=draft.work_item_id, session=active,
+            )
+            assert [entry["after"]["status"] for entry in history] == ["IN_PROGRESS", "OPEN"]
+            with pytest.raises(OwnerWorkRegistryNotFound):
+                store.get(
+                    tenant_id="FOREIGN-TENANT", work_item_id=draft.work_item_id,
+                    session=active,
+                )
+        independent.with_transaction(verify)
+
+
 # ARTIFACT: tests/integration/test_owner_commercial_work_registry_real_mongo.py
-# VERSION: v1.2.0-CANCELLATION-REAL-MONGO-CERT
+# VERSION: v1.3.0-DRAFT-PROGRESS-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: Source registry test, no IAM or execution authority.
 # TENANT POSTURE: Exact tenant record readback, foreign record not found.
 # FAIL-CLOSED POSTURE: Persistence proof requires real disposable replica set.
