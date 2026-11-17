@@ -1,7 +1,7 @@
 """Unit certification for fail-closed authentication authority projection.
 
 TITLE: Authentication Principal Authority Certificate
-VERSION: v1.1.0-SCOPED-REQUEST-TIMING-CERT
+VERSION: v1.1.1-TYPED-TEST-DOUBLE-CERT
 AUTHORITY: Test-only evidence for canonical principal and durable revision gates.
 EPITOME: Certifies that protected authentication reaches canonical principal
     authority and exact durable credential-revision comparison.
@@ -10,6 +10,9 @@ COLLABORATION / OWNERSHIP: Test-only certificate; authentication.py and its
     canonical AuthRegistry dependency remain read-only in this gate.
 CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
+    2026-11-17 v1.1.1-TYPED-TEST-DOUBLE-CERT explicitly types the
+    synthetic repository at the authentication test seam for Pyright;
+    runtime assertions and production authority are unchanged.
     2026-11-15 v1.1.0-SCOPED-REQUEST-TIMING-CERT verifies disabled diagnostic
     silence and enabled privacy-safe authentication timing without changing
     credential or principal authority outcomes.
@@ -34,6 +37,7 @@ import pytest
 from tools.eos.auth import authentication
 from tools.eos.auth.jwt_provider import TokenPurpose
 from tools.eos.auth.principal_authority import PrincipalAuthority
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.api.exceptions import UnauthorizedAccessException
 
@@ -75,7 +79,7 @@ def run(monkeypatch, repository, payload=None, api_key=None, registry_calls=None
         lambda: CredentialRegistry(durable_calls),
     )
     request = Request({"type": "http", "method": "GET", "path": "/", "headers": []})
-    return asyncio.run(authentication.get_current_identity(request, credentials(), api_key, repository))
+    return asyncio.run(authentication.get_current_identity(request, credentials(), api_key, cast(PrincipalAuthorityRepository, repository)))
 
 def test_active_requires_durable_authority_and_projects_status(monkeypatch):
     authority_calls = []
@@ -113,7 +117,7 @@ def test_request_timing_is_opt_in_and_excludes_credential_and_identity_data(
     caplog.set_level(logging.INFO, logger="WilsyOS.Auth.Authentication")
 
     value = asyncio.run(
-        authentication.get_current_identity(request, credentials(), None, repository)
+        authentication.get_current_identity(request, credentials(), None, cast(PrincipalAuthorityRepository, repository))
     )
     assert value.identity_id == "principal-private"
     assert not [
@@ -123,7 +127,7 @@ def test_request_timing_is_opt_in_and_excludes_credential_and_identity_data(
 
     monkeypatch.setenv("WILSY_MY_WORK_TIMING", "1")
     value = asyncio.run(
-        authentication.get_current_identity(request, credentials(), None, repository)
+        authentication.get_current_identity(request, credentials(), None, cast(PrincipalAuthorityRepository, repository))
     )
     assert value.identity_id == "principal-private"
     events = [
@@ -313,7 +317,7 @@ def test_system_session_rejection_remains_401_and_aborts(monkeypatch):
     assert not session.committed
 
 # ARTIFACT: test_authentication_principal_authority.py
-# VERSION: v1.1.0-SCOPED-REQUEST-TIMING-CERT
+# VERSION: v1.1.1-TYPED-TEST-DOUBLE-CERT
 # AUTHORITY BOUNDARY: principal authority and durable credential-revision evidence only
 # TENANT POSTURE: synthetic tenant context; no persistence or cross-tenant access
 # FAIL-CLOSED POSTURE: invalid, non-ACCESS, non-active, absent, and bypass attempts deny
