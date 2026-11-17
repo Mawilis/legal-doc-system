@@ -5,14 +5,19 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.3.0-VERIFIED-STATUS-COUNT-FILTERS
+ * VERSION: v4.4.0-SOURCE-VERIFIED-OWNER-DRAFT-COUNT
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v4.3.0-VERIFIED-STATUS-COUNT-FILTERS surfaces overdue,
+ * CHANGELOG: v4.4.0-SOURCE-VERIFIED-OWNER-DRAFT-COUNT resolves
+ *            owner-scoped saved CRM drafts separately from the active
+ *            projection, validates each source record and exact principal,
+ *            and exposes a numbered Draft filter only after verification.
+ *            Stale scope, denied and unavailable results never claim zero.
+ * CHANGELOG: v4.4.0-SOURCE-VERIFIED-OWNER-DRAFT-COUNT surfaces overdue,
  *            Open and In Progress counts from the exact verified My Work
  *            snapshot and makes them actionable filters. Drafts route to
  *            separate owner-scoped reads without inventing draft counts.
@@ -1021,6 +1026,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
   const [actions, setActions] = useState({});
   const [note, setNote] = useState('');
   const [command, setCommand] = useState({ state: 'IDLE', message: '' });
+  const [draftEvidence, setDraftEvidence] = useState({ scope: null, state: 'UNVERIFIED', count: null });
   const activeRef = useRef(true);
   const commandRef = useRef(null);
   const readbackRef = useRef(null);
@@ -1035,6 +1041,32 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
     return () => { activeRef.current = false; readbackRef.current?.abort(); };
   }, []);
   useEffect(() => { setNote(''); }, [selectedKey]);
+  useEffect(() => {
+    const scope = scopeKey;
+    let current = true;
+    const admitted = Boolean(scope && tenantId && principalId
+      && snapshot?.sources_included?.includes('CRM'));
+    setDraftEvidence({ scope, state: admitted ? 'VERIFYING' : 'NOT_ADMITTED', count: null });
+    if (!admitted) return () => { current = false; };
+    api.get('/crm/owner-workspace/drafts', { forceNetworkRetry: true })
+      .then(({ data }) => {
+        if (!current) return;
+        if (!data || data.schema !== 'WILSY-OWNER-COMMERCIAL-DRAFTS/V1'
+          || data.tenant_id !== tenantId || data.principal_id !== principalId
+          || !Array.isArray(data.items)
+          || data.items.some((row) => row?.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1'
+            || row.tenant_id !== tenantId || row.owner_principal_id !== principalId
+            || row.status !== 'DRAFT')) {
+          throw new Error('HQ_CRM_DRAFTS_SCOPE_INVALID');
+        }
+        setDraftEvidence({ scope, state: 'VERIFIED', count: data.items.length });
+      })
+      .catch(() => {
+        if (current) setDraftEvidence({ scope, state: 'UNAVAILABLE', count: null });
+      });
+    return () => { current = false; };
+  }, [scopeKey, tenantId, principalId, includedKey, snapshot?.as_of]);
+
   useEffect(() => {
     let current = true;
     setActions({});
@@ -1107,7 +1139,15 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
         <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue {snapshot ? '(' + overdueCount + ')' : ''}</button>
         <button type="button" aria-pressed={view === 'OPEN'} onClick={() => { setSource('ALL'); onViewChange(view === 'OPEN' ? 'ALL' : 'OPEN'); }}>Open {snapshot ? '(' + openCount + ')' : ''}</button>
         <button type="button" aria-pressed={view === 'IN_PROGRESS'} onClick={() => { setSource('ALL'); onViewChange(view === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS'); }}>In Progress {snapshot ? '(' + progressCount + ')' : ''}</button>
-        {snapshot?.sources_included.includes('CRM') && <button type="button" title="Saved drafts require a separate owner-scoped EOS read" onClick={() => onOpen()}>Saved drafts</button>}
+        {snapshot?.sources_included.includes('CRM') && <button type="button"
+          title={draftEvidence.state === 'VERIFIED' && draftEvidence.scope === scopeKey
+            ? 'Open your EOS-verified saved CRM drafts' : 'Saved draft count requires independent EOS verification'}
+          aria-label={draftEvidence.state === 'VERIFIED' && draftEvidence.scope === scopeKey
+            ? 'Saved drafts (' + draftEvidence.count + ')' : 'Saved drafts count unavailable'}
+          onClick={() => onOpen()}>
+          Saved drafts {draftEvidence.state === 'VERIFIED' && draftEvidence.scope === scopeKey
+            ? '(' + draftEvidence.count + ')' : draftEvidence.state === 'VERIFYING' ? '(verifying)' : '(unavailable)'}
+        </button>}
       </div>
       <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>
       {snapshot && (loading || error) && (
@@ -1415,7 +1455,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.3.0-VERIFIED-STATUS-COUNT-FILTERS
+ * VERSION: v4.4.0-SOURCE-VERIFIED-OWNER-DRAFT-COUNT
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
