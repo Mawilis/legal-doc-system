@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.11.1-SAFE-EDIT-RECONCILIATION
+ * VERSION: v1.11.2-CANONICAL-DEADLINE-READBACK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.11.2-CANONICAL-DEADLINE-READBACK compares persisted
+ *            deadline instants, not equivalent timezone-offset strings, so
+ *            valid source records do not enter false readback uncertainty.
  * CHANGELOG: v1.11.1-SAFE-EDIT-RECONCILIATION retains the accepted
  *            source receipt when audit/readback fails, reconciles indeterminate
  *            transports using reads only, and normalizes deadline comparison
@@ -729,7 +732,8 @@ export default function MyWorkWorkspace(props = {}) {
                           if (scopeRef.current !== scopeKey || !verified) return false;
                           const row = verified.items.find((item) =>
                             item.source_key === 'CRM:' + updated.work_item_id);
-                          const sameDue = (row?.due_at || null) === (updated.due_at || null);
+                          const sameDue = (row?.due_at ? new Date(row.due_at).getTime() : null)
+                            === (updated.due_at ? new Date(updated.due_at).getTime() : null);
                           if (!row || row.title !== updated.title
                             || row.priority !== updated.priority || !sameDue) return false;
                           setCrmDetail(updated);
@@ -902,7 +906,8 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
       || persisted.title !== draft.title.trim()
       || persisted.description !== draft.description.trim()
       || persisted.priority !== draft.priority
-      || (persisted.due_at || null) !== (draft.due ? new Date(draft.due).toISOString() : null)
+      || (persisted.due_at ? new Date(persisted.due_at).getTime() : null)
+        !== (draft.due ? new Date(draft.due).getTime() : null)
       || (accepted && !accepted.pending && persisted.updated_at !== accepted.updated_at)
       || (persisted.updated_at === record.updated_at && (!accepted || accepted.pending))) {
       throw new Error('CRM_WORK_EDIT_READBACK_PENDING');
@@ -1077,7 +1082,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.11.1-SAFE-EDIT-RECONCILIATION
+ * VERSION: v1.11.2-CANONICAL-DEADLINE-READBACK
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
