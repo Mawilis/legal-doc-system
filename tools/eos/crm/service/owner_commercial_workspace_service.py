@@ -1,12 +1,22 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace Service
-VERSION: v1.3.0-INDEPENDENT-CRM-CORE-ADMISSION
+VERSION: v1.4.0-COMPANY-OWNER-WORK-CONTINUITY
 AUTHORITY: WILSY OS Python EOS CRM source service.
-EPITOME: Enforce independent CRM Core subscription entitlement and tenant-exact owner work
+EPITOME: Enforce independent customer CRM Core or exact WILSY company-owner authority for tenant-exact work
          reads, creation, completion and canonical work-detail readback.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/service/owner_commercial_workspace_service.py
 COLLABORATION / OWNERSHIP: CRM source domain, owner work registry and
          authenticated owner commercial workspace router.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.4.0-COMPANY-OWNER-WORK-CONTINUITY preserves the existing
+           WILSY company Headquarters CRM-owned task queue without inventing
+           crm.core in the historical Founder subscription. The exception is
+           exact WILSY company tenant plus one canonical ACTIVE Founder
+           subscription classified as perpetual by the already-governed
+           subscription-term policy. Existing HTTP read/create/update/complete
+           IAM, exact tenant registry, CAS and audit remain mandatory; other
+           tenants still require independent active CRM Core entitlement.
+           Ambiguous/malformed Founder or CRM evidence rejects; no grants,
+           records, subscriptions or financial authority are changed.
 CHANGELOG: v1.3.0-INDEPENDENT-CRM-CORE-ADMISSION separates CRM work
            admission from the unrelated Legal product entitlement and uses the
            canonical CRM Core resolver in the caller-owned session. Founder
@@ -32,7 +42,7 @@ FAIL-CLOSED POSTURE: Ineligible tenant, unavailable source or absent work item
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import replace
 from hashlib import sha3_256
 from typing import Any
@@ -47,7 +57,14 @@ from tools.eos.crm.domain.crm_core_entitlement import CrmCoreEntitlementState
 from tools.eos.crm.service.crm_core_entitlement_resolver import (
     CrmCoreEntitlementResolverError, resolve_crm_core_entitlement,
 )
-from tools.eos.saas.billing.subscription_registry import SubscriptionRegistryError
+from tools.eos.saas.billing.subscription_registry import (
+    SubscriptionRegistry, SubscriptionRegistryError,
+)
+from tools.eos.saas.billing.subscription_term_policy import (
+    SubscriptionTermKind, SubscriptionTermPolicyError, evaluate_subscription_term,
+)
+from tools.eos.saas.domain.subscription import SubscriptionStatus
+from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
 class OwnerCommercialWorkspaceError(RuntimeError):
@@ -78,12 +95,15 @@ class OwnerCommercialWorkspaceService:
         self._entitlement_current = entitlement_current_collection
 
     def _require_entitlement(self, tenant_id: str, session: Any) -> None:
-        """Require active CRM Core evidence for an already IAM-admitted tenant.
+        """Verify product CRM Core or the exact company's existing owner-work plane.
 
-        The caller owns the transaction and exact tenant scope; the resolver
-        reads canonical subscription truth inside the same session. Neither
-        Legal product availability nor the perpetual Founder term independently
-        authorizes CRM work. No subscription or work record is mutated.
+        IAM must first authorize the precise task command under the caller's
+        active tenant membership and business capacity. This method supplies
+        only commercial admission, never permission possession. Customer tenants
+        require an active crm.core subscription feature; the WILSY company's
+        legacy owner-task queue instead admits its exact canonical ACTIVE
+        perpetual Founder subscription without rewriting historical features.
+        All reads use the caller-owned transaction, no fallback on uncertainty.
         """
         try:
             entitlement = resolve_crm_core_entitlement(
@@ -91,13 +111,36 @@ class OwnerCommercialWorkspaceService:
             )
         except (CrmCoreEntitlementResolverError, SubscriptionRegistryError) as error:
             raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE") from error
-        if entitlement is None:
+        if entitlement is not None:
+            if (
+                entitlement.tenant_id != tenant_id
+                or entitlement.lifecycle_state is not CrmCoreEntitlementState.ACTIVE
+            ):
+                raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE")
+            return
+        if tenant_id != WILSY_COMPANY_TENANT_ID:
             raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_NOT_ENTITLED")
+        try:
+            subscriptions = SubscriptionRegistry.list_entities(
+                tenant_id, collection=self._subscriptions, session=session,
+            )
+            active = tuple(
+                record for record in subscriptions
+                if record.status is SubscriptionStatus.ACTIVE
+            )
+            if len(active) != 1:
+                raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE")
+            decision = evaluate_subscription_term(
+                active[0], evaluated_at=datetime.now(timezone.utc),
+            )
+        except (SubscriptionRegistryError, SubscriptionTermPolicyError) as error:
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE") from error
         if (
-            entitlement.tenant_id != tenant_id
-            or entitlement.lifecycle_state is not CrmCoreEntitlementState.ACTIVE
+            active[0].tenant_id != tenant_id
+            or decision.kind is not SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+            or decision.eligible is not True
         ):
-            raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE")
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_NOT_ENTITLED")
 
     def read_work_item(
         self, *, tenant_id: str, work_item_id: str, session: Any,
@@ -198,7 +241,7 @@ class OwnerCommercialWorkspaceService:
 __all__ = ["OwnerCommercialWorkspaceError", "OwnerCommercialWorkspaceService"]
 
 # ARTIFACT: tools/eos/crm/service/owner_commercial_workspace_service.py
-# VERSION: v1.3.0-INDEPENDENT-CRM-CORE-ADMISSION
+# VERSION: v1.4.0-COMPANY-OWNER-WORK-CONTINUITY
 # AUTHORITY BOUNDARY: Existing CRM HTTP IAM, entitlement and tenant-owned registry.
 # TENANT POSTURE: Exact tenant lookup; foreign record existence is not disclosed.
 # FAIL-CLOSED POSTURE: Denied, unavailable and absent source records remain explicit.
