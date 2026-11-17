@@ -5,20 +5,23 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT
+ * VERSION: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT verifies the
+ *            Founder-approved Mission and Strategy text remains readable
+ *            without claiming independent EOS publication.
  * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT asserts a
  *            real owner-scoped EOS Draft count independently of the active
  *            queue, and rejects false zero when source admission fails.
- * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT proves
+ * CHANGELOG: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT proves
  *            visible verified overdue, Open and In Progress filter
  *            counts, an owner-draft destination and filtered work rows.
- * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT accepts a single
+ * CHANGELOG: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT accepts a single
  *            trustworthy verified active count when reads are shared across
  *            the Headquarters and Daily Attention coordinator, while still
  *            requiring the real source row and independent KPI evidence.
@@ -219,7 +222,12 @@ describe('WILSY Headquarters authenticated shell', () => {
       expect(control.closest(classification === 'MISSION' ? '.hq-hero' : '.hq-strategy')).toBeTruthy();
       fireEvent.click(control);
       expect(await screen.findByRole('dialog')).toHaveAttribute('data-company-document', classification);
-      expect(await screen.findByRole('heading', { name: 'Not yet published' })).toBeVisible();
+      // Founder-approved v1.1.0 is readable to authorized EOS readers even
+      // while official source publication remains independently pending.
+      expect(await screen.findByRole('heading', { name: classification === 'MISSION'
+        ? 'WILSY (PTY) LTD — OFFICIAL MISSION' : 'WILSY (PTY) LTD — OFFICIAL CORPORATE STRATEGY' })).toBeVisible();
+      expect(document.querySelector('[data-document-state="FOUNDER_APPROVED_EOS_PENDING"]')).toBeTruthy();
+      expect(screen.getByText('NOT YET PUBLISHED')).toBeVisible();
       const read = api.get.mock.calls.find(([path]) => path === '/company-operating-documents/' + classification);
       expect(read[1].headers).toMatchObject({ 'X-Tenant-ID': exactTenant, Authorization: 'Bearer ' + auth.token });
       fireEvent.click(screen.getByRole('button', { name: 'Close company document' }));
@@ -927,7 +935,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT
+ * VERSION: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
