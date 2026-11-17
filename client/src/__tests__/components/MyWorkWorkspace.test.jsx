@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.9.0-SOURCE-AUDITED-PROGRESS-CERT
+ * VERSION: v1.10.0-FLOATING-RESIZE-AND-AUTHORITY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.10.0-FLOATING-RESIZE-AND-AUTHORITY-CERT checks
+ *            the independent resizable dialog handle and explicit EOS
+ *            denied-UPDATE disclosure, without displaying unauthorized
+ *            mutation controls or inventing source status.
  * CHANGELOG: v1.9.0-SOURCE-AUDITED-PROGRESS-CERT proves the
  *            In Progress state changes only after source command, persisted
  *            status audit and a fresh authenticated My Work projection.
@@ -155,6 +159,8 @@ describe('authenticated My Work execution queue', () => {
     );
     await openRow('Prepare CRM launch plan');
     expect(await screen.findByText('Persisted source record verified for this tenant')).toBeTruthy();
+    expect(screen.getByRole('separator', { name: 'Resize work details' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Prepare CRM launch plan' })).toBeTruthy();
     expect(screen.getByText('Principal recorded; human-readable name unavailable from this source')).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith(
       '/crm/owner-workspace/work-items/crm-1',
@@ -428,7 +434,9 @@ describe('authenticated My Work execution queue', () => {
     );
     await openRow('Read-only CRM task');
     await screen.findByText('Persisted source record verified for this tenant');
-    await waitFor(() => expect(readAttentionSourceActions).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText('EOS edit permission not admitted')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Recheck actions' })).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'CRM work status' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit CRM task' })).toBeNull();
     expect(api.patch).not.toHaveBeenCalled();
   });
@@ -641,7 +649,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.9.0-SOURCE-AUDITED-PROGRESS-CERT
+ * VERSION: v1.10.0-FLOATING-RESIZE-AND-AUTHORITY-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
