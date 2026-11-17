@@ -1,7 +1,7 @@
 """WILSY OS owner commercial workspace composition certificate.
 
 TITLE: Owner Commercial Workspace Route Mount and EOS Transport Certificate
-VERSION: v1.1.0-TYPED-ROUTE-INSPECTION
+VERSION: v1.2.0-SOURCE-WORK-DETAIL-READ-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Verifies exact owner-workspace route composition, permission bindings,
     and the canonical Vite-to-Python EOS loopback target.
@@ -10,7 +10,9 @@ COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceRouter, FastAPI composition,
     and Vite transport owners.
 CERTIFICATION / UPDATE DATE: 2026-11-10
 CHANGELOG:
-  v1.1.0-TYPED-ROUTE-INSPECTION narrows FastAPI BaseRoute values to APIRoute
+  v1.2.0-SOURCE-WORK-DETAIL-READ-CERT certifies the added exact-record GET route uses
+    existing CRM read IAM and does not establish a new write permission.
+  v1.2.0-SOURCE-WORK-DETAIL-READ-CERT narrows FastAPI BaseRoute values to APIRoute
     before inspecting method/path metadata, preserving exact assertions under Pyright.
   v1.0.0-CANONICAL-EOS-LOOPBACK corrects the stale localhost assertion to the
     fixed 127.0.0.1:9095 EOS target without relaxing route or authorization checks.
@@ -32,6 +34,8 @@ from tools.eos.api.owner_commercial_workspace_router import (
     _COMPLETE,
     _CREATE,
     _READ,
+    _transaction,
+    read_owner_work_item,
     router,
 )
 
@@ -47,6 +51,7 @@ def test_owner_commercial_workspace_routes_are_mounted_once_and_directly() -> No
     }
     assert ("/crm/owner-workspace", ("GET",)) in routes
     assert ("/crm/owner-workspace/work-items", ("POST",)) in routes
+    assert ("/crm/owner-workspace/work-items/{work_item_id}", ("GET",)) in routes
     assert (
         "/crm/owner-workspace/work-items/{work_item_id}/complete",
         ("POST",),
@@ -83,8 +88,21 @@ def test_each_owner_workspace_command_has_its_exact_permission_binding() -> None
     )
 
 
+def test_exact_work_detail_uses_existing_crm_read_permission() -> None:
+    """The source-record lookup must re-use CRM read IAM without self-grant."""
+    from fastapi.params import Depends
+
+    signature = inspect.signature(read_owner_work_item)
+    context_parameter = signature.parameters["context"]
+    assert isinstance(context_parameter.default, Depends)
+    assert context_parameter.default.dependency is _READ
+    transaction_source = inspect.getsource(_transaction)
+    assert "except OwnerWorkRegistryNotFound as error" in transaction_source
+    assert 'HTTPException(status_code=404, detail="OWNER_WORK_NOT_FOUND")' in transaction_source
+
+
 # ARTIFACT: Owner Commercial Workspace Route Mount and EOS Transport Certificate
-# VERSION: v1.1.0-TYPED-ROUTE-INSPECTION
+# VERSION: v1.2.0-SOURCE-WORK-DETAIL-READ-CERT
 # AUTHORITY BOUNDARY: Composition regression evidence only.
 # TENANT POSTURE: No tenant state or records are accessed.
 # FAIL-CLOSED POSTURE: Route mount, transport, or permission drift fails tests.
