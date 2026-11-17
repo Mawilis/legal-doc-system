@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.2.1-FOUNDER-INVITATION-AUTHORITY
+VERSION: v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,6 +14,9 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE — Generates stable
+  tenant-scoped project codes from EOS identity when a caller omits a code,
+  preserves legacy replay snapshots, and retains unique-index collision denial.
   v1.2.1-FOUNDER-INVITATION-AUTHORITY — Uses tenant_owner's already
   eligible membership_invite operation, retaining the separately governed
   ENTERPRISE_ADMIN -> PROJECTS_PLATFORM_OWNER invitation delegation policy.
@@ -44,6 +47,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import hashlib
+import re
 from typing import Any, Callable, Final, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
@@ -105,7 +109,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.2.1-FOUNDER-INVITATION-AUTHORITY"
+VERSION: Final[str] = "v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE"
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
@@ -512,6 +516,19 @@ def project_summary(
     )
 
 
+def _generated_project_code(project_id: str) -> str:
+    """Derive an immutable human-readable code from EOS project identity.
+
+    Tenant/actor/idempotency are already bound into the SHA3-512 project ID.
+    The 64-bit code suffix is stable across retries; tenant-scoped unique
+    persistence indexes reject the extremely unlikely collision rather than
+    silently relabeling a different project.
+    """
+    if not isinstance(project_id, str) or not re.fullmatch(r"prj-[0-9a-f]{48}", project_id):
+        raise ProjectRegistryError("PROJECT_CODE_SOURCE_INVALID")
+    return "PRJ-" + project_id[-16:].upper()
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_project(
     payload: ProjectCreateRequest,
@@ -524,6 +541,9 @@ def create_project(
     The stable identity is derived from tenant, actor and idempotency key. A
     retry returns the original creation snapshot only when the caller and all
     business-input fields match the immutable event; divergent reuse conflicts.
+    When a code is omitted, EOS derives a stable PRJ-<hex> reference from the
+    tenant/actor/idempotency-bound project identity. Legacy null-code replays
+    remain immutable and never silently rewrite existing persisted history.
     """
     response.headers["Cache-Control"] = "no-store"
     if (
@@ -543,7 +563,7 @@ def create_project(
             project_id=project_id,
             tenant_id=context.tenant_id,
             name=payload.name,
-            code=payload.code,
+            code=payload.code if payload.code is not None else _generated_project_code(project_id),
             summary=payload.summary,
             status=ProjectStatus.PLANNED,
             owner_principal_id=None,
@@ -581,6 +601,10 @@ def create_project(
             )
             requested = project.to_dict()
             stored = prior.to_dict()
+            # Legacy projects created before automatic codes may have a null
+            # code. Preserve their immutable idempotent replay response.
+            if payload.code is None and stored.get("code") is None:
+                requested["code"] = None
             if any(stored.get(field) != requested.get(field) for field in command_fields):
                 raise ProjectRegistryConflict("PROJECT_DIVERGENT_REPLAY")
             return _result(context, prior, events=events)
@@ -757,7 +781,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.2.1-FOUNDER-INVITATION-AUTHORITY
+# VERSION: v1.3.0-DETERMINISTIC-REUSABLE-PROJECT-CODE
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: missing assignment, entitlement, current database, indexes, transaction, replay integrity, or readback denies or fails unavailable
