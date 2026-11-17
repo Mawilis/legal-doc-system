@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Work Real Mongo Persistence Certificate
-VERSION: v1.1.0-AUDITED-EDIT-REAL-MONGO-CERT
+VERSION: v1.2.0-CANCELLATION-REAL-MONGO-CERT
 AUTHORITY: WILSY OS CRM source persistence certification.
 EPITOME: Certify tenant-scoped source commands, idempotent completion,
          independent persisted readback and exact tenant isolation.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkRegistry and CRM source domain;
          requires an explicitly configured disposable Mongo replica set.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-CANCELLATION-REAL-MONGO-CERT verifies durable
+           CANCELLED terminal status, source audit, idempotent replay and
+           independent readback in an isolated replica-set transaction.
 CHANGELOG: v1.1.0-AUDITED-EDIT-REAL-MONGO-CERT proves CRM task
            edit/audit commit atomically under a real replica-set transaction,
            independent source readback, exact replay, stale-version and foreign
@@ -197,8 +200,49 @@ def test_real_mongo_divergent_replay_and_terminal_completion_fail_closed(registr
                 completion_note="Contradictory completion", now=NOW, session=active,
             ))
 
+
+def test_real_mongo_owner_cancellation_is_atomic_and_visible_after_new_session(registry):
+    """A cancellation must commit its source record and audit event together."""
+    client, collection, store = registry
+    original = make_item(title="Cancel source task")
+    with client.start_session() as session:
+        session.with_transaction(lambda active: store.create_or_replay(
+            original, idempotency_key="cancel-create", session=active,
+        ))
+        def cancel(active):
+            return store.cancel(
+                tenant_id=TENANT, work_item_id=original.work_item_id,
+                actor_principal_id=original.owner_principal_id,
+                reason="Requirements withdrawn",
+                expected_updated_at=original.updated_at,
+                idempotency_key="cancel-attempt", now=NOW + timedelta(minutes=1),
+                session=active,
+            )
+        committed = session.with_transaction(cancel)
+        assert committed.status is OwnerWorkStatus.CANCELLED
+        assert session.with_transaction(cancel) == committed
+    with client.start_session() as separate:
+        def read(active):
+            persisted = store.get(
+                tenant_id=TENANT, work_item_id=original.work_item_id,
+                session=active,
+            )
+            history = store.revision_history(
+                tenant_id=TENANT, work_item_id=original.work_item_id,
+                session=active,
+            )
+            assert persisted.status is OwnerWorkStatus.CANCELLED
+            assert len(history) == 1
+            assert history[0]["operation"] == "CANCEL"
+            assert history[0]["reason"] == "Requirements withdrawn"
+            assert history[0]["before"]["status"] == "OPEN"
+            assert history[0]["after"]["status"] == "CANCELLED"
+            assert store.daily_queue(tenant_id=TENANT, now=NOW, session=active) == ()
+        separate.with_transaction(read)
+
+
 # ARTIFACT: tests/integration/test_owner_commercial_work_registry_real_mongo.py
-# VERSION: v1.1.0-AUDITED-EDIT-REAL-MONGO-CERT
+# VERSION: v1.2.0-CANCELLATION-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: Source registry test, no IAM or execution authority.
 # TENANT POSTURE: Exact tenant record readback, foreign record not found.
 # FAIL-CLOSED POSTURE: Persistence proof requires real disposable replica set.
