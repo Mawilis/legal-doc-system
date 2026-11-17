@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.12.0-RESPONSIVE-OPERATING-WORKSPACE
+ * VERSION: v3.13.0-SOURCE-IDENTITY-DISCLOSURE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,11 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v3.12.0-RESPONSIVE-OPERATING-WORKSPACE combines the
+ * CHANGELOG: v3.13.0-SOURCE-IDENTITY-DISCLOSURE removes raw IDs
+ *          from the executive detail and limits them to an explicit technical
+ *          disclosure, preserving exact source coordinates and honest owner
+ *          availability without inventing a human identity.
+ *          v3.12.0-RESPONSIVE-OPERATING-WORKSPACE combines the
  *          38/62 independently scrollable desktop work/detail panes with
  *          full-workspace mobile detail and retains functional source triage.
  *          v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION provides clickable
@@ -1112,10 +1116,22 @@ export default function DailyAttentionWorkspace({
             <div><dt className="text-slate-400">Deadline</dt><dd>{dueLabel(selected.dueAt)}</dd></div>
             <div><dt className="text-slate-400">Source status</dt><dd>{sourceStatus(selected)}</dd></div>
             <div><dt className="text-slate-400">SLA</dt><dd>{selected.slaBreachAt ? dueLabel(selected.slaBreachAt) : 'Not supplied by source'}</dd></div>
-            <div><dt className="text-slate-400">Record</dt><dd className="break-all">{selected.sourceRecordId}</dd></div>
-            <div><dt className="text-slate-400">Requester</dt><dd className="break-all">{selected.requesterId || 'Not supplied by source'}</dd></div>
-            <div><dt className="text-slate-400">Assignee</dt><dd className="break-all">{selected.assigneeId || 'Not supplied by source'}</dd></div>
+            <div><dt className="text-slate-400">Owner</dt>
+              <dd>{selected.assigneeId
+                ? 'Principal recorded; name not supplied by source'
+                : 'Not supplied by source'}</dd>
+            </div>
           </dl>
+          <details aria-label="Technical source details"
+            className="mt-3 rounded-md border border-white/10 bg-black/10 px-3 py-2 text-xs">
+            <summary className="cursor-pointer font-semibold text-amber-200">Technical source details</summary>
+            <dl className="mt-3 grid grid-cols-[6rem_minmax(0,1fr)] gap-2 text-slate-300">
+              <dt>Source</dt><dd>{label(selected.sourceModule)}</dd>
+              <dt>Record</dt><dd className="break-all">{selected.sourceRecordId}</dd>
+              <dt>Requester</dt><dd className="break-all">{selected.requesterId || 'Not supplied by source'}</dd>
+              <dt>Assignee</dt><dd className="break-all">{selected.assigneeId || 'Not supplied by source'}</dd>
+            </dl>
+          </details>
           {canComplete && (
             <form className="mt-4 space-y-2 rounded-lg border border-amber-300/20 bg-[#102034] p-3"
               onSubmit={async (event) => {
@@ -1199,7 +1215,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.12.0-RESPONSIVE-OPERATING-WORKSPACE
+// VERSION: v3.13.0-SOURCE-IDENTITY-DISCLOSURE
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
