@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.8.0-RESPONSIVE-REAL-UI-GEOMETRY-CERT
+ * VERSION: v3.9.0-AUTHENTIC-WORK-VIEW-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v3.9.0-AUTHENTIC-WORK-VIEW-CERT exercises the actual
+ *          work-view select and priority select instead of removed tabs or
+ *          button groups, retaining authenticated EOS calendar navigation,
+ *          denial, source completion and durable Mongo readback assertions.
  * CHANGELOG: v3.8.0-RESPONSIVE-REAL-UI-GEOMETRY-CERT verifies the real
  *          38/62 responsive desktop work/detail split and the mobile detail-
  *          only state during asynchronous refresh; the authenticated source
@@ -461,7 +465,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(rail).toBeVisible();
 
       await triage.getByRole('button', {name: 'Close attention detail'}).click();
-      await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
+      await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
       const dates = panel.getByRole('group', {name: 'Choose work deadline date'});
       await expect(dates).toBeVisible();
       const agendaItem = panel.getByRole('article').filter({hasText: title});
@@ -480,13 +484,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       holdAttentionReads = true;
       await triage.getByRole('button', {name: 'Refresh', exact: true}).click();
       await expect.poll(() => heldProjectionReads.length).toBeGreaterThan(0);
-      await expect(panel.getByRole('tab', {name: 'Calendar', exact: true}))
-        .toHaveAttribute('aria-selected', 'true');
+      await expect(triage).toHaveAttribute('data-attention-mode', 'CALENDAR');
       releaseHeld(heldProjectionReads);
       holdProjectionReads = false;
       await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
-      await expect(panel.getByRole('tab', {name: 'Calendar', exact: true}))
-        .toHaveAttribute('aria-selected', 'true');
+      await expect(triage).toHaveAttribute('data-attention-mode', 'CALENDAR');
       releaseHeld(heldAttentionReads);
       holdAttentionReads = false;
       await expect(triage.getByTestId('attention-refresh-state')).toHaveCount(0);
@@ -510,8 +512,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const search = triage.getByRole('searchbox', {name: 'Search authorised work'});
       const initialRequestCount = attentionRequestUrls.length;
       holdAttentionReads = true;
-      const filterGroup = triage.getByRole('group', {name: 'Filter daily attention'});
-      await filterGroup.getByRole('button', {name: 'High priority', exact: true}).click();
+      await triage.getByRole('combobox', {name: 'Filter daily attention'}).selectOption('HIGH');
       await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
       const pendingLabel = triage.getByTestId('attention-refresh-state');
       await expect(pendingLabel).toHaveAttribute('data-attention-refresh-state', 'UPDATING');
@@ -580,16 +581,16 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await panel.getByRole('button', {name: 'Retry authorised read'}).click();
       await expect(triage).toBeVisible();
       await expect(triage.getByRole('button', {name: 'Inspect ' + title})).toBeVisible();
-      await expect(panel.getByRole('tab', {name: 'Work list'})).toHaveAttribute('aria-selected', 'true');
-      await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
+      await expect(triage).toHaveAttribute('data-attention-mode', 'LIST');
+      await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
       await page.keyboard.press('Escape');
       await expect(panel).toBeVisible();
-      await expect(panel.getByRole('tab', {name: 'Work list'})).toHaveAttribute('aria-selected', 'true');
+      await expect(triage).toHaveAttribute('data-attention-mode', 'LIST');
       await page.keyboard.press('Escape');
       await expect(panel).toHaveCount(0);
 
       await bell.click();
-      await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
+      await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
       await agendaItem.getByRole('button', {name: 'Review and complete in My Work'}).click();
       await expect(panel).toHaveCount(0);
       const workItem = page.getByRole('article').filter({hasText: title});
@@ -674,7 +675,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         `Open daily attention: ${afterAggregate.summary.active_count} active work items`,
       );
       await bell.click();
-      await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
+      await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
       await expect(agendaItem).toHaveCount(0);
 
       // Executive action parity: use the Daily Attention surface itself,
@@ -696,12 +697,12 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(scopedCommandAvailability.sourceActions.OPERATIONS).toContain('CREATE');
       expect(scopedCommandAvailability.sourceActions.OPERATIONS).toContain('COMPLETE');
 
-      await panel.getByRole('tab', {name: 'Work list', exact: true}).click();
+      await panel.getByRole('button', {name: 'Close calendar and return to work list'}).click();
       await panel.getByRole('button', {name: 'Create work', exact: true}).click();
       let createForm = panel.getByRole('form', {name: 'Create source work'});
       await expect(createForm).toBeVisible();
       await expect(createForm.getByRole('textbox', {name: 'Work title'})).toBeFocused();
-      await expect(triage.getByRole('group', {name: 'Filter daily attention'})).toHaveCount(0);
+      await expect(triage.getByRole('combobox', {name: 'Filter daily attention'})).toHaveCount(0);
       await expect(triage.getByRole('group', {name: 'Severity of loaded work'})).toHaveCount(0);
       await expect(triage.getByRole('searchbox', {name: 'Search authorised work'})).toHaveCount(0);
       await expect(triage.getByRole('group', {name: 'Verified current-source workload'})).toHaveCount(0);
@@ -710,7 +711,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(createForm.getByText('Enter a work title.', {exact: true})).toBeVisible();
       await expect(createForm.getByLabel('Work title')).toHaveAttribute('aria-invalid', 'true');
       await createForm.getByRole('button', {name: 'Cancel'}).click();
-      await expect(triage.getByRole('group', {name: 'Filter daily attention'})).toBeVisible();
+      await expect(triage.getByRole('combobox', {name: 'Filter daily attention'})).toBeVisible();
       await panel.getByRole('button', {name: 'Create work', exact: true}).click();
       createForm = panel.getByRole('form', {name: 'Create source work'});
       await createForm.getByLabel('Owning source').selectOption('CRM');
@@ -867,7 +868,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.8.0-RESPONSIVE-REAL-UI-GEOMETRY-CERT
+// VERSION: v3.9.0-AUTHENTIC-WORK-VIEW-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
