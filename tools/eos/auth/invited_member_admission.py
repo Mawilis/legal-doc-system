@@ -8,7 +8,10 @@ EPITOME: Consume a recipient-bound invitation, reuse current ACTIVE membership i
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/invited_member_admission.py
 COLLABORATION / OWNERSHIP: EOS auth orchestration.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.1.0-EXISTING-MEMBER-DELEGATED-ROLE-ADMISSION admits an additional\nrole for an already ACTIVE member without creating a duplicate membership;\ninvitation capability, tenant/principal match, source roles and CAS still apply.\nCHANGELOG: v1.0.0 establishes governed three-write admission.
+CHANGELOG: v1.1.0-EXISTING-MEMBER-DELEGATED-ROLE-ADMISSION admits an additional
+role for an already ACTIVE member without creating a duplicate membership;
+invitation capability, tenant/principal match, source roles and CAS still apply.
+CHANGELOG: v1.0.0 establishes governed three-write admission.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Raw capability is transient and never persisted.
 TENANT BOUNDARY: Invitation tenant and authenticated principal are exact.
@@ -94,6 +97,7 @@ def admit_invited_member(*, identity: SovereignIdentity, invitation_id: str, cap
 # ARTIFACT: invited_member_admission.py
 # VERSION: v1.1.0-EXISTING-MEMBER-DELEGATED-ROLE-ADMISSION
 # AUTHORITY BOUNDARY: invitation admission or existing-ACTIVE-member role addition; no grants without accepted capability
-# TENANT POSTURE: exact invitation/current membership tenant and recipient identity\n# FAIL-CLOSED POSTURE: inactive or conflicting memberships and role assignments deny
+# TENANT POSTURE: exact invitation/current membership tenant and recipient identity
+# FAIL-CLOSED POSTURE: inactive or conflicting memberships and role assignments deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
