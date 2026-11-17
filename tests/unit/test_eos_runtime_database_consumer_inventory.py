@@ -1,6 +1,10 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
-VERSION: v1.4.3-PYTHON-RETIRED-K8S-WORKLOAD-ABSENCE
+VERSION: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION
+CHANGELOG: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION categorizes
+ the separately authorized, __main__-guarded development Founder admission
+ operator as operator-only rather than a long-running EOS database consumer;
+ this does not authorize runtime use or weaken canonical client ownership.
 CHANGELOG: v1.4.3-PYTHON-RETIRED-K8S-WORKLOAD-ABSENCE asserts deployment, service, ingress, predictive deployment, and Kustomize workload manifests stay absent.
 CHANGELOG: v1.4.2-PYTHON-RETIRED-KUBERNETES-MANIFEST-ABSENCE asserts the retired server/k8s workload directory stays absent.
 CHANGELOG: v1.4.1-PYTHON-ENTRYPOINT-COMPLETE-SOVEREIGN-METADATA completes artifact privacy and authority posture without changing runtime ownership assertions.
@@ -9,7 +13,7 @@ AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves Kernel-owned persistence and physical Node backend retirement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_runtime_database_consumer_inventory.py
 COLLABORATION / OWNERSHIP: Kernel DB, registry and runtime certification owners.
-CERTIFICATION / UPDATE DATE: 2026-11-10
+CERTIFICATION / UPDATE DATE: 2026-11-17
 CHANGELOG: v1.1.0-PHYSICAL-NODE-RETIREMENT replaces obsolete retained-file assertions with required absence; database ownership assertions remain intact.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Repository blob inspection only; no live records or credentials are read.
@@ -57,6 +61,7 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/tenancy/retire_legacy_root_aliases.py",
     "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py",
     "tools/eos/mongodb/read_only_index_verifier.py",
+    "tools/eos/auth/founder_development_admission.py",
 }
 LEGACY_MIGRATION_HISTORY = (
     "server/scripts/finalize-migration.js",
@@ -143,6 +148,10 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
             runtime_calls.add(relative)
 
     assert runtime_calls == {CANONICAL_CONNECTOR, ISOLATED_AUDIT_SINK}
+    founder_cli = (ROOT / "tools/eos/auth/founder_development_admission.py").read_text(encoding="utf-8")
+    assert 'if __name__ == "__main__":' in founder_cli
+    assert "def main()" in founder_cli
+    assert "MongoClient(" in founder_cli
 
     audit_source = (ROOT / ISOLATED_AUDIT_SINK).read_text(encoding="utf-8")
     assert 'AUDIT_URI_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI"' in audit_source
@@ -253,7 +262,7 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     )
 
 # ARTIFACT: EOS Runtime Database Ownership Certificate
-# VERSION: v1.4.3-PYTHON-RETIRED-K8S-WORKLOAD-ABSENCE
+# VERSION: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION
 # AUTHORITY BOUNDARY: Offline repository ownership evidence.
 # TENANT POSTURE: No data access or mutation.
 # FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.
