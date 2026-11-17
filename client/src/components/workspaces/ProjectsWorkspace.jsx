@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.6.0-EXPANDED-DETAIL-SEMANTIC-SCOPE
+ * VERSION: v1.7.0-ALIGNED-CALENDAR-PROJECT-EXECUTION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.7.0-ALIGNED-CALENDAR-PROJECT-EXECUTION makes both
+ *            project panels a coordinated execution surface and provides
+ *            explicit native date picker actions in create and edit flows.
+ *            ISO date drafts and EOS revision authority remain unchanged.
  * CHANGELOG: v1.6.0-EXPANDED-DETAIL-SEMANTIC-SCOPE expands the verified
  *            list before selection, provides a detail-led split after selection,
  *            formats escaped and same-line Markdown safely in collapsed and
@@ -86,6 +90,41 @@ function ProjectSummary({ value, expanded, onToggle }) {
     {long && <button type="button" className="wp-summary-toggle" aria-expanded={expanded}
       onClick={onToggle}>{expanded ? 'Collapse project scope' : 'Read full project scope'}</button>}
   </section>;
+}
+
+/**
+ * @description Native, accessible calendar selection for EOS date-only fields.
+ * @authority The chosen YYYY-MM-DD value remains a draft until EOS validates
+ * and persists the revision. No date is generated or silently defaulted.
+ */
+function ProjectDateField({ label, value, onChange, disabled = false }) {
+  const pickerRef = useRef(null);
+  const openCalendar = () => {
+    const field = pickerRef.current;
+    if (!field || disabled) return;
+    if (typeof field.showPicker === 'function') {
+      try {
+        field.showPicker();
+        return;
+      } catch {
+        // Browser support varies; focusing retains the native date control.
+      }
+    }
+    field.focus();
+  };
+  return <label className="wp-date-field">
+    <span>{label}</span>
+    <span className="wp-date-wrap">
+      <input ref={pickerRef} type="date" value={value || ''} disabled={disabled}
+        onChange={event => onChange(event.target.value)}
+        aria-label={label + ' date'} />
+      <button type="button" className="wp-calendar-trigger"
+        aria-label={'Choose ' + label.toLowerCase() + ' date'}
+        disabled={disabled} onClick={openCalendar}>
+        <CalendarDays size={17} aria-hidden="true"/>
+      </button>
+    </span>
+  </label>;
 }
 
 const PROJECT_STATUSES = ['planned', 'active', 'on_hold', 'done', 'cancelled'];
@@ -537,7 +576,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               <label className="block text-sm font-semibold text-slate-800">Project name<input required maxLength={180} value={draft.name} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, name: event.target.value }))} aria-invalid={commandError === 'PROJECT_NAME_REQUIRED' || commandError === 'PROJECT_INPUT_INVALID'} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/>{commandError === 'PROJECT_NAME_REQUIRED' && <span className="mt-1 block text-xs font-normal text-rose-700">Enter a project name.</span>}{commandError === 'PROJECT_INPUT_INVALID' && <span className="mt-1 block text-xs font-normal text-rose-700">Check the project name and date fields. Your draft is preserved.</span>}</label>
               <label className="block text-sm font-semibold text-slate-800">Code <span className="font-normal text-slate-500">(optional)</span><input maxLength={80} value={draft.code} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, code: event.target.value }))} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/></label>
               <label className="block text-sm font-semibold text-slate-800">Summary <span className="font-normal text-slate-500">(optional)</span><textarea maxLength={4000} rows={3} value={draft.summary} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, summary: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/></label>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="text-sm font-semibold text-slate-800">Start date<input type="date" value={draft.start_date} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, start_date: event.target.value }))} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal"/></label><label className="text-sm font-semibold text-slate-800">Target date<input type="date" value={draft.target_date} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, target_date: event.target.value }))} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal"/></label></div>
+              <div className="wp-form-grid">
+                <ProjectDateField label="Start" value={draft.start_date} disabled={commandState === 'PENDING'}
+                  onChange={value => { createReplay.current = { fingerprint: '', key: null }; setDraft(current => ({ ...current, start_date: value })); }}/>
+                <ProjectDateField label="Target" value={draft.target_date} disabled={commandState === 'PENDING'}
+                  onChange={value => { createReplay.current = { fingerprint: '', key: null }; setDraft(current => ({ ...current, target_date: value })); }}/>
+              </div>
               {commandError && !['PROJECT_NAME_REQUIRED', 'PROJECT_INPUT_INVALID'].includes(commandError) && <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this project command. Your draft remains available.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'This tenant has no active Projects entitlement. Your draft remains available.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The source reported a conflict. Refresh before retrying.' : 'EOS could not confirm this command. Your draft remains available; retry after checking the source.'}</p>}
               <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-3"><button type="button" onClick={() => { setMode('LIST'); setCommandError(''); }} disabled={commandState === 'PENDING'} className="min-h-10 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 disabled:opacity-50">Cancel</button><button type="submit" disabled={commandState === 'PENDING'} className="wp-button wp-button-primary min-h-10 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 disabled:opacity-60">{commandState === 'PENDING' ? 'Saving…' : 'Save project to EOS'}</button></div>
             </form>
@@ -555,7 +599,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           {detailState === 'READY' && detail && <div className="wp-detail-inner">
             <dl className="wp-facts mb-4 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-slate-200 pb-4 text-sm"><dt className="text-slate-500">Code</dt><dd className="break-words text-slate-900">{detail.project.code || 'Not recorded'}</dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are unassigned until separately authorized assignment workflows are established.</p>
             {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
-            <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code<input maxLength={80} value={edit?.code || ''} onChange={(event) => setEdit({ ...edit, code: event.target.value })} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid grid grid-cols-2 gap-2"><label className="text-xs font-semibold text-slate-700">Start<input type="date" value={edit?.start_date || ''} onChange={(event) => setEdit({ ...edit, start_date: event.target.value })} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-2 text-sm font-normal"/></label><label className="text-xs font-semibold text-slate-700">Target<input type="date" value={edit?.target_date || ''} onChange={(event) => setEdit({ ...edit, target_date: event.target.value })} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-2 text-sm font-normal"/></label></div><button type="submit" disabled={commandState === 'PENDING'} className="wp-button min-h-10 w-full rounded-lg border border-blue-700 px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">{commandState === 'PENDING' ? 'Saving…' : 'Save revision'}</button></form>
+            <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code<input maxLength={80} value={edit?.code || ''} onChange={(event) => setEdit({ ...edit, code: event.target.value })} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
+                <ProjectDateField label="Start" value={edit?.start_date || ''} disabled={commandState === 'PENDING'}
+                  onChange={value => setEdit(current => ({ ...current, start_date: value }))}/>
+                <ProjectDateField label="Target" value={edit?.target_date || ''} disabled={commandState === 'PENDING'}
+                  onChange={value => setEdit(current => ({ ...current, target_date: value }))}/>
+              </div><button type="submit" disabled={commandState === 'PENDING'} className="wp-button min-h-10 w-full rounded-lg border border-blue-700 px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">{commandState === 'PENDING' ? 'Saving…' : 'Save revision'}</button></form>
             <div className="wp-actions mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><label className="sr-only" htmlFor="project-status">Project status</label><select id="project-status" value={detail.project.status} disabled={commandState === 'PENDING'} onChange={(event) => void transitionStatus(event.target.value)} className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm capitalize">{PROJECT_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select><button type="button" disabled={commandState === 'PENDING' || Boolean(detail.project.archived_at)} onClick={() => void archiveProject()} className="wp-button wp-button-danger inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-300 px-3 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-50"><Archive size={14}/> Archive</button></div>
             {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. The list was reconciled from EOS.' : commandError === 'PROJECT_INPUT_INVALID' ? 'The supplied project fields are invalid.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
             {commandState === 'CONFIRMED' && <p role="status" className="mt-3 text-sm font-medium text-emerald-800">EOS confirmed the project change and returned persisted state.</p>}
@@ -568,7 +617,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.6.0-EXPANDED-DETAIL-SEMANTIC-SCOPE
+// VERSION: v1.7.0-ALIGNED-CALENDAR-PROJECT-EXECUTION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
