@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT
+ * VERSION: v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT verifies
+ *            one-click legacy project-code generation, revision guarding,
+ *            independent EOS list/detail confirmation, and no duplicate action.
  * CHANGELOG: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT verifies
  *            visible Start and Target native calendar picker actions
  *            and ISO date-only values without premature EOS mutation.
@@ -183,6 +186,35 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     }
   });
 
+  it('generates a code for an existing legacy project and verifies EOS list/detail readback', async () => {
+    let persisted = project({ code: null });
+    const generated = 'PRJ-' + PROJECT_ID.slice(-16).toUpperCase();
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      throw new Error('Unexpected EOS GET');
+    });
+    api.patch.mockImplementation(async (path, body) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}`);
+      expect(body).toEqual({ expected_revision: 1, code: generated });
+      persisted = project({ ...persisted, code: generated, revision: 2 });
+      return { data: result(persisted) };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="code-generation-cert"/>);
+    await screen.findByText('1 shown · 1 verified');
+    fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
+    expect(await screen.findByText('Not recorded')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Generate and save code' }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText(generated)).toBeVisible());
+    expect(screen.getByText('2')).toBeVisible();
+    expect(api.get.mock.calls.filter(([path]) => path === '/projects').length).toBeGreaterThan(1);
+    expect(api.get.mock.calls.filter(([path]) => path === `/projects/${PROJECT_ID}`).length).toBeGreaterThan(1);
+    expect(screen.queryByRole('button', { name: 'Generate and save code' })).not.toBeInTheDocument();
+  });
+
   it('creates, reads, updates, changes status, archives and reads back through EOS routes', async () => {
     let current = null;
     let events = [];
@@ -329,7 +361,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT
+ * VERSION: v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
