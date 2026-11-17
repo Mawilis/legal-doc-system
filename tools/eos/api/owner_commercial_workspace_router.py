@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace HTTP Router
-VERSION: v1.4.0-OWNER-CANCELLATION-HTTP
+VERSION: v1.5.0-DRAFT-PROGRESS-HTTP
 AUTHORITY: WILSY OS Python EOS institutional CRM API.
 EPITOME: Expose source-owned CRM owner work reads and commands through exact
          tenant authorization, entitlement admission and Mongo transactions.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/ow
 COLLABORATION / OWNERSHIP: Tenant IAM dependency, CRM owner source service,
          tenant-scoped work registry and Python EOS API gateway.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.5.0-DRAFT-PROGRESS-HTTP adds exact-owner draft listing
+           under CRM READ and audited Draft/Open/In Progress status changes
+           under CRM UPDATE, never elevating IAM or exposing foreign drafts.
 CHANGELOG: v1.4.0-OWNER-CANCELLATION-HTTP adds a distinct terminal
            cancel command, actor-owned and current CRM UPDATE authorized,
            with strict reason, expected revision and idempotency key.
@@ -52,7 +55,7 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization, TenantAuthorizationContext,
 )
-from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority, OwnerWorkItemError
+from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority, OwnerWorkStatus, OwnerWorkItemError
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
     COLLECTION, EVENTS_COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError, OwnerWorkRegistryConflict, OwnerWorkRegistryNotFound, ensure_indexes,
 )
@@ -78,6 +81,13 @@ _UPDATE = RequireTenantAuthorization("crm:work_item:update", "crm_work_item_upda
 class OwnerWorkCompleteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     completion_note: str = Field(min_length=1, max_length=1000)
+
+
+class OwnerWorkStatusRequest(BaseModel):
+    """Exact saved-work lifecycle command; no client-selected actor or tenant."""
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["DRAFT", "OPEN", "IN_PROGRESS"]
+    expected_updated_at: datetime
 
 
 class OwnerWorkCancelRequest(BaseModel):
@@ -225,6 +235,48 @@ async def create_owner_work_item(
     return _transaction(create)
 
 
+@router.get("/drafts")
+async def read_owner_work_drafts(
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, object]:
+    """Read the current authenticated principal's saved drafts, not active work."""
+    def read(service: OwnerCommercialWorkspaceService, session: Any):
+        return {
+            "schema": "WILSY-OWNER-COMMERCIAL-DRAFTS/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "items": list(service.drafts_for_owner(
+                tenant_id=context.tenant_id,
+                owner_principal_id=context.identity.identity_id,
+                session=session,
+            )),
+        }
+    return _transaction(read)
+
+
+@router.post("/work-items/{work_item_id}/status")
+async def transition_owner_work_status(
+    work_item_id: str,
+    body: OwnerWorkStatusRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Transition own Draft/Open/In Progress work under current CRM UPDATE IAM."""
+    if body.expected_updated_at.tzinfo is None or body.expected_updated_at.utcoffset() is None:
+        raise HTTPException(status_code=422, detail="WORK_TIMESTAMP_MUST_BE_TIMEZONE_AWARE")
+
+    def transition(service: OwnerCommercialWorkspaceService, session: Any):
+        return service.transition_status(
+            tenant_id=context.tenant_id, work_item_id=work_item_id,
+            actor_principal_id=context.identity.identity_id,
+            target_status=OwnerWorkStatus(body.status),
+            expected_updated_at=body.expected_updated_at,
+            idempotency_key=idempotency_key,
+            now=datetime.now(timezone.utc), session=session,
+        ).to_dict()
+    return _transaction(transition)
+
+
 @router.get("/work-items/{work_item_id}")
 async def read_owner_work_item(
     work_item_id: str,
@@ -350,10 +402,10 @@ async def complete_owner_work_item(
     return _transaction(complete)
 
 
-__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCancelRequest", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item", "cancel_owner_work_item"]
+__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCancelRequest", "OwnerWorkStatusRequest", "read_owner_work_drafts", "transition_owner_work_status", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item", "cancel_owner_work_item"]
 
 # ARTIFACT: tools/eos/api/owner_commercial_workspace_router.py
-# VERSION: v1.4.0-OWNER-CANCELLATION-HTTP
+# VERSION: v1.5.0-DRAFT-PROGRESS-HTTP
 # AUTHORITY BOUNDARY: Existing CRM read IAM and owner source entitlement.
 # TENANT POSTURE: Authorized tenant only; foreign work is indistinguishable from absent.
 # FAIL-CLOSED POSTURE: 401/403/404/503 remain distinct without fabricated evidence.
