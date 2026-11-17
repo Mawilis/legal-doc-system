@@ -5,17 +5,20 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT
+ * VERSION: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT proves
+ * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT asserts a
+ *            real owner-scoped EOS Draft count independently of the active
+ *            queue, and rejects false zero when source admission fails.
+ * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT proves
  *            visible verified overdue, Open and In Progress filter
  *            counts, an owner-draft destination and filtered work rows.
- * CHANGELOG: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT accepts a single
+ * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT accepts a single
  *            trustworthy verified active count when reads are shared across
  *            the Headquarters and Daily Attention coordinator, while still
  *            requiring the real source row and independent KPI evidence.
@@ -121,6 +124,18 @@ vi.mock('../../services/api.js', () => ({
       if (path === '/my-work') return Promise.resolve({
         data: workProjection(),
       });
+      if (path === '/crm/owner-workspace/drafts') return Promise.resolve({ data: {
+        schema: 'WILSY-OWNER-COMMERCIAL-DRAFTS/V1',
+        tenant_id: exactTenant,
+        principal_id: exactPrincipal,
+        items: [{
+          schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+          tenant_id: exactTenant,
+          owner_principal_id: exactPrincipal,
+          work_item_id: 'HQ-DRAFT-1', title: 'Unpublished CRM follow-up',
+          status: 'DRAFT',
+        }],
+      } });
       if (path === '/hr/headcount-requisitions') return Promise.resolve({
         data: {
           schema: 'WILSY-HEADCOUNT-REQUISITIONS/V1',
@@ -302,12 +317,25 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(screen.getByRole('button', { name: 'Overdue (1)' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open (3)' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'In Progress (0)' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Saved drafts' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Saved drafts (1)' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Overdue (1)' }));
     expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open authorized record: Ship work release' })).toBeNull();
   });
 
+
+
+  it('never presents zero saved drafts when separate exact-owner EOS evidence is unavailable', async () => {
+    const previous = api.get.getMockImplementation();
+    api.get.mockImplementation((path, config) => path === '/crm/owner-workspace/drafts'
+      ? Promise.reject(Object.assign(new Error('FORBIDDEN'), { response: { status: 403 } }))
+      : previous(path, config));
+    try {
+      renderHeadquarters();
+      expect(await screen.findByRole('button', { name: 'Saved drafts count unavailable' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Saved drafts (0)' })).toBeNull();
+    } finally { api.get.mockImplementation(previous); }
+  });
 
   it('shows missing Projects entitlement without substituting a zero count', async () => {
     const previous = api.get.getMockImplementation();
@@ -899,7 +927,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT
+ * VERSION: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
