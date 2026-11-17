@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Work Registry Regression Certificate
-VERSION: v1.3.0-DRAFT-PROGRESS-STATUS-CERT
+VERSION: v1.4.0-DIRECT-DRAFT-CREATION-CERT
 AUTHORITY: WILSY OS source-owned CRM persistence certification.
 EPITOME: Verify exact-tenant create/replay, completion compare-and-set,
          persisted readback and absence of foreign-tenant disclosure.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: CRM work item domain and registry; Python EOS
          owner workspace service and authenticated API.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.4.0-DIRECT-DRAFT-CREATION-CERT ensures new drafts
+           persist without entering active attention and cannot complete
+           before an independently audited activation transition.
 CHANGELOG: v1.3.0-DRAFT-PROGRESS-STATUS-CERT verifies exact-owner
            persisted draft exclusion and retrieval, In Progress admission,
            immutable audit replay and foreign/stale/terminal denials.
@@ -386,8 +389,33 @@ def test_owner_status_denies_foreign_stale_and_terminal_commands():
     assert not events.rows
 
 
+
+def test_direct_saved_draft_creation_never_enters_active_queue_or_completes():
+    """A new draft is durable but cannot masquerade as actionable work."""
+    records, events = Collection(), Collection()
+    store = OwnerCommercialWorkRegistry(records, events)
+    draft = OwnerCommercialWorkItem.create(
+        tenant_id=TENANT, title="Unpublished commercial work",
+        owner_principal_id="principal-1", now=NOW,
+        initial_status=OwnerWorkStatus.DRAFT,
+    )
+    session = object()
+    stored = store.create_or_replay(draft, idempotency_key="create-draft", session=session)
+    assert stored.status is OwnerWorkStatus.DRAFT
+    assert store.daily_queue(tenant_id=TENANT, now=NOW, session=session) == ()
+    assert store.drafts_for_owner(
+        tenant_id=TENANT, owner_principal_id="principal-1", session=session,
+    ) == (draft,)
+    with pytest.raises(OwnerWorkRegistryConflict, match="DRAFT_STATE"):
+        store.complete(tenant_id=TENANT, work_item_id=draft.work_item_id,
+                       completion_note="Not published", now=NOW, session=session)
+    assert store.get(
+        tenant_id=TENANT, work_item_id=draft.work_item_id, session=session,
+    ).status is OwnerWorkStatus.DRAFT
+
+
 # ARTIFACT: tests/unit/test_owner_commercial_work_registry.py
-# VERSION: v1.3.0-DRAFT-PROGRESS-STATUS-CERT
+# VERSION: v1.4.0-DIRECT-DRAFT-CREATION-CERT
 # AUTHORITY BOUNDARY: Synthetic registry evidence only; no IAM grants.
 # TENANT POSTURE: Exact tenant, no cross-tenant existence disclosure.
 # FAIL-CLOSED POSTURE: Foreign records are indistinguishable from absent.
