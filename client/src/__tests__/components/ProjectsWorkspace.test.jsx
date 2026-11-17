@@ -162,7 +162,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       const { container } = render(<ProjectsWorkspace tenantId={TENANT}
         principalId={PRINCIPAL} sessionScope="date-picker-cert"/>);
       await screen.findByText('1 shown · 1 verified');
-      fireEvent.click(screen.getByRole('button', { name: 'Persisted roadmap' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Scheduled milestone' }));
       await screen.findByRole('heading', { name: 'Scheduled milestone' });
       expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
       const start = screen.getByLabelText('Start date');
