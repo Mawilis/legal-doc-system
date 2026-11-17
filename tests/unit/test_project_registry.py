@@ -1,12 +1,14 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.0.1-TENANT-PROJECT-REGISTRY-TESTS
+VERSION: v1.0.2-BSON-UTC-EVENT-REGRESSION
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_registry.py
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
-CERTIFICATION / UPDATE DATE: 2026-11-16.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+v1.0.2-BSON-UTC-EVENT-REGRESSION — Proves default PyMongo BSON UTC
+  event readback and strict rejection of malformed event timestamps.
 v1.0.1-TENANT-PROJECT-REGISTRY-TESTS — Governance metadata synchronized with unchanged executable behavior.
   v1.0.1 fixes the in-memory PyMongo cursor sort overload; assertions and
   production behavior remain unchanged.
@@ -226,6 +228,29 @@ def test_event_read_is_tenant_scoped_and_returns_documented_fields(registry) -> 
     assert events.last_query == {"tenant_id": "tenant-a", "project_id": "project-001"}
 
 
+def test_event_readback_accepts_pymongo_default_naive_bson_utc(registry) -> None:
+    """Mongo BSON UTC decoded with tz_aware=False must remain valid evidence."""
+    store, _, events, session = registry
+    _create(store, _project(), session, "create-1")
+    # Mimic PyMongo's default BSON datetime decoder, not caller command input.
+    events.rows[0]["occurred_at"] = NOW.replace(tzinfo=None)
+    result = store.list_events(tenant_id="tenant-a", project_id="project-001", session=session)
+    assert len(result) == 1
+    assert result[0]["occurred_at"] == NOW
+    assert result[0]["occurred_at"].tzinfo is timezone.utc
+    # The stored record itself remains immutable.
+    assert events.rows[0]["occurred_at"].tzinfo is None
+
+
+@pytest.mark.parametrize("bad", [None, "2026-11-16T12:00:00Z", 42])
+def test_event_readback_rejects_malformed_timestamp(registry, bad) -> None:
+    store, _, events, session = registry
+    _create(store, _project(), session, "create-1")
+    events.rows[0]["occurred_at"] = bad
+    with pytest.raises(ProjectRegistryError, match="PROJECT_EVENT_TIMESTAMP_INVALID"):
+        store.list_events(tenant_id="tenant-a", project_id="project-001", session=session)
+
+
 def test_missing_transaction_session_is_rejected(registry) -> None:
     store, _, _, _ = registry
     with pytest.raises(ProjectRegistryError, match="SESSION_REQUIRED"):
@@ -247,7 +272,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.0.1-TENANT-PROJECT-REGISTRY-TESTS
+# VERSION: v1.0.2-BSON-UTC-EVENT-REGRESSION
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
