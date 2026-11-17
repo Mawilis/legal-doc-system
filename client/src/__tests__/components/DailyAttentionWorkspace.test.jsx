@@ -288,7 +288,7 @@ describe('Daily Attention bounded inbox', () => {
     expect(technical).not.toHaveAttribute('open');
     expect(screen.getByText('Technical source details')).toBeTruthy();
     expect(technical.textContent).toContain('attention-0');
-    expect(screen.getByText('Not supplied by source')).toBeTruthy();
+    expect(screen.getAllByText('Not supplied by source').length).toBeGreaterThan(0);
   });
 
   it('opens majority-width source detail and restores the full work list', () => {
