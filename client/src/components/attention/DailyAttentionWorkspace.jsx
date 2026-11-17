@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.10.0-RECEIPT-RECONCILIATION-CONTROL
+ * VERSION: v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -22,7 +22,10 @@
  *          services own transactions, replay evidence and audit.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  * FAIL-CLOSED POSTURE: Missing source coverage is not interpreted as clear.
- * CHANGELOG: v3.10.0-RECEIPT-RECONCILIATION-CONTROL displays an accepted
+ * CHANGELOG: v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION provides clickable
+ *          EOS-backed workload filters, compact absent-source warning,
+ *          optional bulk-selection controls and detail-open row density.
+ *          v3.10.0-RECEIPT-RECONCILIATION-CONTROL displays an accepted
  *          completion note read-only and offers a readback-only reconciliation
  *          action while EOS receipt verification is pending.
  *          v3.9.0-READBACK-SUCCESS-FEEDBACK announces completion only
@@ -298,6 +301,7 @@ export default function DailyAttentionWorkspace({
   const [selectedId, setSelectedId] = useState(null);
   const completionFocusIdRef = useRef(null);
   const [checkedIds, setCheckedIds] = useState([]);
+  const [bulkSelectionMode, setBulkSelectionMode] = useState(false);
   const [completionNote, setCompletionNote] = useState('');
   const [completionNotice, setCompletionNotice] = useState('');
   const [bulkNote, setBulkNote] = useState('');
@@ -533,7 +537,7 @@ export default function DailyAttentionWorkspace({
       return;
     }
     if (mode !== 'LIST' || page.length === 0) return;
-    if (event.key === 'x' && selected) {
+    if (event.key === 'x' && selected && bulkSelectionMode) {
       event.preventDefault();
       setCheckedIds((before) => before.includes(selected.id)
         ? before.filter((id) => id !== selected.id) : [...before, selected.id]);
@@ -640,16 +644,23 @@ export default function DailyAttentionWorkspace({
         {mode === 'LIST' && <div className="mt-2 flex flex-wrap gap-2 text-[10px]" aria-label={resultsUpdating || resultsUnavailable
           ? 'Last verified current-source workload' : 'Verified current-source workload'}>
           {[
-            ['Active', feed.counts.active], ['Overdue', feed.counts.overdue],
-            ['Due today', feed.counts.dueToday], ['High priority', feed.counts.highPriority],
-          ].map(([name, count]) => (
-            <span key={name} className={'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 ' +
-              (name === 'Overdue' && count > 0
-                ? 'border-rose-300/30 bg-rose-300/[0.05] text-rose-200'
-                : 'border-white/10 bg-white/[0.025] text-slate-300')}>
-              <span className="text-slate-400">{name}</span>
+            ['ALL', 'Active', feed.counts.active],
+            ['OVERDUE', 'Overdue', feed.counts.overdue],
+            ['TODAY', 'Due today', feed.counts.dueToday],
+            ['HIGH', 'High priority', feed.counts.highPriority],
+          ].map(([id, name, count]) => (
+            <button key={id} type="button"
+              aria-label={name + ': ' + count}
+              aria-pressed={filter === id}
+              onClick={() => setFilter(id)}
+              className={'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ' +
+                (filter === id ? 'ring-1 ring-inset ring-amber-300/65 ' : '') +
+                (name === 'Overdue' && count > 0
+                  ? 'border-rose-300/50 bg-rose-300/[0.08] text-rose-100'
+                  : 'border-white/15 bg-white/[0.035] text-slate-200 hover:bg-white/[0.08]')}>
+              <span>{name}</span>
               <strong className="font-semibold tabular-nums">{count}</strong>
-            </span>
+            </button>
           ))}
           {(resultsUpdating || resultsUnavailable) && <span className="self-center text-amber-100/80">Last verified</span>}
         </div>}
@@ -686,6 +697,16 @@ export default function DailyAttentionWorkspace({
             className="h-8 max-w-[160px] rounded-md border border-white/15 bg-[#0a1628] px-2 text-[10px] text-slate-200">
             {SORT_MODES.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
+          {page.length > 0 && <button type="button"
+            aria-label={bulkSelectionMode ? 'Exit selection mode' : 'Select work'}
+            aria-pressed={bulkSelectionMode}
+            onClick={() => {
+              if (bulkSelectionMode) setCheckedIds([]);
+              setBulkSelectionMode((active) => !active);
+            }}
+            className="h-8 rounded-md border border-white/15 bg-[#0a1628] px-3 text-[10px] font-semibold text-amber-100 hover:bg-white/10">
+            {bulkSelectionMode ? 'Exit selection' : 'Select work'}
+          </button>}
         </div>}
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]">
           <button type="button" onClick={() => setShowSourceDetails((value) => !value)}
@@ -732,7 +753,7 @@ export default function DailyAttentionWorkspace({
             </button>
           </section>
         )}
-        {missing.length > 0 && showSourceDetails && <p className="mt-2 px-2 text-[10px] leading-4 text-amber-100/75">
+        {missing.length > 0 && !showSourceDetails && <p className="mt-1 px-2 text-[10px] leading-4 text-amber-100/75">
           Not represented in this session: {missing.map(label).join(', ')}. No module access or cleared status is inferred.
         </p>}
           </>
@@ -927,7 +948,7 @@ export default function DailyAttentionWorkspace({
             <section aria-label={resultsUpdating || resultsUnavailable
               ? 'Last verified attention inbox' : 'Attention inbox'}
               data-attention-verified-results="true">
-              <div className="sticky top-0 z-[1] flex items-center justify-between gap-2 border-b border-white/10 bg-[#101d32] px-3 py-1.5 text-[11px]">
+              {bulkSelectionMode && <div className="sticky top-0 z-[1] flex items-center justify-between gap-2 border-b border-white/10 bg-[#101d32] px-3 py-1.5 text-[11px]">
                 <label className="inline-flex items-center gap-2 text-slate-300">
                   <input type="checkbox" aria-label="Select all loaded work"
                     checked={checkedItems.length === page.length && page.length > 0}
@@ -940,7 +961,7 @@ export default function DailyAttentionWorkspace({
                   <button type="button" onClick={() => setCheckedIds([])}
                     className="text-amber-200 hover:text-amber-100">Clear selection</button>
                 )}
-              </div>
+              </div>}
               <div ref={inboxRef} role="list" data-attention-inbox-window="true"
                 style={{height: page.length * ATTENTION_ROW_HEIGHT, position: 'relative'}}>
                 {visibleItems.map(({item, index}) => (
@@ -951,12 +972,12 @@ export default function DailyAttentionWorkspace({
                     className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-0.5 transition-colors ' +
                       severityFor(item).row + (selectedId === item.id
                         ? ' ring-1 ring-inset ring-amber-300/60' : ' hover:bg-white/[0.06]')}>
-                    <input type="checkbox" aria-label={'Select ' + item.title}
+                    {bulkSelectionMode && <input type="checkbox" aria-label={'Select ' + item.title}
                       checked={checkedSet.has(item.id)}
                       onChange={(event) => setCheckedIds((before) => event.target.checked
                         ? [...before.filter((id) => id !== item.id), item.id]
                         : before.filter((id) => id !== item.id))}
-                      className="h-4 w-4 shrink-0 accent-amber-300"/>
+                      className="h-4 w-4 shrink-0 accent-amber-300"/>}
                     <span className="hidden w-14 shrink-0 rounded-md border border-white/10 bg-white/[0.035] px-1.5 py-1 text-center text-[10px] font-semibold text-slate-300 sm:block">
                       {label(item.sourceModule)}
                     </span>
@@ -976,7 +997,8 @@ export default function DailyAttentionWorkspace({
                         <span>{item.summary || label(item.sourceModule)}</span>
                       </span>
                     </button>
-                    <span className={'hidden w-[112px] shrink-0 truncate text-right text-[10px] sm:block ' +
+                    <span className={'hidden w-[112px] shrink-0 truncate text-right text-[10px] ' +
+                      (selected ? '2xl:block ' : 'sm:block ') +
                       (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}
                       title={dueLabel(item.dueAt)}>
                       {dueLabel(item.dueAt)}
@@ -1011,7 +1033,7 @@ export default function DailyAttentionWorkspace({
             Page verification failed. Refresh to reload EOS source truth.</p>}
           </div>
           {bulkResult && <p role="status" className="border-t border-emerald-300/20 bg-[#12302d] px-3 py-2 text-xs text-emerald-100">{bulkResult}</p>}
-          {checkedItems.length > 0 && (
+          {bulkSelectionMode && checkedItems.length > 0 && (
             <div className="shrink-0 space-y-2 border-t border-amber-300/20 bg-[#15263e] px-3 py-2 text-[11px]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-amber-100">
@@ -1170,7 +1192,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.10.0-RECEIPT-RECONCILIATION-CONTROL
+// VERSION: v3.11.0-FUNCTIONAL-TRIAGE-AND-EXPLICIT-SELECTION
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
