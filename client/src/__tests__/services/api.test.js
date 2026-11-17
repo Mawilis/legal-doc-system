@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.2.0-COMPANY-DOCUMENT-TRANSPORT-CERT
+ * VERSION: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.2.0-COMPANY-DOCUMENT-TRANSPORT-CERT verifies six exact
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies
+ *            no extra timestamp fields in CRM status/cancel POSTs while
+ *            cryptographic forensic headers remain intact.
+ * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies six exact
  *            company-document mutation paths retain caller fields and forensic headers.
  * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
  *            covenant status, normal dashboard backoff and 403 separation.
@@ -269,6 +272,14 @@ describe('api.js – Sovereign HTTP Client', () => {
         {
           url: '/crm/owner-workspace/work-items/work-1/complete',
           data: { completion_note: 'Completed by the assigned owner.' },
+        },
+        {
+          url: '/crm/owner-workspace/work-items/work-1/status',
+          data: { status: 'DRAFT', expected_updated_at: '2026-11-17T10:13:00Z' },
+        },
+        {
+          url: '/crm/owner-workspace/work-items/work-1/cancel',
+          data: { reason: 'Withdrawn by owner', expected_updated_at: '2026-11-17T10:13:00Z' },
         },
         ...['operations', 'intelligence'].flatMap(module => [
           {
@@ -538,7 +549,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.2.0-COMPANY-DOCUMENT-TRANSPORT-CERT
+ * VERSION: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.
