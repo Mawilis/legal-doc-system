@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Source-Owned Work Registry
-VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION
+VERSION: v1.3.0-AUDITED-DRAFT-PROGRESS-TRANSITIONS
 AUTHORITY: Python EOS CRM persistence under caller-owned Mongo transactions.
 EPITOME: Persist exact-tenant commercial task creation, completion and an
          independently permission-gated edit with immutable audit evidence.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/pe
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceService, owner CRM router,
          strict OwnerCommercialWorkItem domain and active session IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.3.0-AUDITED-DRAFT-PROGRESS-TRANSITIONS adds owner-only
+           status CAS and immutable edit events for Draft/Open/In Progress,
+           plus exact-owner draft retrieval, with terminal/foreign denials.
 CHANGELOG: v1.2.0-AUDITED-OWNER-CANCELLATION adds an exact-tenant,
            actor-owned, expected-revision cancel transition with immutable
            before/after audit evidence and idempotency in the same Mongo
@@ -417,6 +420,112 @@ class OwnerCommercialWorkRegistry:
         except PyMongoError as error:
             raise OwnerWorkRegistryError("OWNER_WORK_CANCELLATION_UNAVAILABLE") from error
 
+
+    def transition_status(
+        self, *, tenant_id: str, work_item_id: str,
+        actor_principal_id: str, target_status: OwnerWorkStatus,
+        expected_updated_at: datetime, idempotency_key: str,
+        now: datetime, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Persist owner-only Draft/Open/In Progress changes with exact audit.
+
+        Draft is excluded from the active attention projection. A transition
+        uses the same caller-owned transaction for source CAS and an immutable
+        event, and is never a shortcut to terminal completion or cancellation.
+        """
+        tenant = _exact(tenant_id, "OWNER_WORK_TENANT_INVALID")
+        identity = _exact(work_item_id, "OWNER_WORK_ID_INVALID")
+        actor = _exact(actor_principal_id, "OWNER_WORK_ACTOR_INVALID")
+        key = _exact(idempotency_key, "OWNER_WORK_IDEMPOTENCY_KEY_INVALID")
+        caller_session = _session(session)
+        allowed = frozenset((OwnerWorkStatus.DRAFT, OwnerWorkStatus.OPEN, OwnerWorkStatus.IN_PROGRESS))
+        if not isinstance(target_status, OwnerWorkStatus) or target_status not in allowed:
+            raise OwnerWorkItemError("OWNER_WORK_STATUS_INVALID")
+        for instant in (expected_updated_at, now):
+            if not isinstance(instant, datetime) or instant.tzinfo is None or instant.utcoffset() is None:
+                raise OwnerWorkItemError("WORK_TIMESTAMP_INVALID")
+        if self._events is None:
+            raise OwnerWorkRegistryError("OWNER_WORK_AUDIT_STORE_REQUIRED")
+        expected = expected_updated_at.astimezone(timezone.utc)
+        recorded = now.astimezone(timezone.utc)
+        command = {
+            "operation": "STATUS", "tenant_id": tenant, "work_item_id": identity,
+            "actor_principal_id": actor, "target_status": target_status.value,
+            "expected_updated_at": expected.isoformat(),
+        }
+        fingerprint = sha3_512(json.dumps(
+            command, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        ).encode("utf-8")).hexdigest()
+        coordinate = {
+            "tenant_id": tenant, "work_item_id": identity, "idempotency_key": key,
+        }
+        try:
+            prior = self._events.find_one(coordinate, session=caller_session)
+            if prior is not None:
+                if prior.get("fingerprint") != fingerprint:
+                    raise OwnerWorkRegistryConflict("OWNER_WORK_DIVERGENT_STATUS_REPLAY")
+                after = _hydrate(prior["after"])
+                if after.status is not target_status:
+                    raise OwnerWorkRegistryError("OWNER_WORK_CORRUPT_STATUS_AUDIT")
+                return after
+            current = self.get(
+                tenant_id=tenant, work_item_id=identity, session=caller_session,
+            )
+            if current.owner_principal_id != actor:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_STATUS_NOT_OWNER")
+            if current.status not in allowed:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_TERMINAL_OR_BLOCKED_STATE")
+            if current.status is target_status:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_STATUS_UNCHANGED")
+            if current.updated_at != expected:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_STALE_REVISION")
+            if recorded < current.updated_at:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_CLOCK_REGRESSION")
+            updated = replace(current, status=target_status, updated_at=recorded)
+            result = self._collection.update_one(
+                {"tenant_id": tenant, "work_item_id": identity,
+                 "status": current.status.value,
+                 "updated_at": current.updated_at.isoformat()},
+                {"$set": updated.to_dict()}, session=caller_session,
+            )
+            if getattr(result, "matched_count", 0) != 1:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_CONCURRENT_REVISION")
+            self._events.insert_one({
+                **coordinate, "fingerprint": fingerprint,
+                "operation": "STATUS", "actor_principal_id": actor,
+                "recorded_at": recorded.isoformat(),
+                "before": current.to_dict(), "after": updated.to_dict(),
+            }, session=caller_session)
+            return updated
+        except (OwnerWorkRegistryError, OwnerWorkItemError):
+            raise
+        except DuplicateKeyError as error:
+            raise OwnerWorkRegistryConflict("OWNER_WORK_CONCURRENT_STATUS_REPLAY") from error
+        except (KeyError, TypeError, ValueError) as error:
+            raise OwnerWorkRegistryError("OWNER_WORK_CORRUPT_AUDIT_EVENT") from error
+        except PyMongoError as error:
+            raise OwnerWorkRegistryError("OWNER_WORK_STATUS_UNAVAILABLE") from error
+
+    def drafts_for_owner(
+        self, *, tenant_id: str, owner_principal_id: str, session: Any,
+        limit: int = 100,
+    ) -> tuple[OwnerCommercialWorkItem, ...]:
+        """Read exact-owner saved drafts; never present drafts as active work."""
+        tenant = _exact(tenant_id, "OWNER_WORK_TENANT_INVALID")
+        actor = _exact(owner_principal_id, "OWNER_WORK_ACTOR_INVALID")
+        caller_session = _session(session)
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise OwnerWorkRegistryError("OWNER_WORK_LIMIT_INVALID")
+        try:
+            cursor = self._collection.find(
+                {"tenant_id": tenant, "owner_principal_id": actor,
+                 "status": OwnerWorkStatus.DRAFT.value},
+                session=caller_session,
+            ).sort("updated_at", -1).limit(limit)
+            return tuple(_hydrate(row) for row in cursor)
+        except PyMongoError as error:
+            raise OwnerWorkRegistryError("OWNER_WORK_PERSISTENCE_UNAVAILABLE") from error
+
     def revision_history(
         self, *, tenant_id: str, work_item_id: str, session: Any,
         limit: int = 100,
@@ -459,7 +568,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/crm/persistence/owner_commercial_work_registry.py
-# VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION
+# VERSION: v1.3.0-AUDITED-DRAFT-PROGRESS-TRANSITIONS
 # AUTHORITY BOUNDARY: CRM source-only transactional updates; IAM owned by API.
 # TENANT POSTURE: Exact tenant for task, replay and append-only audit event.
 # FAIL-CLOSED POSTURE: Stale CAS, replay divergence, corrupt input or missing audit store reject.
