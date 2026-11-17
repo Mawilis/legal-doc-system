@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.20.0-PROJECT-PERMISSION-CERT
+VERSION: v1.21.0-CRM-WORK-EDIT-CANON-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -13,8 +13,11 @@ billing-intelligence evidence-read, and field-service outcome/return command
 semantics and exact WILSY platform-employer permission metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-11-12.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+2026-11-17 v1.21.0-CRM-WORK-EDIT-CANON-CERT pins the independently
+scoped CRM work-edit permission, preserves separate possession and
+business-role admission, and verifies 203 canonical permissions.
 2026-11-16 v1.20.0-PROJECT-PERMISSION-CERT verifies four exact own-tenant project permissions and confirms no existing authorization role receives them. Canonical source count becomes 202 permissions / 205 total rows.
 2026-11-13 v1.20.0-PROJECT-PERMISSION-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
 2026-11-13 v1.18.0-PLATFORM-EMPLOYEE-ADMISSION-CURRENTNESS-CERT certifies that employee admission alone
@@ -349,7 +352,7 @@ def test_project_permissions_are_exact_and_do_not_grant_existing_roles(
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.63.0-PROJECT-PERMISSION-VOCABULARY"
+    assert POLICY_VERSION == "v1.64.0-CRM-WORK-EDIT-PERMISSION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -484,7 +487,7 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 202
+    ) == 203
 
     assert len(rows) == 205
 
@@ -1245,7 +1248,7 @@ def test_platform_employer_capabilities_are_exact_non_authorizing_tenant_metadat
 
 
 # ARTIFACT: tests/unit/test_permission_namespace.py
-# VERSION: v1.20.0-PROJECT-PERMISSION-CERT
+# VERSION: v1.21.0-CRM-WORK-EDIT-CANON-CERT
 # AUTHORITY BOUNDARY: certifies permission metadata and designated static role definitions only; assignments and current authorization remain separate
 # TENANT POSTURE: exact WILSY employer tenant enforcement and customer HR entitlement checks remain independent runtime gates
 # FAIL-CLOSED POSTURE: offer acceptance is absent; employee admission has one unassigned role and no operation binding or route
