@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.6.2-PROJECT-VALIDATION-DIAGNOSTICS
+ * VERSION: v1.7.0-STRATEGY-RICH-DRAFT-PREVIEW
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.0-STRATEGY-RICH-DRAFT-PREVIEW renders a safe semantic
+ *            live preview of the entered project description, preserving
+ *            editable Markdown source, bounded content and EOS authority.
+ *            Also retains bounded machine codes for PROJECT(S) HTTP 503.
  * CHANGELOG: v1.6.2-PROJECT-VALIDATION-DIAGNOSTICS extracts only
  *            bounded project machine codes and recognized field names from
  *            EOS 422 responses; never displays submitted or sensitive values.
@@ -109,9 +113,51 @@ const projectFailure = failure => {
   return status === 401 ? 'HTTP 401 · Project session authentication required.'
     : status === 403 ? 'HTTP 403 · Current EOS IAM or selected company capacity denies project access. Verify ACTIVE project:read and project:create assignments; this is distinct from the Projects entitlement.'
       : status === 409 ? 'HTTP 409 · A conflicting Projects revision or idempotency request was rejected.'
-        : status === 503 ? 'HTTP 503 · Projects dependency, index readiness or entitlement source unavailable.'
+        : status === 503 ? 'HTTP 503 · ' + (
+            [
+              code, failure?.response?.data?.error_code, failure?.response?.data?.code,
+              failure?.response?.data?.detail?.error,
+            ].find(value => typeof value === 'string' && /^(PROJECT|PROJECTS)_[A-Z0-9_]{3,90}$/.test(value))
+              || 'Project transaction or source unavailable; no current result verified.'
+          )
           : 'Projects source unavailable or source readback could not be verified.';
 };
+
+// A safe, read-only formatting projection of the user's draft. React escapes all
+// text. Markdown characters remain source text until edited by the user.
+// No HTML parsing, contentEditable, persistence, or source authority is implied.
+const projectInlineNodes = (line, keyPrefix) =>
+  line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((piece, i) =>
+    piece.startsWith('**') && piece.endsWith('**')
+      ? <strong key={keyPrefix + '-strong-' + i}>{piece.slice(2, -2)}</strong>
+      : <React.Fragment key={keyPrefix + '-text-' + i}>{piece}</React.Fragment>);
+
+function ProjectDescriptionPreview({ value }) {
+  const normalized = value.replace(/\\([*_])/g, '$1').replace(/\r\n?/g, '\n');
+  const lines = normalized.split('\n');
+  const output = [];
+  lines.forEach((sourceLine, index) => {
+    const line = sourceLine.trim();
+    if (!line) return;
+    const key = 'description-' + index;
+    const heading = /^#{1,4}\s+(.+)$/.exec(line);
+    const ordered = /^(\d+)\.\s+(.+)$/.exec(line);
+    const bullet = /^[-•]\s+(.+)$/.exec(line);
+    const decoratedHeading = /^\*\*(.+)\*\*$/.exec(line);
+    if (heading || decoratedHeading) {
+      output.push(<h4 key={key}>{projectInlineNodes((heading?.[1] || decoratedHeading?.[1]), key)}</h4>);
+    } else if (ordered) {
+      output.push(<p key={key} className={styles.projectListLine}><span>{ordered[1]}.</span>{projectInlineNodes(ordered[2], key)}</p>);
+    } else if (bullet) {
+      output.push(<p key={key} className={styles.projectListLine}><span aria-hidden="true">•</span>{projectInlineNodes(bullet[1], key)}</p>);
+    } else {
+      output.push(<p key={key}>{projectInlineNodes(line, key)}</p>);
+    }
+  });
+  return <div className={styles.projectDescriptionPreview} aria-label="Formatted project description preview">
+    {output.length ? output : <p>No description entered.</p>}
+  </div>;
+}
 
 const labelFor = classification => classification === 'MISSION' ? 'Our Mission' : 'Our Strategy';
 const displayDate = value => value ? new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Not effective';
@@ -245,6 +291,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [projectPillar, setProjectPillar] = useState('pillar-one');
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
+  const [projectEditSource, setProjectEditSource] = useState(false);
   const [projectBusy, setProjectBusy] = useState(false);
   const [projectSuccess, setProjectSuccess] = useState('');
   const [admissionBusy, setAdmissionBusy] = useState(false);
@@ -297,7 +344,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     projectMutation.current = null;
     projectReplay.current = { intent: '', key: null };
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
-    setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription('');
+    setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription(''); setProjectEditSource(false);
     setProjectPillar('pillar-one');
     if (classification === 'STRATEGY' && sessionKey) void loadProjects();
     return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); projectMutation.current = null; };
@@ -627,8 +674,22 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       </select></label>
                       <label>Project name<input required maxLength={180} value={projectName} disabled={projectBusy}
                         onChange={event => { setProjectName(event.target.value); setProjectSuccess(''); }}/></label>
-                      <label>Project description<textarea maxLength={3700} rows={3} value={projectDescription} disabled={projectBusy}
-                        onChange={event => { setProjectDescription(event.target.value); setProjectSuccess(''); }}/></label>
+                      <div className={styles.projectDescriptionHeader}>
+                        <strong>Project description</strong>
+                        <button type="button" onClick={() => setProjectEditSource(value => !value)} disabled={projectBusy}>
+                          {projectEditSource ? 'View formatted description' : 'Edit description'}
+                        </button>
+                      </div>
+                      <p className={styles.projectDescriptionHint}>Formatted live preview of your draft. Headings, lists and emphasis are displayed as readable text; EOS stores the exact submitted description as source.</p>
+                      {!projectEditSource && <ProjectDescriptionPreview value={projectDescription}/>}
+                      {projectEditSource && <label>Editable description source
+                        <textarea maxLength={3700} rows={12} value={projectDescription} disabled={projectBusy}
+                          onChange={event => { setProjectDescription(event.target.value); setProjectSuccess(''); }}/>
+                      </label>}
+                      <div className={styles.projectDescriptionHeader}>
+                        <span>{projectDescription.length.toLocaleString()} / 3,700 characters</span>
+                        {!projectDescription.trim() && !projectEditSource && <button type="button" onClick={() => setProjectEditSource(true)}>Enter project description</button>}
+                      </div>
                       <button type="submit" disabled={projectBusy || !projectName.trim()}>
                         {projectBusy ? 'Verifying EOS readback…' : 'Create project in EOS'}
                       </button>
@@ -708,7 +769,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.6.2-PROJECT-VALIDATION-DIAGNOSTICS
+// VERSION: v1.7.0-STRATEGY-RICH-DRAFT-PREVIEW
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
