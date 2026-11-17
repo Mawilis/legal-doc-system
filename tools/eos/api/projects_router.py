@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS
+VERSION: v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,6 +14,11 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS establishes independently
+  authorized department provisioning, source-verified owner/department choices,
+  and revision-guarded, immutable-event-backed owner assignment. No employee,
+  principal, membership, entitlement or role is created. The generic project
+  edit route cannot mutate either assignment field. Every query binds tenant.
   v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS logs only bounded error
   classes and stable source codes for failed project transactions, separating
   corrupt audit/readback, entitlement and Mongo failures without exposing
@@ -57,7 +62,7 @@ from typing import Any, Callable, Final, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
-from pymongo.errors import PyMongoError
+from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
@@ -68,13 +73,27 @@ from tools.eos.api.tenant_authorization_http import (
 )
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
+from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.tenant_membership import TenantMembershipStatus
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
+from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operation_eligibility
+from tools.eos.auth.tenant_membership_repository import (
+    TenantMembershipRepository, TenantMembershipNotFoundError,
+    TenantMembershipRepositoryError,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    TenantBusinessRoleRepository, TenantBusinessRoleRepositoryError,
+)
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 from tools.eos.auth.invitation_creation import create_invitation, InvitationCreationError
 from tools.eos.auth.invited_member_admission import admit_invited_member, InvitedMemberAdmissionError
 from tools.eos.auth.role_assignment_repository import (
     RoleAssignmentRepository, RoleAssignmentNotFoundError, RoleAssignmentRepositoryError,
 )
-from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.principal_authority_repository import (
+    PrincipalAuthorityRepository, PrincipalAuthorityNotFoundError,
+    PrincipalAuthorityRepositoryError,
+)
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_authorization_decision_evidence_registry import TenantAuthorizationDecisionEvidenceRegistry
@@ -114,13 +133,16 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS"
+VERSION: Final[str] = "v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
 _UPDATE = RequireTenantAuthorization("project:update", "project_update")
 _ARCHIVE = RequireTenantAuthorization("project:archive", "project_archive")
+_DEPARTMENT_PROVISION = RequireTenantAuthorization("tenant:profile:write", "profile_update")
+_DEPARTMENT_COLLECTION: Final[str] = "wilsy_tenant_departments"
+_DEPARTMENT_EVENTS_COLLECTION: Final[str] = "wilsy_tenant_department_events"
 _FOUNDER_INVITE = RequireTenantAuthorization("tenant:membership:write", "membership_invite")
 _FOUNDER_PRODUCT_ISSUE = RequireTenantAuthorization("tenant_product_entitlement:issue", "tenant_product_entitlement_issue")
 
@@ -150,6 +172,22 @@ class ProjectUpdateRequest(BaseModel):
     start_date: date | None = None
     target_date: date | None = None
     status: ProjectStatus | None = None
+
+
+class DepartmentCreateRequest(BaseModel):
+    """Exact tenant department creation. ID and audit actor are EOS-generated."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    name: str = Field(min_length=2, max_length=100)
+
+
+class ProjectAssignmentRequest(BaseModel):
+    """Explicit, revision-guarded assignment; neither input establishes IAM."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
+    owner_principal_id: str = Field(min_length=1, max_length=180)
+    department_id: str = Field(pattern=r"^dept-[0-9a-f]{32}$")
 
 
 class ProjectArchiveRequest(BaseModel):
@@ -641,6 +679,248 @@ def create_project(
     return _transaction(context, create, write=True)
 
 
+def _project_owner_eligible(database: Any, tenant_id: str, principal_id: str, session: Any) -> bool:
+    """Verify current principal, membership and tenant-owner business capacity.
+
+    This is project responsibility eligibility, not authorization to operate
+    under the assignee's identity. Explicit command IAM remains with the caller.
+    No employee record, personal details, or browser role is trusted.
+    """
+    if not principal_id or principal_id != principal_id.strip():
+        return False
+    try:
+        principal = PrincipalAuthorityRepository.get(
+            principal_id, database["principal_authorities"], session=session,
+        )
+        membership = TenantMembershipRepository.resolve(
+            principal_id, tenant_id, database["tenant_memberships"], session=session,
+        )
+        roles = TenantBusinessRoleRepository.resolve_all(
+            principal_id, tenant_id, database["tenant_business_roles"], session=session,
+        )
+    except (PrincipalAuthorityNotFoundError, TenantMembershipNotFoundError):
+        return False
+    except (
+        PrincipalAuthorityRepositoryError, TenantMembershipRepositoryError,
+        TenantBusinessRoleRepositoryError,
+    ) as error:
+        raise HTTPException(status_code=503, detail="PROJECT_OWNER_AUTHORITY_UNAVAILABLE") from error
+    return (
+        principal.status is PrincipalStatus.ACTIVE
+        and membership.status is TenantMembershipStatus.ACTIVE
+        and any(
+            role.status is TenantBusinessRoleStatus.ACTIVE
+            and role.business_role == "tenant_owner"
+            and tenant_role_operation_eligibility(role.business_role, "project_update") == ELIGIBLE
+            for role in roles
+        )
+    )
+
+
+def _current_department(database: Any, tenant_id: str, department_id: str, session: Any) -> dict[str, object]:
+    """Resolve one active, validated canonical tenant department, never a label."""
+    try:
+        row = database[_DEPARTMENT_COLLECTION].find_one(
+            {"tenant_id": tenant_id, "department_id": department_id}, session=session,
+        )
+    except PyMongoError as error:
+        raise HTTPException(status_code=503, detail="PROJECT_DEPARTMENT_SOURCE_UNAVAILABLE") from error
+    if row is None or row.get("status") != "ACTIVE":
+        raise HTTPException(status_code=409, detail="PROJECT_DEPARTMENT_NOT_ELIGIBLE")
+    name = row.get("name")
+    if (
+        not isinstance(name, str) or not 2 <= len(name) <= 100
+        or name != name.strip() or not isinstance(row.get("revision"), int)
+        or row["revision"] < 1
+        or row.get("tenant_id") != tenant_id
+        or row.get("department_id") != department_id
+    ):
+        raise HTTPException(status_code=503, detail="PROJECT_DEPARTMENT_RECORD_INVALID")
+    return {
+        "department_id": department_id,
+        "name": name,
+        "revision": row["revision"],
+        "status": "ACTIVE",
+    }
+
+
+@router.get("/assignment-options")
+def project_assignment_options(
+    response: Response,
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, object]:
+    """Read verified tenant-owner candidates and active canonical departments.
+
+    Results only suggest valid choices. Assignment independently rechecks each
+    source inside its write transaction. No directory value creates a grant.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    def read(_registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        database = kernel_db.get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="PROJECT_ASSIGNMENT_SOURCE_UNAVAILABLE")
+        try:
+            members = list(
+                database["tenant_memberships"].find(
+                    {"tenant_id": context.tenant_id, "status": "ACTIVE"},
+                    {"_id": 0, "principal_id": 1}, session=session,
+                ).sort("principal_id", 1).limit(101)
+            )
+            departments = list(
+                database[_DEPARTMENT_COLLECTION].find(
+                    {"tenant_id": context.tenant_id, "status": "ACTIVE"},
+                    {"_id": 0, "tenant_id": 1, "department_id": 1,
+                     "name": 1, "revision": 1, "status": 1},
+                    session=session,
+                ).sort("department_id", 1).limit(101)
+            )
+        except PyMongoError as error:
+            raise HTTPException(status_code=503, detail="PROJECT_ASSIGNMENT_SOURCE_UNAVAILABLE") from error
+        if len(members) > 100 or len(departments) > 100:
+            raise HTTPException(status_code=503, detail="PROJECT_ASSIGNMENT_DIRECTORY_PAGE_REQUIRED")
+        candidates: list[dict[str, object]] = []
+        for member in members:
+            principal_id = member.get("principal_id")
+            if not isinstance(principal_id, str):
+                raise HTTPException(status_code=503, detail="PROJECT_MEMBER_RECORD_INVALID")
+            if _project_owner_eligible(database, context.tenant_id, principal_id, session):
+                candidates.append({"principal_id": principal_id, "eligibility": "VERIFIED_CURRENT"})
+        values: list[dict[str, object]] = []
+        for department in departments:
+            department_id = department.get("department_id")
+            if not isinstance(department_id, str):
+                raise HTTPException(status_code=503, detail="PROJECT_DEPARTMENT_RECORD_INVALID")
+            values.append(_current_department(database, context.tenant_id, department_id, session))
+        return {
+            "schema": "WILSY-PROJECT-ASSIGNMENT-OPTIONS/V1",
+            "tenant_id": context.tenant_id,
+            "principals": candidates,
+            "departments": values,
+            "source": "EOS_CURRENT_IAM_AND_TENANT_DEPARTMENTS",
+        }
+    return _transaction(context, read)
+
+
+@router.post("/departments", status_code=status.HTTP_201_CREATED)
+def provision_project_department(
+    payload: DepartmentCreateRequest,
+    response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_DEPARTMENT_PROVISION),
+    project_context: TenantAuthorizationContext = Depends(_CREATE),
+) -> dict[str, object]:
+    """Provision a canonical tenant department with conjunctive, distinct IAM.
+
+    Profile-write and Projects-create authority are both revalidated by EOS;
+    records and immutable command evidence commit in one caller-owned majority
+    transaction. Identical keyed retries read the exact persisted result.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if context.tenant_id != project_context.tenant_id or context.identity.identity_id != project_context.identity.identity_id:
+        raise HTTPException(status_code=403, detail="PROJECT_DEPARTMENT_AUTHORITY_MISMATCH")
+    if not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 200 or idempotency_key != idempotency_key.strip():
+        raise HTTPException(status_code=422, detail="PROJECT_IDEMPOTENCY_KEY_INVALID")
+    name = payload.name.strip()
+    if len(name) < 2 or name != payload.name:
+        raise HTTPException(status_code=422, detail="PROJECT_DEPARTMENT_NAME_INVALID")
+    department_id = "dept-" + hashlib.sha3_512(
+        (context.tenant_id + "\0" + name.casefold()).encode("utf-8"),
+    ).hexdigest()[:32]
+    digest = hashlib.sha3_512(
+        (context.tenant_id + "\0" + name + "\0" + idempotency_key).encode("utf-8"),
+    ).hexdigest()
+    def create(_registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        database = kernel_db.get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="PROJECT_DEPARTMENT_SOURCE_UNAVAILABLE")
+        collection = database[_DEPARTMENT_COLLECTION]
+        events = database[_DEPARTMENT_EVENTS_COLLECTION]
+        event_id = context.tenant_id + ":" + idempotency_key
+        try:
+            previous = events.find_one(
+                {"_id": event_id, "tenant_id": context.tenant_id}, session=session,
+            )
+            if previous is not None:
+                if previous.get("request_fingerprint") != digest or previous.get("department_id") != department_id:
+                    raise HTTPException(status_code=409, detail="PROJECT_DEPARTMENT_DIVERGENT_REPLAY")
+                value = _current_department(database, context.tenant_id, department_id, session)
+                return {"tenant_id": context.tenant_id, "department": value, "replayed": True}
+            record = {
+                "_id": context.tenant_id + ":" + department_id,
+                "tenant_id": context.tenant_id, "department_id": department_id,
+                "name": name, "revision": 1, "status": "ACTIVE",
+                "created_by_principal_id": context.identity.identity_id,
+                "created_at": datetime.now(timezone.utc),
+            }
+            collection.insert_one(record, session=session)
+            events.insert_one({
+                "_id": event_id, "tenant_id": context.tenant_id,
+                "department_id": department_id, "event_type": "DEPARTMENT_CREATED",
+                "actor_principal_id": context.identity.identity_id,
+                "request_fingerprint": digest,
+                "result_fingerprint": hashlib.sha3_512(
+                    (department_id + "\0" + name).encode("utf-8")
+                ).hexdigest(),
+                "revision": 1, "occurred_at": record["created_at"],
+            }, session=session)
+            value = _current_department(database, context.tenant_id, department_id, session)
+            return {"tenant_id": context.tenant_id, "department": value, "replayed": False}
+        except DuplicateKeyError as error:
+            raise HTTPException(status_code=409, detail="PROJECT_DEPARTMENT_ALREADY_EXISTS") from error
+        except PyMongoError as error:
+            raise HTTPException(status_code=503, detail="PROJECT_DEPARTMENT_SOURCE_UNAVAILABLE") from error
+    return _transaction(context, create, write=True)
+
+
+@router.patch("/{project_id}/assignment")
+def assign_project_accountability(
+    payload: ProjectAssignmentRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Assign source-verified owner and department with audited CAS/readback.
+
+    Caller IAM authorizes the command; assignee membership and role establish
+    eligibility only. This command does not activate the project or create IAM.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 200 or idempotency_key != idempotency_key.strip():
+        raise HTTPException(status_code=422, detail="PROJECT_IDEMPOTENCY_KEY_INVALID")
+    now = datetime.now(timezone.utc)
+    def assign(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        database = kernel_db.get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="PROJECT_ASSIGNMENT_SOURCE_UNAVAILABLE")
+        if not _project_owner_eligible(database, context.tenant_id, payload.owner_principal_id, session):
+            raise HTTPException(status_code=409, detail="PROJECT_OWNER_NOT_ELIGIBLE")
+        _current_department(database, context.tenant_id, payload.department_id, session)
+        updated = registry.update(
+            tenant_id=context.tenant_id, project_id=project_id,
+            actor_principal_id=context.identity.identity_id,
+            expected_revision=payload.expected_revision,
+            changes={"owner_principal_id": payload.owner_principal_id,
+                     "department_id": payload.department_id},
+            idempotency_key=idempotency_key, occurred_at=now, session=session,
+        )
+        readback = registry.get(
+            tenant_id=context.tenant_id, project_id=project_id, session=session,
+        )
+        if readback.fingerprint != updated.fingerprint or (
+            readback.owner_principal_id != payload.owner_principal_id
+            or readback.department_id != payload.department_id
+        ):
+            raise ProjectRegistryError("PROJECT_ASSIGNMENT_READBACK_MISMATCH")
+        return _result(
+            context, readback,
+            events=registry.list_events(
+                tenant_id=context.tenant_id, project_id=project_id, session=session,
+            ),
+        )
+    return _transaction(context, assign, write=True)
+
+
 @router.get("/{project_id}")
 def get_project(
     response: Response,
@@ -792,9 +1072,9 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.3.1-SAFE-TRANSACTION-FAILURE-DIAGNOSTICS
+# VERSION: v1.4.0-TENANT-GOVERNED-PROJECT-ASSIGNMENTS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
-# FAIL-CLOSED POSTURE: missing assignment, entitlement, current database, indexes, transaction, replay integrity, or readback denies or fails unavailable
+# FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
