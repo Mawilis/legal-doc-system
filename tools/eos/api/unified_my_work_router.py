@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Authenticated Unified My Work Source Aggregation
-VERSION: v1.6.0-CRM-CORE-OPTIONAL-SOURCE
+VERSION: v1.6.1-SAFE-SOURCE-HTTP-CLASSIFICATION
 AUTHORITY: WILSY OS Python EOS; canonical source registries own business truth.
 EPITOME: Compose only independently authenticated and entitled module work in
          exact tenant scope, fan out independent source-owned reads without
@@ -16,7 +16,10 @@ COLLABORATION / OWNERSHIP: TenantAuthorizationHTTP owns current IAM;
          Legal Operations, CRM, tenant module and HR source services own reads,
          index assurance, transactions and durable state; projection owns shape.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.6.0-CRM-CORE-OPTIONAL-SOURCE treats explicitly verified
+CHANGELOG: v1.6.1-SAFE-SOURCE-HTTP-CLASSIFICATION logs the bounded
+           canonical HTTP failure code for independently admitted source reads
+           without logging principal, tenant, payload or raw exception detail.
+           v1.6.0-CRM-CORE-OPTIONAL-SOURCE treats explicitly verified
            absence of tenant CRM Core entitlement as an omitted optional CRM
            source, preserving independently entitled Operations, Intelligence,
            Legal and HR work. CRM entitlement outages and all other source
@@ -206,11 +209,22 @@ def _timed_source_read(source: str, reader: Callable[[], Any]) -> Any:
     except Exception as caught:
         error = caught
         outcome = _failure_classification(caught)
+        # Only source-owned constant error identifiers are safe to emit.
+        # Arbitrary HTTP detail (including dictionaries or human text) is private.
+        http_code = "NONE"
+        if isinstance(caught, HTTPException):
+            detail = caught.detail
+            if isinstance(detail, str) and re.fullmatch(r"[A-Z][A-Z0-9_]{2,99}", detail):
+                http_code = detail
+            else:
+                http_code = "UNCLASSIFIED_HTTP"
         logger.error(
-            "MY_WORK_SOURCE_FAILURE source=%s outcome=%s error_type=%s",
+            "MY_WORK_SOURCE_FAILURE source=%s outcome=%s error_type=%s http_status=%s source_code=%s",
             source,
             outcome,
             _safe_error_type(caught),
+            caught.status_code if isinstance(caught, HTTPException) else "NONE",
+            http_code,
         )
         raise
     finally:
@@ -566,7 +580,7 @@ __all__ = ["router", "read_my_work"]
 
 
 # ARTIFACT: tools/eos/api/unified_my_work_router.py
-# VERSION: v1.6.0-CRM-CORE-OPTIONAL-SOURCE
+# VERSION: v1.6.1-SAFE-SOURCE-HTTP-CLASSIFICATION
 # AUTHORITY BOUNDARY: Authenticated source reads only; no commands.
 # TENANT POSTURE: Exact IAM source admission required.
 # FAIL-CLOSED POSTURE: Any admitted source failure rejects the aggregate.
