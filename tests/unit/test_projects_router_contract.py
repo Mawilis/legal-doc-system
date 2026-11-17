@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT
+VERSION: v1.2.0-DETERMINISTIC-PROJECT-CODE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.2.0-DETERMINISTIC-PROJECT-CODE-CERT validates exact
+  deterministic project-code derivation and malformed ID denial.
   v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT pins the eligible
   membership_invite admission gate and independent entitlement issuance pair.
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
@@ -44,7 +46,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT"
+VERSION = "v1.2.0-DETERMINISTIC-PROJECT-CODE-CERT"
 
 
 def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
@@ -197,6 +199,17 @@ def test_browser_payload_cannot_supply_authority_or_unverified_ownership() -> No
         )
 
 
+def test_project_code_is_deterministic_tenant_scoped_and_replay_stable() -> None:
+    """Omitted human reference derives from the immutable EOS project identity."""
+    identity_one = "prj-" + "a" * 48
+    identity_two = "prj-" + "a" * 32 + "b" * 16
+    assert projects_router._generated_project_code(identity_one) == "PRJ-" + "A" * 16
+    assert projects_router._generated_project_code(identity_one) == projects_router._generated_project_code(identity_one)
+    assert projects_router._generated_project_code(identity_two) != projects_router._generated_project_code(identity_one)
+    with pytest.raises(Exception, match="PROJECT_CODE_SOURCE_INVALID"):
+        projects_router._generated_project_code("unsafe")
+
+
 def test_projects_routes_fail_closed_until_startup_indexes_are_ready() -> None:
     """Metadata indexes gate route readiness without request-time DDL."""
     source = inspect.getsource(projects_router)
@@ -218,7 +231,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT
+# VERSION: v1.2.0-DETERMINISTIC-PROJECT-CODE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
