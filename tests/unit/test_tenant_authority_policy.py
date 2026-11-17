@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authority Policy Certification.
-VERSION: v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT
+VERSION: v1.15.1-CRM-ELIGIBILITY-VERSION-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, WILSY platform-employer
@@ -14,6 +14,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
+2026-11-17 v1.15.1-CRM-ELIGIBILITY-VERSION-CERT aligns the expected
+canonical runtime version after its separately governed CRM edit eligibility
+release; all policy eligibility assertions and denial coverage are preserved.
 2026-11-16 v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT verifies the exact five Project operations are eligible only for existing tenant_owner capacity; authorization-role assignment and entitlement remain independent.
 2026-11-13 v1.14.0-PROJECT-OPERATION-POLICY-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
     2026-11-12 v1.12.0-PLATFORM-EMPLOYEE-ADMISSION-ELIGIBILITY-CERT certifies
@@ -134,7 +137,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.58.0-PROJECT-OWNER-ELIGIBILITY"
+    assert VERSION == "v1.59.0-CRM-WORK-EDIT-ELIGIBILITY"
 
 
 def test_projects_have_exact_operation_vocabulary_and_owner_capacity_only() -> None:
@@ -1082,7 +1085,7 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
 
 
 # ARTIFACT: tests/unit/test_tenant_authority_policy.py
-# VERSION: v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT
+# VERSION: v1.15.1-CRM-ELIGIBILITY-VERSION-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only; no role or permission assignment
 # TENANT POSTURE: Projects business eligibility is owner-capacity only and remains conjunctive with tenant-scoped assignment, membership and entitlement
 # FAIL-CLOSED POSTURE: every non-owner business capacity remains denied; eligibility alone creates no IAM assignment or entitlement
