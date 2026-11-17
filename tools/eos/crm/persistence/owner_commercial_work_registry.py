@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Source-Owned Work Registry
-VERSION: v1.1.0-AUDITED-OPTIMISTIC-WORK-REVISION
+VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION
 AUTHORITY: Python EOS CRM persistence under caller-owned Mongo transactions.
 EPITOME: Persist exact-tenant commercial task creation, completion and an
          independently permission-gated edit with immutable audit evidence.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/pe
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceService, owner CRM router,
          strict OwnerCommercialWorkItem domain and active session IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-AUDITED-OWNER-CANCELLATION adds an exact-tenant,
+           actor-owned, expected-revision cancel transition with immutable
+           before/after audit evidence and idempotency in the same Mongo
+           transaction. Cancellation never deletes a persisted user record.
 CHANGELOG: v1.1.0-AUDITED-OPTIMISTIC-WORK-REVISION introduces a separate
            same-source append-only edit event collection, exact-tenant
            expected-updated-at compare-and-set, idempotency fingerprint,
@@ -327,6 +331,92 @@ class OwnerCommercialWorkRegistry:
         except PyMongoError as error:
             raise OwnerWorkRegistryError("OWNER_WORK_REVISION_UNAVAILABLE") from error
 
+
+    def cancel(
+        self, *, tenant_id: str, work_item_id: str,
+        actor_principal_id: str, reason: str,
+        expected_updated_at: datetime, idempotency_key: str,
+        now: datetime, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Audit and atomically cancel one active task owned by its actor.
+
+        Cancellation is a durable terminal state, never a deletion. Only the
+        authenticated source owner may cancel; caller must separately have
+        CRM update IAM and current entitlement. Concurrent edits, stale
+        versions, differing retries and cross-tenant work fail closed.
+        """
+        tenant = _exact(tenant_id, "OWNER_WORK_TENANT_INVALID")
+        identity = _exact(work_item_id, "OWNER_WORK_ID_INVALID")
+        actor = _exact(actor_principal_id, "OWNER_WORK_ACTOR_INVALID")
+        key = _exact(idempotency_key, "OWNER_WORK_IDEMPOTENCY_KEY_INVALID")
+        if not isinstance(reason, str) or reason != reason.strip() or not 3 <= len(reason) <= 1000:
+            raise OwnerWorkItemError("OWNER_WORK_CANCEL_REASON_INVALID")
+        for instant in (expected_updated_at, now):
+            if not isinstance(instant, datetime) or instant.tzinfo is None or instant.utcoffset() is None:
+                raise OwnerWorkItemError("WORK_TIMESTAMP_INVALID")
+        caller_session = _session(session)
+        if self._events is None:
+            raise OwnerWorkRegistryError("OWNER_WORK_AUDIT_STORE_REQUIRED")
+        expected = expected_updated_at.astimezone(timezone.utc)
+        recorded = now.astimezone(timezone.utc)
+        command = {
+            "operation": "CANCEL", "tenant_id": tenant,
+            "work_item_id": identity, "actor_principal_id": actor,
+            "reason": reason, "expected_updated_at": expected.isoformat(),
+        }
+        fingerprint = sha3_512(json.dumps(
+            command, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        ).encode("utf-8")).hexdigest()
+        coordinate = {
+            "tenant_id": tenant, "work_item_id": identity, "idempotency_key": key,
+        }
+        try:
+            prior_event = self._events.find_one(coordinate, session=caller_session)
+            if prior_event is not None:
+                if prior_event.get("fingerprint") != fingerprint:
+                    raise OwnerWorkRegistryConflict("OWNER_WORK_DIVERGENT_CANCEL_REPLAY")
+                after = _hydrate(prior_event["after"])
+                if after.status is not OwnerWorkStatus.CANCELLED:
+                    raise OwnerWorkRegistryError("OWNER_WORK_CORRUPT_CANCEL_AUDIT")
+                return after
+            current = self.get(
+                tenant_id=tenant, work_item_id=identity, session=caller_session,
+            )
+            if current.owner_principal_id != actor:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_CANCEL_NOT_OWNER")
+            if current.status in (OwnerWorkStatus.COMPLETED, OwnerWorkStatus.CANCELLED):
+                raise OwnerWorkRegistryConflict("OWNER_WORK_TERMINAL_STATE")
+            if current.updated_at != expected:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_STALE_REVISION")
+            if recorded < current.updated_at:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_CLOCK_REGRESSION")
+            updated = replace(
+                current, status=OwnerWorkStatus.CANCELLED, updated_at=recorded,
+            )
+            match = self._collection.update_one(
+                {"tenant_id": tenant, "work_item_id": identity,
+                 "status": current.status.value,
+                 "updated_at": current.updated_at.isoformat()},
+                {"$set": updated.to_dict()}, session=caller_session,
+            )
+            if getattr(match, "matched_count", 0) != 1:
+                raise OwnerWorkRegistryConflict("OWNER_WORK_CONCURRENT_REVISION")
+            self._events.insert_one({
+                **coordinate, "fingerprint": fingerprint,
+                "operation": "CANCEL", "reason": reason,
+                "actor_principal_id": actor, "recorded_at": recorded.isoformat(),
+                "before": current.to_dict(), "after": updated.to_dict(),
+            }, session=caller_session)
+            return updated
+        except (OwnerWorkRegistryConflict, OwnerWorkRegistryError, OwnerWorkItemError):
+            raise
+        except DuplicateKeyError as error:
+            raise OwnerWorkRegistryConflict("OWNER_WORK_CONCURRENT_CANCEL_REPLAY") from error
+        except (KeyError, TypeError, ValueError) as error:
+            raise OwnerWorkRegistryError("OWNER_WORK_CORRUPT_AUDIT_EVENT") from error
+        except PyMongoError as error:
+            raise OwnerWorkRegistryError("OWNER_WORK_CANCELLATION_UNAVAILABLE") from error
+
     def revision_history(
         self, *, tenant_id: str, work_item_id: str, session: Any,
         limit: int = 100,
@@ -369,7 +459,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/crm/persistence/owner_commercial_work_registry.py
-# VERSION: v1.1.0-AUDITED-OPTIMISTIC-WORK-REVISION
+# VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION
 # AUTHORITY BOUNDARY: CRM source-only transactional updates; IAM owned by API.
 # TENANT POSTURE: Exact tenant for task, replay and append-only audit event.
 # FAIL-CLOSED POSTURE: Stale CAS, replay divergence, corrupt input or missing audit store reject.
