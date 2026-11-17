@@ -1,3 +1,23 @@
+"""TITLE: WILSY OS CRM Owner Work Registry Regression Certificate
+VERSION: v1.0.0-COMPLETED-CRM-RECORD-READBACK-CERT
+AUTHORITY: WILSY OS source-owned CRM persistence certification.
+EPITOME: Verify exact-tenant create/replay, completion compare-and-set,
+         persisted readback and absence of foreign-tenant disclosure.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_owner_commercial_work_registry.py
+COLLABORATION / OWNERSHIP: CRM work item domain and registry; Python EOS
+         owner workspace service and authenticated API.
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.0.0-COMPLETED-CRM-RECORD-READBACK-CERT preserves existing source registry tests
+           and certifies completed evidence remains retrievable from its
+           owning exact-tenant record while foreign tenant reads deny.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic data only; no live records.
+TENANT BOUNDARY: All fixtures verify tenant-first persistence coordinates.
+AUTHORITY BOUNDARY: No test grants IAM or authorizes a production command.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
+FAIL-CLOSED POSTURE: Missing, foreign, divergent or stale source rows reject.
+"""
+
 from datetime import datetime, timezone
 from dataclasses import replace
 
@@ -141,3 +161,39 @@ def test_completion_is_tenant_scoped_compare_and_set_and_exact_replay():
             tenant_id="OTHER-TENANT", work_item_id=item.work_item_id,
             completion_note="Confirmed completed", now=NOW, session=object(),
         )
+
+
+def test_completed_record_retains_source_evidence_under_exact_tenant() -> None:
+    """Completed work remains readable without becoming active or cross-tenant."""
+    registry = OwnerCommercialWorkRegistry(Collection())
+    item = make_item()
+    registry.create_or_replay(item, idempotency_key="cmd-detail", session=object())
+    completed = registry.complete(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        completion_note="Reviewed and verified evidence",
+        now=NOW, session=object(),
+    )
+    persisted = registry.get(
+        tenant_id=TENANT, work_item_id=item.work_item_id, session=object(),
+    )
+    assert persisted == completed
+    assert persisted.status is OwnerWorkStatus.COMPLETED
+    assert persisted.completion_note == "Reviewed and verified evidence"
+    assert persisted.completed_at == NOW
+    assert registry.daily_queue(
+        tenant_id=TENANT, now=NOW, session=object(),
+    ) == ()
+    with pytest.raises(OwnerWorkRegistryNotFound):
+        registry.get(
+            tenant_id="OTHER-TENANT",
+            work_item_id=item.work_item_id, session=object(),
+        )
+
+
+# ARTIFACT: tests/unit/test_owner_commercial_work_registry.py
+# VERSION: v1.0.0-COMPLETED-CRM-RECORD-READBACK-CERT
+# AUTHORITY BOUNDARY: Synthetic registry evidence only; no IAM grants.
+# TENANT POSTURE: Exact tenant, no cross-tenant existence disclosure.
+# FAIL-CLOSED POSTURE: Foreign records are indistinguishable from absent.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
