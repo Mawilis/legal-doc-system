@@ -1,15 +1,18 @@
 """WILSY OS owner commercial workspace composition certificate.
 
 TITLE: Owner Commercial Workspace Route Mount and EOS Transport Certificate
-VERSION: v1.2.0-SOURCE-WORK-DETAIL-READ-CERT
+VERSION: v1.3.0-GOVERNED-EDIT-ROUTE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Verifies exact owner-workspace route composition, permission bindings,
     and the canonical Vite-to-Python EOS loopback target.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_owner_commercial_workspace_server_mount.py
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceRouter, FastAPI composition,
     and Vite transport owners.
-CERTIFICATION / UPDATE DATE: 2026-11-10
+CERTIFICATION / UPDATE DATE: 2026-11-17
 CHANGELOG:
+  v1.3.0-GOVERNED-EDIT-ROUTE-CERT proves PATCH uses CRM UPDATE rather
+    than CREATE/COMPLETE IAM, audit-history GET stays read-only, and the
+    typed edit contract requires each field and stable idempotency evidence.
   v1.2.0-SOURCE-WORK-DETAIL-READ-CERT certifies the added exact-record GET route uses
     existing CRM read IAM and does not establish a new write permission.
   v1.2.0-SOURCE-WORK-DETAIL-READ-CERT narrows FastAPI BaseRoute values to APIRoute
@@ -34,8 +37,12 @@ from tools.eos.api.owner_commercial_workspace_router import (
     _COMPLETE,
     _CREATE,
     _READ,
+    _UPDATE,
+    OwnerWorkReviseRequest,
     _transaction,
     read_owner_work_item,
+    read_owner_work_item_history,
+    revise_owner_work_item,
     router,
 )
 
@@ -52,6 +59,8 @@ def test_owner_commercial_workspace_routes_are_mounted_once_and_directly() -> No
     assert ("/crm/owner-workspace", ("GET",)) in routes
     assert ("/crm/owner-workspace/work-items", ("POST",)) in routes
     assert ("/crm/owner-workspace/work-items/{work_item_id}", ("GET",)) in routes
+    assert ("/crm/owner-workspace/work-items/{work_item_id}", ("PATCH",)) in routes
+    assert ("/crm/owner-workspace/work-items/{work_item_id}/history", ("GET",)) in routes
     assert (
         "/crm/owner-workspace/work-items/{work_item_id}/complete",
         ("POST",),
@@ -86,6 +95,10 @@ def test_each_owner_workspace_command_has_its_exact_permission_binding() -> None
         "crm:work_item:complete",
         "crm_work_item_complete",
     )
+    assert (_UPDATE.permission_id, _UPDATE.operation) == (
+        "crm:work_item:update",
+        "crm_work_item_update",
+    )
 
 
 def test_exact_work_detail_uses_existing_crm_read_permission() -> None:
@@ -101,8 +114,34 @@ def test_exact_work_detail_uses_existing_crm_read_permission() -> None:
     assert 'HTTPException(status_code=404, detail="OWNER_WORK_NOT_FOUND")' in transaction_source
 
 
+
+def test_work_edit_and_history_require_distinct_source_permissions():
+    from fastapi.params import Depends
+    from pydantic import ValidationError
+    import pytest
+
+    for endpoint, expected in (
+        (revise_owner_work_item, _UPDATE),
+        (read_owner_work_item_history, _READ),
+    ):
+        parameter = inspect.signature(endpoint).parameters["context"]
+        assert isinstance(parameter.default, Depends)
+        assert parameter.default.dependency is expected
+    valid = {
+        "title": "Source task", "description": "Source instructions",
+        "priority": "HIGH", "due_at": None,
+        "expected_updated_at": "2026-11-17T06:00:00Z",
+    }
+    assert OwnerWorkReviseRequest(**valid).priority == "HIGH"
+    for field in valid:
+        with pytest.raises(ValidationError):
+            OwnerWorkReviseRequest(**{k: v for k, v in valid.items() if k != field})
+    with pytest.raises(ValidationError):
+        OwnerWorkReviseRequest(**{**valid, "owner_principal_id": "forged"})
+
+
 # ARTIFACT: Owner Commercial Workspace Route Mount and EOS Transport Certificate
-# VERSION: v1.2.0-SOURCE-WORK-DETAIL-READ-CERT
+# VERSION: v1.3.0-GOVERNED-EDIT-ROUTE-CERT
 # AUTHORITY BOUNDARY: Composition regression evidence only.
 # TENANT POSTURE: No tenant state or records are accessed.
 # FAIL-CLOSED POSTURE: Route mount, transport, or permission drift fails tests.
