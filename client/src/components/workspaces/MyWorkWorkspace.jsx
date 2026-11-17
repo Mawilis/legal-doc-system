@@ -829,10 +829,10 @@ export default function MyWorkWorkspace(props = {}) {
               </div>
               <span className="hidden h-5 border-l border-white/15 sm:block" aria-hidden="true" />
               <div role="group" aria-label="Work source filters" className="flex flex-wrap items-center gap-1.5">
-                <FilterButton active={sourceFilter === 'ALL'} onClick={() => setSourceFilter('ALL')}>All sources ({items.length})</FilterButton>
+                <FilterButton active={sourceFilter === 'ALL'} onClick={() => setSourceFilter('ALL')}>All {items.length}</FilterButton>
                 {admittedSources.map((source) => (
                   <FilterButton key={source} active={sourceFilter === source} onClick={() => setSourceFilter(source)}>
-                    {SOURCE_LABELS[source] || source} ({projection.summary.source_counts[source]})
+                    {SOURCE_LABELS[source] || source} {projection.summary.source_counts[source]}
                   </FilterButton>
                 ))}
               </div>
