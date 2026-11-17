@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS
+ * VERSION: v1.6.0-FOUNDER-PROJECTS-ACTIVATION-COMMAND
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,7 +8,7 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS distinguishes
+ * CHANGELOG: v1.6.0-FOUNDER-PROJECTS-ACTIVATION-COMMAND presents an explicit\n *            governed Founder activation action only on denied Projects read,\n *            validates source role/entitlement readback and refreshes Projects.\n * CHANGELOG: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS distinguishes
  *            canonical Projects entitlement denial from project IAM denial
  *            and unavailable infrastructure using bounded EOS codes.
  * CHANGELOG: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION adds a tenant/
@@ -223,6 +223,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [projectDescription, setProjectDescription] = useState('');
   const [projectBusy, setProjectBusy] = useState(false);
   const [projectSuccess, setProjectSuccess] = useState('');
+  const [admissionBusy, setAdmissionBusy] = useState(false);
+  const [admissionStatus, setAdmissionStatus] = useState('');
   const projectReadRef = useRef({ sequence: 0, controller: null });
   const projectMutation = useRef(null);
   const projectReplay = useRef({ intent: '', key: null });
@@ -271,11 +273,40 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     projectMutation.current = null;
     projectReplay.current = { intent: '', key: null };
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
-    setProjectBusy(false); setProjectSuccess(''); setProjectName(''); setProjectDescription('');
+    setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription('');
     setProjectPillar('pillar-one');
     if (classification === 'STRATEGY' && sessionKey) void loadProjects();
     return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); projectMutation.current = null; };
   }, [classification, sessionKey, loadProjects]);
+
+  /** Explicitly request the existing administrator-governed Founder admission. */
+  const activateFounderProjects = async () => {
+    const key = sessionKey;
+    if (!key || admissionBusy || projectState !== 'DENIED') return;
+    setAdmissionBusy(true); setAdmissionStatus('');
+    try {
+      const response = await api.post('/projects/founder-projects-admission', {}, {
+        headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token },
+      });
+      if (!active(key)) return;
+      const result = response?.data;
+      if (result?.schema !== 'WILSY-FOUNDER-PROJECTS-ADMISSION/V1'
+          || result.tenant_id !== scope.tenantId || result.principal_id !== scope.principalId
+          || result.project_role !== 'ACTIVE' || result.projects_entitlement !== 'ACTIVE') {
+        throw new Error('PROJECTS_ADMISSION_READBACK_INVALID');
+      }
+      setAdmissionStatus('Source-confirmed: Founder Projects role and entitlement ACTIVE. Loading Projects…');
+      await loadProjects();
+    } catch (failure) {
+      if (!active(key)) return;
+      const code = failure?.response?.data?.detail;
+      setAdmissionStatus(typeof code === 'string' && /^[A-Z][A-Z0-9_]{1,90}$/.test(code)
+        ? code + ' · Governed Projects admission did not complete; no client grant was assumed.'
+        : 'Founder Projects admission could not be verified. Check canonical EOS authority and database index readiness.');
+    } finally {
+      if (active(key)) setAdmissionBusy(false);
+    }
+  };
 
   /** Create only a canonical EOS project, then verify list and detail readback. */
   const createStrategyProject = async event => {
@@ -549,6 +580,11 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </ul>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
+                    {projectState === 'DENIED' && <button type="button"
+                      disabled={admissionBusy} onClick={() => void activateFounderProjects()}>
+                      <ShieldCheck size={15}/> {admissionBusy ? 'Verifying Founder authority…' : 'Activate Founder Projects through EOS'}
+                    </button>}
+                    {admissionStatus && <p role="status">{admissionStatus}</p>}
                     {projectError && projectState === 'READY' && <p role="alert">{projectError}</p>}
                     {projectSuccess && <p role="status">{projectSuccess}</p>}
                     {projectState === 'READY' && <form onSubmit={createStrategyProject} aria-label="Create governed EOS project">
@@ -641,7 +677,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS
+// VERSION: v1.6.0-FOUNDER-PROJECTS-ACTIVATION-COMMAND
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
