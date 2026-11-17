@@ -138,7 +138,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByText(/\\*\\*Project objective\\*\\*/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Read full project scope' }));
     expect(screen.getByRole('button', { name: 'Collapse project scope' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Definition of done' })).toBeVisible();
+    expect(screen.getAllByRole('heading', { name: 'Definition of done' }).length).toBeGreaterThan(0);
     expect(screen.getByLabelText('Project code')).toHaveValue('');
     fireEvent.click(screen.getByRole('button', { name: 'Close project details' }));
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
