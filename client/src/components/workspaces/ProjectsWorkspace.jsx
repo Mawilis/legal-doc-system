@@ -653,7 +653,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   placeholder="Automatically assigned by EOS"
                   onChange={event => setEdit({ ...edit, code: event.target.value })}
                   className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/>
-                <small className="wp-code-hint">A stable project reference, not the system project ID. Existing legacy projects can generate one above; do not enter a code to activate the project.</small>
+                <small className="wp-code-hint">Optional advanced override: for example WOS-PLAT-001 (maximum 80 characters, unique within this tenant). EOS verifies uniqueness and stores changes as an audited revision. No code entry is required to activate the project.</small>
               </label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
                 <ProjectDateField label="Start" value={edit?.start_date || ''} disabled={commandState === 'PENDING'}
                   onChange={value => setEdit(current => ({ ...current, start_date: value }))}/>
