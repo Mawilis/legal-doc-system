@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.6.0-CRM-SOURCE-DETAIL-READBACK-CERT
+ * VERSION: v1.7.0-SOURCE-AUDITED-EDIT-BROWSER-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.0-SOURCE-AUDITED-EDIT-BROWSER-CERT verifies
+ *            independently permitted CRM editing with exact PATCH payload,
+ *            source/audit/unified readback, and denial when UPDATE is absent.
+ *            No in-browser synthetic persistence is accepted.
  * CHANGELOG: v1.6.0-CRM-SOURCE-DETAIL-READBACK-CERT verifies exact source-owned CRM
  *            record details and fails closed for foreign-tenant data without
  *            creating browser audit or lifecycle authority.
@@ -33,11 +37,13 @@ import MyWorkWorkspace from '../../components/workspaces/MyWorkWorkspace.jsx';
 import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
+import { readAttentionSourceActions } from '../../services/attentionFeedClient.js';
 
 vi.mock('../../services/legalOperationsService.js', () => ({
   completeLegalWorkItem: vi.fn(),
 }));
-vi.mock('../../services/api.js', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('../../services/api.js', () => ({ default: { get: vi.fn(), post: vi.fn(), patch: vi.fn() } }));
+vi.mock('../../services/attentionFeedClient.js', () => ({ readAttentionSourceActions: vi.fn() }));
 
 const payload = {
   schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
@@ -76,6 +82,7 @@ const openRow = async (title) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  readAttentionSourceActions.mockResolvedValue({ sourceActions: {}, unavailableSources: [] });
   api.get.mockResolvedValue({ data: payload });
   api.post.mockImplementation(async (path) => ({
     data: { work_item_id: decodeURIComponent(path.split('/').at(-2)), status: 'COMPLETED' },
@@ -144,6 +151,131 @@ describe('authenticated My Work execution queue', () => {
       '/crm/owner-workspace/work-items/crm-1',
       expect.objectContaining({ forceNetworkRetry: true, signal: expect.anything() }),
     );
+  });
+
+
+  it('edits a CRM task only after EOS UPDATE admission and verifies source audit and queue', async () => {
+    const item = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-edit-1',
+      work_item_id: 'crm-edit-1', title: 'Original CRM task', status: 'OPEN',
+    };
+    const original = {
+      schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+      tenant_id: 'tenant-a', work_item_id: item.work_item_id,
+      title: item.title, description: item.description,
+      kind: 'TASK', status: 'OPEN', priority: 'HIGH',
+      owner_principal_id: 'principal-a',
+      source_type: null, source_id: null, due_at: item.due_at,
+      created_at: '2026-11-01T10:00:00+00:00',
+      updated_at: '2026-11-06T10:00:00+00:00',
+      completed_at: null, completion_note: null,
+    };
+    const updated = {
+      ...original, title: 'Updated CRM task', description: 'Audited change',
+      updated_at: '2026-11-06T10:15:00+00:00',
+    };
+    const initial = {
+      ...payload, items: [item], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    const after = {
+      ...initial,
+      items: [{ ...item, title: updated.title, description: updated.description }],
+    };
+    let sourceUpdated = false;
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: sourceUpdated ? after : initial };
+      if (path === '/crm/owner-workspace/work-items/crm-edit-1') {
+        return { data: sourceUpdated ? updated : original };
+      }
+      if (path === '/crm/owner-workspace/work-items/crm-edit-1/history') {
+        return { data: {
+          schema: 'WILSY-OWNER-COMMERCIAL-WORK-HISTORY/V1',
+          tenant_id: 'tenant-a', work_item_id: 'crm-edit-1',
+          events: [{
+            actor_principal_id: 'principal-a', recorded_at: updated.updated_at,
+            before: original, after: updated,
+          }],
+        }};
+      }
+      throw new Error('UNEXPECTED_EDIT_READ');
+    });
+    readAttentionSourceActions.mockResolvedValue({
+      sourceActions: { CRM: ['CREATE', 'UPDATE', 'COMPLETE'] },
+      unavailableSources: [],
+    });
+    api.patch.mockImplementation(async () => {
+      sourceUpdated = true;
+      return { data: updated };
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Original CRM task');
+    await screen.findByText('Persisted source record verified for this tenant');
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit CRM task' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit CRM title' }), {
+      target: { value: updated.title },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit CRM description' }), {
+      target: { value: updated.description },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save audited edit' }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    const [route, request, options] = api.patch.mock.calls[0];
+    expect(route).toBe('/crm/owner-workspace/work-items/crm-edit-1');
+    expect(request).toMatchObject({
+      title: updated.title, description: updated.description,
+      priority: 'HIGH', expected_updated_at: original.updated_at,
+    });
+    expect(options.headers['Idempotency-Key']).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(
+      'CRM edit confirmed by source, audit history and fresh My Work.',
+    )).toBeTruthy());
+    expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
+    expect(screen.getByText(updated.title)).toBeTruthy();
+  });
+
+  it('never exposes CRM edit when current EOS source permission is absent', async () => {
+    const item = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-denied',
+      work_item_id: 'crm-denied', title: 'Read-only CRM task',
+    };
+    const projection = {
+      ...payload, items: [item], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    const source = {
+      schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+      tenant_id: 'tenant-a', work_item_id: 'crm-denied',
+      title: item.title, description: item.description, status: 'OPEN',
+      priority: item.priority, kind: 'TASK', owner_principal_id: 'principal-a',
+      created_at: '2026-11-01T10:00:00Z',
+      updated_at: '2026-11-06T10:00:00Z',
+      due_at: item.due_at, source_type: null, source_id: null,
+      completed_at: null, completion_note: null,
+    };
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: projection };
+      if (path === '/crm/owner-workspace/work-items/crm-denied') return { data: source };
+      throw new Error('UNEXPECTED_SOURCE_READ');
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Read-only CRM task');
+    await screen.findByText('Persisted source record verified for this tenant');
+    await waitFor(() => expect(readAttentionSourceActions).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: 'Edit CRM task' })).toBeNull();
+    expect(api.patch).not.toHaveBeenCalled();
   });
 
   it('rejects CRM source detail from another tenant without showing it as verified', async () => {
@@ -354,7 +486,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.6.0-CRM-SOURCE-DETAIL-READBACK-CERT
+ * VERSION: v1.7.0-SOURCE-AUDITED-EDIT-BROWSER-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
