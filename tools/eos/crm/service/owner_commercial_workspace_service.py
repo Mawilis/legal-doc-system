@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace Service
-VERSION: v1.4.0-COMPANY-OWNER-WORK-CONTINUITY
+VERSION: v1.5.0-OWNER-ONLY-AUDITED-CANCEL
 AUTHORITY: WILSY OS Python EOS CRM source service.
 EPITOME: Enforce independent customer CRM Core or exact WILSY company-owner authority for tenant-exact work
          reads, creation, completion and canonical work-detail readback.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/se
 COLLABORATION / OWNERSHIP: CRM source domain, owner work registry and
          authenticated owner commercial workspace router.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.5.0-OWNER-ONLY-AUDITED-CANCEL delegates exact-owner
+           terminal cancellation to the CRM registry under the same CRM
+           UPDATE IAM and immutable Founder/customer entitlement admission.
+           Neither foreign assignments nor permanent deletion is enabled.
 CHANGELOG: v1.4.0-COMPANY-OWNER-WORK-CONTINUITY preserves the existing
            WILSY company Headquarters CRM-owned task queue without inventing
            crm.core in the historical Founder subscription. The exception is
@@ -188,6 +192,25 @@ class OwnerCommercialWorkspaceService:
             idempotency_key=idempotency_key, now=now, session=session,
         )
 
+    def cancel(
+        self, *, tenant_id: str, work_item_id: str,
+        actor_principal_id: str, reason: str, expected_updated_at: datetime,
+        idempotency_key: str, now: datetime, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Cancel an owned task under CRM UPDATE IAM and commercial admission.
+
+        Source ownership is independently enforced in the registry. The
+        cancellation and immutable audit event share the caller transaction;
+        absent or foreign tasks never become deletions or false successes.
+        """
+        self._require_entitlement(tenant_id, session)
+        return self._registry.cancel(
+            tenant_id=tenant_id, work_item_id=work_item_id,
+            actor_principal_id=actor_principal_id, reason=reason,
+            expected_updated_at=expected_updated_at,
+            idempotency_key=idempotency_key, now=now, session=session,
+        )
+
     def revision_history(
         self, *, tenant_id: str, work_item_id: str,
         session: Any,
@@ -241,7 +264,7 @@ class OwnerCommercialWorkspaceService:
 __all__ = ["OwnerCommercialWorkspaceError", "OwnerCommercialWorkspaceService"]
 
 # ARTIFACT: tools/eos/crm/service/owner_commercial_workspace_service.py
-# VERSION: v1.4.0-COMPANY-OWNER-WORK-CONTINUITY
+# VERSION: v1.5.0-OWNER-ONLY-AUDITED-CANCEL
 # AUTHORITY BOUNDARY: Existing CRM HTTP IAM, entitlement and tenant-owned registry.
 # TENANT POSTURE: Exact tenant lookup; foreign record existence is not disclosed.
 # FAIL-CLOSED POSTURE: Denied, unavailable and absent source records remain explicit.
