@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT
+ * VERSION: v1.15.0-SOURCE-OVERDUE-COUNT-REGRESSION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,10 +8,12 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT proves
+ * CHANGELOG: v1.15.0-SOURCE-OVERDUE-COUNT-REGRESSION distinguishes
+ *            the verified Overdue filter count from per-row overdue badges.
+ * CHANGELOG: v1.15.0-SOURCE-OVERDUE-COUNT-REGRESSION proves
  *            successful audited Draft transition removes the active row,
  *            decrements the verified count and exposes saved owner drafts.
- * CHANGELOG: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT verifies
+ * CHANGELOG: v1.15.0-SOURCE-OVERDUE-COUNT-REGRESSION verifies
  *            modeless desktop dialogue and accessible concurrent queue,
  *            alongside mouse drag and keyboard edge resizing.
  * CHANGELOG: v1.12.0-MOUSE-DRAG-RESIZE-CERT exercises the
@@ -122,7 +124,8 @@ describe('authenticated My Work execution queue', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getByText('Prepare daily operations report')).toBeTruthy();
     expect(screen.getByText('Review matter evidence')).toBeTruthy();
-    expect(screen.getByText('Overdue')).toBeTruthy();
+    expect(screen.getAllByText('Overdue').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Overdue (1)' })).toBeTruthy();
     // The verified source instant is stable; its visible local clock time is
     // determined by the browser environment, not the CI runner's region.
     const verifiedInstant = new Date(payload.as_of);
@@ -745,7 +748,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT
+ * VERSION: v1.15.0-SOURCE-OVERDUE-COUNT-REGRESSION
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
