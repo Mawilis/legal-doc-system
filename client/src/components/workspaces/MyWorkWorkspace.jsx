@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.25.0-LIVE-STATUS-COUNT-FILTERS
+ * VERSION: v1.26.0-DENSE-SOURCE-ACTION-WORKBENCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.26.0-DENSE-SOURCE-ACTION-WORKBENCH replaces
+ *            horizontally disconnected record context and CRM editor
+ *            with one compact vertical execution flow. The independent
+ *            desktop workbench still moves/resizes without empty side gaps.
  * CHANGELOG: v1.25.0-LIVE-STATUS-COUNT-FILTERS derives actionable
  *            Overdue/Open/In Progress counts exclusively from the
  *            validated source projection. Saved Drafts count appears only
@@ -258,7 +262,6 @@ export default function MyWorkWorkspace(props = {}) {
   const [selectedKey, setSelectedKey] = useState(null);
   const closeButtonRef = useRef(null);
   const [workbench, setWorkbench] = useState(null);
-  const splitWorkbench = (workbench?.width ?? 0) >= 880 && typeof window !== "undefined" && window.innerWidth >= 768;
   const workbenchGestureRef = useRef(null);
   const startWorkbenchGesture = (event, mode) => {
     if ((event.button != null && event.button !== 0) || window.innerWidth < 768) return;
@@ -989,17 +992,17 @@ export default function MyWorkWorkspace(props = {}) {
               </button>
             </header>
 
-            <div className={`grid flex-1 auto-rows-min gap-5 p-4 sm:p-6 ${splitWorkbench ? "grid-cols-[minmax(17rem,0.84fr)_minmax(0,1.16fr)] gap-8" : ""}`}>
-              <div className={`col-start-1 flex flex-wrap items-center gap-2 ${splitWorkbench ? "col-span-2" : ""}`}>
+            <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded border border-amber-300/25 bg-amber-300/[0.07] px-2 py-1 text-xs text-amber-100">{SOURCE_LABELS[selectedItem.source] || selectedItem.source}</span>
                 <span className={`rounded border px-2 py-1 text-xs font-semibold ${PRIORITY_STYLE[selectedItem.priority] || PRIORITY_STYLE.NORMAL}`}>{selectedItem.priority}</span>
                 <span className="inline-flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-xs text-slate-300"><Circle size={9} /> {statusLabel(selectedItem)}</span>
               </div>
-              <dl className="col-start-1 grid grid-cols-[6rem_1fr] gap-x-3 gap-y-2 border-y border-white/10 py-3 text-sm">
+              <dl className="flex flex-wrap gap-x-8 gap-y-3 border-y border-white/10 py-3 text-sm [&>dd]:font-medium">
                 <dt className="text-slate-400">Deadline</dt><dd className="text-slate-100">{formatDue(selectedItem.due_at)}</dd>
                 <dt className="text-slate-400">Work type</dt><dd className="text-slate-100">{kindLabel(selectedItem)}</dd>
               </dl>
-              <section className={`col-start-1 ${splitWorkbench ? "row-start-3" : ""}`}>
+              <section className="space-y-1 rounded-lg border border-white/10 bg-white/[0.025] p-4">
                 <h3 className="text-sm font-semibold text-white">Description</h3>
                 <p id="my-work-detail-description" className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">
                   {typeof selectedItem.description === 'string' && selectedItem.description.trim()
@@ -1009,7 +1012,7 @@ export default function MyWorkWorkspace(props = {}) {
 
               {selectedItem.source === 'CRM' && (
                 <section aria-label="Verified CRM source record"
-                  className={`min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4 ${splitWorkbench ? "col-start-2 row-start-2 row-span-3" : ""}`}>
+                  className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
                   <h3 className="text-sm font-semibold text-white">CRM source record</h3>
                   {crmEditNotice?.scope === scopeKey
                     && crmEditNotice?.workItemId === selectedItem.work_item_id
@@ -1107,7 +1110,7 @@ export default function MyWorkWorkspace(props = {}) {
               )}
 
               {selectedItem.source === 'LEGAL' ? (
-                <section className={`min-w-0 space-y-3 border-t border-white/10 pt-4 ${splitWorkbench ? "col-start-2" : ""}`} aria-label="Legal completion evidence">
+                <section className="min-w-0 space-y-3 border-t border-white/10 pt-4" aria-label="Legal completion evidence">
                   <p className="text-xs text-slate-400">EOS requires source evidence for this Legal completion. My Work cannot create or infer that evidence.</p>
                   <label className="grid gap-1 text-xs text-slate-300">
                     Completion evidence reference
@@ -1131,7 +1134,7 @@ export default function MyWorkWorkspace(props = {}) {
                   </label>
                 </section>
               ) : completionPath(selectedItem) ? (
-                <label className={`grid min-w-0 gap-1 border-t border-white/10 pt-4 text-xs text-slate-300 ${splitWorkbench ? "col-start-2" : ""}`}>
+                <label className="grid min-w-0 gap-1 border-t border-white/10 pt-4 text-xs text-slate-300">
                   Completion note <span className="text-slate-500">(required by this source)</span>
                   <textarea value={notes[selectedItem.source_key] || ''}
                     onChange={(event) => setNotes((current) => ({ ...current, [selectedItem.source_key]: event.target.value }))}
@@ -1139,7 +1142,7 @@ export default function MyWorkWorkspace(props = {}) {
                     className="min-h-24 resize-y rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-amber-300" />
                 </label>
               ) : (
-                <p className={`border-t border-white/10 pt-4 text-xs text-slate-400 ${splitWorkbench ? "col-start-2" : ""}`}>This source does not expose a completion action in the current My Work contract.</p>
+                <p className="border-t border-white/10 pt-4 text-xs text-slate-400">This source does not expose a completion action in the current My Work contract.</p>
               )}
 
               {actionError && <div role="alert" className="rounded-lg border border-rose-400/25 bg-rose-950/20 px-3 py-2 text-sm text-rose-200">EOS did not confirm completion: {actionError}. The work remains in the last verified queue until a fresh projection confirms its state.</div>}
@@ -1643,7 +1646,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.25.0-LIVE-STATUS-COUNT-FILTERS
+ * VERSION: v1.26.0-DENSE-SOURCE-ACTION-WORKBENCH
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
