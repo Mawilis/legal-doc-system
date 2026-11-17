@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.3.0-EXACT-SCOPE-LIFECYCLE-READBACK
+ * VERSION: v1.4.0-SCOPED-STRATEGY-PROJECT-FOCUS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-16.
+ * CHANGELOG: v1.4.0-SCOPED-STRATEGY-PROJECT-FOCUS admits a Strategy handoff only after the
+ *            project ID appears in a fresh exact-tenant EOS list, then loads
+ *            source-authorized project detail and immutable audit events.
+ *            The handoff is navigation, never an inferred governed link.
  * CHANGELOG: v1.3.0-EXACT-SCOPE-LIFECYCLE-READBACK validates principal/tenant envelopes for list, summary, detail and command results; requires fresh list/detail readback after lifecycle commands and verifies archived items leave the active list.
  *            v1.2.0-PROJECTS-CREATE-REPLAY-KEY-RETENTION preserves an unchanged
  *            create command's idempotency key through uncertain retries and
@@ -150,11 +154,11 @@ function assertProjectSummary(payload, tenantId, principalId) {
  * the canonical authenticated HTTP transport; Python EOS owns every result.
  * @institutional The component renders only server-returned state and sends
  * revision-guarded, idempotent commands to existing EOS routes.
- * @param {{tenantId?: string|null, sessionScope?: string}} props Exact selected
+ * @param {{tenantId?: string|null, sessionScope?: string, focusProjectId?: string|null}} props Exact selected
  * tenant and session generation supplied by the authenticated workspace owner.
  * @returns {JSX.Element} A source-backed Projects workspace.
  */
-export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '' }) {
+export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
   const [sourceState, setSourceState] = useState('LOADING');
@@ -175,6 +179,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const createReplay = useRef({ fingerprint: '', key: null });
   const activeScope = useRef('');
   const selectedRef = useRef(null);
+  const focusHandled = useRef(null);
   const itemsRef = useRef([]);
   const scopeKey = `${tenantId || ''}\u0000${principalId || ''}\u0000${sessionScope || ''}`;
   activeScope.current = scopeKey;
@@ -248,6 +253,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     detailSequence.current += 1;
     itemsRef.current = [];
     selectedRef.current = null;
+    focusHandled.current = null;
     setItems([]);
     setSummary(null);
     setSelectedId(null);
@@ -299,6 +305,17 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       return false;
     }
   }, [scopeKey, tenantId, principalId, tenantHeaders, changeSelection]);
+
+  // A Strategy-to-Projects handoff is navigation only. Require an exact
+  // authorized first-page list before opening one EOS detail/audit read.
+  // Suppress repeated focus after manual selection or a later list refresh.
+  useEffect(() => {
+    if (!focusProjectId || !/^prj-[0-9a-f]{48}$/.test(focusProjectId)
+      || sourceState !== 'READY' || !items.some(item => item.project_id === focusProjectId)
+      || focusHandled.current === scopeKey + ':' + focusProjectId) return;
+    focusHandled.current = scopeKey + ':' + focusProjectId;
+    void openProject(focusProjectId);
+  }, [focusProjectId, sourceState, items, scopeKey, openProject]);
 
   const newIdempotencyKey = () => {
     if (!globalThis.crypto || typeof globalThis.crypto.randomUUID !== 'function') {
@@ -494,7 +511,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.3.0-EXACT-SCOPE-LIFECYCLE-READBACK
+// VERSION: v1.4.0-SCOPED-STRATEGY-PROJECT-FOCUS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
