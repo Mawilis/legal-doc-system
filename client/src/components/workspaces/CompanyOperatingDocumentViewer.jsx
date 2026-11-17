@@ -1,13 +1,18 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.1.0-LIVE-SESSION-SOURCE-STATUS
+ * VERSION: v1.2.0-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.2.0-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO brings
+ *            publication and separately admitted author/review commands
+ *            into one live workspace; supports private section editing,
+ *            reorder, removal, preview and persisted EOS draft readback.
+ *            Client text is never an official mission or strategy.
  * CHANGELOG: v1.1.0-LIVE-SESSION-SOURCE-STATUS distinguishes local authentication, denied access,
  * unavailable transport/source and invalid responses; presents useful recovery
  * and suppresses commands after an authorization or unverified source failure.
@@ -108,6 +113,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [query, setQuery] = useState({ review: false, revision: null });
   const queryRef = useRef(query);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [proposal, setProposal] = useState(emptyProposal);
   const [approvalReference, setApprovalReference] = useState('');
   const [effectiveFrom, setEffectiveFrom] = useState('');
@@ -145,7 +151,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     epoch.current = sessionKey;
     const fresh = { review: false, revision: null };
     queryRef.current = fresh; setQuery(fresh); setHistory(null); setTab('document');
-    setEditorOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
+    setEditorOpen(false); setPreviewOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
     setMessage(''); setBusy(false); retryKeys.current.clear(); commandLock.current = null;
     void load(fresh);
     return () => { readId.current += 1; readController.current?.abort(); epoch.current = null; };
@@ -159,7 +165,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   }, []);
 
   const changeQuery = next => {
-    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setHistory(null);
+    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setPreviewOpen(false); setHistory(null);
     void load(next);
   };
   const openHistory = async () => {
@@ -193,7 +199,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (readback.document?.revision !== receipt.revision || readback.document?.fingerprint !== receipt.fingerprint) throw new Error('COMPANY_DOCUMENT_READBACK_UNVERIFIED');
       if (!active(key) || commandLock.current !== commandToken) return;
       readId.current += 1; queryRef.current = next; setQuery(next); setSource({ scope: key, classification, data: readback });
-      setEditorOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+      setEditorOpen(false); setPreviewOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
       setMessage('EOS confirmed the command and its durable document readback.');
     } catch (failure) {
       if (!active(key) || commandLock.current !== commandToken) return;
@@ -220,6 +226,38 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       approval_reference: approvalReference, effective_from: effective.toISOString() });
   };
   const expected = data?.current_revision ?? 0;
+  const draftPermitted = actions.includes('CREATE_DRAFT');
+  const reviewPermitted = actions.includes('REVIEW_DRAFTS');
+  const submittedDraft = document?.state === 'SUBMITTED';
+  const authorDraft = document?.state === 'DRAFT';
+  const updateSection = (index, update) => setProposal(previous => ({
+    ...previous,
+    sections: previous.sections.map((section, i) => i === index ? { ...section, ...update } : section),
+  }));
+  const moveSection = (index, direction) => setProposal(previous => {
+    const target = index + direction;
+    if (target < 0 || target >= previous.sections.length) return previous;
+    const sections = [...previous.sections];
+    [sections[index], sections[target]] = [sections[target], sections[index]];
+    return { ...previous, sections };
+  });
+  const removeSection = index => setProposal(previous => previous.sections.length <= 1 ? previous : ({
+    ...previous, sections: previous.sections.filter((section, i) => i !== index),
+  }));
+  const addSection = () => setProposal(previous => {
+    if (previous.sections.length >= 24) return previous;
+    const existing = new Set(previous.sections.map(section => section.section_id));
+    let number = 1;
+    while (existing.has('section-' + number)) number += 1;
+    return { ...previous, sections: [
+      ...previous.sections, { section_id: 'section-' + number, title: '', body: '' },
+    ] };
+  });
+  const proposalCharacters = proposal.sections.reduce((sum, section) => sum + section.body.length, 0);
+  const proposalValid = Boolean(proposal.title.trim()
+    && /^\\d+\\.\\d+\\.\\d+$/.test(proposal.document_version)
+    && proposal.sections.every(section => section.title.trim() && section.body.trim())
+    && proposalCharacters <= 100000);
 
   return createPortal(<div className={styles.backdrop} onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section ref={containerRef} className={styles.viewer} role="dialog" aria-modal="true" aria-labelledby="company-document-title" data-company-document={classification} onKeyDown={trapKeyboard}>
@@ -244,12 +282,107 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
           {loading ? <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>
             : error ? null : tab === 'history' ? <section className={styles.paper}><h2>Revision history</h2><p>Only revisions permitted for your current company capacity appear here.</p>{currentHistory?.items.length ? currentHistory.items.map(item => <button className={styles.revisionRow} key={item.revision} type="button" onClick={() => changeQuery({ review: query.review, revision: item.revision })}><FileText size={18}/><span><strong>Version {item.document_version} · revision {item.revision}</strong><small>{item.state} · {displayDate(item.recorded_at)}</small></span><ArrowUpRight size={15}/></button>) : !error && <p>No permitted revisions are available.</p>}</section>
               : data && <>
+                <nav className={styles.commandDeck} aria-label="Company document actions">
+                  <div className={styles.commandStatus}>
+                    <strong>{editorOpen ? 'Private draft workspace'
+                      : document?.state === 'PUBLISHED' ? 'Official publication'
+                        : authorDraft ? 'Draft under review'
+                          : submittedDraft ? 'Awaiting independent approval'
+                            : 'No official publication'}</strong>
+                    <span>{editorOpen ? 'Unpublished · editing in your current session'
+                      : query.review ? 'Private authorised source view'
+                        : 'Public source view · verified by EOS'}</span>
+                  </div>
+                  <div className={styles.commandButtons}>
+                    {draftPermitted && !editorOpen && <button type="button" disabled={busy}
+                      onClick={() => { setProposal(emptyProposal()); setPreviewOpen(false); setEditorOpen(true); }}>
+                      <FileText size={16}/> Prepare draft
+                    </button>}
+                    {reviewPermitted && !query.review && <button type="button" disabled={busy}
+                      onClick={() => changeQuery({ review: true, revision: null })}>
+                      <BookOpen size={16}/> Review private source
+                    </button>}
+                    {query.review && <button type="button" disabled={busy}
+                      onClick={() => changeQuery({ review: false, revision: null })}>
+                      <ArrowLeft size={16}/> Published view
+                    </button>}
+                    {actions.includes('SUBMIT') && <button type="button" disabled={busy}
+                      onClick={() => void perform('SUBMIT', { expected_revision: expected })}>
+                      <ArrowUpRight size={16}/> Submit for approval
+                    </button>}
+                  </div>
+                  {!draftPermitted && !reviewPermitted && !actions.includes('SUBMIT')
+                    && !actions.includes('PUBLISH') && <p className={styles.permissionNotice}>
+                      Current EOS permissions allow reading this source, not authoring or publishing.
+                      Draft and approval actions require separately verified company-document authority.
+                    </p>}
+                </nav>
                 <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
                 {!document ? <section className={styles.unpublished} data-document-state="NOT_YET_PUBLISHED"><BookOpen size={34}/><span className={styles.state}>VERIFIED SOURCE · NO APPROVED PUBLICATION</span><h2>Not yet published</h2><p>The verified company source currently has no approved {classification === 'MISSION' ? 'Mission' : 'Strategy'} publication available for this view. An authorized author may prepare a private draft; a different authorized approver must publish it before it becomes official.</p><p className={styles.boundaryNote}>{actions.includes('CREATE_DRAFT') ? 'Your current source permission permits draft preparation below.' : 'Draft preparation and publication controls appear only when EOS authorizes them for your current capacity.'}</p></section>
                   : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
                 <section className={styles.execution}><h2>Business execution</h2><p>The document source does not yet publish governed objective, project or work-item relationships. No owners, objectives or progress percentages are inferred.</p><button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button></section>
-                <div className={styles.actions}>{actions.includes('REVIEW_DRAFTS') && <button type="button" disabled={busy} onClick={() => changeQuery({ review: true, revision: null })}>Review drafts</button>}{actions.includes('CREATE_DRAFT') && <button type="button" disabled={busy} onClick={() => { setProposal(emptyProposal()); setEditorOpen(true); }}>Prepare draft</button>}{actions.includes('SUBMIT') && <button type="button" disabled={busy} onClick={() => perform('SUBMIT', { expected_revision: expected })}>{busy ? 'Verifying…' : 'Submit for approval'}</button>}</div>
-                {editorOpen && actions.includes('CREATE_DRAFT') && <form className={styles.form} onSubmit={event => { event.preventDefault(); void perform('CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}><h2>Prepare a proposed {classification === 'MISSION' ? 'Mission' : 'Strategy'}</h2><p>This remains a private draft. A different authorized publisher must approve it.</p><label>Document title<input required maxLength={200} value={proposal.title} onChange={event => setProposal({ ...proposal, title: event.target.value })}/></label><label>Document version<input required pattern="[0-9]+\.[0-9]+\.[0-9]+" value={proposal.document_version} onChange={event => setProposal({ ...proposal, document_version: event.target.value })}/></label>{proposal.sections.map((section, index) => <fieldset key={section.section_id}><legend>Section {index + 1}</legend><label>Section title<input required maxLength={160} value={section.title} onChange={event => setProposal({ ...proposal, sections: proposal.sections.map((item,i) => i === index ? { ...item, title: event.target.value } : item) })}/></label><label>Proposed content<textarea required maxLength={20000} value={section.body} onChange={event => setProposal({ ...proposal, sections: proposal.sections.map((item,i) => i === index ? { ...item, body: event.target.value } : item) })}/></label></fieldset>)}<div className={styles.actions}><button type="button" disabled={busy || proposal.sections.length >= 24} onClick={() => setProposal({ ...proposal, sections: [...proposal.sections, { section_id: 'section-' + (proposal.sections.length + 1), title: '', body: '' }] })}>Add section</button><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Save private draft'}</button><button type="button" onClick={() => setEditorOpen(false)} disabled={busy}>Cancel draft editor</button></div></form>}
+                {editorOpen && draftPermitted && <form className={styles.form}
+                  aria-label="Company private draft editor"
+                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform('CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
+                  <div className={styles.editorHeading}>
+                    <div><span className={styles.eyebrow}>AUTHOR WORKSPACE · PRIVATE</span>
+                      <h2>Prepare {classification === 'MISSION' ? 'Our Mission' : 'Our Strategy'}</h2>
+                      <p>Compose real source content, then save to Python EOS. Saving does not publish or approve it.</p>
+                    </div>
+                    <button type="button" disabled={busy} onClick={() => setPreviewOpen(value => !value)}
+                      aria-pressed={previewOpen}>{previewOpen ? 'Edit document' : 'Preview draft'}</button>
+                  </div>
+                  {previewOpen ? <div className={styles.preview} role="region" aria-label="Unpublished draft preview">
+                    <span className={styles.eyebrow}>UNPUBLISHED PREVIEW · NOT COMPANY POLICY</span>
+                    <h3>{proposal.title || 'Untitled private proposal'}</h3>
+                    <p>Version {proposal.document_version || 'not set'}</p>
+                    {proposal.sections.map(section => <section key={section.section_id}>
+                      <h4>{section.title || 'Untitled section'}</h4>
+                      <p>{section.body || 'No content yet'}</p>
+                    </section>)}
+                  </div> : <>
+                    <div className={styles.editorMeta}>
+                      <label>Document title<input required maxLength={200} value={proposal.title}
+                        onChange={event => setProposal(value => ({ ...value, title: event.target.value }))}/></label>
+                      <label>Document version<input required pattern="[0-9]+\\.[0-9]+\\.[0-9]+"
+                        value={proposal.document_version}
+                        onChange={event => setProposal(value => ({ ...value, document_version: event.target.value }))}/></label>
+                    </div>
+                    <div className={styles.sectionList}>
+                      {proposal.sections.map((section, index) => <fieldset key={section.section_id}>
+                        <legend>Section {index + 1}</legend>
+                        <div className={styles.sectionControls}>
+                          <span>{section.body.trim().split(/\\s+/).filter(Boolean).length} words</span>
+                          <button type="button" disabled={busy || index === 0}
+                            aria-label={`Move section ${index + 1} up`}
+                            onClick={() => moveSection(index, -1)}>Move up</button>
+                          <button type="button" disabled={busy || index === proposal.sections.length - 1}
+                            aria-label={`Move section ${index + 1} down`}
+                            onClick={() => moveSection(index, 1)}>Move down</button>
+                          <button type="button" disabled={busy || proposal.sections.length === 1}
+                            aria-label={`Remove section ${index + 1}`}
+                            onClick={() => removeSection(index)}>Remove</button>
+                        </div>
+                        <label>Section title<input required maxLength={160} value={section.title}
+                          onChange={event => updateSection(index, { title: event.target.value })}/></label>
+                        <label>Proposed content<textarea required maxLength={20000} rows={5} value={section.body}
+                          onChange={event => updateSection(index, { body: event.target.value })}/></label>
+                      </fieldset>)}
+                    </div>
+                  </>}
+                  <div className={styles.editorFooter}>
+                    <span>{proposal.sections.length} sections · {proposalCharacters.toLocaleString()} / 100,000 characters</span>
+                    <div className={styles.actions}>
+                      <button type="button" disabled={busy || proposal.sections.length >= 24 || previewOpen}
+                        onClick={addSection}>Add section</button>
+                      <button type="submit" disabled={busy || !proposalValid}>
+                        {busy ? 'Verifying EOS…' : 'Save private draft to EOS'}
+                      </button>
+                      <button type="button" disabled={busy}
+                        onClick={() => { setEditorOpen(false); setPreviewOpen(false); }}>Close editor</button>
+                    </div>
+                  </div>
+                </form>}
                 {actions.includes('PUBLISH') && <form className={styles.form} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
               </>}
         </div>
@@ -260,7 +393,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.1.0-LIVE-SESSION-SOURCE-STATUS
+// VERSION: v1.2.0-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
