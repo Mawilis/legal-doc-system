@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace HTTP Router
-VERSION: v1.2.0-EXACT-CRM-WORK-EDIT-HTTP
+VERSION: v1.2.1-EXPLICIT-FULL-EDIT-REQUEST
 AUTHORITY: WILSY OS Python EOS institutional CRM API.
 EPITOME: Expose source-owned CRM owner work reads and commands through exact
          tenant authorization, entitlement admission and Mongo transactions.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/ow
 COLLABORATION / OWNERSHIP: Tenant IAM dependency, CRM owner source service,
          tenant-scoped work registry and Python EOS API gateway.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.1-EXPLICIT-FULL-EDIT-REQUEST requires every editable
+           task field in an explicit full-revision PATCH; omitted description,
+           priority or deadline can no longer silently reset source state.
 CHANGELOG: v1.2.0-EXACT-CRM-WORK-EDIT-HTTP adds a dedicated PATCH
            command gated by crm:work_item:update, active entitlement, strict
            request shape, exact actor, idempotency key and source-owned CAS;
@@ -79,9 +82,9 @@ class OwnerWorkReviseRequest(BaseModel):
     """
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=240)
-    description: str = Field(default="", max_length=4000)
-    priority: Literal["CRITICAL", "HIGH", "NORMAL", "LOW"] = "NORMAL"
-    due_at: datetime | None = None
+    description: str = Field(max_length=4000)
+    priority: Literal["CRITICAL", "HIGH", "NORMAL", "LOW"]
+    due_at: datetime | None
     expected_updated_at: datetime
 
 
@@ -306,7 +309,7 @@ async def complete_owner_work_item(
 __all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item"]
 
 # ARTIFACT: tools/eos/api/owner_commercial_workspace_router.py
-# VERSION: v1.2.0-EXACT-CRM-WORK-EDIT-HTTP
+# VERSION: v1.2.1-EXPLICIT-FULL-EDIT-REQUEST
 # AUTHORITY BOUNDARY: Existing CRM read IAM and owner source entitlement.
 # TENANT POSTURE: Authorized tenant only; foreign work is indistinguishable from absent.
 # FAIL-CLOSED POSTURE: 401/403/404/503 remain distinct without fabricated evidence.
