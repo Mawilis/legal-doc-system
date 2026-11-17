@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY
+ * VERSION: v1.9.1-ACCOUNTABILITY-IDEMPOTENCY-REUSE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY adds exact-tenant, EOS-verified
+ * CHANGELOG: v1.9.1-ACCOUNTABILITY-IDEMPOTENCY-REUSE retains the exact command key through
+ *            uncertain department and assignment retries until verified EOS
+ *            readback; role/tenant and project state remain server-owned.
+ *            v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY adds exact-tenant, EOS-verified
  *            owner and department selectors, separately authorized department
  *            provisioning and audited project assignment with fresh readback.
  *            v1.8.0-EOS-PROJECT-CODE-READBACK removes mandatory
@@ -279,6 +282,8 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
   const [department, setDepartment] = useState(project.department_id || '');
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [localError, setLocalError] = useState('');
+  const departmentReplay = useRef({ fingerprint: '', key: null });
+  const assignmentReplay = useRef({ fingerprint: '', key: null });
 
   const loadOptions = useCallback(async () => {
     const { data } = await api.get('/projects/assignment-options', { headers: tenantHeaders });
@@ -313,6 +318,13 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
     return globalThis.crypto.randomUUID();
   };
 
+  const retainedCommandKey = (reference, fingerprint) => {
+    if (reference.current.fingerprint !== fingerprint || !reference.current.key) {
+      reference.current = { fingerprint, key: newKey() };
+    }
+    return reference.current.key;
+  };
+
   const createDepartment = async (event) => {
     event.preventDefault();
     const name = newDepartmentName.trim();
@@ -320,7 +332,8 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
     setLocalError('');
     const confirmed = await runCommand(async () => {
       const { data } = await api.post('/projects/departments', { name }, {
-        headers: { ...tenantHeaders, 'Idempotency-Key': newKey() },
+        headers: { ...tenantHeaders,
+          'Idempotency-Key': retainedCommandKey(departmentReplay, JSON.stringify([tenantId, name])) },
       });
       if (data?.tenant_id !== tenantId || data?.department?.name !== name
         || data.department.status !== 'ACTIVE') throw new Error('PROJECT_DEPARTMENT_READBACK_INVALID');
@@ -331,6 +344,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       setOptions(verified);
       setDepartment(data.department.department_id);
       setNewDepartmentName('');
+      departmentReplay.current = { fingerprint: '', key: null };
     });
     if (!confirmed) setLocalError('EOS did not authorize or verify department creation.');
   };
@@ -344,7 +358,9 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       const { data } = await api.patch(
         `/projects/${encodeURIComponent(project.project_id)}/assignment`,
         { expected_revision: project.revision, owner_principal_id: owner, department_id: department },
-        { headers: { ...tenantHeaders, 'Idempotency-Key': newKey() } },
+        { headers: { ...tenantHeaders,
+          'Idempotency-Key': retainedCommandKey(assignmentReplay,
+            JSON.stringify([tenantId, project.project_id, project.revision, owner, department])) } },
       );
       const next = assertProjectResult(data, tenantId, principalId, project.project_id, project.revision + 1).project;
       if (next.owner_principal_id !== owner || next.department_id !== department
@@ -354,6 +370,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
         throw new Error('PROJECT_ASSIGNMENT_LIST_READBACK_UNAVAILABLE');
       }
       if (!await openProject(project.project_id)) throw new Error('PROJECT_ASSIGNMENT_DETAIL_READBACK_UNAVAILABLE');
+      assignmentReplay.current = { fingerprint: '', key: null };
     });
     if (!confirmed) setLocalError('EOS did not confirm the assignment. The previous values remain authoritative.');
   };
@@ -808,7 +825,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.9.0-SOURCE-GOVERNED-ACCOUNTABILITY
+// VERSION: v1.9.1-ACCOUNTABILITY-IDEMPOTENCY-REUSE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
