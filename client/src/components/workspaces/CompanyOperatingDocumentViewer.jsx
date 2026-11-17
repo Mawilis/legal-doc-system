@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.2.0-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
+ * VERSION: v1.2.1-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.2.1-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO fixes draft-version validation,
+ *            HTML input matching and section word counts so valid proposals
+ *            can be submitted to existing EOS author commands.
  * CHANGELOG: v1.2.0-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO brings
  *            publication and separately admitted author/review commands
  *            into one live workspace; supports private section editing,
@@ -255,7 +258,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   });
   const proposalCharacters = proposal.sections.reduce((sum, section) => sum + section.body.length, 0);
   const proposalValid = Boolean(proposal.title.trim()
-    && /^\\d+\\.\\d+\\.\\d+$/.test(proposal.document_version)
+    && /^\d+\.\d+\.\d+$/.test(proposal.document_version)
     && proposal.sections.every(section => section.title.trim() && section.body.trim())
     && proposalCharacters <= 100000);
 
@@ -344,7 +347,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     <div className={styles.editorMeta}>
                       <label>Document title<input required maxLength={200} value={proposal.title}
                         onChange={event => setProposal(value => ({ ...value, title: event.target.value }))}/></label>
-                      <label>Document version<input required pattern="[0-9]+\\.[0-9]+\\.[0-9]+"
+                      <label>Document version<input required pattern="[0-9]+\.[0-9]+\.[0-9]+"
                         value={proposal.document_version}
                         onChange={event => setProposal(value => ({ ...value, document_version: event.target.value }))}/></label>
                     </div>
@@ -352,7 +355,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       {proposal.sections.map((section, index) => <fieldset key={section.section_id}>
                         <legend>Section {index + 1}</legend>
                         <div className={styles.sectionControls}>
-                          <span>{section.body.trim().split(/\\s+/).filter(Boolean).length} words</span>
+                          <span>{section.body.trim().split(/\s+/).filter(Boolean).length} words</span>
                           <button type="button" disabled={busy || index === 0}
                             aria-label={`Move section ${index + 1} up`}
                             onClick={() => moveSection(index, -1)}>Move up</button>
@@ -393,7 +396,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.2.0-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
+// VERSION: v1.2.1-SOURCE-AUTHORISED-LIVE-DOCUMENT-STUDIO
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
