@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
+ * VERSION: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,6 +16,10 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES keeps
+ *            EOS /status and /cancel commands free of injected timestamp
+ *            JSON. Forensic time and seal remain in request headers, not
+ *            strict Pydantic command payloads.
  * CHANGELOG: 2026-11-17 v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
  *            preserves strict CRM PATCH task-edit payloads as provided by
  *            the caller; forensic timestamps remain transport headers.
@@ -496,7 +500,7 @@ api.interceptors.request.use(
         /^\/legal-acceptance\/accept$/i.test(config.url)
         || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish))$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
-        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/complete)?)?$/i.test(config.url)
+        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/(?:complete|status|cancel))?)?$/i.test(config.url)
         || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
       );
       const isMultipartBody = typeof FormData !== 'undefined'
