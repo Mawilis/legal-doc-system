@@ -55,7 +55,7 @@ from hashlib import sha3_256
 from typing import Any
 
 from tools.eos.crm.domain.owner_commercial_work_item import (
-    OwnerCommercialWorkItem, OwnerWorkKind, OwnerWorkPriority,
+    OwnerCommercialWorkItem, OwnerWorkKind, OwnerWorkPriority, OwnerWorkStatus,
 )
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
     OwnerCommercialWorkRegistry,
