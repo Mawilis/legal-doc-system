@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING
+VERSION: v1.4.2-ACTIVATION-ACCOUNTABILITY-GATE
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,6 +14,10 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.4.2-ACTIVATION-ACCOUNTABILITY-GATE refuses a PLANNED-to-ACTIVE
+  transition unless the project has a current eligible owner and active
+  tenant department. The check runs in the caller-owned project transaction;
+  no activation or IAM grants occur during this change.
   v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING binds department idempotency
   evidence to the exact authorized actor and returns identical successful
   command shape on replay; retained tenant, entitlement and CAS guards apply.
@@ -136,7 +140,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING"
+VERSION: Final[str] = "v1.4.2-ACTIVATION-ACCOUNTABILITY-GATE"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -981,6 +985,22 @@ def update_project(
 
     def update(registry: ProjectRegistry, session: Any) -> dict[str, object]:
         if status_value is not None:
+            if status_value is ProjectStatus.ACTIVE:
+                current = registry.get(
+                    tenant_id=context.tenant_id, project_id=project_id, session=session,
+                )
+                if not current.owner_principal_id or not current.department_id:
+                    raise HTTPException(status_code=409, detail="PROJECT_ACCOUNTABILITY_REQUIRED")
+                database = kernel_db.get_database()
+                if database is None:
+                    raise HTTPException(status_code=503, detail="PROJECT_ASSIGNMENT_SOURCE_UNAVAILABLE")
+                if not _project_owner_eligible(
+                    database, context.tenant_id, current.owner_principal_id, session,
+                ):
+                    raise HTTPException(status_code=409, detail="PROJECT_OWNER_NOT_ELIGIBLE")
+                _current_department(
+                    database, context.tenant_id, current.department_id, session,
+                )
             updated = registry.transition(
                 tenant_id=context.tenant_id,
                 project_id=project_id,
@@ -1075,7 +1095,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.4.1-DEPARTMENT-REPLAY-ACTOR-BINDING
+# VERSION: v1.4.2-ACTIVATION-ACCOUNTABILITY-GATE
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
