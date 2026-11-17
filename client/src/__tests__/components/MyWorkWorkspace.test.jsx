@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.11.0-INTERACTIVE-RESIZE-CERT
+ * VERSION: v1.12.0-MOUSE-DRAG-RESIZE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.12.0-MOUSE-DRAG-RESIZE-CERT exercises the
+ *            desktop mouse fallback via actual down/move/up input and
+ *            retains keyboard shrink and authenticated source denial cases.
  * CHANGELOG: v1.11.0-INTERACTIVE-RESIZE-CERT simulates real pointer
  *            resizing and keyboard width reduction, not merely existence
  *            of the workbench resize handle.
@@ -168,9 +171,9 @@ describe('authenticated My Work execution queue', () => {
     expect(dialog).toBeTruthy();
     await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(500));
     const originalWidth = parseFloat(dialog.style.width);
-    fireEvent.pointerDown(resize, { button: 0, clientX: 600, clientY: 170 });
-    fireEvent.pointerMove(window, { clientX: 680, clientY: 170 });
-    fireEvent.pointerUp(window);
+    fireEvent.mouseDown(resize, { button: 0, clientX: 600, clientY: 170 });
+    fireEvent.mouseMove(window, { clientX: 680, clientY: 170 });
+    fireEvent.mouseUp(window);
     await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(originalWidth));
     const expandedWidth = parseFloat(dialog.style.width);
     fireEvent.keyDown(resize, { key: 'ArrowLeft' });
