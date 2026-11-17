@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.1.1-EXACT-SCOPE-CREATE-UPDATE-ARCHIVE-CERT
+ * VERSION: v1.2.0-STRATEGY-HANDOFF-SCOPE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
- * CERTIFICATION / UPDATE DATE: 2026-11-16.
+ * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.2.0-STRATEGY-HANDOFF-SCOPE-CERT proves Strategy focus requires an
+ *            authenticated exact-tenant list before detail readback and
+ *            rejects absent IDs without issuing any project mutations.
  * CHANGELOG: v1.1.1-EXACT-SCOPE-CREATE-UPDATE-ARCHIVE-CERT covers full synthetic lifecycle and rejects stale or foreign envelopes; v1.0.1 covers create replay and denial.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic test identities only; no credential or production data.
@@ -84,6 +87,30 @@ afterEach(() => {
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
+  it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
+    const persisted = project({ name: 'WILSY OS — Unified Operating Platform Foundation' });
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      throw new Error('Unexpected source route');
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="founder-project-handoff" focusProjectId={PROJECT_ID}/>);
+    expect(await screen.findByRole('heading', { name: persisted.name })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Audit events' })).toBeVisible();
+    expect(api.get.mock.calls.some(([path]) => path === `/projects/${PROJECT_ID}`)).toBe(true);
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('refuses Strategy-handoff details when the authorized list omits that project', async () => {
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="absent-project-handoff" focusProjectId={PROJECT_ID}/>);
+    expect(await screen.findByText('No projects in this tenant')).toBeVisible();
+    expect(api.get.mock.calls.some(([path]) => path === `/projects/${PROJECT_ID}`)).toBe(false);
+  });
+
   it('creates, reads, updates, changes status, archives and reads back through EOS routes', async () => {
     let current = null;
     let events = [];
@@ -230,7 +257,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.1.1-EXACT-SCOPE-CREATE-UPDATE-ARCHIVE-CERT
+ * VERSION: v1.2.0-STRATEGY-HANDOFF-SCOPE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
