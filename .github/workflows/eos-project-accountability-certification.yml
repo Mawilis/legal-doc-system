@@ -1,0 +1,90 @@
+# TITLE: WILSY OS Governed Tenant Projects Assignment Certification
+# VERSION: v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT
+# AUTHORITY: WILSY OS Python EOS and authenticated client certification.
+# EPITOME: Verify exact-tenant assignment directory, department provisioning
+#          source currentness, revision CAS, immutable audit and client build.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-project-accountability-certification.yml
+# COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
+#                           sovereign repository integrity and certification.
+# CERTIFICATION / UPDATE DATE: 2026-11-17
+# CHANGELOG: v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
+#            Python and client project regression checks without any grant,
+#            production deployment, tenant mutation or artificial assignment.
+# COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Synthetic fixtures; no production credentials/data.
+# TENANT BOUNDARY: Tenant predicates and foreign-scope rejection are mandatory.
+# AUTHORITY BOUNDARY: Test-only; no runtime permission or assignment authority.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
+# FAIL-CLOSED POSTURE: Any failed check or build blocks certification.
+name: EOS Governed Tenant Project Accountability Certification
+
+on:
+  push:
+    branches:
+      - eos/p1-my-work-session-sync-20261109
+  pull_request:
+    paths:
+      - tools/eos/api/projects_router.py
+      - tools/eos/saas/domain/project.py
+      - tools/eos/saas/projects/project_registry.py
+      - tests/unit/test_projects_router_contract.py
+      - tests/unit/test_project_domain.py
+      - tests/unit/test_project_registry.py
+      - client/src/components/workspaces/ProjectsWorkspace.jsx
+      - client/src/__tests__/components/ProjectsWorkspace.test.jsx
+      - .github/workflows/eos-project-accountability-certification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-project-accountability-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  governed-project-accountability:
+    name: Exact tenant assignment, source authority and client certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@v4
+      - name: Prepare Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install governed Python dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt pytest==9.1.1 httpx
+      - name: Compile exact Projects sources and certificates
+        run: |
+          python -m py_compile tools/eos/api/projects_router.py tools/eos/saas/domain/project.py tools/eos/saas/projects/project_registry.py tests/unit/test_projects_router_contract.py
+      - name: Certify project IAM, schema, registry, replay and assignment
+        run: |
+          python -m pytest -q tests/unit/test_projects_router_contract.py tests/unit/test_project_domain.py tests/unit/test_project_registry.py
+      - name: Prepare isolated client
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Restore locked client dependencies
+        working-directory: client
+        run: npm ci --include=dev --no-audit --no-fund --progress=false
+      - name: Certify project source-backed interaction
+        working-directory: client
+        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx
+      - name: Build certified frontend
+        working-directory: client
+        run: npm run build
+
+# ARTIFACT: eos-project-accountability-certification.yml
+# VERSION: v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT
+# AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
+# TENANT POSTURE: Synthetic tenant-scoped verification only.
+# FAIL-CLOSED POSTURE: Python, client and build failures block success.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
