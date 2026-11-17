@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Source-Owned Work Registry
-VERSION: v1.3.0-AUDITED-DRAFT-PROGRESS-TRANSITIONS
+VERSION: v1.4.0-DRAFT-TERMINAL-GUARD
 AUTHORITY: Python EOS CRM persistence under caller-owned Mongo transactions.
 EPITOME: Persist exact-tenant commercial task creation, completion and an
          independently permission-gated edit with immutable audit evidence.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/pe
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceService, owner CRM router,
          strict OwnerCommercialWorkItem domain and active session IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.4.0-DRAFT-TERMINAL-GUARD rejects direct completion
+           of unpublished drafts; users must activate Open/In Progress first.
+           Existing completion semantics for active tasks remain unchanged.
 CHANGELOG: v1.3.0-AUDITED-DRAFT-PROGRESS-TRANSITIONS adds owner-only
            status CAS and immutable edit events for Draft/Open/In Progress,
            plus exact-owner draft retrieval, with terminal/foreign denials.
@@ -222,8 +225,8 @@ class OwnerCommercialWorkRegistry:
             if current.completion_note == completion_note:
                 return current
             raise OwnerWorkRegistryConflict("OWNER_WORK_DIVERGENT_COMPLETION_REPLAY")
-        if current.status is OwnerWorkStatus.CANCELLED:
-            raise OwnerWorkRegistryConflict("OWNER_WORK_TERMINAL_STATE")
+        if current.status in (OwnerWorkStatus.CANCELLED, OwnerWorkStatus.DRAFT):
+            raise OwnerWorkRegistryConflict("OWNER_WORK_TERMINAL_OR_DRAFT_STATE")
         updated = replace(
             current, status=OwnerWorkStatus.COMPLETED,
             updated_at=now, completed_at=now, completion_note=completion_note,
@@ -568,7 +571,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/crm/persistence/owner_commercial_work_registry.py
-# VERSION: v1.3.0-AUDITED-DRAFT-PROGRESS-TRANSITIONS
+# VERSION: v1.4.0-DRAFT-TERMINAL-GUARD
 # AUTHORITY BOUNDARY: CRM source-only transactional updates; IAM owned by API.
 # TENANT POSTURE: Exact tenant for task, replay and append-only audit event.
 # FAIL-CLOSED POSTURE: Stale CAS, replay divergence, corrupt input or missing audit store reject.
