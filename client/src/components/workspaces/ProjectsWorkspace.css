@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.0.0-SOURCE-BACKED-FLUID-GLASS-PROJECTS
+ * VERSION: v1.1.0-DETAIL-LED-RESPONSIVE-PROJECTS
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.1.0-DETAIL-LED-RESPONSIVE-PROJECTS expands the list
+ *            to all available width until selection, then emphasizes the
+ *            detail panel in a responsive split while preserving readability.
  * CHANGELOG: v1.0.0-SOURCE-BACKED-FLUID-GLASS-PROJECTS replaces
  *            low-contrast utility-dependent project chrome with scoped styles,
  *            fluid split panes, readable source-backed text and compact detail.
@@ -88,8 +91,19 @@
 }
 .wilsy-projects .wp-button-danger:hover:not(:disabled){background:#ffe5eb;}
 .wilsy-projects .wp-body {
-  display:grid;grid-template-columns:minmax(0, .9fr) minmax(470px,1.1fr);
+  display:grid;grid-template-columns:minmax(0,1fr);
   align-items:start;gap:18px;min-width:0;
+}
+.wilsy-projects .wp-body[data-layout="detail"] {
+  grid-template-columns:minmax(280px,.58fr) minmax(0,1.42fr);
+}
+.wilsy-projects .wp-body[data-layout="list"] .wp-list-panel {
+  min-height:0;
+}
+.wilsy-projects .wp-record-note {
+  margin:0 0 13px; padding:10px 13px; font-size:12px;
+  border-radius:9px; background:#f1f5fa; color:#405771 !important;
+  border:1px solid #d9e2ee;
 }
 .wilsy-projects .wp-panel {
   background:var(--wp-surface);color:var(--wp-ink) !important;
@@ -98,8 +112,8 @@
   box-shadow:0 16px 38px #00000020;
 }
 .wilsy-projects .wp-list-panel {min-height:360px;}
-.wilsy-projects .wp-detail {
-  position:sticky; top:100px; max-height:calc(100vh - 124px);overflow-y:auto;
+ .wilsy-projects .wp-detail {
+  position:sticky; top:94px; max-height:calc(100vh - 112px);overflow-y:auto;
   scrollbar-color:#a9c2df #f0f4fa;
 }
 .wilsy-projects .wp-panel :is(h2,h3,h4,strong) {color:#142b4d !important;}
@@ -134,7 +148,7 @@
 .wilsy-projects .wp-row:hover,.wilsy-projects .wp-row[data-selected=true] {
   background:#ecf4ff;border-left:4px solid #c68b12;padding-left:13px;
 }
-.wilsy-projects .wp-row-title {display:block;font-size:15px;color:#132d50 !important;font-weight:800;line-height:1.35;white-space:normal;overflow-wrap:anywhere;}
+ .wilsy-projects .wp-row-title {display:block;font-size:15px;color:#132d50 !important;font-weight:800;line-height:1.35;white-space:normal;overflow-wrap:anywhere;}
 .wilsy-projects .wp-row-meta {display:flex;flex-wrap:wrap;gap:6px 13px;margin-top:7px;color:#415671 !important;font-size:12px;}
 .wilsy-projects .wp-status {
   display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;
@@ -157,7 +171,9 @@
 }
 .wilsy-projects .wp-section-title{font-size:15px !important;font-weight:800 !important;color:#142e52 !important;margin:0 0 10px;}
 .wilsy-projects .wp-summary {font-size:13px;line-height:1.65;color:#314967 !important;overflow-wrap:anywhere;}
-.wilsy-projects .wp-summary p {margin:0 0 8px;}
+.wilsy-projects .wp-summary p {margin:0 0 10px;white-space:normal;}
+.wilsy-projects .wp-summary strong {color:#152f51 !important;font-weight:800;}
+.wilsy-projects .wp-summary h4 {font-size:15px;color:#102b4f !important;margin:16px 0 9px;font-weight:800;}
 .wilsy-projects .wp-summary h4 {margin:15px 0 7px;font-size:14px;font-weight:800;}
 .wilsy-projects .wp-summary .wp-list-line {display:flex;gap:9px;align-items:baseline;}
 .wilsy-projects .wp-summary .wp-list-line>span:first-child {flex-shrink:0;font-weight:800;min-width:20px;color:#84531b !important;}
@@ -177,7 +193,8 @@
 .wilsy-projects .wp-placeholder p {font-size:13px;color:#435c7a !important;}
 .wilsy-projects .wp-editor-heading {display:flex;justify-content:space-between;align-items:center;gap:10px;}
 @media(max-width:1100px){
-  .wilsy-projects .wp-body{grid-template-columns:minmax(0,1fr);}
+  .wilsy-projects .wp-body,
+  .wilsy-projects .wp-body[data-layout="detail"]{grid-template-columns:minmax(0,1fr);}
   .wilsy-projects .wp-detail{position:static;max-height:none;}
   .wilsy-projects .wp-list-panel{min-height:unset;}
 }
@@ -197,7 +214,7 @@
   .wilsy-projects .wp-button {transition:none;}
 }
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.0.0-SOURCE-BACKED-FLUID-GLASS-PROJECTS
+ * VERSION: v1.1.0-DETAIL-LED-RESPONSIVE-PROJECTS
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
