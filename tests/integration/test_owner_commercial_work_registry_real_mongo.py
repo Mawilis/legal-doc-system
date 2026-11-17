@@ -1,4 +1,24 @@
-"""Real-Mongo certification for tenant owner commercial work persistence."""
+"""TITLE: WILSY OS CRM Owner Work Real Mongo Persistence Certificate
+VERSION: v1.0.0-PERSISTED-COMPLETED-WORK-READBACK-CERT
+AUTHORITY: WILSY OS CRM source persistence certification.
+EPITOME: Certify tenant-scoped source commands, idempotent completion,
+         independent persisted readback and exact tenant isolation.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_owner_commercial_work_registry_real_mongo.py
+COLLABORATION / OWNERSHIP: OwnerCommercialWorkRegistry and CRM source domain;
+         requires an explicitly configured disposable Mongo replica set.
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.0.0-PERSISTED-COMPLETED-WORK-READBACK-CERT proves a completed item
+           persists evidence across a new session and remains inaccessible
+           under a foreign tenant coordinate. Existing tests are preserved.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Disposable fixture DB only; never production data.
+TENANT BOUNDARY: Every record read is tenant-prefixed.
+AUTHORITY BOUNDARY: Tests source registry, no IAM grant or HTTP authorization.
+TRANSACTION / IDEMPOTENCY BOUNDARY: Caller-owned replica-set sessions and
+                                   source compare-and-set receipts.
+FINANCIAL AUTHORITY BOUNDARY: No funds; Kennel EOS exclusively executes.
+FAIL-CLOSED POSTURE: Missing disposable Mongo is a skip, not pass evidence.
+"""
 from __future__ import annotations
 
 import os
@@ -67,6 +87,19 @@ def test_real_mongo_create_replay_tenant_isolation_and_completion(registry):
             session=active,
         ))
         assert replayed_completion == completed
+    # Independent Mongo session reads durable source evidence, not a UI cache.
+    with client.start_session() as independent:
+        persisted = independent.with_transaction(lambda active: store.get(
+            tenant_id=TENANT, work_item_id=item.work_item_id, session=active,
+        ))
+        assert persisted.status is OwnerWorkStatus.COMPLETED
+        assert persisted.completed_at == NOW
+        assert persisted.completion_note == "Follow-up completed"
+        with pytest.raises(OwnerWorkRegistryNotFound):
+            independent.with_transaction(lambda active: store.get(
+                tenant_id="OTHER-TENANT", work_item_id=item.work_item_id,
+                session=active,
+            ))
 
 
 def test_real_mongo_queue_orders_overdue_and_today_and_is_tenant_scoped(registry):
@@ -108,3 +141,11 @@ def test_real_mongo_divergent_replay_and_terminal_completion_fail_closed(registr
                 tenant_id=TENANT, work_item_id=item.work_item_id,
                 completion_note="Contradictory completion", now=NOW, session=active,
             ))
+
+# ARTIFACT: tests/integration/test_owner_commercial_work_registry_real_mongo.py
+# VERSION: v1.0.0-PERSISTED-COMPLETED-WORK-READBACK-CERT
+# AUTHORITY BOUNDARY: Source registry test, no IAM or execution authority.
+# TENANT POSTURE: Exact tenant record readback, foreign record not found.
+# FAIL-CLOSED POSTURE: Persistence proof requires real disposable replica set.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
