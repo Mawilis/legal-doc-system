@@ -5,14 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.21.0-SCOPED-WORK-RECOVERY-CERT
+ * VERSION: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.21.0-SCOPED-WORK-RECOVERY-CERT accepts a single
+ * CHANGELOG: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT proves
+ *            visible verified overdue, Open and In Progress filter
+ *            counts, an owner-draft destination and filtered work rows.
+ * CHANGELOG: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT accepts a single
  *            trustworthy verified active count when reads are shared across
  *            the Headquarters and Daily Attention coordinator, while still
  *            requiring the real source row and independent KPI evidence.
@@ -296,6 +299,13 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(screen.getByText('Verified active directory result')).toBeTruthy();
     expect(screen.queryByText('247')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Overdue (1)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open (3)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'In Progress (0)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Saved drafts' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Overdue (1)' }));
+    expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open authorized record: Ship work release' })).toBeNull();
   });
 
 
@@ -889,7 +899,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.21.0-SCOPED-WORK-RECOVERY-CERT
+ * VERSION: v1.22.0-HQ-STATUS-FILTER-COUNT-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
