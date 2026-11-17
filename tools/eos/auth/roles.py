@@ -1,7 +1,11 @@
 """
+CHANGELOG: v1.57.0-CRM-OWNER-WORK-EDIT-ROLE adds a narrow own-tenant
+CRM source-work editing permission to TENANT_OWNER and ENTERPRISE_ADMIN;
+AUDITOR remains read-only. Static grants require independent current
+membership, eligible capacity and active role assignment.
 CHANGELOG: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE — Consolidated sovereign documentation without executable changes.
 TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE
+VERSION: v1.57.0-CRM-OWNER-WORK-EDIT-ROLE
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -17,7 +21,7 @@ creating tenant-wide matter reads, deputy possession, service, or financial
 authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-17
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Contains no credentials, principal records,
 memberships or runtime secrets. A role definition never proves possession.
@@ -252,7 +256,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE"
+VERSION = "v1.57.0-CRM-OWNER-WORK-EDIT-ROLE"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -331,6 +335,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "subscription:read",
         "crm:work_item:read",
         "crm:work_item:create",
+        "crm:work_item:update",
         "crm:work_item:complete",
         "operations:work_item:read",
         "operations:work_item:create",
@@ -703,6 +708,7 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
 ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
     "crm:work_item:read",
     "crm:work_item:create",
+    "crm:work_item:update",
     "crm:work_item:complete",
 ])
 ROLE_PERMISSIONS_MAP["AUDITOR"].append("crm:work_item:read")
@@ -782,7 +788,7 @@ ROLE_PERMISSIONS_MAP["PROJECTS_PLATFORM_OWNER"] = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE
+# VERSION: v1.57.0-CRM-OWNER-WORK-EDIT-ROLE
 # AUTHORITY BOUNDARY: static read permission only; current assignment and operation authorization remain separate
 # TENANT POSTURE: company-document reading is hard-fenced to the canonical WILSY company tenant after separately governed active assignments
 # FAIL-CLOSED POSTURE: unknown, inactive, foreign, unpublished-review, author and publisher paths deny; this definition creates no assignment, route, admission, IAM, payroll, or entitlement authority
