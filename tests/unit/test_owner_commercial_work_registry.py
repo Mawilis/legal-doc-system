@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Work Registry Regression Certificate
-VERSION: v1.1.0-AUDITED-CRM-TASK-EDIT-CERT
+VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION-CERT
 AUTHORITY: WILSY OS source-owned CRM persistence certification.
 EPITOME: Verify exact-tenant create/replay, completion compare-and-set,
          persisted readback and absence of foreign-tenant disclosure.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: CRM work item domain and registry; Python EOS
          owner workspace service and authenticated API.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-AUDITED-OWNER-CANCELLATION-CERT certifies
+           owner-only terminal cancellation with CAS, exact audit, retries,
+           stale revision, wrong actor and foreign tenant denial.
 CHANGELOG: v1.1.0-AUDITED-CRM-TASK-EDIT-CERT exercises active-work
            compare-and-set, durable audit receipt, exact-key replay, stale,
            divergent, terminal, foreign and missing-audit-store denial.
@@ -265,8 +268,68 @@ def test_completed_record_retains_source_evidence_under_exact_tenant() -> None:
         )
 
 
+
+def test_cancel_owned_task_is_terminal_audited_and_idempotent():
+    """Source cancellation must survive replay and keep immutable before/after."""
+    records, events = Collection(), Collection()
+    store = OwnerCommercialWorkRegistry(records, events)
+    item = make_item()
+    session = object()
+    store.create_or_replay(item, idempotency_key="create", session=session)
+    values = dict(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        actor_principal_id="principal-1", reason="Scope changed",
+        expected_updated_at=item.updated_at, idempotency_key="cancel-1",
+        now=NOW + timedelta(minutes=1), session=session,
+    )
+    cancelled = store.cancel(**values)
+    assert cancelled.status is OwnerWorkStatus.CANCELLED
+    assert store.cancel(**values) == cancelled
+    assert len(events.rows) == 1
+    assert events.rows[0]["operation"] == "CANCEL"
+    assert events.rows[0]["reason"] == "Scope changed"
+    assert events.rows[0]["before"]["status"] == "OPEN"
+    assert events.rows[0]["after"]["status"] == "CANCELLED"
+    assert store.daily_queue(tenant_id=TENANT, now=NOW, session=session) == ()
+    history = store.revision_history(
+        tenant_id=TENANT, work_item_id=item.work_item_id, session=session,
+    )
+    assert len(history) == 1
+    assert history[0]["operation"] == "CANCEL"
+    assert history[0]["actor_principal_id"] == "principal-1"
+    with pytest.raises(OwnerWorkRegistryConflict, match="DIVERGENT_CANCEL_REPLAY"):
+        store.cancel(**{**values, "reason": "Different reason"})
+    with pytest.raises(OwnerWorkRegistryConflict, match="TERMINAL_STATE"):
+        store.cancel(**{**values, "idempotency_key": "cancel-2"})
+
+
+def test_cancel_denies_nonowner_foreign_and_stale_without_audit():
+    """Business authority is not ownership; spoofed actor cannot cancel."""
+    records, events = Collection(), Collection()
+    store = OwnerCommercialWorkRegistry(records, events)
+    item = make_item()
+    session = object()
+    store.create_or_replay(item, idempotency_key="create", session=session)
+    options = dict(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        actor_principal_id="principal-1", reason="No longer required",
+        expected_updated_at=item.updated_at, idempotency_key="cancel-1",
+        now=NOW + timedelta(minutes=1), session=session,
+    )
+    with pytest.raises(OwnerWorkRegistryConflict, match="CANCEL_NOT_OWNER"):
+        store.cancel(**{**options, "actor_principal_id": "someone-else"})
+    with pytest.raises(OwnerWorkRegistryNotFound):
+        store.cancel(**{**options, "tenant_id": "OTHER-TENANT"})
+    with pytest.raises(OwnerWorkRegistryConflict, match="STALE_REVISION"):
+        store.cancel(**{**options, "expected_updated_at": NOW - timedelta(minutes=1)})
+    with pytest.raises(OwnerWorkRegistryError, match="AUDIT_STORE_REQUIRED"):
+        OwnerCommercialWorkRegistry(records).cancel(**options)
+    assert events.rows == []
+    assert store.get(tenant_id=TENANT, work_item_id=item.work_item_id, session=session).status is OwnerWorkStatus.OPEN
+
+
 # ARTIFACT: tests/unit/test_owner_commercial_work_registry.py
-# VERSION: v1.1.0-AUDITED-CRM-TASK-EDIT-CERT
+# VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION-CERT
 # AUTHORITY BOUNDARY: Synthetic registry evidence only; no IAM grants.
 # TENANT POSTURE: Exact tenant, no cross-tenant existence disclosure.
 # FAIL-CLOSED POSTURE: Foreign records are indistinguishable from absent.
