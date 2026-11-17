@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Work Registry Regression Certificate
-VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION-CERT
+VERSION: v1.3.0-DRAFT-PROGRESS-STATUS-CERT
 AUTHORITY: WILSY OS source-owned CRM persistence certification.
 EPITOME: Verify exact-tenant create/replay, completion compare-and-set,
          persisted readback and absence of foreign-tenant disclosure.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: CRM work item domain and registry; Python EOS
          owner workspace service and authenticated API.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.3.0-DRAFT-PROGRESS-STATUS-CERT verifies exact-owner
+           persisted draft exclusion and retrieval, In Progress admission,
+           immutable audit replay and foreign/stale/terminal denials.
 CHANGELOG: v1.2.0-AUDITED-OWNER-CANCELLATION-CERT certifies
            owner-only terminal cancellation with CAS, exact audit, retries,
            stale revision, wrong actor and foreign tenant denial.
@@ -30,7 +33,7 @@ from dataclasses import replace
 import pytest
 
 from tools.eos.crm.domain.owner_commercial_work_item import (
-    OwnerCommercialWorkItem, OwnerWorkStatus, OwnerWorkPriority,
+    OwnerCommercialWorkItem, OwnerWorkStatus, OwnerWorkPriority, OwnerWorkItemError,
 )
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
     OwnerCommercialWorkRegistry, OwnerWorkRegistryConflict,
@@ -328,8 +331,63 @@ def test_cancel_denies_nonowner_foreign_and_stale_without_audit():
     assert store.get(tenant_id=TENANT, work_item_id=item.work_item_id, session=session).status is OwnerWorkStatus.OPEN
 
 
+
+def test_owner_draft_progress_transitions_keep_draft_out_of_attention():
+    records, events = Collection(), Collection()
+    store = OwnerCommercialWorkRegistry(records, events)
+    item = make_item()
+    session = object()
+    store.create_or_replay(item, idempotency_key="create", session=session)
+    command = dict(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        actor_principal_id="principal-1", target_status=OwnerWorkStatus.DRAFT,
+        expected_updated_at=item.updated_at, idempotency_key="draft-1",
+        now=NOW + timedelta(minutes=1), session=session,
+    )
+    draft = store.transition_status(**command)
+    assert draft.status is OwnerWorkStatus.DRAFT
+    assert store.transition_status(**command) == draft
+    assert store.daily_queue(tenant_id=TENANT, now=NOW, session=session) == ()
+    assert store.drafts_for_owner(tenant_id=TENANT, owner_principal_id="principal-1", session=session) == (draft,)
+    assert store.drafts_for_owner(tenant_id=TENANT, owner_principal_id="other", session=session) == ()
+    progress = store.transition_status(**{
+        **command, "target_status": OwnerWorkStatus.IN_PROGRESS,
+        "expected_updated_at": draft.updated_at,
+        "now": NOW + timedelta(minutes=2), "idempotency_key": "progress-1",
+    })
+    assert progress.status is OwnerWorkStatus.IN_PROGRESS
+    assert len(store.daily_queue(tenant_id=TENANT, now=NOW, session=session)) == 1
+    assert store.drafts_for_owner(tenant_id=TENANT, owner_principal_id="principal-1", session=session) == ()
+    history = store.revision_history(tenant_id=TENANT, work_item_id=item.work_item_id, session=session)
+    assert [event["operation"] for event in history] == ["STATUS", "STATUS"]
+    assert [event["after"]["status"] for event in history] == ["IN_PROGRESS", "DRAFT"]
+
+
+def test_owner_status_denies_foreign_stale_and_terminal_commands():
+    records, events = Collection(), Collection()
+    store = OwnerCommercialWorkRegistry(records, events)
+    item = make_item()
+    session = object()
+    store.create_or_replay(item, idempotency_key="create", session=session)
+    cmd = dict(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        actor_principal_id="principal-1", target_status=OwnerWorkStatus.IN_PROGRESS,
+        expected_updated_at=item.updated_at, idempotency_key="progress",
+        now=NOW + timedelta(minutes=1), session=session,
+    )
+    with pytest.raises(OwnerWorkRegistryConflict, match="NOT_OWNER"):
+        store.transition_status(**{**cmd, "actor_principal_id": "foreign"})
+    with pytest.raises(OwnerWorkRegistryNotFound):
+        store.transition_status(**{**cmd, "tenant_id": "OTHER-TENANT"})
+    with pytest.raises(OwnerWorkRegistryConflict, match="STALE_REVISION"):
+        store.transition_status(**{**cmd, "expected_updated_at": NOW - timedelta(minutes=1)})
+    with pytest.raises(OwnerWorkItemError, match="STATUS_INVALID"):
+        store.transition_status(**{**cmd, "target_status": OwnerWorkStatus.COMPLETED})
+    assert not events.rows
+
+
 # ARTIFACT: tests/unit/test_owner_commercial_work_registry.py
-# VERSION: v1.2.0-AUDITED-OWNER-CANCELLATION-CERT
+# VERSION: v1.3.0-DRAFT-PROGRESS-STATUS-CERT
 # AUTHORITY BOUNDARY: Synthetic registry evidence only; no IAM grants.
 # TENANT POSTURE: Exact tenant, no cross-tenant existence disclosure.
 # FAIL-CLOSED POSTURE: Foreign records are indistinguishable from absent.
