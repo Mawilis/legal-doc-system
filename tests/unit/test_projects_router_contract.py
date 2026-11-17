@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT
+VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT asserts EOS rejects
+  activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
   and divergent idempotency rejection with no implied IAM grant.
@@ -55,7 +57,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT"
+VERSION = "v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT"
 
 
 def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
@@ -101,6 +103,36 @@ def test_department_read_requires_exact_tenant_active_record():
                 {"wilsy_tenant_departments": Collection(invalid)}, "tenant-a", identity, object(),
             )
         assert denied.value.status_code == 409
+
+
+def test_project_activation_rejects_missing_owner_or_department(monkeypatch):
+    """The generic lifecycle update cannot bypass governed accountability."""
+    project_id = "prj-" + "a" * 48
+    context = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="principal-a"),
+    )
+    class Registry:
+        def __init__(self, owner, department):
+            self.owner = owner
+            self.department = department
+        def get(self, **kwargs):
+            return SimpleNamespace(
+                owner_principal_id=self.owner, department_id=self.department,
+            )
+        def transition(self, **kwargs):
+            pytest.fail("activation must not execute without current accountability")
+    registry = Registry(None, None)
+    monkeypatch.setattr(projects_router, "_transaction", lambda _ctx, callback, **_kw: callback(registry, object()))
+    for owner, department in ((None, None), ("principal-owner", None), (None, "dept-" + "b" * 32)):
+        registry.owner, registry.department = owner, department
+        with pytest.raises(HTTPException) as rejected:
+            projects_router.update_project(
+                projects_router.ProjectUpdateRequest(
+                    expected_revision=2, status=projects_router.ProjectStatus.ACTIVE,
+                ), Response(), project_id, "activation-request", context,
+            )
+        assert rejected.value.status_code == 409
+        assert rejected.value.detail == "PROJECT_ACCOUNTABILITY_REQUIRED"
 
 
 def test_department_provision_persists_audit_and_exact_idempotent_replay(monkeypatch):
@@ -399,7 +431,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT
+# VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
