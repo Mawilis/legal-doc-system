@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.12.3-RELABELED-SOURCE-EDIT-DIALOG
+ * VERSION: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,7 +13,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v3.12.3-RELABELED-SOURCE-EDIT-DIALOG follows the
+ * CHANGELOG: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT remeasures the
+ *          mobile inbox/footer geometry during asynchronous source refresh
+ *          using bounded polling; the same no-overlap invariant remains.
+ *          v3.12.3-RELABELED-SOURCE-EDIT-DIALOG follows the
  *          production dialog's accessible name after a verified source title
  *          edit; avoids querying a stale dialog label while preserving source
  *          confirmation and updated queue checks.
@@ -932,13 +935,16 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         await panel.getByRole('checkbox', {name: 'Select ' + batchTitle}).check();
         console.log('[ATTENTION-STEP]', viewport.width, 'bulk-row-selected');
         if (viewport.width === 390 && batchIndex === 0) {
-          const inboxBounds = await panel.locator('[data-attention-scroll-container="true"]').boundingBox();
+          const inbox = panel.locator('[data-attention-scroll-container="true"]');
           const bulkFooter = panel.getByRole('form', {name: 'Complete selected source work'}).locator('xpath=..');
-          const bulkFooterBounds = await bulkFooter.boundingBox();
-          expect(inboxBounds).not.toBeNull();
-          expect(inboxBounds.height).toBeGreaterThanOrEqual(44);
-          expect(bulkFooterBounds).not.toBeNull();
-          expect(inboxBounds.y + inboxBounds.height).toBeLessThanOrEqual(bulkFooterBounds.y + 1);
+          // The source may revalidate between checkbox selection and layout:
+          // measure both boxes repeatedly; do not accept permanent overlap.
+          await expect.poll(async () => {
+            const inboxBounds = await inbox.boundingBox();
+            const bulkFooterBounds = await bulkFooter.boundingBox();
+            if (!inboxBounds || !bulkFooterBounds || inboxBounds.height < 44) return false;
+            return inboxBounds.y + inboxBounds.height <= bulkFooterBounds.y + 1;
+          }, { timeout: 10000 }).toBe(true);
         }
       }
       await panel.getByRole('textbox', {name: 'Bulk completion evidence'})
@@ -982,7 +988,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.12.3-RELABELED-SOURCE-EDIT-DIALOG
+// VERSION: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
