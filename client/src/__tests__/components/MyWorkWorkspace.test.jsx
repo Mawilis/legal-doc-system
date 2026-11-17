@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT
+ * VERSION: v1.6.0-CRM-SOURCE-DETAIL-READBACK-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
- * CHANGELOG: v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT certifies the exact EOS as_of instant
+ * CHANGELOG: v1.6.0-CRM-SOURCE-DETAIL-READBACK-CERT verifies exact source-owned CRM
+ *            record details and fails closed for foreign-tenant data without
+ *            creating browser audit or lifecycle authority.
+ *            v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT certifies the exact EOS as_of instant
  *            in the runner's browser-local timezone, retaining a real
  *            timestamp assertion across Johannesburg and UTC environments.
  *            v1.5.0-DENSE-EXECUTION-QUEUE-CERT covers responsive detail drawer
@@ -28,6 +31,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import MyWorkWorkspace from '../../components/workspaces/MyWorkWorkspace.jsx';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 
 vi.mock('../../services/legalOperationsService.js', () => ({
@@ -100,6 +104,81 @@ describe('authenticated My Work execution queue', () => {
     expect(path).toBe('/my-work');
     expect(request.forceNetworkRetry).toBe(true);
     expect(request.signal.aborted).toBe(false);
+  });
+
+  it('reads the selected CRM source record under the authenticated tenant', async () => {
+    const crmItem = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-1',
+      work_item_id: 'crm-1', title: 'Prepare CRM launch plan', status: 'OPEN',
+    };
+    const crmProjection = {
+      ...payload, items: [crmItem], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    const sourceRecord = {
+      schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+      tenant_id: 'tenant-a', work_item_id: 'crm-1',
+      title: crmItem.title, description: crmItem.description,
+      kind: 'TASK', status: 'OPEN', priority: crmItem.priority,
+      owner_principal_id: 'principal-a', source_type: null, source_id: null,
+      due_at: crmItem.due_at, created_at: '2026-11-01T10:00:00+00:00',
+      updated_at: '2026-11-06T10:00:00+00:00',
+      completed_at: null, completion_note: null,
+    };
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: crmProjection };
+      if (path === '/crm/owner-workspace/work-items/crm-1') return { data: sourceRecord };
+      throw new Error('UNEXPECTED_SOURCE_ROUTE');
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Prepare CRM launch plan');
+    expect(await screen.findByText('Persisted source record verified for this tenant')).toBeTruthy();
+    expect(screen.getByText('Principal recorded; human-readable name unavailable from this source')).toBeTruthy();
+    expect(api.get).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items/crm-1',
+      expect.objectContaining({ forceNetworkRetry: true, signal: expect.anything() }),
+    );
+  });
+
+  it('rejects CRM source detail from another tenant without showing it as verified', async () => {
+    const crmItem = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-2',
+      work_item_id: 'crm-2', title: 'Review tenant CRM work', status: 'OPEN',
+    };
+    const crmProjection = {
+      ...payload, items: [crmItem], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: crmProjection };
+      if (path === '/crm/owner-workspace/work-items/crm-2') return { data: {
+        schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+        tenant_id: 'foreign-tenant', work_item_id: 'crm-2',
+        title: crmItem.title, description: '', status: 'OPEN',
+        owner_principal_id: 'foreign-principal',
+        created_at: '2026-11-01T10:00:00Z',
+        updated_at: '2026-11-06T10:00:00Z',
+        completed_at: null, completion_note: null,
+      } };
+      throw new Error('UNEXPECTED_SOURCE_ROUTE');
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Review tenant CRM work');
+    expect(await screen.findByRole('alert')).toHaveTextContent('CRM_DETAIL_SOURCE_OR_SCOPE_MISMATCH');
+    expect(screen.queryByText('Persisted source record verified for this tenant')).toBeNull();
+    expect(screen.queryByText('foreign-principal')).toBeNull();
   });
 
   it('renders ten authorized tasks as rows and offers only admitted sources with counts', async () => {
@@ -275,7 +354,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.5.1-LOCAL-TIMEZONE-VERIFICATION-CERT
+ * VERSION: v1.6.0-CRM-SOURCE-DETAIL-READBACK-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
