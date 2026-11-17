@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace Service
-VERSION: v1.6.0-OWNER-DRAFT-PROGRESS-COMMANDS
+VERSION: v1.7.0-DIRECT-SAVED-DRAFT-CREATION
 AUTHORITY: WILSY OS Python EOS CRM source service.
 EPITOME: Enforce independent customer CRM Core or exact WILSY company-owner authority for tenant-exact work
          reads, creation, completion and canonical work-detail readback.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/se
 COLLABORATION / OWNERSHIP: CRM source domain, owner work registry and
          authenticated owner commercial workspace router.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.7.0-DIRECT-SAVED-DRAFT-CREATION preserves deterministic
+           create replay while admitting a direct DRAFT initial status;
+           source task becomes active only on explicit audited transition.
 CHANGELOG: v1.6.0-OWNER-DRAFT-PROGRESS-COMMANDS adds exact-owner
            Draft/Open/In Progress transitions and saved-draft reads through
            existing CRM commercial and IAM boundaries, without grants.
@@ -269,6 +272,7 @@ class OwnerCommercialWorkspaceService:
         description: str, kind: OwnerWorkKind, priority: OwnerWorkPriority,
         due_at: datetime | None, source_type: str | None, source_id: str | None,
         idempotency_key: str, now: datetime, session: Any,
+        initial_status: OwnerWorkStatus = OwnerWorkStatus.OPEN,
     ) -> OwnerCommercialWorkItem:
         self._require_entitlement(tenant_id, session)
         if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
@@ -280,6 +284,7 @@ class OwnerCommercialWorkspaceService:
             tenant_id=tenant_id, title=title, description=description,
             kind=kind, priority=priority, owner_principal_id=principal_id,
             due_at=due_at, source_type=source_type, source_id=source_id, now=now,
+            initial_status=initial_status,
         )
         # A retry with the same tenant/key reconstructs the identical domain
         # value, allowing the registry fingerprint to prove exact replay.
@@ -292,7 +297,7 @@ class OwnerCommercialWorkspaceService:
 __all__ = ["OwnerCommercialWorkspaceError", "OwnerCommercialWorkspaceService"]
 
 # ARTIFACT: tools/eos/crm/service/owner_commercial_workspace_service.py
-# VERSION: v1.6.0-OWNER-DRAFT-PROGRESS-COMMANDS
+# VERSION: v1.7.0-DIRECT-SAVED-DRAFT-CREATION
 # AUTHORITY BOUNDARY: Existing CRM HTTP IAM, entitlement and tenant-owned registry.
 # TENANT POSTURE: Exact tenant lookup; foreign record existence is not disclosed.
 # FAIL-CLOSED POSTURE: Denied, unavailable and absent source records remain explicit.
