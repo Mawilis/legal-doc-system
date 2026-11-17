@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT
+VERSION: v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
+  department source writes, immutable command event, identical replay
+  and divergent idempotency rejection with no implied IAM grant.
   v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT checks source-backed\n  assignee currentness, rejects stale department and certifies audited CAS\n  readback without changing the real role/entitlement contract.\n  v1.3.0-TENANT-ACCOUNTABILITY-ROUTE-CERT checks source-backed directory,
   conjunctive department provisioning IAM and isolated assignment commands;
   original project CRUD and Founder gates remain mandatory.
@@ -52,7 +55,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT"
+VERSION = "v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT"
 
 
 def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
@@ -98,6 +101,62 @@ def test_department_read_requires_exact_tenant_active_record():
                 {"wilsy_tenant_departments": Collection(invalid)}, "tenant-a", identity, object(),
             )
         assert denied.value.status_code == 409
+
+
+def test_department_provision_persists_audit_and_exact_idempotent_replay(monkeypatch):
+    """Department identity and event are exact-tenant, actor-bound and atomic."""
+    class Collection:
+        def __init__(self):
+            self.rows = {}
+        def find_one(self, predicate, session=None):
+            return next(
+                (row for row in self.rows.values()
+                 if all(row.get(key) == value for key, value in predicate.items())),
+                None,
+            )
+        def insert_one(self, value, session=None):
+            assert value["_id"] not in self.rows
+            self.rows[value["_id"]] = dict(value)
+    collection = Collection()
+    events = Collection()
+    database = {
+        "wilsy_tenant_departments": collection,
+        "wilsy_tenant_department_events": events,
+    }
+    actor = SimpleNamespace(tenant_id="tenant-a", identity=SimpleNamespace(identity_id="owner-a"))
+    other_actor = SimpleNamespace(tenant_id="tenant-a", identity=SimpleNamespace(identity_id="owner-b"))
+    other_tenant = SimpleNamespace(tenant_id="tenant-b", identity=SimpleNamespace(identity_id="owner-a"))
+    monkeypatch.setattr(projects_router.kernel_db, "get_database", lambda: database)
+    session = object()
+    monkeypatch.setattr(projects_router, "_transaction", lambda _context, callback, **kwargs: callback(None, session))
+    request = projects_router.DepartmentCreateRequest(name="Engineering")
+    first = projects_router.provision_project_department(
+        request, Response(), "request-1", actor, actor,
+    )
+    second = projects_router.provision_project_department(
+        request, Response(), "request-1", actor, actor,
+    )
+    assert first == second
+    assert len(collection.rows) == len(events.rows) == 1
+    assert next(iter(events.rows.values()))["actor_principal_id"] == "owner-a"
+    assert first["department"]["name"] == "Engineering"
+    assert first["tenant_id"] == "tenant-a"
+    with pytest.raises(HTTPException) as different_command:
+        projects_router.provision_project_department(
+            projects_router.DepartmentCreateRequest(name="Operations"),
+            Response(), "request-1", actor, actor,
+        )
+    assert different_command.value.status_code == 409
+    with pytest.raises(HTTPException) as different_actor:
+        projects_router.provision_project_department(
+            request, Response(), "request-1", other_actor, other_actor,
+        )
+    assert different_actor.value.status_code == 409
+    with pytest.raises(HTTPException) as mixed_scope:
+        projects_router.provision_project_department(
+            request, Response(), "request-2", actor, other_tenant,
+        )
+    assert mixed_scope.value.status_code == 403
 
 
 def test_assignment_command_uses_cas_audit_and_fresh_readback(monkeypatch):
@@ -340,7 +399,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.3.1-TENANT-ASSIGNMENT-CURRENTNESS-CERT
+# VERSION: v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
