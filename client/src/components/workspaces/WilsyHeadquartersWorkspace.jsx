@@ -5,13 +5,18 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.1.0-PROJECTS-KPI-HTTP-STATE
+ * VERSION: v4.2.0-SCOPED-MY-WORK-RECOVERY
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.2.0-SCOPED-MY-WORK-RECOVERY shares authenticated EOS reads
+ *            with Daily Attention; transient failure preserves only the same-
+ *            session last-verified snapshot with explicit stale status and
+ *            bounded visible-workspace recovery. Authorization denial clears
+ *            evidence, and refreshed source counts are never fabricated.
  * CHANGELOG: v4.1.0-PROJECTS-KPI-HTTP-STATE distinguishes route-missing 404 from 5xx service failure in the source-backed Projects KPI while retaining verified-empty, authentication, entitlement, denial, unavailable and stale-scope states.
  *            v3.9.0-PROJECTS-DELIVERY-DESTINATION adds the explicit Projects & Delivery destination under Products & R&D; EOS still independently denies users lacking Projects permission, role assignment or entitlement. v3.8.0 mounts the authenticated EOS lifecycle workspace.
  * CHANGELOG: v3.7.0-EXPLICIT-HEADQUARTERS-GRID replaces nested display:contents columns and conflicting legacy spans with direct named-area children. The desktop 9/3 hero and 5/4/3 operating stacks are explicit; source and authority behavior are unchanged.
@@ -381,6 +386,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const [myWorkLoading, setMyWorkLoading] = useState(false);
   const [myWorkError, setMyWorkError] = useState('');
   const [myWorkRefresh, setMyWorkRefresh] = useState(0);
+  const myWorkRetryRef = useRef({ scope: null, attempts: 0 });
   useEffect(() => {
     if (section !== 'overview' || showMyWork) return undefined;
     if (!workScope) {
@@ -397,19 +403,27 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     readUnifiedMyWork(
       workScope,
       { tenantId: workTenantId, principalId: authUser.id },
-      { signal: controller.signal, force: true },
+      { signal: controller.signal },
     )
       .then((verified) => {
         if (current) {
           setMyWorkSnapshot(verified);
           setMyWorkSnapshotScope(workScope);
+          setMyWorkError('');
+          myWorkRetryRef.current = { scope: workScope, attempts: 0 };
         }
       })
       .catch((error) => {
         if (current && error?.name !== 'AbortError') {
-          setMyWorkSnapshot(null);
-          setMyWorkSnapshotScope(null);
-          setMyWorkError(error?.response?.data?.detail || error?.message || 'MY_WORK_UNAVAILABLE');
+          const denied = error?.response?.status === 401 || error?.response?.status === 403;
+          if (denied) {
+            setMyWorkSnapshot(null);
+            setMyWorkSnapshotScope(null);
+          }
+          // A temporary transport/source outage is not a cleared work queue.
+          // Only a snapshot from this exact AuthProvider scope may survive.
+          setMyWorkError(denied ? 'MY_WORK_ACCESS_DENIED'
+            : error?.response?.data?.detail || error?.message || 'MY_WORK_UNAVAILABLE');
         }
       })
       .finally(() => {
@@ -427,6 +441,31 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       setMyWorkRefresh((value) => value + 1);
     });
   }, [workScope, section, showMyWork]);
+  useEffect(() => {
+    if (!workScope || section !== 'overview' || showMyWork
+      || !myWorkError || myWorkError === 'MY_WORK_ACCESS_DENIED'
+      || myWorkError === 'MY_WORK_AUTHENTICATED_SCOPE_REQUIRED') return undefined;
+    if (myWorkRetryRef.current.scope !== workScope) {
+      myWorkRetryRef.current = { scope: workScope, attempts: 0 };
+    }
+    if (myWorkRetryRef.current.attempts >= 2) return undefined;
+    const retry = () => {
+      if (document.visibilityState !== 'visible') return;
+      myWorkRetryRef.current.attempts += 1;
+      setMyWorkRefresh((value) => value + 1);
+    };
+    const timer = window.setTimeout(retry, 2500);
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      window.clearTimeout(timer);
+      retry();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [workScope, section, showMyWork, myWorkError, myWorkRefresh]);
   useEffect(() => {
     if (section !== 'people' && section !== 'overview') return undefined;
     if (!workScope || !workTenantId || !authUser.id) {
@@ -734,12 +773,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                 <section className="hq-panel hq-glance" aria-labelledby="hq-glance-title">
                   <h2 id="hq-glance-title">Company at a glance</h2>
                   <div className="hq-glance-row"><Users size={18}/><span>Employees</span><strong>{workforceMetricValue(currentWorkforce, currentWorkforceLoading, currentWorkforceError)}</strong></div>
-                  <div className="hq-glance-row"><CheckCircle2 size={18}/><span>Active work</span><strong>{currentSnapshot ? currentSnapshot.summary.active_count : '—'}</strong></div>
+                  <div className="hq-glance-row"><CheckCircle2 size={18}/><span>Active work</span><strong>{currentSnapshot && !myWorkLoading && !myWorkError ? currentSnapshot.summary.active_count : '—'}</strong></div>
                   <div className="hq-glance-row"><Activity size={18}/><span>EOS kernel API</span><strong>{kernelMetricValue(kennelHealth)}</strong></div>
                   <details className="hq-source-note"><summary>Source coverage</summary><p>Projects: {currentProjectsSummaryState === 'READY' ? 'verified EOS summary' : currentProjectsSummaryError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'entitlement required' : currentProjectsSummaryError === 'ACCESS_DENIED' ? 'access denied' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'EOS route not mounted' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'EOS service unavailable' : currentProjectsSummaryState === 'LOADING' ? 'verifying current session' : 'unavailable'}</p><p>Commercial source not connected</p><p>Kernel response does not establish platform uptime.</p></details>
                 </section>
                 <section className="hq-kpis" aria-label="Executive operating indicators">
-                  <button type="button" onClick={() => openMyWork()} className="hq-kpi"><span className="hq-round hq-blue"><CheckCircle2 size={22}/></span><span><small>My Work</small><strong>{currentSnapshot ? currentSnapshot.summary.active_count : '—'}</strong><em>View tasks <ArrowUpRight size={12}/></em></span></button>
+                  <button type="button" onClick={() => openMyWork()} className="hq-kpi"><span className="hq-round hq-blue"><CheckCircle2 size={22}/></span><span><small>My Work</small><strong>{currentSnapshot && !myWorkLoading && !myWorkError ? currentSnapshot.summary.active_count : '—'}</strong><em>View tasks <ArrowUpRight size={12}/></em></span></button>
                   <button type="button" onClick={() => navigateSection('projects')} className="hq-kpi" data-source-state={currentProjectsSummaryState} aria-label={currentProjectsSummaryState === 'READY' ? `Projects: ${currentProjectsSummary.total} verified` : `Projects: ${currentProjectsSummaryError || currentProjectsSummaryState}`}><span className="hq-round hq-purple"><Code2 size={22}/></span><span><small>Projects</small><strong className="hq-kpi-label">{currentProjectsSummaryState === 'READY' ? currentProjectsSummary.total : currentProjectsSummaryState === 'LOADING' ? 'Verifying…' : currentProjectsSummaryError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'Entitlement required' : currentProjectsSummaryError === 'ACCESS_DENIED' ? 'Access denied' : currentProjectsSummaryError === 'AUTHENTICATION_REQUIRED' ? 'Sign in required' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'EOS route unavailable' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'Service unavailable' : 'Source unavailable'}</strong><em>{currentProjectsSummaryState === 'READY' ? `${currentProjectsSummary.active} active · View projects` : currentProjectsSummaryState === 'LOADING' ? 'Checking authorized EOS source' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'Running EOS has no Projects route' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'EOS returned a server failure' : 'Open Projects for source details'} <ArrowUpRight size={12}/></em></span></button>
                   <button type="button" onClick={() => navigateSection('hiring')} className="hq-kpi"><span className="hq-round hq-green"><BriefcaseBusiness size={22}/></span><span><small>Approvals</small><strong>{pendingApprovalCount === null ? '—' : pendingApprovalCount}</strong><em>{pendingApprovalCount === null ? 'Authorized queue unavailable' : 'Submitted requisitions'}</em></span></button>
                   <button type="button" onClick={() => setSection('people')} className="hq-kpi"><span className="hq-round hq-blue"><Users size={22}/></span><span><small>Team</small><strong>{Number.isSafeInteger(currentWorkforce?.total) ? currentWorkforce.total.toLocaleString() : '—'}</strong><em>{Number.isSafeInteger(currentWorkforce?.total) ? 'View directory' : workforceStateLabel(null, currentWorkforceLoading, currentWorkforceError)} <ArrowUpRight size={12}/></em></span></button>
@@ -752,8 +791,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   view={workView} onViewChange={setWorkView}
                   selectedKey={myWorkFocusItem} onSelect={setMyWorkFocusItem}
                   onOpen={openMyWork}
-                  onRefresh={() => setMyWorkRefresh((value) => value + 1)}
-                  onVerified={(verified) => { setMyWorkSnapshot(verified); setMyWorkSnapshotScope(workScope); }}
+                  onRefresh={() => {
+                    myWorkRetryRef.current = { scope: workScope, attempts: 0 };
+                    invalidateUnifiedMyWork(workScope);
+                  }}
+                  onVerified={(verified) => {
+                    setMyWorkSnapshot(verified);
+                    setMyWorkSnapshotScope(workScope);
+                    setMyWorkError('');
+                    myWorkRetryRef.current = { scope: workScope, attempts: 0 };
+                  }}
                   onManage={() => { setSection('operations'); setShowMyWork(false); }}
                   ownerLabel={[authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || 'Current authenticated principal'}
                 />
@@ -1051,8 +1098,15 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
         <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue</button>
       </div>
       <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>
-      {loading ? <div className="hq-work-status" role="status">Loading the authorized My Work projection…</div>
-        : error || !snapshot ? <div className="hq-work-status" role="alert"><strong>My Work snapshot unavailable</strong><p>Current work could not be verified. Retry the source read.</p><button type="button" onClick={onRefresh}>Retry source read</button></div>
+      {snapshot && (loading || error) && (
+        <div className="hq-work-status" role={error ? 'alert' : 'status'} data-work-state="LAST_VERIFIED">
+          <strong>Last verified source snapshot · revalidation {loading ? 'in progress' : 'unavailable'}</strong>
+          <p>These items were authorized in this session at {formatHeadquartersDeadline(snapshot.as_of)}. Current counts cannot be confirmed until EOS revalidates.</p>
+          {error && <button type="button" onClick={onRefresh}>Retry current source read</button>}
+        </div>
+      )}
+      {loading && !snapshot ? <div className="hq-work-status" role="status">Loading the authorized My Work projection…</div>
+        : !snapshot ? <div className="hq-work-status" role="alert"><strong>{error === 'MY_WORK_ACCESS_DENIED' ? 'My Work authorization required' : 'My Work snapshot unavailable'}</strong><p>Current work could not be verified. Retry the source read.</p><button type="button" onClick={onRefresh}>Retry source read</button></div>
           : <div className={visibleItems.length ? 'hq-work-list' : 'hq-work-list hq-work-list--empty'} aria-label="Authorized Headquarters work queue">
             {visibleItems.length === 0 ? <div className="hq-work-status hq-verified-empty" data-work-state={items.length ? 'FILTERED_EMPTY' : 'VERIFIED_EMPTY'}><span className="hq-empty-icon"><CheckCircle2 size={21}/></span><div><strong>{items.length ? 'No matching work' : 'Current source read verified'}</strong><p>{!items.length ? snapshot.sources_included.length ? 'No active work was returned by the authorized sources at the recorded time.' : 'No work source was included in this session.' : 'No work matches these filters.'}</p>{snapshot.sources_included.includes('OPERATIONS') && <button type="button" onClick={onManage}>Create or manage Operations work</button>}<span className="hq-empty-time">Verified {formatHeadquartersDeadline(snapshot.as_of)}</span></div></div>
               : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onSelect(item.source_key); setCommand({ state: 'IDLE', message: '' }); }}>
@@ -1066,7 +1120,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
           : <button type="button" className="hq-text-button" onClick={() => onOpen(selected)}>Open source-governed workspace <ArrowUpRight size={12}/></button>}
       </section>}
       {command.message && <div className="hq-command-message" data-state={command.state} role={['ERROR','CONFLICT','DENIED'].includes(command.state) ? 'alert' : 'status'}>{command.message}</div>}
-      <footer className="hq-work-footer"><span>{snapshot ? Object.entries(snapshot.summary.source_counts).map(([id,count]) => <span key={id}>{id}: {count} </span>) : 'Current session only'}</span><button type="button" onClick={onRefresh} aria-label="Refresh snapshot"><RefreshCw size={10}/> Refresh</button></footer>
+      <footer className="hq-work-footer"><span>{snapshot && !loading && !error ? Object.entries(snapshot.summary.source_counts).map(([id,count]) => <span key={id}>{id}: {count} </span>) : 'Current session only'}</span><button type="button" onClick={onRefresh} aria-label="Refresh snapshot"><RefreshCw size={10}/> Refresh</button></footer>
     </section>
   );
 }
@@ -1349,7 +1403,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.1.0-PROJECTS-KPI-HTTP-STATE
+ * VERSION: v4.2.0-SCOPED-MY-WORK-RECOVERY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
