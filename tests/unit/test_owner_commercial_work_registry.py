@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Work Registry Regression Certificate
-VERSION: v1.0.0-COMPLETED-CRM-RECORD-READBACK-CERT
+VERSION: v1.1.0-AUDITED-CRM-TASK-EDIT-CERT
 AUTHORITY: WILSY OS source-owned CRM persistence certification.
 EPITOME: Verify exact-tenant create/replay, completion compare-and-set,
          persisted readback and absence of foreign-tenant disclosure.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: CRM work item domain and registry; Python EOS
          owner workspace service and authenticated API.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.1.0-AUDITED-CRM-TASK-EDIT-CERT exercises active-work
+           compare-and-set, durable audit receipt, exact-key replay, stale,
+           divergent, terminal, foreign and missing-audit-store denial.
 CHANGELOG: v1.0.0-COMPLETED-CRM-RECORD-READBACK-CERT preserves existing source registry tests
            and certifies completed evidence remains retrievable from its
            owning exact-tenant record while foreign tenant reads deny.
@@ -18,17 +21,17 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
 FAIL-CLOSED POSTURE: Missing, foreign, divergent or stale source rows reject.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from dataclasses import replace
 
 import pytest
 
 from tools.eos.crm.domain.owner_commercial_work_item import (
-    OwnerCommercialWorkItem, OwnerWorkStatus,
+    OwnerCommercialWorkItem, OwnerWorkStatus, OwnerWorkPriority,
 )
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
     OwnerCommercialWorkRegistry, OwnerWorkRegistryConflict,
-    OwnerWorkRegistryNotFound, OwnerWorkRegistryError, ensure_indexes,
+    OwnerWorkRegistryNotFound, OwnerWorkRegistryError, EVENTS_COLLECTION, ensure_indexes,
 )
 
 NOW = datetime(2026, 11, 3, 8, tzinfo=timezone.utc)
@@ -59,9 +62,12 @@ class Collection:
         assert session is not None
         self.rows.append(dict(document))
 
-    def find(self, query, session=None):
+    def find(self, query, projection=None, session=None):
         assert session is not None
-        return Cursor(row for row in self.rows if all(row.get(k) == v for k, v in query.items()))
+        rows = (row for row in self.rows if all(row.get(k) == v for k, v in query.items()))
+        if projection:
+            rows = ({k: v for k, v in row.items() if projection.get(k) != 0} for row in rows)
+        return Cursor(rows)
 
     def update_one(self, query, update, session=None):
         assert session is not None
@@ -163,6 +169,75 @@ def test_completion_is_tenant_scoped_compare_and_set_and_exact_replay():
         )
 
 
+
+def test_audited_edit_commits_exact_source_changes_and_replays_without_duplication():
+    records, events = Collection(), Collection()
+    ensure_indexes(records, events)
+    assert len(events.indexes) == 1
+    assert events.indexes[0][0][0][0] == "tenant_id"
+    registry = OwnerCommercialWorkRegistry(records, events)
+    item = make_item()
+    registry.create_or_replay(item, idempotency_key="create-1", session=object())
+    arguments = dict(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        actor_principal_id="principal-editor", title="Updated client follow-up",
+        description="Evidence-backed next action", priority=OwnerWorkPriority.HIGH,
+        due_at=NOW + timedelta(days=1), expected_updated_at=NOW,
+        idempotency_key="edit-1", now=NOW + timedelta(minutes=1),
+        session=object(),
+    )
+    updated = registry.revise(**arguments)
+    assert updated.title == arguments["title"]
+    assert updated.updated_at == arguments["now"]
+    assert updated.owner_principal_id == item.owner_principal_id
+    assert registry.revise(**arguments) == updated
+    assert len(events.rows) == 1
+    history = registry.revision_history(
+        tenant_id=TENANT, work_item_id=item.work_item_id, session=object(),
+    )
+    assert len(history) == 1
+    assert history[0]["actor_principal_id"] == "principal-editor"
+    assert history[0]["before"]["title"] == item.title
+    assert history[0]["after"]["title"] == updated.title
+    assert "idempotency_key" not in history[0]
+    assert "fingerprint" not in history[0]
+    with pytest.raises(OwnerWorkRegistryNotFound):
+        registry.revision_history(
+            tenant_id="FOREIGN-TENANT", work_item_id=item.work_item_id,
+            session=object(),
+        )
+    with pytest.raises(OwnerWorkRegistryConflict, match="DIVERGENT_EDIT_REPLAY"):
+        registry.revise(**{**arguments, "title": "Divergent replay"})
+    with pytest.raises(OwnerWorkRegistryConflict, match="STALE_REVISION"):
+        registry.revise(**{**arguments, "idempotency_key": "edit-2"})
+    assert len(events.rows) == 1
+
+
+def test_audited_edit_rejects_terminal_work_and_missing_audit_store():
+    records, events = Collection(), Collection()
+    registry = OwnerCommercialWorkRegistry(records, events)
+    item = make_item()
+    registry.create_or_replay(item, idempotency_key="create-1", session=object())
+    registry.complete(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        completion_note="Source complete", now=NOW, session=object(),
+    )
+    arguments = dict(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        actor_principal_id="principal-editor", title="Do not revise",
+        description="", priority=OwnerWorkPriority.HIGH, due_at=None,
+        expected_updated_at=NOW, idempotency_key="edit-terminal",
+        now=NOW + timedelta(minutes=1), session=object(),
+    )
+    with pytest.raises(OwnerWorkRegistryConflict, match="TERMINAL_STATE"):
+        registry.revise(**arguments)
+    with pytest.raises(OwnerWorkRegistryError, match="AUDIT_STORE_REQUIRED"):
+        OwnerCommercialWorkRegistry(records).revise(**arguments)
+    with pytest.raises(OwnerWorkRegistryNotFound):
+        registry.revise(**{**arguments, "tenant_id": "FOREIGN-TENANT"})
+    assert events.rows == []
+
+
 def test_completed_record_retains_source_evidence_under_exact_tenant() -> None:
     """Completed work remains readable without becoming active or cross-tenant."""
     registry = OwnerCommercialWorkRegistry(Collection())
@@ -191,7 +266,7 @@ def test_completed_record_retains_source_evidence_under_exact_tenant() -> None:
 
 
 # ARTIFACT: tests/unit/test_owner_commercial_work_registry.py
-# VERSION: v1.0.0-COMPLETED-CRM-RECORD-READBACK-CERT
+# VERSION: v1.1.0-AUDITED-CRM-TASK-EDIT-CERT
 # AUTHORITY BOUNDARY: Synthetic registry evidence only; no IAM grants.
 # TENANT POSTURE: Exact tenant, no cross-tenant existence disclosure.
 # FAIL-CLOSED POSTURE: Foreign records are indistinguishable from absent.
