@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.22.0-WIDTH-RESPONSIVE-WORKBENCH-LAYOUT
+ * VERSION: v1.23.0-POINTER-MOUSE-RESIZE-INTEROPERABILITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.23.0-POINTER-MOUSE-RESIZE-INTEROPERABILITY adds
+ *            mouse drag fallback to pointer drag so the independent
+ *            workbench can be resized with desktop input and tested in
+ *            jsdom; keyboard resizing remains independently operable.
  * CHANGELOG: v1.22.0-WIDTH-RESPONSIVE-WORKBENCH-LAYOUT reflows
  *            record fields according to the live resized workbench width,
  *            not the browser viewport; narrow desktop windows remain
@@ -249,7 +253,7 @@ export default function MyWorkWorkspace(props = {}) {
   const splitWorkbench = (workbench?.width ?? 0) >= 880 && typeof window !== "undefined" && window.innerWidth >= 768;
   const workbenchGestureRef = useRef(null);
   const startWorkbenchGesture = (event, mode) => {
-    if (event.button !== 0 || window.innerWidth < 768) return;
+    if ((event.button != null && event.button !== 0) || window.innerWidth < 768) return;
     if (mode === 'MOVE' && event.target.closest('button, input, select, textarea, a')) return;
     event.preventDefault();
     workbenchGestureRef.current = {
@@ -302,13 +306,17 @@ export default function MyWorkWorkspace(props = {}) {
       });
     };
     window.addEventListener('pointermove', move);
+    window.addEventListener('mousemove', move);
     window.addEventListener('pointerup', finish);
+    window.addEventListener('mouseup', finish);
     window.addEventListener('pointercancel', finish);
     window.addEventListener('resize', clamp);
     return () => {
       workbenchGestureRef.current = null;
       window.removeEventListener('pointermove', move);
+      window.removeEventListener('mousemove', move);
       window.removeEventListener('pointerup', finish);
+      window.removeEventListener('mouseup', finish);
       window.removeEventListener('pointercancel', finish);
       window.removeEventListener('resize', clamp);
     };
@@ -935,6 +943,7 @@ export default function MyWorkWorkspace(props = {}) {
             <div role="separator" aria-orientation="vertical" aria-label="Resize work details"
               tabIndex={0} title="Drag to resize the workbench"
               onPointerDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
+              onMouseDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
               onKeyDown={(event) => {
                 if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
                 event.preventDefault();
@@ -947,6 +956,7 @@ export default function MyWorkWorkspace(props = {}) {
               }}
               className="absolute right-0 top-14 z-20 hidden h-[calc(100%-3.5rem)] w-2 cursor-ew-resize touch-none bg-transparent hover:bg-amber-300/20 focus-visible:bg-amber-300/30 md:block" />
             <header onPointerDown={(event) => startWorkbenchGesture(event, 'MOVE')}
+              onMouseDown={(event) => startWorkbenchGesture(event, 'MOVE')}
               className="flex cursor-move touch-none items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-6">
               <span className="sr-only">Drag this header to move the workbench. Resize using the right edge or its keyboard arrow controls.</span>
               <div className="min-w-0">
@@ -1613,7 +1623,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.22.0-WIDTH-RESPONSIVE-WORKBENCH-LAYOUT
+ * VERSION: v1.23.0-POINTER-MOUSE-RESIZE-INTEROPERABILITY
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
