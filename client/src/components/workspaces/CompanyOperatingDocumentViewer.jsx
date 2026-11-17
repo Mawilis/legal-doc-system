@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.7.0-STRATEGY-RICH-DRAFT-PREVIEW
+ * VERSION: v1.7.1-UNAVAILABLE-DRAFT-RETENTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.1-UNAVAILABLE-DRAFT-RETENTION keeps editable project
+ *            descriptions and formatted preview visible when EOS Projects
+ *            is unavailable, but blocks mutation until a verified fresh read.
  * CHANGELOG: v1.7.0-STRATEGY-RICH-DRAFT-PREVIEW renders a safe semantic
  *            live preview of the entered project description, preserving
  *            editable Markdown source, bounded content and EOS authority.
@@ -665,9 +668,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     {admissionStatus && <p role="status">{admissionStatus}</p>}
                     {projectError && projectState === 'READY' && <p role="alert">{projectError}</p>}
                     {projectSuccess && <p role="status">{projectSuccess}</p>}
-                    {projectState === 'READY' && <form onSubmit={createStrategyProject} aria-label="Create governed EOS project">
+                    {(projectState === 'READY' || projectState === 'UNAVAILABLE') && <form onSubmit={createStrategyProject} aria-label="Create governed EOS project">
                       <h3>Create a project in EOS</h3>
                       <p>Choose the strategic context for its description. This does not establish a formal strategy relationship or appoint an owner.</p>
+                      {projectState === 'UNAVAILABLE' && <p role="status">Your draft remains available to inspect and edit. Project creation is disabled until a fresh EOS Projects read succeeds. Use Refresh projects to reverify source availability.</p>}
                       <label>Strategic pillar context<select value={projectPillar} disabled={projectBusy}
                         onChange={event => { setProjectPillar(event.target.value); setProjectSuccess(''); }}>
                         {STRATEGY_PILLARS.map(pillar => <option key={pillar.section_id} value={pillar.section_id}>{pillar.title}</option>)}
@@ -690,7 +694,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         <span>{projectDescription.length.toLocaleString()} / 3,700 characters</span>
                         {!projectDescription.trim() && !projectEditSource && <button type="button" onClick={() => setProjectEditSource(true)}>Enter project description</button>}
                       </div>
-                      <button type="submit" disabled={projectBusy || !projectName.trim()}>
+                      <button type="submit" disabled={projectBusy || projectState !== 'READY' || !projectName.trim()}>
                         {projectBusy ? 'Verifying EOS readback…' : 'Create project in EOS'}
                       </button>
                     </form>}
@@ -769,7 +773,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.7.0-STRATEGY-RICH-DRAFT-PREVIEW
+// VERSION: v1.7.1-UNAVAILABLE-DRAFT-RETENTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
