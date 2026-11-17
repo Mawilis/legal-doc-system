@@ -1,12 +1,14 @@
 """TITLE: WILSY OS Unified My Work router authorization certification.
-VERSION: v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT
+VERSION: v1.2.1-SAFE-SOURCE-FAILURE-LOG-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certifies independently admitted, source-owned My Work aggregation,
          including privacy-minimal HR action projection handoff.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_unified_my_work_router.py
 COLLABORATION / OWNERSHIP: unified_my_work_router and existing source routers.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
-CHANGELOG: v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT omits CRM only on
+CHANGELOG: v1.2.1-SAFE-SOURCE-FAILURE-LOG-CERT verifies stable
+           error-only diagnostics never contain arbitrary private HTTP detail.
+           v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT omits CRM only on
            exact canonical not-entitled evidence and proves CRM entitlement
            uncertainty still raises, preserving other source truth.
 CHANGELOG: v1.1.0-HR-SOURCE-OWNED-ACTIONS-CERT adds denied-HR, safe-HR-action
@@ -26,6 +28,30 @@ import pytest
 from fastapi import HTTPException
 
 from tools.eos.api import unified_my_work_router as route
+
+
+def test_source_http_failure_logs_only_bounded_codes(caplog):
+    """A failing CRM source cannot leak arbitrary HTTP detail into EOS logs."""
+    import logging
+
+    caplog.set_level(logging.ERROR, logger="WilsyOS.API.UnifiedMyWork")
+    def unavailable():
+        raise HTTPException(status_code=503, detail="OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE")
+
+    with pytest.raises(HTTPException):
+        route._timed_source_read("CRM", unavailable)
+    assert any(
+        "http_status=503 source_code=OWNER_WORK_CRM_ENTITLEMENT_UNAVAILABLE" in row.message
+        for row in caplog.records
+    )
+    caplog.clear()
+    def private_failure():
+        raise HTTPException(status_code=503, detail={"private_record": "sensitive value"})
+
+    with pytest.raises(HTTPException):
+        route._timed_source_read("CRM", private_failure)
+    assert any("source_code=UNCLASSIFIED_HTTP" in row.message for row in caplog.records)
+    assert "sensitive value" not in caplog.text
 
 
 def _context(tenant="tenant-a", principal="principal-a"):
@@ -418,7 +444,7 @@ def test_hr_source_owners_emit_only_action_metadata_not_administrative_records(m
 
 
 # ARTIFACT: test_unified_my_work_router.py
-# VERSION: v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT
+# VERSION: v1.2.1-SAFE-SOURCE-FAILURE-LOG-CERT
 # AUTHORITY BOUNDARY: Source read admission and metadata projection only.
 # TENANT POSTURE: Exact tenant and principal contexts are mandatory in each case.
 # FAIL-CLOSED POSTURE: Denial and source errors never become an empty success.
