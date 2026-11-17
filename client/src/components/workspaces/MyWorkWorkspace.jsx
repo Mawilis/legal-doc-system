@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.19.0-FLOATING-RESIZABLE-WORKBENCH
+ * VERSION: v1.20.0-EXPLICIT-EOS-ACTION-ADMISSION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.20.0-EXPLICIT-EOS-ACTION-ADMISSION shows verification,
+ *            denial and outage of CRM UPDATE permission instead of silently
+ *            hiding status actions. A recheck calls the existing EOS source
+ *            authority; no client-side grant or role widening is introduced.
  * CHANGELOG: v1.19.0-FLOATING-RESIZABLE-WORKBENCH replaces the
  *            fixed right-edge detail drawer with a centered, movable and
  *            edge-resizable desktop workbench. Mobile stays fullscreen;
@@ -1145,6 +1149,9 @@ export default function MyWorkWorkspace(props = {}) {
  */
 function CrmSourceEditor({ record, tenantId, principalId, onVerified, onCancellationVerified, onStatusVerified }) {
   const [permitted, setPermitted] = useState(false);
+  const [permissionState, setPermissionState] = useState('VERIFYING');
+  const [permissionCode, setPermissionCode] = useState('');
+  const [permissionRevision, setPermissionRevision] = useState(0);
   const [editing, setEditing] = useState(false);
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState('');
@@ -1172,16 +1179,33 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified, onCancella
     activeRef.current = true;
     let active = true;
     setPermitted(false);
-    if (['COMPLETED', 'CANCELLED'].includes(record.status)) return undefined;
+    setPermissionCode('');
+    if (['COMPLETED', 'CANCELLED'].includes(record.status)) {
+      setPermissionState('TERMINAL');
+      return () => { activeRef.current = false; };
+    }
+    setPermissionState('VERIFYING');
     readAttentionSourceActions({ tenantId, principalId }, ['CRM'])
       .then((result) => {
-        if (active) setPermitted(
-          result.unavailableSources.length === 0
-          && result.sourceActions?.CRM?.includes('UPDATE') === true,
-        );
-      }).catch(() => { if (active) setPermitted(false); });
+        if (!active) return;
+        if (result.unavailableSources?.includes('CRM')) {
+          setPermissionState('UNAVAILABLE');
+          setPermissionCode('CRM_UPDATE_CAPABILITY_UNAVAILABLE');
+          return;
+        }
+        const allowed = result.sourceActions?.CRM?.includes('UPDATE') === true;
+        setPermitted(allowed);
+        setPermissionState(allowed ? 'ALLOWED' : 'DENIED');
+        if (!allowed) setPermissionCode('CRM_UPDATE_NOT_ADMITTED');
+      }).catch((error) => {
+        if (!active) return;
+        const code = safeErrorCode(error);
+        const denied = [401, 403].includes(error?.response?.status);
+        setPermissionState(denied ? 'DENIED' : 'UNAVAILABLE');
+        setPermissionCode(code);
+      });
     return () => { active = false; activeRef.current = false; };
-  }, [tenantId, principalId, record.status, record.work_item_id]);
+  }, [tenantId, principalId, record.status, record.work_item_id, permissionRevision]);
 
   const verifyHistory = async (persisted, key) => {
     const historyResponse = await api.get(route + '/history', { forceNetworkRetry: true });
@@ -1403,6 +1427,32 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified, onCancella
     || oldDueTime !== newDueTime;
   return (
     <section aria-label="CRM source task controls" className="space-y-3 border-t border-white/10 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-2">
+        <h4 className="text-sm font-semibold text-slate-100">Task actions and status</h4>
+        <span className="text-xs text-slate-400">
+          {permissionState === 'ALLOWED' ? 'EOS edit authority verified'
+            : permissionState === 'VERIFYING' ? 'Checking EOS edit authority…'
+              : permissionState === 'TERMINAL' ? 'Terminal source record'
+                : permissionState === 'DENIED' ? 'EOS edit permission not admitted'
+                  : 'EOS edit permission unavailable'}
+        </span>
+      </div>
+      {permissionState !== 'ALLOWED' && permissionState !== 'TERMINAL' && (
+        <div role={permissionState === 'VERIFYING' ? 'status' : 'alert'}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300/25 p-3 text-xs text-slate-300">
+          <span>
+            {permissionState === 'VERIFYING'
+              ? 'Status changes require current tenant and CRM UPDATE authority.'
+              : 'Task history remains readable; editing, status transitions and cancellation are unavailable until EOS verifies UPDATE authority.'}
+            {permissionCode && ' (' + permissionCode + ')'}
+          </span>
+          {permissionState !== 'VERIFYING' && <button type="button"
+            onClick={() => setPermissionRevision((value) => value + 1)}
+            className="rounded-lg border border-amber-300/40 px-3 py-2 text-amber-100">
+            Recheck actions
+          </button>}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         {permitted && !editing && <button type="button"
           onClick={() => { setEditing(true); setStatus(''); }}
@@ -1550,7 +1600,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.19.0-FLOATING-RESIZABLE-WORKBENCH
+ * VERSION: v1.20.0-EXPLICIT-EOS-ACTION-ADMISSION
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
