@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.0.2-TENANT-PROJECT-REGISTRY
+VERSION: v1.0.3-BSON-UTC-EVENT-READBACK
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -7,8 +7,11 @@ EPITOME: Persists tenant-scoped Project aggregates and immutable command events
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/projects/project_registry.py
 COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
-CERTIFICATION / UPDATE DATE: 2026-11-16.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.0.3-BSON-UTC-EVENT-READBACK — Normalizes BSON UTC datetimes on
+  event readback when PyMongo returns naive values by default, without
+  weakening strict input or malformed-event validation.
   v1.0.2-TENANT-PROJECT-REGISTRY — Narrows validated status values before enum
   access to satisfy Pyright's strict union checking.
   v1.0.1-TENANT-PROJECT-REGISTRY — Replaces runtime-derived hydration shape
@@ -36,7 +39,7 @@ for those events.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 from typing import Any, Final, cast
@@ -47,7 +50,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.0.2-TENANT-PROJECT-REGISTRY"
+VERSION: Final[str] = "v1.0.3-BSON-UTC-EVENT-READBACK"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -421,16 +424,25 @@ class ProjectRegistry:
             raise ProjectRegistryError("PROJECT_EVENT_SNAPSHOT_INVALID")
         _hydrate(snapshot)
         occurred = row.get("occurred_at")
-        if not isinstance(occurred, datetime) or occurred.tzinfo is None or occurred.utcoffset() is None:
+        if not isinstance(occurred, datetime):
             raise ProjectRegistryError("PROJECT_EVENT_TIMESTAMP_INVALID")
-        return {key: row[key] for key in _EVENT_FIELDS}
+        # BSON datetime always represents UTC. PyMongo with tz_aware=False
+        # decodes persisted UTC instants as naive datetime values. Normalize
+        # ONLY the trusted database read; command input remains strictly aware.
+        if occurred.tzinfo is None:
+            occurred = occurred.replace(tzinfo=timezone.utc)
+        if occurred.utcoffset() is None:
+            raise ProjectRegistryError("PROJECT_EVENT_TIMESTAMP_INVALID")
+        event = {key: row[key] for key in _EVENT_FIELDS}
+        event["occurred_at"] = occurred.astimezone(timezone.utc)
+        return event
 
 
 __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.0.2-TENANT-PROJECT-REGISTRY
+# VERSION: v1.0.3-BSON-UTC-EVENT-READBACK
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
