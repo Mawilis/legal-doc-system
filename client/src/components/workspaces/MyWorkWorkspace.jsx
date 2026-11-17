@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.12.1-SINGLE-AUDITED-EDIT-ANNOUNCEMENT
+ * VERSION: v1.13.0-WIDE-EXECUTION-WORKSPACE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.13.0-WIDE-EXECUTION-WORKSPACE gives source work a
+ *            responsive full workbench instead of a narrow edge form,
+ *            separating verified record context from source-owned edit,
+ *            history and completion actions without fabricating commands.
+ *            It retains source verification, focus/escape, IAM-gated edit,
+ *            audit and readback loops; viewport scrolling remains bounded.
  * CHANGELOG: v1.12.1-SINGLE-AUDITED-EDIT-ANNOUNCEMENT removes
  *            the duplicate transient editor success message; the scoped
  *            parent dialog alone announces the source/audit/queue-confirmed
@@ -694,7 +700,7 @@ export default function MyWorkWorkspace(props = {}) {
         }}>
           <aside id="my-work-detail-dialog" role="dialog" aria-modal="true"
             aria-labelledby="my-work-detail-title" aria-describedby="my-work-detail-description"
-            className="flex h-full w-full max-w-full flex-col overflow-y-auto border-l border-white/10 bg-[#101b2b] shadow-2xl outline-none md:max-w-[30rem]">
+            className="flex h-full w-full max-w-full flex-col overflow-y-auto border-l border-white/10 bg-[#101b2b] shadow-2xl outline-none md:max-w-[min(94vw,76rem)]">
             <header className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-6">
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-amber-200">{SOURCE_LABELS[selectedItem.source] || selectedItem.source} work</p>
@@ -706,17 +712,17 @@ export default function MyWorkWorkspace(props = {}) {
               </button>
             </header>
 
-            <div className="flex-1 space-y-4 p-4 sm:p-6">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="grid flex-1 auto-rows-min gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(17rem,0.84fr)_minmax(0,1.16fr)] lg:gap-8">
+              <div className="col-start-1 flex flex-wrap items-center gap-2 lg:col-span-2">
                 <span className="rounded border border-amber-300/25 bg-amber-300/[0.07] px-2 py-1 text-xs text-amber-100">{SOURCE_LABELS[selectedItem.source] || selectedItem.source}</span>
                 <span className={`rounded border px-2 py-1 text-xs font-semibold ${PRIORITY_STYLE[selectedItem.priority] || PRIORITY_STYLE.NORMAL}`}>{selectedItem.priority}</span>
                 <span className="inline-flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-xs text-slate-300"><Circle size={9} /> {statusLabel(selectedItem)}</span>
               </div>
-              <dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-2 border-y border-white/10 py-3 text-sm">
+              <dl className="col-start-1 grid grid-cols-[6rem_1fr] gap-x-3 gap-y-2 border-y border-white/10 py-3 text-sm">
                 <dt className="text-slate-400">Deadline</dt><dd className="text-slate-100">{formatDue(selectedItem.due_at)}</dd>
                 <dt className="text-slate-400">Work type</dt><dd className="text-slate-100">{kindLabel(selectedItem)}</dd>
               </dl>
-              <section>
+              <section className="col-start-1 lg:row-start-3">
                 <h3 className="text-sm font-semibold text-white">Description</h3>
                 <p id="my-work-detail-description" className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">
                   {typeof selectedItem.description === 'string' && selectedItem.description.trim()
@@ -726,7 +732,7 @@ export default function MyWorkWorkspace(props = {}) {
 
               {selectedItem.source === 'CRM' && (
                 <section aria-label="Verified CRM source record"
-                  className="space-y-2 rounded-lg border border-white/10 bg-white/[0.025] p-3">
+                  className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4 lg:col-start-2 lg:row-start-2 lg:row-span-3">
                   <h3 className="text-sm font-semibold text-white">CRM source record</h3>
                   {crmEditNotice?.scope === scopeKey
                     && crmEditNotice?.workItemId === selectedItem.work_item_id
@@ -793,7 +799,7 @@ export default function MyWorkWorkspace(props = {}) {
               )}
 
               {selectedItem.source === 'LEGAL' ? (
-                <section className="space-y-3 border-t border-white/10 pt-4" aria-label="Legal completion evidence">
+                <section className="min-w-0 space-y-3 border-t border-white/10 pt-4 lg:col-start-2" aria-label="Legal completion evidence">
                   <p className="text-xs text-slate-400">EOS requires source evidence for this Legal completion. My Work cannot create or infer that evidence.</p>
                   <label className="grid gap-1 text-xs text-slate-300">
                     Completion evidence reference
@@ -817,7 +823,7 @@ export default function MyWorkWorkspace(props = {}) {
                   </label>
                 </section>
               ) : completionPath(selectedItem) ? (
-                <label className="grid gap-1 border-t border-white/10 pt-4 text-xs text-slate-300">
+                <label className="grid min-w-0 gap-1 border-t border-white/10 pt-4 text-xs text-slate-300 lg:col-start-2">
                   Completion note <span className="text-slate-500">(required by this source)</span>
                   <textarea value={notes[selectedItem.source_key] || ''}
                     onChange={(event) => setNotes((current) => ({ ...current, [selectedItem.source_key]: event.target.value }))}
@@ -825,7 +831,7 @@ export default function MyWorkWorkspace(props = {}) {
                     className="min-h-24 resize-y rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-amber-300" />
                 </label>
               ) : (
-                <p className="border-t border-white/10 pt-4 text-xs text-slate-400">This source does not expose a completion action in the current My Work contract.</p>
+                <p className="border-t border-white/10 pt-4 text-xs text-slate-400 lg:col-start-2">This source does not expose a completion action in the current My Work contract.</p>
               )}
 
               {actionError && <div role="alert" className="rounded-lg border border-rose-400/25 bg-rose-950/20 px-3 py-2 text-sm text-rose-200">EOS did not confirm completion: {actionError}. The work remains in the last verified queue until a fresh projection confirms its state.</div>}
@@ -1035,20 +1041,20 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
             </div>)}
       </div>}
       {editing && <form aria-label="Edit CRM source task" onSubmit={submit}
-        className="space-y-3 rounded-lg border border-amber-300/25 p-3">
-        <label className="block text-xs">Task title
+        className="grid min-w-0 gap-4 rounded-xl border border-amber-300/25 bg-[#132338] p-4 sm:grid-cols-2">
+        <label className="block min-w-0 text-xs sm:col-span-2">Task title
           <input aria-label="Edit CRM title" value={draft.title} maxLength={240} required
             disabled={pending || !!receipt}
             onChange={(event) => { setDraft((v) => ({ ...v, title: event.target.value })); editKeyRef.current = null; }}
             className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm"/>
         </label>
-        <label className="block text-xs">Description
+        <label className="block min-w-0 text-xs sm:col-span-2">Description
           <textarea aria-label="Edit CRM description" value={draft.description}
             maxLength={4000} disabled={pending || !!receipt}
             onChange={(event) => { setDraft((v) => ({ ...v, description: event.target.value })); editKeyRef.current = null; }}
             className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm"/>
         </label>
-        <label className="block text-xs">Priority
+        <label className="block min-w-0 text-xs">Priority
           <select aria-label="Edit CRM priority" value={draft.priority}
             disabled={pending || !!receipt}
             onChange={(event) => { setDraft((v) => ({ ...v, priority: event.target.value })); editKeyRef.current = null; }}
@@ -1056,14 +1062,14 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
             {['LOW','NORMAL','HIGH','CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
-        <label className="block text-xs">Deadline
+        <label className="block min-w-0 text-xs">Deadline
           <input aria-label="Edit CRM deadline" type="datetime-local" value={draft.due}
             disabled={pending || !!receipt}
             onChange={(event) => { setDraft((v) => ({ ...v, due: event.target.value })); editKeyRef.current = null; }}
             className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm"/>
         </label>
-        <p className="text-xs text-slate-400">EOS checks current edit authority and source revision; each edit writes an audit event.</p>
-        <div className="flex flex-wrap gap-2">
+        <p className="text-xs text-slate-400 sm:col-span-2">EOS checks current edit authority and source revision; each edit writes an audit event.</p>
+        <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button type="submit" disabled={pending || (!receipt && (!dirty || !draft.title.trim()))}
             className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
             {pending ? 'Verifying source…' : receipt ? 'Reconcile source edit' : 'Save audited edit'}
@@ -1105,7 +1111,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.12.1-SINGLE-AUDITED-EDIT-ANNOUNCEMENT
+ * VERSION: v1.13.0-WIDE-EXECUTION-WORKSPACE
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
