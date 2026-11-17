@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.11.2-CANONICAL-DEADLINE-READBACK
+ * VERSION: v1.12.0-PERSISTED-CRM-EDIT-CONFIRMATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.12.0-PERSISTED-CRM-EDIT-CONFIRMATION retains a
+ *            source/audit/aggregate-confirmed edit receipt in the scoped
+ *            My Work dialog across the necessary source-detail remount.
+ *            A new selected record, session scope or dialog close clears it;
+ *            no optimistic client record or authority is introduced.
  * CHANGELOG: v1.11.2-CANONICAL-DEADLINE-READBACK compares persisted
  *            deadline instants, not equivalent timezone-offset strings, so
  *            valid source records do not enter false readback uncertainty.
@@ -214,6 +219,7 @@ export default function MyWorkWorkspace(props = {}) {
   const [crmDetail, setCrmDetail] = useState(null);
   const [crmDetailState, setCrmDetailState] = useState('IDLE');
   const [crmDetailError, setCrmDetailError] = useState('');
+  const [crmEditNotice, setCrmEditNotice] = useState(null);
 
   const load = useCallback(async ({ quiet = false } = {}) => {
     const request = ++requestRef.current;
@@ -273,6 +279,7 @@ export default function MyWorkWorkspace(props = {}) {
     setLegalEvidence({});
     setCompleting('');
     setActionError('');
+    setCrmEditNotice(null);
     setSelectedKey(null);
     setCloseGuard(false);
     setSourceFilter('ALL');
@@ -417,6 +424,7 @@ export default function MyWorkWorkspace(props = {}) {
       return;
     }
     setActionError('');
+    setCrmEditNotice(null);
     setSelectedKey(null);
   }
 
@@ -425,6 +433,7 @@ export default function MyWorkWorkspace(props = {}) {
     setNotes((current) => ({ ...current, [selectedItem.source_key]: '' }));
     setLegalEvidence((current) => ({ ...current, [selectedItem.source_key]: { reference: '', fingerprint: '' } }));
     setActionError('');
+    setCrmEditNotice(null);
     setCloseGuard(false);
     setSelectedKey(null);
   };
@@ -622,7 +631,7 @@ export default function MyWorkWorkspace(props = {}) {
                           if (element) rowRefs.current.set(item.source_key, element);
                           else rowRefs.current.delete(item.source_key);
                         }}
-                        onClick={() => { setActionError(''); setCloseGuard(false); setSelectedKey(item.source_key); }}
+                        onClick={() => { setActionError(''); setCrmEditNotice(null); setCloseGuard(false); setSelectedKey(item.source_key); }}
                         className="grid min-h-[4.25rem] w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-white/[0.035] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
                         <span className="min-w-0">
                           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -715,6 +724,12 @@ export default function MyWorkWorkspace(props = {}) {
                 <section aria-label="Verified CRM source record"
                   className="space-y-2 rounded-lg border border-white/10 bg-white/[0.025] p-3">
                   <h3 className="text-sm font-semibold text-white">CRM source record</h3>
+                  {crmEditNotice?.scope === scopeKey
+                    && crmEditNotice?.workItemId === selectedItem.work_item_id
+                    && crmEditNotice?.title === selectedItem.title
+                    && <p role="status" className="rounded-lg border border-emerald-400/30 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-100">
+                      CRM edit confirmed by source, audit history and fresh My Work.
+                    </p>}
                   {crmDetailState === 'LOADING' && <p role="status" className="text-xs text-slate-300">Verifying persisted CRM detail with EOS…</p>}
                   {crmDetailState === 'UNAVAILABLE' && <p role="alert" className="text-xs text-amber-200">
                     Source detail could not be verified ({crmDetailError}). The queue summary is not an audit record.
@@ -738,6 +753,10 @@ export default function MyWorkWorkspace(props = {}) {
                             || row.priority !== updated.priority || !sameDue) return false;
                           setCrmDetail(updated);
                           setActionError('');
+                          setCrmEditNotice({
+                            scope: scopeKey, workItemId: updated.work_item_id,
+                            title: updated.title, updatedAt: updated.updated_at,
+                          });
                           return true;
                         }}/>
                       <dl className="grid grid-cols-[6rem_1fr] gap-2 text-xs">
@@ -1082,7 +1101,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.11.2-CANONICAL-DEADLINE-READBACK
+ * VERSION: v1.12.0-PERSISTED-CRM-EDIT-CONFIRMATION
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
