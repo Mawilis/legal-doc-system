@@ -1,11 +1,15 @@
 """TITLE: WILSY OS Unified My Work replica-set integration certification.
-VERSION: v1.1.0-HR-DEPENDENCY-ISOLATION-CERT
+VERSION: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Proves authenticated My Work source aggregation against an isolated,
          writable MongoDB replica set without canonical tenant mutation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_unified_my_work_real_mongo.py
 COLLABORATION / OWNERSHIP: unified_my_work_router and owner-bound registries.
-CERTIFICATION / UPDATE DATE: 2026-11-15.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
+CHANGELOG: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT gives the synthetic
+           source-integration subscription both legal.core and crm.core
+           because the fixture creates real CRM tasks. It does not alter
+           canonical customer or Founder records or weaken IAM.
 CHANGELOG: v1.1.0-HR-DEPENDENCY-ISOLATION-CERT explicitly denies new HR
            dependencies in the existing Operations replica-set fixture and
            proves a real owner-transaction HR projection releases only generic
@@ -550,7 +554,7 @@ def _seed_live_legal_subscription(
         "planType": "ENTERPRISE",
         "idempotencyKey": f"my-work-plan-{tenant_id}",
         "active": True,
-        "features": ["legal.core"],
+        "features": ["legal.core", "crm.core"],
         "metadata": {"certificate": "MY-WORK-CRM-REAL-MONGO"},
         "tags": ["my-work-real-mongo"],
         "user": "MY-WORK-REAL-MONGO-CERT",
@@ -735,7 +739,7 @@ def test_legal_partner_my_work_reads_live_assigned_legal_work_from_replica_set(
 
 
 # ARTIFACT: test_unified_my_work_real_mongo.py
-# VERSION: v1.1.0-HR-DEPENDENCY-ISOLATION-CERT
+# VERSION: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: Isolated authenticated source-read certification only.
 # TENANT POSTURE: Disposable exact-tenant fixtures; no canonical mutation.
 # FAIL-CLOSED POSTURE: Dependency errors cannot become verified empty queues.
