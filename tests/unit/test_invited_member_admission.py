@@ -119,6 +119,7 @@ def test_raw_capability_digest_is_lowercase_sha3():
 # ARTIFACT: test_invited_member_admission.py
 # VERSION: v1.1.0-EXISTING-MEMBER-ROLE-ADMISSION-CERT
 # AUTHORITY BOUNDARY: unit evidence only
+# TENANT POSTURE: recipient-bound invitation and exact tenant membership
 # FAIL-CLOSED POSTURE: malformed authority denies
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
