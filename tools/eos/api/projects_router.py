@@ -3,18 +3,21 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION
+VERSION: v1.2.1-FOUNDER-INVITATION-AUTHORITY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
-         validated domain and caller-transaction-owned registry. It does not
-         assign roles, issue entitlements, select tenants, or create workforce
-         ownership/department authority.
+         validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
+         command; it does not select tenants or assign workforce ownership.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/projects_router.py
 COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            tenant authorization and entitlement registries own
                            independent admission; server.py mounts this router.
-CERTIFICATION / UPDATE DATE: 2026-11-16.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.2.1-FOUNDER-INVITATION-AUTHORITY — Uses tenant_owner's already
+  eligible membership_invite operation, retaining the separately governed
+  ENTERPRISE_ADMIN -> PROJECTS_PLATFORM_OWNER invitation delegation policy.
+  Generic role_grant business-capacity policy remains unchanged.
   v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION — Gates the API on startup index readiness, bounds list/path/idempotency inputs, and maps invalid domain construction to 422. Existing tenant, entitlement, IAM, transaction and readback rules remain intact.
   v1.0.0-PROJECTS-GOVERNED-API — Adds authenticated list, summary, detail,
   create, update/status-transition and soft-archive HTTP operations with exact
@@ -102,13 +105,13 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION"
+VERSION: Final[str] = "v1.2.1-FOUNDER-INVITATION-AUTHORITY"
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
 _UPDATE = RequireTenantAuthorization("project:update", "project_update")
 _ARCHIVE = RequireTenantAuthorization("project:archive", "project_archive")
-_FOUNDER_ROLE_GRANT = RequireTenantAuthorization("tenant:role_assignment:write", "role_grant")
+_FOUNDER_INVITE = RequireTenantAuthorization("tenant:membership:write", "membership_invite")
 _FOUNDER_PRODUCT_ISSUE = RequireTenantAuthorization("tenant_product_entitlement:issue", "tenant_product_entitlement_issue")
 
 
@@ -324,13 +327,14 @@ def _result(
 
 @router.post("/founder-projects-admission")
 def admit_founder_projects(
-    grant_context: TenantAuthorizationContext = Depends(_FOUNDER_ROLE_GRANT),
+    grant_context: TenantAuthorizationContext = Depends(_FOUNDER_INVITE),
     issue_context: TenantAuthorizationContext = Depends(_FOUNDER_PRODUCT_ISSUE),
 ) -> dict[str, object]:
     """Execute the explicitly requested, canonical Founder Projects admission.
 
     A current tenant_owner with an ACTIVE ENTERPRISE_ADMIN assignment must
-    independently pass role-grant and entitlement-issue IAM. An additional
+    independently pass membership-invite and entitlement-issue IAM. Delegation of
+    PROJECTS_PLATFORM_OWNER remains governed by the invitation source policy. An additional
     PROJECTS_PLATFORM_OWNER role is accepted through the existing digest-only
     invitation service, not inserted directly. The source subscription-backed
     issuance orchestrator owns commercial evidence, and the caller-owned
@@ -753,7 +757,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.2.0-GOVERNED-FOUNDER-PROJECTS-ADMISSION
+# VERSION: v1.2.1-FOUNDER-INVITATION-AUTHORITY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: missing assignment, entitlement, current database, indexes, transaction, replay integrity, or readback denies or fails unavailable
