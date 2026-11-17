@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.12.0-AUTHENTICATED-CRM-EDIT-JOURNEY
+ * VERSION: v3.12.1-SANITIZED-SOURCE-EDIT-REJECTION-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v3.12.1-SANITIZED-SOURCE-EDIT-REJECTION-CERT surfaces
+ *          only the stable EOS validation code when an authenticated
+ *          task-edit assertion fails, without logging request bodies,
+ *          credentials, tenant data or unsafe exception text.
  * CHANGELOG: v3.12.0-AUTHENTICATED-CRM-EDIT-JOURNEY certifies
  *          real CRM source creation, My Work editing through the permission-
  *          gated production UI, HTTP PATCH, persisted source audit and exact-
@@ -844,8 +848,12 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         )),
         revisionDialog.getByRole('button', {name: 'Save audited edit'}).click(),
       ]);
-      expect(patchedRevision.status()).toBe(200);
-      const patchReceipt = await patchedRevision.json();
+      const patchPayload = await patchedRevision.json();
+      const patchFailure = typeof patchPayload?.detail === 'string'
+        && /^[A-Z][A-Z0-9_]{1,95}$/.test(patchPayload.detail)
+        ? patchPayload.detail : 'CRM_EDIT_RESPONSE_REJECTED';
+      expect(patchedRevision.status(), patchFailure).toBe(200);
+      const patchReceipt = patchPayload;
       expect(patchReceipt.work_item_id).toBe(revisionWork.work_item_id);
       expect(patchReceipt.title).toBe(revisionChanged);
       await expect(revisionRow).toContainText(revisionChanged);
@@ -963,7 +971,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.12.0-AUTHENTICATED-CRM-EDIT-JOURNEY
+// VERSION: v3.12.1-SANITIZED-SOURCE-EDIT-REJECTION-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
