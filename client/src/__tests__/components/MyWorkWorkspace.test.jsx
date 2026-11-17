@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.12.0-MOUSE-DRAG-RESIZE-CERT
+ * VERSION: v1.13.0-INDEPENDENT-DESKTOP-A11Y-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.13.0-INDEPENDENT-DESKTOP-A11Y-CERT verifies
+ *            modeless desktop dialogue and accessible concurrent queue,
+ *            alongside mouse drag and keyboard edge resizing.
  * CHANGELOG: v1.12.0-MOUSE-DRAG-RESIZE-CERT exercises the
  *            desktop mouse fallback via actual down/move/up input and
  *            retains keyboard shrink and authenticated source denial cases.
@@ -169,6 +172,8 @@ describe('authenticated My Work execution queue', () => {
     const dialog = screen.getByRole('dialog', { name: 'Prepare CRM launch plan' });
     expect(resize).toBeTruthy();
     expect(dialog).toBeTruthy();
+    expect(dialog.getAttribute('aria-modal')).toBe('false');
+    expect(document.querySelector('main')?.getAttribute('aria-hidden')).toBeNull();
     await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(500));
     const originalWidth = parseFloat(dialog.style.width);
     fireEvent.mouseDown(resize, { button: 0, clientX: 600, clientY: 170 });
