@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.6.0-FOUNDER-PROJECTS-ACTIVATION-COMMAND
+ * VERSION: v1.6.1-BOUNDED-ADMISSION-HTTP-STATUS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.6.1-BOUNDED-ADMISSION-HTTP-STATUS maps known HTTP
+ *            outcomes to bounded IAM/transport/readiness classifications
+ *            even when the EOS error envelope lacks a simple detail string.
  * CHANGELOG: v1.6.0-FOUNDER-PROJECTS-ACTIVATION-COMMAND presents an explicit\n *            governed Founder activation action only on denied Projects read,\n *            validates source role/entitlement readback and refreshes Projects.\n * CHANGELOG: v1.5.1-PROJECTS-DENIAL-DIAGNOSTICS distinguishes
  *            canonical Projects entitlement denial from project IAM denial
  *            and unavailable infrastructure using bounded EOS codes.
@@ -300,9 +303,16 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     } catch (failure) {
       if (!active(key)) return;
       const code = failure?.response?.data?.detail;
-      setAdmissionStatus(typeof code === 'string' && /^[A-Z][A-Z0-9_]{1,90}$/.test(code)
-        ? code + ' · Governed Projects admission did not complete; no client grant was assumed.'
-        : 'Founder Projects admission could not be verified. Check canonical EOS authority and database index readiness.');
+      const status = failure?.response?.status;
+      const boundedCode = typeof code === 'string' && /^[A-Z][A-Z0-9_]{1,90}$/.test(code) ? code : null;
+      const category = status === 401 ? 'HTTP 401 · Founder session requires authentication.'
+        : status === 403 ? 'HTTP 403 · Current Founder invitation or entitlement-issuance IAM denied.'
+          : status === 404 || status === 405 ? 'HTTP ' + status + ' · Updated activation route is not running on this EOS instance.'
+            : status === 409 ? 'HTTP 409 · Existing role, invitation, or entitlement state conflicts with admission.'
+              : status === 503 ? 'HTTP 503 · EOS authority, entitlement composition, or database readiness unavailable.'
+                : status ? 'HTTP ' + status + ' · Founder Projects admission not verified.'
+                  : 'No verified HTTP response · EOS connection or request failed.';
+      setAdmissionStatus((boundedCode ? boundedCode + ' · ' : '') + category);
     } finally {
       if (active(key)) setAdmissionBusy(false);
     }
@@ -677,7 +687,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.6.0-FOUNDER-PROJECTS-ACTIVATION-COMMAND
+// VERSION: v1.6.1-BOUNDED-ADMISSION-HTTP-STATUS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
