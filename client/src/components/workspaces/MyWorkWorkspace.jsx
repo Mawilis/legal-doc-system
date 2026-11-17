@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.11.0-SOURCE-AUDITED-CRM-EDIT
+ * VERSION: v1.11.1-SAFE-EDIT-RECONCILIATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.11.1-SAFE-EDIT-RECONCILIATION retains the accepted
+ *            source receipt when audit/readback fails, reconciles indeterminate
+ *            transports using reads only, and normalizes deadline comparison
+ *            without false changes from ISO offset formatting.
  * CHANGELOG: v1.11.0-SOURCE-AUDITED-CRM-EDIT adds independently admitted
  *            CRM active-task editing using the owning Python EOS PATCH, a
  *            stable command key, expected source revision, fresh source/history
@@ -899,8 +903,8 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
       || persisted.description !== draft.description.trim()
       || persisted.priority !== draft.priority
       || (persisted.due_at || null) !== (draft.due ? new Date(draft.due).toISOString() : null)
-      || (accepted && persisted.updated_at !== accepted.updated_at)
-      || (persisted.updated_at === record.updated_at && !accepted)) {
+      || (accepted && !accepted.pending && persisted.updated_at !== accepted.updated_at)
+      || (persisted.updated_at === record.updated_at && (!accepted || accepted.pending))) {
       throw new Error('CRM_WORK_EDIT_READBACK_PENDING');
     }
     await verifyHistory(persisted, true);
@@ -928,6 +932,7 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
       return;
     }
     editKeyRef.current = key;
+    let acceptedReceipt = null;
     try {
       const body = {
         title: draft.title.trim(), description: draft.description.trim(),
@@ -945,6 +950,7 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
         throw new Error('CRM_WORK_EDIT_RECEIPT_INVALID');
       }
       if (!activeRef.current) return;
+      acceptedReceipt = accepted;
       setReceipt(accepted);
       await reconcile(accepted);
     } catch (error) {
@@ -953,7 +959,7 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
       if (http === 401 || http === 403) setPermitted(false);
       if (http === 409 || http === 422 || http === 401 || http === 403) {
         editKeyRef.current = null;
-      } else if (!receipt) {
+      } else if (!receipt && !acceptedReceipt) {
         // Transport can fail after EOS commits. Subsequent clicks reconcile
         // with read-only source/audit queries rather than duplicate writes.
         setReceipt({ pending: true });
@@ -968,10 +974,12 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
     try { await verifyHistory(record, false); }
     catch (error) { if (activeRef.current) setHistoryError(safeErrorCode(error)); }
   };
+  const oldDueTime = record.due_at ? new Date(record.due_at).getTime() : null;
+  const newDueTime = draft.due ? new Date(draft.due).getTime() : null;
   const dirty = draft.title.trim() !== record.title
     || draft.description.trim() !== record.description
     || draft.priority !== record.priority
-    || (draft.due ? new Date(draft.due).toISOString() : null) !== (record.due_at || null);
+    || oldDueTime !== newDueTime;
   return (
     <section aria-label="CRM source task controls" className="space-y-3 border-t border-white/10 pt-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -1069,7 +1077,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.11.0-SOURCE-AUDITED-CRM-EDIT
+ * VERSION: v1.11.1-SAFE-EDIT-RECONCILIATION
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
