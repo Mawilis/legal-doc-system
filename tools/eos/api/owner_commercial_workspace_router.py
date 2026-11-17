@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace HTTP Router
-VERSION: v1.3.0-CRM-CORE-ADMISSION-ERRORS
+VERSION: v1.4.0-OWNER-CANCELLATION-HTTP
 AUTHORITY: WILSY OS Python EOS institutional CRM API.
 EPITOME: Expose source-owned CRM owner work reads and commands through exact
          tenant authorization, entitlement admission and Mongo transactions.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/ow
 COLLABORATION / OWNERSHIP: Tenant IAM dependency, CRM owner source service,
          tenant-scoped work registry and Python EOS API gateway.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.4.0-OWNER-CANCELLATION-HTTP adds a distinct terminal
+           cancel command, actor-owned and current CRM UPDATE authorized,
+           with strict reason, expected revision and idempotency key.
+           No deletion, reassignment or tenant authorization is inferred.
 CHANGELOG: v1.3.0-CRM-CORE-ADMISSION-ERRORS maps exact CRM Core
            entitlement absence to 403 and unverifiable CRM Core evidence
            to 503 without using Legal authorization or granting access.
@@ -74,6 +78,13 @@ _UPDATE = RequireTenantAuthorization("crm:work_item:update", "crm_work_item_upda
 class OwnerWorkCompleteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     completion_note: str = Field(min_length=1, max_length=1000)
+
+
+class OwnerWorkCancelRequest(BaseModel):
+    """Exact user-authored reason and revision; actor/tenant come from EOS IAM."""
+    model_config = ConfigDict(extra="forbid")
+    reason: str = Field(min_length=3, max_length=1000)
+    expected_updated_at: datetime
 
 
 class OwnerWorkReviseRequest(BaseModel):
@@ -268,6 +279,36 @@ async def revise_owner_work_item(
     return _transaction(revise)
 
 
+@router.post("/work-items/{work_item_id}/cancel")
+async def cancel_owner_work_item(
+    work_item_id: str,
+    body: OwnerWorkCancelRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Cancel only the authenticated actor's own active CRM task.
+
+    CRM update IAM, current commercial admission, source ownership, revision,
+    durable reason and idempotency are required; neither client-selected
+    principals nor delete authority is accepted. EOS persists before/after
+    audit and terminal status in one Mongo transaction.
+    """
+    if body.expected_updated_at.tzinfo is None or body.expected_updated_at.utcoffset() is None:
+        raise HTTPException(status_code=422, detail="WORK_TIMESTAMP_MUST_BE_TIMEZONE_AWARE")
+
+    def cancel(service: OwnerCommercialWorkspaceService, session: Any):
+        item = service.cancel(
+            tenant_id=context.tenant_id, work_item_id=work_item_id,
+            actor_principal_id=context.identity.identity_id,
+            reason=body.reason, expected_updated_at=body.expected_updated_at,
+            idempotency_key=idempotency_key, now=datetime.now(timezone.utc),
+            session=session,
+        )
+        return item.to_dict()
+
+    return _transaction(cancel)
+
+
 @router.get("/work-items/{work_item_id}/history")
 async def read_owner_work_item_history(
     work_item_id: str,
@@ -309,10 +350,10 @@ async def complete_owner_work_item(
     return _transaction(complete)
 
 
-__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item"]
+__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkReviseRequest", "OwnerWorkCancelRequest", "OwnerWorkCompleteRequest", "read_owner_work_item", "read_owner_work_item_history", "revise_owner_work_item", "cancel_owner_work_item"]
 
 # ARTIFACT: tools/eos/api/owner_commercial_workspace_router.py
-# VERSION: v1.3.0-CRM-CORE-ADMISSION-ERRORS
+# VERSION: v1.4.0-OWNER-CANCELLATION-HTTP
 # AUTHORITY BOUNDARY: Existing CRM read IAM and owner source entitlement.
 # TENANT POSTURE: Authorized tenant only; foreign work is indistinguishable from absent.
 # FAIL-CLOSED POSTURE: 401/403/404/503 remain distinct without fabricated evidence.
