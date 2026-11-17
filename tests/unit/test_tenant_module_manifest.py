@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Tenant Module Manifest Contract Certificate.
-VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+VERSION: v1.2.0-PROJECTS-PRODUCT-ADMISSION-CERT
 AUTHORITY: Repository-owned isolated regression evidence only.
 EPITOME: Prove exact WILSY company separation while preserving customer Legal
 availability, entitlement validation and fail-closed source behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_module_manifest.py
 COLLABORATION / OWNERSHIP: Canonical tenant module projection and authenticated HTTP adapter.
-CERTIFICATION / UPDATE DATE: 2026-11-13
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-PROJECTS-PRODUCT-ADMISSION-CERT restores closed
+           catalogue parity and verifies Projects needs exact ACTIVE evidence
+           without granting principal permissions or synthetic availability.
 CHANGELOG: v1.1.0-WILSY-PLATFORM-OWNER-CERT retains all existing assertions and
 adds exact-company, customer preservation and legacy entitlement negative gates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -80,7 +83,7 @@ def _active_crm(tenant_id: str = "TENANT-A"):
 
 def test_global_module_catalogue_is_closed_and_uses_canonical_product_keys():
     descriptors = list_tenant_module_descriptors()
-    assert len(descriptors) == 7
+    assert len(descriptors) == 8
     assert {item.product_id for item in descriptors} == set(TenantProductId)
     assert {item.module_id for item in descriptors} == set(TenantModuleId)
 
@@ -93,6 +96,18 @@ def test_only_exact_active_legal_product_entitlement_projects_legal_os():
     assert len(result) == 1
     assert result[0].module_id is TenantModuleId.LEGAL_OS
     assert result[0].workspace_key == "LEGAL_DASHBOARD"
+    assert result[0].entitlement_revision == 1
+
+
+def test_projects_requires_its_own_active_product_entitlement():
+    result = build_tenant_module_manifest(
+        tenant_id="TENANT-A",
+        entitlements=[_active_product(TenantProductId.PROJECTS)],
+    )
+    assert len(result) == 1
+    assert result[0].module_id is TenantModuleId.PROJECTS
+    assert result[0].product_id is TenantProductId.PROJECTS
+    assert result[0].workspace_key == "PROJECTS_DASHBOARD"
     assert result[0].entitlement_revision == 1
 
 
@@ -238,7 +253,7 @@ def test_company_exclusion_does_not_skip_foreign_or_duplicate_evidence_validatio
         build_tenant_module_manifest(tenant_id=company, entitlements=[legal, legal])
 
 # ARTIFACT: test_tenant_module_manifest.py
-# VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+# VERSION: v1.2.0-PROJECTS-PRODUCT-ADMISSION-CERT
 # AUTHORITY BOUNDARY: Regression evidence only; no IAM/entitlement mutation.
 # TENANT POSTURE: Exact company exclusion and customer Legal preservation.
 # FAIL-CLOSED POSTURE: Foreign or malformed source evidence never passes.
