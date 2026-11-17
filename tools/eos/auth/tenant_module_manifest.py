@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS tenant module manifest and entitlement projection.
 
 TITLE: Tenant Module Manifest
-VERSION: v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST
+VERSION: v1.2.0-CANONICAL-PROJECTS-MANIFEST
 AUTHORITY: Read-only presentation projection over canonical product entitlements.
 EPITOME: Describe stable WILSY OS modules and expose only modules backed by
          exact ACTIVE tenant-product entitlement evidence.
@@ -13,7 +13,12 @@ COLLABORATION / OWNERSHIP:
     D22A owns product identity; D22B1/D22B2 own product entitlement domain and
     persistence; CRM Core entitlement authority owns crm.core evidence; this
     artifact composes browser-safe module availability only.
-CERTIFICATION / UPDATE DATE: 2026-11-13
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG:
+    v1.2.0-CANONICAL-PROJECTS-MANIFEST includes the already-catalogued PROJECTS
+    product in the closed read-only module descriptors. Positive Projects
+    entitlement is still required; foreign and invalid evidence still rejects.
+    The stable HTTP response schema and all existing module identities remain.
 CHANGELOG:
     v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST separates WILSY company operations from
     customer Legal OS consumption. Validated Legal evidence is omitted only
@@ -71,7 +76,7 @@ from tools.eos.saas.entitlement.product_catalogue import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST"
+VERSION: Final[str] = "v1.2.0-CANONICAL-PROJECTS-MANIFEST"
 # Artifact policy evolves independently from the stable unchanged HTTP schema.
 CONTRACT_VERSION: Final[str] = "v1.0.0-EOS-TENANT-MODULE-MANIFEST"
 _SHA3: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -91,6 +96,7 @@ class TenantModuleId(StrEnum):
     PEOPLE = "PEOPLE"
     OPERATIONS = "OPERATIONS"
     INTELLIGENCE = "INTELLIGENCE"
+    PROJECTS = "PROJECTS"
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,6 +190,15 @@ _MODULES: Final[tuple[TenantModuleDescriptor, ...]] = (
         "INTELLIGENCE",
         "brain-circuit",
         "Analytics, evidence-backed insights and decision-support workspace.",
+    ),
+    TenantModuleDescriptor(
+        TenantModuleId.PROJECTS,
+        TenantProductId.PROJECTS,
+        "Projects",
+        get_tenant_product(TenantProductId.PROJECTS).workspace_key,
+        "BUSINESS_OPERATIONS",
+        "folder-kanban",
+        "Tenant project planning, delivery and auditable status workspace.",
     ),
 )
 _MODULE_BY_PRODUCT: Final[dict[TenantProductId, TenantModuleDescriptor]] = {
@@ -345,7 +360,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_module_manifest.py
-# VERSION: v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST
+# VERSION: v1.2.0-CANONICAL-PROJECTS-MANIFEST
 # AUTHORITY BOUNDARY: read-only module availability projection; no IAM or route admission
 # TENANT POSTURE: exact tenant-bound canonical entitlement evidence only
 # FAIL-CLOSED POSTURE: unknown types, foreign tenants, duplicates and malformed evidence reject
