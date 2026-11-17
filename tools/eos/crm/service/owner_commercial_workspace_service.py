@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace Service
-VERSION: v1.5.0-OWNER-ONLY-AUDITED-CANCEL
+VERSION: v1.6.0-OWNER-DRAFT-PROGRESS-COMMANDS
 AUTHORITY: WILSY OS Python EOS CRM source service.
 EPITOME: Enforce independent customer CRM Core or exact WILSY company-owner authority for tenant-exact work
          reads, creation, completion and canonical work-detail readback.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/se
 COLLABORATION / OWNERSHIP: CRM source domain, owner work registry and
          authenticated owner commercial workspace router.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.6.0-OWNER-DRAFT-PROGRESS-COMMANDS adds exact-owner
+           Draft/Open/In Progress transitions and saved-draft reads through
+           existing CRM commercial and IAM boundaries, without grants.
 CHANGELOG: v1.5.0-OWNER-ONLY-AUDITED-CANCEL delegates exact-owner
            terminal cancellation to the CRM registry under the same CRM
            UPDATE IAM and immutable Founder/customer entitlement admission.
@@ -211,6 +214,31 @@ class OwnerCommercialWorkspaceService:
             idempotency_key=idempotency_key, now=now, session=session,
         )
 
+    def transition_status(
+        self, *, tenant_id: str, work_item_id: str,
+        actor_principal_id: str, target_status: OwnerWorkStatus,
+        expected_updated_at: datetime, idempotency_key: str,
+        now: datetime, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Change owner task state under CRM UPDATE permission and entitlement."""
+        self._require_entitlement(tenant_id, session)
+        return self._registry.transition_status(
+            tenant_id=tenant_id, work_item_id=work_item_id,
+            actor_principal_id=actor_principal_id,
+            target_status=target_status, expected_updated_at=expected_updated_at,
+            idempotency_key=idempotency_key, now=now, session=session,
+        )
+
+    def drafts_for_owner(
+        self, *, tenant_id: str, owner_principal_id: str, session: Any,
+    ) -> tuple[dict[str, object], ...]:
+        """Return only persisted drafts owned by the authenticated principal."""
+        self._require_entitlement(tenant_id, session)
+        return tuple(item.to_dict() for item in self._registry.drafts_for_owner(
+            tenant_id=tenant_id, owner_principal_id=owner_principal_id,
+            session=session,
+        ))
+
     def revision_history(
         self, *, tenant_id: str, work_item_id: str,
         session: Any,
@@ -264,7 +292,7 @@ class OwnerCommercialWorkspaceService:
 __all__ = ["OwnerCommercialWorkspaceError", "OwnerCommercialWorkspaceService"]
 
 # ARTIFACT: tools/eos/crm/service/owner_commercial_workspace_service.py
-# VERSION: v1.5.0-OWNER-ONLY-AUDITED-CANCEL
+# VERSION: v1.6.0-OWNER-DRAFT-PROGRESS-COMMANDS
 # AUTHORITY BOUNDARY: Existing CRM HTTP IAM, entitlement and tenant-owned registry.
 # TENANT POSTURE: Exact tenant lookup; foreign record existence is not disclosed.
 # FAIL-CLOSED POSTURE: Denied, unavailable and absent source records remain explicit.
