@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.13.0-INDEPENDENT-DESKTOP-A11Y-CERT
+ * VERSION: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.13.0-INDEPENDENT-DESKTOP-A11Y-CERT verifies
+ * CHANGELOG: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT proves
+ *            successful audited Draft transition removes the active row,
+ *            decrements the verified count and exposes saved owner drafts.
+ * CHANGELOG: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT verifies
  *            modeless desktop dialogue and accessible concurrent queue,
  *            alongside mouse drag and keyboard edge resizing.
  * CHANGELOG: v1.12.0-MOUSE-DRAG-RESIZE-CERT exercises the
@@ -423,6 +426,77 @@ describe('authenticated My Work execution queue', () => {
     expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
   });
 
+
+  it('saves an active CRM task as Draft only after source, audit and queue removal', async () => {
+    const item = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:draft-transition',
+      work_item_id: 'draft-transition', title: 'Draft candidate task', status: 'OPEN',
+    };
+    const source = {
+      schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1', tenant_id: 'tenant-a',
+      work_item_id: 'draft-transition', title: item.title,
+      description: item.description, kind: 'TASK', priority: item.priority,
+      status: 'OPEN', owner_principal_id: 'principal-a',
+      due_at: item.due_at, source_type: null, source_id: null,
+      created_at: '2026-11-01T10:00:00+00:00',
+      updated_at: '2026-11-06T10:00:00+00:00',
+      completed_at: null, completion_note: null,
+    };
+    const draft = { ...source, status: 'DRAFT', updated_at: '2026-11-06T10:20:00+00:00' };
+    const projection = {
+      ...payload, items: [item], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    let saved = false;
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: saved
+        ? { ...projection, items: [],
+          summary: { active_count: 0, overdue_count: 0, source_counts: { CRM: 0 } } }
+        : projection };
+      if (path === '/crm/owner-workspace/work-items/draft-transition') {
+        return { data: saved ? draft : source };
+      }
+      if (path.endsWith('/draft-transition/history')) return { data: {
+        schema: 'WILSY-OWNER-COMMERCIAL-WORK-HISTORY/V1',
+        tenant_id: 'tenant-a', work_item_id: 'draft-transition',
+        events: [{ operation: 'STATUS', actor_principal_id: 'principal-a',
+          before: source, after: draft, recorded_at: draft.updated_at }],
+      } };
+      throw new Error('UNEXPECTED_DRAFT_READ');
+    });
+    readAttentionSourceActions.mockResolvedValue({
+      sourceActions: { CRM: ['UPDATE'] }, unavailableSources: [],
+    });
+    api.post.mockImplementation(async (path) => {
+      if (path !== '/crm/owner-workspace/work-items/draft-transition/status') {
+        throw new Error('UNEXPECTED_DRAFT_POST');
+      }
+      saved = true;
+      return { data: draft };
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Draft candidate task');
+    await screen.findByText('Persisted source record verified for this tenant');
+    fireEvent.change(await screen.findByRole('combobox', { name: 'CRM work status' }), {
+      target: { value: 'DRAFT' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Update status' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items/draft-transition/status',
+      { status: 'DRAFT', expected_updated_at: source.updated_at },
+      expect.objectContaining({ headers: { 'Idempotency-Key': expect.any(String) } }),
+    ));
+    await waitFor(() => expect(screen.queryByText('Draft candidate task')).toBeNull());
+    expect(screen.getByText('0 active')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Saved Drafts · View' })).toBeTruthy();
+  });
+
   it('never exposes CRM edit when current EOS source permission is absent', async () => {
     const item = {
       ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-denied',
@@ -671,7 +745,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.13.0-INDEPENDENT-DESKTOP-A11Y-CERT
+ * VERSION: v1.14.0-VERIFIED-DRAFT-ACTIVATION-COUNT-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
