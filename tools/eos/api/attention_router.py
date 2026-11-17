@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authenticated HTTP Read Surface
-VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY
+VERSION: v1.4.0-GOVERNED-CRM-EDIT-CAPABILITY
 AUTHORITY: WILSY OS Core Governance; canonical source EOS service authority.
 EPITOME: Serve cursor-bounded attention feeds, counts, source coverage and
          deadline calendar from the existing independently authorised My Work.
@@ -7,7 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/at
 COLLABORATION / OWNERSHIP: unified_my_work_router.read_my_work authorizes
          source reads and tenant/principal admission; attention_feed_projection
          normalizes read-only items; no second source/task registry is created.
-CERTIFICATION / UPDATE DATE: 2026-11-10
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.4.0-GOVERNED-CRM-EDIT-CAPABILITY returns optional CRM
+           UPDATE only when current exact tenant/principal independent edit
+           authorization is admitted. Each source command reauthorizes, and
+           missing capability is not advertised or interpreted as a grant.
 CHANGELOG: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY adds
            separate authenticated CRM, Operations and Intelligence action
            reads to prevent unrelated command dependency failure from
@@ -60,6 +64,9 @@ _INTELLIGENCE_COMPLETE = OptionalTenantAuthorization(
 )
 _CRM_COMPLETE = OptionalTenantAuthorization(
     "crm:work_item:complete", "crm_work_item_complete"
+)
+_CRM_UPDATE = OptionalTenantAuthorization(
+    "crm:work_item:update", "crm_work_item_update"
 )
 _OPERATIONS_CREATE = OptionalTenantAuthorization(
     "operations:work_item:create", "operations_work_item_create"
@@ -185,6 +192,7 @@ async def attention_authorised_actions(
     operations_create: TenantAuthorizationContext | None = Depends(_OPERATIONS_CREATE),
     intelligence_create: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_CREATE),
     crm_create: TenantAuthorizationContext | None = Depends(_CRM_CREATE),
+    crm_update: TenantAuthorizationContext | None = Depends(_CRM_UPDATE),
 ) -> dict[str, Any]:
     """Report existing source CREATE/COMPLETE availability without granting it.
 
@@ -199,7 +207,7 @@ async def attention_authorised_actions(
     for module, pairs in (
         ("OPERATIONS", (("CREATE", operations_create), ("COMPLETE", operations_context))),
         ("INTELLIGENCE", (("CREATE", intelligence_create), ("COMPLETE", intelligence_context))),
-        ("CRM", (("CREATE", crm_create), ("COMPLETE", crm_context))),
+        ("CRM", (("CREATE", crm_create), ("UPDATE", crm_update), ("COMPLETE", crm_context))),
     ):
         if module not in admitted:
             continue
@@ -231,6 +239,7 @@ def _source_actions(
     module: str,
     create: TenantAuthorizationContext | None,
     complete: TenantAuthorizationContext | None,
+    update: TenantAuthorizationContext | None = None,
 ) -> dict[str, Any]:
     """Keep read admission and each source command independent and fail-closed."""
     tenant_id, principal_id = source["tenant_id"], source["principal_id"]
@@ -238,7 +247,7 @@ def _source_actions(
     if not admitted:
         raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED")
     actions: list[str] = []
-    for name, context in (("CREATE", create), ("COMPLETE", complete)):
+    for name, context in (("CREATE", create), ("UPDATE", update), ("COMPLETE", complete)):
         if context is None:
             continue
         if context.tenant_id != tenant_id or context.identity.identity_id != principal_id:
@@ -258,9 +267,10 @@ async def attention_crm_actions(
     source: dict[str, Any] = Depends(read_my_work),
     create: TenantAuthorizationContext | None = Depends(_CRM_CREATE),
     complete: TenantAuthorizationContext | None = Depends(_CRM_COMPLETE),
+    update: TenantAuthorizationContext | None = Depends(_CRM_UPDATE),
 ) -> dict[str, Any]:
     """Independently verify CRM task actions; other command systems do not gate it."""
-    return _source_actions(source, "CRM", create, complete)
+    return _source_actions(source, "CRM", create, complete, update)
 
 
 @router.get("/actions/operations")
@@ -309,7 +319,7 @@ __all__ = ["router", "attention_feed", "attention_counts",
            "attention_operations_actions", "attention_intelligence_actions"]
 
 # ARTIFACT: tools/eos/api/attention_router.py
-# VERSION: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY
+# VERSION: v1.4.0-GOVERNED-CRM-EDIT-CAPABILITY
 # AUTHORITY BOUNDARY: Authenticated source-owned reads; no attention commands.
 # TENANT POSTURE: Exact tenant/principal read_my_work dependency each request.
 # FAIL-CLOSED POSTURE: No inferred health, entitlement, access or cleared queue.
