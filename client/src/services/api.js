@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.11.0-PROVIDER-OWNED-AUTHENTICATED-RETRY
+ * VERSION: v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -15,7 +15,11 @@
  * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
- * CERTIFICATION / UPDATE DATE: 2026-11-14
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: 2026-11-17 v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
+ *            preserves strict CRM PATCH task-edit payloads as provided by
+ *            the caller; forensic timestamps remain transport headers.
+ *            Existing create/complete and all other request sealing remain.
  * CHANGELOG: 2026-11-14 v74.11.0-PROVIDER-OWNED-AUTHENTICATED-RETRY delegates
  *            one authenticated retry to the current AuthProvider refresh owner;
  *            exact reader-grant bodies survive sealing; missing company-route
@@ -492,7 +496,7 @@ api.interceptors.request.use(
         /^\/legal-acceptance\/accept$/i.test(config.url)
         || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish))$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
-        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
+        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/complete)?)?$/i.test(config.url)
         || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
       );
       const isMultipartBody = typeof FormData !== 'undefined'
@@ -816,7 +820,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.11.0-PROVIDER-OWNED-AUTHENTICATED-RETRY
+ * VERSION: v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
