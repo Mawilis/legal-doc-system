@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Authenticated Unified My Work Source Aggregation
-VERSION: v1.5.0-TRACE-CORRELATED-TIMING
+VERSION: v1.6.0-CRM-CORE-OPTIONAL-SOURCE
 AUTHORITY: WILSY OS Python EOS; canonical source registries own business truth.
 EPITOME: Compose only independently authenticated and entitled module work in
          exact tenant scope, fan out independent source-owned reads without
@@ -15,7 +15,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/un
 COLLABORATION / OWNERSHIP: TenantAuthorizationHTTP owns current IAM;
          Legal Operations, CRM, tenant module and HR source services own reads,
          index assurance, transactions and durable state; projection owns shape.
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.6.0-CRM-CORE-OPTIONAL-SOURCE treats explicitly verified
+           absence of tenant CRM Core entitlement as an omitted optional CRM
+           source, preserving independently entitled Operations, Intelligence,
+           Legal and HR work. CRM entitlement outages and all other source
+           errors continue to fail closed; no phantom work is displayed.
 CHANGELOG: v1.5.0-TRACE-CORRELATED-TIMING adds the existing request's
            validated diagnostic trace reference to opt-in, privacy-safe source,
            projection, and route timing; it does not change source reads.
@@ -291,7 +296,7 @@ def _read_crm(*, tenant_id: str) -> dict[str, Any] | None:
     try:
         return crm_source._transaction(read)
     except HTTPException as error:
-        if error.status_code == 403 and error.detail == "OWNER_WORK_LEGAL_NOT_ENTITLED":
+        if error.status_code == 403 and error.detail == "OWNER_WORK_CRM_NOT_ENTITLED":
             return None
         raise
 
@@ -561,7 +566,7 @@ __all__ = ["router", "read_my_work"]
 
 
 # ARTIFACT: tools/eos/api/unified_my_work_router.py
-# VERSION: v1.5.0-TRACE-CORRELATED-TIMING
+# VERSION: v1.6.0-CRM-CORE-OPTIONAL-SOURCE
 # AUTHORITY BOUNDARY: Authenticated source reads only; no commands.
 # TENANT POSTURE: Exact IAM source admission required.
 # FAIL-CLOSED POSTURE: Any admitted source failure rejects the aggregate.
