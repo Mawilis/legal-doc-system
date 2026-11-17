@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT
+# VERSION: v1.1.0-DISPOSABLE-REPLICA-ACCOUNTABILITY-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,7 +7,10 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-17
-# CHANGELOG: v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
+# CHANGELOG: v1.1.0-DISPOSABLE-REPLICA-ACCOUNTABILITY-CERT adds a real
+#            disposable Mongo replica-set transaction certificate for exact
+#            tenant owner currentness, department replay and project audit.
+#            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
 #            Python and client project regression checks without any grant,
 #            production deployment, tenant mutation or artificial assignment.
 # COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -30,6 +33,7 @@ on:
       - tests/unit/test_projects_router_contract.py
       - tests/unit/test_project_domain.py
       - tests/unit/test_project_registry.py
+      - tests/integration/test_project_accountability_real_mongo.py
       - client/src/components/workspaces/ProjectsWorkspace.jsx
       - client/src/__tests__/components/ProjectsWorkspace.test.jsx
       - .github/workflows/eos-project-accountability-certification.yml
@@ -46,7 +50,7 @@ jobs:
   governed-project-accountability:
     name: Exact tenant assignment, source authority and client certification
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 27
     steps:
       - name: Checkout reviewed source
         uses: actions/checkout@v4
@@ -65,6 +69,26 @@ jobs:
       - name: Certify project IAM, schema, registry, replay and assignment
         run: |
           python -m pytest -q tests/unit/test_projects_router_contract.py tests/unit/test_project_domain.py tests/unit/test_project_registry.py
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run -d --name wilsy-projects-accountability-mongo -p 27017:27017 mongo:7.0.37 mongod --replSet wilsyProjectAccountabilityCertRS --bind_ip_all
+          for attempt in $(seq 1 30); do
+            if docker exec wilsy-projects-accountability-mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok' | grep -q 1; then break; fi
+            sleep 2
+          done
+          docker exec wilsy-projects-accountability-mongo mongosh --quiet --eval 'rs.initiate({_id:"wilsyProjectAccountabilityCertRS",members:[{_id:0,host:"localhost:27017"}]})'
+          for attempt in $(seq 1 30); do
+            if docker exec wilsy-projects-accountability-mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Certify real Mongo project owner and department transactions
+        env:
+          TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyProjectAccountabilityCertRS
+        run: python -m pytest -q tests/integration/test_project_accountability_real_mongo.py
+      - name: Stop disposable MongoDB
+        if: always()
+        run: docker rm -f wilsy-projects-accountability-mongo 2>/dev/null || true
       - name: Prepare isolated client
         uses: actions/setup-node@v4
         with:
@@ -82,7 +106,7 @@ jobs:
         run: npm run build
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT
+# VERSION: v1.1.0-DISPOSABLE-REPLICA-ACCOUNTABILITY-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
