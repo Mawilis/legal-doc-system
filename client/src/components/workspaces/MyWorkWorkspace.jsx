@@ -4,14 +4,20 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.10.0-CRM-SOURCE-DETAIL-READBACK
+ * VERSION: v1.11.0-SOURCE-AUDITED-CRM-EDIT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/MyWorkWorkspace.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.11.0-SOURCE-AUDITED-CRM-EDIT adds independently admitted
+ *            CRM active-task editing using the owning Python EOS PATCH, a
+ *            stable command key, expected source revision, fresh source/history
+ *            and unified queue readback, and readback-only reconciliation
+ *            after accepted or indeterminate transport. No delegation or
+ *            browser-granted permissions are invented.
  * CHANGELOG: v1.10.0-CRM-SOURCE-DETAIL-READBACK adds exact-tenant CRM source detail
  *            verification and renders persisted record evidence without
  *            fabricating audit history or broadening mutation authority.
@@ -52,6 +58,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
+import { readAttentionSourceActions } from '../../services/attentionFeedClient.js';
 import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
 import {
   currentUnifiedMyWorkScope,
@@ -708,6 +715,23 @@ export default function MyWorkWorkspace(props = {}) {
                   {crmDetailState === 'VERIFIED' && crmDetail && (
                     <>
                       <p className="text-xs text-emerald-200">Persisted source record verified for this tenant</p>
+                      <CrmSourceEditor key={crmDetail.work_item_id + ':' + scopeKey}
+                        record={crmDetail} tenantId={authUser?.tenantId}
+                        principalId={authUser?.id}
+                        onVerified={async (updated) => {
+                          if (scopeRef.current !== scopeKey) return false;
+                          invalidateUnifiedMyWork(currentUnifiedMyWorkScope(auth, authUser?.tenantId));
+                          const verified = await load({ quiet: true });
+                          if (scopeRef.current !== scopeKey || !verified) return false;
+                          const row = verified.items.find((item) =>
+                            item.source_key === 'CRM:' + updated.work_item_id);
+                          const sameDue = (row?.due_at || null) === (updated.due_at || null);
+                          if (!row || row.title !== updated.title
+                            || row.priority !== updated.priority || !sameDue) return false;
+                          setCrmDetail(updated);
+                          setActionError('');
+                          return true;
+                        }}/>
                       <dl className="grid grid-cols-[6rem_1fr] gap-2 text-xs">
                         <dt className="text-slate-400">Created</dt><dd>{formatVerified(crmDetail.created_at)}</dd>
                         <dt className="text-slate-400">Updated</dt><dd>{formatVerified(crmDetail.updated_at)}</dd>
@@ -807,6 +831,226 @@ export default function MyWorkWorkspace(props = {}) {
   );
 }
 
+
+/**
+ * @description Execute a source-owned, audited CRM task revision from a
+ * current-session verified CRM source record, with independent capability
+ * admission, expected-revision CAS and readback-only reconciliation.
+ * @param {Object} props Exact tenant/actor, source record and readback callback.
+ * @returns {JSX.Element} Permission-gated editor and durable edit history.
+ * @authority Only EOS /attention/actions/crm grants UI availability; PATCH
+ *   reauthorizes CRM UPDATE, subscription and active role possession.
+ * @tenant All HTTP results are checked against the current actor and tenant.
+ * @mutation PATCH with an idempotency key; retries never blindly resubmit.
+ * @transaction EOS commits the revision and audit event in one Mongo session.
+ * @financial No payment, release, settlement or financial execution.
+ */
+function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
+  const [permitted, setPermitted] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [status, setStatus] = useState('');
+  const [receipt, setReceipt] = useState(null);
+  const [draft, setDraft] = useState(() => ({
+    title: record.title, description: record.description,
+    priority: record.priority, due: toLocalDeadline(record.due_at),
+  }));
+  const [history, setHistory] = useState(null);
+  const [historyError, setHistoryError] = useState('');
+  const activeRef = useRef(true);
+  const editKeyRef = useRef(null);
+  const route = '/crm/owner-workspace/work-items/' + encodeURIComponent(record.work_item_id);
+  useEffect(() => {
+    activeRef.current = true;
+    let active = true;
+    setPermitted(false);
+    if (['COMPLETED', 'CANCELLED'].includes(record.status)) return undefined;
+    readAttentionSourceActions({ tenantId, principalId }, ['CRM'])
+      .then((result) => {
+        if (active) setPermitted(
+          result.unavailableSources.length === 0
+          && result.sourceActions?.CRM?.includes('UPDATE') === true,
+        );
+      }).catch(() => { if (active) setPermitted(false); });
+    return () => { active = false; activeRef.current = false; };
+  }, [tenantId, principalId, record.status, record.work_item_id]);
+
+  const verifyHistory = async (persisted, key) => {
+    const historyResponse = await api.get(route + '/history', { forceNetworkRetry: true });
+    const body = historyResponse?.data;
+    if (!body || body.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-HISTORY/V1'
+      || body.tenant_id !== tenantId || body.work_item_id !== record.work_item_id
+      || !Array.isArray(body.events)) throw new Error('CRM_WORK_HISTORY_UNVERIFIED');
+    const event = body.events.find((value) =>
+      value?.actor_principal_id === principalId
+      && value?.after?.tenant_id === tenantId
+      && value?.after?.work_item_id === record.work_item_id
+      && value?.after?.updated_at === persisted.updated_at);
+    if (key && !event) throw new Error('CRM_WORK_EDIT_AUDIT_UNVERIFIED');
+    setHistory(body.events);
+  };
+  const reconcile = async (accepted) => {
+    const sourceResponse = await api.get(route, { forceNetworkRetry: true });
+    const persisted = sourceResponse?.data;
+    if (!persisted || persisted.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1'
+      || persisted.tenant_id !== tenantId
+      || persisted.work_item_id !== record.work_item_id
+      || persisted.title !== draft.title.trim()
+      || persisted.description !== draft.description.trim()
+      || persisted.priority !== draft.priority
+      || (persisted.due_at || null) !== (draft.due ? new Date(draft.due).toISOString() : null)
+      || (accepted && persisted.updated_at !== accepted.updated_at)
+      || (persisted.updated_at === record.updated_at && !accepted)) {
+      throw new Error('CRM_WORK_EDIT_READBACK_PENDING');
+    }
+    await verifyHistory(persisted, true);
+    if (!await onVerified(persisted)) throw new Error('CRM_WORK_AGGREGATE_READBACK_PENDING');
+    if (!activeRef.current) return;
+    setReceipt(null);
+    setEditing(false);
+    setStatus('CRM edit confirmed by source, audit history and fresh My Work.');
+  };
+  const submit = async (event) => {
+    event.preventDefault();
+    if (pending || !permitted) return;
+    setPending(true);
+    setStatus('');
+    if (receipt) {
+      try { await reconcile(receipt); }
+      catch (error) { if (activeRef.current) setStatus(safeErrorCode(error)); }
+      finally { if (activeRef.current) setPending(false); }
+      return;
+    }
+    const key = editKeyRef.current || globalThis.crypto?.randomUUID?.();
+    if (!key) {
+      setStatus('CRM_WORK_IDEMPOTENCY_UNAVAILABLE');
+      setPending(false);
+      return;
+    }
+    editKeyRef.current = key;
+    try {
+      const body = {
+        title: draft.title.trim(), description: draft.description.trim(),
+        priority: draft.priority,
+        due_at: draft.due ? new Date(draft.due).toISOString() : null,
+        expected_updated_at: record.updated_at,
+      };
+      const response = await api.patch(route, body, {
+        headers: { 'Idempotency-Key': key },
+      });
+      const accepted = response?.data;
+      if (!accepted || accepted.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1'
+        || accepted.tenant_id !== tenantId
+        || accepted.work_item_id !== record.work_item_id) {
+        throw new Error('CRM_WORK_EDIT_RECEIPT_INVALID');
+      }
+      if (!activeRef.current) return;
+      setReceipt(accepted);
+      await reconcile(accepted);
+    } catch (error) {
+      if (!activeRef.current) return;
+      const http = error?.response?.status;
+      if (http === 401 || http === 403) setPermitted(false);
+      if (http === 409 || http === 422 || http === 401 || http === 403) {
+        editKeyRef.current = null;
+      } else if (!receipt) {
+        // Transport can fail after EOS commits. Subsequent clicks reconcile
+        // with read-only source/audit queries rather than duplicate writes.
+        setReceipt({ pending: true });
+      }
+      setStatus(safeErrorCode(error));
+    } finally {
+      if (activeRef.current) setPending(false);
+    }
+  };
+  const openHistory = async () => {
+    setHistoryError('');
+    try { await verifyHistory(record, false); }
+    catch (error) { if (activeRef.current) setHistoryError(safeErrorCode(error)); }
+  };
+  const dirty = draft.title.trim() !== record.title
+    || draft.description.trim() !== record.description
+    || draft.priority !== record.priority
+    || (draft.due ? new Date(draft.due).toISOString() : null) !== (record.due_at || null);
+  return (
+    <section aria-label="CRM source task controls" className="space-y-3 border-t border-white/10 pt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {permitted && !editing && <button type="button"
+          onClick={() => { setEditing(true); setStatus(''); }}
+          className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100">
+          Edit CRM task
+        </button>}
+        <button type="button" onClick={openHistory}
+          className="rounded-lg border border-white/20 px-3 py-2 text-xs text-slate-200">
+          View recorded changes
+        </button>
+      </div>
+      {historyError && <p role="alert" className="text-xs text-amber-200">{historyError}</p>}
+      {history && <div role="region" aria-label="Persisted CRM edit history"
+        className="space-y-2 rounded-lg border border-white/10 p-3 text-xs">
+        {history.length === 0
+          ? <p>No edits have been recorded for this source item.</p>
+          : history.map((event, index) => <div key={event.recorded_at + ':' + index}
+              className="border-b border-white/10 pb-2 last:border-none">
+              <strong>Edited {formatVerified(event.recorded_at)}</strong>
+              <p>Actor: principal recorded; human name not supplied</p>
+              <p>From: {event.before.title} · {event.before.priority}</p>
+              <p>To: {event.after.title} · {event.after.priority}</p>
+            </div>)}
+      </div>}
+      {editing && <form aria-label="Edit CRM source task" onSubmit={submit}
+        className="space-y-3 rounded-lg border border-amber-300/25 p-3">
+        <label className="block text-xs">Task title
+          <input aria-label="Edit CRM title" value={draft.title} maxLength={240} required
+            disabled={pending || !!receipt}
+            onChange={(event) => { setDraft((v) => ({ ...v, title: event.target.value })); editKeyRef.current = null; }}
+            className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm"/>
+        </label>
+        <label className="block text-xs">Description
+          <textarea aria-label="Edit CRM description" value={draft.description}
+            maxLength={4000} disabled={pending || !!receipt}
+            onChange={(event) => { setDraft((v) => ({ ...v, description: event.target.value })); editKeyRef.current = null; }}
+            className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm"/>
+        </label>
+        <label className="block text-xs">Priority
+          <select aria-label="Edit CRM priority" value={draft.priority}
+            disabled={pending || !!receipt}
+            onChange={(event) => { setDraft((v) => ({ ...v, priority: event.target.value })); editKeyRef.current = null; }}
+            className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm">
+            {['LOW','NORMAL','HIGH','CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="block text-xs">Deadline
+          <input aria-label="Edit CRM deadline" type="datetime-local" value={draft.due}
+            disabled={pending || !!receipt}
+            onChange={(event) => { setDraft((v) => ({ ...v, due: event.target.value })); editKeyRef.current = null; }}
+            className="mt-1 w-full rounded-md border border-white/20 bg-[#0c1624] p-2 text-sm"/>
+        </label>
+        <p className="text-xs text-slate-400">EOS checks current edit authority and source revision; each edit writes an audit event.</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="submit" disabled={pending || (!receipt && (!dirty || !draft.title.trim()))}
+            className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-bold text-slate-950 disabled:opacity-50">
+            {pending ? 'Verifying source…' : receipt ? 'Reconcile source edit' : 'Save audited edit'}
+          </button>
+          {!receipt && <button type="button" disabled={pending}
+            onClick={() => { setEditing(false); setStatus(''); editKeyRef.current = null; }}
+            className="rounded-lg border border-white/20 px-3 py-2 text-xs">Cancel</button>}
+        </div>
+      </form>}
+      {status && <p role={status.startsWith('CRM_') ? 'alert' : 'status'}
+        className="text-xs text-amber-100">{status}</p>}
+    </section>
+  );
+}
+
+function toLocalDeadline(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
 function Summary({ label, value, tone = 'default' }) {
   const styles = tone === 'rose' ? 'text-rose-200' : tone === 'amber' ? 'text-amber-100' : 'text-slate-100';
   return <div className="rounded-md border border-white/10 bg-white/[0.025] px-3 py-1.5 text-xs"><span className="text-slate-400">{label}</span><span className={`ml-2 font-semibold tabular-nums ${styles}`}>{value}</span></div>;
@@ -825,7 +1069,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.10.0-CRM-SOURCE-DETAIL-READBACK
+ * VERSION: v1.11.0-SOURCE-AUDITED-CRM-EDIT
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
