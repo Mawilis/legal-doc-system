@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.2.0-FLUID-GLASS-DOCUMENT-STUDIO
+ * VERSION: v1.3.0-STRATEGY-RICH-DESCRIPTION-PREVIEW
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
@@ -77,6 +77,23 @@
 @media(max-width:800px){.body{grid-template-columns:minmax(125px,155px) minmax(0,1fr)}.commandDeck{align-items:stretch}.editorMeta{grid-template-columns:1fr}.commandButtons{width:100%}}
 @media(max-width:650px){.viewer{width:100%}.commandDeck{padding:13px}.commandButtons button{flex:1;justify-content:center}.editorHeading{flex-direction:column}.editorFooter .actions{width:100%}.editorFooter .actions button{flex:1}.preview{padding:16px}}
 @media(prefers-reduced-motion:reduce){.commandButtons button{transition:none}.commandButtons button:hover:not(:disabled){transform:none}}
+
+
+/* Strategy project description: source remains editable, semantic preview is
+   read-only, never an authoritative EOS document or persisted rich HTML. */
+.projectDescriptionHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0 6px;color:#e8d29a;font-size:12px}
+.projectDescriptionHeader>strong{font-weight:700;font-size:13px}
+.projectDescriptionHeader>span{font-size:11px;color:#a8bad3}
+.projectDescriptionHeader>button{padding:8px 11px;border:1px solid #cbb26b7a;border-radius:8px;background:#eccd8030;color:#f3d991;font-size:11px;min-height:36px}
+.projectDescriptionHint{font-size:11px!important;line-height:1.65!important;color:#b1c5db!important;margin:6px 0 11px!important}
+.projectDescriptionPreview{max-height:440px;overflow:auto;white-space:normal;padding:21px 24px;background:linear-gradient(180deg,#fffdf8,#f1f4f9);border:1px solid #d7dce5;border-radius:12px;color:#203652;box-shadow:inset 0 1px #fff,0 12px 40px #0002}
+.projectDescriptionPreview h4{font-size:15px;line-height:1.45;margin:22px 0 9px;color:#162b48;font-weight:750}
+.projectDescriptionPreview h4:first-child{margin-top:0}
+.projectDescriptionPreview p{font-size:13px!important;line-height:1.8!important;color:#334d6c!important;margin:0 0 12px!important}
+.projectDescriptionPreview strong{font-weight:750;color:#193451}
+.projectDescriptionPreview .projectListLine{display:flex;gap:10px;align-items:baseline;padding-left:8px}
+.projectListLine>span{flex:0 0 22px;font-weight:700;color:#8b661f}
+@media(max-width:650px){.projectDescriptionPreview{padding:15px;max-height:320px}.projectDescriptionPreview p{font-size:12px!important}}
 
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
  * VERSION: v1.2.0-FLUID-GLASS-DOCUMENT-STUDIO
