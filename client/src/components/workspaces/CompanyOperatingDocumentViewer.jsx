@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.4.0-APPROVED-SOURCE-READABLE
+ * VERSION: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION adds a tenant/
+ *            session-scoped live Projects list and explicit, idempotent project
+ *            create plus list/detail readback inside the Strategy document.
+ *            Pillar context is descriptive, never a fabricated governed link.
  * CHANGELOG: v1.4.0-APPROVED-SOURCE-READABLE exposes the already
  *            Founder-approved v1.1.0 source text to EOS-authorized readers
  *            while distinguishing EOS pending publication. Source-owned
@@ -43,10 +47,34 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import { ArrowLeft, ArrowUpRight, BookOpen, CheckCircle2, Clock3, FileText, History, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import AuthContext from '../../contexts/authContext.jsx';
+import api from '../../services/api.js';
 import { currentUnifiedMyWorkScope } from '../../services/unifiedMyWorkSync.js';
 import { commandCompanyDocument, readCompanyDocumentHistory, readCompanyOperatingDocument } from '../../services/companyOperatingDocumentsClient.js';
 import styles from './CompanyOperatingDocumentViewer.module.css';
 import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
+
+// Projects are a separate EOS authority; no Strategy-to-Project relationship
+// exists in the current Projects domain. A descriptive project summary cannot
+// be interpreted as a durable strategic linkage or a verified owner assignment.
+const STRATEGY_PILLARS = FOUNDER_APPROVED_SOURCE.STRATEGY.sections.filter(section => section.section_id.startsWith('pillar-'));
+const validProjectList = (value, tenantId, principalId) => Boolean(
+  value?.schema === 'WILSY-PROJECT-LIST/V1'
+  && value.tenant_id === tenantId && value.principal_id === principalId
+  && value.limit === 100 && value.offset === 0
+  && Array.isArray(value.items) && value.items.every(item =>
+    item?.tenant_id === tenantId && typeof item.project_id === 'string'
+    && typeof item.name === 'string' && typeof item.status === 'string'
+    && Number.isSafeInteger(item.revision) && item.revision >= 1)
+  && new Set(value.items.map(item => item.project_id)).size === value.items.length
+);
+const projectFailure = failure => {
+  const status = failure?.response?.status;
+  return status === 401 ? 'Project session authentication required.'
+    : status === 403 ? 'Current EOS authority or Projects entitlement does not permit this operation.'
+      : status === 409 ? 'A conflicting Projects revision or idempotency request was rejected.'
+        : status === 422 ? 'EOS rejected the project fields; check the name and description.'
+          : 'Projects source unavailable or source readback could not be verified.';
+};
 
 const labelFor = classification => classification === 'MISSION' ? 'Our Mission' : 'Our Strategy';
 const displayDate = value => value ? new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Not effective';
@@ -173,6 +201,17 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [effectiveFrom, setEffectiveFrom] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [projectState, setProjectState] = useState('IDLE');
+  const [projectItems, setProjectItems] = useState([]);
+  const [projectError, setProjectError] = useState('');
+  const [projectPillar, setProjectPillar] = useState('pillar-one');
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [projectBusy, setProjectBusy] = useState(false);
+  const [projectSuccess, setProjectSuccess] = useState('');
+  const projectReadRef = useRef({ sequence: 0, controller: null });
+  const projectMutation = useRef(null);
+  const projectReplay = useRef({ intent: '', key: null });
   const readId = useRef(0);
   const readController = useRef(null);
   const commandLock = useRef(null);
@@ -184,6 +223,100 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const document = data?.document;
   const actions = !error && !loading ? data?.available_actions || [] : [];
   const active = key => epoch.current === key && key !== null;
+
+  /** Fetch an authorized first page only. No project-to-pillar relationship is inferred. */
+  const loadProjects = useCallback(async () => {
+    const request = ++projectReadRef.current.sequence;
+    projectReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    projectReadRef.current.controller = controller;
+    const key = sessionKey;
+    setProjectState('LOADING'); setProjectError(''); setProjectItems([]);
+    if (!key || !scope.tenantId || !scope.principalId || classification !== 'STRATEGY') {
+      setProjectState('DENIED'); return null;
+    }
+    try {
+      const reply = await api.get('/projects', { headers: {
+        'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
+      }, params: { limit: 100, offset: 0 }, signal: controller.signal });
+      if (!active(key) || request !== projectReadRef.current.sequence) return null;
+      if (!validProjectList(reply.data, scope.tenantId, scope.principalId)) throw new Error('PROJECT_LIST_SCOPE_OR_SHAPE_INVALID');
+      setProjectItems(reply.data.items); setProjectState('READY');
+      return reply.data.items;
+    } catch (failure) {
+      if (!active(key) || request !== projectReadRef.current.sequence) return null;
+      if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return null;
+      setProjectState(failure?.response?.status === 401 || failure?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+      setProjectError(projectFailure(failure)); return null;
+    }
+  }, [classification, sessionKey, auth.token, scope.tenantId, scope.principalId]);
+
+  useEffect(() => {
+    projectReadRef.current.sequence += 1;
+    projectReadRef.current.controller?.abort();
+    projectMutation.current = null;
+    projectReplay.current = { intent: '', key: null };
+    setProjectItems([]); setProjectState('IDLE'); setProjectError('');
+    setProjectBusy(false); setProjectSuccess(''); setProjectName(''); setProjectDescription('');
+    setProjectPillar('pillar-one');
+    if (classification === 'STRATEGY' && sessionKey) void loadProjects();
+    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); projectMutation.current = null; };
+  }, [classification, sessionKey, loadProjects]);
+
+  /** Create only a canonical EOS project, then verify list and detail readback. */
+  const createStrategyProject = async event => {
+    event.preventDefault();
+    const key = sessionKey;
+    const pillar = STRATEGY_PILLARS.find(item => item.section_id === projectPillar);
+    const name = projectName.trim();
+    if (!key || !pillar || !name || name.length > 180 || projectBusy
+      || projectState !== 'READY' || projectMutation.current) return;
+    const summary = [
+      'Strategy reference (descriptive only, not a governed relationship): ' + pillar.title + '.',
+      'Founder-approved Strategy source version: 1.1.0.',
+      projectDescription.trim(),
+    ].filter(Boolean).join('\\n');
+    if (summary.length > 4000 || typeof globalThis.crypto?.randomUUID !== 'function') {
+      setProjectError('The project description is too long or a secure command key is unavailable.'); return;
+    }
+    const body = { name, code: null, summary, start_date: null, target_date: null };
+    const intent = JSON.stringify([key, body]);
+    if (projectReplay.current.intent !== intent) projectReplay.current = { intent, key: globalThis.crypto.randomUUID() };
+    const nonce = Symbol('project'); projectMutation.current = nonce;
+    setProjectBusy(true); setProjectError(''); setProjectSuccess('');
+    try {
+      const config = { headers: { 'X-Tenant-ID': scope.tenantId,
+        Authorization: 'Bearer ' + auth.token, 'Idempotency-Key': projectReplay.current.key } };
+      const created = (await api.post('/projects', body, config)).data;
+      if (!active(key) || projectMutation.current !== nonce) return;
+      const item = created?.project;
+      if (created?.schema !== 'WILSY-PROJECT-RESULT/V1' || created.tenant_id !== scope.tenantId
+        || created.principal_id !== scope.principalId || created.authority?.source !== 'PYTHON_EOS_PROJECT_REGISTRY'
+        || item?.tenant_id !== scope.tenantId || !item.project_id || item.name !== name
+        || !Number.isSafeInteger(item.revision)) throw new Error('PROJECT_CREATE_READBACK_INVALID');
+      const items = await loadProjects();
+      if (!active(key) || projectMutation.current !== nonce) return;
+      if (!items?.some(current => current.project_id === item.project_id && current.revision === item.revision)) {
+        throw new Error('PROJECT_LIST_READBACK_UNVERIFIED');
+      }
+      const details = (await api.get('/projects/' + encodeURIComponent(item.project_id), {
+        headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token },
+      })).data;
+      if (!active(key) || projectMutation.current !== nonce) return;
+      if (details?.schema !== 'WILSY-PROJECT-RESULT/V1' || details.tenant_id !== scope.tenantId
+        || details.principal_id !== scope.principalId || details.project?.project_id !== item.project_id
+        || details.project?.revision !== item.revision || details.project?.summary !== summary) {
+        throw new Error('PROJECT_DETAIL_READBACK_UNVERIFIED');
+      }
+      projectReplay.current = { intent: '', key: null };
+      setProjectName(''); setProjectDescription('');
+      setProjectSuccess('EOS confirmed project creation and durable list/detail readback. Strategic linkage and ownership are not yet governed.');
+    } catch (failure) {
+      if (active(key) && projectMutation.current === nonce) setProjectError(projectFailure(failure));
+    } finally {
+      if (active(key) && projectMutation.current === nonce) { projectMutation.current = null; setProjectBusy(false); }
+    }
+  };
 
   const load = useCallback(async (nextQuery = queryRef.current) => {
     const request = ++readId.current;
@@ -382,7 +515,46 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   {FOUNDER_APPROVED_SOURCE[classification].sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p style={{ whiteSpace: 'pre-line' }}>{section.body}</p></section>)}
                   <footer className={styles.fingerprint}><span>Founder-approved PDF source · SHA3-512 (not an EOS revision fingerprint)</span><code>{FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512}</code></footer>
                 </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
-                <section className={styles.execution}><h2>Business execution</h2><p>The document source does not yet publish governed objective, project or work-item relationships. No owners, objectives or progress percentages are inferred.</p><button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button></section>
+                <section className={styles.execution} aria-label="Company operating execution">
+                  <h2>Business execution</h2>
+                  <p>No governed objective-to-project or pillar-to-project relationship is present in the current EOS schema. Project ownership and completion percentages are not inferred.</p>
+                  {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
+                    <div className={styles.editorHeading}><div>
+                      <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
+                      <h3>Projects &amp; delivery</h3>
+                      <p>Projects listed here belong to this tenant; they are not automatically linked to the six strategic pillars.</p>
+                    </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
+                      <RefreshCw size={15}/> Refresh projects</button></div>
+                    {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
+                    {projectState === 'READY' && <div role="status">{projectItems.length === 0
+                      ? 'No projects returned by EOS on the first page.'
+                      : projectItems.length + ' source-confirmed project(s) on the first page.'}</div>}
+                    {projectState === 'READY' && projectItems.length > 0 && <ul aria-label="EOS project list">
+                      {projectItems.map(item => <li key={item.project_id}><strong>{item.name}</strong>
+                        {' · '}{item.status}{' · revision '}{item.revision}</li>)}
+                    </ul>}
+                    {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
+                      {projectError || 'Projects source has not been verified for this session.'}</p>}
+                    {projectError && projectState === 'READY' && <p role="alert">{projectError}</p>}
+                    {projectSuccess && <p role="status">{projectSuccess}</p>}
+                    {projectState === 'READY' && <form onSubmit={createStrategyProject} aria-label="Create governed EOS project">
+                      <h3>Create a project in EOS</h3>
+                      <p>Choose the strategic context for its description. This does not establish a formal strategy relationship or appoint an owner.</p>
+                      <label>Strategic pillar context<select value={projectPillar} disabled={projectBusy}
+                        onChange={event => { setProjectPillar(event.target.value); setProjectSuccess(''); }}>
+                        {STRATEGY_PILLARS.map(pillar => <option key={pillar.section_id} value={pillar.section_id}>{pillar.title}</option>)}
+                      </select></label>
+                      <label>Project name<input required maxLength={180} value={projectName} disabled={projectBusy}
+                        onChange={event => { setProjectName(event.target.value); setProjectSuccess(''); }}/></label>
+                      <label>Project description<textarea maxLength={3700} rows={3} value={projectDescription} disabled={projectBusy}
+                        onChange={event => { setProjectDescription(event.target.value); setProjectSuccess(''); }}/></label>
+                      <button type="submit" disabled={projectBusy || !projectName.trim()}>
+                        {projectBusy ? 'Verifying EOS readback…' : 'Create project in EOS'}
+                      </button>
+                    </form>}
+                  </div>}
+                  <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
+                </section>
                 {editorOpen && draftPermitted && <form className={styles.form}
                   aria-label="Company private draft editor"
                   onSubmit={event => { event.preventDefault(); if (proposalValid) void perform('CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
@@ -455,7 +627,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.4.0-APPROVED-SOURCE-READABLE
+// VERSION: v1.5.0-SOURCE-BACKED-STRATEGY-EXECUTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
