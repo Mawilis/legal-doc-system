@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.9.4-SAFE-MISSING-FIELDS
+ * VERSION: v1.10.0-CRM-SOURCE-DETAIL-READBACK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,7 +12,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
- * CHANGELOG: v1.9.4-SAFE-MISSING-FIELDS displays explicit safe labels when
+ * CHANGELOG: v1.10.0-CRM-SOURCE-DETAIL-READBACK adds exact-tenant CRM source detail
+ *            verification and renders persisted record evidence without
+ *            fabricating audit history or broadening mutation authority.
+ *            v1.9.4-SAFE-MISSING-FIELDS displays explicit safe labels when
  *            an optional source status or kind is absent or malformed, rather
  *            than rendering an object or inventing lifecycle data.
  *            v1.9.3-PROJECTION-AS-OF-COUNTS derives due-today from the
@@ -194,6 +197,9 @@ export default function MyWorkWorkspace(props = {}) {
   const [completing, setCompleting] = useState('');
   const [actionError, setActionError] = useState('');
   const [closeGuard, setCloseGuard] = useState(false);
+  const [crmDetail, setCrmDetail] = useState(null);
+  const [crmDetailState, setCrmDetailState] = useState('IDLE');
+  const [crmDetailError, setCrmDetailError] = useState('');
 
   const load = useCallback(async ({ quiet = false } = {}) => {
     const request = ++requestRef.current;
@@ -278,6 +284,51 @@ export default function MyWorkWorkspace(props = {}) {
       )))
       .sort((left, right) => compareItems(left, right, sortMode));
   }, [items, search, sortMode, sourceFilter]);
+
+  useEffect(() => {
+    // Exact current-session CRM source read; never a client authorization grant.
+    setCrmDetail(null);
+    setCrmDetailError('');
+    if (selectedItem?.source !== 'CRM' || !authUser?.tenantId || !authUser?.id) {
+      setCrmDetailState('IDLE');
+      return undefined;
+    }
+    const requestedScope = scopeKey;
+    const requestedId = selectedItem.work_item_id;
+    const requestedTitle = selectedItem.title;
+    const requestedStatus = selectedItem.status;
+    const controller = new AbortController();
+    let current = true;
+    setCrmDetailState('LOADING');
+    api.get('/crm/owner-workspace/work-items/' + encodeURIComponent(requestedId), {
+      forceNetworkRetry: true, signal: controller.signal,
+    }).then(({ data: record }) => {
+      if (!current || scopeRef.current !== requestedScope) return;
+      if (!record || record.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1'
+        || record.tenant_id !== authUser.tenantId
+        || record.work_item_id !== requestedId || record.title !== requestedTitle
+        || record.status !== requestedStatus
+        || typeof record.description !== 'string'
+        || typeof record.owner_principal_id !== 'string'
+        || typeof record.created_at !== 'string'
+        || Number.isNaN(Date.parse(record.created_at))
+        || typeof record.updated_at !== 'string'
+        || Number.isNaN(Date.parse(record.updated_at))
+        || (record.completed_at !== null && (typeof record.completed_at !== 'string'
+          || Number.isNaN(Date.parse(record.completed_at))))
+        || (record.completion_note !== null && typeof record.completion_note !== 'string')
+      ) throw new Error('CRM_DETAIL_SOURCE_OR_SCOPE_MISMATCH');
+      setCrmDetail(record);
+      setCrmDetailState('VERIFIED');
+    }).catch((error) => {
+      if (!current || controller.signal.aborted || scopeRef.current !== requestedScope) return;
+      setCrmDetail(null);
+      setCrmDetailState('UNAVAILABLE');
+      setCrmDetailError(safeErrorCode(error));
+    });
+    return () => { current = false; controller.abort(); };
+  }, [selectedItem?.source, selectedItem?.work_item_id, selectedItem?.title,
+    selectedItem?.status, authUser?.id, authUser?.tenantId, scopeKey]);
 
   useEffect(() => {
     if (!focusKey || !items.some((item) => item.source_key === focusKey)) return;
@@ -646,6 +697,46 @@ export default function MyWorkWorkspace(props = {}) {
                 </p>
               </section>
 
+              {selectedItem.source === 'CRM' && (
+                <section aria-label="Verified CRM source record"
+                  className="space-y-2 rounded-lg border border-white/10 bg-white/[0.025] p-3">
+                  <h3 className="text-sm font-semibold text-white">CRM source record</h3>
+                  {crmDetailState === 'LOADING' && <p role="status" className="text-xs text-slate-300">Verifying persisted CRM detail with EOS…</p>}
+                  {crmDetailState === 'UNAVAILABLE' && <p role="alert" className="text-xs text-amber-200">
+                    Source detail could not be verified ({crmDetailError}). The queue summary is not an audit record.
+                  </p>}
+                  {crmDetailState === 'VERIFIED' && crmDetail && (
+                    <>
+                      <p className="text-xs text-emerald-200">Persisted source record verified for this tenant</p>
+                      <dl className="grid grid-cols-[6rem_1fr] gap-2 text-xs">
+                        <dt className="text-slate-400">Created</dt><dd>{formatVerified(crmDetail.created_at)}</dd>
+                        <dt className="text-slate-400">Updated</dt><dd>{formatVerified(crmDetail.updated_at)}</dd>
+                        <dt className="text-slate-400">Owner</dt>
+                        <dd>Principal recorded; human-readable name unavailable from this source</dd>
+                        {crmDetail.completed_at && <>
+                          <dt className="text-slate-400">Completed</dt><dd>{formatVerified(crmDetail.completed_at)}</dd>
+                        </>}
+                        {crmDetail.completion_note && <>
+                          <dt className="text-slate-400">Evidence</dt>
+                          <dd className="whitespace-pre-wrap break-words">{crmDetail.completion_note}</dd>
+                        </>}
+                      </dl>
+                      <details className="border-t border-white/10 pt-2 text-xs text-slate-400">
+                        <summary className="cursor-pointer text-amber-200">Technical record details</summary>
+                        <dl className="mt-2 space-y-2 break-all">
+                          <div><dt>Source record</dt><dd>{crmDetail.work_item_id}</dd></div>
+                          <div><dt>Owner principal</dt><dd>{crmDetail.owner_principal_id}</dd></div>
+                          {crmDetail.source_type && <div>
+                            <dt>Source context</dt>
+                            <dd>{crmDetail.source_type} · {crmDetail.source_id}</dd>
+                          </div>}
+                        </dl>
+                      </details>
+                    </>
+                  )}
+                </section>
+              )}
+
               {selectedItem.source === 'LEGAL' ? (
                 <section className="space-y-3 border-t border-white/10 pt-4" aria-label="Legal completion evidence">
                   <p className="text-xs text-slate-400">EOS requires source evidence for this Legal completion. My Work cannot create or infer that evidence.</p>
@@ -734,7 +825,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.9.4-SAFE-MISSING-FIELDS
+ * VERSION: v1.10.0-CRM-SOURCE-DETAIL-READBACK
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
