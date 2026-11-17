@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.13.0-WIDE-EXECUTION-WORKSPACE
+ * VERSION: v1.14.0-SOURCE-AUDITED-OWNER-CANCEL
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.14.0-SOURCE-AUDITED-OWNER-CANCEL adds a confirmed
+ *            owner-only cancellation workflow to CRM detail: reason,
+ *            source revision, idempotent EOS command, authenticated record
+ *            and audit verification, and fresh My Work queue reconciliation.
+ *            Unknown transport never triggers a second cancel mutation;
+ *            canceled work leaves the active queue only after verification.
  * CHANGELOG: v1.13.0-WIDE-EXECUTION-WORKSPACE gives source work a
  *            responsive full workbench instead of a narrow edge form,
  *            separating verified record context from source-owned edit,
@@ -750,6 +756,19 @@ export default function MyWorkWorkspace(props = {}) {
                       <CrmSourceEditor key={crmDetail.work_item_id + ':' + scopeKey}
                         record={crmDetail} tenantId={authUser?.tenantId}
                         principalId={authUser?.id}
+                        onCancellationVerified={async (updated) => {
+                          if (scopeRef.current !== scopeKey || updated.status !== 'CANCELLED') return false;
+                          invalidateUnifiedMyWork(currentUnifiedMyWorkScope(auth, authUser?.tenantId));
+                          const verified = await load({ quiet: true });
+                          if (scopeRef.current !== scopeKey || !verified) return false;
+                          if (verified.items.some((item) =>
+                            item.source_key === 'CRM:' + updated.work_item_id)) return false;
+                          setSelectedKey(null);
+                          setCrmDetail(null);
+                          setCrmEditNotice(null);
+                          setActionError('');
+                          return true;
+                        }}
                         onVerified={async (updated) => {
                           if (scopeRef.current !== scopeKey) return false;
                           invalidateUnifiedMyWork(currentUnifiedMyWorkScope(auth, authUser?.tenantId));
@@ -882,7 +901,7 @@ export default function MyWorkWorkspace(props = {}) {
  * @transaction EOS commits the revision and audit event in one Mongo session.
  * @financial No payment, release, settlement or financial execution.
  */
-function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
+function CrmSourceEditor({ record, tenantId, principalId, onVerified, onCancellationVerified }) {
   const [permitted, setPermitted] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pending, setPending] = useState(false);
@@ -894,6 +913,11 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
   }));
   const [history, setHistory] = useState(null);
   const [historyError, setHistoryError] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelPending, setCancelPending] = useState(false);
+  const [cancelStatus, setCancelStatus] = useState('');
+  const cancelKeyRef = useRef(null);
   const activeRef = useRef(true);
   const editKeyRef = useRef(null);
   const route = '/crm/owner-workspace/work-items/' + encodeURIComponent(record.work_item_id);
@@ -1003,6 +1027,63 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
       if (activeRef.current) setPending(false);
     }
   };
+  const cancelTask = async (event) => {
+    event.preventDefault();
+    if (!permitted || cancelPending || !cancelling
+      || record.owner_principal_id !== principalId || cancelReason.trim().length < 3) return;
+    const key = cancelKeyRef.current || globalThis.crypto?.randomUUID?.();
+    if (!key) { setCancelStatus('CRM_WORK_IDEMPOTENCY_UNAVAILABLE'); return; }
+    cancelKeyRef.current = key;
+    setCancelPending(true);
+    setCancelStatus('');
+    try {
+      // A previous indeterminate transport may have committed. Re-read the
+      // source before any further POST; never synthesize cancellation success.
+      let result = null;
+      if (cancelStatus === 'CRM_WORK_CANCEL_READBACK_PENDING') {
+        result = (await api.get(route, { forceNetworkRetry: true }))?.data;
+        if (result?.status !== 'CANCELLED') {
+          throw new Error('CRM_WORK_CANCEL_READBACK_PENDING');
+        }
+      } else {
+        result = (await api.post(route + '/cancel', {
+          reason: cancelReason.trim(),
+          expected_updated_at: record.updated_at,
+        }, { headers: { 'Idempotency-Key': key } }))?.data;
+      }
+      if (!result || result.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1'
+        || result.tenant_id !== tenantId || result.work_item_id !== record.work_item_id
+        || result.status !== 'CANCELLED') throw new Error('CRM_WORK_CANCEL_RECEIPT_INVALID');
+      const readback = (await api.get(route, { forceNetworkRetry: true }))?.data;
+      if (!readback || readback.tenant_id !== tenantId
+        || readback.work_item_id !== record.work_item_id || readback.status !== 'CANCELLED'
+        || readback.updated_at !== result.updated_at) throw new Error('CRM_WORK_CANCEL_READBACK_PENDING');
+      const events = (await api.get(route + '/history', { forceNetworkRetry: true }))?.data;
+      if (!events || events.tenant_id !== tenantId || events.work_item_id !== record.work_item_id
+        || !Array.isArray(events.events)
+        || !events.events.some((entry) =>
+          entry.operation === 'CANCEL' && entry.actor_principal_id === principalId
+          && entry.after?.updated_at === readback.updated_at
+          && entry.after?.status === 'CANCELLED')) {
+        throw new Error('CRM_WORK_CANCEL_AUDIT_PENDING');
+      }
+      if (!await onCancellationVerified(readback)) throw new Error('CRM_WORK_CANCEL_AGGREGATE_PENDING');
+    } catch (error) {
+      if (!activeRef.current) return;
+      const http = error?.response?.status;
+      if (http === 401 || http === 403) setPermitted(false);
+      if (http === 409 || http === 422 || http === 401 || http === 403) {
+        cancelKeyRef.current = null;
+        setCancelStatus(safeErrorCode(error));
+      } else {
+        // Any unverified response, including timeout or post-commit read
+        // failure, remains pending; repeat the readback, never the POST.
+        setCancelStatus('CRM_WORK_CANCEL_READBACK_PENDING');
+      }
+    } finally {
+      if (activeRef.current) setCancelPending(false);
+    }
+  };
   const openHistory = async () => {
     setHistoryError('');
     try { await verifyHistory(record, false); }
@@ -1022,11 +1103,41 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
           className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100">
           Edit CRM task
         </button>}
+        {permitted && record.owner_principal_id === principalId && !editing && !cancelling
+          && <button type="button" onClick={() => setCancelling(true)}
+            className="rounded-lg border border-rose-400/35 px-3 py-2 text-xs font-semibold text-rose-200">
+            Cancel task
+          </button>}
         <button type="button" onClick={openHistory}
           className="rounded-lg border border-white/20 px-3 py-2 text-xs text-slate-200">
           View recorded changes
         </button>
       </div>
+      {cancelling && <form aria-label="Cancel CRM task" onSubmit={cancelTask}
+        className="space-y-3 rounded-xl border border-rose-400/30 bg-rose-950/10 p-4">
+        <h4 className="text-sm font-semibold text-white">Cancel this task</h4>
+        <p className="text-xs leading-5 text-slate-300">The record is retained as CANCELLED, with your reason and an EOS audit event. It leaves the active queue only after verified readback.</p>
+        <label className="grid gap-1 text-xs text-slate-200">
+          Cancellation reason (required)
+          <textarea aria-label="CRM cancellation reason" value={cancelReason}
+            rows={3} minLength={3} maxLength={1000} required
+            disabled={cancelPending || cancelStatus === 'CRM_WORK_CANCEL_READBACK_PENDING'}
+            onChange={(event) => { setCancelReason(event.target.value); cancelKeyRef.current = null; }}
+            className="min-h-24 w-full rounded-lg border border-white/20 bg-[#0c1624] p-3 text-sm"/>
+        </label>
+        {cancelStatus && <p role="alert" className="text-xs text-amber-100">{cancelStatus}</p>}
+        <div className="flex flex-wrap gap-2">
+          <button type="submit" disabled={cancelPending || cancelReason.trim().length < 3
+            || !permitted}
+            className="rounded-lg bg-rose-300 px-4 py-2 text-xs font-semibold text-slate-950 disabled:opacity-40">
+            {cancelPending ? 'Verifying EOS…'
+              : cancelStatus === 'CRM_WORK_CANCEL_READBACK_PENDING' ? 'Verify cancellation' : 'Confirm cancellation'}
+          </button>
+          {cancelStatus !== 'CRM_WORK_CANCEL_READBACK_PENDING' && <button type="button"
+            disabled={cancelPending} onClick={() => { setCancelling(false); setCancelStatus(''); cancelKeyRef.current = null; }}
+            className="rounded-lg border border-white/20 px-3 py-2 text-xs">Keep task</button>}
+        </div>
+      </form>}
       {historyError && <p role="alert" className="text-xs text-amber-200">{historyError}</p>}
       {history && <div role="region" aria-label="Persisted CRM edit history"
         className="space-y-2 rounded-lg border border-white/10 p-3 text-xs">
@@ -1034,10 +1145,11 @@ function CrmSourceEditor({ record, tenantId, principalId, onVerified }) {
           ? <p>No edits have been recorded for this source item.</p>
           : history.map((event, index) => <div key={event.recorded_at + ':' + index}
               className="border-b border-white/10 pb-2 last:border-none">
-              <strong>Edited {formatVerified(event.recorded_at)}</strong>
+              <strong>{event.operation === 'CANCEL' ? 'Cancelled' : 'Edited'} {formatVerified(event.recorded_at)}</strong>
               <p>Actor: principal recorded; human name not supplied</p>
               <p>From: {event.before.title} · {event.before.priority}</p>
-              <p>To: {event.after.title} · {event.after.priority}</p>
+              <p>To: {event.after.title} · {event.after.priority} · {event.after.status}</p>
+              {event.operation === 'CANCEL' && <p>Reason: {event.reason}</p>}
             </div>)}
       </div>}
       {editing && <form aria-label="Edit CRM source task" onSubmit={submit}
@@ -1111,7 +1223,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.13.0-WIDE-EXECUTION-WORKSPACE
+ * VERSION: v1.14.0-SOURCE-AUDITED-OWNER-CANCEL
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
