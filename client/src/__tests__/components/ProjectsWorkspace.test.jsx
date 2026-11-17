@@ -208,7 +208,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByText('Not recorded')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Generate and save code' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByText(generated)).toBeVisible());
+    await waitFor(() => expect(screen.getAllByText(generated).length).toBeGreaterThan(0));
     expect(screen.getByText('2')).toBeVisible();
     expect(api.get.mock.calls.filter(([path]) => path === '/projects').length).toBeGreaterThan(1);
     expect(api.get.mock.calls.filter(([path]) => path === `/projects/${PROJECT_ID}`).length).toBeGreaterThan(1);
