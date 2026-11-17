@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.9.0-AUTHENTIC-WORK-VIEW-CERT
+ * VERSION: v3.10.0-CONTEXTUAL-ESCAPE-FOCUS-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v3.10.0-CONTEXTUAL-ESCAPE-FOCUS-CERT focuses an actual
+ *          workspace control after the native view select before verifying
+ *          that Escape exits Calendar without dismissing the outer dialog.
+ *          A subsequent Escape must dismiss the authenticated panel.
  * CHANGELOG: v3.9.0-AUTHENTIC-WORK-VIEW-CERT exercises the actual
  *          work-view select and priority select instead of removed tabs or
  *          button groups, retaining authenticated EOS calendar navigation,
@@ -583,6 +587,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(triage.getByRole('button', {name: 'Inspect ' + title})).toBeVisible();
       await expect(triage).toHaveAttribute('data-attention-mode', 'LIST');
       await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
+      // Native SELECT handles Escape itself; focus a workspace control to
+      // exercise the Daily Attention calendar-level keyboard contract.
+      const calendarRefresh = triage.getByRole('button', {name: 'Refresh', exact: true});
+      await calendarRefresh.focus();
+      await expect(calendarRefresh).toBeFocused();
       await page.keyboard.press('Escape');
       await expect(panel).toBeVisible();
       await expect(triage).toHaveAttribute('data-attention-mode', 'LIST');
@@ -868,7 +877,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.9.0-AUTHENTIC-WORK-VIEW-CERT
+// VERSION: v3.10.0-CONTEXTUAL-ESCAPE-FOCUS-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
