@@ -1,14 +1,18 @@
 """Direct certificate for the D22A tenant product catalogue.
 
 TITLE: Tenant Product Catalogue Direct Certificate
-VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE-CERT
+VERSION: v1.2.0-IMMUTABLE-PRODUCT-FINGERPRINT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact product identities, VAS separation, deterministic
          descriptor integrity and absence of entitlement/IAM/financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_product_catalogue.py
 COLLABORATION / OWNERSHIP: Evidence-only direct certificate for the D22A
                             product catalogue owner.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-IMMUTABLE-PRODUCT-FINGERPRINT-CERT verifies
+           existing Legal product evidence retains the original exact
+           SHA3-512 fingerprint despite adding Projects and verifies
+           Projects uses its own introduction-era version.
 CHANGELOG: v1.1.0-PROJECTS-PRODUCT-CATALOGUE-CERT pins the Projects product identity and confirms it remains catalogue metadata only.
            v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE-CERT establishes direct
            evidence for Legal Operations, Billing, CRM and HR product identity
@@ -58,6 +62,25 @@ def test_legal_operations_descriptor_is_exact_and_non_financial() -> None:
     assert value.required_products == ()
     assert "legal" in value.description.lower()
     assert "financial execution" not in value.description.lower()
+
+
+def test_original_legal_product_fingerprint_is_stable_after_projects_expansion() -> None:
+    """Issued Legal entitlement fingerprints must not drift with new products."""
+    legal = get_tenant_product(TenantProductId.LEGAL_OPERATIONS)
+    projects = get_tenant_product(TenantProductId.PROJECTS)
+    assert legal.catalogue_version == "v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE"
+    assert legal.fingerprint == (
+        "6b4763a4ea8f4b4e1644f338bd9e721e4f1d2ecb52ec2af3076394b352990182d88"
+        "b058a8f4f50e80ba42726c722510a23966ac7e97db3bac63ba79191437770"
+    )
+    assert projects.catalogue_version == "v1.1.0-PROJECTS-PRODUCT-CATALOGUE"
+    assert hydrate_tenant_product(legal.to_dict()) == legal
+    assert hydrate_tenant_product(projects.to_dict()) == projects
+    with pytest.raises(TenantProductCatalogueError, match="D22A_IDENTITY_INVALID"):
+        hydrate_tenant_product({
+            **legal.to_dict(),
+            "catalogue_version": "v1.2.0-PER-PRODUCT-FINGERPRINT-STABILITY",
+        })
 
 
 def test_billing_descriptor_preserves_financial_execution_boundary() -> None:
@@ -217,7 +240,7 @@ def test_full_enterprise_must_be_future_explicit_composition_not_wildcard() -> N
 
 
 # ARTIFACT: test_tenant_product_catalogue.py
-# VERSION: v1.1.0-PROJECTS-PRODUCT-CATALOGUE-CERT
+# VERSION: v1.2.0-IMMUTABLE-PRODUCT-FINGERPRINT-CERT
 # AUTHORITY BOUNDARY: direct product-catalogue evidence only
 # TENANT POSTURE: synthetic global catalogue facts only
 # FAIL-CLOSED POSTURE: unknown products, descriptor drift and VAS leakage reject
