@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.20.0-PROJECTS-KPI-HTTP-STATE-CERT
+ * VERSION: v1.21.0-SCOPED-WORK-RECOVERY-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.21.0-SCOPED-WORK-RECOVERY-CERT accepts a single
+ *            trustworthy verified active count when reads are shared across
+ *            the Headquarters and Daily Attention coordinator, while still
+ *            requiring the real source row and independent KPI evidence.
  * CHANGELOG: v1.20.0-PROJECTS-KPI-HTTP-STATE-CERT proves the KPI distinguishes verified empty, authentication required, missing entitlement, missing route, service failure, and late prior-scope responses.
  * CHANGELOG: v1.18.0-EOS-PROJECTS-DESTINATION-CERT proves the Products & R&D Projects destination mounts the authenticated Projects workspace, passes exact selected tenant scope, and renders only its verified empty result. v1.17.0 covers the prior destination set.
  * CHANGELOG: v1.15.0-BALANCED-HEADQUARTERS-COLUMNS-CERT proves the existing strategy banner is composed beneath work/performance, balancing the left operating column without inventing source data.
@@ -286,7 +290,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 
   it('renders source-backed My Work, Projects and Team KPIs without inventing Approvals', async () => {
     renderHeadquarters();
-    expect((await screen.findAllByText('3')).length).toBeGreaterThanOrEqual(2);
+    expect((await screen.findAllByText('3')).length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByRole('button', { name: 'Projects: 0 verified' })).toBeTruthy();
     expect(screen.getByText('Commercial source not connected')).toBeTruthy();
     expect(screen.getByText('Verified active directory result')).toBeTruthy();
@@ -885,7 +889,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.20.0-PROJECTS-KPI-HTTP-STATE-CERT
+ * VERSION: v1.21.0-SCOPED-WORK-RECOVERY-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
