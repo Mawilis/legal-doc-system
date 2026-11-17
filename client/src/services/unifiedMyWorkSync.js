@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session Unified My Work Read Coordinator
- * VERSION: v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP
+ * VERSION: v1.1.2-BOUNDED-SOURCE-FAILURE-BACKOFF
  * AUTHORITY: WILSY OS Core Governance; EOS remains business and IAM authority.
  * EPITOME: Deduplicate concurrent authenticated My Work reads and revalidate
  *          exactly scoped subscribers after a server-confirmed source command.
@@ -9,7 +9,9 @@
  *                            unifiedMyWorkProjection validates EOS responses,
  *                            source services own all writes and durable audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP requires a current bearer and excludes SYSTEM
+ * CHANGELOG: v1.1.2-BOUNDED-SOURCE-FAILURE-BACKOFF suppresses repeated same-session 503
+ *            source reads for a bounded window, preserving explicit invalidation.
+ *            v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP requires a current bearer and excludes SYSTEM
  *            workspaces from tenant My Work reuse; isolates aborted consumers
  *            without leaking a rejected cleanup promise.
  *            v1.1.0-GOVERNED-SESSION-SCOPED-READS enforces authenticated principal, tenant and
@@ -32,6 +34,7 @@ import { assertUnifiedMyWorkProjection } from './unifiedMyWorkProjection.js';
 
 const RESOURCE_PREFIX = 'WILSY-OS-MY-WORK-SCOPE/V1';
 const MAX_REUSE_MS = 750;
+const SOURCE_UNAVAILABLE_BACKOFF_MS = 10000;
 const entries = new Map();
 
 const exact = (value) => value === null || value === undefined ? '' : String(value);
@@ -118,7 +121,7 @@ function entryFor(key) {
   let entry = entries.get(key);
   if (!entry) {
     entry = { listeners: new Set(), version: 0, pending: null, controller: null,
-      payload: null, expiresAt: 0 };
+      payload: null, expiresAt: 0, sourceUnavailableUntil: 0, sourceUnavailableError: null };
     entries.set(key, entry);
   }
   return entry;
@@ -193,6 +196,11 @@ export function readUnifiedMyWork(scopeKey, expectedScope = {}, options = {}) {
     return callerAbort(entry.pending.then((payload) =>
       assertUnifiedMyWorkProjection(payload, expectedScope)), options.signal);
   }
+  // A verified EOS 503 is unavailable state, never a zero-work projection.
+  // Deduplicate repeated polling even when callers request force=true.
+  if (entry.sourceUnavailableError && Date.now() < entry.sourceUnavailableUntil) {
+    return callerAbort(Promise.reject(entry.sourceUnavailableError), options.signal);
+  }
   if (!options.force && entry.payload && Date.now() < entry.expiresAt) {
     try {
       return callerAbort(Promise.resolve(
@@ -213,12 +221,21 @@ export function readUnifiedMyWork(scopeKey, expectedScope = {}, options = {}) {
     const verified = assertUnifiedMyWorkProjection(response?.data, expectedScope);
     if (controller.signal.aborted || entry.version !== version) throw abortError();
     entry.payload = verified;
+    entry.sourceUnavailableError = null;
+    entry.sourceUnavailableUntil = 0;
     entry.expiresAt = Date.now() + MAX_REUSE_MS;
     return verified;
   }).catch((error) => {
     if (entry.version === version) {
       entry.payload = null;
       entry.expiresAt = 0;
+      if (error?.response?.status === 503) {
+        entry.sourceUnavailableError = error;
+        entry.sourceUnavailableUntil = Date.now() + SOURCE_UNAVAILABLE_BACKOFF_MS;
+      } else {
+        entry.sourceUnavailableError = null;
+        entry.sourceUnavailableUntil = 0;
+      }
     }
     throw error;
   }).finally(() => {
@@ -259,6 +276,8 @@ export function subscribeUnifiedMyWork(scopeKey, callback) {
       entry.controller = null;
       entry.payload = null;
       entry.expiresAt = 0;
+      entry.sourceUnavailableUntil = 0;
+      entry.sourceUnavailableError = null;
       discardIfUnused(scopeKey, entry);
     }
   };
@@ -285,6 +304,8 @@ export function invalidateUnifiedMyWork(scopeKey) {
   entry.controller = null;
   entry.payload = null;
   entry.expiresAt = 0;
+  entry.sourceUnavailableUntil = 0;
+  entry.sourceUnavailableError = null;
   for (const notify of Array.from(entry.listeners)) notify();
   discardIfUnused(scopeKey, entry);
   return entry.listeners.size > 0;
@@ -308,11 +329,13 @@ export function releaseUnifiedMyWork(scopeKey) {
   entry.controller = null;
   entry.payload = null;
   entry.expiresAt = 0;
+  entry.sourceUnavailableUntil = 0;
+  entry.sourceUnavailableError = null;
   if (entry.listeners.size === 0) discardIfUnused(scopeKey, entry);
 }
 
 // ARTIFACT: client/src/services/unifiedMyWorkSync.js
-// VERSION: v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP
+// VERSION: v1.1.2-BOUNDED-SOURCE-FAILURE-BACKOFF
 // AUTHORITY BOUNDARY: EOS-only reads; no browser command authorization.
 // TENANT POSTURE: Exact session/capacity partition, no persistent cache.
 // FAIL-CLOSED POSTURE: Superseded reads and invalid/foreign results reject.
