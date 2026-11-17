@@ -56,7 +56,6 @@ import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
 // Projects are a separate EOS authority; no Strategy-to-Project relationship
 // exists in the current Projects domain. A descriptive project summary cannot
 // be interpreted as a durable strategic linkage or a verified owner assignment.
-const STRATEGY_PILLARS = FOUNDER_APPROVED_SOURCE.STRATEGY.sections.filter(section => section.section_id.startsWith('pillar-'));
 const validProjectList = (value, tenantId, principalId) => Boolean(
   value?.schema === 'WILSY-PROJECT-LIST/V1'
   && value.tenant_id === tenantId && value.principal_id === principalId
@@ -116,6 +115,7 @@ const FOUNDER_APPROVED_SOURCE = Object.freeze({
     ],
   },
 });
+const STRATEGY_PILLARS = FOUNDER_APPROVED_SOURCE.STRATEGY.sections.filter(section => section.section_id.startsWith('pillar-'));
 const founderApprovedProposal = classification => {
   const source = FOUNDER_APPROVED_SOURCE[classification];
   return { title: source.title, document_version: source.document_version,
@@ -275,7 +275,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       'Strategy reference (descriptive only, not a governed relationship): ' + pillar.title + '.',
       'Founder-approved Strategy source version: 1.1.0.',
       projectDescription.trim(),
-    ].filter(Boolean).join('\\n');
+    ].filter(Boolean).join('\n');
     if (summary.length > 4000 || typeof globalThis.crypto?.randomUUID !== 'function') {
       setProjectError('The project description is too long or a secure command key is unavailable.'); return;
     }
