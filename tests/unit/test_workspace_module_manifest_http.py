@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Tenant Module Manifest HTTP Certificate.
-VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+VERSION: v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT
 AUTHORITY: Repository-owned isolated regression evidence only.
 EPITOME: Prove exact WILSY company separation while preserving customer Legal
 availability, entitlement validation and fail-closed source behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_workspace_module_manifest_http.py
 COLLABORATION / OWNERSHIP: Canonical tenant module projection and authenticated HTTP adapter.
-CERTIFICATION / UPDATE DATE: 2026-11-13
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT pins the new
+           Projects-aware policy version while requiring unchanged v1
+           browser wire schema and independent tenant IAM.
 CHANGELOG: v1.1.0-WILSY-PLATFORM-OWNER-CERT retains all existing assertions and
 adds exact-company, customer preservation and legacy entitlement negative gates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -310,11 +313,11 @@ def test_policy_version_does_not_change_the_existing_manifest_wire_schema(monkey
     monkeypatch.setattr(auth_router, "build_workspace_bootstrap_projection", lambda **_kwargs: SimpleNamespace(tenant_id=TENANT))
     monkeypatch.setattr(auth_router, "_workspace_module_manifest_projection", lambda tenant_id: ())
     response = asyncio.run(auth_router.workspace_module_manifest(SimpleNamespace(identity_id="synthetic-principal")))
-    assert VERSION == "v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST"
+    assert VERSION == "v1.2.0-CANONICAL-PROJECTS-MANIFEST"
     assert response["workspace"]["moduleManifestVersion"] == CONTRACT_VERSION == "v1.0.0-EOS-TENANT-MODULE-MANIFEST"
 
 # ARTIFACT: test_workspace_module_manifest_http.py
-# VERSION: v1.1.0-WILSY-PLATFORM-OWNER-CERT
+# VERSION: v1.2.0-PROJECTS-POLICY-STABLE-WIRE-CERT
 # AUTHORITY BOUNDARY: Regression evidence only; no IAM/entitlement mutation.
 # TENANT POSTURE: Exact company exclusion and customer Legal preservation.
 # FAIL-CLOSED POSTURE: Foreign or malformed source evidence never passes.
