@@ -1,8 +1,25 @@
-"""EOS orchestration for the tenant owner's commercial work queue.
-
-HTTP/IAM admission occurs before this service. This service independently
-requires exact active crm.core subscription truth before exposing or mutating
-the commercial workspace. It does not read or mutate Legal matters.
+"""TITLE: WILSY OS CRM Owner Commercial Workspace Service
+VERSION: v1.1.0-TENANT-SCOPED-WORK-DETAIL-READ
+AUTHORITY: WILSY OS Python EOS CRM source service.
+EPITOME: Enforce source entitlement and tenant-exact persisted owner work
+         reads, creation, completion and canonical work-detail readback.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/service/owner_commercial_workspace_service.py
+COLLABORATION / OWNERSHIP: CRM source domain, owner work registry and
+         authenticated owner commercial workspace router.
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.1.0-TENANT-SCOPED-WORK-DETAIL-READ adds a strictly tenant-scoped,
+           entitlement-gated work item read for existing and completed work.
+           Existing source create, complete and queue behavior is unchanged.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No IAM grants, credentials or additional PII.
+TENANT BOUNDARY: Every record lookup scopes tenant_id before revealing existence.
+AUTHORITY BOUNDARY: HTTP IAM checks precede the service; subscription admission
+                    and source registry remain mandatory; no new command authority.
+TRANSACTION / IDEMPOTENCY BOUNDARY: Caller-owned Mongo session; read-only
+                                   addition, no new idempotency semantics.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution, Kennel EOS exclusively.
+FAIL-CLOSED POSTURE: Ineligible tenant, unavailable source or absent work item
+                     is not converted into a successful empty work record.
 """
 from __future__ import annotations
 
@@ -60,6 +77,23 @@ class OwnerCommercialWorkspaceService:
         if context.tenant_id != tenant_id or context.product_available is not True or context.subscription_status is None:
             raise OwnerCommercialWorkspaceError("OWNER_WORK_LEGAL_NOT_ENTITLED")
 
+    def read_work_item(
+        self, *, tenant_id: str, work_item_id: str, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Return a persisted CRM work record under exact current tenant scope.
+
+        HTTP IAM must already permit CRM work read. The service independently
+        checks active entitlement and delegates the tenant-prefixed lookup to
+        the existing source registry. Completed work retains only source-stored
+        completion evidence; this method does not fabricate an audit ledger,
+        actor identity, or reverse a terminal transition. Caller owns the
+        read transaction; no mutation or idempotency key is involved.
+        """
+        self._require_entitlement(tenant_id, session)
+        return self._registry.get(
+            tenant_id=tenant_id, work_item_id=work_item_id, session=session,
+        )
+
     def daily_queue(self, *, tenant_id: str, now: datetime, session: Any):
         self._require_entitlement(tenant_id, session)
         return self._registry.daily_queue(
@@ -102,3 +136,11 @@ class OwnerCommercialWorkspaceService:
 
 
 __all__ = ["OwnerCommercialWorkspaceError", "OwnerCommercialWorkspaceService"]
+
+# ARTIFACT: tools/eos/crm/service/owner_commercial_workspace_service.py
+# VERSION: v1.1.0-TENANT-SCOPED-WORK-DETAIL-READ
+# AUTHORITY BOUNDARY: Existing CRM HTTP IAM, entitlement and tenant-owned registry.
+# TENANT POSTURE: Exact tenant lookup; foreign record existence is not disclosed.
+# FAIL-CLOSED POSTURE: Denied, unavailable and absent source records remain explicit.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
