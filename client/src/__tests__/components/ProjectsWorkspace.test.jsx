@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT
+ * VERSION: v1.6.0-GOVERNED-ACCOUNTABILITY-CLIENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT verifies
+ * CHANGELOG: v1.6.0-GOVERNED-ACCOUNTABILITY-CLIENT-CERT covers source-backed owner/department selection,
+ *            independently authorized department creation and audited CAS
+ *            assignment with fresh list and detail readback.
+ * v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT verifies
  *            one-click legacy project-code generation, revision guarding,
  *            independent EOS list/detail confirmation, and no duplicate action.
  * CHANGELOG: v1.4.0-NATIVE-CALENDAR-EXECUTION-CERT verifies
@@ -186,6 +189,67 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     }
   });
 
+  it('selects verified owner and department through EOS and confirms audited assignment readback', async () => {
+    const ownerId = 'verified-owner';
+    const departmentId = 'dept-' + 'b'.repeat(32);
+    let current = project({ owner_principal_id: null, department_id: null });
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return { data: list([current]) };
+      if (path === '/projects/summary') return { data: summary([current]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(current) };
+      if (path === '/projects/assignment-options') return { data: {
+        schema: 'WILSY-PROJECT-ASSIGNMENT-OPTIONS/V1',
+        tenant_id: TENANT,
+        principals: [{ principal_id: ownerId, eligibility: 'VERIFIED_CURRENT' }],
+        departments: [{ department_id: departmentId, name: 'Platform Engineering', status: 'ACTIVE', revision: 1 }],
+      } };
+      throw new Error('Unexpected project GET ' + path);
+    });
+    api.patch.mockImplementation(async (path, body) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/assignment`);
+      expect(body).toEqual({
+        expected_revision: 1, owner_principal_id: ownerId, department_id: departmentId,
+      });
+      current = project({
+        owner_principal_id: ownerId, department_id: departmentId, revision: 2,
+      });
+      return { data: result(current, [event('PROJECT_CREATED', 1), event('PROJECT_UPDATED', 2)]) };
+    });
+
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="owner-assignment" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    const ownerSelector = await screen.findByRole('combobox', { name: 'Eligible project owner' });
+    fireEvent.change(ownerSelector, { target: { value: ownerId } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Tenant department' }), {
+      target: { value: departmentId },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(ownerId)).toBeInTheDocument();
+      expect(screen.getByText(departmentId)).toBeInTheDocument();
+    });
+    expect(current.status).toBe('planned');
+    expect(api.get.mock.calls.filter(([path]) => path === `/projects/${PROJECT_ID}`).length).toBeGreaterThan(1);
+  });
+
+  it('does not offer assignment when current owner and department directories are empty', async () => {
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return { data: list([project()]) };
+      if (path === '/projects/summary') return { data: summary([project()]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(project()) };
+      if (path === '/projects/assignment-options') return { data: {
+        schema: 'WILSY-PROJECT-ASSIGNMENT-OPTIONS/V1',
+        tenant_id: TENANT, principals: [], departments: [],
+      } };
+      throw new Error('Unexpected project GET ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="empty-authorities" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save audited assignment' })).toBeDisabled());
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('generates a code for an existing legacy project and verifies EOS list/detail readback', async () => {
     let persisted = project({ code: null });
     const generated = 'PRJ-' + PROJECT_ID.slice(-16).toUpperCase();
@@ -361,7 +425,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT
+ * VERSION: v1.6.0-GOVERNED-ACCOUNTABILITY-CLIENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
