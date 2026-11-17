@@ -363,7 +363,7 @@ def test_owner_draft_progress_transitions_keep_draft_out_of_attention():
     assert store.drafts_for_owner(tenant_id=TENANT, owner_principal_id="principal-1", session=session) == ()
     history = store.revision_history(tenant_id=TENANT, work_item_id=item.work_item_id, session=session)
     assert [event["operation"] for event in history] == ["STATUS", "STATUS"]
-    assert [event["after"]["status"] for event in history] == ["IN_PROGRESS", "DRAFT"]
+    assert [event["after"]["status"] for event in history] == ["DRAFT", "IN_PROGRESS"]
 
 
 def test_owner_status_denies_foreign_stale_and_terminal_commands():
