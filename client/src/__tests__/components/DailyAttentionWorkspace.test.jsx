@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT
+ * VERSION: v2.6.0-FUNCTIONAL-FILTER-AND-BULK-MODE-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -14,7 +14,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-16
- * CHANGELOG: v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT asserts success is visible only after the source owner confirms completion and the parent receives fresh-readback confirmation.
+ * CHANGELOG: v2.6.0-FUNCTIONAL-FILTER-AND-BULK-MODE-CERT verifies
+ *          source-backed counters operate the canonical filters and bulk
+ *          checkboxes remain hidden until explicitly selected.
+ *          v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT asserts success is visible only after the source owner confirms completion and the parent receives fresh-readback confirmation.
  *          v2.4.0-IN-PANEL-SOURCE-COMPLETION-CERT verifies action gating, direct row-to-evidence focus, and failed completion preservation.
  *          v2.3.0-COMPACT-EXECUTION-BAR-CERT verifies one compact control
  *          toolbar, collapsed source details, canonical default ordering, and
@@ -246,6 +249,26 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
   });
 
+  it('uses the four EOS-backed counters as real source-filter controls', () => {
+    const setFilter = vi.fn();
+    render(
+      <DailyAttentionWorkspace feed={fixtureFeed(2)} calendarItems={[]}
+        filter="ALL" setFilter={setFilter}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError="" />,
+    );
+    expect(screen.getByRole('button', { name: 'Active: 2' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Overdue: 0' }));
+    expect(setFilter).toHaveBeenCalledWith('OVERDUE');
+    fireEvent.click(screen.getByRole('button', { name: 'Due today: 0' }));
+    expect(setFilter).toHaveBeenCalledWith('TODAY');
+    fireEvent.click(screen.getByRole('button', { name: 'High priority: 1' }));
+    expect(setFilter).toHaveBeenCalledWith('HIGH');
+    expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
+  });
+
   it('selects and inspects multiple verified work rows without inventing a mutation', () => {
     const inert = vi.fn();
     render(
@@ -265,6 +288,8 @@ describe('Daily Attention bounded inbox', () => {
         pageError=""
       />,
     );
+    expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Select work' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
     expect(screen.getByText('3 selected · 0 permitted to complete')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect first selected' }));
@@ -327,6 +352,8 @@ describe('Daily Attention bounded inbox', () => {
         pageError=""
       />,
     );
+    expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Select work' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Bulk completion evidence' }), {
       target: { value: 'All selected operations tasks verified and completed' },
@@ -450,7 +477,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT
+// VERSION: v2.6.0-FUNCTIONAL-FILTER-AND-BULK-MODE-CERT
 // AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.
