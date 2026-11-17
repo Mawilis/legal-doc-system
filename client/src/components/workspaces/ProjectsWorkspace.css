@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.1.0-DETAIL-LED-RESPONSIVE-PROJECTS
+ * VERSION: v1.2.0-COORDINATED-PANELS-NATIVE-DATE-PICKER
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.2.0-COORDINATED-PANELS-NATIVE-DATE-PICKER aligns
+ *            list/detail heights during selection and exposes accessible
+ *            native calendar controls for EOS date-only schedule drafts.
  * CHANGELOG: v1.1.0-DETAIL-LED-RESPONSIVE-PROJECTS expands the list
  *            to all available width until selection, then emphasizes the
  *            detail panel in a responsive split while preserving readability.
@@ -92,10 +95,12 @@
 .wilsy-projects .wp-button-danger:hover:not(:disabled){background:#ffe5eb;}
 .wilsy-projects .wp-body {
   display:grid;grid-template-columns:minmax(0,1fr);
-  align-items:start;gap:18px;min-width:0;
+  align-items:stretch;gap:18px;min-width:0;
 }
 .wilsy-projects .wp-body[data-layout="detail"] {
-  grid-template-columns:minmax(280px,.58fr) minmax(0,1.42fr);
+  grid-template-columns:minmax(320px,.76fr) minmax(0,1.24fr);
+  height:clamp(580px, calc(100dvh - 255px), 880px);
+  min-height:0;
 }
 .wilsy-projects .wp-body[data-layout="list"] .wp-list-panel {
   min-height:0;
@@ -111,9 +116,19 @@
   min-width:0;overflow:hidden;
   box-shadow:0 16px 38px #00000020;
 }
-.wilsy-projects .wp-list-panel {min-height:360px;}
- .wilsy-projects .wp-detail {
-  position:sticky; top:94px; max-height:calc(100vh - 112px);overflow-y:auto;
+.wilsy-projects .wp-list-panel {
+  min-height:0;display:flex;flex-direction:column;
+}
+.wilsy-projects .wp-body[data-layout="detail"] .wp-list-panel,
+.wilsy-projects .wp-body[data-layout="detail"] .wp-detail {
+  height:100%;min-height:0;max-height:none;
+}
+.wilsy-projects .wp-list-panel > ul {
+  flex:1;min-height:0;overflow-y:auto;scrollbar-color:#a9c2df #f0f4fa;
+}
+.wilsy-projects .wp-list-panel > .wp-footer {margin-top:auto;}
+.wilsy-projects .wp-detail {
+  position:static;overflow-y:auto;
   scrollbar-color:#a9c2df #f0f4fa;
 }
 .wilsy-projects .wp-panel :is(h2,h3,h4,strong) {color:#142b4d !important;}
@@ -182,6 +197,34 @@
 .wilsy-projects .wp-form label {font-size:12px;font-weight:750;color:#2a4365 !important;display:block;}
 .wilsy-projects .wp-form label :is(input,textarea) {margin-top:7px;font-weight:450;}
 .wilsy-projects .wp-form-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.wilsy-projects .wp-date-field {
+  display:block;min-width:0;color:#2a4365 !important;
+  font-size:12px;font-weight:750;
+}
+.wilsy-projects .wp-date-field > span:first-child {
+  display:block;margin-bottom:8px;
+}
+.wilsy-projects .wp-date-wrap {
+  position:relative;display:block;min-width:0;
+}
+.wilsy-projects .wp-date-wrap > input[type=date] {
+  display:block;width:100%;padding-right:52px !important;
+  min-height:46px;font-variant-numeric:tabular-nums;
+  cursor:pointer;
+}
+.wilsy-projects .wp-date-wrap > input[type=date]::-webkit-calendar-picker-indicator {
+  cursor:pointer;opacity:0;position:absolute;
+  inset:0;width:100%;height:100%;
+}
+.wilsy-projects .wp-calendar-trigger {
+  position:absolute;z-index:1;top:4px;right:4px;
+  display:flex;align-items:center;justify-content:center;
+  height:38px;width:40px;
+  color:#173e72 !important;background:#e8f2ff;
+  border:1px solid #a8c2e2;border-radius:8px;cursor:pointer;
+}
+.wilsy-projects .wp-calendar-trigger:hover:not(:disabled) {background:#d4e8ff;}
+
 .wilsy-projects .wp-actions {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:14px 0;}
 .wilsy-projects .wp-event {border:1px solid #d5e1f1;border-left:3px solid #b68a2e;background:#f5f8fe;color:#223a5a !important;border-radius:9px;padding:12px;margin-bottom:8px;font-size:12px;}
 .wilsy-projects .wp-event strong {display:block;font-size:12px;}
@@ -194,9 +237,16 @@
 .wilsy-projects .wp-editor-heading {display:flex;justify-content:space-between;align-items:center;gap:10px;}
 @media(max-width:1100px){
   .wilsy-projects .wp-body,
-  .wilsy-projects .wp-body[data-layout="detail"]{grid-template-columns:minmax(0,1fr);}
-  .wilsy-projects .wp-detail{position:static;max-height:none;}
-  .wilsy-projects .wp-list-panel{min-height:unset;}
+  .wilsy-projects .wp-body[data-layout="detail"]{
+    grid-template-columns:minmax(0,1fr);height:auto;
+  }
+  .wilsy-projects .wp-body[data-layout="detail"] .wp-list-panel {
+    height:auto;max-height:340px;
+  }
+  .wilsy-projects .wp-body[data-layout="detail"] .wp-detail {
+    height:auto;max-height:none;
+  }
+  .wilsy-projects .wp-list-panel {min-height:0;}
 }
 @media(max-width:640px) {
   .wilsy-projects {padding:10px;border-radius:12px;}
@@ -214,7 +264,7 @@
   .wilsy-projects .wp-button {transition:none;}
 }
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.1.0-DETAIL-LED-RESPONSIVE-PROJECTS
+ * VERSION: v1.2.0-COORDINATED-PANELS-NATIVE-DATE-PICKER
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
