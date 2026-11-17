@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.26.0-DENSE-SOURCE-ACTION-WORKBENCH
+ * VERSION: v1.27.0-COMPACT-EXECUTION-CONTROLS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.27.0-COMPACT-EXECUTION-CONTROLS consolidates
+ *            duplicated summary rows, source and lifecycle filtering,
+ *            saved drafts, search and sort into one responsive toolbar.
+ *            Values remain EOS-projected; draft expansion is source-gated.
  * CHANGELOG: v1.26.0-DENSE-SOURCE-ACTION-WORKBENCH replaces
  *            horizontally disconnected record context and CRM editor
  *            with one compact vertical execution flow. The independent
@@ -815,42 +819,50 @@ export default function MyWorkWorkspace(props = {}) {
           {error && projection && <div role="alert" className="border-b border-rose-400/20 bg-rose-950/20 px-3 py-2 text-xs text-rose-200">Refresh failed ({error}). Displayed rows remain the prior verified snapshot.</div>}
           {actionError && <div role="alert" className="mt-3 rounded-lg border border-rose-400/25 bg-rose-950/20 px-3 py-2 text-sm text-rose-200">The source action was not confirmed in the current queue: {actionError}</div>}
 
-          <section aria-label="Work queue summary" className="flex flex-wrap gap-2 border-b border-white/10 py-3 text-xs">
-            <Summary label="Active" value={projection.summary.active_count} />
-            <Summary label="Overdue" value={projection.summary.overdue_count} tone="rose" />
-            <Summary label="Due today" value={dueTodayCount} tone="amber" />
-          </section>
-
-          <section aria-label="Work status filters" className="flex flex-wrap gap-2 border-b border-white/10 py-3 text-xs">
-            <FilterButton active={statusFilter === 'ALL'} onClick={() => setStatusFilter('ALL')}>All active ({items.length})</FilterButton>
-            <FilterButton active={statusFilter === 'OVERDUE'} onClick={() => setStatusFilter('OVERDUE')}>Overdue ({projection.summary.overdue_count})</FilterButton>
-            <FilterButton active={statusFilter === 'OPEN'} onClick={() => setStatusFilter('OPEN')}>Open ({openCount})</FilterButton>
-            <FilterButton active={statusFilter === 'IN_PROGRESS'} onClick={() => setStatusFilter('IN_PROGRESS')}>In Progress ({progressCount})</FilterButton>
-          </section>
-
-          <section className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 py-3" aria-label="Work source filters">
-            <div className="flex flex-wrap gap-2">
-              <FilterButton active={sourceFilter === 'ALL'} onClick={() => setSourceFilter('ALL')}>
-                All <span className="tabular-nums">{items.length}</span>
-              </FilterButton>
-              {admittedSources.map((source) => (
-                <FilterButton key={source} active={sourceFilter === source} onClick={() => setSourceFilter(source)}>
-                  {SOURCE_LABELS[source] || source}
-                  <span className="tabular-nums">{projection.summary.source_counts[source]}</span>
-                </FilterButton>
-              ))}
+          <section aria-label="My Work controls" className="border-b border-white/10 py-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div role="group" aria-label="Work status filters" className="flex flex-wrap items-center gap-1.5">
+                <FilterButton active={statusFilter === 'ALL'} onClick={() => setStatusFilter('ALL')}>Active ({items.length})</FilterButton>
+                <FilterButton active={statusFilter === 'OVERDUE'} onClick={() => setStatusFilter('OVERDUE')}>Overdue ({projection.summary.overdue_count})</FilterButton>
+                <FilterButton active={statusFilter === 'OPEN'} onClick={() => setStatusFilter('OPEN')}>Open ({openCount})</FilterButton>
+                <FilterButton active={statusFilter === 'IN_PROGRESS'} onClick={() => setStatusFilter('IN_PROGRESS')}>In Progress ({progressCount})</FilterButton>
+              </div>
+              <span className="hidden h-5 border-l border-white/15 sm:block" aria-hidden="true" />
+              <div role="group" aria-label="Work source filters" className="flex flex-wrap items-center gap-1.5">
+                <FilterButton active={sourceFilter === 'ALL'} onClick={() => setSourceFilter('ALL')}>All sources ({items.length})</FilterButton>
+                {admittedSources.map((source) => (
+                  <FilterButton key={source} active={sourceFilter === source} onClick={() => setSourceFilter(source)}>
+                    {SOURCE_LABELS[source] || source} ({projection.summary.source_counts[source]})
+                  </FilterButton>
+                ))}
+              </div>
+              {admittedSources.includes('CRM') && <button type="button" onClick={openDrafts}
+                disabled={draftsBusy} aria-expanded={draftsVisible}
+                aria-controls="my-work-saved-drafts"
+                className="inline-flex min-h-8 items-center rounded-lg border border-amber-300/30 px-2.5 py-1 text-xs font-semibold text-amber-100 hover:bg-amber-300/5 disabled:opacity-60">
+                {draftsBusy ? 'Verifying drafts…'
+                  : draftsVisible ? `Saved Drafts (${drafts.length}) · Hide` : 'Saved Drafts · View'}
+              </button>}
+              <span className="ml-auto text-xs tabular-nums text-slate-400">Due today {dueTodayCount}</span>
             </div>
-            <span className="text-[11px] text-slate-500">Only independently admitted sources appear here.</span>
-          </section>
-
-          {admittedSources.includes("CRM") && <section aria-label="Saved CRM draft work" className="space-y-3 border-b border-white/10 py-3">
-            <button type="button" onClick={openDrafts} disabled={draftsBusy}
-              className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold text-amber-100">
-              {draftsBusy ? 'Verifying saved drafts…' : draftsVisible ? `Saved Drafts (${drafts.length}) · Hide` : 'Saved Drafts · View'}
-            </button>
-            {draftsError && <p role="alert" className="text-xs text-amber-100">{draftsError}</p>}
-            {draftsVisible && !draftsBusy && <div role="region" aria-label="Verified saved CRM drafts"
-              className="space-y-2 rounded-xl border border-white/10 bg-[#0f1b2c] p-3">
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className="sr-only" htmlFor="my-work-search">Search authorized work</label>
+              <input id="my-work-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search title, description or source…"
+                className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-[#0b1421] px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-300/70" />
+              <label className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="sr-only sm:not-sr-only">Sort</span>
+                <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}
+                  className="min-h-9 rounded-lg border border-white/15 bg-[#0b1421] px-3 text-sm text-slate-100 focus:border-amber-300/70">
+                  <option value="due">Due soon, then priority</option>
+                  <option value="priority">Priority, then due</option>
+                </select>
+              </label>
+            </div>
+            {draftsError && <p role="alert" className="mt-2 text-xs text-amber-100">{draftsError}</p>}
+            {draftsVisible && !draftsBusy && admittedSources.includes('CRM') && <div
+              id="my-work-saved-drafts" role="region" aria-label="Verified saved CRM drafts"
+              className="mt-2 space-y-2 rounded-xl border border-white/10 bg-[#0f1b2c] p-3">
               {drafts.length === 0 ? <p className="text-sm text-slate-400">No verified saved drafts for your account.</p>
                 : drafts.map((record) => <article key={record.work_item_id}
                   className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-2 last:border-none">
@@ -858,28 +870,12 @@ export default function MyWorkWorkspace(props = {}) {
                     <p className="text-sm font-semibold text-white">{record.title}</p>
                     <p className="text-xs text-slate-400">Draft · Saved {formatVerified(record.updated_at)}</p>
                   </div>
-                  <button type="button" disabled={draftsBusy}
-                    onClick={() => resumeDraft(record)}
+                  <button type="button" disabled={draftsBusy} onClick={() => resumeDraft(record)}
                     className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100">
                     Resume as Open
                   </button>
                 </article>)}
             </div>}
-          </section>}
-
-          <section className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
-            <label className="sr-only" htmlFor="my-work-search">Search authorized work</label>
-            <input id="my-work-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search title, description or source…"
-              className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/15 bg-[#0b1421] px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-300/70" />
-            <label className="flex items-center gap-2 text-xs text-slate-400">
-              Sort
-              <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}
-                className="min-h-10 rounded-lg border border-white/15 bg-[#0b1421] px-3 text-sm text-slate-100 focus:border-amber-300/70">
-                <option value="due">Due soon, then priority</option>
-                <option value="priority">Priority, then due</option>
-              </select>
-            </label>
           </section>
 
           <section aria-label="Authorized work queue" className="overflow-hidden rounded-xl border border-white/10 bg-[#0c1420]">
@@ -1646,7 +1642,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.26.0-DENSE-SOURCE-ACTION-WORKBENCH
+ * VERSION: v1.27.0-COMPACT-EXECUTION-CONTROLS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
