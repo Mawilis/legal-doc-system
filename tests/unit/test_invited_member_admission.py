@@ -8,6 +8,8 @@ EPITOME: Recipient-bound invitation provenance and atomic orchestration.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_invited_member_admission.py
 COLLABORATION / OWNERSHIP: EOS auth unit certification.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.1.0-EXISTING-MEMBER-ROLE-ADMISSION-CERT proves accepted
+additional-role admission for ACTIVE members and fail-closed inactive cases.
 CHANGELOG: v1.0.0 establishes A3 unit evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Raw capability remains transient.
