@@ -1,5 +1,5 @@
 """TITLE: WILSY OS CRM Owner Commercial Workspace Service
-VERSION: v1.1.0-TENANT-SCOPED-WORK-DETAIL-READ
+VERSION: v1.2.0-ENTITLED-AUDITED-WORK-EDIT
 AUTHORITY: WILSY OS Python EOS CRM source service.
 EPITOME: Enforce source entitlement and tenant-exact persisted owner work
          reads, creation, completion and canonical work-detail readback.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/crm/se
 COLLABORATION / OWNERSHIP: CRM source domain, owner work registry and
          authenticated owner commercial workspace router.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-ENTITLED-AUDITED-WORK-EDIT routes existing-tenant
+           source edits and revision history through the same mandatory active
+           CRM subscription/entitlement gate; HTTP owns separate read/edit IAM,
+           registry owns exact CAS, audit and caller-owned transaction.
 CHANGELOG: v1.1.0-TENANT-SCOPED-WORK-DETAIL-READ adds a strictly tenant-scoped,
            entitlement-gated work item read for existing and completed work.
            Existing source create, complete and queue behavior is unchanged.
@@ -100,6 +104,44 @@ class OwnerCommercialWorkspaceService:
             tenant_id=tenant_id, now=now, session=session,
         )
 
+    def revise(
+        self, *, tenant_id: str, work_item_id: str,
+        actor_principal_id: str, title: str, description: str,
+        priority: OwnerWorkPriority, due_at: datetime | None,
+        expected_updated_at: datetime, idempotency_key: str,
+        now: datetime, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Revise one active commercial task under current CRM entitlement.
+
+        HTTP must independently authorize the exact CRM edit permission and
+        authenticated actor. The registry owns tenant CAS, idempotent replay,
+        immutable edit history, and atomic Mongo writes. No assignment,
+        inferred history, cross-tenant or financial authority is established.
+        """
+        self._require_entitlement(tenant_id, session)
+        return self._registry.revise(
+            tenant_id=tenant_id, work_item_id=work_item_id,
+            actor_principal_id=actor_principal_id, title=title,
+            description=description, priority=priority, due_at=due_at,
+            expected_updated_at=expected_updated_at,
+            idempotency_key=idempotency_key, now=now, session=session,
+        )
+
+    def revision_history(
+        self, *, tenant_id: str, work_item_id: str,
+        session: Any,
+    ) -> tuple[dict[str, object], ...]:
+        """Read persisted edit evidence for one own-tenant CRM work record.
+
+        HTTP must independently authorize the CRM work-item read permission.
+        No unrecorded legacy events are fabricated, and caller owns the read
+        transaction. Neither role assignment nor financial authority changes.
+        """
+        self._require_entitlement(tenant_id, session)
+        return self._registry.revision_history(
+            tenant_id=tenant_id, work_item_id=work_item_id, session=session,
+        )
+
     def complete(
         self, *, tenant_id: str, work_item_id: str, completion_note: str,
         now: datetime, session: Any,
@@ -138,7 +180,7 @@ class OwnerCommercialWorkspaceService:
 __all__ = ["OwnerCommercialWorkspaceError", "OwnerCommercialWorkspaceService"]
 
 # ARTIFACT: tools/eos/crm/service/owner_commercial_workspace_service.py
-# VERSION: v1.1.0-TENANT-SCOPED-WORK-DETAIL-READ
+# VERSION: v1.2.0-ENTITLED-AUDITED-WORK-EDIT
 # AUTHORITY BOUNDARY: Existing CRM HTTP IAM, entitlement and tenant-owned registry.
 # TENANT POSTURE: Exact tenant lookup; foreign record existence is not disclosed.
 # FAIL-CLOSED POSTURE: Denied, unavailable and absent source records remain explicit.
