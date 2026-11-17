@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT
+VERSION: v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT pins the eligible
+  membership_invite admission gate and independent entitlement issuance pair.
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
@@ -42,7 +44,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT"
+VERSION = "v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT"
 
 
 def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
@@ -64,7 +66,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
     expected = {
         ("/projects", "GET"): ("project:read", "project_list"),
         ("/projects/summary", "GET"): ("project:read", "project_list"),
-        ("/projects/founder-projects-admission", "POST"): ("tenant:role_assignment:write", "role_grant"),
+        ("/projects/founder-projects-admission", "POST"): ("tenant:membership:write", "membership_invite"),
         ("/projects/{project_id}", "GET"): ("project:read", "project_detail"),
         ("/projects", "POST"): ("project:create", "project_create"),
         ("/projects/{project_id}", "PATCH"): ("project:update", "project_update"),
@@ -85,7 +87,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         if isinstance(dependency.call, RequireTenantAuthorization)
     }
     assert admission_pairs == {
-        ("tenant:role_assignment:write", "role_grant"),
+        ("tenant:membership:write", "membership_invite"),
         ("tenant_product_entitlement:issue", "tenant_product_entitlement_issue"),
     }
 
@@ -216,7 +218,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT
+# VERSION: v1.1.1-FOUNDER-INVITATION-AUTHORITY-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
