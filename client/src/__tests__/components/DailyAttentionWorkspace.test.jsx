@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.7.0-RESPONSIVE-OPERATING-PANE-CERT
+ * VERSION: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -14,7 +14,10 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-16
- * CHANGELOG: v2.7.0-RESPONSIVE-OPERATING-PANE-CERT certifies the
+ * CHANGELOG: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT keeps raw source
+ *          coordinates in a collapsed technical disclosure while preserving
+ *          human-readable owner unavailability and task inspection.
+ *          v2.7.0-RESPONSIVE-OPERATING-PANE-CERT certifies the
  *          38/62 desktop pane, full-width mobile detail and list restoration.
  *          v2.6.0-FUNCTIONAL-FILTER-AND-BULK-MODE-CERT verifies
  *          source-backed counters operate the canonical filters and bulk
@@ -271,6 +274,23 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
   });
 
+  it('does not promote raw record identifiers to the operating overview', () => {
+    render(
+      <DailyAttentionWorkspace feed={fixtureFeed(1)} calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError="" />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
+    const technical = screen.getByLabelText('Technical source details');
+    expect(technical).not.toHaveAttribute('open');
+    expect(screen.getByText('Technical source details')).toBeTruthy();
+    expect(technical.textContent).toContain('attention-0');
+    expect(screen.getByText('Not supplied by source')).toBeTruthy();
+  });
+
   it('opens majority-width source detail and restores the full work list', () => {
     render(
       <DailyAttentionWorkspace feed={fixtureFeed(3)} calendarItems={[]}
@@ -504,7 +524,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.7.0-RESPONSIVE-OPERATING-PANE-CERT
+// VERSION: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT
 // AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.
