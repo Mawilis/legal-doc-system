@@ -4,7 +4,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.15.0-DRAFT-PROGRESS-WORK-CONTROL
+ * VERSION: v1.16.0-RETRIEVABLE-SAVED-DRAFTS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -12,6 +12,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.16.0-RETRIEVABLE-SAVED-DRAFTS lists exact-owner saved
+ *            CRM drafts from their source, resumes under independently
+ *            verified CRM UPDATE IAM, and reconciles source record, audit
+ *            and the active My Work queue before removing a saved draft.
  * CHANGELOG: v1.15.0-DRAFT-PROGRESS-WORK-CONTROL exposes source-audited
  *            Draft/Open/In Progress transitions in the verified task pane,
  *            then checks persisted record, status audit and the refreshed
@@ -241,6 +245,10 @@ export default function MyWorkWorkspace(props = {}) {
   const [crmDetailState, setCrmDetailState] = useState('IDLE');
   const [crmDetailError, setCrmDetailError] = useState('');
   const [crmEditNotice, setCrmEditNotice] = useState(null);
+  const [draftsVisible, setDraftsVisible] = useState(false);
+  const [draftsBusy, setDraftsBusy] = useState(false);
+  const [draftsError, setDraftsError] = useState('');
+  const [drafts, setDrafts] = useState([]);
 
   const load = useCallback(async ({ quiet = false } = {}) => {
     const request = ++requestRef.current;
@@ -301,12 +309,95 @@ export default function MyWorkWorkspace(props = {}) {
     setCompleting('');
     setActionError('');
     setCrmEditNotice(null);
+    setDraftsVisible(false);
+    setDrafts([]);
+    setDraftsError('');
+    setDraftsBusy(false);
     setSelectedKey(null);
     setCloseGuard(false);
     setSourceFilter('ALL');
     setSearch('');
     pendingRef.current.clear();
   }, [scopeKey]);
+
+
+  const openDrafts = async () => {
+    if (draftsVisible) { setDraftsVisible(false); return; }
+    setDraftsVisible(true);
+    setDraftsBusy(true);
+    setDraftsError('');
+    const requestedScope = scopeKey;
+    try {
+      const response = await api.get('/crm/owner-workspace/drafts', { forceNetworkRetry: true });
+      const body = response?.data;
+      if (!body || body.schema !== 'WILSY-OWNER-COMMERCIAL-DRAFTS/V1'
+        || body.tenant_id !== authUser?.tenantId
+        || body.principal_id !== authUser?.id || !Array.isArray(body.items)
+        || body.items.some((entry) => entry?.tenant_id !== authUser?.tenantId
+          || entry?.owner_principal_id !== authUser?.id || entry?.status !== 'DRAFT'
+          || entry?.schema !== 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1')) {
+        throw new Error('CRM_DRAFTS_SOURCE_OR_SCOPE_MISMATCH');
+      }
+      if (scopeRef.current === requestedScope) setDrafts(body.items);
+    } catch (error) {
+      if (scopeRef.current === requestedScope) {
+        setDrafts([]);
+        setDraftsError(safeErrorCode(error));
+      }
+    } finally {
+      if (scopeRef.current === requestedScope) setDraftsBusy(false);
+    }
+  };
+
+  const resumeDraft = async (record) => {
+    if (draftsBusy || record?.status !== 'DRAFT' || record?.tenant_id !== authUser?.tenantId
+      || record?.owner_principal_id !== authUser?.id) return;
+    setDraftsBusy(true);
+    setDraftsError('');
+    const requestedScope = scopeKey;
+    try {
+      const actions = await readAttentionSourceActions({
+        tenantId: authUser.tenantId, principalId: authUser.id,
+      }, ['CRM']);
+      if (actions.unavailableSources?.length || !actions.sourceActions?.CRM?.includes('UPDATE')) {
+        throw new Error('CRM_DRAFT_UPDATE_NOT_AUTHORIZED');
+      }
+      const route = '/crm/owner-workspace/work-items/' + encodeURIComponent(record.work_item_id);
+      const key = globalThis.crypto?.randomUUID?.();
+      if (!key) throw new Error('CRM_WORK_IDEMPOTENCY_UNAVAILABLE');
+      const saved = (await api.post(route + '/status', {
+        status: 'OPEN', expected_updated_at: record.updated_at,
+      }, { headers: { 'Idempotency-Key': key } }))?.data;
+      if (!saved || saved.tenant_id !== authUser.tenantId
+        || saved.work_item_id !== record.work_item_id || saved.status !== 'OPEN') {
+        throw new Error('CRM_DRAFT_ACTIVATION_UNVERIFIED');
+      }
+      const current = (await api.get(route, { forceNetworkRetry: true }))?.data;
+      const changes = (await api.get(route + '/history', { forceNetworkRetry: true }))?.data;
+      if (!current || current.tenant_id !== authUser.tenantId
+        || current.work_item_id !== record.work_item_id
+        || current.status !== 'OPEN' || current.updated_at !== saved.updated_at
+        || changes?.tenant_id !== authUser.tenantId
+        || !changes.events?.some((event) =>
+          event.operation === 'STATUS' && event.actor_principal_id === authUser.id
+          && event.after?.updated_at === saved.updated_at && event.after?.status === 'OPEN')) {
+        throw new Error('CRM_DRAFT_ACTIVATION_READBACK_PENDING');
+      }
+      invalidateUnifiedMyWork(currentUnifiedMyWorkScope(auth, authUser.tenantId));
+      const verified = await load({ quiet: true });
+      if (!verified?.items.some((item) =>
+        item.source_key === 'CRM:' + saved.work_item_id && item.status === 'OPEN')) {
+        throw new Error('CRM_DRAFT_AGGREGATE_PENDING');
+      }
+      if (scopeRef.current !== requestedScope) return;
+      setDrafts((existing) => existing.filter((entry) => entry.work_item_id !== saved.work_item_id));
+    } catch (error) {
+      if (scopeRef.current === requestedScope) setDraftsError(safeErrorCode(error)
+        + '. Refresh saved drafts to reconcile before trying another action.');
+    } finally {
+      if (scopeRef.current === requestedScope) setDraftsBusy(false);
+    }
+  };
 
   const items = useMemo(() => projection?.items || [], [projection]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
@@ -618,6 +709,30 @@ export default function MyWorkWorkspace(props = {}) {
               ))}
             </div>
             <span className="text-[11px] text-slate-500">Only independently admitted sources appear here.</span>
+          </section>
+
+          <section aria-label="Saved CRM draft work" className="space-y-3 border-b border-white/10 py-3">
+            <button type="button" onClick={openDrafts} disabled={draftsBusy}
+              className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold text-amber-100">
+              {draftsBusy ? 'Verifying saved drafts…' : draftsVisible ? 'Hide saved drafts' : 'Saved CRM drafts'}
+            </button>
+            {draftsError && <p role="alert" className="text-xs text-amber-100">{draftsError}</p>}
+            {draftsVisible && !draftsBusy && <div role="region" aria-label="Verified saved CRM drafts"
+              className="space-y-2 rounded-xl border border-white/10 bg-[#0f1b2c] p-3">
+              {drafts.length === 0 ? <p className="text-sm text-slate-400">No verified saved drafts for your account.</p>
+                : drafts.map((record) => <article key={record.work_item_id}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-2 last:border-none">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white">{record.title}</p>
+                    <p className="text-xs text-slate-400">Draft · Saved {formatVerified(record.updated_at)}</p>
+                  </div>
+                  <button type="button" disabled={draftsBusy}
+                    onClick={() => resumeDraft(record)}
+                    className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100">
+                    Resume as Open
+                  </button>
+                </article>)}
+            </div>}
           </section>
 
           <section className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
@@ -1331,7 +1446,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.15.0-DRAFT-PROGRESS-WORK-CONTROL
+ * VERSION: v1.16.0-RETRIEVABLE-SAVED-DRAFTS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
