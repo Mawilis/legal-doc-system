@@ -135,7 +135,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getAllByText('Not assigned')).toHaveLength(2);
     expect(screen.getByText('Not scheduled')).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Project objective' })).toBeVisible();
-    expect(screen.queryByText(/\\*\\*Project objective\\*\\*/)).not.toBeInTheDocument();
+    expect(screen.queryByText('**Project objective**')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Read full project scope' }));
     expect(screen.getByRole('button', { name: 'Collapse project scope' })).toBeVisible();
     expect(screen.getAllByRole('heading', { name: 'Definition of done' }).length).toBeGreaterThan(0);
