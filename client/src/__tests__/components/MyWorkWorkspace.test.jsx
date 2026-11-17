@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.7.0-SOURCE-AUDITED-EDIT-BROWSER-CERT
+ * VERSION: v1.7.1-SOURCE-EDIT-DUAL-SURFACE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.1-SOURCE-EDIT-DUAL-SURFACE-CERT confirms the
+ *            updated title is present in both the verified work row and
+ *            source detail without assuming it occurs only once.
  * CHANGELOG: v1.7.0-SOURCE-AUDITED-EDIT-BROWSER-CERT verifies
  *            independently permitted CRM editing with exact PATCH payload,
  *            source/audit/unified readback, and denial when UPDATE is absent.
@@ -237,7 +240,7 @@ describe('authenticated My Work execution queue', () => {
       'CRM edit confirmed by source, audit history and fresh My Work.',
     )).toBeTruthy());
     expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
-    expect(screen.getByText(updated.title)).toBeTruthy();
+    expect(screen.getAllByText(updated.title).length).toBeGreaterThanOrEqual(1);
   });
 
   it('never exposes CRM edit when current EOS source permission is absent', async () => {
@@ -486,7 +489,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.7.0-SOURCE-AUDITED-EDIT-BROWSER-CERT
+ * VERSION: v1.7.1-SOURCE-EDIT-DUAL-SURFACE-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
