@@ -1,15 +1,15 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS
+VERSION: v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_projects_router_contract.py
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
-CERTIFICATION / UPDATE DATE: 2026-11-16.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
+  v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -42,7 +42,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS"
+VERSION = "v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT"
 
 
 def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
@@ -56,6 +56,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects", ("GET",)),
         ("/projects", ("POST",)),
         ("/projects/summary", ("GET",)),
+        ("/projects/founder-projects-admission", ("POST",)),
         ("/projects/{project_id}", ("GET",)),
         ("/projects/{project_id}", ("PATCH",)),
         ("/projects/{project_id}/archive", ("POST",)),
@@ -63,6 +64,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
     expected = {
         ("/projects", "GET"): ("project:read", "project_list"),
         ("/projects/summary", "GET"): ("project:read", "project_list"),
+        ("/projects/founder-projects-admission", "POST"): ("tenant:role_assignment:write", "role_grant"),
         ("/projects/{project_id}", "GET"): ("project:read", "project_detail"),
         ("/projects", "POST"): ("project:create", "project_create"),
         ("/projects/{project_id}", "PATCH"): ("project:update", "project_update"),
@@ -76,6 +78,16 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
             if isinstance(item.call, RequireTenantAuthorization)
         )
         assert (dependency.permission_id, dependency.operation) == expected[(path, method)]
+    founder_route = routes[("/projects/founder-projects-admission", ("POST",))]
+    admission_pairs = {
+        (dependency.call.permission_id, dependency.call.operation)
+        for dependency in founder_route.dependant.dependencies
+        if isinstance(dependency.call, RequireTenantAuthorization)
+    }
+    assert admission_pairs == {
+        ("tenant:role_assignment:write", "role_grant"),
+        ("tenant_product_entitlement:issue", "tenant_product_entitlement_issue"),
+    }
 
 
 def test_selected_session_tenant_must_equal_request_scope() -> None:
@@ -130,6 +142,34 @@ def test_internal_projects_role_is_confined_to_the_canonical_company_tenant() ->
     assert denied.value.detail == "PROJECT_PLATFORM_OWNER_TENANT_DENIED"
 
 
+def test_founder_projects_admission_denies_wrong_tenant_role_and_actor_before_io() -> None:
+    """An IAM-valid request still requires exact canonical Founder ownership."""
+    def context(principal: str, tenant: str, business_role: str, auth_role: str):
+        identity = SovereignIdentity(
+            identity_id=principal, tenant_id=tenant, auth_method="TEST_FIXTURE",
+            status=PrincipalStatus.ACTIVE,
+        )
+        return projects_router.TenantAuthorizationContext(
+            identity, tenant,
+            TenantAuthorizationDecision(
+                True, TenantAuthorizationReason.AUTHORIZED, business_role, auth_role,
+            ),
+        )
+
+    founder = context("p1", WILSY_COMPANY_TENANT_ID, "tenant_owner", "ENTERPRISE_ADMIN")
+    cases = [
+        (context("p1", "other-tenant", "tenant_owner", "ENTERPRISE_ADMIN"), founder),
+        (founder, context("p2", WILSY_COMPANY_TENANT_ID, "tenant_owner", "ENTERPRISE_ADMIN")),
+        (context("p1", WILSY_COMPANY_TENANT_ID, "tenant_admin", "ENTERPRISE_ADMIN"), founder),
+        (founder, context("p1", WILSY_COMPANY_TENANT_ID, "tenant_owner", "TENANT_OWNER")),
+    ]
+    for grant, issuer in cases:
+        with pytest.raises(HTTPException) as denial:
+            projects_router.admit_founder_projects(grant, issuer)
+        assert denial.value.status_code == 403
+        assert denial.value.detail == "FOUNDER_PROJECTS_AUTHORITY_REQUIRED"
+
+
 def test_browser_payload_cannot_supply_authority_or_unverified_ownership() -> None:
     """Creation and update bodies exclude tenant, actor, IDs and owner grants."""
     valid = projects_router.ProjectCreateRequest.model_validate(
@@ -176,7 +216,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS
+# VERSION: v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
