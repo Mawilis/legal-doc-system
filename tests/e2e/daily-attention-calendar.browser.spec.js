@@ -5,14 +5,18 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.7.0-EXPLICIT-BULK-WORKFLOW-CERT
+ * VERSION: v3.8.0-RESPONSIVE-REAL-UI-GEOMETRY-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-15.
+ * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v3.8.0-RESPONSIVE-REAL-UI-GEOMETRY-CERT verifies the real
+ *          38/62 responsive desktop work/detail split and the mobile detail-
+ *          only state during asynchronous refresh; the authenticated source
+ *          journey, durability checks and accessibility assertions remain strict.
  * CHANGELOG: v3.7.0-EXPLICIT-BULK-WORKFLOW-CERT opens source-owned bulk selection explicitly
  *          before verifying checkbox access and real separate completion.
  * CHANGELOG: v3.6.0-EXPLICIT-BRIEFING-OPERATING-CERT explicitly opens the verified
@@ -405,7 +409,16 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(rail).toBeVisible();
       const railBounds = await rail.boundingBox();
       expect(railBounds.width).toBeGreaterThan(300);
-      expect(railBounds.width).toBeLessThanOrEqual(420);
+      if (viewport.width >= 768) {
+        const panelBounds = await triage.boundingBox();
+        expect(panelBounds).not.toBeNull();
+        // Production desktop uses a 38/62 work/detail split, not the old 420px drawer.
+        expect(railBounds.width / panelBounds.width).toBeGreaterThanOrEqual(0.59);
+        expect(railBounds.width / panelBounds.width).toBeLessThanOrEqual(0.65);
+      } else {
+        // Mobile switches to the full-workspace detail; it must fit the viewport.
+        expect(railBounds.width).toBeLessThanOrEqual(viewport.width);
+      }
       expect(railBounds.x).toBeGreaterThanOrEqual(0);
       expect(railBounds.x + railBounds.width).toBeLessThanOrEqual(viewport.width);
       await expect(triage.getByRole('button', {name: 'Open full record'})).toBeVisible();
@@ -425,7 +438,12 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
       await expect(triage.getByTestId('attention-refresh-state'))
         .toHaveAttribute('data-attention-refresh-state', 'UPDATING');
-      await expect(row).toBeVisible();
+      if (viewport.width >= 768) {
+        await expect(row).toBeVisible();
+      } else {
+        // When detail is open, mobile intentionally hides the underlying work list.
+        await expect(row).toBeHidden();
+      }
       await expect(rail).toBeVisible();
       expect(await panel.getAttribute('style')).toBe(panelStyleBeforeRefresh);
       expect(await workListScroll.evaluate(node => node.scrollTop)).toBe(scrollBeforeRefresh);
@@ -849,7 +867,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.7.0-EXPLICIT-BULK-WORKFLOW-CERT
+// VERSION: v3.8.0-RESPONSIVE-REAL-UI-GEOMETRY-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
