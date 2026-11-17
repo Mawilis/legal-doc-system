@@ -1,7 +1,7 @@
 """WILSY OS owner commercial workspace composition certificate.
 
 TITLE: Owner Commercial Workspace Route Mount and EOS Transport Certificate
-VERSION: v1.4.0-AUDITED-OWNER-CANCEL-ROUTE-CERT
+VERSION: v1.5.0-DRAFT-PROGRESS-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Verifies exact owner-workspace route composition, permission bindings,
     and the canonical Vite-to-Python EOS loopback target.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: OwnerCommercialWorkspaceRouter, FastAPI composition,
     and Vite transport owners.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.5.0-DRAFT-PROGRESS-HTTP-CERT proves exact owner
+           draft GET uses CRM READ and Draft/Open/In Progress status POST
+           uses independently granted CRM UPDATE with strict revision evidence.
 CHANGELOG: v1.4.0-AUDITED-OWNER-CANCEL-ROUTE-CERT pins the distinct
            owner-cancel route to CRM UPDATE IAM, requiring reason, source
            revision and idempotency without accepting actor/tenant from body.
@@ -45,6 +48,9 @@ from tools.eos.api.owner_commercial_workspace_router import (
     _UPDATE,
     OwnerWorkReviseRequest,
     OwnerWorkCancelRequest,
+    OwnerWorkStatusRequest,
+    read_owner_work_drafts,
+    transition_owner_work_status,
     cancel_owner_work_item,
     _transaction,
     read_owner_work_item,
@@ -69,6 +75,8 @@ def test_owner_commercial_workspace_routes_are_mounted_once_and_directly() -> No
     assert ("/crm/owner-workspace/work-items/{work_item_id}", ("PATCH",)) in routes
     assert ("/crm/owner-workspace/work-items/{work_item_id}/history", ("GET",)) in routes
     assert ("/crm/owner-workspace/work-items/{work_item_id}/cancel", ("POST",)) in routes
+    assert ("/crm/owner-workspace/drafts", ("GET",)) in routes
+    assert ("/crm/owner-workspace/work-items/{work_item_id}/status", ("POST",)) in routes
     assert (
         "/crm/owner-workspace/work-items/{work_item_id}/complete",
         ("POST",),
@@ -165,8 +173,28 @@ def test_owner_cancel_requires_exact_crm_update_authority_and_strict_payload() -
         OwnerWorkCancelRequest(**{**valid, "actor_principal_id": "forged"})
 
 
+def test_exact_draft_and_progress_routes_retain_source_iam() -> None:
+    from pydantic import ValidationError
+    source = inspect.getsource(transition_owner_work_status)
+    assert "Depends(_UPDATE)" in source
+    assert "context.identity.identity_id" in source
+    assert "Idempotency-Key" in source
+    assert "Depends(_READ)" in inspect.getsource(read_owner_work_drafts)
+    assert OwnerWorkStatusRequest(
+        status="IN_PROGRESS", expected_updated_at="2026-11-17T10:00:00Z",
+    ).status == "IN_PROGRESS"
+    assert OwnerWorkStatusRequest(
+        status="DRAFT", expected_updated_at="2026-11-17T10:00:00Z",
+    ).status == "DRAFT"
+    with pytest.raises(ValidationError):
+        OwnerWorkStatusRequest(status="COMPLETED", expected_updated_at="2026-11-17T10:00:00Z")
+    with pytest.raises(ValidationError):
+        OwnerWorkStatusRequest(status="DRAFT", expected_updated_at="2026-11-17T10:00:00Z",
+                               owner_principal_id="forged")
+
+
 # ARTIFACT: Owner Commercial Workspace Route Mount and EOS Transport Certificate
-# VERSION: v1.4.0-AUDITED-OWNER-CANCEL-ROUTE-CERT
+# VERSION: v1.5.0-DRAFT-PROGRESS-HTTP-CERT
 # AUTHORITY BOUNDARY: Composition regression evidence only.
 # TENANT POSTURE: No tenant state or records are accessed.
 # FAIL-CLOSED POSTURE: Route mount, transport, or permission drift fails tests.
