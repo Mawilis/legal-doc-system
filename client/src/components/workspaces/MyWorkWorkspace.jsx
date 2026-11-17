@@ -797,7 +797,7 @@ export default function MyWorkWorkspace(props = {}) {
                 </button>
               )}
               <div className="hidden text-right text-xs text-slate-400 sm:block">
-                <div><span className="text-white">{projection.summary.active_count}</span> open · <span className="text-rose-200">{projection.summary.overdue_count}</span> overdue</div>
+                <div><span className="text-white">{projection.summary.active_count}</span> active · <span className="text-rose-200">{projection.summary.overdue_count}</span> overdue</div>
                 <div className="mt-1">Verified {formatVerified(projection.as_of)}</div>
               </div>
               <button type="button" onClick={() => load({ quiet: true })} disabled={refreshing}
