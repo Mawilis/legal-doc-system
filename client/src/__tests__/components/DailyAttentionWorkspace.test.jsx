@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT
+ * VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -13,7 +13,11 @@
  * COLLABORATION / OWNERSHIP: DailyAttentionWorkspace owns display/windowing;
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT proves the
+ *          explicit CRM Save Draft intent goes through the real source
+ *          callback with its own stable idempotency key, not an active
+ *          in-browser row or unsupported non-CRM action.
  * CHANGELOG: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT keeps raw source
  *          coordinates in a collapsed technical disclosure while preserving
  *          human-readable owner unavailability and task inspection.
@@ -412,6 +416,43 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getByRole('checkbox', { name: 'Select Attention item 2' }).checked).toBe(true);
   });
 
+
+  it('saves a CRM Draft as a separate source intent without publishing active work', async () => {
+    const source = fixtureFeed(0);
+    source.sources = [{ moduleId: 'CRM', state: 'empty', count: 0 }];
+    source.coverage = {
+      ...source.coverage,
+      admittedSources: ['CRM'],
+      notRepresentedSources: ['LEGAL', 'OPERATIONS', 'INTELLIGENCE', 'FINANCE', 'PEOPLE'],
+    };
+    const onCreateWork = vi.fn().mockResolvedValue(true);
+    render(
+      <DailyAttentionWorkspace
+        feed={source} calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()}
+        onCreateWork={onCreateWork}
+        authorisedActions={{ CRM: ['CREATE'] }}
+        onLoadMore={vi.fn()} loadingMore={false} pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create CRM work' }));
+    fireEvent.change(screen.getByPlaceholderText('What needs to be done?'), {
+      target: { value: 'Unpublished investor notes' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(onCreateWork).toHaveBeenCalledWith(
+      'CRM',
+      expect.objectContaining({
+        title: 'Unpublished investor notes', initial_status: 'DRAFT',
+      }),
+      expect.any(String),
+    ));
+  });
+
+
   it('offers a source-owned create work action when the admitted empty source can create', () => {
     render(
       <DailyAttentionWorkspace
@@ -524,7 +565,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT
+// VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
 // AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.
