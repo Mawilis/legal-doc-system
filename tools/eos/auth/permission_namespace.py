@@ -1,10 +1,13 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.63.0-PROJECT-PERMISSION-VOCABULARY
+VERSION: v1.64.0-CRM-WORK-EDIT-PERMISSION
 AUTHORITY: Canonical permission vocabulary and scope metadata only.
 EPITOME: Defines exact, non-self-authorizing permission metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.64.0-CRM-WORK-EDIT-PERMISSION defines a separate own-tenant
+           CRM task-edit permission; metadata alone grants no assignment,
+           entitlement, command, transaction or cross-tenant access.
 CHANGELOG: v1.63.0-PROJECT-PERMISSION-VOCABULARY — Preserves exact permission namespace semantics.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Metadata only; no secrets or session issuance.
@@ -274,7 +277,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.63.0-PROJECT-PERMISSION-VOCABULARY"
+VERSION = "v1.64.0-CRM-WORK-EDIT-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -704,6 +707,7 @@ _PERMISSIONS: Final = MappingProxyType(
         "project:archive": _meta("project:archive", "TENANT", "TENANT", "archive own-tenant projects without deletion", tenant=True),
         "crm:work_item:read": _meta("crm:work_item:read", "TENANT", "TENANT", "read owner commercial work items", tenant=True),
         "crm:work_item:create": _meta("crm:work_item:create", "TENANT", "TENANT", "create owner commercial work items", tenant=True),
+        "crm:work_item:update": _meta("crm:work_item:update", "TENANT", "TENANT", "edit active owner commercial work items", tenant=True),
         "crm:work_item:complete": _meta("crm:work_item:complete", "TENANT", "TENANT", "complete owner commercial work items", tenant=True),
         "operations:work_item:read": _meta("operations:work_item:read", "TENANT", "TENANT", "read Operations work items", tenant=True),
         "operations:work_item:create": _meta("operations:work_item:create", "TENANT", "TENANT", "create Operations work items", tenant=True),
@@ -1449,7 +1453,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.63.0-PROJECT-PERMISSION-VOCABULARY
+# VERSION: v1.64.0-CRM-WORK-EDIT-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
