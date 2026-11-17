@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.24.0-MODELESS-A11Y-QUEUE-CONTINUITY
+ * VERSION: v1.25.0-LIVE-STATUS-COUNT-FILTERS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.25.0-LIVE-STATUS-COUNT-FILTERS derives actionable
+ *            Overdue/Open/In Progress counts exclusively from the
+ *            validated source projection. Saved Drafts count appears only
+ *            after separate exact-owner source read, never guessed.
  * CHANGELOG: v1.24.0-MODELESS-A11Y-QUEUE-CONTINUITY preserves
  *            the underlying authorized work queue in the desktop
  *            accessibility tree while a modeless floating workbench is
@@ -345,6 +349,7 @@ export default function MyWorkWorkspace(props = {}) {
   const [error, setError] = useState('');
   const [errorStatus, setErrorStatus] = useState(null);
   const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState('due');
   const [notes, setNotes] = useState({});
@@ -427,6 +432,7 @@ export default function MyWorkWorkspace(props = {}) {
     setSelectedKey(null);
     setCloseGuard(false);
     setSourceFilter('ALL');
+    setStatusFilter('ALL');
     setSearch('');
     pendingRef.current.clear();
   }, [scopeKey]);
@@ -513,6 +519,8 @@ export default function MyWorkWorkspace(props = {}) {
   const items = useMemo(() => projection?.items || [], [projection]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
   const admittedSources = projection?.sources_included || [];
+  const openCount = items.filter((item) => item.status === 'OPEN').length;
+  const progressCount = items.filter((item) => item.status === 'IN_PROGRESS').length;
   const dueTodayCount = useMemo(() => {
     if (!projection) return 0;
     const snapshotTime = new Date(projection.as_of);
@@ -522,12 +530,13 @@ export default function MyWorkWorkspace(props = {}) {
     const query = search.trim().toLocaleLowerCase();
     return items
       .filter((item) => sourceFilter === 'ALL' || item.source === sourceFilter)
+      .filter((item) => statusFilter === 'ALL' || (statusFilter === 'OVERDUE' ? item.is_overdue : item.status === statusFilter))
       .filter((item) => !query || [item.title, item.description, item.source,
         SOURCE_LABELS[item.source], item.status].some((value) => (
         typeof value === 'string' && value.toLocaleLowerCase().includes(query)
       )))
       .sort((left, right) => compareItems(left, right, sortMode));
-  }, [items, search, sortMode, sourceFilter]);
+  }, [items, search, sortMode, sourceFilter, statusFilter]);
 
   useEffect(() => {
     // Exact current-session CRM source read; never a client authorization grant.
@@ -805,8 +814,15 @@ export default function MyWorkWorkspace(props = {}) {
 
           <section aria-label="Work queue summary" className="flex flex-wrap gap-2 border-b border-white/10 py-3 text-xs">
             <Summary label="Active" value={projection.summary.active_count} />
-            <Summary label="Overdue count" value={projection.summary.overdue_count} tone="rose" />
+            <Summary label="Overdue" value={projection.summary.overdue_count} tone="rose" />
             <Summary label="Due today" value={dueTodayCount} tone="amber" />
+          </section>
+
+          <section aria-label="Work status filters" className="flex flex-wrap gap-2 border-b border-white/10 py-3 text-xs">
+            <FilterButton active={statusFilter === 'ALL'} onClick={() => setStatusFilter('ALL')}>All active ({items.length})</FilterButton>
+            <FilterButton active={statusFilter === 'OVERDUE'} onClick={() => setStatusFilter('OVERDUE')}>Overdue ({projection.summary.overdue_count})</FilterButton>
+            <FilterButton active={statusFilter === 'OPEN'} onClick={() => setStatusFilter('OPEN')}>Open ({openCount})</FilterButton>
+            <FilterButton active={statusFilter === 'IN_PROGRESS'} onClick={() => setStatusFilter('IN_PROGRESS')}>In Progress ({progressCount})</FilterButton>
           </section>
 
           <section className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 py-3" aria-label="Work source filters">
@@ -827,7 +843,7 @@ export default function MyWorkWorkspace(props = {}) {
           {admittedSources.includes("CRM") && <section aria-label="Saved CRM draft work" className="space-y-3 border-b border-white/10 py-3">
             <button type="button" onClick={openDrafts} disabled={draftsBusy}
               className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold text-amber-100">
-              {draftsBusy ? 'Verifying saved drafts…' : draftsVisible ? 'Hide saved drafts' : 'Saved CRM drafts'}
+              {draftsBusy ? 'Verifying saved drafts…' : draftsVisible ? `Saved Drafts (${drafts.length}) · Hide` : 'Saved Drafts · View'}
             </button>
             {draftsError && <p role="alert" className="text-xs text-amber-100">{draftsError}</p>}
             {draftsVisible && !draftsBusy && <div role="region" aria-label="Verified saved CRM drafts"
@@ -922,7 +938,7 @@ export default function MyWorkWorkspace(props = {}) {
             ) : (
               <div className="px-4 py-8 text-center text-sm text-slate-400" role="status">
                 No work matches the current source filter and search.
-                <button type="button" className="ml-2 text-amber-200 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); }}>Clear filters</button>
+                <button type="button" className="ml-2 text-amber-200 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); }}>Clear filters</button>
               </div>
             )}
           </section>
@@ -1627,7 +1643,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.24.0-MODELESS-A11Y-QUEUE-CONTINUITY
+ * VERSION: v1.25.0-LIVE-STATUS-COUNT-FILTERS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
