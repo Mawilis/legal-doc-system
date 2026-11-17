@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT
+VERSION: v1.13.1-CRM-WORK-BINDING-VERSION-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -15,6 +15,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
+2026-11-17 v1.13.1-CRM-WORK-BINDING-VERSION-CERT refreshes two
+strict runtime-version assertions to the canonical CRM work-edit release.
+All binding, tenant fence, business role and denial assertions remain intact.
 2026-11-16 v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT verifies exact Projects pairs, tenant_owner eligibility, the dedicated assigned role, missing-role denial, and the internal-role foreign-tenant fence. No role assignment or entitlement is created.
 2026-11-13 v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
 2026-11-13 v1.10.0-PLATFORM-EMPLOYEE-ADMISSION-CURRENTNESS-CERT certifies that admission also requires
@@ -202,7 +205,7 @@ from tools.eos.workforce.domain.workforce_relationship import (
     WorkforceScopeKind,
 )
 
-VERSION = "v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT"
+VERSION = "v1.13.1-CRM-WORK-BINDING-VERSION-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1596,7 +1599,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.53.0-PROJECTS-PLATFORM-ROLE-TENANT-FENCE"
+    assert ta.VERSION == "v1.54.0-CRM-WORK-EDIT-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1610,7 +1613,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.53.0-PROJECTS-PLATFORM-ROLE-TENANT-FENCE"
+    assert ta.VERSION == "v1.54.0-CRM-WORK-EDIT-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -3198,7 +3201,7 @@ def test_platform_employer_admission_requires_current_exact_tenant_workforce(
 
 
 # ARTIFACT: tests/unit/test_tenant_authorization.py
-# VERSION: v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT
+# VERSION: v1.13.1-CRM-WORK-BINDING-VERSION-CERT
 # AUTHORITY BOUNDARY: certifies exact composition, operation policy and static role conjunctions only; fixtures create no assignment
 # TENANT POSTURE: platform-employer decisions are restricted to the canonical WILSY company tenant and require active membership, eligible business role and active assigned authorization role
 # FAIL-CLOSED POSTURE: crossed pairs deny; offer acceptance remains unbound; admission has no command or route
