@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.23.0-POINTER-MOUSE-RESIZE-INTEROPERABILITY
+ * VERSION: v1.24.0-MODELESS-A11Y-QUEUE-CONTINUITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.24.0-MODELESS-A11Y-QUEUE-CONTINUITY preserves
+ *            the underlying authorized work queue in the desktop
+ *            accessibility tree while a modeless floating workbench is
+ *            open; mobile modal semantics still hide inactive background.
  * CHANGELOG: v1.23.0-POINTER-MOUSE-RESIZE-INTEROPERABILITY adds
  *            mouse drag fallback to pointer drag so the independent
  *            workbench can be resized with desktop input and tested in
@@ -751,7 +755,7 @@ export default function MyWorkWorkspace(props = {}) {
   return (
     <div className="min-h-screen bg-[#080b10] text-slate-100">
       <main
-        aria-hidden={selectedItem ? 'true' : undefined}
+        aria-hidden={selectedItem && (typeof window === 'undefined' || window.innerWidth < 768) ? 'true' : undefined}
         className="min-h-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-10"
       >
         <div className="mx-auto max-w-7xl">
@@ -1623,7 +1627,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.23.0-POINTER-MOUSE-RESIZE-INTEROPERABILITY
+ * VERSION: v1.24.0-MODELESS-A11Y-QUEUE-CONTINUITY
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
