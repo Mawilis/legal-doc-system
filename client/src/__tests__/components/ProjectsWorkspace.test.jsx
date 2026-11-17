@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.2.0-STRATEGY-HANDOFF-SCOPE-CERT
+ * VERSION: v1.3.0-FLUID-PROJECT-DETAIL-PRESENTATION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v1.3.0-FLUID-PROJECT-DETAIL-PRESENTATION-CERT proves
+ *            full-width list, selected detail layout, safe formatted scope
+ *            in both collapsed and expanded modes, and sourced null values.
  * CHANGELOG: v1.2.0-STRATEGY-HANDOFF-SCOPE-CERT proves Strategy focus requires an
  *            authenticated exact-tenant list before detail readback and
  *            rejects absent IDs without issuing any project mutations.
@@ -109,6 +112,36 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="absent-project-handoff" focusProjectId={PROJECT_ID}/>);
     expect(await screen.findByText('No projects in this tenant')).toBeVisible();
     expect(api.get.mock.calls.some(([path]) => path === `/projects/${PROJECT_ID}`)).toBe(false);
+  });
+
+  it('uses full-width list until selection and renders governed EOS fields and Markdown accessibly', async () => {
+    const source = project({
+      code: null, owner_principal_id: null, department_id: null, target_date: null,
+      summary: 'Strategy reference (descriptive only).\\n**Project objective**\\nDeliver a real platform.\\n**Scope of execution**\\n1. **Unified identity:** Secure access.\\n**Definition of done**\\nConfirmed EOS result. '.repeat(4),
+    });
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return { data: list([source]) };
+      if (path === '/projects/summary') return { data: summary([source]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
+      throw new Error('Unexpected project route');
+    });
+    const { container } = render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="layout-cert"/>);
+    await screen.findByText('1 shown · 1 verified');
+    expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
+    fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
+    expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeVisible();
+    expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
+    expect(screen.getByText('Not recorded')).toBeVisible();
+    expect(screen.getAllByText('Not assigned')).toHaveLength(2);
+    expect(screen.getByText('Not scheduled')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Project objective' })).toBeVisible();
+    expect(screen.queryByText(/\\*\\*Project objective\\*\\*/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Read full project scope' }));
+    expect(screen.getByRole('button', { name: 'Collapse project scope' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Definition of done' })).toBeVisible();
+    expect(screen.getByLabelText('Project code')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: 'Close project details' }));
+    expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
   });
 
   it('creates, reads, updates, changes status, archives and reads back through EOS routes', async () => {
@@ -257,7 +290,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.2.0-STRATEGY-HANDOFF-SCOPE-CERT
+ * VERSION: v1.3.0-FLUID-PROJECT-DETAIL-PRESENTATION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
