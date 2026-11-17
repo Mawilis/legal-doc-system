@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.5.0-CANONICAL-WORK-DESCRIPTION-CERT
+ * VERSION: v1.6.0-DIRECT-SAVED-DRAFT-TRANSPORT-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
- * CERTIFICATION / UPDATE DATE: 2026-11-11
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.6.0-DIRECT-SAVED-DRAFT-TRANSPORT-CERT checks
+ *          source-owned CRM-only initial Draft creation, exact status
+ *          readback, and preservation of non-CRM create schema.
  * CHANGELOG: v1.5.0-CANONICAL-WORK-DESCRIPTION-CERT verifies
  *          EOS strict-domain whitespace normalization for a real create.
  *          v1.4.0-MODULE-ENTITLEMENT-ACTION-BOUNDARY-CERT
@@ -187,7 +190,7 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
       '/crm/owner-workspace/work-items',
       {
         title: 'Call Investors', description: 'Discuss WILSY OS launch',
-        kind: 'TASK', priority: 'CRITICAL', due_at: null,
+        kind: 'TASK', priority: 'CRITICAL', due_at: null, initial_status: 'OPEN',
       },
       { headers: { 'Idempotency-Key': 'normalized-intent' } },
     );
@@ -206,7 +209,7 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
     expect(api.post).toHaveBeenCalledWith(
       '/crm/owner-workspace/work-items',
       { title: 'Review customer contract', description: 'Record customer decision',
-        kind: 'TASK', priority: 'HIGH', due_at: null },
+        kind: 'TASK', priority: 'HIGH', due_at: null, initial_status: 'OPEN' },
       { headers: { 'Idempotency-Key': 'source-intent-once' } },
     );
     api.post.mockClear();
@@ -266,8 +269,36 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
 
 });
 
-// ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.5.0-CANONICAL-WORK-DESCRIPTION-CERT
+  it('saves a CRM Draft in EOS without creating active work or cross-module status', async () => {
+    api.post.mockResolvedValue({ data: {
+      work_item_id: 'CRM-DRAFT-1', tenant_id: tenantId, status: 'DRAFT',
+    } });
+    const created = await createAttentionSourceWork('CRM', scope, {
+      title: 'Draft stakeholder follow-up',
+      description: 'Needs assignment approval',
+      priority: 'NORMAL', initial_status: 'DRAFT',
+    }, 'draft-source-intent');
+    expect(created.status).toBe('DRAFT');
+    expect(api.post).toHaveBeenCalledWith(
+      '/crm/owner-workspace/work-items',
+      {
+        title: 'Draft stakeholder follow-up',
+        description: 'Needs assignment approval',
+        kind: 'TASK', priority: 'NORMAL', due_at: null,
+        initial_status: 'DRAFT',
+      },
+      { headers: { 'Idempotency-Key': 'draft-source-intent' } },
+    );
+    api.post.mockClear();
+    await expect(createAttentionSourceWork('OPERATIONS', scope, {
+      title: 'Foreign module draft', initial_status: 'DRAFT',
+    }, 'not-admitted-draft')).rejects.toThrow('ATTENTION_SOURCE_CREATE_INPUT_INVALID');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+
+ // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
+// VERSION: v1.6.0-DIRECT-SAVED-DRAFT-TRANSPORT-CERT
 // AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.
