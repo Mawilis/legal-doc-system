@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.12.1-SANITIZED-SOURCE-EDIT-REJECTION-CERT
+ * VERSION: v3.12.2-ACCESSIBLE-POST-EDIT-QUEUE-READBACK
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v3.12.2-ACCESSIBLE-POST-EDIT-QUEUE-READBACK waits for
+ *          the source/audit/aggregate confirmation inside the modal before
+ *          closing it and reading the updated queue row. The background
+ *          queue intentionally remains aria-hidden while the modal is open.
  * CHANGELOG: v3.12.1-SANITIZED-SOURCE-EDIT-REJECTION-CERT surfaces
  *          only the stable EOS validation code when an authenticated
  *          task-edit assertion fails, without logging request bodies,
@@ -856,7 +860,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const patchReceipt = patchPayload;
       expect(patchReceipt.work_item_id).toBe(revisionWork.work_item_id);
       expect(patchReceipt.title).toBe(revisionChanged);
-      await expect(revisionRow).toContainText(revisionChanged);
+      await expect(revisionDialog.getByText(
+        'CRM edit confirmed by source, audit history and fresh My Work.',
+      )).toBeVisible();
+      await revisionDialog.getByRole('button', {name: 'Close work details'}).click();
+      await expect(page.getByRole('button', {name: revisionChanged})).toBeVisible();
       const persistedRevision = await context.request.get(
         crmPath + '/' + revisionWork.work_item_id, {headers},
       );
@@ -875,8 +883,6 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(revisionHistoryData.events[0].after.title).toBe(revisionChanged);
       expect(revisionHistoryData.events[0].actor_principal_id).toBe(actor.principal_id);
       console.log('[ATTENTION-STEP]', viewport.width, 'crm-audited-edit-verified');
-
-      await revisionDialog.getByRole('button', {name: 'Close work details'}).click();
       const revisionComplete = await context.request.post(
         crmPath + '/' + revisionWork.work_item_id + '/complete', {
           headers, data: { completion_note: 'Audited revision browser certificate complete' },
@@ -971,7 +977,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.12.1-SANITIZED-SOURCE-EDIT-REJECTION-CERT
+// VERSION: v3.12.2-ACCESSIBLE-POST-EDIT-QUEUE-READBACK
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
