@@ -5,15 +5,18 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.12.0-PROJECTS-OWNER-ROLE-CERT
+VERSION: v1.13.0-CRM-SOURCE-EDIT-ROLE-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-11-12.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+2026-11-17 v1.13.0-CRM-SOURCE-EDIT-ROLE-CERT verifies that CRM
+UPDATE belongs solely to static owner and enterprise-administrator grants;
+Auditor remains read-only, and no active assignment is created.
 2026-11-16 v1.12.0-PROJECTS-OWNER-ROLE-CERT pins the current v1.56 role source, certifies the unassigned dedicated Projects role, deny-by-absence for every existing role, and aligns the company-document read matrix with the current source.
 2026-11-13 v1.11.0-COMPANY-DOCUMENT-ROLE-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
     2026-11-12 v1.10.0-PLATFORM-EMPLOYEE-ADMISSION-ROLE-CERT
@@ -156,7 +159,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE"
+    assert POLICY_VERSION == "v1.57.0-CRM-OWNER-WORK-EDIT-ROLE"
 
 def test_platform_employer_role_grants_are_exact_and_nonpossessory() -> None:
     """Verify exact HR, owner-signing, and dedicated admission-role grants."""
@@ -297,7 +300,7 @@ def test_projects_platform_owner_is_separately_assignable_and_exact() -> None:
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "billing_dunning:projection:evaluate", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "telemetry:event:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "operations:work_item:read", "operations:work_item:create", "operations:work_item:complete", "intelligence:work_item:read", "intelligence:work_item:create", "intelligence:work_item:complete", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute", "crm:work_item:read", "crm:work_item:create", "crm:work_item:complete", "tenant:commercial_agreement:read", "tenant:commercial_agreement:draft:create", "tenant:commercial_agreement:execute", "tenant:commercial_agreement:activate", "company_operating_document:read"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "billing_dunning:projection:evaluate", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "telemetry:event:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "operations:work_item:read", "operations:work_item:create", "operations:work_item:complete", "intelligence:work_item:read", "intelligence:work_item:create", "intelligence:work_item:complete", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute", "crm:work_item:read", "crm:work_item:create", "crm:work_item:update", "crm:work_item:complete", "tenant:commercial_agreement:read", "tenant:commercial_agreement:draft:create", "tenant:commercial_agreement:execute", "tenant:commercial_agreement:activate", "company_operating_document:read"]
     assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "tenant:business_role:read", "tenant_branding:read", "crm:lead:read", "crm:email_template:read", "operations:work_item:read", "intelligence:work_item:read", "crm:work_item:read", "tenant:commercial_agreement:read"]
 
 
@@ -946,7 +949,7 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.12.0-PROJECTS-OWNER-ROLE-CERT
+# VERSION: v1.13.0-CRM-SOURCE-EDIT-ROLE-CERT
 # AUTHORITY BOUNDARY: deterministic verification of static role definitions only; no assignment or current authorization is created
 # TENANT POSTURE: platform-employer use is restricted by the separate exact WILSY tenant authorization gate; customer HR authority remains separate
 # FAIL-CLOSED POSTURE: offer acceptance stays ungranted; admission has one unassigned role and no operation binding; unknown permissions deny
