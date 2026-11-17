@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.7.1-SOURCE-EDIT-DUAL-SURFACE-CERT
+ * VERSION: v1.8.0-SOURCE-AUDITED-CANCEL-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.8.0-SOURCE-AUDITED-CANCEL-CERT verifies source-owned
+ *            cancellation POST, mandatory reason, revision, idempotency,
+ *            persisted cancellation event and fresh queue removal.
  * CHANGELOG: v1.7.1-SOURCE-EDIT-DUAL-SURFACE-CERT confirms the
  *            updated title is present in both the verified work row and
  *            source detail without assuming it occurs only once.
@@ -241,6 +244,82 @@ describe('authenticated My Work execution queue', () => {
     )).toBeTruthy());
     expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
     expect(screen.getAllByText(updated.title).length).toBeGreaterThanOrEqual(1);
+  });
+
+
+  it('cancels only a verified owned CRM task, then verifies history and refreshed queue', async () => {
+    const item = {
+      ...payload.items[0], source: 'CRM', source_key: 'CRM:crm-cancel-1',
+      work_item_id: 'crm-cancel-1', title: 'Withdrawn CRM follow-up', status: 'OPEN',
+    };
+    const original = {
+      schema: 'WILSY-OWNER-COMMERCIAL-WORK-ITEM/V1',
+      tenant_id: 'tenant-a', work_item_id: item.work_item_id,
+      title: item.title, description: item.description, kind: 'TASK',
+      status: 'OPEN', priority: 'HIGH', owner_principal_id: 'principal-a',
+      source_type: null, source_id: null, due_at: item.due_at,
+      created_at: '2026-11-01T10:00:00+00:00',
+      updated_at: '2026-11-06T10:00:00+00:00',
+      completed_at: null, completion_note: null,
+    };
+    const cancelled = {
+      ...original, status: 'CANCELLED', updated_at: '2026-11-06T10:20:00+00:00',
+    };
+    const initial = {
+      ...payload, items: [item], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 1, source_counts: { CRM: 1 } },
+    };
+    const after = {
+      ...initial, items: [],
+      summary: { active_count: 0, overdue_count: 0, source_counts: { CRM: 0 } },
+    };
+    let committed = false;
+    api.get.mockImplementation(async (path) => {
+      if (path === '/my-work') return { data: committed ? after : initial };
+      if (path.endsWith('/crm-cancel-1')) return { data: committed ? cancelled : original };
+      if (path.endsWith('/crm-cancel-1/history')) {
+        return { data: {
+          schema: 'WILSY-OWNER-COMMERCIAL-WORK-HISTORY/V1',
+          tenant_id: 'tenant-a', work_item_id: 'crm-cancel-1',
+          events: [{ operation: 'CANCEL', reason: 'Requirement withdrawn',
+            actor_principal_id: 'principal-a', recorded_at: cancelled.updated_at,
+            before: original, after: cancelled }],
+        } };
+      }
+      throw new Error('UNEXPECTED_CANCEL_READ');
+    });
+    readAttentionSourceActions.mockResolvedValue({
+      sourceActions: { CRM: ['UPDATE', 'COMPLETE'] }, unavailableSources: [],
+    });
+    api.post.mockImplementation(async (path) => {
+      if (!path.endsWith('/crm-cancel-1/cancel')) throw new Error('UNEXPECTED_CANCEL_POST');
+      committed = true;
+      return { data: cancelled };
+    });
+    render(
+      <AuthContext.Provider value={{ sessionGeneration: 4, user: {
+        id: 'principal-a', tenantId: 'tenant-a',
+      } }}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await openRow('Withdrawn CRM follow-up');
+    await screen.findByText('Persisted source record verified for this tenant');
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel task' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'CRM cancellation reason' }), {
+      target: { value: 'Requirement withdrawn' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    const [url, body, options] = api.post.mock.calls[0];
+    expect(url).toBe('/crm/owner-workspace/work-items/crm-cancel-1/cancel');
+    expect(body).toEqual({
+      reason: 'Requirement withdrawn', expected_updated_at: original.updated_at,
+    });
+    expect(options.headers['Idempotency-Key']).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.queryByText('Withdrawn CRM follow-up')).toBeNull();
+    expect(api.get.mock.calls.some(([path]) => path.endsWith('/history'))).toBe(true);
   });
 
   it('never exposes CRM edit when current EOS source permission is absent', async () => {
@@ -489,7 +568,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.7.1-SOURCE-EDIT-DUAL-SURFACE-CERT
+ * VERSION: v1.8.0-SOURCE-AUDITED-CANCEL-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
