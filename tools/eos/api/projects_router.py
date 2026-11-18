@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS
+VERSION: v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,41 +14,44 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS atomically persists comment
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST permits exact-project
+  participants to see current co-participants for controlled mentions;
+  tenant-wide membership directory access remains owner-only.
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS exposes a bounded my-projects
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS adds source-owned task comments
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS permits owner-only task edit and
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS exposes bounded exact-tenant project
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS exposes owner and exact-project participant task
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS admits exact project-bound participant detail and
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS adds exact-tenant owner-authorized participant grant,
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS moves note-domain validation inside existing
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS introduces authenticated, project-existence-verified
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS projects verified next-page availability and exact offset
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS refuses a PLANNED-to-ACTIVE
+  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -205,7 +208,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS"
+VERSION: Final[str] = "v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1387,6 +1390,39 @@ def _project_notification_store(
     )
 
 
+@router.get("/{project_id}/my-project/participants")
+def list_my_project_participants(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Read co-participant identities after the caller's current record gate."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        participants = _project_participants(
+            registry, context.tenant_id, project_id, session,
+        )
+        items, more = participants.page(
+            tenant_id=context.tenant_id, project_id=project_id,
+            session=session, limit=limit, offset=offset,
+        )
+        return {
+            "schema": "WILSY-PROJECT-PARTICIPANT-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "items": [item.to_dict() for item in items],
+            "limit": limit, "offset": offset, "has_more": more,
+            "next_offset": offset + len(items) if more else None,
+        }
+
+    return _transaction(context, read)
+
+
 @router.get("/{project_id}/my-project/notifications")
 def list_my_project_notifications(
     response: Response,
@@ -2327,7 +2363,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS
+# VERSION: v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
