@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS
+VERSION: v1.13.0-PARTICIPANT-PROJECT-DISCOVERY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,35 +14,38 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS adds source-owned task comments
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY exposes a bounded my-projects
+  discovery route, using exact current participant IAM, membership,
+  entitlement, ACTIVE project records and nondisclosing tenant scope.
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS permits owner-only task edit and
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS exposes bounded exact-tenant project
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS exposes owner and exact-project participant task
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS admits exact project-bound participant detail and
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS adds exact-tenant owner-authorized participant grant,
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS moves note-domain validation inside existing
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS introduces authenticated, project-existence-verified
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS projects verified next-page availability and exact offset
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS refuses a PLANNED-to-ACTIVE
+  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -193,7 +196,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS"
+VERSION: Final[str] = "v1.13.0-PARTICIPANT-PROJECT-DISCOVERY"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1614,6 +1617,56 @@ def transition_assigned_project_task(
     return _transaction(context, change, write=True)
 
 
+@router.get("/my-projects")
+def list_my_assigned_projects(
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Discover only this principal's explicit active Projects assignments.
+
+    No tenant-wide project list is accessible through participant IAM.
+    Each participating record is rechecked against the current canonical
+    Projects source in the same read snapshot before being revealed.
+    """
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        database = kernel_db.get_database()
+        if database is None:
+            raise ProjectParticipantError("PROJECT_PARTICIPANT_SOURCE_UNAVAILABLE")
+        participants = ProjectParticipantRegistry(
+            database[PROJECT_PARTICIPANT_COLLECTION],
+            database[PROJECT_PARTICIPANT_EVENT_COLLECTION],
+        )
+        assignments, more = participants.projects_for_principal(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            limit=limit, offset=offset, session=session,
+        )
+        verified = []
+        for assignment in assignments:
+            project = registry.get(
+                tenant_id=context.tenant_id,
+                project_id=assignment.project_id, session=session,
+            )
+            verified.append({
+                "project": project.to_dict(),
+                "participation": assignment.to_dict(),
+            })
+        return {
+            "schema": "WILSY-PROJECT-MY-PROJECTS/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "items": verified, "limit": limit, "offset": offset,
+            "has_more": more,
+            "next_offset": offset + len(verified) if more else None,
+        }
+
+    return _transaction(context, read)
+
+
 @router.get("/{project_id}/my-project")
 def read_assigned_project(
     response: Response,
@@ -2161,7 +2214,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS
+# VERSION: v1.13.0-PARTICIPANT-PROJECT-DISCOVERY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
