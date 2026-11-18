@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Notes and Revision Evidence Registry
-VERSION: v1.0.0-AUTHORED-PROJECT-NOTES
+VERSION: v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION
 AUTHORITY: Python EOS tenant-scoped project collaboration persistence.
 EPITOME: Store source-owned project notes with author ownership, bounded pages,
          compare-and-set revisions, immutable event snapshots and replay guards.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router proves project access/record visibility;
          this registry owns note persistence only and receives caller Mongo sessions.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-AUTHORED-PROJECT-NOTES establishes exact-tenant authored
+CHANGELOG: v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION supports ISO UTC
+         timestamps from immutable event snapshots as well as trusted BSON UTC
+         readbacks, retaining command-time timezone strictness.
+         v1.0.0-AUTHORED-PROJECT-NOTES establishes exact-tenant authored
          note create, bounded list, revision update and soft-redaction events.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Notes never establish task assignment, decisions,
@@ -31,7 +34,7 @@ from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 
-VERSION: Final[str] = "v1.0.0-AUTHORED-PROJECT-NOTES"
+VERSION: Final[str] = "v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION"
 COLLECTION: Final[str] = "wilsy_project_notes"
 EVENT_COLLECTION: Final[str] = "wilsy_project_note_events"
 _FIELDS: Final[frozenset[str]] = frozenset({
@@ -88,6 +91,14 @@ def _session(value: object) -> object:
 
 def _instant(value: object) -> datetime:
     """Normalize Mongo UTC readback while requiring aware command instants."""
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError as error:
+            raise ProjectNoteError("PROJECT_NOTE_TIMESTAMP_INVALID") from error
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ProjectNoteError("PROJECT_NOTE_TIMESTAMP_INVALID")
+        value = parsed
     if not isinstance(value, datetime):
         raise ProjectNoteError("PROJECT_NOTE_TIMESTAMP_INVALID")
     if value.tzinfo is None:
@@ -404,7 +415,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_notes_registry.py
-# VERSION: v1.0.0-AUTHORED-PROJECT-NOTES
+# VERSION: v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION
 # AUTHORITY BOUNDARY: persistence-only, caller-owned session and author-only edits
 # TENANT POSTURE: exact tenant and project filters for reads, writes, replay and events
 # FAIL-CLOSED POSTURE: corruption, foreign scope, replay conflict and stale revisions deny
