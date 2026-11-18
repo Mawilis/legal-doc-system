@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE
+ * VERSION: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -9,30 +9,31 @@
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE opens
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE opens the
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE mounts exact-tenant,
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE mounts the independently source-backed
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE mounts independently source-backed note
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE applies status filtering at the exact-tenant
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE exposes readable title-case
+ *            v2.10.0-VERIFIED-HUMAN-OWNER-LABELS exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -345,7 +346,12 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
     if (data?.schema !== 'WILSY-PROJECT-ASSIGNMENT-OPTIONS/V1'
       || data?.tenant_id !== tenantId
       || !Array.isArray(data.principals) || !Array.isArray(data.departments)
-      || data.principals.some(value => value.eligibility !== 'VERIFIED_CURRENT' || typeof value.principal_id !== 'string')
+      || data.principals.some(value => value.eligibility !== 'VERIFIED_CURRENT'
+        || typeof value.principal_id !== 'string'
+        || !Object.hasOwn(value, 'first_name') || !Object.hasOwn(value, 'last_name')
+        || ![value.first_name, value.last_name].every(name =>
+          name === null || (typeof name === 'string' && name.length > 0
+            && name.length <= 100 && name === name.trim())))
       || data.departments.some(value => value.status !== 'ACTIVE' || typeof value.department_id !== 'string' || typeof value.name !== 'string')) {
       throw new Error('PROJECT_ASSIGNMENT_SOURCE_INVALID');
     }
@@ -432,7 +438,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
 
   return <section aria-label="Project accountability" className="wp-accountability mb-5 border-t border-slate-200 pt-4">
     <h3 className="font-semibold text-slate-900">Owner and department governance</h3>
-    <p className="mt-1 text-xs text-slate-600">Only current verified EOS identities and tenant departments are selectable. No role or employment is created.</p>
+    <p className="mt-1 text-xs text-slate-600">Only current verified EOS identities and tenant departments are selectable. Project creation does not automatically assign ownership or grant additional IAM authority.</p>
     {state === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying authorized assignment sources…</p>}
     {state === 'UNAVAILABLE' && <p role="alert" className="mt-2 text-sm text-rose-700">Assignment sources unavailable. <button type="button" onClick={() => {
       setState('LOADING');
@@ -453,7 +459,10 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
           <select aria-label="Eligible project owner" value={owner} disabled={options.principals.length === 0} onChange={event => setOwner(event.target.value)}
             className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
             <option value="">Select a verified principal</option>
-            {options.principals.map(value => <option key={value.principal_id} value={value.principal_id}>{value.principal_id}</option>)}
+            {options.principals.map(value => <option key={value.principal_id} value={value.principal_id}>
+              {[value.first_name, value.last_name].filter(Boolean).join(' ') || 'Name not recorded — verified principal'}
+              {' · '} {value.principal_id}
+            </option>)}
           </select>
         </label>
         <label className="block text-xs font-semibold text-slate-700">Tenant department
@@ -474,7 +483,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
         </label>
         <button type="submit" disabled={newDepartmentName.trim().length < 2}
           className="min-h-11 rounded-lg border border-blue-700 px-4 text-sm font-semibold text-blue-800 disabled:opacity-50">Create authorized department</button>
-        <p className="text-xs text-slate-500">Independent current tenant profile-write and Projects-create IAM are required.</p>
+        <p className="text-xs text-slate-500">Creating a tenant department is an organizational administration action. EOS requires both tenant-profile-write and project-create authority; creating a project alone does not grant profile-write access.</p>
       </form>
     </>}
     {localError && <p role="alert" className="mt-2 text-sm text-rose-700">{localError}</p>}
@@ -1073,7 +1082,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE
+// VERSION: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
