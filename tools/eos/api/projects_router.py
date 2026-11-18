@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT
+VERSION: v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,71 +30,72 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT allows bounded
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds a verified
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT binds optional
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT independently
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT accepts exact task
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT lists the named
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds owner-requested,
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT permits exact-project
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT atomically persists comment
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT exposes a bounded my-projects
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds source-owned task comments
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT permits owner-only task edit and
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT exposes bounded exact-tenant project
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT exposes owner and exact-project participant task
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT admits exact project-bound participant detail and
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds exact-tenant owner-authorized participant grant,
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT moves note-domain validation inside existing
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT introduces authenticated, project-existence-verified
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT projects verified next-page availability and exact offset
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT refuses a PLANNED-to-ACTIVE
+  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -134,7 +135,7 @@ from typing import Literal, Any, Callable, Final, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
 from starlette.datastructures import UploadFile
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from bson import ObjectId
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
@@ -265,7 +266,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT"
+VERSION: Final[str] = "v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -282,6 +283,22 @@ _FOUNDER_PRODUCT_ISSUE = RequireTenantAuthorization("tenant_product_entitlement:
 
 
 
+def _project_wire_iso_date(value: object) -> object:
+    """Accept only canonical date-only JSON; preserve strict typed date support.
+
+    The browser calendar emits YYYY-MM-DD strings. FastAPI validates its parsed
+    JSON object in Python mode; strict Pydantic dates otherwise reject those
+    legitimate strings before the project domain is reached. Other values are
+    returned unchanged for strict model rejection.
+    """
+    if isinstance(value, str) and re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", value):
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            return value
+    return value
+
+
 class ProjectCreateRequest(BaseModel):
     """Bounded project creation input; actor, tenant, status and IDs stay EOS-owned."""
 
@@ -292,6 +309,12 @@ class ProjectCreateRequest(BaseModel):
     summary: str | None = Field(default=None, max_length=4000)
     start_date: date | None = None
     target_date: date | None = None
+
+    @field_validator("start_date", "target_date", mode="before")
+    @classmethod
+    def parse_wire_date(cls, value: object) -> object:
+        """Normalize canonical date-only JSON without relaxing strict fields."""
+        return _project_wire_iso_date(value)
 
 
 class ProjectUpdateRequest(BaseModel):
@@ -306,6 +329,23 @@ class ProjectUpdateRequest(BaseModel):
     start_date: date | None = None
     target_date: date | None = None
     status: ProjectStatus | None = None
+
+    @field_validator("start_date", "target_date", mode="before")
+    @classmethod
+    def parse_wire_date(cls, value: object) -> object:
+        """Normalize only canonical date-only JSON for strict project updates."""
+        return _project_wire_iso_date(value)
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def parse_wire_status(cls, value: object) -> object:
+        """Map exact declared JSON enum values, never unknown status aliases."""
+        if isinstance(value, str):
+            try:
+                return ProjectStatus(value)
+            except ValueError:
+                return value
+        return value
 
 
 class DepartmentCreateRequest(BaseModel):
@@ -3299,7 +3339,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT
+# VERSION: v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
