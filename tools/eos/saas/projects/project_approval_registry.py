@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Governed Project Task Approval Registry
-VERSION: v1.1.0-PENDING-REVIEWER-INBOX
+VERSION: v1.2.0-SCANNED-TASK-EVIDENCE-BINDING
 AUTHORITY: Python EOS project task business approval evidence.
 EPITOME: Explicit task review request, named reviewer, immutable business
          approval/rejection and revision-bound audit without financial authority.
@@ -8,10 +8,13 @@ COLLABORATION / OWNERSHIP: Projects router owns exact tenant IAM, entitlement,
          task/project existence, participant currentness, reviewer authority and
          caller-owned MongoDB transactions; this registry owns decision truth.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.1.0-PENDING-REVIEWER-INBOX adds indexed reviewer-only pending decision
+CHANGELOG: v1.2.0-SCANNED-TASK-EVIDENCE-BINDING binds
+         a bounded set of immutable scanned attachment IDs into the review
+         fingerprint and replay while preserving legacy unbound V1 records.
+CHANGELOG: v1.2.0-SCANNED-TASK-EVIDENCE-BINDING adds indexed reviewer-only pending decision
          discovery with bounded source scanning. The router still verifies
          current IAM, ACTIVE participation and project/task existence.
-CHANGELOG: v1.1.0-PENDING-REVIEWER-INBOX creates source-owned
+CHANGELOG: v1.2.0-SCANNED-TASK-EVIDENCE-BINDING creates source-owned
          PENDING -> APPROVED/REJECTED decisions with idempotency, CAS and events.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain-text rationale, opaque identities,
@@ -32,12 +35,13 @@ from hashlib import sha3_512
 from hmac import compare_digest
 import json
 import re
+import re
 from typing import Any, Final, Literal
 
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.1.0-PENDING-REVIEWER-INBOX"
+VERSION: Final[str] = "v1.2.0-SCANNED-TASK-EVIDENCE-BINDING"
 SCHEMA: Final[str] = "wilsy.project.approval.v1"
 COLLECTION: Final[str] = "wilsy_project_approvals"
 EVENT_COLLECTION: Final[str] = "wilsy_project_approval_events"
@@ -150,6 +154,7 @@ class ProjectApproval:
     decision_rationale: str | None = None
     revision: int = 1
     fingerprint: str = ""
+    evidence_attachment_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         """Validate coherent source truth and detect fingerprint tampering."""
@@ -163,6 +168,18 @@ class ProjectApproval:
         if self.requester_principal_id == self.reviewer_principal_id:
             raise ProjectApprovalError("PROJECT_APPROVAL_SELF_REVIEW_DENIED")
         _body(self.rationale)
+        if (
+            not isinstance(self.evidence_attachment_ids, tuple)
+            or len(self.evidence_attachment_ids) > 10
+            or len(set(self.evidence_attachment_ids)) != len(self.evidence_attachment_ids)
+        ):
+            raise ProjectApprovalError("PROJECT_APPROVAL_EVIDENCE_INVALID")
+        for attachment_id in self.evidence_attachment_ids:
+            if (
+                not isinstance(attachment_id, str)
+                or re.fullmatch(r"pat-[a-f0-9]{48}", attachment_id) is None
+            ):
+                raise ProjectApprovalError("PROJECT_APPROVAL_EVIDENCE_INVALID")
         created = _time(self.requested_at)
         object.__setattr__(self, "requested_at", created)
         if self.status == "PENDING":
@@ -188,8 +205,8 @@ class ProjectApproval:
         object.__setattr__(self, "fingerprint", calculated)
 
     def _canonical(self) -> dict[str, object]:
-        """Serialize every source field, excluding its derived fingerprint."""
-        return {
+        """Serialize old and new source records without rewriting legacy hashes."""
+        canonical: dict[str, object] = {
             "schema": SCHEMA, "tenant_id": self.tenant_id,
             "project_id": self.project_id, "task_id": self.task_id,
             "approval_id": self.approval_id,
@@ -201,6 +218,9 @@ class ProjectApproval:
             "decision_rationale": self.decision_rationale,
             "revision": self.revision,
         }
+        if self.evidence_attachment_ids:
+            canonical["evidence_attachment_ids"] = list(self.evidence_attachment_ids)
+        return canonical
 
     def to_dict(self) -> dict[str, object]:
         """Expose complete authoritative state with its integrity digest."""
@@ -215,9 +235,17 @@ class ProjectApproval:
             "status", "requested_at", "decided_at", "decision_rationale",
             "revision", "fingerprint",
         }
-        if not isinstance(source, dict) or set(source) != required or source["schema"] != SCHEMA:
+        if (
+            not isinstance(source, dict)
+            or set(source) not in (required, required | {"evidence_attachment_ids"})
+            or source["schema"] != SCHEMA
+        ):
             raise ProjectApprovalError("PROJECT_APPROVAL_RECORD_INVALID")
         args = {key: value for key, value in source.items() if key != "schema"}
+        if "evidence_attachment_ids" in args:
+            if not isinstance(args["evidence_attachment_ids"], list):
+                raise ProjectApprovalError("PROJECT_APPROVAL_EVIDENCE_INVALID")
+            args["evidence_attachment_ids"] = tuple(args["evidence_attachment_ids"])
         args["requested_at"] = _load_time(args["requested_at"])
         if args["decided_at"] is not None:
             args["decided_at"] = _load_time(args["decided_at"])
@@ -445,7 +473,7 @@ class ProjectApprovalRegistry:
         ):
             raise ProjectApprovalConflict("PROJECT_APPROVAL_ORIGIN_INVALID")
         key = _id(idempotency_key, "KEY", 200)
-        digest = _digest({
+        request_claim: dict[str, object] = {
             "command": "REQUEST",
             "tenant_id": approval.tenant_id,
             "project_id": approval.project_id,
@@ -453,7 +481,12 @@ class ProjectApprovalRegistry:
             "actor": approval.requester_principal_id,
             "reviewer": approval.reviewer_principal_id,
             "rationale": approval.rationale,
-        })
+        }
+        if approval.evidence_attachment_ids:
+            request_claim["evidence_attachment_ids"] = list(
+                approval.evidence_attachment_ids,
+            )
+        digest = _digest(request_claim)
         original = self._replay(
             tenant_id=approval.tenant_id,
             actor_principal_id=approval.requester_principal_id,
@@ -546,7 +579,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_approval_registry.py
-# VERSION: v1.1.0-PENDING-REVIEWER-INBOX
+# VERSION: v1.2.0-SCANNED-TASK-EVIDENCE-BINDING
 # AUTHORITY BOUNDARY: source business review only, not financial or IAM
 # TENANT POSTURE: exact tenant/project/task/reviewer and transaction replay
 # FAIL-CLOSED POSTURE: unknown, self-review, stale, divergent, foreign denied
