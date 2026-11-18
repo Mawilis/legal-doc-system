@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS My Pending Project Decision Inbox
- * VERSION: v1.0.0-CURRENT-REVIEWER-DECISION-INBOX
+ * VERSION: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX
  * AUTHORITY: Python EOS recipient/project participant IAM and approval source.
  * EPITOME: One searchable-by-authority pending review queue with exact-person
  *          decisions and source-confirmed readback, independent of task pages.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: AssignedProjectsWorkspace mounts this reviewer
  *          feed; Python EOS owns project records, decisions, IAM and replay.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-CURRENT-REVIEWER-DECISION-INBOX adds current designated
+ * CHANGELOG: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX shows immutable source evidence references and embeds the existing participant-authorized task attachment viewer before a decision, verifying evidence identity on decision acknowledgement.
+ * CHANGELOG: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX adds current designated
  *          participant's PENDING decisions with CAS, no owner-list authority.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Plain text, no client-generated approvals.
@@ -19,10 +20,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ClipboardCheck, RefreshCw } from 'lucide-react';
 import api from '../../services/api.js';
+import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
 const PROJECT = /^prj-[0-9a-f]{48}$/;
 const TASK = /^ptk-[0-9a-f]{48}$/;
 const APPROVAL = /^par-[0-9a-f]{48}$/;
+const ATTACHMENT = /^pat-[0-9a-f]{48}$/;
+
+function matchingEvidence(left, right) {
+  return Array.isArray(left) && Array.isArray(right)
+    && left.length === right.length
+    && left.every((id, index) => id === right[index]);
+}
 
 function valid(item, tenantId, principalId) {
   return Boolean(
@@ -37,7 +46,12 @@ function valid(item, tenantId, principalId) {
     && typeof item.rationale === 'string' && item.rationale.trim()
     && item.status === 'PENDING' && item.revision === 1
     && item.decided_at === null && item.decision_rationale === null
-    && /^[a-f0-9]{128}$/.test(item.fingerprint || ''),
+    && /^[a-f0-9]{128}$/.test(item.fingerprint || '')
+    && (item.evidence_attachment_ids === undefined
+      || (Array.isArray(item.evidence_attachment_ids)
+        && item.evidence_attachment_ids.length <= 10
+        && item.evidence_attachment_ids.every(id => ATTACHMENT.test(id))
+        && new Set(item.evidence_attachment_ids).size === item.evidence_attachment_ids.length)),
   );
 }
 
@@ -50,6 +64,7 @@ export default function ProjectApprovalInbox({
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState({});
+  const [openEvidenceId, setOpenEvidenceId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const scope = [tenantId, principalId, sessionScope].join('\0');
@@ -96,6 +111,7 @@ export default function ProjectApprovalInbox({
     generation.current += 1;
     setItems([]);
     setDraft({});
+    setOpenEvidenceId(null);
     setOffset(0);
     replay.current.clear();
     void load(0);
@@ -138,6 +154,10 @@ export default function ProjectApprovalInbox({
         || data.approval.status !== decision || data.approval.revision !== 2
         || data.approval.decision_rationale !== rationale
         || !/^[a-f0-9]{128}$/.test(data.approval.fingerprint || '')
+        || !matchingEvidence(
+          data.approval.evidence_attachment_ids || [],
+          item.evidence_attachment_ids || [],
+        )
       ) throw new Error('PROJECT_REVIEWER_DECISION_RESULT_INVALID');
       const confirmed = await load(0);
       if (!confirmed || active.current !== current) return;
@@ -151,6 +171,7 @@ export default function ProjectApprovalInbox({
         || refreshed.items.some(row => row.approval_id === item.approval_id)
       ) throw new Error('PROJECT_REVIEWER_DECISION_READBACK_PENDING');
       replay.current.delete(fingerprint);
+      setOpenEvidenceId(null);
       setDraft(previous => {
         const next = { ...previous };
         delete next[item.approval_id];
@@ -194,6 +215,34 @@ export default function ProjectApprovalInbox({
             Task {item.task_id} · Project {item.project_id}
           </p>
           <p className="break-all text-xs text-slate-600">Requested by {item.requester_principal_id}</p>
+          {Array.isArray(item.evidence_attachment_ids) && item.evidence_attachment_ids.length > 0 &&
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+              <p className="font-semibold text-slate-900">
+                Evidence-backed review · {item.evidence_attachment_ids.length} bound file(s)
+              </p>
+              <ul aria-label={'Pending approval evidence ' + item.approval_id}
+                className="mt-1 space-y-1">
+                {item.evidence_attachment_ids.map(id =>
+                  <li key={id} className="break-all">{id}</li>)}
+              </ul>
+              <p className="mt-2">
+                Inspect the current task file manifests and authorized scan-cleared downloads
+                before deciding. A scan result does not establish document authenticity.
+              </p>
+              <button type="button" className="wp-button mt-2" disabled={busy}
+                onClick={() => setOpenEvidenceId(previous =>
+                  previous === item.approval_id ? null : item.approval_id)}>
+                {openEvidenceId === item.approval_id ? 'Close task evidence' : 'Inspect task evidence'}
+              </button>
+              {openEvidenceId === item.approval_id &&
+                <ProjectTaskAttachmentsPanel
+                  key={scope + item.approval_id}
+                  tenantId={tenantId} principalId={principalId}
+                  projectId={item.project_id} taskId={item.task_id}
+                  tenantHeaders={tenantHeaders} participantMode
+                  onClose={() => setOpenEvidenceId(null)}
+                />}
+            </div>}
           <label className="block text-xs font-semibold text-slate-800">Decision rationale
             <textarea maxLength={3000} rows={2} aria-label={'Review rationale ' + item.approval_id}
               value={draft[item.approval_id] || ''}
@@ -227,7 +276,7 @@ export default function ProjectApprovalInbox({
 }
 
 // ARTIFACT: ProjectApprovalInbox.jsx
-// VERSION: v1.0.0-CURRENT-REVIEWER-DECISION-INBOX
+// VERSION: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX
 // AUTHORITY BOUNDARY: source-owned review only; no task/financial/IAM action
 // TENANT POSTURE: exact tenant/principal on every list and decision readback
 // FAIL-CLOSED POSTURE: stale, foreign, malformed, unverifiable decision denied
