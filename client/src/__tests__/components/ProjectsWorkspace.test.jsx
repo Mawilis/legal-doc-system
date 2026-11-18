@@ -632,11 +632,13 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByLabelText(/Summary/), { target: { value: 'Source-confirmed project' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save project to EOS' }));
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Audit history' }));
     expect(screen.getByText('PROJECT_CREATED')).toBeInTheDocument();
     expect(api.post).toHaveBeenCalledWith('/projects', expect.objectContaining({ name: 'Persisted roadmap' }), expect.objectContaining({
       headers: { 'X-Tenant-ID': TENANT, 'Idempotency-Key': 'stable-project-key-1' },
     }));
 
+    fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Updated roadmap' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save revision' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
