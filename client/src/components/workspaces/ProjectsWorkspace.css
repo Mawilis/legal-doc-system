@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.4.0-PROJECTS-OPERATING-TABLE
+ * VERSION: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
+ * CHANGELOG: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION adds subdued fluid
+ *            glass portfolio bar-chart styling and accessible pagination;
+ *            visualized counts come only from validated EOS response data.
+ *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
  *            operational project table, readable filters and calm white surfaces.
  *            Selected detail uses balanced columns without affecting source truth.
  *            v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS targets the mounted
@@ -453,8 +456,88 @@
   .wilsy-projects .wp-table-row > span:nth-child(5) { grid-column: 2; }
 }
 
+
+/* Verified portfolio chart: percentages derive exclusively from EOS summary. */
+.wilsy-projects .wp-portfolio-chart {
+  margin: 0 0 18px;
+  padding: 20px 24px;
+  background: linear-gradient(125deg, rgba(255,255,255,.98), rgba(235,242,255,.91));
+  border: 1px solid #cfdaea;
+  border-radius: 14px;
+  color: #163251;
+  box-shadow: 0 7px 28px rgba(24,50,82,.06);
+  backdrop-filter: blur(14px);
+}
+.wilsy-projects .wp-chart-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #142b4d;
+  font-size: 14px;
+}
+.wilsy-projects .wp-chart-heading span {
+  font-size: 12px;
+  color: #526781 !important;
+}
+.wilsy-projects .wp-chart-bars {
+  margin-top: 18px;
+  height: 116px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(10px, 3vw, 28px);
+}
+.wilsy-projects .wp-chart-item {
+  display: grid;
+  grid-template-rows: 18px minmax(0, 1fr) 20px;
+  gap: 5px;
+  min-width: 0;
+  align-items: end;
+  text-align: center;
+}
+.wilsy-projects .wp-chart-value { font-size: 12px; font-weight: 750; color: #173251 !important; }
+.wilsy-projects .wp-chart-caption {font-size: 11px; color: #405875 !important; text-transform: capitalize;}
+.wilsy-projects .wp-chart-track {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  background: #e5ebf4;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+}
+.wilsy-projects .wp-chart-fill {
+  position: absolute;
+  inset: auto 0 0;
+  background: #6689c9;
+  border-radius: 5px 5px 0 0;
+}
+.wilsy-projects .wp-chart-item[data-status=active] .wp-chart-fill {background: #258369;}
+.wilsy-projects .wp-chart-item[data-status=on_hold] .wp-chart-fill {background: #bc7929;}
+.wilsy-projects .wp-chart-item[data-status=done] .wp-chart-fill {background: #4d8fa2;}
+.wilsy-projects .wp-chart-item[data-status=cancelled] .wp-chart-fill {background: #9c6b80;}
+.wilsy-projects .wp-pagination {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.wilsy-projects .wp-pagination .wp-button {min-height: 32px; padding: 5px 12px;}
+.wilsy-projects .wp-footer:has(.wp-pagination) {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media(max-width:640px) {
+  .wilsy-projects .wp-portfolio-chart { padding: 14px; }
+  .wilsy-projects .wp-chart-bars { gap: 5px; }
+  .wilsy-projects .wp-chart-caption {font-size: 9px; overflow-wrap: anywhere;}
+}
+
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.4.0-PROJECTS-OPERATING-TABLE
+ * VERSION: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
