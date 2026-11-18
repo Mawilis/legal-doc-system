@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Participant Projects and Inbox Client Certificate
- * VERSION: v1.0.0-PARTICIPANT-WORK-AND-RECEIPT-CERT
+ * VERSION: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT
  * AUTHORITY: Mocked EOS client presentation only; server retains all IAM.
  * EPITOME: Certify participant-only assigned project selection, own-assignee
  *          lifecycle, mention notification acknowledgement and tenant isolation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/AssignedProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: AssignedProjectsWorkspace, api.js mock.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-PARTICIPANT-WORK-AND-RECEIPT-CERT asserts source-backed
+ * CHANGELOG: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT covers a
+ *            source-verified deep link to an assigned project beyond the
+ *            first participant discovery page without owner-list access.
+ * CHANGELOG: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT asserts source-backed
  *          assigned project task and unread/read notification UI lifecycle.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic tenant and principal records only.
@@ -161,8 +164,46 @@ it('fails closed on a foreign assigned-project list', async () => {
   expect(api.post).not.toHaveBeenCalled();
 });
 
+it('opens a directly authorized project focus beyond the first discovery page', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === '/projects/my-projects?limit=50&offset=0') return response({
+      schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
+      tenant_id: tenantId, principal_id: principalId,
+      items: [], limit: 50, offset: 0, has_more: true, next_offset: 0,
+    });
+    if (path === '/projects/' + projectId + '/my-project') return response({
+      schema: 'WILSY-PROJECT-PARTICIPANT-DETAIL/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      project, participation,
+    });
+    if (path === '/projects/' + projectId + '/my-project/tasks?limit=50&offset=0') return response({
+      schema: 'WILSY-PROJECT-TASK-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      items: [work], limit: 50, offset: 0, has_more: false, next_offset: null,
+    });
+    if (path === '/projects/' + projectId + '/my-project/notifications?limit=50&offset=0') return response({
+      schema: 'WILSY-PROJECT-NOTIFICATION-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+    });
+    if (path === '/projects/' + projectId + '/my-project/participants?limit=100&offset=0') return response({
+      schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      items: [participation], limit: 100, offset: 0, has_more: false, next_offset: null,
+    });
+    throw new Error('Unexpected participant deep link read ' + path);
+  });
+  render(<AssignedProjectsWorkspace tenantId={tenantId} principalId={principalId}
+    sessionScope="focused-project-cert" focusProjectId={projectId}
+    tenantHeaders={{ 'X-Tenant-ID': tenantId }} onBack={() => {}}/>);
+  expect(await screen.findByRole('region', { name: 'Assigned project tasks' })).toBeVisible();
+  expect(screen.getByText('Review the dependency')).toBeVisible();
+  expect(api.get.mock.calls.some(([path]) => path === '/projects')).toBe(false);
+});
+
+
 // ARTIFACT: AssignedProjectsWorkspace.test.jsx
-// VERSION: v1.0.0-PARTICIPANT-WORK-AND-RECEIPT-CERT
+// VERSION: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT
 // AUTHORITY BOUNDARY: client mock only, no real principal IAM claims
 // TENANT POSTURE: foreign tenant response is rejected
 // FAIL-CLOSED POSTURE: no task actions or unread claims without EOS
