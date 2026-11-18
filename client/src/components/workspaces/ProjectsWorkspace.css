@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION
+ * VERSION: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION adds subdued fluid
+ * CHANGELOG: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY enforces the intended
+ *            narrow-screen compact table column visibility under global
+ *            display overrides; visible project, status and action remain.
+ * CHANGELOG: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY adds subdued fluid
  *            glass portfolio bar-chart styling and accessible pagination;
  *            visualized counts come only from validated EOS response data.
  *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
@@ -451,7 +454,7 @@
     gap: 8px 12px;
   }
   .wilsy-projects .wp-table-row > span:nth-child(2),
-  .wilsy-projects .wp-table-row > span:nth-child(4) { display: none; }
+  .wilsy-projects .wp-table-row > span:nth-child(4) { display: none !important; }
   .wilsy-projects .wp-table-row > span:nth-child(3) { grid-column: 2; grid-row: 1; }
   .wilsy-projects .wp-table-row > span:nth-child(5) { grid-column: 2; }
 }
@@ -537,7 +540,7 @@
 }
 
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION
+ * VERSION: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
