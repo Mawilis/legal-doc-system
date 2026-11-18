@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.0.0-PROJECTS-RENDERED-RESPONSIVE-CERT
+ * VERSION: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-PROJECTS-RENDERED-RESPONSIVE-CERT measures actual
+ * CHANGELOG: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT certifies the existing
+ *          intentional mobile two-column compact table instead of requiring
+ *          horizontal scrolling; retained visible status and action are tested.
+ * CHANGELOG: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -120,7 +123,14 @@ for (const width of [1440, 390]) {
         documentWidth: document.documentElement.scrollWidth,
         workspace: bounds(workspace), list: bounds(list),
         body: bounds(body), row: bounds(row),
-        table: { clientWidth: shell.clientWidth, scrollWidth: shell.scrollWidth },
+        table: {
+          clientWidth: shell.clientWidth, scrollWidth: shell.scrollWidth,
+          headDisplay: getComputedStyle(document.querySelector('.wp-table-head')).display,
+          codeDisplay: getComputedStyle(row.querySelector('span:nth-child(2)')).display,
+          dateDisplay: getComputedStyle(row.querySelector('span:nth-child(4)')).display,
+          statusDisplay: getComputedStyle(row.querySelector('span:nth-child(3)')).display,
+          actionDisplay: getComputedStyle(row.querySelector('span:nth-child(5)')).display,
+        },
       };
     });
     expect(before.documentWidth, 'outer horizontal overflow').toBeLessThanOrEqual(before.viewport + 1);
@@ -129,8 +139,13 @@ for (const width of [1440, 390]) {
       expect(before.row.width, 'readable desktop table').toBeGreaterThan(740);
       expect(before.table.scrollWidth).toBeLessThanOrEqual(before.table.clientWidth + 2);
     } else {
-      expect(before.table.scrollWidth, 'mobile table scrolls inside its own region')
-        .toBeGreaterThan(before.table.clientWidth);
+      expect(before.table.scrollWidth, 'mobile table must fit its compact region')
+        .toBeLessThanOrEqual(before.table.clientWidth + 2);
+      expect(before.table.headDisplay).toBe('none');
+      expect(before.table.codeDisplay).toBe('none');
+      expect(before.table.dateDisplay).toBe('none');
+      expect(before.table.statusDisplay).not.toBe('none');
+      expect(before.table.actionDisplay).not.toBe('none');
     }
 
     await page.getByRole('button', { name: /View project Projects operating foundation/ }).click();
@@ -162,7 +177,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.0.0-PROJECTS-RENDERED-RESPONSIVE-CERT
+// VERSION: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
