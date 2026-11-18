@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS
+ * VERSION: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,22 +8,23 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS opens
+ * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION explains denied Contributor/Viewer discovery without treating project ownership as an implicit participant grant; no route or IAM change.
+ * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS exposes
+ * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION exposes
  *          the recipient-scoped pending project approvals independently
  *          of the currently selected task or first page of project work.
- * CHANGELOG:  v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS exposes
+ * CHANGELOG:  v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION exposes
  *          source-backed task approvals to current participants, allowing
  *          decisions only by the explicitly designated contributor reviewer.
- * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS rejects
+ * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION rejects
  *            impossible empty forward pages to prevent unverified project
  *            pagination evidence from controlling focused navigation.
- * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS opens a
+ * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION opens a
  *          specifically authorized project from Daily Attention even when
  *          it lies beyond the first page of participant project discovery.
- * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS adds full-width
+ * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION adds full-width
  *          participant project listing, selected task execution, conversations
  *          and recipient-only notification acknowledgement with verified EOS reads.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -157,7 +158,7 @@ export default function AssignedProjectsWorkspace({
       setProjects([]);
       const status = cause?.response?.status;
       setListState(status === 403 || status === 401 ? 'DENIED' : 'UNAVAILABLE');
-      setError(status === 403 ? 'EOS denied assigned project access.'
+      setError(status === 403 ? 'No current participant-discovery permission is authorized. Being a project owner is a separate role; use My owned projects unless an explicit Contributor or Viewer grant is established.'
         : status === 401 ? 'Sign in to see assigned projects.'
           : 'Assigned projects could not be verified. Retry source read.');
     }
@@ -528,7 +529,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS
+// VERSION: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
