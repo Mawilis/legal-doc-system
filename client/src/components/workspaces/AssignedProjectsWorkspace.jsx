@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.3.0-REVIEWER-INBOX-MOUNT
+ * VERSION: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,19 +8,22 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT exposes
+ * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS opens
+ *          task-bound quarantined file evidence; no preview, download,
+ *          scanner release or approval authority is created.
+ * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS exposes
  *          the recipient-scoped pending project approvals independently
  *          of the currently selected task or first page of project work.
- * CHANGELOG:  v1.3.0-REVIEWER-INBOX-MOUNT exposes
+ * CHANGELOG:  v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS exposes
  *          source-backed task approvals to current participants, allowing
  *          decisions only by the explicitly designated contributor reviewer.
- * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT rejects
+ * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS rejects
  *            impossible empty forward pages to prevent unverified project
  *            pagination evidence from controlling focused navigation.
- * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT opens a
+ * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS opens a
  *          specifically authorized project from Daily Attention even when
  *          it lies beyond the first page of participant project discovery.
- * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT adds full-width
+ * CHANGELOG: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS adds full-width
  *          participant project listing, selected task execution, conversations
  *          and recipient-only notification acknowledgement with verified EOS reads.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -41,6 +44,7 @@ import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectApprovalInbox from './ProjectApprovalInbox.jsx';
+import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
 const PROJECT_ID = /^prj-[0-9a-f]{48}$/;
 const TASK_ID = /^ptk-[0-9a-f]{48}$/;
@@ -115,6 +119,7 @@ export default function AssignedProjectsWorkspace({
   const [workState, setWorkState] = useState('LOADING');
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
+  const [attachmentTaskId, setAttachmentTaskId] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const sequence = useRef(0);
@@ -184,6 +189,7 @@ export default function AssignedProjectsWorkspace({
     setParticipants([]);
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
+    setAttachmentTaskId(null);
     setError('');
     try {
       const prefix = '/projects/' + encodeURIComponent(id) + '/my-project';
@@ -439,6 +445,10 @@ export default function AssignedProjectsWorkspace({
                           key={next} className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
                           disabled={busy} onClick={() => transition(task, next)}>{caption(next)}</button>)}
                       <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                        onClick={() => setAttachmentTaskId(value => value === task.task_id ? null : task.task_id)}>
+                        <ClipboardList size={13}/> Attachments
+                      </button>
+                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
                         onClick={() => setApprovalTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <ClipboardList size={13}/> Approvals
                       </button>
@@ -455,6 +465,13 @@ export default function AssignedProjectsWorkspace({
               </table>
             </div>
           </section>
+          {attachmentTaskId && work.some(task => task.task_id === attachmentTaskId) &&
+            <ProjectTaskAttachmentsPanel key={scope + attachmentTaskId}
+              tenantId={tenantId} projectId={selection.project.project_id}
+              taskId={attachmentTaskId} principalId={principalId}
+              tenantHeaders={tenantHeaders}
+              participantMode={selection.participation.role === 'CONTRIBUTOR'}
+              onClose={() => setAttachmentTaskId(null)}/>}
           {approvalTaskId && work.some(task => task.task_id === approvalTaskId) &&
             <ProjectTaskApprovalsPanel key={scope + approvalTaskId}
               tenantId={tenantId} projectId={selection.project.project_id}
@@ -511,7 +528,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.3.0-REVIEWER-INBOX-MOUNT
+// VERSION: v1.4.0-PARTICIPANT-QUARANTINE-ATTACHMENTS
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
