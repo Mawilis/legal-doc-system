@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING
+VERSION: v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,72 +30,73 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING allows bounded
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds current-principal owned_by_me owner-read filtering before paginating the exact tenant's projects. It never grants participant IAM, modifies project assignment or exposes foreign project records.
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds a verified
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING binds optional
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING independently
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING accepts exact task
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING lists the named
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds owner-requested,
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING permits exact-project
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING atomically persists comment
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING exposes a bounded my-projects
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds source-owned task comments
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING permits owner-only task edit and
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING exposes bounded exact-tenant project
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING exposes owner and exact-project participant task
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING admits exact project-bound participant detail and
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING adds exact-tenant owner-authorized participant grant,
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING moves note-domain validation inside existing
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING introduces authenticated, project-existence-verified
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING projects verified next-page availability and exact offset
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING refuses a PLANNED-to-ACTIVE
+  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -266,7 +267,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING"
+VERSION: Final[str] = "v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -853,6 +854,7 @@ def list_projects(
     offset: int = Query(default=0, ge=0),
     project_status: ProjectStatus | None = None,
     include_archived: bool = False,
+    owned_by_me: bool = False,
     context: TenantAuthorizationContext = Depends(_READ),
 ) -> dict[str, object]:
     """Read the current tenant's bounded project page under current IAM."""
@@ -866,6 +868,7 @@ def list_projects(
             offset=offset,
             status=project_status,
             include_archived=include_archived,
+            owner_principal_id=context.identity.identity_id if owned_by_me else None,
         )
         return {
             "schema": "WILSY-PROJECT-LIST/V1",
@@ -3339,7 +3342,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.27.0-STRICT-WIRE-DATE-STATUS-PARSING
+# VERSION: v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
