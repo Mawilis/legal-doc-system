@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT
+VERSION: v1.2.0-PROJECT-NOTES-REAL-MONGO-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,7 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT proves
+CHANGELOG: v1.2.0-PROJECT-NOTES-REAL-MONGO-CERT proves authored note
+         creation, replay, revision, redaction and project record-scope guards
+         with true BSON timestamp/fingerprint readback and immutable events.
+         v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT proves
          project-linked Operations task durability, exact provenance and
          same-key replay/conflict against a disposable real Mongo replica.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
@@ -37,12 +40,13 @@ from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
 
 from tools.eos.api import projects_router as router
-from tools.eos.api import project_work_router
+from tools.eos.api import project_work_router, project_notes_router
 from tools.eos.saas.domain.project import Project, ProjectStatus
 from tools.eos.workspaces.persistence.tenant_module_work_registry import (
     ensure_indexes as ensure_operations_indexes,
 )
 from tools.eos.workspaces.service.tenant_module_workspace_service import TenantModuleWorkspaceService
+from tools.eos.saas.projects.project_notes_registry import ProjectNotesRegistry
 from tools.eos.saas.projects.project_registry import (
     ProjectNotFound, ProjectRegistry,
 )
@@ -284,8 +288,113 @@ def test_real_replica_project_work_uses_existing_operations_source(monkeypatch):
 
 
 
+
+def test_real_replica_project_note_versioning_and_record_scope(monkeypatch):
+    """Prove durable author-scoped note revisions and redaction with real BSON."""
+    uri = os.environ.get("TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI")
+    if not uri:
+        pytest.skip("Disposable MongoDB replica-set URI not configured")
+    client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=4000)
+    database = client.get_database("wilsy_project_note_evidence_cert")
+    try:
+        client.admin.command("ping")
+        client.drop_database(database.name)
+        project_collection = database["wilsy_projects"]
+        project_events = database["wilsy_project_events"]
+        ProjectRegistry.ensure_indexes(project_collection, project_events)
+        notes_collection = database["wilsy_project_notes"]
+        note_events = database["wilsy_project_note_events"]
+        ProjectNotesRegistry.ensure_indexes(notes_collection, note_events)
+        project_registry = ProjectRegistry(project_collection, project_events)
+        tenant, principal = "cert-notes-a", "cert-project-author"
+        project_id = "prj-" + "d" * 48
+        now = datetime.now(timezone.utc)
+        value = Project(
+            project_id=project_id, tenant_id=tenant, name="Governed notes",
+            code="NOTE-CERT", summary=None, status=ProjectStatus.PLANNED,
+            owner_principal_id=None, department_id=None, start_date=None,
+            target_date=None, source_type="internal", external_source_reference=None,
+            created_by_principal_id=principal, created_at=now,
+            updated_by_principal_id=principal, updated_at=now,
+        )
+        with client.start_session() as session:
+            session.with_transaction(
+                lambda tx: project_registry.create_or_replay(
+                    project=value, actor_principal_id=principal,
+                    idempotency_key="notes-project", occurred_at=now, session=tx,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+
+        def transaction(_context, callback, **_kwargs):
+            with client.start_session() as session:
+                return session.with_transaction(
+                    lambda tx: callback(project_registry, tx),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+        monkeypatch.setattr(project_notes_router, "_transaction", transaction)
+        monkeypatch.setattr(project_notes_router.kernel_db, "get_database", lambda: database)
+        context = SimpleNamespace(
+            tenant_id=tenant, identity=SimpleNamespace(identity_id=principal),
+        )
+        created = project_notes_router.create_project_note(
+            project_notes_router.ProjectNoteCreateRequest(
+                body="Evidence-backed project brief",
+            ), Response(), project_id, "note-key", context, context,
+        )
+        note_id = created["note"]["note_id"]
+        assert created["note"]["revision"] == 1
+        assert notes_collection.count_documents({"tenant_id": tenant, "project_id": project_id}) == 1
+        assert note_events.count_documents({"tenant_id": tenant, "project_id": project_id}) == 1
+        replay = project_notes_router.create_project_note(
+            project_notes_router.ProjectNoteCreateRequest(
+                body="Evidence-backed project brief",
+            ), Response(), project_id, "note-key", context, context,
+        )
+        assert replay["note"]["fingerprint"] == created["note"]["fingerprint"]
+        changed = project_notes_router.revise_project_note(
+            project_notes_router.ProjectNoteReviseRequest(
+                expected_revision=1, body="Reviewed brief with source notes",
+            ), Response(), project_id, note_id, "note-revise", context, context,
+        )
+        assert changed["note"]["revision"] == 2
+        listing = project_notes_router.list_project_notes(
+            Response(), project_id, 50, 0, context,
+        )
+        assert len(listing["items"]) == 1
+        assert listing["items"][0]["body"] == "Reviewed brief with source notes"
+        redacted = project_notes_router.redact_project_note(
+            project_notes_router.ProjectNoteRedactRequest(expected_revision=2),
+            Response(), project_id, note_id, "note-redact", context, context,
+        )
+        assert redacted["note"]["body"] == ""
+        assert redacted["note"]["redacted_at"] is not None
+        assert note_events.count_documents({
+            "tenant_id": tenant, "project_id": project_id,
+        }) == 3
+        assert project_collection.find_one({
+            "tenant_id": tenant, "project_id": project_id,
+        })["status"] == "planned"
+        unauthorized = SimpleNamespace(
+            tenant_id=tenant, identity=SimpleNamespace(identity_id="unbound-principal"),
+        )
+        with pytest.raises(HTTPException) as denied:
+            project_notes_router.list_project_notes(
+                Response(), project_id, 50, 0, unauthorized,
+            )
+        assert denied.value.status_code == 403
+    finally:
+        client.drop_database(database.name)
+        client.close()
+
+
+
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT
+# VERSION: v1.2.0-PROJECT-NOTES-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
