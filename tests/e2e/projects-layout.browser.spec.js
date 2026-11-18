@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT
+ * VERSION: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,18 +8,21 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT verifies source-backed
+ * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT makes the shared
+ *          participant fixture honor the exact 50/100 page size requested by
+ *          independently bounded participant and task selectors.
+ * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT verifies EOS-backed project work
+ * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT measures exact direct-child table
+ * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT certifies the existing
+ * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT measures actual
+ * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -96,7 +99,8 @@ for (const width of [1440, 390]) {
         response = {
           schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
           tenant_id: TENANT, principal_id: PRINCIPAL, project_id: projectId,
-          limit: 100, offset: 0, has_more: false, next_offset: null,
+          limit: Number(url.searchParams.get('limit')), offset: 0,
+          has_more: false, next_offset: null,
           items: [],
         };
       }
@@ -224,7 +228,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT
+// VERSION: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
