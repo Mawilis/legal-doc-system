@@ -13,6 +13,22 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            tenant authorization and entitlement registries own
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No client-provided actor or tenant authority; IDs,
+                            idempotency and revision are bounded; no-store
+                            responses; errors disclose stable codes only.
+TENANT BOUNDARY: X-Tenant-ID must equal the authenticated selected session
+                 tenant; all registry and entitlement reads bind that tenant.
+AUTHORITY BOUNDARY: Existing EOS principal, membership, capacity, permission,
+                    assigned role and product entitlement remain conjunctive.
+                    The internal Projects Platform Owner role is confined to
+                    canonical WILSY; customer admission remains independently
+                    governed and is not inferred here.
+TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
+                      session to every registry/entitlement read and write;
+                      response follows commit. The registry never opens one.
+FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
+                              payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
   v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ allows bounded
   browser download only after current owner/participant IAM, a persisted
@@ -102,22 +118,7 @@ CHANGELOG:
   create, update/status-transition and soft-archive HTTP operations with exact
   session tenant matching, ACTIVE Projects entitlement, current permission /
   operation checks, transaction-bound persistence and durable event readback.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY / PRIVACY POSTURE: No client-provided actor or tenant authority; IDs,
-                            idempotency and revision are bounded; no-store
-                            responses; errors disclose stable codes only.
-TENANT BOUNDARY: X-Tenant-ID must equal the authenticated selected session
-                 tenant; all registry and entitlement reads bind that tenant.
-AUTHORITY BOUNDARY: Existing EOS principal, membership, capacity, permission,
-                    assigned role and product entitlement remain conjunctive.
-                    The internal Projects Platform Owner role is confined to
-                    canonical WILSY; customer admission remains independently
-                    governed and is not inferred here.
-TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
-                      session to every registry/entitlement read and write;
-                      response follows commit. The registry never opens one.
-FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
-                              payment, execution or settlement; Kennel EOS only.
+
 """
 from __future__ import annotations
 
