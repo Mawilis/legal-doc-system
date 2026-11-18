@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES
+ * VERSION: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,32 +16,33 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES opens
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES opens the
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES mounts exact-tenant,
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES mounts the independently source-backed
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES mounts independently source-backed note
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES applies status filtering at the exact-tenant
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES exposes readable title-case
+ *            v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -227,9 +228,13 @@ function classifyFailure(cause) {
       ? 'PROJECTS_ENTITLEMENT_REQUIRED'
       : 'ACCESS_DENIED';
   }
+  const detail = cause?.response?.data?.detail;
+  if ((status === 409 || status === 422) && typeof detail === 'string'
+    && /^[A-Z0-9_]{1,100}$/.test(detail)) return detail;
+  if ((status === 409 || status === 422) && detail && typeof detail.error === 'string'
+    && /^[A-Z0-9_]{1,100}$/.test(detail.error)) return detail.error;
   if (status === 409) return 'PROJECT_REVISION_OR_REPLAY_CONFLICT';
   if (status === 422) return 'PROJECT_INPUT_INVALID';
-  const detail = cause?.response?.data?.detail;
   if (typeof detail === 'string' && /^[A-Z0-9_]{1,100}$/.test(detail)) return detail;
   if (detail && typeof detail.error === 'string' && /^[A-Z0-9_]{1,100}$/.test(detail.error)) return detail.error;
   return 'PROJECT_SOURCE_UNAVAILABLE';
@@ -403,6 +408,13 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
     event.preventDefault();
     const name = newDepartmentName.trim();
     if (name.length < 2) return;
+    const existing = options?.departments.find(value =>
+      value.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
+    if (existing) {
+      setDepartment(existing.department_id);
+      setLocalError('This department already exists. It has been selected; save the audited assignment to use it.');
+      return;
+    }
     setLocalError('');
     const confirmed = await runCommand(async () => {
       const { data } = await api.post('/projects/departments', { name }, {
@@ -420,7 +432,20 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       setNewDepartmentName('');
       departmentReplay.current = { fingerprint: '', key: null };
     });
-    if (!confirmed) setLocalError('EOS did not authorize or verify department creation.');
+    if (!confirmed) {
+      try {
+        const verified = await loadOptions();
+        setOptions(verified);
+        const matching = verified.departments.find(value =>
+          value.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+        if (matching) {
+          setDepartment(matching.department_id);
+          setLocalError('A canonical department with this name is already available. Select it and save the assignment.');
+          return;
+        }
+      } catch { /* Retain the original safe server error. */ }
+      setLocalError('EOS did not authorize or verify department creation. No duplicate department was created by this response.');
+    }
   };
 
   const saveAssignment = async (event) => {
@@ -446,7 +471,9 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       if (!await openProject(project.project_id)) throw new Error('PROJECT_ASSIGNMENT_DETAIL_READBACK_UNAVAILABLE');
       assignmentReplay.current = { fingerprint: '', key: null };
     });
-    if (!confirmed) setLocalError('EOS did not confirm the assignment. The previous values remain authoritative.');
+    if (!confirmed) {
+      setLocalError('Assignment was not confirmed. Inspect the EOS error above; project state has not been assumed changed. Refresh the project before retrying.');
+    }
   };
 
   return <section aria-label="Project accountability" className="wp-accountability mb-5 border-t border-slate-200 pt-4">
@@ -732,7 +759,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       const code = classifyFailure(cause);
       setCommandState('FAILED');
       setCommandError(code);
-      if (cause?.response?.status === 409 || ![401, 403, 422].includes(cause?.response?.status)) {
+      if ([409, 422].includes(cause?.response?.status) || ![401, 403].includes(cause?.response?.status)) {
         await refresh();
         if (selectedRef.current) await openProject(selectedRef.current);
       }
@@ -1101,7 +1128,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               </div><button type="submit" disabled={commandState === 'PENDING'} className="wp-button min-h-10 w-full rounded-lg border border-blue-700 px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">{commandState === 'PENDING' ? 'Saving…' : 'Save revision'}</button></form>
             <div className="wp-actions mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><label className="sr-only" htmlFor="project-status">Project status</label><select id="project-status" value={detail.project.status} disabled={commandState === 'PENDING'} onChange={(event) => void transitionStatus(event.target.value)} className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm capitalize">{PROJECT_STATUSES.map((value) => <option key={value} value={value} disabled={value === 'active' && (!detail.project.owner_principal_id || !detail.project.department_id)}>{statusLabel(value)}</option>)}</select><button type="button" disabled={commandState === 'PENDING' || Boolean(detail.project.archived_at)} onClick={() => void archiveProject()} className="wp-button wp-button-danger inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-300 px-3 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-50"><Archive size={14}/> Archive</button></div>
             {(!detail.project.owner_principal_id || !detail.project.department_id) && detail.project.status === 'planned' && <p role="status" className="mt-2 text-xs text-amber-900">Activation requires a verified project owner and tenant department. The project remains Planned until EOS confirms both.</p>}
-            {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. The list was reconciled from EOS.' : commandError === 'PROJECT_INPUT_INVALID' ? 'The supplied project fields are invalid.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
+            {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. Refresh the source before retrying.' : commandError === 'PROJECT_INPUT_INVALID' ? 'EOS rejected the supplied fields. Check the network response detail, including validation paths.' : /^PROJECT_[A-Z0-9_]{1,90}$/.test(commandError) ? 'EOS response: ' + commandError + '. No success has been inferred.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
             {commandState === 'CONFIRMED' && <p role="status" className="mt-3 text-sm font-medium text-emerald-800">EOS confirmed the project change and returned persisted state.</p>}
             </div>}
             {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Audit events</h3>{Array.isArray(detail.events) && detail.events.length ? <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">{detail.events.map((event) => <li key={event.event_id} className="wp-event rounded-md bg-slate-50 p-2 text-xs"><strong className="text-slate-800">{event.event_type}</strong><div className="mt-1 text-slate-700">By {personLabel(event.actor_principal_id)} · revision {event.revision}</div>
@@ -1114,7 +1141,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES
+// VERSION: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
