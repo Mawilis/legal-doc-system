@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION
+ * VERSION: v2.3.0-SERVER-SCOPED-STATUS-FILTER
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,10 +8,13 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.3.0-SERVER-SCOPED-STATUS-FILTER applies status filtering at the exact-tenant
+ *            EOS API before paging instead of filtering only the visible page;
+ *            status changes reset pagination and preserve all authorization.
+ * CHANGELOG: v2.3.0-SERVER-SCOPED-STATUS-FILTER consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION exposes readable title-case
+ *            v2.3.0-SERVER-SCOPED-STATUS-FILTER exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -464,6 +467,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const statusFilterRef = useRef('all');
   const [pageOffset, setPageOffset] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const pageOffsetRef = useRef(0);
@@ -514,7 +518,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setError('');
     try {
       const [listResponse, summaryResponse] = await Promise.all([
-        api.get(pageOffsetRef.current === 0 ? '/projects' : `/projects?limit=100&offset=${pageOffsetRef.current}`, { headers: tenantHeaders }),
+        api.get(
+          statusFilterRef.current === 'all' && pageOffsetRef.current === 0
+            ? '/projects'
+            : `/projects?limit=100&offset=${pageOffsetRef.current}${statusFilterRef.current === 'all' ? '' : `&project_status=${statusFilterRef.current}`}`,
+          { headers: tenantHeaders },
+        ),
         api.get('/projects/summary', { headers: tenantHeaders }),
       ]);
       if (sequence !== listSequence.current || activeScope.current !== requestScope) return null;
@@ -581,6 +590,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     createReplay.current = { fingerprint: '', key: null };
     setQuery('');
     setStatusFilter('all');
+    statusFilterRef.current = 'all';
     pageOffsetRef.current = 0;
     setPageOffset(0);
     setHasNextPage(false);
@@ -799,6 +809,20 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setCommandError('');
   };
 
+  const changeStatusFilter = (value) => {
+    if (sourceState !== 'READY' || !['all', ...PROJECT_STATUSES].includes(value)) return;
+    statusFilterRef.current = value;
+    setStatusFilter(value);
+    pageOffsetRef.current = 0;
+    setPageOffset(0);
+    setHasNextPage(false);
+    changeSelection(null);
+    setDetail(null);
+    setDetailState('IDLE');
+    setQuery('');
+    void refresh({ preserveSelection: false });
+  };
+
   const changePage = (nextOffset) => {
     if (sourceState !== 'READY' || commandState === 'PENDING'
       || nextOffset < 0 || (nextOffset > pageOffsetRef.current && !hasNextPage)) return;
@@ -809,7 +833,6 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setDetail(null);
     setDetailState('IDLE');
     setQuery('');
-    setStatusFilter('all');
     void refresh({ preserveSelection: false });
   };
 
@@ -869,7 +892,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-3"><button type="button" onClick={() => { setMode('LIST'); setCommandError(''); }} disabled={commandState === 'PENDING'} className="min-h-10 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 disabled:opacity-50">Cancel</button><button type="submit" disabled={commandState === 'PENDING'} className="wp-button wp-button-primary min-h-10 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 disabled:opacity-60">{commandState === 'PENDING' ? 'Saving…' : 'Save project to EOS'}</button></div>
             </form>
           ) : <>
-            <div className="wp-list-controls flex flex-wrap items-center gap-2 border-b border-slate-200 p-3"><label className="wp-search relative min-w-[180px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/><span className="sr-only">Search projects</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" className="min-h-10 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"/></label><label className="sr-only" htmlFor="project-status-filter">Filter by status</label><select id="project-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="wp-filter min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="all">All statuses</option>{PROJECT_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></div>
+            <div className="wp-list-controls flex flex-wrap items-center gap-2 border-b border-slate-200 p-3"><label className="wp-search relative min-w-[180px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/><span className="sr-only">Search projects</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" className="min-h-10 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"/></label><label className="sr-only" htmlFor="project-status-filter">Filter by status</label><select id="project-status-filter" value={statusFilter} onChange={(event) => changeStatusFilter(event.target.value)} className="wp-filter min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="all">All statuses</option>{PROJECT_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></div>
             {sourceState === 'READY' && items.length === 0 ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0 ? <p className="p-6 text-center text-sm text-slate-600">No projects match the current search and status filter.</p> : <div className="wp-table-shell" role="region" aria-label="Projects table" tabIndex={0}>
               <div className="wp-table-head" aria-hidden="true">
                 <span>Project</span><span>Project code</span><span>Status</span><span>Target date</span><span>Action</span>
@@ -894,7 +917,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified` : 'Source state shown above'}</span>
               {sourceState === 'READY' && (pageOffset > 0 || hasNextPage) && (
                 <nav className="wp-pagination" aria-label="Project pages">
-                  <span>Page {Math.floor(pageOffset / 100) + 1} · Filters search this page</span>
+                  <span>Page {Math.floor(pageOffset / 100) + 1} · Search applies to this page</span>
                   <button type="button" className="wp-button" disabled={pageOffset === 0}
                     onClick={() => changePage(Math.max(0, pageOffset - 100))}>Previous</button>
                   <button type="button" className="wp-button" disabled={!hasNextPage}
@@ -947,7 +970,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION
+// VERSION: v2.3.0-SERVER-SCOPED-STATUS-FILTER
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
