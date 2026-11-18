@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT
+ * VERSION: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,42 +8,43 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT renders
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT renders
  *          task attachments as quarantined evidence with no preview/download
  *          and a bounded contributor upload control at desktop/mobile sizes.
- * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT scopes
+ * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT scopes
  *          review rationale assertions to the selected task's accessible
  *          region when that source text also appears in the reviewer inbox.
- * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies
+ * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies
  *          the separately admitted reviewer inbox is rendered and usable
  *          without navigation through the owner-only project registry.
- * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT renders
+ * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT renders
  *          the task-review approval history and named reviewer decision
  *          controls at desktop and mobile widths without simulated IAM grants.
- * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT renders
+ * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT renders
  *          the separately authorized Assigned Projects task/notification
  *          journey at desktop and mobile widths without simulated grants.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT makes the shared
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies EOS-backed project work
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT measures exact direct-child table
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT certifies the existing
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT measures actual
+ * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -357,6 +358,11 @@ for (const width of [1440, 390]) {
     await expect(projectWork.getByRole('combobox', { name: 'Task assignee' })).toBeVisible();
     await expect(projectWork.getByRole('textbox', { name: 'Task title' })).toBeVisible();
     await expect(projectWork.getByRole('textbox', { name: 'Task title' })).toBeEditable();
+    const taskFormLabelColour = await projectWork.locator('form label').first().evaluate(
+      node => getComputedStyle(node).color,
+    );
+    expect(taskFormLabelColour, 'task label must not inherit pale gold')
+      .toBe('rgb(21, 44, 76)');
     await expect(projectWork.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
 
 
@@ -383,7 +389,21 @@ for (const width of [1440, 390]) {
     await expect(participantPanel.getByRole('option', { name: 'eligible-tenant-person' })).toHaveCount(1);
     await expect(participantPanel.getByRole('button', { name: 'Add participant' })).toBeDisabled();
     await page.getByRole('button', { name: 'Notes', exact: true }).click();
-    await expect(page.getByRole('region', { name: 'Project notes' })).toBeVisible();
+    const notesPanel = page.getByRole('region', { name: 'Project notes' });
+    await expect(notesPanel).toBeVisible();
+    const noteFormLabelColour = await notesPanel.locator('form label').first().evaluate(
+      node => getComputedStyle(node).color,
+    );
+    expect(noteFormLabelColour, 'note label must not inherit pale gold')
+      .toBe('rgb(21, 44, 76)');
+    for (const colour of ['Sunflower', 'Sky', 'Mint', 'Rose', 'Lilac', 'Slate']) {
+      await expect(notesPanel.getByRole('button', {
+        name: colour + ' sticky-note colour',
+      })).toBeVisible();
+    }
+    await notesPanel.getByRole('button', { name: 'Lilac sticky-note colour' }).click();
+    await expect(notesPanel.getByRole('button', { name: 'Lilac sticky-note colour' }))
+      .toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('button', { name: 'Back to projects table' }).click();
     await expect(page.locator('.wp-body')).toHaveAttribute('data-layout', 'list');
     await expect(page.getByRole('region', { name: 'Project notes' })).toHaveCount(0);
@@ -431,7 +451,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT
+// VERSION: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
