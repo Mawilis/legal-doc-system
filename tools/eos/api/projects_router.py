@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES
+VERSION: v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,26 +14,29 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES exposes owner and exact-project participant task
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY exposes bounded exact-tenant project
+  participant candidate pages from current membership and EOS principal/role
+  sources; client cannot invent a principal or bypass grantee eligibility.
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES admits exact project-bound participant detail and
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES adds exact-tenant owner-authorized participant grant,
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES moves note-domain validation inside existing
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES introduces authenticated, project-existence-verified
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES projects verified next-page availability and exact offset
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES refuses a PLANNED-to-ACTIVE
+  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -178,7 +181,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES"
+VERSION: Final[str] = "v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1459,6 +1462,58 @@ def create_assigned_project_note(
     return _transaction(context, create, write=True)
 
 
+@router.get("/{project_id}/participant-options")
+def project_participant_options(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """List exact-tenant currently eligible member principals for owner assignment.
+
+    This is a choice projection, not employment, current permission possession,
+    project participation or an invitation. Grants independently revalidate
+    source principal, membership and capacity within the write transaction.
+    """
+    response.headers["Cache-Control"] = "no-store"
+
+    def load(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _project_participants(registry, context.tenant_id, project_id, session)
+        database = kernel_db.get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_SOURCE_UNAVAILABLE")
+        try:
+            members = database["tenant_memberships"].find({
+                "tenant_id": context.tenant_id, "status": "ACTIVE",
+            }, {"principal_id": 1, "_id": 0}, session=session).sort(
+                "principal_id", 1,
+            ).skip(offset).limit(limit + 1)
+            records = list(members)
+        except PyMongoError as error:
+            raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_DIRECTORY_UNAVAILABLE") from error
+        candidates = []
+        for entry in records[:limit]:
+            principal_id = entry.get("principal_id")
+            if not isinstance(principal_id, str) or not principal_id:
+                raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_DIRECTORY_INVALID")
+            if _project_participant_eligible(
+                database, context.tenant_id, principal_id, session,
+            ):
+                candidates.append({"principal_id": principal_id})
+        return {
+            "schema": "WILSY-PROJECT-PARTICIPANT-OPTIONS/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "items": candidates,
+            "limit": limit, "offset": offset,
+            "has_more": len(records) > limit,
+            "next_offset": offset + limit if len(records) > limit else None,
+        }
+
+    return _transaction(context, load)
+
+
 @router.get("/{project_id}/participants")
 def list_project_participants(
     response: Response,
@@ -1859,7 +1914,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES
+# VERSION: v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
