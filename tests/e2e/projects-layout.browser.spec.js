@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.0.2-EXACT-DIRECT-COLUMN-CERT
+ * VERSION: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,13 +8,16 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.2-EXACT-DIRECT-COLUMN-CERT measures exact direct-child table
+ * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT verifies EOS-backed project work
+ *          geometry, verified empty state and a functional task-creation
+ *          action on both 1440px desktop and 390px mobile in Chromium.
+ * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.0.2-EXACT-DIRECT-COLUMN-CERT certifies the existing
+ * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.0.2-EXACT-DIRECT-COLUMN-CERT measures actual
+ * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -71,6 +74,22 @@ for (const width of [1440, 390]) {
       if (request.method() === 'GET' && pathname === '/api/projects') response = envelope;
       if (request.method() === 'GET' && pathname === '/api/projects/summary') response = summary;
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId) response = detail;
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/tasks') {
+        response = {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: projectId,
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [],
+        };
+      }
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/participants') {
+        response = {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: projectId,
+          limit: 100, offset: 0, has_more: false, next_offset: null,
+          items: [],
+        };
+      }
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/notes') {
         response = {
           schema: 'WILSY-PROJECT-NOTE-LIST/V1',
@@ -154,6 +173,16 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: /View project Projects operating foundation/ }).click();
     await expect(page.getByRole('heading', { name: 'Projects operating foundation' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Project notes' })).toBeVisible();
+    const projectWork = page.getByRole('region', { name: 'Project work execution' });
+    await expect(projectWork).toBeVisible();
+    await expect(projectWork.getByText('EOS verified no tasks on this page. Create work to begin execution.')).toBeVisible();
+    await expect(projectWork.getByRole('button', { name: 'Create task' })).toBeVisible();
+    await projectWork.getByRole('button', { name: 'Create task' }).click();
+    await expect(projectWork.getByText('Create EOS work item')).toBeVisible();
+    await expect(projectWork.getByRole('combobox', { name: 'Task assignee' })).toBeVisible();
+    await expect(projectWork.getByRole('textbox', { name: 'Task title' })).toBeVisible();
+    await expect(projectWork.getByRole('textbox', { name: 'Task title' })).toBeEditable();
+
     const after = await page.evaluate(() => {
       const list = document.querySelector('.wp-list-panel').getBoundingClientRect();
       const detail = document.querySelector('.wp-detail').getBoundingClientRect();
@@ -180,7 +209,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.0.2-EXACT-DIRECT-COLUMN-CERT
+// VERSION: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
