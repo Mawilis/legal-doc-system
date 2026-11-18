@@ -7,15 +7,12 @@ EPITOME: Exercise principal membership/role currentness, tenant department
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_project_accountability_real_mongo.py
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
-CERTIFICATION / UPDATE DATE: 2026-11-17
+CERTIFICATION / UPDATE DATE: 2026-11-18
 CHANGELOG: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT adds disposable real-replica certification for
          511 source-valid tenant projects, complete indexed page traversal,
          immutable tenant isolation and summary counts.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
          persistence proof without creating production records.
-HISTORICAL CHANGELOG: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT establishes exact-tenant
-         persistence proof without creating a real principal, tenant, IAM grant,
-         employee, subscription, activation or production record.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic opaque IDs and disposable DB only.
 TENANT BOUNDARY: Every read, mutation, event and revocation is exact-tenant.
@@ -221,7 +218,7 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
         rows.append(Project(
             tenant_id="scale-tenant-b", project_id="prj-" + "f" * 48,
             name="Foreign tenant project", code="FOREIGN",
-            summary=None, status=ProjectStatus.ACTIVE,
+            summary=None, status=ProjectStatus.PLANNED,
             owner_principal_id=None, department_id=None,
             start_date=None, target_date=None,
             source_type="internal", external_source_reference=None,
