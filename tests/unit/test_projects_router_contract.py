@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
+VERSION: v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT verifies conjunctive Projects and
+  Operations route IAM, exact tenant/principal, source-owned task creation,
+  transactional task readback, idempotent replay and startup index admission.
   v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
@@ -44,7 +47,7 @@ from fastapi import HTTPException, Response
 from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
-from tools.eos.api import projects_router, server
+from tools.eos.api import projects_router, project_work_router, server
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -57,7 +60,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT"
+VERSION = "v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT"
 
 
 def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
@@ -410,6 +413,140 @@ def test_project_code_is_deterministic_tenant_scoped_and_replay_stable() -> None
         projects_router._generated_project_code("unsafe")
 
 
+
+def test_project_work_requires_three_independent_permissions_and_startup_indexes() -> None:
+    """Project work is a source adapter, never an inherited Founder task grant."""
+    routes = [route for route in project_work_router.router.routes
+              if isinstance(route, APIRoute)]
+    assert [(route.path, route.methods) for route in routes] == [
+        ("/projects/{project_id}/work-items", {"POST"}),
+    ]
+    pairs = {
+        (item.call.permission_id, item.call.operation)
+        for item in routes[0].dependant.dependencies
+        if isinstance(item.call, RequireTenantAuthorization)
+    }
+    assert pairs == {
+        ("project:read", "project_detail"),
+        ("project:update", "project_update"),
+        ("operations:work_item:create", "operations_work_item_create"),
+    }
+    with pytest.raises(ValidationError):
+        project_work_router.ProjectWorkCreateRequest.model_validate(
+            {"title": "Task", "assignee_principal_id": "invented-employee"}
+        )
+    with pytest.raises(HTTPException) as unavailable:
+        project_work_router.require_project_work_indexes_ready(
+            SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(
+                project_work_indexes_ready=False,
+            )))
+        )
+    assert unavailable.value.status_code == 503
+    assert "ensure_project_work_indexes(" in inspect.getsource(server)
+    assert inspect.getsource(server).count(
+        'app.include_router(project_work_router, prefix="/api")'
+    ) == 1
+
+
+def test_project_work_create_uses_same_source_session_and_readback(monkeypatch) -> None:
+    """A Planned project can originate work without assignment or activation."""
+    project_id = "prj-" + "a" * 48
+    scope = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="principal-a"),
+    )
+    transaction_session = object()
+    project = SimpleNamespace(project_id=project_id, status=projects_router.ProjectStatus.PLANNED)
+
+    class Projects:
+        def get(self, **kwargs):
+            assert kwargs == {
+                "tenant_id": "tenant-a", "project_id": project_id,
+                "session": transaction_session,
+            }
+            return project
+
+    created = []
+    class SourceWork:
+        def get(self, **kwargs):
+            assert kwargs["session"] is transaction_session
+            assert kwargs["tenant_id"] == "tenant-a"
+            if not created:
+                raise project_work_router.ModuleWorkRegistryNotFound("MODULE_WORK_NOT_FOUND")
+            return created[0]
+
+    class SourceService:
+        def _require_product(self, tenant_id, session):
+            assert tenant_id == "tenant-a" and session is transaction_session
+        def create(self, **kwargs):
+            assert kwargs["tenant_id"] == "tenant-a"
+            assert kwargs["principal_id"] == "principal-a"
+            assert kwargs["source_type"] == "PROJECT"
+            assert kwargs["source_id"] == project_id
+            assert kwargs["session"] is transaction_session
+            assert kwargs["kind"] is project_work_router.ModuleWorkKind.TASK
+            value = SimpleNamespace(
+                source_type="PROJECT", source_id=project_id, tenant_id="tenant-a",
+                created_by_principal_id="principal-a", title="Build implementation",
+                description="Verified instructions",
+                priority=project_work_router.ModuleWorkPriority.NORMAL,
+                kind=project_work_router.ModuleWorkKind.TASK,
+                due_at=None, work_item_id="tmw_" + "b" * 32,
+            )
+            value.to_dict = lambda: {
+                "work_item_id": value.work_item_id, "tenant_id": value.tenant_id,
+                "source_type": "PROJECT", "source_id": project_id,
+                "title": value.title,
+            }
+            created.append(value)
+            return value
+
+    monkeypatch.setattr(
+        project_work_router, "_transaction",
+        lambda context, callback, **kw: callback(Projects(), transaction_session),
+    )
+    monkeypatch.setattr(project_work_router.kernel_db, "get_database", lambda: {})
+    monkeypatch.setattr(
+        project_work_router, "_operations_service",
+        lambda _db: (SourceService(), SourceWork()),
+    )
+    body = project_work_router.ProjectWorkCreateRequest(
+        title="Build implementation", description="Verified instructions",
+    )
+    result = project_work_router.create_project_work_item(
+        body, Response(), project_id, "stable-key", scope, scope, scope,
+    )
+    assert result["schema"] == "WILSY-PROJECT-WORK-RESULT/V1"
+    assert result["work_item"]["source_id"] == project_id
+    assert result["project_status"] == "planned"
+    assert not result["replayed"]
+    again = project_work_router.create_project_work_item(
+        body, Response(), project_id, "stable-key", scope, scope, scope,
+    )
+    assert again["replayed"]
+    assert len(created) == 1
+
+
+def test_project_work_rejects_foreign_session_authority_before_io(monkeypatch) -> None:
+    """A user with one tenant's rights cannot combine another tenant's grants."""
+    scope = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="principal-a"),
+    )
+    foreign = SimpleNamespace(
+        tenant_id="tenant-b", identity=SimpleNamespace(identity_id="principal-a"),
+    )
+    monkeypatch.setattr(
+        project_work_router, "_transaction",
+        lambda *_a, **_k: pytest.fail("no transaction permitted"),
+    )
+    with pytest.raises(HTTPException) as denial:
+        project_work_router.create_project_work_item(
+            project_work_router.ProjectWorkCreateRequest(title="No foreign task"),
+            Response(), "prj-" + "a" * 48, "stable-key", scope, scope, foreign,
+        )
+    assert denial.value.status_code == 403
+
+
+
 def test_projects_routes_fail_closed_until_startup_indexes_are_ready() -> None:
     """Metadata indexes gate route readiness without request-time DDL."""
     source = inspect.getsource(projects_router)
@@ -431,7 +568,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
+# VERSION: v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
