@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT
+ * VERSION: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,24 +8,27 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT verifies source-backed
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT renders
+ *          the separately authorized Assigned Projects task/notification
+ *          journey at desktop and mobile widths without simulated grants.
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT makes the shared
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT verifies source-backed
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT verifies EOS-backed project work
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT measures exact direct-child table
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT certifies the existing
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT measures actual
+ * CHANGELOG: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -70,6 +73,30 @@ const detail = {
   principal_id: PRINCIPAL, project, events: [projectEvent],
   authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
 };
+const assignedParticipant = {
+  tenant_id: TENANT, project_id: projectId,
+  principal_id: PRINCIPAL, role: 'CONTRIBUTOR',
+  state: 'ACTIVE', revision: 1, fingerprint: 'a'.repeat(128),
+};
+const assignedTask = {
+  schema: 'wilsy.project.task.v1', tenant_id: TENANT,
+  project_id: projectId, task_id: 'ptk-' + 'b'.repeat(48),
+  title: 'Participant operational handoff', description: '',
+  status: 'TODO', depends_on: [], assignee_principal_id: PRINCIPAL,
+  revision: 1, fingerprint: 'b'.repeat(128),
+};
+const assignedNotification = {
+  schema: 'wilsy.project.notification.v1',
+  tenant_id: TENANT, project_id: projectId,
+  notification_id: 'pnf-' + 'c'.repeat(48),
+  comment_id: 'pcm-' + 'd'.repeat(48),
+  task_id: assignedTask.task_id,
+  recipient_principal_id: PRINCIPAL,
+  actor_principal_id: 'another-contributor',
+  occurred_at: '2026-11-18T08:00:00+00:00',
+  read_at: null, revision: 1, fingerprint: 'e'.repeat(128),
+};
+
 
 for (const width of [1440, 390]) {
   test('Projects real rendered table and detail at ' + width + 'px', async ({ page }) => {
@@ -80,6 +107,46 @@ for (const width of [1440, 390]) {
       const pathname = url.pathname;
       let response = null;
       if (request.method() === 'GET' && pathname === '/api/projects') response = envelope;
+      if (request.method() === 'GET' && pathname === '/api/projects/my-projects') {
+        response = {
+          schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [{ project, participation: assignedParticipant }],
+        };
+      }
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/my-project') {
+        response = {
+          schema: 'WILSY-PROJECT-PARTICIPANT-DETAIL/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          project_id: projectId, project, participation: assignedParticipant,
+        };
+      }
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/my-project/tasks') {
+        response = {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          project_id: projectId, limit: 50, offset: 0,
+          has_more: false, next_offset: null, items: [assignedTask],
+        };
+      }
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/my-project/notifications') {
+        response = {
+          schema: 'WILSY-PROJECT-NOTIFICATION-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          project_id: projectId, limit: 50, offset: 0,
+          has_more: false, next_offset: null, items: [assignedNotification],
+        };
+      }
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/my-project/participants') {
+        response = {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          project_id: projectId, limit: 100, offset: 0,
+          has_more: false, next_offset: null, items: [assignedParticipant],
+        };
+      }
+
       if (request.method() === 'GET' && pathname === '/api/projects/summary') response = summary;
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId) response = detail;
       if (request.method() === 'GET' && pathname.startsWith('/api/projects/' + projectId + '/tasks/')
@@ -239,11 +306,27 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Close project details' }).click();
     await expect(page.locator('.wp-body')).toHaveAttribute('data-layout', 'list');
     await expect(page.getByRole('region', { name: 'Project notes' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'My assigned projects' }).click();
+    await expect(page.getByRole('heading', { name: 'My assigned projects' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Projects operating foundation/ })).toBeVisible();
+    await page.getByRole('button', { name: /Projects operating foundation/ }).click();
+    await expect(page.getByRole('region', { name: 'Participant task table' })).toBeVisible();
+    await expect(page.getByText('Participant operational handoff')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Project notifications' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Mark read' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'In progress' })).toBeVisible();
+    const assignedGeometry = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      doc: document.documentElement.scrollWidth,
+    }));
+    expect(assignedGeometry.doc, 'participant workspace page overflow')
+      .toBeLessThanOrEqual(assignedGeometry.viewport + 1);
+
   });
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT
+// VERSION: v1.4.0-ASSIGNED-PROJECT-INBOX-CHROMIUM-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
