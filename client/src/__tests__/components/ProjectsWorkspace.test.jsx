@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.6.3-RUNNER-PORTABLE-CSS-CERT
+ * VERSION: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
+ * CHANGELOG: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT proves navigation
+ *            beyond 100 same-tenant projects and source-verified status graph
+ *            counts while retaining the existing lifecycle assertions.
+ *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
  *            from Vitest's project root rather than transformed import.meta.url;
  *            retains exact semantic label selectors and all assertions.
  *            v1.6.2-ACTUAL-ACCOUNTABILITY-STYLE-HOOK-CERT ensures the rendered
@@ -110,6 +113,33 @@ afterEach(() => {
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
+  it('navigates 125 source-backed tenant projects without truncating to the first 100', async () => {
+    const rows = Array.from({ length: 125 }, (_, index) => project({
+      project_id: `prj-${(index + 1).toString(16).padStart(48, '0')}`,
+      name: `Tenant project ${index + 1}`,
+      code: `TEN-${index + 1}`,
+    }));
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return { data: list(rows.slice(0, 100)) };
+      if (path === '/projects?limit=100&offset=100') return {
+        data: { ...list(rows.slice(100)), limit: 100, offset: 100 },
+      };
+      if (path === '/projects/summary') return { data: summary(rows) };
+      throw new Error(`Unexpected project GET ${path}`);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="tenant-paging-cert" />);
+    expect(await screen.findByText('100 shown · 100 verified')).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Verified project status distribution' })).toBeVisible();
+    expect(screen.getByRole('img', { name: 'Planned: 125 of 125 projects' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText('25 shown · 25 verified')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Tenant project 125/ })).toBeVisible();
+    expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=100')).toBe(true);
+  });
+
   it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
     const persisted = project({ name: 'WILSY OS — Unified Operating Platform Foundation' });
     api.get.mockImplementation(async (path) => {
@@ -446,7 +476,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.6.3-RUNNER-PORTABLE-CSS-CERT
+ * VERSION: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
