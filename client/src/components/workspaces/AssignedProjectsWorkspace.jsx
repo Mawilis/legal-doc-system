@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK
+ * VERSION: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,10 +8,13 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK opens a
+ * CHANGELOG: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR rejects
+ *            impossible empty forward pages to prevent unverified project
+ *            pagination evidence from controlling focused navigation.
+ * CHANGELOG: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR opens a
  *          specifically authorized project from Daily Attention even when
  *          it lies beyond the first page of participant project discovery.
- * CHANGELOG: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK adds full-width
+ * CHANGELOG: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR adds full-width
  *          participant project listing, selected task execution, conversations
  *          and recipient-only notification acknowledgement with verified EOS reads.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -128,6 +131,7 @@ export default function AssignedProjectsWorkspace({
         || !Array.isArray(data.items) || data.items.length > 50
         || data.items.some(row => !checkAssignedProject(row, tenantId, principalId))
         || new Set(data.items.map(row => row.project.project_id)).size !== data.items.length
+        || (data.has_more && data.items.length === 0)
         || data.next_offset !== (data.has_more ? offset + data.items.length : null)
       ) throw new Error('ASSIGNED_PROJECT_SOURCE_INVALID');
       setProjects(data.items);
@@ -483,7 +487,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK
+// VERSION: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
