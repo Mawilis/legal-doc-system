@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
+VERSION: v1.4.0-TENANT-PROJECTS-EXPLICIT-ROLE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT asserts EOS rejects
+  v1.4.0-TENANT-PROJECTS-EXPLICIT-ROLE-CERT proves customer Projects authority is separately
+  assignable without adding inherited founder/admin/manager permissions and
+  retains the WILSY-only platform-role fence.
+  v1.4.0-TENANT-PROJECTS-EXPLICIT-ROLE-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -46,6 +49,7 @@ from pydantic import ValidationError
 
 from tools.eos.api import projects_router, server
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
+from tools.eos.auth.roles import get_permissions_for_roles, get_roles_granting_permission
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
@@ -57,7 +61,29 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT"
+VERSION = "v1.4.0-TENANT-PROJECTS-EXPLICIT-ROLE-CERT"
+
+
+def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
+    """Grant definitions are non-possessory and never inherited by unrelated roles."""
+    grants = ("project:read", "project:create", "project:update", "project:archive")
+    assert set(get_permissions_for_roles(["PROJECTS_TENANT_OWNER"])) == set(grants)
+    assert set(get_permissions_for_roles(["PROJECTS_PLATFORM_OWNER"])) == set(grants)
+    for role in ("TENANT_OWNER", "ENTERPRISE_ADMIN", "AUDITOR", "HR_MANAGER", "POS_OPERATOR"):
+        assert not set(get_permissions_for_roles([role])).intersection(grants)
+    assert "PROJECTS_TENANT_OWNER" in get_roles_granting_permission("project:read")
+    foreign = SimpleNamespace(
+        tenant_id="customer-a",
+        decision=SimpleNamespace(authorization_role="PROJECTS_PLATFORM_OWNER"),
+    )
+    with pytest.raises(HTTPException) as denied:
+        projects_router._require_project_role_tenant(foreign)
+    assert denied.value.status_code == 403
+    customer = SimpleNamespace(
+        tenant_id="customer-a",
+        decision=SimpleNamespace(authorization_role="PROJECTS_TENANT_OWNER"),
+    )
+    projects_router._require_project_role_tenant(customer)
 
 
 def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
@@ -431,7 +457,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
+# VERSION: v1.4.0-TENANT-PROJECTS-EXPLICIT-ROLE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
