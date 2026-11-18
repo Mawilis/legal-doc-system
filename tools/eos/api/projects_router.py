@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.13.0-PARTICIPANT-PROJECT-DISCOVERY
+VERSION: v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,38 +14,41 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY exposes a bounded my-projects
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS atomically persists comment
+  mention inbox evidence and exposes recipient-only project notification
+  read and CAS read-receipt commands with current participant IAM gates.
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY adds source-owned task comments
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY permits owner-only task edit and
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY exposes bounded exact-tenant project
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY exposes owner and exact-project participant task
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY admits exact project-bound participant detail and
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY adds exact-tenant owner-authorized participant grant,
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY moves note-domain validation inside existing
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY introduces authenticated, project-existence-verified
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY projects verified next-page availability and exact offset
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.13.0-PARTICIPANT-PROJECT-DISCOVERY refuses a PLANNED-to-ACTIVE
+  v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -162,6 +165,12 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     get_current as get_current_entitlement,
 )
 from tools.eos.saas.domain.project_note import ProjectNote, ProjectNoteError
+from tools.eos.saas.projects.project_notification_registry import (
+    COLLECTION as PROJECT_NOTIFICATION_COLLECTION,
+    EVENT_COLLECTION as PROJECT_NOTIFICATION_EVENT_COLLECTION,
+    ProjectNotificationRegistry, ProjectNotificationError,
+    ProjectNotificationConflict, ProjectNotificationNotFound,
+)
 from tools.eos.saas.projects.project_comment_registry import (
     COLLECTION as PROJECT_COMMENT_COLLECTION,
     EVENT_COLLECTION as PROJECT_COMMENT_EVENT_COLLECTION,
@@ -196,7 +205,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.13.0-PARTICIPANT-PROJECT-DISCOVERY"
+VERSION: Final[str] = "v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -266,6 +275,13 @@ class ProjectTaskCreateRequest(BaseModel):
     due_date: date | None = None
     assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
     depends_on: tuple[str, ...] = Field(default=(), max_length=25)
+
+
+class ProjectNotificationReadRequest(BaseModel):
+    """Recipient-only notification receipt with explicit expected revision."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
 
 
 class ProjectTaskCommentRequest(BaseModel):
@@ -475,6 +491,13 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectNotificationNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectNotificationConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectNotificationError as error:
+        logger.error("PROJECT_NOTIFICATION_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectCommentConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
     except ProjectCommentError as error:
@@ -1337,12 +1360,102 @@ def _create_project_comment(
         comment=comment, actor_principal_id=actor,
         idempotency_key=idempotency_key, session=session,
     )
+    notification_store = ProjectNotificationRegistry(
+        database[PROJECT_NOTIFICATION_COLLECTION],
+        database[PROJECT_NOTIFICATION_EVENT_COLLECTION],
+    )
+    notification_store.append_for_comment(comment=stored, session=session)
     return {
         "schema": "WILSY-PROJECT-COMMENT-RESULT/V1",
         "tenant_id": context.tenant_id,
         "principal_id": actor, "project_id": project_id,
         "task_id": task_id, "comment": stored.to_dict(),
     }
+
+
+def _project_notification_store(
+    registry: ProjectRegistry, tenant_id: str, project_id: str, session: Any,
+) -> ProjectNotificationRegistry:
+    """Require exact-project existence before recipient-scoped inbox reads."""
+    registry.get(tenant_id=tenant_id, project_id=project_id, session=session)
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectNotificationError("PROJECT_NOTIFICATION_SOURCE_UNAVAILABLE")
+    return ProjectNotificationRegistry(
+        database[PROJECT_NOTIFICATION_COLLECTION],
+        database[PROJECT_NOTIFICATION_EVENT_COLLECTION],
+    )
+
+
+@router.get("/{project_id}/my-project/notifications")
+def list_my_project_notifications(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Read only this exact principal's project mentions while currently admitted."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        notifications = _project_notification_store(
+            registry, context.tenant_id, project_id, session,
+        )
+        items, more = notifications.list_for_recipient(
+            tenant_id=context.tenant_id, project_id=project_id,
+            recipient_principal_id=context.identity.identity_id,
+            limit=limit, offset=offset, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-NOTIFICATION-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "items": [item.to_dict() for item in items],
+            "limit": limit, "offset": offset,
+            "has_more": more,
+            "next_offset": offset + len(items) if more else None,
+        }
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/my-project/notifications/{notification_id}/read")
+def read_my_project_notification(
+    payload: ProjectNotificationReadRequest, response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    notification_id: str = Path(pattern=r"^pnf-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Mark one recipient-only in-app signal read, without approving any work."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+
+    def write(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        notifications = _project_notification_store(
+            registry, context.tenant_id, project_id, session,
+        )
+        result = notifications.mark_read(
+            tenant_id=context.tenant_id, project_id=project_id,
+            recipient_principal_id=context.identity.identity_id,
+            notification_id=notification_id,
+            expected_revision=payload.expected_revision,
+            idempotency_key=key, occurred_at=datetime.now(timezone.utc),
+            session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-NOTIFICATION-RESULT/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "notification": result.to_dict(),
+        }
+
+    return _transaction(context, write, write=True)
 
 
 @router.get("/{project_id}/tasks/{task_id}/comments")
@@ -2214,7 +2327,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.13.0-PARTICIPANT-PROJECT-DISCOVERY
+# VERSION: v1.14.0-ATOMIC-PROJECT-MENTION-NOTIFICATIONS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
