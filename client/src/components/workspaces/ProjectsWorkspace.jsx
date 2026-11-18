@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION
+ * VERSION: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,25 +8,29 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION opens the
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS opens
+ *            current participant project execution directly from an
+ *            EOS-authorized Daily Attention project handoff; owner source
+ *            reads are not used as participant admission.
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION mounts exact-tenant,
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION mounts the independently source-backed
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION mounts independently source-backed note
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION exposes readable title-case
+ *            v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -476,7 +480,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
   </section>;
 }
 
-export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null }) {
+export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusAssignedProjectId = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
   const [sourceState, setSourceState] = useState('LOADING');
@@ -492,7 +496,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [detail, setDetail] = useState(null);
   const [detailState, setDetailState] = useState('IDLE');
   const [mode, setMode] = useState('LIST');
-  const [showAssignedProjects, setShowAssignedProjects] = useState(false);
+  const [showAssignedProjects, setShowAssignedProjects] = useState(
+    Boolean(focusAssignedProjectId && /^prj-[0-9a-f]{48}$/.test(focusAssignedProjectId)),
+  );
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [edit, setEdit] = useState(null);
   const [commandState, setCommandState] = useState('IDLE');
@@ -611,12 +617,16 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     pageOffsetRef.current = 0;
     setPageOffset(0);
     setHasNextPage(false);
-    void refresh({ preserveSelection: false });
+    if (focusAssignedProjectId && /^prj-[0-9a-f]{48}$/.test(focusAssignedProjectId)) {
+      setShowAssignedProjects(true);
+    } else {
+      void refresh({ preserveSelection: false });
+    }
     return () => {
       listSequence.current += 1;
       detailSequence.current += 1;
     };
-  }, [scopeKey, refresh]);
+  }, [scopeKey, refresh, focusAssignedProjectId]);
 
   const visibleItems = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -862,7 +872,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     return <AssignedProjectsWorkspace
       tenantId={tenantId} principalId={principalId}
       tenantHeaders={tenantHeaders} sessionScope={sessionScope}
-      onBack={() => setShowAssignedProjects(false)}/>;
+      focusProjectId={focusAssignedProjectId}
+      onBack={() => { setShowAssignedProjects(false); void refresh({ preserveSelection: false }); }}/>;
   }
 
   return (
@@ -1003,7 +1014,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION
+// VERSION: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
