@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.1.0-UNBOUNDED-VALIDATED-SUMMARY
+VERSION: v1.2.0-TENANT-STATUS-PAGE-INDEX
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,7 +9,10 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.1.0-UNBOUNDED-VALIDATED-SUMMARY — Streams validated exact-tenant
+  v1.2.0-TENANT-STATUS-PAGE-INDEX — Adds a compound tenant/archive/status/sort index for
+  bounded project-list status filtering at enterprise project volumes.
+  This is index DDL only: no tenant, role, grant or record is changed.
+  v1.2.0-TENANT-STATUS-PAGE-INDEX — Streams validated exact-tenant
   project summaries without the former 500-record ceiling, returns bounded
   list pages without rejecting a valid next page, and adds a tenant-oriented
   active-recent listing index. No IAM or project data changes.
@@ -54,7 +57,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.1.0-UNBOUNDED-VALIDATED-SUMMARY"
+VERSION: Final[str] = "v1.2.0-TENANT-STATUS-PAGE-INDEX"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -168,6 +171,10 @@ class ProjectRegistry:
             projects.create_index([("tenant_id", ASCENDING), ("archived_at", ASCENDING),
                                    ("updated_at", DESCENDING), ("project_id", ASCENDING)],
                                   name="wilsy_project_tenant_active_recent")
+            projects.create_index([("tenant_id", ASCENDING), ("archived_at", ASCENDING),
+                                   ("status", ASCENDING), ("updated_at", DESCENDING),
+                                   ("project_id", ASCENDING)],
+                                  name="wilsy_project_tenant_status_recent")
             events.create_index([("tenant_id", ASCENDING), ("event_id", ASCENDING)],
                                 unique=True, name=EVENT_ID_INDEX)
             events.create_index([("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
@@ -459,7 +466,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.1.0-UNBOUNDED-VALIDATED-SUMMARY
+# VERSION: v1.2.0-TENANT-STATUS-PAGE-INDEX
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
