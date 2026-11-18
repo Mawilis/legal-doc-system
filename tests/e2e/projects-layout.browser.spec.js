@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT
+ * VERSION: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,21 +8,24 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT makes the shared
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT verifies source-backed
+ *          task discussion opens only for a source-confirmed task and uses
+ *          exact tenant/project/task comment response checks in Chromium.
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT verifies source-backed
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT verifies EOS-backed project work
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT measures exact direct-child table
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT certifies the existing
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT measures actual
+ * CHANGELOG: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -79,6 +82,16 @@ for (const width of [1440, 390]) {
       if (request.method() === 'GET' && pathname === '/api/projects') response = envelope;
       if (request.method() === 'GET' && pathname === '/api/projects/summary') response = summary;
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId) response = detail;
+      if (request.method() === 'GET' && pathname.startsWith('/api/projects/' + projectId + '/tasks/')
+        && pathname.endsWith('/comments')) {
+        response = {
+          schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: projectId,
+          task_id: 'ptk-' + 'c'.repeat(48),
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [],
+        };
+      }
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/tasks') {
         response = {
           schema: 'WILSY-PROJECT-TASK-LIST/V1',
@@ -201,6 +214,8 @@ for (const width of [1440, 390]) {
     await expect(projectWork.getByRole('combobox', { name: 'Task assignee' })).toBeVisible();
     await expect(projectWork.getByRole('textbox', { name: 'Task title' })).toBeVisible();
     await expect(projectWork.getByRole('textbox', { name: 'Task title' })).toBeEditable();
+    await expect(projectWork.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
+
 
     const after = await page.evaluate(() => {
       const list = document.querySelector('.wp-list-panel').getBoundingClientRect();
@@ -228,7 +243,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.2.1-PARTICIPANT-LIST-SIZE-EXACT-CERT
+// VERSION: v1.3.0-TASK-DISCUSSION-CHROMIUM-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
