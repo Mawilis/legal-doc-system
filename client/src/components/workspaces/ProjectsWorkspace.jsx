@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS
+ * VERSION: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,29 +8,30 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS opens
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS opens the
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS mounts exact-tenant,
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS mounts the independently source-backed
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS mounts independently source-backed note
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS applies status filtering at the exact-tenant
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS exposes readable title-case
+ *            v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -492,6 +493,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [hasNextPage, setHasNextPage] = useState(false);
   const pageOffsetRef = useRef(0);
   const [selectedId, setSelectedId] = useState(null);
+  const [projectView, setProjectView] = useState('work');
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [detail, setDetail] = useState(null);
   const [detailState, setDetailState] = useState('IDLE');
@@ -520,6 +522,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   );
 
   const changeSelection = useCallback((projectId) => {
+    if (projectId !== selectedRef.current) setProjectView('work');
     selectedRef.current = projectId;
     setSelectedId(projectId);
   }, []);
@@ -884,7 +887,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           aria-label="My assigned projects"><ShieldCheck size={15}/> My assigned projects</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
       </header>
 
-      {sourceState === 'READY' && summary && (
+      {sourceState === 'READY' && summary && !selectedId && mode !== 'CREATE' && (
         <section className="wp-portfolio-chart" aria-label="Verified project status distribution">
           <div className="wp-chart-heading">
             <strong>Portfolio distribution</strong>
@@ -910,8 +913,13 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       {sourceState === 'STALE' && <div role="status" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">The latest EOS read failed. Previously verified records remain marked stale. <button type="button" onClick={() => void refresh()} className="font-bold underline">Retry</button></div>}
       {sourceState === 'REFRESHING' && <div role="status" className="mb-3 text-xs text-slate-500">Refreshing from EOS…</div>}
 
-      <div className="wp-body grid min-w-0 grid-cols-1 items-start gap-4" data-layout={selectedId && mode !== "CREATE" ? "detail" : "list"}>
-        <section aria-label="Project list" className="wp-panel wp-list-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="wp-body grid min-w-0 grid-cols-1 items-start gap-4"
+        data-layout={selectedId && mode !== 'CREATE' ? 'detail' : 'list'}
+        style={selectedId && mode !== 'CREATE'
+          ? { display: 'block', width: '100%', height: 'auto', overflow: 'visible' }
+          : undefined}>
+        <section aria-label="Project list" className="wp-panel wp-list-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+          style={selectedId && mode !== 'CREATE' ? { display: 'none' } : undefined}>
           {mode === 'CREATE' ? (
             <form onSubmit={submitCreate} className="wp-form space-y-4 p-4 sm:p-5" aria-labelledby="project-create-title">
               <div className="flex items-start justify-between gap-3"><div><h2 id="project-create-title" className="text-lg font-bold text-slate-900">Create project</h2><p className="mt-1 text-sm text-slate-600">EOS validates authority and confirms the persisted project before it appears in the list.</p></div><button type="button" aria-label="Cancel project creation" onClick={() => { setMode('LIST'); setCommandError(''); }} disabled={commandState === 'PENDING'} className="wp-close rounded-md p-2 text-slate-600 hover:bg-slate-100"><X size={18}/></button></div>
@@ -964,11 +972,56 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           </>}
         </section>
 
-        {selectedId && <aside aria-label="Project detail" aria-busy={detailState === 'LOADING'} className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="wp-detail-top mb-4 flex items-start justify-between gap-3"><div><p className="wp-eyebrow text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">EOS project detail</p><h2 className="wp-detail-title mt-1 text-lg font-bold text-slate-900">{detail?.project?.name || 'Project'}</h2></div><button type="button" onClick={closeDetail} aria-label="Close project details" className="rounded-md p-2 text-slate-600 hover:bg-slate-100"><X size={17}/></button></div>
+        {selectedId && mode !== 'CREATE' && <section aria-label="Project detail" aria-busy={detailState === 'LOADING'}
+          className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+          style={{ width: '100%', height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
+          <div className="wp-detail-top mb-3 flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <button type="button" onClick={closeDetail}
+                className="wp-button mb-3" aria-label="Back to projects table">
+                <X size={15}/> Back to all projects
+              </button>
+              <p className="wp-eyebrow">Projects &amp; delivery / Current project</p>
+              <h2 className="wp-detail-title">{detail?.project?.name || 'Loading project…'}</h2>
+              {detail?.project && <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-700">
+                <span className="wp-status" data-status={detail.project.status}>
+                  {statusLabel(detail.project.status)}
+                </span>
+                <span className="font-semibold">{detail.project.code || 'Code not recorded'}</span>
+                <span>Revision {detail.project.revision}</span>
+                <span>Target {detail.project.target_date || 'not scheduled'}</span>
+              </div>}
+            </div>
+            <button type="button" onClick={() => void openProject(selectedId)}
+              disabled={detailState === 'LOADING'} className="wp-button">
+              <RefreshCw size={15}/> Refresh project
+            </button>
+          </div>
+          <nav className="mb-5 flex flex-wrap gap-2 border-b border-slate-200 pb-3"
+            aria-label="Project workspace views">
+            {[
+              ['work', 'Work & milestones'],
+              ['overview', 'Overview'],
+              ['people', 'People'],
+              ['notes', 'Notes'],
+              ['settings', 'Manage project'],
+              ['history', 'Audit history'],
+            ].map(([value, label]) =>
+              <button key={value} type="button"
+                aria-current={projectView === value ? 'page' : undefined}
+                onClick={() => setProjectView(value)}
+                className="wp-button"
+                style={projectView === value
+                  ? { background: '#e8f2ff', borderColor: '#2b67ad', color: '#163f76' }
+                  : undefined}>
+                {label}
+              </button>)}
+          </nav>
           {detailState === 'LOADING' && <p role="status" className="text-sm text-slate-600">Loading project and audit events…</p>}
           {detailState === 'ERROR' && <p role="alert" className="text-sm text-rose-700">{commandError === 'ACCESS_DENIED' ? 'EOS denied this project detail read.' : 'Project detail is unavailable. Retry the read.'}<button type="button" onClick={() => void openProject(selectedId)} className="ml-2 font-semibold underline">Retry</button></p>}
           {detailState === 'READY' && detail && <div className="wp-detail-inner">
+            {projectView === 'overview' && <div className="max-w-5xl">
+            <h3 className="mb-3 text-lg font-bold text-slate-900">Project overview</h3>
             <dl className="wp-facts mb-4 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-slate-200 pb-4 text-sm"><dt className="text-slate-500">Code</dt><dd className="break-words text-slate-900">
               {detail.project.code || 'Not recorded'}
               {!detail.project.code && <button type="button"
@@ -977,18 +1030,23 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                 disabled={commandState === 'PENDING' || sourceState !== 'READY'}
               >Generate and save code</button>}
             </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
+            </div>}
+            {projectView === 'settings' && <div className="max-w-5xl">
+            <h3 className="mb-3 text-lg font-bold text-slate-900">Project governance &amp; configuration</h3>
             <ProjectAccountabilityPanel key={detail.project.project_id} project={detail.project} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders} runCommand={runCommand}
               refresh={refresh} openProject={openProject}/>
-            {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
-            <ProjectParticipantsPanel key={'participants:' + detail.project.project_id + ':' + sessionScope}
+            </div>}
+            {projectView === 'overview' && detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
+            {projectView === 'people' && <ProjectParticipantsPanel key={'participants:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
-              principalId={principalId} tenantHeaders={tenantHeaders}/>
-            <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
+              principalId={principalId} tenantHeaders={tenantHeaders}/>}
+            {projectView === 'work' && <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
-              principalId={principalId} tenantHeaders={tenantHeaders}/>
-            <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
-              tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>
+              principalId={principalId} tenantHeaders={tenantHeaders}/>}
+            {projectView === 'notes' && <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
+              tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>}
+            {projectView === 'settings' && <div className="max-w-5xl">
             <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code <span className="wp-code-optional">(optional override)</span>
                 <input aria-label="Project code" maxLength={80} value={edit?.code || ''}
                   placeholder="Automatically assigned by EOS"
@@ -1005,16 +1063,17 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {(!detail.project.owner_principal_id || !detail.project.department_id) && detail.project.status === 'planned' && <p role="status" className="mt-2 text-xs text-amber-900">Activation requires a verified project owner and tenant department. The project remains Planned until EOS confirms both.</p>}
             {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. The list was reconciled from EOS.' : commandError === 'PROJECT_INPUT_INVALID' ? 'The supplied project fields are invalid.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
             {commandState === 'CONFIRMED' && <p role="status" className="mt-3 text-sm font-medium text-emerald-800">EOS confirmed the project change and returned persisted state.</p>}
-            <section className="wp-section mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Audit events</h3>{Array.isArray(detail.events) && detail.events.length ? <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">{detail.events.map((event) => <li key={event.event_id} className="wp-event rounded-md bg-slate-50 p-2 text-xs"><strong className="text-slate-800">{event.event_type}</strong><div className="mt-1 break-all text-slate-600">Actor: {event.actor_principal_id} · revision {event.revision}</div><time className="text-slate-500">{event.occurred_at ? new Date(event.occurred_at).toLocaleString() : 'Timestamp unavailable'}</time></li>)}</ol> : <p className="mt-2 text-sm text-slate-600">No audit event was returned by EOS.</p>}</section>
+            </div>}
+            {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Audit events</h3>{Array.isArray(detail.events) && detail.events.length ? <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">{detail.events.map((event) => <li key={event.event_id} className="wp-event rounded-md bg-slate-50 p-2 text-xs"><strong className="text-slate-800">{event.event_type}</strong><div className="mt-1 break-all text-slate-600">Actor: {event.actor_principal_id} · revision {event.revision}</div><time className="text-slate-500">{event.occurred_at ? new Date(event.occurred_at).toLocaleString() : 'Timestamp unavailable'}</time></li>)}</ol> : <p className="mt-2 text-sm text-slate-600">No audit event was returned by EOS.</p>}</section>
           </div>}
-        </aside>}
+        </section>}
       </div>
     </section>
   );
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.8.0-ATTENTION-TO-ASSIGNED-PROJECT-FOCUS
+// VERSION: v2.9.0-FULL-WIDTH-TASK-FIRST-PROJECT-WORKSPACE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
