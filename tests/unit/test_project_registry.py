@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT
+VERSION: v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,13 +7,14 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT proves full 511-record exact-tenant owner filters are applied before pagination, preserve verified next offsets, exclude foreign principals and use a dedicated compound index.
-  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
-  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT certifies first/final page has_more truth for 511
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH verifies profiled summary still validates every active exact-tenant aggregate, excludes archived/foreign rows and fails closed on corrupted records with no extra reads.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH proves full 511-record exact-tenant owner filters are applied before pagination, preserve verified next offsets, exclude foreign principals and use a dedicated compound index.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH certifies first/final page has_more truth for 511
   exact-tenant projects, zero overlap, and foreign-tenant exclusion.
-  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT certifies tenant/status/recent project index order and
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH certifies tenant/status/recent project index order and
   keeps uniqueness requirements for canonical project and event identities.
-v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT — Verifies exact compound
+v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH — Verifies exact compound
   active-list index keys, preserves project/event uniqueness guards and
   confirms the listing index is intentionally nonunique.
 v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
@@ -267,6 +268,30 @@ def test_summary_and_status_filter_use_authoritative_tenant_records(registry) ->
 
 
 
+def test_summary_phase_metrics_keep_full_integrity_and_exact_scope(registry) -> None:
+    """Profiling must never replace source validation with unverified counts."""
+    store, projects, _, session = registry
+    _create(store, _project("tenant-a", "p1"), session, "create-1")
+    projects.rows.append({"_id": "foreign", **_project(
+        "tenant-b", "p2", code="FOREIGN",
+    ).to_dict()})
+    phases: dict[str, float] = {}
+    counts = store.summary_for_tenant(
+        tenant_id="tenant-a", session=session, phase_timings=phases,
+    )
+    assert counts["total"] == 1 and counts["planned"] == 1
+    assert projects.last_query == {"tenant_id": "tenant-a", "archived_at": None}
+    assert projects.last_session is session
+    assert set(phases) == {"cursor_first_ms", "cursor_remaining_ms", "hydrate_ms"}
+    assert all(0 <= value < 5000 for value in phases.values())
+
+    projects.rows[0]["fingerprint"] = "invalid"
+    with pytest.raises(ProjectRegistryError):
+        store.summary_for_tenant(
+            tenant_id="tenant-a", session=session, phase_timings={},
+        )
+
+
 def test_large_tenant_summary_and_bounded_pages_over_500(registry) -> None:
     """No cap may turn an ordinary >500-project tenant into an unavailable portfolio."""
     store, projects, _, session = registry
@@ -417,7 +442,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT
+# VERSION: v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
