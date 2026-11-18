@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.1.1-EXACT-ACTIVE-LIST-INDEX-CERT
+VERSION: v1.2.0-NOTE-REVISION-ISOLATION-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+v1.2.0-NOTE-REVISION-ISOLATION-CERT — Proves tenant-scoped notes
+  creation, exact replay, author-only revisions, CAS conflicts, redaction
+  and immutable event evidence with no IAM mutation.
 v1.1.1-EXACT-ACTIVE-LIST-INDEX-CERT — Verifies exact compound
   active-list index keys, preserves project/event uniqueness guards and
   confirms the listing index is intentionally nonunique.
@@ -35,6 +38,9 @@ import pytest
 from tools.eos.saas.domain.project import Project, ProjectStatus
 from tools.eos.saas.projects.project_registry import (
     ProjectNotFound, ProjectRegistry, ProjectRegistryConflict, ProjectRegistryError,
+)
+from tools.eos.saas.projects.project_notes_registry import (
+    ProjectNotesRegistry, ProjectNoteConflict, ProjectNoteNotFound,
 )
 
 NOW = datetime(2026, 11, 16, 12, 0, tzinfo=timezone.utc)
@@ -253,6 +259,85 @@ def test_large_tenant_summary_and_bounded_pages_over_500(registry) -> None:
 
 
 
+
+def test_project_notes_create_revise_redact_replay_and_tenant_isolation() -> None:
+    """Author-only CAS notes retain immutable revisions without any IAM grants."""
+    notes, events, session = FakeCollection(), FakeCollection(), object()
+    ProjectNotesRegistry.ensure_indexes(notes, events)
+    source = ProjectNotesRegistry(notes, events)
+    command = dict(
+        tenant_id="tenant-a", project_id="project-a",
+        actor_principal_id="principal-a",
+    )
+    created = source.create(
+        **command, body="Foundation note", idempotency_key="note-create",
+        occurred_at=NOW, session=session,
+    )
+    assert created["revision"] == 1
+    assert created["body"] == "Foundation note"
+    assert source.create(
+        **command, body="Foundation note", idempotency_key="note-create",
+        occurred_at=NOW + timedelta(seconds=1), session=session,
+    ) == created
+    assert len(notes.rows) == len(events.rows) == 1
+    with pytest.raises(ProjectNoteConflict, match="DIVERGENT_REPLAY"):
+        source.create(
+            **command, body="Other content", idempotency_key="note-create",
+            occurred_at=NOW, session=session,
+        )
+    assert len(source.list_for_project(
+        tenant_id="tenant-a", project_id="project-a", session=session,
+    )) == 1
+    assert source.list_for_project(
+        tenant_id="tenant-b", project_id="project-a", session=session,
+    ) == ()
+    with pytest.raises(ProjectNoteNotFound):
+        source.get(
+            tenant_id="tenant-b", project_id="project-a",
+            note_id=created["note_id"], session=session,
+        )
+    with pytest.raises(ProjectNoteConflict, match="AUTHOR_REQUIRED"):
+        source.revise(
+            tenant_id="tenant-a", project_id="project-a",
+            note_id=created["note_id"], actor_principal_id="principal-b",
+            expected_revision=1, body="Forbidden", redact=False,
+            idempotency_key="foreign-revision", occurred_at=NOW + timedelta(seconds=1),
+            session=session,
+        )
+    revised = source.revise(
+        **command, note_id=created["note_id"], expected_revision=1,
+        body="Revised with evidence", redact=False,
+        idempotency_key="note-revise", occurred_at=NOW + timedelta(seconds=2),
+        session=session,
+    )
+    assert revised["revision"] == 2
+    assert revised["body"] == "Revised with evidence"
+    assert source.revise(
+        **command, note_id=created["note_id"], expected_revision=1,
+        body="Revised with evidence", redact=False,
+        idempotency_key="note-revise", occurred_at=NOW + timedelta(seconds=2),
+        session=session,
+    ) == revised
+    with pytest.raises(ProjectNoteConflict, match="REVISION_CONFLICT"):
+        source.revise(
+            **command, note_id=created["note_id"], expected_revision=1,
+            body="Old edit", redact=False, idempotency_key="note-stale",
+            occurred_at=NOW + timedelta(seconds=3), session=session,
+        )
+    redacted = source.revise(
+        **command, note_id=created["note_id"], expected_revision=2,
+        body=None, redact=True, idempotency_key="note-redact",
+        occurred_at=NOW + timedelta(seconds=4), session=session,
+    )
+    assert redacted["revision"] == 3
+    assert redacted["body"] == "" and redacted["redacted_at"] is not None
+    assert len(events.rows) == 3
+    assert [event["event_type"] for event in events.rows] == [
+        "PROJECT_NOTE_CREATED", "PROJECT_NOTE_REVISED", "PROJECT_NOTE_REDACTED",
+    ]
+
+
+
 def test_event_read_is_tenant_scoped_and_returns_documented_fields(registry) -> None:
     store, _, events, session = registry
     _create(store, _project(), session, "create-1")
@@ -312,7 +397,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.1.1-EXACT-ACTIVE-LIST-INDEX-CERT
+# VERSION: v1.2.0-NOTE-REVISION-ISOLATION-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
