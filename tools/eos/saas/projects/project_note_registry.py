@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Note Transaction Registry
-VERSION: v1.0.0-AUDITED-EXACT-TENANT-PROJECT-NOTES
+VERSION: v1.1.0-SIGNED-NOTE-COLOUR-CAS
 AUTHORITY: Python EOS caller-owned MongoDB transaction persistence.
 EPITOME: Source-owned note CRUD, immutable note events, bounded list pages,
          deterministic idempotency and author/revision CAS without IAM grants.
@@ -7,7 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: ProjectNote domain; Projects router owns current
          project existence, permission/entitlement admission and Mongo session.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-AUDITED-EXACT-TENANT-PROJECT-NOTES adds exact-tenant source
+CHANGELOG: v1.1.0-SIGNED-NOTE-COLOUR-CAS adds optional source-owned sticky-note colour to create/revise fingerprints and replay, preserves original colourless records and remains author-CAS governed.
+CHANGELOG: v1.1.0-SIGNED-NOTE-COLOUR-CAS adds exact-tenant source
          records and durable event audit without mixing note state into Project.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Whitelisted source fields, no leaked foreign notes,
@@ -35,13 +36,13 @@ from tools.eos.saas.domain.project_note import (
     ProjectNote, ProjectNoteError,
 )
 
-VERSION: Final[str] = "v1.0.0-AUDITED-EXACT-TENANT-PROJECT-NOTES"
+VERSION: Final[str] = "v1.1.0-SIGNED-NOTE-COLOUR-CAS"
 COLLECTION: Final[str] = "wilsy_project_notes"
 EVENT_COLLECTION: Final[str] = "wilsy_project_note_events"
 _NOTE_FIELDS: Final[tuple[str, ...]] = (
     "tenant_id", "project_id", "note_id", "author_principal_id",
     "body", "created_at", "updated_at", "revision", "archived_at",
-    "schema", "version", "fingerprint",
+    "schema", "version", "fingerprint", "colour",
 )
 _EVENT_TYPES: Final[frozenset[str]] = frozenset({
     "PROJECT_NOTE_CREATED", "PROJECT_NOTE_REVISED", "PROJECT_NOTE_ARCHIVED",
@@ -82,7 +83,7 @@ def _session(value: object) -> Any:
 def _hydrate(value: Mapping[str, object]) -> ProjectNote:
     """Hydrate only the canonical note fields and verify SHA3-512 semantics."""
     try:
-        return ProjectNote.from_dict({key: value[key] for key in _NOTE_FIELDS})
+        return ProjectNote.from_dict({key: value[key] for key in _NOTE_FIELDS if key in value})
     except (KeyError, ValueError, TypeError, ProjectNoteError) as error:
         raise ProjectNoteRegistryError("PROJECT_NOTE_RECORD_INVALID") from error
 
@@ -267,6 +268,7 @@ class ProjectNoteRegistry:
             "type": "create", "tenant_id": note.tenant_id,
             "project_id": note.project_id, "note_id": note.note_id,
             "actor": actor, "body": note.body,
+            **({"colour": note.colour} if note.colour is not None else {}),
         })
         replay = self._find_replay(
             tenant_id=note.tenant_id, idempotency_key=idempotency_key,
@@ -291,6 +293,7 @@ class ProjectNoteRegistry:
         self, *, tenant_id: str, project_id: str, note_id: str,
         actor_principal_id: str, expected_revision: int, body: str,
         idempotency_key: str, occurred_at: datetime, session: Any,
+        colour: str | None = None,
     ) -> ProjectNote:
         """Apply authored note revision under exact CAS and durable replay."""
         tenant = _exact(tenant_id, "tenant_id")
@@ -301,6 +304,7 @@ class ProjectNoteRegistry:
             "type": "revise", "tenant_id": tenant, "project_id": project,
             "note_id": identity, "actor": actor,
             "expected_revision": expected_revision, "body": body,
+            **({"colour": colour} if colour is not None else {}),
         })
         replay = self._find_replay(
             tenant_id=tenant, idempotency_key=idempotency_key,
@@ -315,7 +319,7 @@ class ProjectNoteRegistry:
         try:
             revised = prior.revise(
                 actor_principal_id=actor, expected_revision=expected_revision,
-                body=body, updated_at=occurred_at,
+                body=body, updated_at=occurred_at, colour=colour,
             )
         except ProjectNoteError as error:
             raise ProjectNoteConflict(error.code) from error
@@ -432,7 +436,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_note_registry.py
-# VERSION: v1.0.0-AUDITED-EXACT-TENANT-PROJECT-NOTES
+# VERSION: v1.1.0-SIGNED-NOTE-COLOUR-CAS
 # AUTHORITY BOUNDARY: persistence-only; EOS owns authenticated permission and admission
 # TENANT POSTURE: every query binds tenant_id + project_id with no fallback
 # FAIL-CLOSED POSTURE: invalid event, author, revision, replay or audit denies
