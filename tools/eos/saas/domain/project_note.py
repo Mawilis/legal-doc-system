@@ -32,7 +32,9 @@ import json
 import re
 from typing import Final
 
-VERSION: Final[str] = "v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE"
+# Preserve the persisted v1 authority version: existing fingerprints include it.
+# Optional colour is a backward-compatible semantic extension, not a migration.
+VERSION: Final[str] = "v1.0.1-RETIRED-TENANT-ALIAS-DENIAL"
 SCHEMA: Final[str] = "wilsy.project.note.v1"
 NOTE_COLOURS: Final[frozenset[str]] = frozenset({"yellow", "blue", "mint", "rose", "violet", "slate"})
 _NOTE_ID = re.compile(r"^pnt-[0-9a-f]{48}$")
