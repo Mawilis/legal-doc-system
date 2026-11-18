@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION
+ * VERSION: v1.6.0-SOURCE-OWNED-WORK-COMMAND-FORM
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION adds subdued fluid
+ * CHANGELOG: v1.6.0-SOURCE-OWNED-WORK-COMMAND-FORM styles the real
+ *            Project-to-Operations create command with accessible navy
+ *            controls, responsive inputs and explicit confirmed/denied states.
+ *            v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION adds subdued fluid
  *            glass portfolio bar-chart styling and accessible pagination;
  *            visualized counts come only from validated EOS response data.
  *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
@@ -536,8 +539,74 @@
   .wilsy-projects .wp-chart-caption {font-size: 9px; overflow-wrap: anywhere;}
 }
 
+
+/* Project execution: functional source-command surface, not a decorative card. */
+.wilsy-projects .wp-project-work {
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px solid #cedae9;
+  border-radius: 14px;
+  background: linear-gradient(125deg, rgba(255,255,255,.98), rgba(237,244,255,.95));
+  backdrop-filter: blur(14px);
+  color: #172f4d;
+}
+.wilsy-projects .wp-project-work h3 {
+  color: #142b4d !important;
+  font-size: 16px;
+  font-weight: 800;
+}
+.wilsy-projects .wp-project-work > p {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #405976 !important;
+  margin: 8px 0 12px;
+}
+.wilsy-projects .wp-work-form {display: grid; gap: 12px;}
+.wilsy-projects .wp-work-form label {
+  display: block;
+  color: #203a5e !important;
+  -webkit-text-fill-color: #203a5e !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-size: 12px;
+  font-weight: 750;
+}
+.wilsy-projects .wp-work-form :is(input, textarea, select) {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: 450;
+  background: #fff !important;
+  color: #152d4c !important;
+  -webkit-text-fill-color: #152d4c !important;
+}
+.wilsy-projects .wp-work-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.wilsy-projects .wp-work-confirmed {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #8bc8a6;
+  background: #ebfaf0;
+  border-radius: 9px;
+  color: #145934 !important;
+}
+.wilsy-projects .wp-work-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #e9a5b1;
+  background: #fff1f4;
+  border-radius: 9px;
+  color: #85213b !important;
+}
+@media(max-width: 640px) {
+  .wilsy-projects .wp-work-fields { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.5.0-VERIFIED-PORTFOLIO-VISUALIZATION
+ * VERSION: v1.6.0-SOURCE-OWNED-WORK-COMMAND-FORM
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
