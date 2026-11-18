@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT
+ * VERSION: v1.2.0-PROJECT-TASK-DISCUSSION-MOUNT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,10 +8,13 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT adds a
+ * CHANGELOG: v1.2.0-PROJECT-TASK-DISCUSSION-MOUNT opens a selected task's
+ *          source-backed immutable comment/mention thread without treating
+ *          mentions as deliveries, approvals or task lifecycle commands.
+ * CHANGELOG: v1.2.0-PROJECT-TASK-DISCUSSION-MOUNT adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT adds source-backed
+ * CHANGELOG: v1.2.0-PROJECT-TASK-DISCUSSION-MOUNT adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -26,6 +29,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
+import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -112,6 +116,7 @@ export default function ProjectTasksPanel({
   const [draft, setDraft] = useState({ ...EMPTY });
   const [creating, setCreating] = useState(false);
   const [editor, setEditor] = useState(null);
+  const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const generation = useRef(0);
@@ -165,6 +170,7 @@ export default function ProjectTasksPanel({
     setHasMore(false);
     setCreating(false);
     setEditor(null);
+    setDiscussionTaskId(null);
     setDraft({ ...EMPTY });
     setError('');
     command.current = { fingerprint: '', key: '' };
@@ -474,6 +480,11 @@ export default function ProjectTasksPanel({
                           assignee_principal_id: item.assignee_principal_id || '',
                         });
                       }}>Edit work</button>}
+                  <button type="button" disabled={busy}
+                    onClick={() => setDiscussionTaskId(current => current === item.task_id ? null : item.task_id)}
+                    className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
+                    Discuss
+                  </button>
                   {TRANSITIONS[item.status].length === 0 && <span className="text-xs text-slate-500">Terminal state</span>}
                 </div>
               </td></tr>)}
@@ -483,6 +494,12 @@ export default function ProjectTasksPanel({
           </tbody>
         </table>
       </div>
+      {discussionTaskId && items.some(item => item.task_id === discussionTaskId) &&
+        <ProjectTaskCommentsPanel key={[scope, discussionTaskId].join(':')}
+          tenantId={tenantId} projectId={projectId} principalId={principalId}
+          taskId={discussionTaskId} participants={participants}
+          tenantHeaders={tenantHeaders}
+          onClose={() => setDiscussionTaskId(null)}/>}
       {(hasMore || offset > 0) && <nav className="mt-3 flex items-center justify-between gap-2" aria-label="Task pages">
         <button type="button" className="wp-button" disabled={busy || offset === 0}
           onClick={() => void load(Math.max(0, offset - 50))}>Previous work</button>
@@ -496,7 +513,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT
+// VERSION: v1.2.0-PROJECT-TASK-DISCUSSION-MOUNT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
