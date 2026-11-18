@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION
+VERSION: v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,69 +30,70 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION allows bounded
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds a verified
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION binds optional
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION independently
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION accepts exact task
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION lists the named
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds owner-requested,
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION permits exact-project
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION atomically persists comment
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION exposes a bounded my-projects
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds source-owned task comments
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION permits owner-only task edit and
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION exposes bounded exact-tenant project
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION exposes owner and exact-project participant task
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION admits exact project-bound participant detail and
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds exact-tenant owner-authorized participant grant,
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION moves note-domain validation inside existing
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION introduces authenticated, project-existence-verified
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION projects verified next-page availability and exact offset
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION refuses a PLANNED-to-ACTIVE
+  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -263,7 +264,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION"
+VERSION: Final[str] = "v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1071,12 +1072,13 @@ def _current_department(database: Any, tenant_id: str, department_id: str, sessi
     }
 
 
-def _verified_project_owner_name(
+def _exact_tenant_project_person_name(
     database: Any, tenant_id: str, principal_id: str, session: Any,
 ) -> dict[str, str | None]:
     """Project display-only names from exact tenant-scoped durable authentication.
 
-    Principal membership and tenant-owner capacity are checked separately first.
+    Owner eligibility, when required, is established separately. Actor names
+    are descriptive historical evidence, not current-role authority.
     This query neither admits a principal nor trusts a client-provided name.
     Legacy ObjectId identity is accepted only when it matches the same exact
     tenant and no colliding canonical user identity is found. Absent optional
@@ -1160,7 +1162,7 @@ def project_assignment_options(
                 candidates.append({
                     "principal_id": principal_id,
                     "eligibility": "VERIFIED_CURRENT",
-                    **_verified_project_owner_name(
+                    **_exact_tenant_project_person_name(
                         database, context.tenant_id, principal_id, session,
                     ),
                 })
@@ -3123,15 +3125,30 @@ def get_project(
             session=session,
             include_archived=include_archived,
         )
-        return _result(
-            context,
-            value,
-            events=registry.list_events(
-                tenant_id=context.tenant_id,
-                project_id=project_id,
-                session=session,
-            ),
+        events = registry.list_events(
+            tenant_id=context.tenant_id, project_id=project_id, session=session,
         )
+        response_payload = _result(context, value, events=events)
+        actor_ids = {value.created_by_principal_id}
+        actor_ids.update(event["actor_principal_id"] for event in events)
+        if len(actor_ids) > 100 or any(
+            not isinstance(actor_id, str) or not actor_id or len(actor_id) > 180
+            for actor_id in actor_ids
+        ):
+            raise HTTPException(
+                status_code=503, detail="PROJECT_ACTOR_DIRECTORY_PAGE_REQUIRED",
+            )
+        database = kernel_db.get_database()
+        if database is None:
+            raise HTTPException(
+                status_code=503, detail="PROJECT_ACTOR_PROFILE_SOURCE_UNAVAILABLE",
+            )
+        response_payload["actor_profiles"] = {
+            actor_id: _exact_tenant_project_person_name(
+                database, context.tenant_id, actor_id, session,
+            ) for actor_id in sorted(actor_ids)
+        }
+        return response_payload
 
     return _transaction(context, load)
 
@@ -3273,7 +3290,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION
+# VERSION: v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
