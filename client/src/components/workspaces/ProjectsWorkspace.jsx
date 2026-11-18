@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION
+ * VERSION: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,22 +8,25 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION mounts exact-tenant,
+ * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION opens the
+ *            separately authorized participant Projects destination, without
+ *            claiming owner privileges or weakening owner list admission.
+ * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION mounts the independently source-backed
+ * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION mounts independently source-backed note
+ * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION exposes readable title-case
+ *            v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -101,6 +104,7 @@ import api from '../../services/api.js';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTasksPanel from './ProjectTasksPanel.jsx';
 import ProjectParticipantsPanel from './ProjectParticipantsPanel.jsx';
+import AssignedProjectsWorkspace from './AssignedProjectsWorkspace.jsx';
 import './ProjectsWorkspace.css';
 
 /**
@@ -488,6 +492,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [detail, setDetail] = useState(null);
   const [detailState, setDetailState] = useState('IDLE');
   const [mode, setMode] = useState('LIST');
+  const [showAssignedProjects, setShowAssignedProjects] = useState(false);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [edit, setEdit] = useState(null);
   const [commandState, setCommandState] = useState('IDLE');
@@ -853,11 +858,19 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     ? `${summary.active ?? '—'} active · ${summary.total} total`
     : 'Counts unavailable';
 
+  if (showAssignedProjects) {
+    return <AssignedProjectsWorkspace
+      tenantId={tenantId} principalId={principalId}
+      tenantHeaders={tenantHeaders} sessionScope={sessionScope}
+      onBack={() => setShowAssignedProjects(false)}/>;
+  }
+
   return (
     <section className="wilsy-projects mx-auto w-full max-w-[1500px] px-3 pb-6 sm:px-5" data-projects-workspace data-source-state={sourceState}>
       <header className="wp-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div><p className="wp-eyebrow text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Projects &amp; delivery</p><h1 className="wp-title mt-1 text-2xl font-bold text-slate-900">Projects</h1><p className="wp-subtitle mt-1 text-sm text-slate-600">EOS-authorized project delivery for the selected workspace.</p></div>
-        <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
+        <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => setShowAssignedProjects(true)} className="wp-button"
+          aria-label="My assigned projects"><ShieldCheck size={15}/> My assigned projects</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
       </header>
 
       {sourceState === 'READY' && summary && (
@@ -990,7 +1003,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION
+// VERSION: v2.7.0-ASSIGNED-PROJECTS-PARTICIPANT-DESTINATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
