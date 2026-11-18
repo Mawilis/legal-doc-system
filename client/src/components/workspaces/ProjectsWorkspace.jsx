@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION
+ * VERSION: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,19 +8,22 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION mounts the independently source-backed
+ * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION mounts exact-tenant,
+ *            EOS-sourced candidate selection and audited participant
+ *            grant/revoke alongside task execution in selected project detail.
+ * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION mounts independently source-backed note
+ * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION exposes readable title-case
+ *            v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -97,6 +100,7 @@ import {
 import api from '../../services/api.js';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTasksPanel from './ProjectTasksPanel.jsx';
+import ProjectParticipantsPanel from './ProjectParticipantsPanel.jsx';
 import './ProjectsWorkspace.css';
 
 /**
@@ -953,6 +957,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               principalId={principalId} tenantHeaders={tenantHeaders} runCommand={runCommand}
               refresh={refresh} openProject={openProject}/>
             {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
+            <ProjectParticipantsPanel key={'participants:' + detail.project.project_id + ':' + sessionScope}
+              projectId={detail.project.project_id} tenantId={tenantId}
+              principalId={principalId} tenantHeaders={tenantHeaders}/>
             <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders}/>
@@ -983,7 +990,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION
+// VERSION: v2.6.0-GOVERNED-PROJECT-PARTICIPATION-INTEGRATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
