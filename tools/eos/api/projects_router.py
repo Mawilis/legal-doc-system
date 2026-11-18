@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER
+VERSION: v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,50 +14,54 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER lists the named
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD accepts exact task
+  encrypted provider-verified bytes in quarantine only; independently
+  reauthorizes the contributor before immutable Mongo manifest commit.
+  GET reads redact provider receipt; no scan, download or approval release.
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER adds owner-requested,
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER permits exact-project
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER atomically persists comment
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER exposes a bounded my-projects
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER adds source-owned task comments
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER permits owner-only task edit and
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER exposes bounded exact-tenant project
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER exposes owner and exact-project participant task
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER admits exact project-bound participant detail and
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER adds exact-tenant owner-authorized participant grant,
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER moves note-domain validation inside existing
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER introduces authenticated, project-existence-verified
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER projects verified next-page availability and exact offset
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER refuses a PLANNED-to-ACTIVE
+  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -111,6 +115,7 @@ import re
 from typing import Literal, Any, Callable, Final, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
+from starlette.datastructures import UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
@@ -180,6 +185,17 @@ from tools.eos.saas.projects.project_notification_registry import (
     ProjectNotificationRegistry, ProjectNotificationError,
     ProjectNotificationConflict, ProjectNotificationNotFound,
 )
+from tools.eos.saas.projects.project_attachment_registry import (
+    COLLECTION as PROJECT_ATTACHMENT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_ATTACHMENT_EVENT_COLLECTION,
+    MAX_ATTACHMENT_BYTES,
+    ProjectAttachment, ProjectAttachmentRegistry, ProjectAttachmentError,
+    ProjectAttachmentConflict, ProjectAttachmentNotFound,
+    attachment_id_for_command,
+)
+from tools.eos.saas.projects.project_attachment_storage import (
+    ProjectAttachmentStorageError, store_quarantined_attachment,
+)
 from tools.eos.saas.projects.project_approval_registry import (
     COLLECTION as PROJECT_APPROVAL_COLLECTION,
     EVENT_COLLECTION as PROJECT_APPROVAL_EVENT_COLLECTION,
@@ -221,7 +237,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER"
+VERSION: Final[str] = "v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -524,6 +540,13 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectAttachmentNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectAttachmentConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectAttachmentError as error:
+        logger.error("PROJECT_ATTACHMENT_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectApprovalNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectApprovalConflict as error:
@@ -1584,6 +1607,196 @@ def _approval_page(
         "offset": offset, "limit": limit, "has_more": more,
         "next_offset": offset + len(items) if more else None,
     }
+
+
+def _project_attachment_store(
+    registry: ProjectRegistry, tenant_id: str, project_id: str,
+    task_id: str, session: Any,
+) -> ProjectAttachmentRegistry:
+    """Check exact source task existence before accessing quarantined manifests."""
+    _project_task_store(registry, tenant_id, project_id, session).get(
+        tenant_id=tenant_id, project_id=project_id,
+        task_id=task_id, session=session,
+    )
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectAttachmentError("PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE")
+    return ProjectAttachmentRegistry(
+        database[PROJECT_ATTACHMENT_COLLECTION],
+        database[PROJECT_ATTACHMENT_EVENT_COLLECTION],
+    )
+
+
+def _attachment_projection(attachment: ProjectAttachment) -> dict[str, object]:
+    """Redact opaque storage receipt and any capability/provider coordinates."""
+    record = attachment.to_dict()
+    record.pop("storage_receipt")
+    record.pop("fingerprint")
+    return record
+
+
+def _attachment_page(
+    context: TenantAuthorizationContext, project_id: str, task_id: str,
+    registry: ProjectRegistry, session: Any, limit: int, offset: int,
+) -> dict[str, object]:
+    """Present bounded quarantined task manifest metadata, not safe files."""
+    items, more = _project_attachment_store(
+        registry, context.tenant_id, project_id, task_id, session,
+    ).list_page(
+        tenant_id=context.tenant_id, project_id=project_id,
+        task_id=task_id, session=session, limit=limit, offset=offset,
+    )
+    return {
+        "schema": "WILSY-PROJECT-ATTACHMENT-LIST/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "task_id": task_id,
+        "items": [_attachment_projection(item) for item in items],
+        "limit": limit, "offset": offset, "has_more": more,
+        "next_offset": offset + len(items) if more else None,
+    }
+
+
+@router.get("/{project_id}/tasks/{task_id}/attachments")
+def list_owner_project_task_attachments(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Expose redacted exact-task metadata only to authorized project owner."""
+    response.headers["Cache-Control"] = "no-store"
+    return _transaction(context, lambda registry, session: _attachment_page(
+        context, project_id, task_id, registry, session, limit, offset,
+    ))
+
+
+@router.get("/{project_id}/my-project/tasks/{task_id}/attachments")
+def list_participant_project_task_attachments(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Require ACTIVE project participation before exposing quarantined files."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        return _attachment_page(
+            context, project_id, task_id, registry, session, limit, offset,
+        )
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/my-project/tasks/{task_id}/attachments", status_code=status.HTTP_201_CREATED)
+async def upload_participant_project_attachment(
+    request: Request, response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    content_length: int | None = Header(default=None, alias="Content-Length"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Accept bounded bytes in encrypted quarantine; never approve or download.
+
+    The exact participant and task are rechecked in snapshot/majority Mongo
+    before AND after the external S3 write. Provider receipt is server-only.
+    A provider success followed by Mongo failure remains inaccessible
+    quarantine; later exact-key replay reconciles the immutable S3 object.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    if (
+        content_length is None or content_length <= 0
+        or content_length > MAX_ATTACHMENT_BYTES + 1024 * 1024
+    ):
+        raise HTTPException(status_code=413, detail="PROJECT_ATTACHMENT_MULTIPART_SIZE_INVALID")
+
+    def authorize(registry: ProjectRegistry, session: Any) -> None:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        _project_task_store(
+            registry, context.tenant_id, project_id, session,
+        ).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+
+    _transaction(context, authorize)
+    try:
+        form = await request.form(
+            max_files=1, max_fields=0, max_part_size=MAX_ATTACHMENT_BYTES,
+        )
+    except Exception as error:
+        raise HTTPException(status_code=422, detail="PROJECT_ATTACHMENT_MULTIPART_INVALID") from error
+    if list(form.keys()) != ["file"]:
+        raise HTTPException(status_code=422, detail="PROJECT_ATTACHMENT_MULTIPART_FIELDS_INVALID")
+    file = form.get("file")
+    if not isinstance(file, UploadFile):
+        raise HTTPException(status_code=422, detail="PROJECT_ATTACHMENT_FILE_REQUIRED")
+    name = file.filename or ""
+    media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+    if (
+        not name or name != name.strip() or len(name) > 255
+        or name.startswith(".") or "/" in name or "\\" in name
+        or any(ord(char) < 32 for char in name)
+        or media_type not in {"application/pdf", "image/png", "image/jpeg"}
+    ):
+        raise HTTPException(status_code=422, detail="PROJECT_ATTACHMENT_FILE_INVALID")
+    try:
+        file.file.seek(0, 2)
+        measured = file.file.tell()
+        file.file.seek(0)
+        if measured <= 0 or measured > MAX_ATTACHMENT_BYTES:
+            raise HTTPException(status_code=413, detail="PROJECT_ATTACHMENT_SIZE_INVALID")
+        try:
+            size, digest, receipt = store_quarantined_attachment(
+                tenant_id=context.tenant_id, project_id=project_id,
+                task_id=task_id, uploader_principal_id=context.identity.identity_id,
+                idempotency_key=key, media_type=media_type,
+                content_length=measured, stream=file.file,
+            )
+        except ProjectAttachmentStorageError as error:
+            raise HTTPException(status_code=503, detail=error.code) from error
+    finally:
+        await file.close()
+
+    def commit(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        authorize(registry, session)
+        attachment = ProjectAttachment(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id,
+            attachment_id=attachment_id_for_command(
+                context.tenant_id, project_id, task_id,
+                context.identity.identity_id, key,
+            ),
+            uploader_principal_id=context.identity.identity_id,
+            filename=name, media_type=media_type,
+            size_bytes=size, content_sha3_512=digest,
+            storage_receipt=receipt,
+            created_at=datetime.now(timezone.utc),
+        )
+        stored = _project_attachment_store(
+            registry, context.tenant_id, project_id, task_id, session,
+        ).create_or_replay(
+            attachment=attachment, idempotency_key=key, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-ATTACHMENT-RESULT/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "attachment": _attachment_projection(stored),
+        }
+
+    return _transaction(context, commit, write=True)
 
 
 @router.get("/my-approvals")
@@ -2653,7 +2866,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER
+# VERSION: v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
