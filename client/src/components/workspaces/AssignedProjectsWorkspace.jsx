@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.0.0-SOURCE-BACKED-ASSIGNED-PROJECT-EXECUTION
+ * VERSION: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-SOURCE-BACKED-ASSIGNED-PROJECT-EXECUTION adds full-width
+ * CHANGELOG: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK opens a
+ *          specifically authorized project from Daily Attention even when
+ *          it lies beyond the first page of participant project discovery.
+ * CHANGELOG: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK adds full-width
  *          participant project listing, selected task execution, conversations
  *          and recipient-only notification acknowledgement with verified EOS reads.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -88,6 +91,7 @@ function checkNotice(item, tenantId, projectId, principalId) {
 /** @description Real participant workflow without any owner-role fallback. */
 export default function AssignedProjectsWorkspace({
   tenantId, principalId, tenantHeaders, sessionScope, onBack,
+  focusProjectId = null,
 }) {
   const [projects, setProjects] = useState([]);
   const [projectOffset, setProjectOffset] = useState(0);
@@ -102,6 +106,7 @@ export default function AssignedProjectsWorkspace({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const sequence = useRef(0);
+  const focusHandled = useRef(null);
   const command = useRef({ fingerprint: '', key: '' });
   const scope = [tenantId, principalId, sessionScope].join('\0');
   const currentScope = useRef(scope);
@@ -148,6 +153,7 @@ export default function AssignedProjectsWorkspace({
     setNotices([]);
     setParticipants([]);
     setError('');
+    focusHandled.current = null;
     command.current = { fingerprint: '', key: '' };
     void list(0);
     return () => { sequence.current += 1; };
@@ -231,6 +237,43 @@ export default function AssignedProjectsWorkspace({
         : 'The project execution source could not be verified. Retry.');
     }
   };
+
+  useEffect(() => {
+    if (
+      listState !== 'READY' || !focusProjectId
+      || !PROJECT_ID.test(focusProjectId)
+      || focusHandled.current === scope + ':' + focusProjectId
+    ) return undefined;
+    const active = scope;
+    focusHandled.current = scope + ':' + focusProjectId;
+    let live = true;
+    const known = projects.find(row => row.project.project_id === focusProjectId);
+    if (known) {
+      void openProject(known);
+    } else {
+      // The source queue may contain a project beyond the first 50
+      // participant assignments. Fetch only this exact participant detail.
+      void api.get('/projects/' + encodeURIComponent(focusProjectId) + '/my-project', {
+        headers,
+      }).then(({ data }) => {
+        if (!live || currentScope.current !== active) return;
+        if (
+          data?.schema !== 'WILSY-PROJECT-PARTICIPANT-DETAIL/V1'
+          || data.tenant_id !== tenantId || data.principal_id !== principalId
+          || data.project_id !== focusProjectId
+          || !checkAssignedProject({
+            project: data.project, participation: data.participation,
+          }, tenantId, principalId)
+        ) throw new Error('ASSIGNED_PROJECT_FOCUS_INVALID');
+        void openProject({ project: data.project, participation: data.participation });
+      }).catch(() => {
+        if (live && currentScope.current === active) {
+          setError('EOS could not verify this project focus. Refresh your assignments.');
+        }
+      });
+    }
+    return () => { live = false; };
+  }, [scope, listState, focusProjectId, projects, tenantId, principalId, tenantHeaders]);
 
   const submit = async (fingerprint, action, confirm) => {
     if (busy || workState !== 'READY' || !selection) return;
@@ -440,7 +483,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.0.0-SOURCE-BACKED-ASSIGNED-PROJECT-EXECUTION
+// VERSION: v1.1.0-EXACT-ATTENTION-PROJECT-DEEP-LINK
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
