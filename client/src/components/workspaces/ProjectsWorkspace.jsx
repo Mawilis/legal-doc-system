@@ -454,13 +454,34 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       || !options?.departments.some(value => value.department_id === department)) return;
     setLocalError('');
     const confirmed = await runCommand(async () => {
-      const { data } = await api.patch(
-        `/projects/${encodeURIComponent(project.project_id)}/assignment`,
-        { expected_revision: project.revision, owner_principal_id: owner, department_id: department },
-        { headers: { ...tenantHeaders,
-          'Idempotency-Key': retainedCommandKey(assignmentReplay,
-            JSON.stringify([tenantId, project.project_id, project.revision, owner, department])) } },
-      );
+      let data;
+      try {
+        ({ data } = await api.patch(
+          `/projects/${encodeURIComponent(project.project_id)}/assignment`,
+          { expected_revision: project.revision, owner_principal_id: owner, department_id: department },
+          { headers: { ...tenantHeaders,
+            'Idempotency-Key': retainedCommandKey(assignmentReplay,
+              JSON.stringify([tenantId, project.project_id, project.revision, owner, department])) } },
+        ));
+      } catch (cause) {
+        if (cause?.response?.status === 422) {
+          const detail = cause.response.data?.detail;
+          const fieldPaths = Array.isArray(detail)
+            ? detail.slice(0, 3).map(item => {
+              const parts = Array.isArray(item?.loc) ? item.loc.filter(value =>
+                typeof value === 'string' && /^[a-z_]{1,40}$/.test(value)) : [];
+              return parts.slice(-2).join('.');
+            }).filter(Boolean)
+            : [];
+          setLocalError(fieldPaths.length
+            ? 'EOS rejected the assignment fields: ' + fieldPaths.join(', ')
+              + '. No assignment was saved.'
+            : 'EOS rejected the assignment payload (422). Review the safe response detail and refresh the project.');
+        } else if (cause?.response?.status === 403) {
+          setLocalError('EOS denied project-update authorization (403). Project creation is a separate permission.');
+        }
+        throw cause;
+      }
       const next = assertProjectResult(data, tenantId, principalId, project.project_id, project.revision + 1).project;
       if (next.owner_principal_id !== owner || next.department_id !== department
         || next.status !== project.status) throw new Error('PROJECT_ASSIGNMENT_READBACK_INVALID');
@@ -472,7 +493,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       assignmentReplay.current = { fingerprint: '', key: null };
     });
     if (!confirmed) {
-      setLocalError('Assignment was not confirmed. Inspect the EOS error above; project state has not been assumed changed. Refresh the project before retrying.');
+      setLocalError(previous => previous || 'Assignment was not confirmed. Inspect the EOS error above; refresh before retrying.');
     }
   };
 
