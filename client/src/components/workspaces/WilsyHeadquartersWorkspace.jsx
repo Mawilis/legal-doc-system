@@ -5,14 +5,15 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.8.0-SCOPED-PROJECT-SUMMARY-RECOVERY
+ * VERSION: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v4.8.0-SCOPED-PROJECT-SUMMARY-RECOVERY adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
+ * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ removes unauthorized speculative Overview HR workforce requests; directory reads occur only when People is opened and retain exact-session authorization/tenant validation and fail-closed UI. Existing My Work and Projects summary feeds are unchanged.
+ * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
  * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY adds a
  *            verified Blocked attention filter and renders project date-only
  *            deadlines without manufacturing a timezone or overdue instant.
@@ -490,7 +491,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     };
   }, [workScope, section, showMyWork, myWorkError, myWorkRefresh]);
   useEffect(() => {
-    if (section !== 'people' && section !== 'overview') return undefined;
+    if (section !== 'people') return undefined;
     if (!workScope || !workTenantId || !authUser.id) {
       setWorkforce(null);
       setWorkforceScope(null);
@@ -744,8 +745,8 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const currentWorkforceError = !workScope
     ? 'AUTHENTICATION_REQUIRED'
     : workforceScopeCurrent ? workforceError : '';
-  const currentWorkforceLoading = workforceLoading
-    || (Boolean(workScope) && (section === 'overview' || section === 'people') && !workforceScopeCurrent);
+  const currentWorkforceLoading = section === 'people' && (workforceLoading
+    || (Boolean(workScope) && !workforceScopeCurrent));
   const currentSnapshot = myWorkSnapshotScope === workScope ? myWorkSnapshot : null;
   const currentRequisitions = requisitionsScope === workScope ? requisitions : null;
   const pendingApprovalCount = currentRequisitions
@@ -1529,7 +1530,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.8.0-SCOPED-PROJECT-SUMMARY-RECOVERY
+ * VERSION: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
