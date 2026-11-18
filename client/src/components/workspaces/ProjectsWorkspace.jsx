@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL
+ * VERSION: v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL exposes readable title-case
+ * CHANGELOG: v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION consumes EOS verified has_more/next_offset page
+ *            evidence, retaining legacy mock compatibility and denying malformed
+ *            new metadata without claiming nonexistent pages.
+ *            v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -462,6 +465,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pageOffset, setPageOffset] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const pageOffsetRef = useRef(0);
   const [selectedId, setSelectedId] = useState(null);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -515,9 +519,21 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       ]);
       if (sequence !== listSequence.current || activeScope.current !== requestScope) return null;
       const nextItems = assertProjectList(listResponse?.data, tenantId, principalId);
+      const pageEvidence = listResponse?.data;
+      const hasPageEvidence = Object.prototype.hasOwnProperty.call(pageEvidence, 'has_more');
+      if (hasPageEvidence && (
+        typeof pageEvidence.has_more !== 'boolean'
+        || pageEvidence.offset !== pageOffsetRef.current
+        || pageEvidence.limit !== 100
+        || (pageEvidence.has_more
+          ? pageEvidence.next_offset !== pageOffsetRef.current + nextItems.length
+          : pageEvidence.next_offset != null)
+      )) throw new Error('PROJECT_PAGE_EVIDENCE_INVALID');
+      const verifiedNextPage = hasPageEvidence ? pageEvidence.has_more : nextItems.length === 100;
       const nextSummary = assertProjectSummary(summaryResponse?.data, tenantId, principalId);
       itemsRef.current = nextItems;
       setItems(nextItems);
+      setHasNextPage(verifiedNextPage);
       setSummary(nextSummary);
       setSourceState('READY');
       const currentSelection = selectedRef.current;
@@ -567,6 +583,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setStatusFilter('all');
     pageOffsetRef.current = 0;
     setPageOffset(0);
+    setHasNextPage(false);
     void refresh({ preserveSelection: false });
     return () => {
       listSequence.current += 1;
@@ -784,7 +801,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 
   const changePage = (nextOffset) => {
     if (sourceState !== 'READY' || commandState === 'PENDING'
-      || nextOffset < 0 || (nextOffset > pageOffsetRef.current && items.length < 100)) return;
+      || nextOffset < 0 || (nextOffset > pageOffsetRef.current && !hasNextPage)) return;
     pageOffsetRef.current = nextOffset;
     setPageOffset(nextOffset);
     detailSequence.current += 1;
@@ -875,12 +892,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             </div>}
             <footer className="wp-footer border-t border-slate-200 px-4 py-2 text-xs text-slate-500">
               <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified` : 'Source state shown above'}</span>
-              {sourceState === 'READY' && (pageOffset > 0 || items.length === 100) && (
+              {sourceState === 'READY' && (pageOffset > 0 || hasNextPage) && (
                 <nav className="wp-pagination" aria-label="Project pages">
                   <span>Page {Math.floor(pageOffset / 100) + 1} · Filters search this page</span>
                   <button type="button" className="wp-button" disabled={pageOffset === 0}
                     onClick={() => changePage(Math.max(0, pageOffset - 100))}>Previous</button>
-                  <button type="button" className="wp-button" disabled={items.length < 100}
+                  <button type="button" className="wp-button" disabled={!hasNextPage}
                     onClick={() => changePage(pageOffset + 100)}>Next</button>
                 </nav>
               )}
@@ -930,7 +947,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL
+// VERSION: v2.2.0-VERIFIED-PROJECT-PAGE-NAVIGATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
