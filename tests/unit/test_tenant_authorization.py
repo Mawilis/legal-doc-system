@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT
+VERSION: v1.15.0-PROJECT-PARTICIPANT-CONJUNCTIVE-IAM-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -14,11 +14,14 @@ permissions are restricted to the exact WILSY company tenant before authority re
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
-CHANGELOG: v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT certifies non-inherited customer Projects
+CHANGELOG: v1.15.0-PROJECT-PARTICIPANT-CONJUNCTIVE-IAM-CERT certifies participant read/contribute
+role possession separately from owner Projects IAM, exact tenant, membership,
+capacity and operation pairing; project record gate remains at router boundary.
+CHANGELOG: v1.15.0-PROJECT-PARTICIPANT-CONJUNCTIVE-IAM-CERT certifies non-inherited customer Projects
 owner grants, WILSY-only platform role fencing, and existing separate
 membership/business-capacity/role requirements.
 CHANGELOG:
-2026-11-17 v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT refreshes two
+2026-11-17 v1.15.0-PROJECT-PARTICIPANT-CONJUNCTIVE-IAM-CERT refreshes two
 strict runtime-version assertions to the canonical CRM work-edit release.
 All binding, tenant fence, business role and denial assertions remain intact.
 2026-11-16 v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT verifies exact Projects pairs, tenant_owner eligibility, the dedicated assigned role, missing-role denial, and the internal-role foreign-tenant fence. No role assignment or entitlement is created.
@@ -208,7 +211,7 @@ from tools.eos.workforce.domain.workforce_relationship import (
     WorkforceScopeKind,
 )
 
-VERSION = "v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT"
+VERSION = "v1.15.0-PROJECT-PARTICIPANT-CONJUNCTIVE-IAM-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -979,6 +982,60 @@ def test_customer_owner_requires_explicit_projects_role_in_own_tenant() -> None:
     assert denied.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
 
 
+@pytest.mark.parametrize(
+    ("role", "operation", "permission", "expected"),
+    [
+        ("PROJECTS_PARTICIPANT_VIEWER", "project_participant_detail", "project:participant:read", True),
+        ("PROJECTS_PARTICIPANT_VIEWER", "project_participant_contribute", "project:participant:contribute", False),
+        ("PROJECTS_PARTICIPANT_CONTRIBUTOR", "project_participant_detail", "project:participant:read", True),
+        ("PROJECTS_PARTICIPANT_CONTRIBUTOR", "project_participant_contribute", "project:participant:contribute", True),
+        ("PROJECTS_TENANT_OWNER", "project_participant_detail", "project:participant:read", False),
+        ("TENANT_OWNER", "project_participant_detail", "project:participant:read", False),
+    ],
+)
+def test_participant_iam_is_explicit_non_inherited(
+    role: str, operation: str, permission: str, expected: bool,
+) -> None:
+    """IAM possession alone is non-possessory without exact project record scope."""
+    tenant = "customer-participant-tenant"
+    assert ta._BINDINGS.get(operation) == permission
+    decision = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_manager", tenant_id=tenant),
+        assignment_repository=_assignments(role, tenant_id=tenant),
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert decision.authorized is expected
+    if expected:
+        assert decision.authorization_role == role
+
+
+def test_participant_iam_cross_tenant_and_cross_permission_deny() -> None:
+    """Foreign-tenant role and changed operation cannot borrow record access."""
+    tenant = "tenant-a"
+    denied = _decision(
+        permission_id="project:participant:read",
+        operation="project_participant_detail",
+        business_repository=_business("tenant_manager", tenant_id=tenant),
+        assignment_repository=_assignments("PROJECTS_PARTICIPANT_VIEWER", tenant_id="tenant-b"),
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert denied.authorized is False
+    mismatch = _decision(
+        permission_id="project:participant:contribute",
+        operation="project_participant_detail",
+        business_repository=_business("tenant_manager", tenant_id=tenant),
+        assignment_repository=_assignments("PROJECTS_PARTICIPANT_CONTRIBUTOR", tenant_id=tenant),
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert mismatch.authorized is False
+    assert mismatch.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
 def test_project_crossed_operation_pairs_deny_before_role_assignment_reads() -> None:
     """A project permission cannot be replayed across another operation."""
     assignments = _assignments("TENANT_OWNER")
@@ -1632,7 +1689,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.54.0-CRM-WORK-EDIT-BINDING"
+    assert ta.VERSION == "v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1646,7 +1703,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.54.0-CRM-WORK-EDIT-BINDING"
+    assert ta.VERSION == "v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -3234,7 +3291,7 @@ def test_platform_employer_admission_requires_current_exact_tenant_workforce(
 
 
 # ARTIFACT: tests/unit/test_tenant_authorization.py
-# VERSION: v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT
+# VERSION: v1.15.0-PROJECT-PARTICIPANT-CONJUNCTIVE-IAM-CERT
 # AUTHORITY BOUNDARY: certifies exact composition, operation policy and static role conjunctions only; fixtures create no assignment
 # TENANT POSTURE: platform-employer decisions are restricted to the canonical WILSY company tenant and require active membership, eligible business role and active assigned authorization role
 # FAIL-CLOSED POSTURE: crossed pairs deny; offer acceptance remains unbound; admission has no command or route
