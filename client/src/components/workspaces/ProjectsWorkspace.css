@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS
+ * VERSION: v1.4.0-PROJECTS-OPERATING-TABLE
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS targets the mounted
+ * CHANGELOG: v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
+ *            operational project table, readable filters and calm white surfaces.
+ *            Selected detail uses balanced columns without affecting source truth.
+ *            v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS targets the mounted
  *            .wp-accountability element (previous .wp-section selector never
  *            matched), restoring navy label text and normal letter spacing.
  *            v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE prevents global uppercase, tracked
@@ -330,8 +333,128 @@
 @media(prefers-reduced-motion:reduce) {
   .wilsy-projects .wp-button {transition:none;}
 }
+/* Projects table: canonical list/data and behavior remain in React/EOS. */
+.wilsy-projects {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  min-height: 0;
+  background: #f3f6fb;
+  border-color: #dce4f0;
+  border-radius: 14px;
+}
+.wilsy-projects .wp-toolbar {
+  box-shadow: none;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.wilsy-projects .wp-body[data-layout="list"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100%;
+  height: auto;
+}
+.wilsy-projects .wp-body[data-layout="list"] > .wp-list-panel {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+.wilsy-projects .wp-body[data-layout="detail"] {
+  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+}
+.wilsy-projects .wp-panel { box-shadow: none; }
+.wilsy-projects .wp-list-controls { flex-wrap: wrap; width: 100%; }
+.wilsy-projects .wp-list-controls .wp-search { flex: 1 1 280px; }
+.wilsy-projects .wp-search input,
+.wilsy-projects .wp-filter {
+  background: #fff !important;
+  color: #162d50 !important;
+  -webkit-text-fill-color: #162d50 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+.wilsy-projects .wp-search input::placeholder {
+  color: #526781 !important;
+  -webkit-text-fill-color: #526781 !important;
+  opacity: 1 !important;
+}
+.wilsy-projects .wp-filter {
+  width: 190px;
+  flex: 0 0 190px;
+}
+.wilsy-projects .wp-table-shell {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-color: #a9c2df #f0f4fa;
+}
+.wilsy-projects .wp-table-head,
+.wilsy-projects .wp-table-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(130px, 1fr) minmax(120px, .8fr) minmax(135px, .85fr) minmax(110px, .55fr);
+  min-width: 740px;
+  align-items: center;
+  gap: 16px;
+}
+.wilsy-projects .wp-table-head {
+  padding: 13px 20px;
+  background: #f7f9fd;
+  border-bottom: 1px solid #d9e2ee;
+  color: #435771 !important;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.wilsy-projects .wp-table-row {
+  min-height: 74px;
+  width: 100%;
+  padding: 13px 20px;
+  border: none;
+  border-bottom: 1px solid #e0e7f0;
+  border-radius: 0;
+  text-align: left;
+  background: #fff;
+  color: #173251 !important;
+  cursor: pointer;
+}
+.wilsy-projects .wp-table-row:hover,
+.wilsy-projects .wp-table-row[data-selected="true"] {
+  background: #eff5ff;
+  box-shadow: inset 3px 0 #3269b6;
+}
+.wilsy-projects .wp-table-row:focus-visible {
+  outline: 3px solid #1467d6 !important;
+  outline-offset: -3px;
+}
+.wilsy-projects .wp-table-row > span { min-width: 0; overflow-wrap: anywhere; }
+.wilsy-projects .wp-table-row .wp-row-title { font-size: 14px; }
+.wilsy-projects .wp-table-row .wp-row-meta { margin-top: 4px; }
+.wilsy-projects .wp-table-action { color: #164b85 !important; font-size: 13px; font-weight: 750; }
+@media (max-width: 1100px) {
+  .wilsy-projects .wp-body[data-layout="detail"] {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+}
+@media (max-width: 640px) {
+  .wilsy-projects .wp-filter { width: 100%; flex: 1 1 100%; }
+  .wilsy-projects .wp-table-head { display: none; }
+  .wilsy-projects .wp-table-row {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+  }
+  .wilsy-projects .wp-table-row > span:nth-child(2),
+  .wilsy-projects .wp-table-row > span:nth-child(4) { display: none; }
+  .wilsy-projects .wp-table-row > span:nth-child(3) { grid-column: 2; grid-row: 1; }
+  .wilsy-projects .wp-table-row > span:nth-child(5) { grid-column: 2; }
+}
+
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS
+ * VERSION: v1.4.0-PROJECTS-OPERATING-TABLE
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
