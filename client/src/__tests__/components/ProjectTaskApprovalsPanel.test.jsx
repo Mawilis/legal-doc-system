@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Exact Task Approval Client Decision Certificate
- * VERSION: v1.0.0-NAMED-REVIEWER-AUDITED-READBACK-CERT
+ * VERSION: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT
  * AUTHORITY: Synthetic EOS client contract; Python EOS owns permission truth.
  * EPITOME: Certify owner request, independently authorized reviewer decision,
  *          durable readback, foreign source denial and no self-approval action.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskApprovalsPanel; mocked api.js.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-NAMED-REVIEWER-AUDITED-READBACK-CERT tests both separated
+ * CHANGELOG: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT verifies explicit clean-source file selection, immutable attachment IDs on request and independently confirmed approval readback; forged clearance cannot be selected.
+ * CHANGELOG: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT tests both separated
  *          user journeys without granting financial or task status authority.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic identities; no live IAM credentials.
@@ -168,8 +169,111 @@ it('rejects cross-tenant approval list without exposing decision controls', asyn
   expect(api.post).not.toHaveBeenCalled();
 });
 
+
+
+it('binds only source-verified clean task attachments to a review request', async () => {
+  const attachment = 'pat-' + 'd'.repeat(48);
+  const clearFile = {
+    schema: 'wilsy.project.attachment.v1',
+    tenant_id: tenantId, project_id: projectId, task_id: taskId,
+    attachment_id: attachment, uploader_principal_id: reviewer,
+    filename: 'delivery-evidence.pdf', media_type: 'application/pdf',
+    size_bytes: 128, content_sha3_512: 'e'.repeat(128),
+    created_at: '2026-11-18T08:00:00+00:00',
+    state: 'QUARANTINED', revision: 1,
+    scan_clearance_status: 'SCAN_CLEAN_VERIFIED',
+    scan_clearance_fingerprint: 'f'.repeat(128),
+  };
+  let current = [];
+  api.get.mockImplementation(async path => {
+    if (path === prefix + '?limit=50&offset=0') {
+      return { data: {
+        schema: 'WILSY-PROJECT-APPROVAL-LIST/V1',
+        tenant_id: tenantId, principal_id: requester, project_id: projectId,
+        task_id: taskId, items: current, offset: 0, limit: 50,
+        has_more: false, next_offset: null,
+      } };
+    }
+    expect(path).toBe('/projects/' + projectId + '/tasks/' + taskId
+      + '/attachments?limit=50&offset=0');
+    return { data: {
+      schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1',
+      tenant_id: tenantId, principal_id: requester, project_id: projectId,
+      task_id: taskId, limit: 50, offset: 0, has_more: false,
+      next_offset: null, items: [clearFile],
+    } };
+  });
+  api.post.mockImplementationOnce(async (path, payload) => {
+    expect(path).toBe(prefix);
+    expect(payload).toEqual({
+      reviewer_principal_id: reviewer, rationale: 'Review cleared delivery evidence.',
+      evidence_attachment_ids: [attachment],
+    });
+    current = [record({
+      rationale: payload.rationale, evidence_attachment_ids: [attachment],
+    })];
+    return { data: {
+      schema: 'WILSY-PROJECT-APPROVAL-RESULT/V1',
+      tenant_id: tenantId, principal_id: requester,
+      project_id: projectId, task_id: taskId, approval: current[0],
+    } };
+  });
+  mount(requester);
+  expect(await screen.findByText('EOS verified no approvals on this task page.')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Choose verified task evidence' }));
+  const choice = await screen.findByRole('checkbox', { name: /delivery-evidence.pdf/ });
+  fireEvent.click(choice);
+  fireEvent.change(screen.getByRole('combobox', { name: 'Review contributor' }), {
+    target: { value: reviewer },
+  });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Review request rationale' }), {
+    target: { value: 'Review cleared delivery evidence.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Request EOS review' }));
+  await waitFor(() => expect(screen.getByText('Bound task evidence · 1 file(s)')).toBeVisible());
+  expect(screen.getByText(attachment)).toBeVisible();
+  expect(api.post).toHaveBeenCalledTimes(1);
+});
+
+it('never selects fabricated clean scan evidence from a malformed source', async () => {
+  const attachment = 'pat-' + 'd'.repeat(48);
+  api.get.mockImplementation(async path => {
+    if (path === prefix + '?limit=50&offset=0') {
+      return { data: {
+        schema: 'WILSY-PROJECT-APPROVAL-LIST/V1',
+        tenant_id: tenantId, principal_id: requester, project_id: projectId,
+        task_id: taskId, items: [], offset: 0, limit: 50,
+        has_more: false, next_offset: null,
+      } };
+    }
+    return { data: {
+      schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1',
+      tenant_id: tenantId, principal_id: requester, project_id: projectId,
+      task_id: taskId, limit: 50, offset: 0, has_more: false,
+      next_offset: null, items: [{
+        schema: 'wilsy.project.attachment.v1',
+        tenant_id: tenantId, project_id: projectId, task_id: taskId,
+        attachment_id: attachment, filename: 'untrusted.pdf',
+        media_type: 'application/pdf', size_bytes: 8,
+        content_sha3_512: 'e'.repeat(128),
+        state: 'QUARANTINED', revision: 1,
+        scan_clearance_status: 'SCAN_CLEAN_VERIFIED',
+        scan_clearance_fingerprint: null,
+      }],
+    } };
+  });
+  mount(requester);
+  expect(await screen.findByText('EOS verified no approvals on this task page.')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Choose verified task evidence' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'No file can be linked without verification',
+  );
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 // ARTIFACT: ProjectTaskApprovalsPanel.test.jsx
-// VERSION: v1.0.0-NAMED-REVIEWER-AUDITED-READBACK-CERT
+// VERSION: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT
 // AUTHORITY BOUNDARY: mocked client only, no live IAM or financial approval
 // TENANT POSTURE: exact tenant/project/task/actor source readback
 // FAIL-CLOSED POSTURE: foreign, unknown and non-reviewer denied
