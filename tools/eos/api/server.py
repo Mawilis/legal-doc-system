@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.46.0-SOURCE-OWNED-PROJECT-WORK
+VERSION: v1.47.0-PROJECT-NOTES-RECORD-SCOPE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -18,7 +18,10 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-13
-CHANGELOG: 2026-11-18 v1.46.0-SOURCE-OWNED-PROJECT-WORK independently gates project-linked
+CHANGELOG: 2026-11-18 v1.47.0-PROJECT-NOTES-RECORD-SCOPE introduces a
+separately indexed, exact-project authored Notes API and record-visibility
+admission while preserving existing Projects and Operations lifecycles.
+2026-11-18 v1.46.0-SOURCE-OWNED-PROJECT-WORK independently gates project-linked
 Operations task commands on startup indexes and mounts the conjunctively
 authorized source-owned task adapter without creating work or IAM at startup.
 2026-11-16 v1.45.0-PROJECTS-ROUTER-AND-INDEX-BOOTSTRAP mounts the authenticated Projects router once under /api and provisions only the project registry unique indexes before route readiness; no business records, permissions, assignments or entitlements are created.
@@ -183,6 +186,12 @@ from .project_work_router import (
     router as project_work_router,
     OPERATIONS_COLLECTION as PROJECT_WORK_OPERATIONS_COLLECTION,
 )
+from .project_notes_router import router as project_notes_router
+from tools.eos.saas.projects.project_notes_registry import (
+    ProjectNotesRegistry,
+    COLLECTION as PROJECT_NOTES_COLLECTION,
+    EVENT_COLLECTION as PROJECT_NOTES_EVENT_COLLECTION,
+)
 from tools.eos.workspaces.persistence.tenant_module_work_registry import (
     ensure_indexes as ensure_project_work_indexes,
 )
@@ -314,7 +323,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.46.0-SOURCE-OWNED-PROJECT-WORK"
+VERSION = "v1.47.0-PROJECT-NOTES-RECORD-SCOPE"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -382,6 +391,7 @@ class WilsyAPIServer:
         app.state.p12c_binding_indexes_ready = False
         app.state.projects_indexes_ready = False
         app.state.project_work_indexes_ready = False
+        app.state.project_notes_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
         app.state.global_principal_session_indexes_ready = False
         app.state.global_principal_system_session_indexes_ready = False
@@ -575,6 +585,7 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.projects_indexes_ready = False
             app.state.project_work_indexes_ready = False
+            app.state.project_notes_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
             app.state.global_principal_system_session_indexes_ready = False
@@ -638,6 +649,18 @@ class WilsyAPIServer:
                 app.state.project_work_indexes_ready = False
                 logger.error(
                     "[PROJECT_WORK] Operations index bootstrap unavailable: %s",
+                    type(error).__name__,
+                )
+            try:
+                ProjectNotesRegistry.ensure_indexes(
+                    database[PROJECT_NOTES_COLLECTION],
+                    database[PROJECT_NOTES_EVENT_COLLECTION],
+                )
+                app.state.project_notes_indexes_ready = True
+            except Exception as error:
+                app.state.project_notes_indexes_ready = False
+                logger.error(
+                    "[PROJECT_NOTES] Index bootstrap unavailable: %s",
                     type(error).__name__,
                 )
             try:
@@ -1205,6 +1228,7 @@ class WilsyAPIServer:
         app.include_router(company_operating_document_router, prefix="/api")
         app.include_router(projects_router, prefix="/api")
         app.include_router(project_work_router, prefix="/api")
+        app.include_router(project_notes_router, prefix="/api")
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
@@ -1222,7 +1246,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.46.0-SOURCE-OWNED-PROJECT-WORK
+# VERSION: v1.47.0-PROJECT-NOTES-RECORD-SCOPE
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
