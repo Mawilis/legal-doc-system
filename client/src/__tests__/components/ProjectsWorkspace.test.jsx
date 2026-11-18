@@ -1,31 +1,32 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT
+ * VERSION: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT proves a
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT adds in-place task
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT certifies task creation, verified
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT waits for the committed note row
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT certifies source-backed project note
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT proves navigation
+ * CHANGELOG: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -379,6 +380,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="notes-client-certificate" />);
     fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Notes', exact: true }));
     expect(await screen.findByRole('region', { name: 'Project notes' })).toBeVisible();
     const input = screen.getByRole('textbox', { name: 'New project note' });
     fireEvent.change(input, { target: { value: 'Project operating context' } });
@@ -404,6 +406,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="founder-project-handoff" focusProjectId={PROJECT_ID}/>);
     expect(await screen.findByRole('heading', { name: persisted.name })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Audit history' }));
     expect(screen.getByRole('heading', { name: 'Audit events' })).toBeVisible();
     expect(api.get.mock.calls.some(([path]) => path === `/projects/${PROJECT_ID}`)).toBe(true);
     expect(api.patch).not.toHaveBeenCalled();
@@ -434,6 +437,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeVisible();
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
+    fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     expect(screen.getByText('Not recorded')).toBeVisible();
     expect(screen.getAllByText('Not assigned')).toHaveLength(2);
     expect(screen.getByText('Not scheduled')).toBeVisible();
@@ -442,8 +446,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read full project scope' }));
     expect(screen.getByRole('button', { name: 'Collapse project scope' })).toBeVisible();
     expect(screen.getAllByRole('heading', { name: 'Definition of done' }).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
     expect(screen.getByLabelText('Project code')).toHaveValue('');
-    fireEvent.click(screen.getByRole('button', { name: 'Close project details' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to projects table' }));
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
   });
 
@@ -465,6 +470,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       fireEvent.click(screen.getByRole('button', { name: /Scheduled milestone/ }));
       await screen.findByRole('heading', { name: 'Scheduled milestone' });
       expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
+      fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
       const start = screen.getByLabelText('Start date');
       const target = screen.getByLabelText('Target date');
       expect(start).toHaveAttribute('type', 'date');
@@ -512,6 +518,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="owner-assignment" />);
     fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
     const ownerSelector = await screen.findByRole('combobox', { name: 'Eligible project owner' });
     fireEvent.change(ownerSelector, { target: { value: ownerId } });
     fireEvent.change(screen.getByRole('combobox', { name: 'Tenant department' }), {
@@ -540,6 +547,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="empty-authorities" />);
     fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Save audited assignment' })).toBeDisabled());
     expect(screen.getByText('EOS verified 0 eligible project owners and 0 active tenant departments.')).toBeInTheDocument();
     const accountability = screen.getByRole('region', { name: 'Project accountability' });
@@ -573,6 +581,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="code-generation-cert"/>);
     await screen.findByText('1 shown · 1 verified');
     fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     expect(await screen.findByText('Not recorded')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Generate and save code' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
@@ -729,7 +738,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT
+ * VERSION: v2.4.0-FULL-WIDTH-PROJECT-VIEW-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
