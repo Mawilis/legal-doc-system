@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS
+ * VERSION: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -9,31 +9,32 @@
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS opens
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS opens the
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS mounts exact-tenant,
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS mounts the independently source-backed
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS mounts independently source-backed note
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS applies status filtering at the exact-tenant
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.10.0-VERIFIED-HUMAN-OWNER-LABELS exposes readable title-case
+ *            v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -265,6 +266,18 @@ function assertProjectResult(payload, tenantId, principalId, projectId, minimumR
       || typeof event.event_type !== 'string' || typeof event.actor_principal_id !== 'string'
       || !Number.isSafeInteger(event.revision) || typeof event.occurred_at !== 'string'
       || Number.isNaN(Date.parse(event.occurred_at)))
+    || (payload.actor_profiles !== undefined && (
+      !payload.actor_profiles || Array.isArray(payload.actor_profiles)
+      || typeof payload.actor_profiles !== 'object'
+      || Object.entries(payload.actor_profiles).some(([id, profile]) =>
+        ![project.created_by_principal_id, project.owner_principal_id,
+          ...events.map(event => event.actor_principal_id)].includes(id)
+        || !profile || typeof profile !== 'object'
+        || !Object.hasOwn(profile, 'first_name') || !Object.hasOwn(profile, 'last_name')
+        || ![profile.first_name, profile.last_name].every(name =>
+          name === null || (typeof name === 'string'
+            && name.length > 0 && name.length <= 100 && name === name.trim())))
+    ))
   ) throw new Error('PROJECT_RESULT_SCOPE_OR_SHAPE_INVALID');
   return payload;
 }
@@ -881,6 +894,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     void refresh({ preserveSelection: false });
   };
 
+  const personLabel = (principal) => {
+    if (!principal) return 'Not assigned';
+    const profile = detail?.actor_profiles?.[principal];
+    const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
+    return name || 'Name not recorded';
+  };
   const statusLabel = (value) => String(value || 'unknown').replaceAll('_', ' ');
   const countLabel = summary
     ? `${summary.active ?? '—'} active · ${summary.total} total`
@@ -1044,7 +1063,13 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                 onClick={() => void assignGeneratedCode()}
                 disabled={commandState === 'PENDING' || sourceState !== 'READY'}
               >Generate and save code</button>}
-            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">{detail.project.owner_principal_id || 'Not assigned'}</dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
+            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">
+              {personLabel(detail.project.owner_principal_id)}
+              {detail.project.owner_principal_id && <small className="ml-2 text-xs text-slate-500" title={detail.project.owner_principal_id}>Verified principal</small>}
+            </dd><dt className="text-slate-500">Created by</dt><dd className="text-slate-900">
+              {personLabel(detail.project.created_by_principal_id)}
+              <small className="ml-2 text-xs text-slate-500" title={detail.project.created_by_principal_id}>Audited creator</small>
+            </dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
             </div>}
             {projectView === 'settings' && <div className="max-w-5xl">
             <h3 className="mb-3 text-lg font-bold text-slate-900">Project governance &amp; configuration</h3>
@@ -1079,7 +1104,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. The list was reconciled from EOS.' : commandError === 'PROJECT_INPUT_INVALID' ? 'The supplied project fields are invalid.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
             {commandState === 'CONFIRMED' && <p role="status" className="mt-3 text-sm font-medium text-emerald-800">EOS confirmed the project change and returned persisted state.</p>}
             </div>}
-            {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Audit events</h3>{Array.isArray(detail.events) && detail.events.length ? <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">{detail.events.map((event) => <li key={event.event_id} className="wp-event rounded-md bg-slate-50 p-2 text-xs"><strong className="text-slate-800">{event.event_type}</strong><div className="mt-1 break-all text-slate-600">Actor: {event.actor_principal_id} · revision {event.revision}</div><time className="text-slate-500">{event.occurred_at ? new Date(event.occurred_at).toLocaleString() : 'Timestamp unavailable'}</time></li>)}</ol> : <p className="mt-2 text-sm text-slate-600">No audit event was returned by EOS.</p>}</section>}
+            {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Audit events</h3>{Array.isArray(detail.events) && detail.events.length ? <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">{detail.events.map((event) => <li key={event.event_id} className="wp-event rounded-md bg-slate-50 p-2 text-xs"><strong className="text-slate-800">{event.event_type}</strong><div className="mt-1 text-slate-700">By {personLabel(event.actor_principal_id)} · revision {event.revision}</div>
+              <div className="text-xs text-slate-500" title={event.actor_principal_id}>Immutable actor ID retained in EOS audit evidence</div><time className="text-slate-500">{event.occurred_at ? new Date(event.occurred_at).toLocaleString() : 'Timestamp unavailable'}</time></li>)}</ol> : <p className="mt-2 text-sm text-slate-600">No audit event was returned by EOS.</p>}</section>}
           </div>}
         </section>}
       </div>
@@ -1088,7 +1114,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.10.0-VERIFIED-HUMAN-OWNER-LABELS
+// VERSION: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
