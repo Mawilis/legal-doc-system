@@ -1,12 +1,15 @@
 """TITLE: WILSY OS Project Execution Domain Certificate
-VERSION: v1.0.0-PROJECT-DEPENDENCY-STATE-CERT
+VERSION: v1.1.0-REVISIONED-TASK-EDIT-CERT
 AUTHORITY: Synthetic immutable task domain certificate only.
 EPITOME: Validate task/subtask/milestone state, dependency syntax, fingerprints,
          revision CAS, terminal states and fail-closed mutation boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_task_registry.py
 COLLABORATION / OWNERSHIP: ProjectTaskRegistry and Projects router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-PROJECT-DEPENDENCY-STATE-CERT establishes source-domain tests.
+CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-CERT certifies bounded
+revisioned task editing, assignee changes, immutable dependency graph and
+terminal editing denial without creating any IAM grant.
+CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-CERT establishes source-domain tests.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic project and principal identities only.
 TENANT BOUNDARY: No fallback tenant and no unverified record ownership.
@@ -73,6 +76,43 @@ def test_task_integrity_and_immutable_transitions() -> None:
         )
 
 
+def test_task_revise_preserves_graph_and_denies_terminal_edits() -> None:
+    """Source task changes are CAS-controlled without resetting lifecycle."""
+    source = task()
+    updated = source.revise(
+        title="Updated task", description="New context", due_date=None,
+        assignee_principal_id="other-current-participant",
+        actor_principal_id="owner-a", expected_revision=1,
+        occurred_at=NOW + timedelta(seconds=1),
+    )
+    assert updated.title == "Updated task"
+    assert updated.assignee_principal_id == "other-current-participant"
+    assert updated.due_date is None and updated.revision == 2
+    assert updated.task_id == source.task_id
+    assert updated.depends_on == source.depends_on
+    assert updated.parent_task_id == source.parent_task_id
+    with pytest.raises(ProjectTaskConflict, match="REVISION_CONFLICT"):
+        updated.revise(
+            title="Stale", description="", due_date=None,
+            assignee_principal_id=None, actor_principal_id="owner-a",
+            expected_revision=1, occurred_at=NOW + timedelta(seconds=2),
+        )
+    active = source.transition(
+        status="IN_PROGRESS", actor_principal_id="owner-a",
+        expected_revision=1, occurred_at=NOW + timedelta(seconds=1),
+    )
+    terminal = active.transition(
+        status="DONE", actor_principal_id="owner-a",
+        expected_revision=2, occurred_at=NOW + timedelta(seconds=2),
+    )
+    with pytest.raises(ProjectTaskConflict, match="TERMINAL_REVISION_DENIED"):
+        terminal.revise(
+            title="Rewrite completion", description="", due_date=None,
+            assignee_principal_id=None, actor_principal_id="owner-a",
+            expected_revision=3, occurred_at=NOW + timedelta(seconds=3),
+        )
+
+
 def test_source_mutation_and_false_fingerprint_deny() -> None:
     """Forged completion, foreign fields and invalid fingerprints are rejected."""
     original = task()
@@ -118,7 +158,7 @@ def test_task_ids_are_stable_only_for_exact_command_origins() -> None:
 
 
 # ARTIFACT: test_project_task_registry.py
-# VERSION: v1.0.0-PROJECT-DEPENDENCY-STATE-CERT
+# VERSION: v1.1.0-REVISIONED-TASK-EDIT-CERT
 # AUTHORITY BOUNDARY: domain-only, no membership/permission or persistence
 # TENANT POSTURE: exact synthetic project and principal identifiers
 # FAIL-CLOSED POSTURE: forged states, bad parent/dependencies and stale CAS deny
