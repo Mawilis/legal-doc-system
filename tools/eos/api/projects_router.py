@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ
+VERSION: v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,67 +30,68 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ allows bounded
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ adds a verified
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ binds optional
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ independently
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ accepts exact task
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ lists the named
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ adds owner-requested,
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ permits exact-project
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ atomically persists comment
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ exposes a bounded my-projects
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ adds source-owned task comments
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ permits owner-only task edit and
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ exposes bounded exact-tenant project
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ exposes owner and exact-project participant task
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ admits exact project-bound participant detail and
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ adds exact-tenant owner-authorized participant grant,
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ moves note-domain validation inside existing
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ introduces authenticated, project-existence-verified
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ projects verified next-page availability and exact offset
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ refuses a PLANNED-to-ACTIVE
+  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -260,7 +261,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ"
+VERSION: Final[str] = "v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1893,6 +1894,62 @@ def _require_cleared_project_attachment(
     return manifest, clearance
 
 
+def _fresh_project_approval_evidence(
+    context: TenantAuthorizationContext, project_id: str, task_id: str,
+    attachment_ids: tuple[str, ...], *, participant: bool,
+) -> dict[str, tuple[str, str]]:
+    """Revalidate original clean evidence without external I/O in a Mongo transaction.
+
+    The caller's already-admitted tenant context and exact task are read in a
+    separate source snapshot; the trusted S3 policy, version, KMS metadata and
+    GuardDuty clean tag are inspected outside its transaction. The returned
+    immutable manifest/clearance fingerprints MUST be compared again inside the
+    subsequent command transaction. This is a bounded observation, not a
+    signature, legal validity finding, authorization to release funds, or a
+    guarantee against a provider policy change after the command commits.
+    """
+    if not attachment_ids:
+        return {}
+    if len(attachment_ids) > 10 or len(set(attachment_ids)) != len(attachment_ids):
+        raise HTTPException(status_code=422, detail="PROJECT_APPROVAL_EVIDENCE_INVALID")
+    if any(re.fullmatch(r"pat-[0-9a-f]{48}", identifier) is None
+           for identifier in attachment_ids):
+        raise HTTPException(status_code=422, detail="PROJECT_APPROVAL_EVIDENCE_ID_INVALID")
+
+    def source(registry: ProjectRegistry, session: Any) -> tuple[
+        tuple[ProjectAttachment, ProjectAttachmentClearance], ...
+    ]:
+        if participant:
+            _require_current_project_participation(
+                context, registry, project_id, session, contribute=True,
+            )
+        return tuple(
+            _require_cleared_project_attachment(
+                registry, context.tenant_id, project_id, task_id,
+                identifier, session,
+            ) for identifier in attachment_ids
+        )
+
+    originals = _transaction(context, source)
+    evidence: dict[str, tuple[str, str]] = {}
+    for manifest, clearance in originals:
+        try:
+            policy_sha3, scan_sha3 = verify_guardduty_clean_attachment(manifest)
+        except ProjectAttachmentStorageError as error:
+            raise HTTPException(status_code=503, detail=error.code) from error
+        if (
+            policy_sha3 != clearance.policy_sha3_512
+            or scan_sha3 != clearance.scan_evidence_sha3_512
+        ):
+            raise HTTPException(
+                status_code=409, detail="PROJECT_APPROVAL_EVIDENCE_PROVIDER_CHANGED",
+            )
+        evidence[manifest.attachment_id] = (
+            manifest.fingerprint, clearance.fingerprint,
+        )
+    return evidence
+
+
 def _download_project_attachment(
     context: TenantAuthorizationContext, project_id: str, task_id: str,
     attachment_id: str, *, participant: bool,
@@ -2148,6 +2205,10 @@ def request_project_task_approval(
     """Request an independently reviewed business decision on an existing task."""
     response.headers["Cache-Control"] = "no-store"
     key = _note_idempotency_key(idempotency_key)
+    evidence = _fresh_project_approval_evidence(
+        context, project_id, task_id, payload.evidence_attachment_ids,
+        participant=False,
+    )
 
     def write(registry: ProjectRegistry, session: Any) -> dict[str, object]:
         store = _project_approval_store(
@@ -2177,10 +2238,16 @@ def request_project_task_approval(
         for attachment_id in payload.evidence_attachment_ids:
             if re.fullmatch(r"pat-[0-9a-f]{48}", attachment_id) is None:
                 raise HTTPException(status_code=422, detail="PROJECT_APPROVAL_EVIDENCE_ID_INVALID")
-            _require_cleared_project_attachment(
+            manifest, clearance = _require_cleared_project_attachment(
                 registry, context.tenant_id, project_id,
                 task_id, attachment_id, session,
             )
+            if evidence.get(attachment_id) != (
+                manifest.fingerprint, clearance.fingerprint,
+            ):
+                raise HTTPException(
+                    status_code=409, detail="PROJECT_APPROVAL_EVIDENCE_CHANGED",
+                )
         approval = ProjectApproval(
             tenant_id=context.tenant_id, project_id=project_id,
             task_id=task_id,
@@ -2210,9 +2277,36 @@ def decide_project_task_approval(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
 ) -> dict[str, object]:
-    """Allow only the designated current Contributor to decide exactly once."""
+    """Allow only the designated current Contributor to decide exactly once.
+
+    A PENDING evidence-backed review requires fresh GuardDuty provider readback
+    before entering the write transaction. Terminal idempotent replay does not
+    generate a new verdict or replace already durable decision evidence.
+    """
     response.headers["Cache-Control"] = "no-store"
     key = _note_idempotency_key(idempotency_key)
+
+    def original(registry: ProjectRegistry, session: Any) -> ProjectApproval:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        saved = _project_approval_store(
+            registry, context.tenant_id, project_id, task_id, session,
+        ).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, approval_id=approval_id, session=session,
+        )
+        if saved.reviewer_principal_id != context.identity.identity_id:
+            raise HTTPException(status_code=404, detail="PROJECT_APPROVAL_NOT_FOUND")
+        return saved
+
+    observed = _transaction(context, original)
+    evidence = (
+        _fresh_project_approval_evidence(
+            context, project_id, task_id, observed.evidence_attachment_ids,
+            participant=True,
+        ) if observed.status == "PENDING" else None
+    )
 
     def write(registry: ProjectRegistry, session: Any) -> dict[str, object]:
         _require_current_project_participation(
@@ -2227,11 +2321,21 @@ def decide_project_task_approval(
         )
         if current_approval.reviewer_principal_id != context.identity.identity_id:
             raise HTTPException(status_code=404, detail="PROJECT_APPROVAL_NOT_FOUND")
+        if current_approval.fingerprint != observed.fingerprint:
+            raise HTTPException(
+                status_code=409, detail="PROJECT_APPROVAL_SOURCE_CHANGED",
+            )
         for attachment_id in current_approval.evidence_attachment_ids:
-            _require_cleared_project_attachment(
+            manifest, clearance = _require_cleared_project_attachment(
                 registry, context.tenant_id, project_id,
                 task_id, attachment_id, session,
             )
+            if evidence is not None and evidence.get(attachment_id) != (
+                manifest.fingerprint, clearance.fingerprint,
+            ):
+                raise HTTPException(
+                    status_code=409, detail="PROJECT_APPROVAL_EVIDENCE_CHANGED",
+                )
         committed = store.decide_or_replay(
             tenant_id=context.tenant_id, project_id=project_id,
             task_id=task_id, approval_id=approval_id,
@@ -3115,7 +3219,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.22.0-AUTHORIZED-SCANNED-ATTACHMENT-READ
+# VERSION: v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
