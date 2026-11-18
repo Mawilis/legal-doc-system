@@ -1,34 +1,35 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT
+ * VERSION: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT proves a
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT adds in-place task
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies task creation, verified
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT waits for the committed note row
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies source-backed project note
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT proves navigation
+ * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -357,7 +358,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const approvedNote = {
       tenant_id: TENANT, project_id: PROJECT_ID, note_id: noteId,
       author_principal_id: PRINCIPAL, revision: 1,
-      body: 'Project operating context', fingerprint: 'f'.repeat(128),
+      body: 'Project operating context', colour: 'mint', fingerprint: 'f'.repeat(128),
       created_at: '2026-11-18T06:30:00+00:00',
       updated_at: '2026-11-18T06:30:00+00:00',
       archived_at: null,
@@ -380,7 +381,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       expect(path).toBe(`/projects/${PROJECT_ID}/notes`);
       expect(options.headers['X-Tenant-ID']).toBe(TENANT);
       expect(options.headers['Idempotency-Key']).toBeTruthy();
-      expect(body).toEqual({ body: 'Project operating context' });
+      expect(body).toEqual({ body: 'Project operating context', colour: 'mint' });
       notes = [approvedNote];
       return { data: {
         schema: 'WILSY-PROJECT-NOTE-RESULT/V1',
@@ -395,11 +396,16 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByRole('region', { name: 'Project notes' })).toBeVisible();
     const input = screen.getByRole('textbox', { name: 'New project note' });
     fireEvent.change(input, { target: { value: 'Project operating context' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mint sticky-note colour' }));
+    expect(screen.getByRole('button', { name: 'Mint sticky-note colour' }))
+      .toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: /Add note to EOS/ }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Edit note' })).toBeVisible();
     });
     expect(screen.getByText('Project operating context', { selector: '.wp-notes-list p' })).toBeVisible();
+    expect(screen.getByRole('list', { name: 'Project sticky notes board' })).toBeVisible();
+    expect(screen.getByText('Mint note')).toBeVisible();
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(api.patch).not.toHaveBeenCalled();
     expect(persisted.status).toBe('planned');
@@ -761,7 +767,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT
+ * VERSION: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
