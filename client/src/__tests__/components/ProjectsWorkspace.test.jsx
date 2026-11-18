@@ -179,7 +179,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(api.post).not.toHaveBeenCalled();
     expect(api.patch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'My owned projects' }));
-    expect(screen.getByText('Another team project')).toBeVisible();
+    expect(await screen.findByText('Another team project')).toBeVisible();
   });
 
 
