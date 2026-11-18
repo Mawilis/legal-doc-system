@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Unified My Work Projection Contract Tests
- * VERSION: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT-CERT
+ * VERSION: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies one shared fail-closed client contract for EOS aggregate
  *          scope, source coverage, row identity and summary reconciliation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/unifiedMyWorkProjection.test.js
  * COLLABORATION / OWNERSHIP: unifiedMyWorkProjection.js and EOS /api/my-work.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
- * CHANGELOG: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT-CERT certifies the existing,
+ * CHANGELOG: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT certifies
+ *            the source-admitted PROJECTS queue, own assignment, blocker,
+ *            deadline-only metadata and rejection of a forged project ID.
+ * CHANGELOG: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT certifies the existing,
  *            server-owned HR source label and count coverage without granting
  *            browser HR capability. v1.0.0-SOURCE-COVERAGE-CONTRACT covers exact tenant/principal
  *            matching, included-source parity, row counts, overdue summaries
@@ -111,6 +114,39 @@ describe('unified My Work projection contract', () => {
     expect(() => assertUnifiedMyWorkProjection(incorrectOverdue)).toThrow('ATTENTION_SUMMARY_INVALID');
   });
 
+  it('accepts a verified delegated and blocked PROJECTS source without invented due instant', () => {
+    const payload = valid();
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    payload.items = [{
+      tenant_id: 'tenant-a', source: 'PROJECTS',
+      source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
+      title: 'Resolve external blocker', status: 'BLOCKED',
+      priority: 'NORMAL', due_at: null, due_date: '2026-12-01',
+      project_id: projectId, owner_principal_id: 'principal-a',
+      is_overdue: false, action_authority: 'SOURCE_SERVICE_ONLY',
+      completion_route: null,
+    }];
+    payload.summary = {
+      active_count: 1, overdue_count: 0, source_counts: { PROJECTS: 1 },
+    };
+    payload.sources_included = ['PROJECTS'];
+    expect(assertUnifiedMyWorkProjection(payload, {
+      tenantId: 'tenant-a', principalId: 'principal-a',
+    })).toBe(payload);
+    expect(unifiedMyWorkSourceLabel('PROJECTS')).toBe('Projects & Delivery');
+
+    const forged = structuredClone(payload);
+    forged.items[0].owner_principal_id = 'other-principal';
+    expect(() => assertUnifiedMyWorkProjection(forged)).toThrow('ATTENTION_ITEM_INVALID');
+    const wrongProject = structuredClone(payload);
+    wrongProject.items[0].project_id = 'foreign';
+    expect(() => assertUnifiedMyWorkProjection(wrongProject)).toThrow('ATTENTION_ITEM_INVALID');
+    const fabricatedInstant = structuredClone(payload);
+    fabricatedInstant.items[0].due_at = '2026-12-01T00:00:00+00:00';
+    expect(() => assertUnifiedMyWorkProjection(fabricatedInstant)).toThrow('ATTENTION_ITEM_INVALID');
+  });
+
   it('returns a known source label without labelling unknown sources', () => {
     expect(unifiedMyWorkSourceLabel('LEGAL')).toBe('Legal');
     expect(unifiedMyWorkSourceLabel('HR')).toBe('HR & Hiring');
@@ -120,7 +156,7 @@ describe('unified My Work projection contract', () => {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.test.js
- * VERSION: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT-CERT
+ * VERSION: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT
  * AUTHORITY BOUNDARY: Deterministic projection contract evidence only.
  * TENANT POSTURE: Synthetic exact-scope and mismatch tests.
  * FAIL-CLOSED POSTURE: Unknown or divergent source metadata is rejected.
