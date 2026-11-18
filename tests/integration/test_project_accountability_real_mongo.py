@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT
+VERSION: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,10 +8,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT certifies transactional note revisions,
+CHANGELOG: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
+CHANGELOG: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT certifies transactional note revisions,
          author denial, replay, foreign-tenant absence and immutable note events
          on disposable MongoDB; no real principal or project activation.
-CHANGELOG: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT adds disposable real-replica certification for
+CHANGELOG: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT adds disposable real-replica certification for
          511 source-valid tenant projects, complete indexed page traversal,
          immutable tenant isolation and summary counts.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
@@ -72,6 +73,12 @@ def test_real_replica_project_owner_department_assignment_and_revocation(monkeyp
         database["principal_authorities"].insert_one({
             "principal_id": principal_id, "status": "ACTIVE", "revision": 0,
         })
+        database["users"].insert_many([
+            {"user_id": principal_id, "tenantId": tenant,
+             "firstName": "Verified", "lastName": "Owner"},
+            {"user_id": principal_id, "tenantId": "foreign-tenant",
+             "firstName": "Foreign", "lastName": "Person"},
+        ])
         database["tenant_memberships"].insert_one({
             "principal_id": principal_id, "tenant_id": tenant,
             "status": "ACTIVE", "revision": 0,
@@ -121,6 +128,7 @@ def test_real_replica_project_owner_department_assignment_and_revocation(monkeyp
         assert initial["tenant_id"] == tenant
         assert initial["principals"] == [{
             "principal_id": principal_id, "eligibility": "VERIFIED_CURRENT",
+            "first_name": "Verified", "last_name": "Owner",
         }]
         assert initial["departments"] == []
         department_result = router.provision_project_department(
@@ -376,7 +384,7 @@ def test_real_replica_project_notes_replay_author_cas_and_tenant_isolation() -> 
 
 
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT
+# VERSION: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
