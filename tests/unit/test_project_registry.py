@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.4.0-DATE-COMMAND-REPLAY-CERT
+VERSION: v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,12 +7,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.4.0-DATE-COMMAND-REPLAY-CERT verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
-  v1.4.0-DATE-COMMAND-REPLAY-CERT certifies first/final page has_more truth for 511
+  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT proves full 511-record exact-tenant owner filters are applied before pagination, preserve verified next offsets, exclude foreign principals and use a dedicated compound index.
+  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
+  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT certifies first/final page has_more truth for 511
   exact-tenant projects, zero overlap, and foreign-tenant exclusion.
-  v1.4.0-DATE-COMMAND-REPLAY-CERT certifies tenant/status/recent project index order and
+  v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT certifies tenant/status/recent project index order and
   keeps uniqueness requirements for canonical project and event identities.
-v1.4.0-DATE-COMMAND-REPLAY-CERT — Verifies exact compound
+v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT — Verifies exact compound
   active-list index keys, preserves project/event uniqueness guards and
   confirms the listing index is intentionally nonunique.
 v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
@@ -303,6 +304,48 @@ def test_large_tenant_summary_and_bounded_pages_over_500(registry) -> None:
 
 
 
+def test_owned_project_pages_apply_owner_before_limit_over_500(registry) -> None:
+    """No current-page owner filtering or inherited contributor visibility."""
+    store, projects, _, session = registry
+    projects.rows.extend([
+        {"_id": f"tenant-a:owned-{i:04}", **_project(
+            "tenant-a", f"project-{i:04}", code=f"OWN-{i:04}",
+            owner_principal_id="principal-a" if i % 2 == 0 else "principal-b",
+        ).to_dict()}
+        for i in range(511)
+    ])
+    projects.rows.append({"_id": "foreign", **_project(
+        "tenant-b", "foreign", code="FOREIGN",
+        owner_principal_id="principal-a",
+    ).to_dict()})
+    first, more = store.list_page_for_tenant(
+        tenant_id="tenant-a", owner_principal_id="principal-a",
+        session=session, limit=100,
+    )
+    assert len(first) == 100 and more
+    assert projects.last_query == {
+        "tenant_id": "tenant-a", "archived_at": None,
+        "owner_principal_id": "principal-a",
+    }
+    offset = 100
+    seen = {item.project_id for item in first}
+    while more:
+        batch, more = store.list_page_for_tenant(
+            tenant_id="tenant-a", owner_principal_id="principal-a",
+            session=session, limit=100, offset=offset,
+        )
+        assert not seen.intersection(item.project_id for item in batch)
+        seen.update(item.project_id for item in batch)
+        offset += len(batch)
+    assert len(seen) == 256
+    assert all(int(project_id[-4:]) % 2 == 0 for project_id in seen)
+    assert "foreign" not in seen
+    assert store.list_page_for_tenant(
+        tenant_id="tenant-a", owner_principal_id="not-an-owner",
+        session=session, limit=100,
+    ) == ((), False)
+
+
 def test_event_read_is_tenant_scoped_and_returns_documented_fields(registry) -> None:
     store, _, events, session = registry
     _create(store, _project(), session, "create-1")
@@ -344,6 +387,9 @@ def test_missing_transaction_session_is_rejected(registry) -> None:
 def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
     _, projects, events, _ = registry
     ProjectRegistry.ensure_indexes(projects, events)
+    assert any(options.get("name") == "wilsy_project_tenant_owner_recent"
+               and keys[:2] == (("tenant_id", 1), ("owner_principal_id", 1))
+               for keys, options in projects.indexes)
     assert [opts["name"] for _, opts in projects.indexes] == [
         "wilsy_project_tenant_identity_unique", "wilsy_project_tenant_code_unique",
         "wilsy_project_tenant_active_recent",
@@ -369,7 +415,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.4.0-DATE-COMMAND-REPLAY-CERT
+# VERSION: v1.5.0-INDEXED-OWNER-RESPONSIBILITY-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
