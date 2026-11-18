@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE
+VERSION: v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,22 +14,26 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE admits exact project-bound participant detail and
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES exposes owner and exact-project participant task
+  listing, audited owner-authorized creation/assignment and revisioned
+  lifecycle transitions; contributor completion requires personal assignment.
+  Dependencies and unfinished child work are enforced in source transactions.
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE adds exact-tenant owner-authorized participant grant,
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE moves note-domain validation inside existing
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE introduces authenticated, project-existence-verified
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE projects verified next-page availability and exact offset
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE refuses a PLANNED-to-ACTIVE
+  v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -146,6 +150,12 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     get_current as get_current_entitlement,
 )
 from tools.eos.saas.domain.project_note import ProjectNote, ProjectNoteError
+from tools.eos.saas.projects.project_task_registry import (
+    COLLECTION as PROJECT_TASK_COLLECTION,
+    EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
+    ProjectTask, ProjectTaskRegistry, ProjectTaskError, ProjectTaskConflict,
+    ProjectTaskNotFound, task_id_for_command,
+)
 from tools.eos.saas.projects.project_participant_registry import (
     COLLECTION as PROJECT_PARTICIPANT_COLLECTION,
     EVENT_COLLECTION as PROJECT_PARTICIPANT_EVENT_COLLECTION,
@@ -168,7 +178,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE"
+VERSION: Final[str] = "v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -225,6 +235,27 @@ class ProjectAssignmentRequest(BaseModel):
     expected_revision: int = Field(ge=1)
     owner_principal_id: str = Field(min_length=1, max_length=180)
     department_id: str = Field(pattern=r"^dept-[0-9a-f]{32}$")
+
+
+class ProjectTaskCreateRequest(BaseModel):
+    """Bounded project task/subtask/milestone; identity, tenant and actor EOS-owned."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    kind: Literal["TASK", "MILESTONE"]
+    parent_task_id: str | None = Field(default=None, pattern=r"^ptk-[0-9a-f]{48}$")
+    title: str = Field(min_length=1, max_length=180)
+    description: str = Field(default="", max_length=5000)
+    due_date: date | None = None
+    assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
+    depends_on: tuple[str, ...] = Field(default=(), max_length=25)
+
+
+class ProjectTaskTransitionRequest(BaseModel):
+    """Revision-guarded task status transition without implicit completion."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
+    status: Literal["IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"]
 
 
 class ProjectParticipantGrantRequest(BaseModel):
@@ -407,6 +438,13 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectTaskNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectTaskConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectTaskError as error:
+        logger.error("PROJECT_TASK_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectParticipantNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectParticipantConflict as error:
@@ -1132,6 +1170,200 @@ def _require_current_project_participation(
     return project, participants
 
 
+def _project_task_store(
+    registry: ProjectRegistry, tenant_id: str, project_id: str, session: Any,
+) -> ProjectTaskRegistry:
+    """Require an existing exact-tenant project before accessing project work."""
+    registry.get(tenant_id=tenant_id, project_id=project_id, session=session)
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectTaskError("PROJECT_TASK_SOURCE_UNAVAILABLE")
+    return ProjectTaskRegistry(
+        database[PROJECT_TASK_COLLECTION], database[PROJECT_TASK_EVENT_COLLECTION],
+    )
+
+
+def _task_result(
+    context: TenantAuthorizationContext, project_id: str, task: ProjectTask,
+) -> dict[str, object]:
+    """Expose only persisted task state with an exact authenticated envelope."""
+    return {
+        "schema": "WILSY-PROJECT-TASK-RESULT/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "task": task.to_dict(),
+    }
+
+
+def _list_project_tasks(
+    context: TenantAuthorizationContext, project_id: str,
+    registry: ProjectRegistry, session: Any, limit: int, offset: int,
+) -> dict[str, object]:
+    """Return one bounded page; caller must already satisfy project visibility."""
+    tasks = _project_task_store(registry, context.tenant_id, project_id, session)
+    items, more = tasks.list_page(
+        tenant_id=context.tenant_id, project_id=project_id,
+        session=session, limit=limit, offset=offset,
+    )
+    return {
+        "schema": "WILSY-PROJECT-TASK-LIST/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "items": [item.to_dict() for item in items],
+        "limit": limit, "offset": offset, "has_more": more,
+        "next_offset": offset + len(items) if more else None,
+    }
+
+
+@router.get("/{project_id}/tasks")
+def list_project_tasks(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Return exact-project task page through tenant-owner Projects IAM."""
+    response.headers["Cache-Control"] = "no-store"
+    return _transaction(context, lambda registry, session: _list_project_tasks(
+        context, project_id, registry, session, limit, offset,
+    ))
+
+
+@router.get("/{project_id}/my-project/tasks")
+def list_assigned_project_tasks(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Read task page only after exact current project participation verification."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        return _list_project_tasks(context, project_id, registry, session, limit, offset)
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/tasks", status_code=status.HTTP_201_CREATED)
+def create_project_task(
+    payload: ProjectTaskCreateRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Create one audited task/milestone, validating exact assigned participant."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    instant = datetime.now(timezone.utc)
+
+    def create(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        tasks = _project_task_store(registry, context.tenant_id, project_id, session)
+        if payload.assignee_principal_id is not None:
+            database = kernel_db.get_database()
+            if database is None:
+                raise ProjectTaskError("PROJECT_TASK_SOURCE_UNAVAILABLE")
+            if not _project_participant_eligible(
+                database, context.tenant_id, payload.assignee_principal_id, session,
+            ):
+                raise HTTPException(status_code=409, detail="PROJECT_TASK_ASSIGNEE_NOT_CURRENT")
+            participants = _project_participants(registry, context.tenant_id, project_id, session)
+            assignment = participants.get(
+                tenant_id=context.tenant_id, project_id=project_id,
+                principal_id=payload.assignee_principal_id, session=session,
+            )
+            if assignment.role != "CONTRIBUTOR":
+                raise HTTPException(status_code=409, detail="PROJECT_TASK_ASSIGNEE_NOT_CONTRIBUTOR")
+        task_id = task_id_for_command(
+            context.tenant_id, project_id, context.identity.identity_id, key,
+        )
+        task = ProjectTask(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, kind=payload.kind,
+            parent_task_id=payload.parent_task_id,
+            title=payload.title, description=payload.description,
+            status="TODO", assignee_principal_id=payload.assignee_principal_id,
+            due_date=payload.due_date.isoformat() if payload.due_date else None,
+            depends_on=payload.depends_on,
+            created_by_principal_id=context.identity.identity_id,
+            updated_by_principal_id=context.identity.identity_id,
+            created_at=instant, updated_at=instant,
+        )
+        committed = tasks.create_or_replay(
+            task=task, idempotency_key=key, session=session,
+        )
+        return _task_result(context, project_id, committed)
+
+    return _transaction(context, create, write=True)
+
+
+@router.post("/{project_id}/tasks/{task_id}/transition")
+def transition_project_task(
+    payload: ProjectTaskTransitionRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Require owner update IAM and source CAS for a project task transition."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    instant = datetime.now(timezone.utc)
+
+    def change(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        tasks = _project_task_store(registry, context.tenant_id, project_id, session)
+        result = tasks.transition_or_replay(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, actor_principal_id=context.identity.identity_id,
+            status=payload.status, expected_revision=payload.expected_revision,
+            idempotency_key=key, occurred_at=instant, session=session,
+        )
+        return _task_result(context, project_id, result)
+
+    return _transaction(context, change, write=True)
+
+
+@router.post("/{project_id}/my-project/tasks/{task_id}/transition")
+def transition_assigned_project_task(
+    payload: ProjectTaskTransitionRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Permit contributor lifecycle only for personally assigned project work."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    instant = datetime.now(timezone.utc)
+
+    def change(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        tasks = _project_task_store(registry, context.tenant_id, project_id, session)
+        task = tasks.get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        if task.assignee_principal_id != context.identity.identity_id:
+            raise HTTPException(status_code=403, detail="PROJECT_TASK_ASSIGNEE_SCOPE_REQUIRED")
+        result = tasks.transition_or_replay(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, actor_principal_id=context.identity.identity_id,
+            status=payload.status, expected_revision=payload.expected_revision,
+            idempotency_key=key, occurred_at=instant, session=session,
+        )
+        return _task_result(context, project_id, result)
+
+    return _transaction(context, change, write=True)
+
+
 @router.get("/{project_id}/my-project")
 def read_assigned_project(
     response: Response,
@@ -1627,7 +1859,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE
+# VERSION: v1.9.0-RECORD-SCOPED-PROJECT-EXECUTION-ROUTES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
