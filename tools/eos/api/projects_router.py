@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.11.0-GOVERNED-TASK-REASSIGNMENT
+VERSION: v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,32 +14,35 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT permits owner-only task edit and
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS adds source-owned task comments
+  for owners and project contributors. Mentions require current ACTIVE exact-
+  project participants; no notification delivery or approval is inferred.
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT exposes bounded exact-tenant project
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT exposes owner and exact-project participant task
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT admits exact project-bound participant detail and
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT adds exact-tenant owner-authorized participant grant,
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT moves note-domain validation inside existing
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT introduces authenticated, project-existence-verified
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT projects verified next-page availability and exact offset
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.11.0-GOVERNED-TASK-REASSIGNMENT refuses a PLANNED-to-ACTIVE
+  v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -156,6 +159,12 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     get_current as get_current_entitlement,
 )
 from tools.eos.saas.domain.project_note import ProjectNote, ProjectNoteError
+from tools.eos.saas.projects.project_comment_registry import (
+    COLLECTION as PROJECT_COMMENT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_COMMENT_EVENT_COLLECTION,
+    ProjectComment, ProjectCommentRegistry, ProjectCommentError,
+    ProjectCommentConflict, comment_id_for_command,
+)
 from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as PROJECT_TASK_COLLECTION,
     EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
@@ -184,7 +193,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.11.0-GOVERNED-TASK-REASSIGNMENT"
+VERSION: Final[str] = "v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -254,6 +263,14 @@ class ProjectTaskCreateRequest(BaseModel):
     due_date: date | None = None
     assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
     depends_on: tuple[str, ...] = Field(default=(), max_length=25)
+
+
+class ProjectTaskCommentRequest(BaseModel):
+    """Plain-text task comment with at most ten explicit mentioned principals."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    body: str = Field(min_length=1, max_length=5000)
+    mentions: tuple[str, ...] = Field(default=(), max_length=10)
 
 
 class ProjectTaskReviseRequest(BaseModel):
@@ -455,6 +472,11 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectCommentConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectCommentError as error:
+        logger.error("PROJECT_COMMENT_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectTaskNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectTaskConflict as error:
@@ -1232,6 +1254,170 @@ def _list_project_tasks(
     }
 
 
+def _project_comment_store(
+    registry: ProjectRegistry, tenant_id: str,
+    project_id: str, task_id: str, session: Any,
+) -> ProjectCommentRegistry:
+    """Check one real project and task before resolving their comment timeline."""
+    _project_task_store(registry, tenant_id, project_id, session).get(
+        tenant_id=tenant_id, project_id=project_id,
+        task_id=task_id, session=session,
+    )
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectCommentError("PROJECT_COMMENT_SOURCE_UNAVAILABLE")
+    return ProjectCommentRegistry(
+        database[PROJECT_COMMENT_COLLECTION],
+        database[PROJECT_COMMENT_EVENT_COLLECTION],
+    )
+
+
+def _list_project_comments(
+    context: TenantAuthorizationContext, registry: ProjectRegistry,
+    project_id: str, task_id: str, session: Any,
+    limit: int, offset: int,
+) -> dict[str, object]:
+    """Return one source-authorized exact-project/task comment page."""
+    store = _project_comment_store(
+        registry, context.tenant_id, project_id, task_id, session,
+    )
+    items, has_more = store.list_page(
+        tenant_id=context.tenant_id, project_id=project_id,
+        task_id=task_id, limit=limit, offset=offset, session=session,
+    )
+    return {
+        "schema": "WILSY-PROJECT-COMMENT-LIST/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "task_id": task_id,
+        "items": [item.to_dict() for item in items],
+        "limit": limit, "offset": offset, "has_more": has_more,
+        "next_offset": offset + len(items) if has_more else None,
+    }
+
+
+def _create_project_comment(
+    context: TenantAuthorizationContext, registry: ProjectRegistry,
+    project_id: str, task_id: str, payload: ProjectTaskCommentRequest,
+    idempotency_key: str, session: Any,
+) -> dict[str, object]:
+    """Persist a comment only after independent current mention membership checks."""
+    store = _project_comment_store(
+        registry, context.tenant_id, project_id, task_id, session,
+    )
+    participants = _project_participants(
+        registry, context.tenant_id, project_id, session,
+    )
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectCommentError("PROJECT_COMMENT_SOURCE_UNAVAILABLE")
+    for principal in payload.mentions:
+        if not _project_participant_eligible(
+            database, context.tenant_id, principal, session,
+        ):
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_MENTION_NOT_CURRENT")
+        participants.get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            principal_id=principal, session=session,
+        )
+    actor = context.identity.identity_id
+    comment = ProjectComment(
+        tenant_id=context.tenant_id, project_id=project_id,
+        task_id=task_id,
+        comment_id=comment_id_for_command(
+            context.tenant_id, project_id, task_id, actor, idempotency_key,
+        ),
+        author_principal_id=actor, body=payload.body,
+        mentions=tuple(payload.mentions), created_at=datetime.now(timezone.utc),
+    )
+    stored = store.create_or_replay(
+        comment=comment, actor_principal_id=actor,
+        idempotency_key=idempotency_key, session=session,
+    )
+    return {
+        "schema": "WILSY-PROJECT-COMMENT-RESULT/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": actor, "project_id": project_id,
+        "task_id": task_id, "comment": stored.to_dict(),
+    }
+
+
+@router.get("/{project_id}/tasks/{task_id}/comments")
+def list_owner_task_comments(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Read task comments through current tenant owner IAM and entitlement."""
+    response.headers["Cache-Control"] = "no-store"
+    return _transaction(context, lambda registry, session: _list_project_comments(
+        context, registry, project_id, task_id, session, limit, offset,
+    ))
+
+
+@router.post("/{project_id}/tasks/{task_id}/comments", status_code=status.HTTP_201_CREATED)
+def create_owner_task_comment(
+    payload: ProjectTaskCommentRequest, response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Append one audited owner-authored task comment, not an approval."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    return _transaction(context, lambda registry, session: _create_project_comment(
+        context, registry, project_id, task_id, payload, key, session,
+    ), write=True)
+
+
+@router.get("/{project_id}/my-project/tasks/{task_id}/comments")
+def list_participant_task_comments(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Read task comments only through active current project participation."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        return _list_project_comments(
+            context, registry, project_id, task_id, session, limit, offset,
+        )
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/my-project/tasks/{task_id}/comments", status_code=status.HTTP_201_CREATED)
+def create_participant_task_comment(
+    payload: ProjectTaskCommentRequest, response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Write comments only with contributor IAM and active project record."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+
+    def write(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        return _create_project_comment(
+            context, registry, project_id, task_id, payload, key, session,
+        )
+
+    return _transaction(context, write, write=True)
+
+
 @router.get("/{project_id}/tasks")
 def list_project_tasks(
     response: Response,
@@ -1975,7 +2161,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.11.0-GOVERNED-TASK-REASSIGNMENT
+# VERSION: v1.12.0-PROJECT-COMMENTS-VERIFIED-MENTIONS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
