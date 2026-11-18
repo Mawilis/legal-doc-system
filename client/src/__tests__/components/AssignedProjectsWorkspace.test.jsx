@@ -1,16 +1,19 @@
 /**
  * TITLE: WILSY OS Participant Projects and Inbox Client Certificate
- * VERSION: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT
+ * VERSION: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT
  * AUTHORITY: Mocked EOS client presentation only; server retains all IAM.
  * EPITOME: Certify participant-only assigned project selection, own-assignee
  *          lifecycle, mention notification acknowledgement and tenant isolation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/AssignedProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: AssignedProjectsWorkspace, api.js mock.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT covers a
+ * CHANGELOG: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT models an
+ *            actual 50-item source page and a target beyond that page,
+ *            preserving nonempty cursor evidence and source containment.
+ * CHANGELOG: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT covers a
  *            source-verified deep link to an assigned project beyond the
  *            first participant discovery page without owner-list access.
- * CHANGELOG: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT asserts source-backed
+ * CHANGELOG: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT asserts source-backed
  *          assigned project task and unread/read notification UI lifecycle.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic tenant and principal records only.
@@ -169,7 +172,13 @@ it('opens a directly authorized project focus beyond the first discovery page', 
     if (path === '/projects/my-projects?limit=50&offset=0') return response({
       schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
       tenant_id: tenantId, principal_id: principalId,
-      items: [], limit: 50, offset: 0, has_more: true, next_offset: 0,
+      items: Array.from({ length: 50 }, (_, index) => {
+        const id = 'prj-' + index.toString(16).padStart(48, '0');
+        return {
+          project: { ...project, project_id: id, name: 'Other assigned project ' + index },
+          participation: { ...participation, project_id: id },
+        };
+      }), limit: 50, offset: 0, has_more: true, next_offset: 50,
     });
     if (path === '/projects/' + projectId + '/my-project') return response({
       schema: 'WILSY-PROJECT-PARTICIPANT-DETAIL/V1',
@@ -203,7 +212,7 @@ it('opens a directly authorized project focus beyond the first discovery page', 
 
 
 // ARTIFACT: AssignedProjectsWorkspace.test.jsx
-// VERSION: v1.1.0-ATTENTION-FOCUSED-PROJECT-CERT
+// VERSION: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT
 // AUTHORITY BOUNDARY: client mock only, no real principal IAM claims
 // TENANT POSTURE: foreign tenant response is rejected
 // FAIL-CLOSED POSTURE: no task actions or unread claims without EOS
