@@ -1,15 +1,17 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT
+ * VERSION: v1.9.0-TENANT-STATUS-PAGING-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT tests server-verified page metadata, source
+ * CHANGELOG: v1.9.0-TENANT-STATUS-PAGING-CERT certifies server-side exact-tenant status filtering,
+ *            one-page post-filter readback and no client-invented rows.
+ * CHANGELOG: v1.9.0-TENANT-STATUS-PAGING-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT proves navigation
+ * CHANGELOG: v1.9.0-TENANT-STATUS-PAGING-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -159,6 +161,35 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByText('100 shown · 100 verified')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
     expect(api.get.mock.calls.some(([path]) => path.includes('offset=100'))).toBe(false);
+  });
+
+  it('filters project status across the tenant at EOS before paging', async () => {
+    const planned = project({ name: 'Unfiltered planned project' });
+    const active = project({
+      project_id: `prj-${'b'.repeat(48)}`,
+      name: 'Verified active project',
+      status: 'active',
+    });
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return {
+        data: { ...list([planned, active]), has_more: false, next_offset: null },
+      };
+      if (path === '/projects?limit=100&offset=0&project_status=active') return {
+        data: { ...list([active]), has_more: false, next_offset: null },
+      };
+      if (path === '/projects/summary') return { data: summary([planned, active]) };
+      throw new Error(`Unexpected project GET ${path}`);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="tenant-status-filter-cert" />);
+    expect(await screen.findByText('2 shown · 2 verified')).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filter by status' }), {
+      target: { value: 'active' },
+    });
+    expect(await screen.findByText('1 shown · 1 verified')).toBeVisible();
+    expect(screen.getByRole('button', { name: /Verified active project/ })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Unfiltered planned project/ })).not.toBeInTheDocument();
+    expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=0&project_status=active')).toBe(true);
   });
 
   it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
@@ -497,7 +528,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT
+ * VERSION: v1.9.0-TENANT-STATUS-PAGING-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
