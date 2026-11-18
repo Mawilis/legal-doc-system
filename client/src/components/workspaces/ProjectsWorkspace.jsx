@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES
+ * VERSION: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
+ * CHANGELOG: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL exposes readable title-case
+ *            status counts to assistive technology without changing EOS truth.
+ *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
  *            distribution without simulating metrics or mutating records.
  *            v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY distinguishes missing
@@ -817,7 +819,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               <div key={status} className="wp-chart-item" data-status={status}>
                 <span className="wp-chart-value">{summary[status]}</span>
                 <div className="wp-chart-track" role="img"
-                  aria-label={`${statusLabel(status)}: ${summary[status]} of ${summary.total} projects`}>
+                  aria-label={`${statusLabel(status).replace(/^./, character => character.toUpperCase())}: ${summary[status]} of ${summary.total} projects`}>
                   <div className="wp-chart-fill" style={{ height: `${summary.total ? (100 * summary[status] / summary.total) : 0}%` }}/>
                 </div>
                 <span className="wp-chart-caption">{statusLabel(status)}</span>
@@ -928,7 +930,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES
+// VERSION: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
