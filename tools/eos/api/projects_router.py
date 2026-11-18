@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK
+VERSION: v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,68 +30,69 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK allows bounded
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds a verified
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK binds optional
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK independently
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK accepts exact task
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK lists the named
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds owner-requested,
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK permits exact-project
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK atomically persists comment
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK exposes a bounded my-projects
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds source-owned task comments
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK permits owner-only task edit and
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK exposes bounded exact-tenant project
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK exposes owner and exact-project participant task
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK admits exact project-bound participant detail and
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK adds exact-tenant owner-authorized participant grant,
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK moves note-domain validation inside existing
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK introduces authenticated, project-existence-verified
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK projects verified next-page availability and exact offset
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK refuses a PLANNED-to-ACTIVE
+  v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -132,6 +133,7 @@ from typing import Literal, Any, Callable, Final, Mapping
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
 from starlette.datastructures import UploadFile
 from pydantic import BaseModel, ConfigDict, Field
+from bson import ObjectId
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -261,7 +263,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK"
+VERSION: Final[str] = "v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1069,6 +1071,52 @@ def _current_department(database: Any, tenant_id: str, department_id: str, sessi
     }
 
 
+def _verified_project_owner_name(
+    database: Any, tenant_id: str, principal_id: str, session: Any,
+) -> dict[str, str | None]:
+    """Project display-only names from exact tenant-scoped durable authentication.
+
+    Principal membership and tenant-owner capacity are checked separately first.
+    This query neither admits a principal nor trusts a client-provided name.
+    Legacy ObjectId identity is accepted only when it matches the same exact
+    tenant and no colliding canonical user identity is found. Absent optional
+    profile names remain null; never infer them from email, IDs or session.
+    """
+    selectors: list[dict[str, object]] = [{"user_id": principal_id}]
+    if re.fullmatch(r"[0-9a-fA-F]{24}", principal_id):
+        selectors.append({"_id": ObjectId(principal_id)})
+    try:
+        profiles = list(database["users"].find(
+            {"tenantId": tenant_id, "$or": selectors},
+            {"_id": 0, "user_id": 1, "firstName": 1, "lastName": 1,
+             "tenantId": 1},
+            session=session,
+        ).limit(2))
+    except PyMongoError as error:
+        raise HTTPException(
+            status_code=503, detail="PROJECT_OWNER_PROFILE_UNAVAILABLE",
+        ) from error
+    if len(profiles) > 1:
+        raise HTTPException(
+            status_code=503, detail="PROJECT_OWNER_PROFILE_COLLISION",
+        )
+    profile = profiles[0] if profiles else {}
+    if profile and profile.get("tenantId") != tenant_id:
+        raise HTTPException(
+            status_code=503, detail="PROJECT_OWNER_PROFILE_INVALID",
+        )
+    def optional(value: object) -> str | None:
+        return value if (
+            isinstance(value, str) and 0 < len(value) <= 100
+            and value == value.strip()
+        ) else None
+
+    return {
+        "first_name": optional(profile.get("firstName")),
+        "last_name": optional(profile.get("lastName")),
+    }
+
+
 @router.get("/assignment-options")
 def project_assignment_options(
     response: Response,
@@ -1109,7 +1157,13 @@ def project_assignment_options(
             if not isinstance(principal_id, str):
                 raise HTTPException(status_code=503, detail="PROJECT_MEMBER_RECORD_INVALID")
             if _project_owner_eligible(database, context.tenant_id, principal_id, session):
-                candidates.append({"principal_id": principal_id, "eligibility": "VERIFIED_CURRENT"})
+                candidates.append({
+                    "principal_id": principal_id,
+                    "eligibility": "VERIFIED_CURRENT",
+                    **_verified_project_owner_name(
+                        database, context.tenant_id, principal_id, session,
+                    ),
+                })
         values: list[dict[str, object]] = []
         for department in departments:
             department_id = department.get("department_id")
@@ -3219,7 +3273,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.23.0-FRESH-APPROVAL-EVIDENCE-READBACK
+# VERSION: v1.24.0-TENANT-VERIFIED-OWNER-NAME-PROJECTION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
