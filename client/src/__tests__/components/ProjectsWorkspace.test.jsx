@@ -525,8 +525,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       target: { value: departmentId },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledTimes(1);
       expect(screen.getByText(ownerId)).toBeInTheDocument();
       expect(screen.getByText(departmentId)).toBeInTheDocument();
     });
@@ -690,6 +691,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(api.post.mock.calls[0][2].headers['Idempotency-Key'])
       .toBe(api.post.mock.calls[1][2].headers['Idempotency-Key']);
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Audit history' }));
     expect(screen.getByText('PROJECT_CREATED')).toBeInTheDocument();
   });
 
