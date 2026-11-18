@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.0.3-BSON-UTC-EVENT-READBACK
+VERSION: v1.1.0-UNBOUNDED-VALIDATED-SUMMARY
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,6 +9,10 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.1.0-UNBOUNDED-VALIDATED-SUMMARY — Streams validated exact-tenant
+  project summaries without the former 500-record ceiling, returns bounded
+  list pages without rejecting a valid next page, and adds a tenant-oriented
+  active-recent listing index. No IAM or project data changes.
   v1.0.3-BSON-UTC-EVENT-READBACK — Normalizes BSON UTC datetimes on
   event readback when PyMongo returns naive values by default, without
   weakening strict input or malformed-event validation.
@@ -50,7 +54,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.0.3-BSON-UTC-EVENT-READBACK"
+VERSION: Final[str] = "v1.1.0-UNBOUNDED-VALIDATED-SUMMARY"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -161,6 +165,9 @@ class ProjectRegistry:
             projects.create_index([("tenant_id", ASCENDING), ("code", ASCENDING)],
                                   unique=True, name=CODE_INDEX,
                                   partialFilterExpression={"code": {"$type": "string"}})
+            projects.create_index([("tenant_id", ASCENDING), ("archived_at", ASCENDING),
+                                   ("updated_at", DESCENDING), ("project_id", ASCENDING)],
+                                  name="wilsy_project_tenant_active_recent")
             events.create_index([("tenant_id", ASCENDING), ("event_id", ASCENDING)],
                                 unique=True, name=EVENT_ID_INDEX)
             events.create_index([("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
@@ -205,21 +212,31 @@ class ProjectRegistry:
         try:
             rows = list(self._projects.find(query, session=_session(session))
                         .sort([("updated_at", DESCENDING), ("project_id", ASCENDING)])
-                        .skip(offset).limit(limit + 1))
+                        .skip(offset).limit(limit))
         except PyMongoError as error:
             raise ProjectRegistryError("PROJECT_LIST_UNAVAILABLE") from error
-        if len(rows) > limit:
-            raise ProjectRegistryError("PROJECT_PAGE_BOUND_EXCEEDED")
         return tuple(_hydrate(row) for row in rows)
 
     def summary_for_tenant(self, *, tenant_id: str, session: Any) -> dict[str, int]:
         """Derive status counts from fully validated, exact-tenant active records."""
-        values = self.list_for_tenant(tenant_id=tenant_id, session=session, limit=500)
+        tenant = _exact("tenant_id", tenant_id)
         counts = {item.value: 0 for item in ProjectStatus}
-        for value in values:
-            counts[cast(ProjectStatus, value.status).value] += 1
+        total = 0
+        try:
+            # Stream validated tenant records rather than truncating at 500;
+            # no unverified count or foreign-tenant data enters the projection.
+            cursor = self._projects.find(
+                {"tenant_id": tenant, "archived_at": None},
+                session=_session(session),
+            )
+            for row in cursor:
+                value = _hydrate(row)
+                counts[cast(ProjectStatus, value.status).value] += 1
+                total += 1
+        except PyMongoError as error:
+            raise ProjectRegistryError("PROJECT_SUMMARY_UNAVAILABLE") from error
         return {
-            "total": len(values), "active": counts[ProjectStatus.ACTIVE.value],
+            "total": total, "active": counts[ProjectStatus.ACTIVE.value],
             "planned": counts[ProjectStatus.PLANNED.value],
             "on_hold": counts[ProjectStatus.ON_HOLD.value],
             "done": counts[ProjectStatus.DONE.value],
@@ -442,7 +459,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.0.3-BSON-UTC-EVENT-READBACK
+# VERSION: v1.1.0-UNBOUNDED-VALIDATED-SUMMARY
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
