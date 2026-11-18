@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT
+VERSION: v1.5.0-EXACT-NOTE-RECORD-ACCESS-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.5.0-EXACT-NOTE-RECORD-ACCESS-CERT proves note read/update route
+  permission separation, record-scope denial before source reads, no
+  browser-authored actors and explicit startup note index admission.
   v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT verifies conjunctive Projects and
   Operations route IAM, exact tenant/principal, source-owned task creation,
   transactional task readback, idempotent replay and startup index admission.
@@ -47,7 +50,7 @@ from fastapi import HTTPException, Response
 from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
-from tools.eos.api import projects_router, project_work_router, server
+from tools.eos.api import projects_router, project_work_router, project_notes_router, server
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -60,7 +63,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT"
+VERSION = "v1.5.0-EXACT-NOTE-RECORD-ACCESS-CERT"
 
 
 def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
@@ -547,6 +550,71 @@ def test_project_work_rejects_foreign_session_authority_before_io(monkeypatch) -
 
 
 
+
+def test_project_notes_api_requires_current_project_read_and_write() -> None:
+    """Notes never imply company-wide discussion access from module admission."""
+    routes = {
+        (route.path, next(iter(route.methods))): route
+        for route in project_notes_router.router.routes
+        if isinstance(route, APIRoute)
+    }
+    assert set(routes) == {
+        ("/projects/{project_id}/notes", "GET"),
+        ("/projects/{project_id}/notes", "POST"),
+        ("/projects/{project_id}/notes/{note_id}", "PATCH"),
+        ("/projects/{project_id}/notes/{note_id}/redact", "POST"),
+    }
+    for (path, method), route in routes.items():
+        pairs = {
+            (item.call.permission_id, item.call.operation)
+            for item in route.dependant.dependencies
+            if isinstance(item.call, RequireTenantAuthorization)
+        }
+        required = {("project:read", "project_detail")}
+        if method != "GET":
+            required.add(("project:update", "project_update"))
+        assert pairs == required
+    with pytest.raises(ValidationError):
+        project_notes_router.ProjectNoteCreateRequest.model_validate(
+            {"body": "Untrusted owner", "author_principal_id": "fake-author"}
+        )
+    assert "ProjectNotesRegistry.ensure_indexes(" in inspect.getsource(server)
+    assert inspect.getsource(server).count(
+        'app.include_router(project_notes_router, prefix="/api")'
+    ) == 1
+
+
+def test_project_notes_reject_nonparticipant_record_reader_before_source_io(monkeypatch):
+    """An independently admitted tenant role is not a project-note grant."""
+    project_id = "prj-" + "a" * 48
+    context = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="other-member"),
+    )
+    class ProjectSource:
+        def get(self, **kwargs):
+            assert kwargs["tenant_id"] == "tenant-a"
+            assert kwargs["project_id"] == project_id
+            return SimpleNamespace(
+                created_by_principal_id="original-author",
+                owner_principal_id=None,
+            )
+    monkeypatch.setattr(
+        project_notes_router, "_transaction",
+        lambda _ctx, callback, **kwargs: callback(ProjectSource(), object()),
+    )
+    monkeypatch.setattr(
+        project_notes_router.kernel_db, "get_database",
+        lambda: pytest.fail("a nonparticipant cannot inspect notes database"),
+    )
+    with pytest.raises(HTTPException) as denied:
+        project_notes_router.list_project_notes(
+            Response(), project_id, 50, 0, context,
+        )
+    assert denied.value.status_code == 403
+    assert denied.value.detail == "PROJECT_NOTE_RECORD_SCOPE_REQUIRED"
+
+
+
 def test_projects_routes_fail_closed_until_startup_indexes_are_ready() -> None:
     """Metadata indexes gate route readiness without request-time DDL."""
     source = inspect.getsource(projects_router)
@@ -568,7 +636,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.4.0-SOURCE-PROJECT-WORK-AUTH-CERT
+# VERSION: v1.5.0-EXACT-NOTE-RECORD-ACCESS-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
