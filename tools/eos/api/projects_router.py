@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY
+VERSION: v1.11.0-GOVERNED-TASK-REASSIGNMENT
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,29 +14,32 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY exposes bounded exact-tenant project
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT permits owner-only task edit and
+  reassignment with current tenant/project contributor readback, guarded
+  revision, idempotent Mongo transaction and immutable source task event.
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY exposes owner and exact-project participant task
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY admits exact project-bound participant detail and
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY adds exact-tenant owner-authorized participant grant,
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY moves note-domain validation inside existing
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY introduces authenticated, project-existence-verified
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY projects verified next-page availability and exact offset
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY refuses a PLANNED-to-ACTIVE
+  v1.11.0-GOVERNED-TASK-REASSIGNMENT refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -181,7 +184,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY"
+VERSION: Final[str] = "v1.11.0-GOVERNED-TASK-REASSIGNMENT"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -251,6 +254,17 @@ class ProjectTaskCreateRequest(BaseModel):
     due_date: date | None = None
     assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
     depends_on: tuple[str, ...] = Field(default=(), max_length=25)
+
+
+class ProjectTaskReviseRequest(BaseModel):
+    """Owner-command task revision with complete editable fields and CAS."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=180)
+    description: str = Field(default="", max_length=5000)
+    due_date: date | None = None
+    assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
 
 
 class ProjectTaskTransitionRequest(BaseModel):
@@ -1304,6 +1318,53 @@ def create_project_task(
     return _transaction(context, create, write=True)
 
 
+@router.patch("/{project_id}/tasks/{task_id}")
+def revise_project_task(
+    payload: ProjectTaskReviseRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Edit one exact task with current-project assignee verification and CAS."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    instant = datetime.now(timezone.utc)
+
+    def revise(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        tasks = _project_task_store(registry, context.tenant_id, project_id, session)
+        if payload.assignee_principal_id is not None:
+            database = kernel_db.get_database()
+            if database is None:
+                raise ProjectTaskError("PROJECT_TASK_SOURCE_UNAVAILABLE")
+            if not _project_participant_eligible(
+                database, context.tenant_id, payload.assignee_principal_id, session,
+            ):
+                raise HTTPException(status_code=409, detail="PROJECT_TASK_ASSIGNEE_NOT_CURRENT")
+            participants = _project_participants(
+                registry, context.tenant_id, project_id, session,
+            )
+            assignment = participants.get(
+                tenant_id=context.tenant_id, project_id=project_id,
+                principal_id=payload.assignee_principal_id, session=session,
+            )
+            if assignment.role != "CONTRIBUTOR":
+                raise HTTPException(status_code=409, detail="PROJECT_TASK_ASSIGNEE_NOT_CONTRIBUTOR")
+        committed = tasks.revise_or_replay(
+            tenant_id=context.tenant_id, project_id=project_id, task_id=task_id,
+            actor_principal_id=context.identity.identity_id,
+            title=payload.title, description=payload.description,
+            due_date=payload.due_date.isoformat() if payload.due_date else None,
+            assignee_principal_id=payload.assignee_principal_id,
+            expected_revision=payload.expected_revision,
+            idempotency_key=key, occurred_at=instant, session=session,
+        )
+        return _task_result(context, project_id, committed)
+
+    return _transaction(context, revise, write=True)
+
+
 @router.post("/{project_id}/tasks/{task_id}/transition")
 def transition_project_task(
     payload: ProjectTaskTransitionRequest,
@@ -1914,7 +1975,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.10.0-PARTICIPANT-ELIGIBLE-MEMBER-DIRECTORY
+# VERSION: v1.11.0-GOVERNED-TASK-REASSIGNMENT
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
