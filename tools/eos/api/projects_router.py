@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION
+VERSION: v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,57 +14,61 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION independently
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE binds optional
+  task approval attachments exclusively after source-owned GuardDuty clearance;
+  a named reviewer must revalidate every immutable evidence reference before
+  deciding. Legacy rationale-only approvals remain distinct and unchanged.
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION accepts exact task
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION lists the named
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION adds owner-requested,
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION permits exact-project
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION atomically persists comment
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION exposes a bounded my-projects
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION adds source-owned task comments
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION permits owner-only task edit and
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION exposes bounded exact-tenant project
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION exposes owner and exact-project participant task
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION admits exact project-bound participant detail and
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION adds exact-tenant owner-authorized participant grant,
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION moves note-domain validation inside existing
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION introduces authenticated, project-existence-verified
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION projects verified next-page availability and exact offset
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION refuses a PLANNED-to-ACTIVE
+  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -248,7 +252,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION"
+VERSION: Final[str] = "v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -326,6 +330,7 @@ class ProjectApprovalRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     reviewer_principal_id: str = Field(min_length=1, max_length=180)
     rationale: str = Field(min_length=1, max_length=3000)
+    evidence_attachment_ids: tuple[str, ...] = Field(default=(), max_length=10)
 
 
 class ProjectApprovalDecisionRequest(BaseModel):
@@ -2067,6 +2072,15 @@ def request_project_task_approval(
         )
         if reviewer.role != "CONTRIBUTOR":
             raise HTTPException(status_code=409, detail="PROJECT_APPROVAL_REVIEWER_NOT_CONTRIBUTOR")
+        if len(set(payload.evidence_attachment_ids)) != len(payload.evidence_attachment_ids):
+            raise HTTPException(status_code=422, detail="PROJECT_APPROVAL_EVIDENCE_DUPLICATED")
+        for attachment_id in payload.evidence_attachment_ids:
+            if re.fullmatch(r"pat-[0-9a-f]{48}", attachment_id) is None:
+                raise HTTPException(status_code=422, detail="PROJECT_APPROVAL_EVIDENCE_ID_INVALID")
+            _require_cleared_project_attachment(
+                registry, context.tenant_id, project_id,
+                task_id, attachment_id, session,
+            )
         approval = ProjectApproval(
             tenant_id=context.tenant_id, project_id=project_id,
             task_id=task_id,
@@ -2076,6 +2090,7 @@ def request_project_task_approval(
             requester_principal_id=actor,
             reviewer_principal_id=payload.reviewer_principal_id,
             rationale=payload.rationale, status="PENDING",
+            evidence_attachment_ids=payload.evidence_attachment_ids,
             requested_at=datetime.now(timezone.utc),
         )
         committed = store.create_or_replay(
@@ -2106,6 +2121,17 @@ def decide_project_task_approval(
         store = _project_approval_store(
             registry, context.tenant_id, project_id, task_id, session,
         )
+        current_approval = store.get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, approval_id=approval_id, session=session,
+        )
+        if current_approval.reviewer_principal_id != context.identity.identity_id:
+            raise HTTPException(status_code=404, detail="PROJECT_APPROVAL_NOT_FOUND")
+        for attachment_id in current_approval.evidence_attachment_ids:
+            _require_cleared_project_attachment(
+                registry, context.tenant_id, project_id,
+                task_id, attachment_id, session,
+            )
         committed = store.decide_or_replay(
             tenant_id=context.tenant_id, project_id=project_id,
             task_id=task_id, approval_id=approval_id,
@@ -2989,7 +3015,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION
+# VERSION: v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
