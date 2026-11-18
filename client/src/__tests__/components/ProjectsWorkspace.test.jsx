@@ -1,20 +1,22 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT
+ * VERSION: v2.0.1-PERSISTED-NOTE-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT certifies source-backed project note
+ * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT waits for the committed note row
+ *            instead of a transient draft textarea with the same source text.
+ * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT proves navigation
+ * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -239,7 +241,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const input = screen.getByRole('textbox', { name: 'New project note' });
     fireEvent.change(input, { target: { value: 'Project operating context' } });
     fireEvent.click(screen.getByRole('button', { name: /Add note to EOS/ }));
-    expect(await screen.findByText('Project operating context')).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Edit note' })).toBeVisible();
+    });
+    expect(screen.getByText('Project operating context', { selector: '.wp-notes-list p' })).toBeVisible();
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(api.patch).not.toHaveBeenCalled();
     expect(persisted.status).toBe('planned');
@@ -582,7 +587,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT
+ * VERSION: v2.0.1-PERSISTED-NOTE-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
