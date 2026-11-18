@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST
+VERSION: v1.16.0-PROJECT-TASK-REVIEW-COMMANDS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,44 +14,47 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST permits exact-project
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS adds owner-requested,
+  independently reviewed project-task business approvals with explicit
+  currently active contributor reviewers, CAS and no financial authority.
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST atomically persists comment
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST exposes a bounded my-projects
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST adds source-owned task comments
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST permits owner-only task edit and
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST exposes bounded exact-tenant project
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST exposes owner and exact-project participant task
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST admits exact project-bound participant detail and
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST adds exact-tenant owner-authorized participant grant,
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST moves note-domain validation inside existing
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST introduces authenticated, project-existence-verified
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST projects verified next-page availability and exact offset
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST refuses a PLANNED-to-ACTIVE
+  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -174,6 +177,13 @@ from tools.eos.saas.projects.project_notification_registry import (
     ProjectNotificationRegistry, ProjectNotificationError,
     ProjectNotificationConflict, ProjectNotificationNotFound,
 )
+from tools.eos.saas.projects.project_approval_registry import (
+    COLLECTION as PROJECT_APPROVAL_COLLECTION,
+    EVENT_COLLECTION as PROJECT_APPROVAL_EVENT_COLLECTION,
+    ProjectApproval, ProjectApprovalRegistry, ProjectApprovalError,
+    ProjectApprovalConflict, ProjectApprovalNotFound,
+    approval_id_for_request,
+)
 from tools.eos.saas.projects.project_comment_registry import (
     COLLECTION as PROJECT_COMMENT_COLLECTION,
     EVENT_COLLECTION as PROJECT_COMMENT_EVENT_COLLECTION,
@@ -208,7 +218,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST"
+VERSION: Final[str] = "v1.16.0-PROJECT-TASK-REVIEW-COMMANDS"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -278,6 +288,23 @@ class ProjectTaskCreateRequest(BaseModel):
     due_date: date | None = None
     assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
     depends_on: tuple[str, ...] = Field(default=(), max_length=25)
+
+
+class ProjectApprovalRequest(BaseModel):
+    """Owner requests one separately reviewed task business decision."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    reviewer_principal_id: str = Field(min_length=1, max_length=180)
+    rationale: str = Field(min_length=1, max_length=3000)
+
+
+class ProjectApprovalDecisionRequest(BaseModel):
+    """Named reviewer decides with explicit expected revision and rationale."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
+    decision: Literal["APPROVED", "REJECTED"]
+    rationale: str = Field(min_length=1, max_length=3000)
 
 
 class ProjectNotificationReadRequest(BaseModel):
@@ -494,6 +521,13 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectApprovalNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectApprovalConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectApprovalError as error:
+        logger.error("PROJECT_APPROVAL_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectNotificationNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectNotificationConflict as error:
@@ -1494,6 +1528,186 @@ def read_my_project_notification(
     return _transaction(context, write, write=True)
 
 
+def _project_approval_store(
+    registry: ProjectRegistry, tenant_id: str, project_id: str,
+    task_id: str, session: Any,
+) -> ProjectApprovalRegistry:
+    """Require an existing task before exposing independent review evidence."""
+    _project_task_store(registry, tenant_id, project_id, session).get(
+        tenant_id=tenant_id, project_id=project_id, task_id=task_id,
+        session=session,
+    )
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectApprovalError("PROJECT_APPROVAL_SOURCE_UNAVAILABLE")
+    return ProjectApprovalRegistry(
+        database[PROJECT_APPROVAL_COLLECTION],
+        database[PROJECT_APPROVAL_EVENT_COLLECTION],
+    )
+
+
+def _approval_result(
+    context: TenantAuthorizationContext, project_id: str, task_id: str,
+    approval: ProjectApproval,
+) -> dict[str, object]:
+    """Return authoritative business decision state, never task completion."""
+    return {
+        "schema": "WILSY-PROJECT-APPROVAL-RESULT/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "task_id": task_id,
+        "approval": approval.to_dict(),
+    }
+
+
+def _approval_page(
+    context: TenantAuthorizationContext, project_id: str, task_id: str,
+    registry: ProjectRegistry, session: Any, limit: int, offset: int,
+) -> dict[str, object]:
+    """Project/task-scoped approval timeline under previously checked IAM."""
+    store = _project_approval_store(
+        registry, context.tenant_id, project_id, task_id, session,
+    )
+    items, more = store.list_page(
+        tenant_id=context.tenant_id, project_id=project_id,
+        task_id=task_id, session=session, limit=limit, offset=offset,
+    )
+    return {
+        "schema": "WILSY-PROJECT-APPROVAL-LIST/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "task_id": task_id,
+        "items": [item.to_dict() for item in items],
+        "offset": offset, "limit": limit, "has_more": more,
+        "next_offset": offset + len(items) if more else None,
+    }
+
+
+@router.get("/{project_id}/tasks/{task_id}/approvals")
+def list_project_task_approvals(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """List task decisions only through separately admitted owner read IAM."""
+    response.headers["Cache-Control"] = "no-store"
+    return _transaction(context, lambda registry, session: _approval_page(
+        context, project_id, task_id, registry, session, limit, offset,
+    ))
+
+
+@router.get("/{project_id}/my-project/tasks/{task_id}/approvals")
+def list_participant_task_approvals(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """List task decisions only after the caller's current project admission."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        return _approval_page(
+            context, project_id, task_id, registry, session, limit, offset,
+        )
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/tasks/{task_id}/approvals", status_code=status.HTTP_201_CREATED)
+def request_project_task_approval(
+    payload: ProjectApprovalRequest, response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Request an independently reviewed business decision on an existing task."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+
+    def write(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        store = _project_approval_store(
+            registry, context.tenant_id, project_id, task_id, session,
+        )
+        database = kernel_db.get_database()
+        if database is None:
+            raise ProjectApprovalError("PROJECT_APPROVAL_SOURCE_UNAVAILABLE")
+        actor = context.identity.identity_id
+        if payload.reviewer_principal_id == actor:
+            raise HTTPException(status_code=403, detail="PROJECT_APPROVAL_SELF_REVIEW_DENIED")
+        if not _project_participant_eligible(
+            database, context.tenant_id, payload.reviewer_principal_id, session,
+        ):
+            raise HTTPException(status_code=409, detail="PROJECT_APPROVAL_REVIEWER_NOT_CURRENT")
+        participants = _project_participants(
+            registry, context.tenant_id, project_id, session,
+        )
+        reviewer = participants.get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            principal_id=payload.reviewer_principal_id, session=session,
+        )
+        if reviewer.role != "CONTRIBUTOR":
+            raise HTTPException(status_code=409, detail="PROJECT_APPROVAL_REVIEWER_NOT_CONTRIBUTOR")
+        approval = ProjectApproval(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id,
+            approval_id=approval_id_for_request(
+                context.tenant_id, project_id, task_id, actor, key,
+            ),
+            requester_principal_id=actor,
+            reviewer_principal_id=payload.reviewer_principal_id,
+            rationale=payload.rationale, status="PENDING",
+            requested_at=datetime.now(timezone.utc),
+        )
+        committed = store.create_or_replay(
+            approval=approval, idempotency_key=key, session=session,
+        )
+        return _approval_result(context, project_id, task_id, committed)
+
+    return _transaction(context, write, write=True)
+
+
+@router.post("/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision")
+def decide_project_task_approval(
+    payload: ProjectApprovalDecisionRequest, response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    approval_id: str = Path(pattern=r"^par-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Allow only the designated current Contributor to decide exactly once."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+
+    def write(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        store = _project_approval_store(
+            registry, context.tenant_id, project_id, task_id, session,
+        )
+        committed = store.decide_or_replay(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, approval_id=approval_id,
+            reviewer_principal_id=context.identity.identity_id,
+            decision=payload.decision, rationale=payload.rationale,
+            expected_revision=payload.expected_revision,
+            occurred_at=datetime.now(timezone.utc),
+            idempotency_key=key, session=session,
+        )
+        return _approval_result(context, project_id, task_id, committed)
+
+    return _transaction(context, write, write=True)
+
+
 @router.get("/{project_id}/tasks/{task_id}/comments")
 def list_owner_task_comments(
     response: Response,
@@ -2363,7 +2577,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.15.0-PARTICIPANT-CURRENT-MEMBER-LIST
+# VERSION: v1.16.0-PROJECT-TASK-REVIEW-COMMANDS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
