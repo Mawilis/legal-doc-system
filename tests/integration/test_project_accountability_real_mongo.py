@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT
+VERSION: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,7 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT adds disposable real-replica certification for
+CHANGELOG: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT certifies transactional note revisions,
+         author denial, replay, foreign-tenant absence and immutable note events
+         on disposable MongoDB; no real principal or project activation.
+CHANGELOG: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT adds disposable real-replica certification for
          511 source-valid tenant projects, complete indexed page traversal,
          immutable tenant isolation and summary counts.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
@@ -37,6 +40,11 @@ from pymongo.write_concern import WriteConcern
 
 from tools.eos.api import projects_router as router
 from tools.eos.saas.domain.project import Project, ProjectStatus
+from tools.eos.saas.domain.project_note import ProjectNote
+from tools.eos.saas.projects.project_note_registry import (
+    ProjectNoteRegistry, ProjectNoteConflict, ProjectNoteNotFound,
+    note_id_for_command,
+)
 from tools.eos.saas.projects.project_registry import (
     ProjectNotFound, ProjectRegistry,
 )
@@ -261,8 +269,114 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
         client.close()
 
 
+def test_real_replica_project_notes_replay_author_cas_and_tenant_isolation() -> None:
+    """Proof that note collaboration persists independently of project lifecycle."""
+    uri = os.environ.get("TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI")
+    if not uri:
+        pytest.skip("Disposable MongoDB replica-set URI not configured")
+    client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=4000)
+    database = client.get_database("wilsy_project_notes_cert")
+    try:
+        client.admin.command("ping")
+        client.drop_database(database.name)
+        notes = database.get_collection("wilsy_project_notes")
+        events = database.get_collection("wilsy_project_note_events")
+        ProjectNoteRegistry.ensure_indexes(notes, events)
+        registry = ProjectNoteRegistry(notes, events)
+        tenant = "note-cert-tenant"
+        project_id = "prj-" + "d" * 48
+        actor = "note-author"
+        key = "note-create-idempotency"
+        identity = note_id_for_command(tenant, project_id, actor, key)
+        instant = datetime.now(timezone.utc)
+        original = ProjectNote(
+            tenant_id=tenant, project_id=project_id, note_id=identity,
+            author_principal_id=actor, body="Verified project discussion",
+            created_at=instant, updated_at=instant,
+        )
+
+        def created(tx: Any) -> ProjectNote:
+            return registry.create_or_replay(
+                note=original, actor_principal_id=actor, idempotency_key=key,
+                occurred_at=instant, session=tx,
+            )
+
+        with client.start_session() as session:
+            recorded = session.with_transaction(
+                created,
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+            replayed = session.with_transaction(
+                created,
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+            assert replayed == recorded
+            with pytest.raises(ProjectNoteNotFound):
+                registry.get(
+                    tenant_id="foreign-tenant", project_id=project_id,
+                    note_id=identity, session=session,
+                )
+            first, first_more = registry.list_for_project(
+                tenant_id=tenant, project_id=project_id, session=session,
+            )
+            assert len(first) == 1 and first_more is False
+
+        with client.start_session() as session:
+            with pytest.raises(ProjectNoteConflict, match="AUTHOR_DENIED"):
+                session.with_transaction(
+                    lambda tx: registry.revise_or_replay(
+                        tenant_id=tenant, project_id=project_id, note_id=identity,
+                        actor_principal_id="different-author",
+                        expected_revision=1, body="Unauthorized",
+                        idempotency_key="bad-editor", occurred_at=instant, session=tx,
+                    ),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+            updated = session.with_transaction(
+                lambda tx: registry.revise_or_replay(
+                    tenant_id=tenant, project_id=project_id, note_id=identity,
+                    actor_principal_id=actor, expected_revision=1,
+                    body="Revised discussion", idempotency_key="note-revision",
+                    occurred_at=instant, session=tx,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+            assert updated.revision == 2
+            with pytest.raises(ProjectNoteConflict, match="REVISION_CONFLICT"):
+                session.with_transaction(
+                    lambda tx: registry.revise_or_replay(
+                        tenant_id=tenant, project_id=project_id, note_id=identity,
+                        actor_principal_id=actor, expected_revision=1,
+                        body="Stale revision", idempotency_key="stale-editor",
+                        occurred_at=instant, session=tx,
+                    ),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+            history = registry.list_events(
+                tenant_id=tenant, project_id=project_id,
+                note_id=identity, session=session,
+            )
+            assert [event["event_type"] for event in history] == [
+                "PROJECT_NOTE_CREATED", "PROJECT_NOTE_REVISED",
+            ]
+            assert events.count_documents({"tenant_id": tenant}) == 2
+    finally:
+        client.drop_database(database.name)
+        client.close()
+
+
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT
+# VERSION: v1.2.0-PROJECT-NOTE-REPLICA-LIFECYCLE-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
