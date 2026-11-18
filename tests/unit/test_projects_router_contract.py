@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT
+VERSION: v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,18 +9,20 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT pins five new exact-tenant task operations
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT pins exact tenant candidate membership
+  choice reads to project owner detail IAM without granting participation.
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT certifies independent participant IAM pairs
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT verifies explicit project owner-only participant
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT pins the four bounded notes endpoints to current
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT proves customer Projects authority is separately
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT asserts EOS rejects
+  v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -69,7 +71,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT"
+VERSION = "v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -390,6 +392,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project", ("GET",)),
         ("/projects/{project_id}/my-project/notes", ("GET",)),
         ("/projects/{project_id}/my-project/notes", ("POST",)),
+        ("/projects/{project_id}/participant-options", ("GET",)),
         ("/projects/{project_id}/participants", ("GET",)),
         ("/projects/{project_id}/participants", ("POST",)),
         ("/projects/{project_id}/participants/{participant_principal_id}/revoke", ("POST",)),
@@ -416,6 +419,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/notes", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/notes", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/participant-options", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/participants", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/participants", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/participants/{participant_principal_id}/revoke", "POST"): ("project:update", "project_update"),
@@ -595,7 +599,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT
+# VERSION: v1.9.0-PARTICIPANT-CHOICE-ROUTE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
