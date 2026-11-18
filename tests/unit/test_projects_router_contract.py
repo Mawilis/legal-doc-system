@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT
+VERSION: v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,16 +9,18 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT certifies independent participant IAM pairs
+  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT pins five new exact-tenant task operations
+  to independent owner or participant IAM; no inferred assignee access.
+  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT verifies explicit project owner-only participant
+  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT pins the four bounded notes endpoints to current
+  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT proves customer Projects authority is separately
+  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT asserts EOS rejects
+  v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -67,7 +69,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT"
+VERSION = "v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -186,6 +188,33 @@ def test_project_participant_record_requires_current_scoped_iam(monkeypatch):
         projects_router._require_current_project_participation(
             context, registry, "prj-" + "d" * 48, object(),
         )
+
+
+def test_personal_project_task_transition_cannot_operate_on_another_assignee(monkeypatch):
+    """Project contributor role is necessary but task-assignee equality is separate."""
+    task_id = "ptk-" + "a" * 48
+    project_id = "prj-" + "b" * 48
+    context = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="participant-a"),
+        decision=SimpleNamespace(authorization_role="PROJECTS_PARTICIPANT_CONTRIBUTOR"),
+    )
+    registry = SimpleNamespace(get=lambda **_kwargs: SimpleNamespace(project_id=project_id))
+    task = SimpleNamespace(assignee_principal_id="participant-b")
+    class Tasks:
+        def get(self, **_kwargs):
+            return task
+        def transition_or_replay(self, **_kwargs):
+            pytest.fail("Another person's work must not transition")
+    monkeypatch.setattr(projects_router, "_require_current_project_participation", lambda *_a, **_k: (None, None))
+    monkeypatch.setattr(projects_router, "_project_task_store", lambda *_a: Tasks())
+    monkeypatch.setattr(projects_router, "_transaction", lambda _ctx, callback, **_kwargs: callback(registry, object()))
+    with pytest.raises(HTTPException) as denied:
+        projects_router.transition_assigned_project_task(
+            projects_router.ProjectTaskTransitionRequest(
+                expected_revision=1, status="IN_PROGRESS",
+            ), Response(), project_id, task_id, "task-key", context,
+        )
+    assert denied.value.status_code == 403
 
 
 def test_department_read_requires_exact_tenant_active_record():
@@ -353,6 +382,11 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", ("POST",)),
         ("/projects/{project_id}/assignment", ("PATCH",)),
         ("/projects/founder-projects-admission", ("POST",)),
+        ("/projects/{project_id}/tasks", ("GET",)),
+        ("/projects/{project_id}/tasks", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/transition", ("POST",)),
+        ("/projects/{project_id}/my-project/tasks", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition", ("POST",)),
         ("/projects/{project_id}/my-project", ("GET",)),
         ("/projects/{project_id}/my-project/notes", ("GET",)),
         ("/projects/{project_id}/my-project/notes", ("POST",)),
@@ -374,6 +408,11 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", "POST"): ("tenant:profile:write", "profile_update"),
         ("/projects/{project_id}/assignment", "PATCH"): ("project:update", "project_update"),
         ("/projects/founder-projects-admission", "POST"): ("tenant:membership:write", "membership_invite"),
+        ("/projects/{project_id}/tasks", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}/transition", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/my-project/tasks", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/my-project", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/notes", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/notes", "POST"): ("project:participant:contribute", "project_participant_contribute"),
@@ -556,7 +595,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT
+# VERSION: v1.8.0-PROJECT-TASK-EXECUTION-ROUTE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
