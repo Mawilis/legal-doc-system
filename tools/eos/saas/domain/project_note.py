@@ -120,7 +120,7 @@ class ProjectNote:
         if not isinstance(self.note_id, str) or not _NOTE_ID.fullmatch(self.note_id):
             raise ProjectNoteError("PROJECT_NOTE_ID_INVALID")
         _body(self.body)
-        if self.colour is not None and self.colour not in NOTE_COLOURS:
+        if self.colour is not None and (not isinstance(self.colour, str) or self.colour not in NOTE_COLOURS):
             raise ProjectNoteError("PROJECT_NOTE_COLOUR_INVALID")
         created = _instant("created_at", self.created_at)
         updated = _instant("updated_at", self.updated_at)
