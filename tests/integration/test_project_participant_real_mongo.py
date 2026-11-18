@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Participant Replica-Set Certificate
-VERSION: v1.0.0-PROJECT-EXACT-TENANT-REPLICA-CERT
+VERSION: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT
 AUTHORITY: Disposable MongoDB test-owned authority; never a real tenant grant.
 EPITOME: Certify indexes, transactional participant grant/replay/revocation,
          source CAS, foreign-tenant absence and immutable event history.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: ProjectParticipantRegistry; existing Projects
          accountability CI owns the disposable replica and cleanup.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-PROJECT-EXACT-TENANT-REPLICA-CERT adds a test of durable
+CHANGELOG: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT certifies revoked participants
+         are hidden like unknown/foreign records even for stale retries.
+CHANGELOG: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT adds a test of durable
          explicit role evidence with cross-tenant denial and revision replay.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No real principal, subscription or project data.
@@ -127,7 +129,7 @@ def test_disposable_project_participant_grant_replay_revoke() -> None:
                 tenant_id=tenant, project_id=project_id,
                 principal_id=principal, session=session, require_active=False,
             ) == removed
-        with pytest.raises(ProjectParticipantConflict):
+        with pytest.raises(ProjectParticipantNotFound):
             transaction(lambda session: store.revoke(
                 tenant_id=tenant, project_id=project_id, principal_id=principal,
                 actor_principal_id=actor, expected_revision=1,
@@ -146,7 +148,7 @@ def test_disposable_project_participant_grant_replay_revoke() -> None:
 
 
 # ARTIFACT: test_project_participant_real_mongo.py
-# VERSION: v1.0.0-PROJECT-EXACT-TENANT-REPLICA-CERT
+# VERSION: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT
 # AUTHORITY BOUNDARY: only synthetic source persistence, no live IAM
 # TENANT POSTURE: foreign tenant and project reads return absence
 # FAIL-CLOSED POSTURE: diverging replay, stale revision, revoked access denied
