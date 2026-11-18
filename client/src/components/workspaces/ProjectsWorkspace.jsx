@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.0.1-SOURCE-BACKED-TABLE-CODE-COPY
+ * VERSION: v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.0.1-SOURCE-BACKED-TABLE-CODE-COPY distinguishes the list's
+ * CHANGELOG: v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY distinguishes missing
+ *            table target-date copy from the existing detail readback.
+ *            v2.0.1-SOURCE-BACKED-TABLE-CODE-COPY distinguishes the list's
  *            empty code from the source-backed detail value without changing
  *            EOS commands or record truth.
  *            v2.0.0-SOURCE-BACKED-PROJECT-TABLE replaces card-like project rows
@@ -822,7 +824,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                     <span><strong className="wp-row-title">{item.name}</strong><span className="wp-row-meta">{item.project_id}</span></span>
                     <span className="text-sm text-slate-700">{item.code || 'No project code'}</span>
                     <span><span className="wp-status" data-status={item.status}>{statusLabel(item.status)}</span></span>
-                    <span className="text-sm text-slate-700">{item.target_date || 'Not scheduled'}</span>
+                    <span className="text-sm text-slate-700">{item.target_date || 'No target date'}</span>
                     <span className="wp-table-action">View details</span>
                   </button>
                 </li>)}
@@ -874,7 +876,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.0.1-SOURCE-BACKED-TABLE-CODE-COPY
+// VERSION: v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
