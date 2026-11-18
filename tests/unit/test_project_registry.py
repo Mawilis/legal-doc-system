@@ -394,6 +394,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
         "wilsy_project_tenant_identity_unique", "wilsy_project_tenant_code_unique",
         "wilsy_project_tenant_active_recent",
         "wilsy_project_tenant_status_recent",
+        "wilsy_project_tenant_owner_recent",
     ]
     active_keys, active_opts = projects.indexes[2]
     assert active_keys == (
@@ -406,6 +407,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
         ("updated_at", -1), ("project_id", 1),
     )
     assert "unique" not in status_opts
+    assert "unique" not in projects.indexes[4][1]
     assert [opts["name"] for _, opts in events.indexes] == [
         "wilsy_project_event_tenant_identity_unique",
         "wilsy_project_event_tenant_idempotency_unique",
