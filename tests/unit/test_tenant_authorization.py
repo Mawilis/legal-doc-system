@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.13.1-CRM-WORK-BINDING-VERSION-CERT
+VERSION: v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -14,8 +14,11 @@ permissions are restricted to the exact WILSY company tenant before authority re
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
+CHANGELOG: v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT certifies non-inherited customer Projects
+owner grants, WILSY-only platform role fencing, and existing separate
+membership/business-capacity/role requirements.
 CHANGELOG:
-2026-11-17 v1.13.1-CRM-WORK-BINDING-VERSION-CERT refreshes two
+2026-11-17 v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT refreshes two
 strict runtime-version assertions to the canonical CRM work-edit release.
 All binding, tenant fence, business role and denial assertions remain intact.
 2026-11-16 v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT verifies exact Projects pairs, tenant_owner eligibility, the dedicated assigned role, missing-role denial, and the internal-role foreign-tenant fence. No role assignment or entitlement is created.
@@ -205,7 +208,7 @@ from tools.eos.workforce.domain.workforce_relationship import (
     WorkforceScopeKind,
 )
 
-VERSION = "v1.13.1-CRM-WORK-BINDING-VERSION-CERT"
+VERSION = "v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -897,7 +900,10 @@ def test_project_operation_pairs_require_dedicated_assigned_role(
     )
     assert decision.authorized is False
     assert decision.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
-    assert assignments.calls == [("p", tenant, "PROJECTS_PLATFORM_OWNER")]
+    assert assignments.calls == [
+        ("p", tenant, "PROJECTS_PLATFORM_OWNER"),
+        ("p", tenant, "PROJECTS_TENANT_OWNER"),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -943,7 +949,34 @@ def test_internal_projects_role_is_ignored_in_customer_tenant() -> None:
     )
     assert decision.authorized is False
     assert decision.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
-    assert assignments.calls == []
+    assert assignments.calls == [("p", tenant, "PROJECTS_TENANT_OWNER")]
+
+
+def test_customer_owner_requires_explicit_projects_role_in_own_tenant() -> None:
+    """An active customer-tenant role is necessary, not a founder fallback."""
+    tenant = "customer-tenant"
+    assignments = _assignments("PROJECTS_TENANT_OWNER", tenant_id=tenant)
+    decision = _decision(
+        permission_id="project:read",
+        operation="project_list",
+        business_repository=_business("tenant_owner", tenant_id=tenant),
+        assignment_repository=assignments,
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert decision.authorized is True
+    assert decision.authorization_role == "PROJECTS_TENANT_OWNER"
+    foreign_assignments = _assignments("PROJECTS_TENANT_OWNER", tenant_id="foreign-tenant")
+    denied = _decision(
+        permission_id="project:read",
+        operation="project_list",
+        business_repository=_business("tenant_owner", tenant_id=tenant),
+        assignment_repository=foreign_assignments,
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert denied.authorized is False
+    assert denied.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
 
 
 def test_project_crossed_operation_pairs_deny_before_role_assignment_reads() -> None:
@@ -3201,7 +3234,7 @@ def test_platform_employer_admission_requires_current_exact_tenant_workforce(
 
 
 # ARTIFACT: tests/unit/test_tenant_authorization.py
-# VERSION: v1.13.1-CRM-WORK-BINDING-VERSION-CERT
+# VERSION: v1.14.0-EXPLICIT-TENANT-PROJECTS-ROLE-CERT
 # AUTHORITY BOUNDARY: certifies exact composition, operation policy and static role conjunctions only; fixtures create no assignment
 # TENANT POSTURE: platform-employer decisions are restricted to the canonical WILSY company tenant and require active membership, eligible business role and active assigned authorization role
 # FAIL-CLOSED POSTURE: crossed pairs deny; offer acceptance remains unbound; admission has no command or route
