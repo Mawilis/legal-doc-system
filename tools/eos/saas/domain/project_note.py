@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Note Domain
-VERSION: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL
+VERSION: v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE
 AUTHORITY: Python EOS canonical tenant Projects domain facts.
 EPITOME: Immutable, independently revisioned project notes with source-verifiable
          identity, author ownership, chronological audit coordinates, soft
@@ -8,9 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/d
 COLLABORATION / OWNERSHIP: ProjectNoteRegistry and Projects router; EOS owns
          tenant, authentication, entitlement, records and transaction admission.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL rejects retired platform/root tenant aliases
+CHANGELOG: v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE adds an optional validated sticky colour to new and revised notes while preserving original fingerprints and field shape for existing colourless notes; revision and author authority unchanged.
+CHANGELOG: v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE rejects retired platform/root tenant aliases
          as invalid note tenancy instead of relying solely on HTTP admission.
-CHANGELOG: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL defines strict source-backed note state
+CHANGELOG: v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE defines strict source-backed note state
          without authorizing notes as project approvals or signed decisions.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No HTML interpretation; text is bounded and no
@@ -31,8 +32,9 @@ import json
 import re
 from typing import Final
 
-VERSION: Final[str] = "v1.0.1-RETIRED-TENANT-ALIAS-DENIAL"
+VERSION: Final[str] = "v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE"
 SCHEMA: Final[str] = "wilsy.project.note.v1"
+NOTE_COLOURS: Final[frozenset[str]] = frozenset({"yellow", "blue", "mint", "rose", "violet", "slate"})
 _NOTE_ID = re.compile(r"^pnt-[0-9a-f]{48}$")
 _PROJECT_ID = re.compile(r"^prj-[0-9a-f]{48}$")
 _HEX_512 = re.compile(r"^[0-9a-f]{128}$")
@@ -100,6 +102,7 @@ class ProjectNote:
     updated_at: datetime
     revision: int = 1
     archived_at: datetime | None = None
+    colour: str | None = None
     schema: str = SCHEMA
     version: str = VERSION
     fingerprint: str = ""
@@ -115,6 +118,8 @@ class ProjectNote:
         if not isinstance(self.note_id, str) or not _NOTE_ID.fullmatch(self.note_id):
             raise ProjectNoteError("PROJECT_NOTE_ID_INVALID")
         _body(self.body)
+        if self.colour is not None and self.colour not in NOTE_COLOURS:
+            raise ProjectNoteError("PROJECT_NOTE_COLOUR_INVALID")
         created = _instant("created_at", self.created_at)
         updated = _instant("updated_at", self.updated_at)
         archived = _instant("archived_at", self.archived_at, nullable=True)
@@ -142,7 +147,7 @@ class ProjectNote:
 
     def _payload(self) -> dict[str, object]:
         """Return canonical persisted semantics excluding the derived fingerprint."""
-        return {
+        payload = {
             "tenant_id": self.tenant_id, "project_id": self.project_id,
             "note_id": self.note_id, "author_principal_id": self.author_principal_id,
             "body": self.body, "created_at": self.created_at.isoformat(),
@@ -150,6 +155,9 @@ class ProjectNote:
             "archived_at": self.archived_at.isoformat() if self.archived_at else None,
             "schema": self.schema, "version": self.version,
         }
+        if self.colour is not None:
+            payload["colour"] = self.colour
+        return payload
 
     def to_dict(self) -> dict[str, object]:
         """Serialize exact source-owned state for persistence or transport."""
@@ -163,7 +171,7 @@ class ProjectNote:
             "body", "created_at", "updated_at", "revision", "archived_at",
             "schema", "version", "fingerprint",
         }
-        if not isinstance(value, dict) or set(value) != expected:
+        if not isinstance(value, dict) or not expected.issubset(value) or not set(value).issubset(expected | {"colour"}):
             raise ProjectNoteError("PROJECT_NOTE_DOCUMENT_INVALID")
         fields = dict(value)
         for name in ("created_at", "updated_at", "archived_at"):
@@ -183,7 +191,7 @@ class ProjectNote:
 
     def revise(
         self, *, actor_principal_id: str, expected_revision: int,
-        body: str, updated_at: datetime,
+        body: str, updated_at: datetime, colour: str | None = None,
     ) -> ProjectNote:
         """Revise only the original author's non-archived note with CAS intent."""
         self._require_writer(actor_principal_id, expected_revision)
@@ -193,6 +201,7 @@ class ProjectNote:
             raise ProjectNoteError("PROJECT_NOTE_TIMESTAMP_ORDER_INVALID")
         return replace(
             self, body=_body(body), revision=self.revision + 1,
+            colour=self.colour if colour is None else colour,
             updated_at=stamp, fingerprint="",
         )
 
@@ -222,10 +231,10 @@ class ProjectNote:
             raise ProjectNoteError("PROJECT_NOTE_ARCHIVED")
 
 
-__all__ = ["VERSION", "SCHEMA", "ProjectNote", "ProjectNoteError"]
+__all__ = ["VERSION", "SCHEMA", "NOTE_COLOURS", "ProjectNote", "ProjectNoteError"]
 
 # ARTIFACT: project_note.py
-# VERSION: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL
+# VERSION: v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE
 # AUTHORITY BOUNDARY: immutable author-owned note lifecycle only
 # TENANT POSTURE: exact tenant and project coordinates, no default tenant
 # FAIL-CLOSED POSTURE: source signature/integrity, author and CAS checks fail closed
