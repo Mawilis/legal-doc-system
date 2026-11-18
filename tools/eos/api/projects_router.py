@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD
+VERSION: v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,54 +14,57 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD accepts exact task
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION independently
+  verifies exact-version GuardDuty clean tags and pinned S3 policy before
+  storing immutable clearance. The principal cannot self-assert scan safety.
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD lists the named
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD adds owner-requested,
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD permits exact-project
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD atomically persists comment
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD exposes a bounded my-projects
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD adds source-owned task comments
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD permits owner-only task edit and
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD exposes bounded exact-tenant project
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD exposes owner and exact-project participant task
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD admits exact project-bound participant detail and
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD adds exact-tenant owner-authorized participant grant,
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD moves note-domain validation inside existing
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD introduces authenticated, project-existence-verified
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD projects verified next-page availability and exact offset
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD refuses a PLANNED-to-ACTIVE
+  v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -185,6 +188,13 @@ from tools.eos.saas.projects.project_notification_registry import (
     ProjectNotificationRegistry, ProjectNotificationError,
     ProjectNotificationConflict, ProjectNotificationNotFound,
 )
+from tools.eos.saas.projects.project_attachment_clearance_registry import (
+    COLLECTION as PROJECT_ATTACHMENT_CLEARANCE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_ATTACHMENT_CLEARANCE_EVENT_COLLECTION,
+    ProjectAttachmentClearance, ProjectAttachmentClearanceRegistry,
+    ProjectAttachmentClearanceError, ProjectAttachmentClearanceConflict,
+    ProjectAttachmentClearanceNotFound,
+)
 from tools.eos.saas.projects.project_attachment_registry import (
     COLLECTION as PROJECT_ATTACHMENT_COLLECTION,
     EVENT_COLLECTION as PROJECT_ATTACHMENT_EVENT_COLLECTION,
@@ -195,6 +205,7 @@ from tools.eos.saas.projects.project_attachment_registry import (
 )
 from tools.eos.saas.projects.project_attachment_storage import (
     ProjectAttachmentStorageError, store_quarantined_attachment,
+    verify_guardduty_clean_attachment,
 )
 from tools.eos.saas.projects.project_approval_registry import (
     COLLECTION as PROJECT_APPROVAL_COLLECTION,
@@ -237,7 +248,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD"
+VERSION: Final[str] = "v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -540,6 +551,13 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectAttachmentClearanceNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectAttachmentClearanceConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectAttachmentClearanceError as error:
+        logger.error("PROJECT_ATTACHMENT_CLEARANCE_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectAttachmentNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectAttachmentConflict as error:
@@ -1799,6 +1817,111 @@ async def upload_participant_project_attachment(
     return _transaction(context, commit, write=True)
 
 
+def _project_attachment_clearances(
+    registry: ProjectRegistry, tenant_id: str, project_id: str,
+    task_id: str, session: Any,
+) -> ProjectAttachmentClearanceRegistry:
+    """Resolve a current task before accessing independently verified scans."""
+    _project_attachment_store(
+        registry, tenant_id, project_id, task_id, session,
+    )
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectAttachmentClearanceError("PROJECT_ATTACHMENT_CLEARANCE_SOURCE_UNAVAILABLE")
+    return ProjectAttachmentClearanceRegistry(
+        database[PROJECT_ATTACHMENT_CLEARANCE_COLLECTION],
+        database[PROJECT_ATTACHMENT_CLEARANCE_EVENT_COLLECTION],
+    )
+
+
+def _require_cleared_project_attachment(
+    registry: ProjectRegistry, tenant_id: str, project_id: str,
+    task_id: str, attachment_id: str, session: Any,
+) -> tuple[ProjectAttachment, ProjectAttachmentClearance]:
+    """Bind immutable source manifest to its independently verified clean scan."""
+    manifest = _project_attachment_store(
+        registry, tenant_id, project_id, task_id, session,
+    ).get(
+        tenant_id=tenant_id, project_id=project_id,
+        task_id=task_id, attachment_id=attachment_id, session=session,
+    )
+    clearance = _project_attachment_clearances(
+        registry, tenant_id, project_id, task_id, session,
+    ).get(
+        tenant_id=tenant_id, project_id=project_id,
+        task_id=task_id, attachment_id=attachment_id, session=session,
+    )
+    if clearance.attachment_fingerprint != manifest.fingerprint:
+        raise ProjectAttachmentClearanceError("PROJECT_ATTACHMENT_CLEARANCE_SOURCE_MISMATCH")
+    return manifest, clearance
+
+
+@router.post("/{project_id}/my-project/tasks/{task_id}/attachments/{attachment_id}/verify-scan")
+def reconcile_project_attachment_guardduty_scan(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    attachment_id: str = Path(pattern=r"^pat-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Observe clean scanner evidence only under exact live object/policy proof.
+
+    Storage inspection runs OUTSIDE MongoDB transaction; authorization and
+    attachment fingerprint are checked before and after. No request body
+    supplies scanner status, provider version, trust policy or verdict.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+
+    def current(registry: ProjectRegistry, session: Any) -> ProjectAttachment:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        return _project_attachment_store(
+            registry, context.tenant_id, project_id, task_id, session,
+        ).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, attachment_id=attachment_id, session=session,
+        )
+
+    manifest = _transaction(context, current)
+    try:
+        pinned_policy, scan_digest = verify_guardduty_clean_attachment(manifest)
+    except ProjectAttachmentStorageError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+
+    def record(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        observed = current(registry, session)
+        if observed.fingerprint != manifest.fingerprint:
+            raise ProjectAttachmentClearanceError("PROJECT_ATTACHMENT_CLEARANCE_SOURCE_CHANGED")
+        result = _project_attachment_clearances(
+            registry, context.tenant_id, project_id, task_id, session,
+        ).record_or_replay(
+            clearance=ProjectAttachmentClearance(
+                tenant_id=context.tenant_id, project_id=project_id,
+                task_id=task_id, attachment_id=attachment_id,
+                attachment_fingerprint=manifest.fingerprint,
+                policy_sha3_512=pinned_policy,
+                scan_evidence_sha3_512=scan_digest,
+                observed_by_principal_id=context.identity.identity_id,
+                observed_at=datetime.now(timezone.utc),
+            ),
+            idempotency_key=key, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-ATTACHMENT-SCAN-RESULT/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "attachment_id": attachment_id,
+            "scan_status": result.scan_status,
+            "clearance_fingerprint": result.fingerprint,
+        }
+
+    return _transaction(context, record, write=True)
+
+
 @router.get("/my-approvals")
 def list_my_pending_project_approvals(
     response: Response,
@@ -2866,7 +2989,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.18.0-QUARANTINED-ATTACHMENT-UPLOAD
+# VERSION: v1.19.0-TRUSTED-ATTACHMENT-SCAN-RECONCILIATION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
