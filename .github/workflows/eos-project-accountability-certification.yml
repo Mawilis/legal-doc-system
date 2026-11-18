@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT
+# VERSION: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,49 +7,52 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT runs
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT verifies
+#            full 511-item delegated project attention projection with
+#            indexed real Mongo reads and immediate project revocation exclusion.
+# CHANGELOG:  v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT runs
 #            exact PROJECTS source contract in the shared My Work client,
 #            including blocked, own-assignee and no fake due-at deadlines.
-# CHANGELOG:  v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT includes
+# CHANGELOG:  v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT includes
 #            independently admitted project attention source and pure My Work
 #            projection tests with revoked scope, blockers and no owner bypass.
-# CHANGELOG:  v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT includes a
+# CHANGELOG:  v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT includes a
 #            participant-only assigned-project/task/notification source
 #            readback and denial UI certificate alongside owner Projects.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT compiles and tests
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT compiles and tests
 #            atomic recipient-scoped mention inbox creation, exact tenant
 #            and principal read gates and source-owned read receipt CAS.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT includes task
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT includes task
 #            comment discussion rendering, mocked EOS publish/readback, and
 #            explicit mention choice denial in the governed frontend gate.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT adds exact-task
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT adds exact-task
 #            comment/mention domain, caller transaction, audited replay and
 #            foreign-tenant Mongo integration to the governed Projects gate.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT executes exact-source
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT executes exact-source
 #            project participant grant/revoke client tests with Projects UI
 #            and rendered browser certification.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT tracks and runs
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT tracks and runs
 #            the mounted task and participant list/editor surfaces and
 #            their desktop/mobile browser checks in the existing certificate.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT compiles and tests source-owned
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT compiles and tests source-owned
 #            task, subtask, milestone, dependency, assignee and lifecycle
 #            contracts with exact tenant disposable Mongo persistence.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT executes the central roles,
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT executes the central roles,
 #            permission namespace, tenant operation and authorization tests
 #            with the Projects-specific and disposable Mongo contracts.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT adds indexed exact-tenant project participant
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT adds indexed exact-tenant project participant
 #            domain and disposable MongoDB grant/revoke/replay certification,
 #            retaining browser, Python, source and frontend release gates.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT honors the root manifest's
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT honors the root manifest's
 #            existing legacy React peer-lock agreement for test tooling,
 #            without relaxing the client's locked dependency resolution.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT adds isolated rendered Chromium
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT adds isolated rendered Chromium
 #            desktop/mobile geometry and selected-note surface verification;
 #            mocked API replies are presentation tests, not authenticated EOS.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT extends exact-head CI to the
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT adds a real
+# CHANGELOG: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -101,6 +104,7 @@ on:
       - tests/unit/test_project_comment_registry.py
       - tests/unit/test_project_notification_registry.py
       - tests/integration/test_project_notifications_real_mongo.py
+      - tests/integration/test_project_attention_real_mongo.py
       - tests/integration/test_project_comments_real_mongo.py
       - tests/integration/test_project_tasks_real_mongo.py
       - tests/integration/test_project_participant_real_mongo.py
@@ -169,7 +173,7 @@ jobs:
       - name: Certify real Mongo project owner and department transactions
         env:
           TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyProjectAccountabilityCertRS
-        run: python -m pytest -q tests/integration/test_project_accountability_real_mongo.py tests/integration/test_project_participant_real_mongo.py tests/integration/test_project_tasks_real_mongo.py tests/integration/test_project_comments_real_mongo.py tests/integration/test_project_notifications_real_mongo.py
+        run: python -m pytest -q tests/integration/test_project_accountability_real_mongo.py tests/integration/test_project_participant_real_mongo.py tests/integration/test_project_tasks_real_mongo.py tests/integration/test_project_comments_real_mongo.py tests/integration/test_project_notifications_real_mongo.py tests/integration/test_project_attention_real_mongo.py
       - name: Stop disposable MongoDB
         if: always()
         run: docker rm -f wilsy-projects-accountability-mongo 2>/dev/null || true
@@ -210,7 +214,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.14.0-MY-WORK-PROJECTS-CLIENT-PARITY-CERT
+# VERSION: v1.15.0-OVER-500-ASSIGNED-WORK-REPLICA-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
