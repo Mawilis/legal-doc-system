@@ -1,35 +1,36 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT
+ * VERSION: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT proves a
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT adds in-place task
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies task creation, verified
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT waits for the committed note row
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies source-backed project note
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT proves navigation
+ * CHANGELOG: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -144,6 +145,38 @@ afterEach(() => {
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
+
+  it('filters authorized owned projects without calling participant IAM or changing records', async () => {
+    const owned = project({
+      project_id: PROJECT_ID, name: 'Owned platform programme',
+      owner_principal_id: PRINCIPAL, status: 'active',
+    });
+    const another = project({
+      project_id: 'prj-' + 'b'.repeat(48), name: 'Another team project',
+      owner_principal_id: 'another-principal', code: 'OTHER',
+    });
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([owned, another]) };
+      if (path === '/projects/summary') return { data: summary([owned, another]) };
+      throw new Error('Owner filter requested an unapproved source: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="explicit-owner-responsibility"/>);
+    expect(await screen.findByText('2 shown · 2 verified')).toBeVisible();
+    expect(screen.getByText('Owned platform programme')).toBeVisible();
+    expect(screen.getByText('Another team project')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'My owned projects' }));
+    expect(await screen.findByText(/1 shown · 2 verified · owner-filtered current page/)).toBeVisible();
+    expect(screen.getByText('Owned platform programme')).toBeVisible();
+    expect(screen.queryByText('Another team project')).not.toBeInTheDocument();
+    expect(api.get.mock.calls.some(([path]) => path.includes('/my-projects'))).toBe(false);
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'My owned projects' }));
+    expect(screen.getByText('Another team project')).toBeVisible();
+  });
+
+
   it('opens participant-focused project execution without owner registry reads', async () => {
     api.get.mockImplementation(async path => {
       if (path === '/projects/my-projects?limit=50&offset=0') return { data: {
@@ -767,7 +800,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.7.0-STICKY-NOTE-PALETTE-READBACK-CERT
+ * VERSION: v2.8.0-OWNER-VS-PARTICIPANT-PROJECT-NAVIGATION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
