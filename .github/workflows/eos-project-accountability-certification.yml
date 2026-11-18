@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT
+# VERSION: v1.3.1-LOCKED-PLAYWRIGHT-DEPENDENCY-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,13 +7,16 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT adds isolated rendered Chromium
+# CHANGELOG: v1.3.1-LOCKED-PLAYWRIGHT-DEPENDENCY-CERT honors the root manifest's
+#            existing legacy React peer-lock agreement for test tooling,
+#            without relaxing the client's locked dependency resolution.
+# CHANGELOG: v1.3.1-LOCKED-PLAYWRIGHT-DEPENDENCY-CERT adds isolated rendered Chromium
 #            desktop/mobile geometry and selected-note surface verification;
 #            mocked API replies are presentation tests, not authenticated EOS.
-# CHANGELOG: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT extends exact-head CI to the
+# CHANGELOG: v1.3.1-LOCKED-PLAYWRIGHT-DEPENDENCY-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT adds a real
+# CHANGELOG: v1.3.1-LOCKED-PLAYWRIGHT-DEPENDENCY-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -118,7 +121,7 @@ jobs:
         run: npm run build
 
       - name: Install existing browser certification tooling
-        run: npm ci --ignore-scripts --no-audit --no-fund --progress=false
+        run: npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund --progress=false
       - name: Install isolated Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Certify rendered desktop and mobile Projects layout
@@ -138,7 +141,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT
+# VERSION: v1.3.1-LOCKED-PLAYWRIGHT-DEPENDENCY-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
