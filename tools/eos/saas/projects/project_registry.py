@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.7.0-CANONICAL-SUMMARY-INDEX-HINT
+VERSION: v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,16 +9,17 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT pins full validated summary reads to the startup-certified exact tenant+archived compound index; missing index aborts rather than broadening source scope or returning unverified count.
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT profiles cursor first row, remaining iteration and strict full-record hydration without changing complete tenant summary, archive filtering, index ownership or query count.
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT lists owner-responsibility records using exact tenant/principal indexed predicates before pagination; no role or participant IAM claims are inferred from ownership.
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT — Adds bounded look-ahead paging with verified has-more
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH requests bounded 256-record Mongo cursor batches on indexed exact-tenant summary scans, reducing getMore round trips beyond 500 records while preserving full persisted-record integrity checks.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH pins full validated summary reads to the startup-certified exact tenant+archived compound index; missing index aborts rather than broadening source scope or returning unverified count.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH profiles cursor first row, remaining iteration and strict full-record hydration without changing complete tenant summary, archive filtering, index ownership or query count.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH lists owner-responsibility records using exact tenant/principal indexed predicates before pagination; no role or participant IAM claims are inferred from ownership.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH — Adds bounded look-ahead paging with verified has-more
   metadata while preserving the existing page-only registry API.
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT — Adds a compound tenant/archive/status/sort index for
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH — Adds a compound tenant/archive/status/sort index for
   bounded project-list status filtering at enterprise project volumes.
   This is index DDL only: no tenant, role, grant or record is changed.
-  v1.7.0-CANONICAL-SUMMARY-INDEX-HINT — Streams validated exact-tenant
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH — Streams validated exact-tenant
   project summaries without the former 500-record ceiling, returns bounded
   list pages without rejecting a valid next page, and adds a tenant-oriented
   active-recent listing index. No IAM or project data changes.
@@ -64,7 +65,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.7.0-CANONICAL-SUMMARY-INDEX-HINT"
+VERSION: Final[str] = "v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -273,7 +274,7 @@ class ProjectRegistry:
                     {"tenant_id": tenant, "archived_at": None},
                     session=_session(session),
                 )
-                cursor = cursor.hint("wilsy_project_tenant_active_recent")
+                cursor = cursor.hint("wilsy_project_tenant_active_recent").batch_size(256)
                 for row in cursor:
                     value = _hydrate(row)
                     counts[cast(ProjectStatus, value.status).value] += 1
@@ -290,7 +291,7 @@ class ProjectRegistry:
                 {"tenant_id": tenant, "archived_at": None},
                 session=_session(session),
             )
-            cursor = cursor.hint("wilsy_project_tenant_active_recent")
+            cursor = cursor.hint("wilsy_project_tenant_active_recent").batch_size(256)
             first_row = True
             iterator = iter(cursor)
             while True:
@@ -546,7 +547,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.7.0-CANONICAL-SUMMARY-INDEX-HINT
+# VERSION: v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
