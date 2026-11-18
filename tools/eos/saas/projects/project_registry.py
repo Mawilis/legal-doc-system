@@ -267,6 +267,22 @@ class ProjectRegistry:
         counts = {item.value: 0 for item in ProjectStatus}
         total = 0
         try:
+            if phase_timings is None:
+                cursor = self._projects.find(
+                    {"tenant_id": tenant, "archived_at": None},
+                    session=_session(session),
+                )
+                for row in cursor:
+                    value = _hydrate(row)
+                    counts[cast(ProjectStatus, value.status).value] += 1
+                    total += 1
+                return {
+                    "total": total, "active": counts[ProjectStatus.ACTIVE.value],
+                    "planned": counts[ProjectStatus.PLANNED.value],
+                    "on_hold": counts[ProjectStatus.ON_HOLD.value],
+                    "done": counts[ProjectStatus.DONE.value],
+                    "cancelled": counts[ProjectStatus.CANCELLED.value],
+                }
             cursor_started = perf_counter()
             cursor = self._projects.find(
                 {"tenant_id": tenant, "archived_at": None},
