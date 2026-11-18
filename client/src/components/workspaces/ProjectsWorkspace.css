@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.3.1-ACCOUNTABILITY-FORM-CONTRAST
+ * VERSION: v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.3.1-ACCOUNTABILITY-FORM-CONTRAST locks readable dark
+ * CHANGELOG: v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE prevents global uppercase, tracked
+ *            label rules from transforming ordinary project-code helper text;
+ *            uses readable sentence case and subdued type hierarchy.
+ *            v1.3.1-ACCOUNTABILITY-FORM-CONTRAST locks readable dark
  *            labels, hints and field text for the new governance forms against
  *            global theme/utility overrides while retaining existing glass.
  *            v1.3.0-GOVERNED-CODE-ASSIGNMENT-AFFORDANCE adds
@@ -243,8 +246,19 @@
 .wilsy-projects .wp-code-action:hover:not(:disabled){background:#d5e8ff;}
 .wilsy-projects .wp-code-action:disabled{opacity:.55;cursor:not-allowed;}
 .wilsy-projects .wp-code-hint {
-  display:block;margin:6px 0 13px;color:#355776 !important;
-  font-size:12px;line-height:1.55;font-weight:500;
+  display:block;margin:6px 0 13px;color:#3a536f !important;
+  -webkit-text-fill-color:#3a536f !important;
+  font-size:12px;line-height:1.55;font-weight:450;
+  text-transform:none !important;
+  letter-spacing:normal !important;
+  white-space:normal;
+}
+.wilsy-projects .wp-form label .wp-code-hint,
+.wilsy-projects .wp-detail .wp-code-hint {
+  text-transform:none !important;
+  letter-spacing:normal !important;
+  font-variant:normal;
+  font-weight:450 !important;
 }
 .wilsy-projects .wp-code-optional {color:#4f6280 !important;font-weight:500;}
 .wilsy-projects .wp-date-field {
@@ -314,7 +328,7 @@
   .wilsy-projects .wp-button {transition:none;}
 }
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.3.1-ACCOUNTABILITY-FORM-CONTRAST
+ * VERSION: v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
