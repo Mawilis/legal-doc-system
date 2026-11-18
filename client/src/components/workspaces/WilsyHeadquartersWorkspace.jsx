@@ -5,17 +5,20 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT
+ * VERSION: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT routes exact
+ * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY adds a
+ *            verified Blocked attention filter and renders project date-only
+ *            deadlines without manufacturing a timezone or overdue instant.
+ * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY routes exact
  *            source-verified PROJECTS Daily Attention work to assigned
  *            project task execution, without owner workspace privilege.
- * CHANGELOG: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT hands source-verified Strategy projects
+ * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY hands source-verified Strategy projects
  *            to the existing Projects workspace with an exact project ID;
  *            EOS must reauthorize list and detail before presenting actions.
  * CHANGELOG: v4.4.0-SOURCE-VERIFIED-OWNER-DRAFT-COUNT resolves
@@ -23,7 +26,7 @@
  *            projection, validates each source record and exact principal,
  *            and exposes a numbered Draft filter only after verification.
  *            Stale scope, denied and unavailable results never claim zero.
- * CHANGELOG: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT surfaces overdue,
+ * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY surfaces overdue,
  *            Open and In Progress counts from the exact verified My Work
  *            snapshot and makes them actionable filters. Drafts route to
  *            separate owner-scoped reads without inventing draft counts.
@@ -1055,6 +1058,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
   const items = snapshot?.items || [];
   const openCount = items.filter((item) => item.status === 'OPEN').length;
   const progressCount = items.filter((item) => item.status === 'IN_PROGRESS').length;
+  const blockedCount = items.filter((item) => item.status === 'BLOCKED').length;
   const overdueCount = snapshot?.summary?.overdue_count ?? 0;
   const includedKey = (snapshot?.sources_included || []).join(',');
   const selected = items.find((item) => item.source_key === selectedKey);
@@ -1104,6 +1108,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
     && (view !== 'OVERDUE' || item.is_overdue)
     && (view !== 'OPEN' || item.status === 'OPEN')
     && (view !== 'IN_PROGRESS' || item.status === 'IN_PROGRESS')
+    && (view !== 'BLOCKED' || item.status === 'BLOCKED')
     && (!query.trim() || [item.title, item.description, item.status,
       unifiedMyWorkSourceLabel(item.source)].some((value) => (
       typeof value === 'string' && value.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
@@ -1161,6 +1166,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
         <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue {snapshot ? '(' + overdueCount + ')' : ''}</button>
         <button type="button" aria-pressed={view === 'OPEN'} onClick={() => { setSource('ALL'); onViewChange(view === 'OPEN' ? 'ALL' : 'OPEN'); }}>Open {snapshot ? '(' + openCount + ')' : ''}</button>
         <button type="button" aria-pressed={view === 'IN_PROGRESS'} onClick={() => { setSource('ALL'); onViewChange(view === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS'); }}>In Progress {snapshot ? '(' + progressCount + ')' : ''}</button>
+        <button type="button" aria-pressed={view === 'BLOCKED'} onClick={() => { setSource('ALL'); onViewChange(view === 'BLOCKED' ? 'ALL' : 'BLOCKED'); }}>Blocked {snapshot ? '(' + blockedCount + ')' : ''}</button>
         {snapshot?.sources_included.includes('CRM') && <button type="button"
           title={draftEvidence.state === 'VERIFIED' && draftEvidence.scope === scopeKey
             ? 'Open your EOS-verified saved CRM drafts' : 'Saved draft count requires independent EOS verification'}
@@ -1185,11 +1191,11 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
             {visibleItems.length === 0 ? <div className="hq-work-status hq-verified-empty" data-work-state={items.length ? 'FILTERED_EMPTY' : 'VERIFIED_EMPTY'}><span className="hq-empty-icon"><CheckCircle2 size={21}/></span><div><strong>{items.length ? 'No matching work' : 'Current source read verified'}</strong><p>{!items.length ? snapshot.sources_included.length ? 'No active work was returned by the authorized sources at the recorded time.' : 'No work source was included in this session.' : 'No work matches these filters.'}</p>{snapshot.sources_included.includes('OPERATIONS') && <button type="button" onClick={onManage}>Create or manage Operations work</button>}<span className="hq-empty-time">Verified {formatHeadquartersDeadline(snapshot.as_of)}</span></div></div>
               : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onSelect(item.source_key); setCommand({ state: 'IDLE', message: '' }); }}>
                 <span className={'hq-round ' + ({ LEGAL: 'hq-purple', OPERATIONS: 'hq-green', INTELLIGENCE: 'hq-blue', CRM: 'hq-orange' }[item.source] || 'hq-blue')}>{item.source === 'LEGAL' ? <FileText size={17}/> : item.source === 'CRM' ? <Users size={17}/> : <CheckCircle2 size={17}/>}</span>
-                <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}</small></span>
+                <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}</small></span>
                 <span className="hq-priority" data-priority={item.priority}>{item.priority === 'NORMAL' ? 'Normal' : item.priority === 'HIGH' ? 'High' : item.priority === 'LOW' ? 'Low' : 'Critical'}</span><ChevronRight size={13}/>
               </button>)}
           </div>}
-      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><h3>{selected.title}</h3><button type="button" aria-label="Close work record" onClick={() => onSelect(null)}><X size={16}/></button></div>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd><dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
+      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><h3>{selected.title}</h3><button type="button" aria-label="Close work record" onClick={() => onSelect(null)}><X size={16}/></button></div>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd><dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
         {actions[selected.source]?.includes('COMPLETE') ? <form className="hq-command" onSubmit={performCompletion}><label>Completion note<textarea aria-label={'Completion note for ' + selected.title} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} required disabled={command.state === 'PENDING'}/></label><button type="submit" disabled={!note.trim() || command.state === 'PENDING'}>{command.state === 'PENDING' ? 'Verifying completion…' : 'Complete work'}</button><p>EOS verifies your authority and records the result.</p></form>
           : <button type="button" className="hq-text-button" onClick={() => onOpen(selected)}>Open source-governed workspace <ArrowUpRight size={12}/></button>}
       </section>}
@@ -1477,7 +1483,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT
+ * VERSION: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
