@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.13.0-CRM-SOURCE-EDIT-ROLE-CERT
+VERSION: v1.14.0-TENANT-PROJECTS-OWNER-ROLE-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -13,8 +13,10 @@ reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
+CHANGELOG: v1.14.0-TENANT-PROJECTS-OWNER-ROLE-CERT certifies two explicit Projects owner
+roles and absence of inherited project permission across unrelated roles.
 CHANGELOG:
-2026-11-17 v1.13.0-CRM-SOURCE-EDIT-ROLE-CERT verifies that CRM
+2026-11-17 v1.14.0-TENANT-PROJECTS-OWNER-ROLE-CERT verifies that CRM
 UPDATE belongs solely to static owner and enterprise-administrator grants;
 Auditor remains read-only, and no active assignment is created.
 2026-11-16 v1.12.0-PROJECTS-OWNER-ROLE-CERT pins the current v1.56 role source, certifies the unassigned dedicated Projects role, deny-by-absence for every existing role, and aligns the company-document read matrix with the current source.
@@ -159,7 +161,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.57.0-CRM-OWNER-WORK-EDIT-ROLE"
+    assert POLICY_VERSION == "v1.58.0-TENANT-PROJECTS-OWNER-ROLE"
 
 def test_platform_employer_role_grants_are_exact_and_nonpossessory() -> None:
     """Verify exact HR, owner-signing, and dedicated admission-role grants."""
@@ -288,14 +290,17 @@ def test_projects_platform_owner_is_separately_assignable_and_exact() -> None:
     permissions = (
         "project:read", "project:create", "project:update", "project:archive",
     )
-    assert ROLE_PERMISSIONS_MAP["PROJECTS_PLATFORM_OWNER"] == list(permissions)
+    for explicit_role in ("PROJECTS_PLATFORM_OWNER", "PROJECTS_TENANT_OWNER"):
+        assert ROLE_PERMISSIONS_MAP[explicit_role] == list(permissions)
+        assert get_permissions_for_roles([explicit_role]) == sorted(permissions)
     for permission in permissions:
-        assert get_roles_granting_permission(permission) == ("PROJECTS_PLATFORM_OWNER",)
+        assert get_roles_granting_permission(permission) == (
+            "PROJECTS_PLATFORM_OWNER", "PROJECTS_TENANT_OWNER",
+        )
         for role, grants in ROLE_PERMISSIONS_MAP.items():
             assert grants.count(permission) == (
-                1 if role == "PROJECTS_PLATFORM_OWNER" else 0
+                1 if role in {"PROJECTS_PLATFORM_OWNER", "PROJECTS_TENANT_OWNER"} else 0
             )
-    assert get_permissions_for_roles(["PROJECTS_PLATFORM_OWNER"]) == sorted(permissions)
 
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
@@ -949,7 +954,7 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.13.0-CRM-SOURCE-EDIT-ROLE-CERT
+# VERSION: v1.14.0-TENANT-PROJECTS-OWNER-ROLE-CERT
 # AUTHORITY BOUNDARY: deterministic verification of static role definitions only; no assignment or current authorization is created
 # TENANT POSTURE: platform-employer use is restricted by the separate exact WILSY tenant authorization gate; customer HR authority remains separate
 # FAIL-CLOSED POSTURE: offer acceptance stays ungranted; admission has one unassigned role and no operation binding; unknown permissions deny
