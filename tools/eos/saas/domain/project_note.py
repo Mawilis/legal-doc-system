@@ -32,9 +32,10 @@ import json
 import re
 from typing import Final
 
-# Preserve the persisted v1 authority version: existing fingerprints include it.
-# Optional colour is a backward-compatible semantic extension, not a migration.
-VERSION: Final[str] = "v1.0.1-RETIRED-TENANT-ALIAS-DENIAL"
+VERSION: Final[str] = "v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE"
+# Persisted v1 note authority stays unchanged, preserving historical fingerprints.
+# The optional colour field extends the original schema without rewriting Atlas.
+PERSISTED_VERSION: Final[str] = "v1.0.1-RETIRED-TENANT-ALIAS-DENIAL"
 SCHEMA: Final[str] = "wilsy.project.note.v1"
 NOTE_COLOURS: Final[frozenset[str]] = frozenset({"yellow", "blue", "mint", "rose", "violet", "slate"})
 _NOTE_ID = re.compile(r"^pnt-[0-9a-f]{48}$")
@@ -106,7 +107,7 @@ class ProjectNote:
     archived_at: datetime | None = None
     colour: str | None = None
     schema: str = SCHEMA
-    version: str = VERSION
+    version: str = PERSISTED_VERSION
     fingerprint: str = ""
 
     def __post_init__(self) -> None:
@@ -133,7 +134,7 @@ class ProjectNote:
         object.__setattr__(self, "archived_at", archived)
         if type(self.revision) is not int or self.revision < 1:
             raise ProjectNoteError("PROJECT_NOTE_REVISION_INVALID")
-        if self.schema != SCHEMA or self.version != VERSION:
+        if self.schema != SCHEMA or self.version != PERSISTED_VERSION:
             raise ProjectNoteError("PROJECT_NOTE_SCHEMA_VERSION_INVALID")
         computed = sha3_512(json.dumps(
             self._payload(), ensure_ascii=False, sort_keys=True,
@@ -233,7 +234,7 @@ class ProjectNote:
             raise ProjectNoteError("PROJECT_NOTE_ARCHIVED")
 
 
-__all__ = ["VERSION", "SCHEMA", "NOTE_COLOURS", "ProjectNote", "ProjectNoteError"]
+__all__ = ["VERSION", "PERSISTED_VERSION", "SCHEMA", "NOTE_COLOURS", "ProjectNote", "ProjectNoteError"]
 
 # ARTIFACT: project_note.py
 # VERSION: v1.1.0-IMMUTABLE-STICKY-COLOUR-EVIDENCE
