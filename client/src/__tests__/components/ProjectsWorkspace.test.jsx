@@ -1,25 +1,28 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT
+ * VERSION: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT certifies task creation, verified
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT adds in-place task
+ *            editing and updated revision readback without changing project
+ *            Planned status, task graph or tenant authorization scope.
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT waits for the committed note row
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT certifies source-backed project note
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT proves navigation
+ * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -200,7 +203,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=0&project_status=active')).toBe(true);
   });
 
-  it('creates and transitions source-backed project tasks without activating the project', async () => {
+  it('creates, transitions and edits source-backed project tasks without activating the project', async () => {
     const persisted = project();
     const taskId = `ptk-${'b'.repeat(48)}`;
     const originalTask = {
@@ -262,6 +265,24 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
         project_id: PROJECT_ID, task: work[0],
       } };
     });
+    api.patch.mockImplementationOnce(async (path, body, options) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/tasks/${taskId}`);
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      expect(body).toEqual({
+        expected_revision: 2, title: 'Updated task handoff',
+        description: '', due_date: null, assignee_principal_id: null,
+      });
+      work = [{
+        ...work[0], title: 'Updated task handoff', revision: 3,
+        fingerprint: 'c'.repeat(128),
+      }];
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        project_id: PROJECT_ID, task: work[0],
+      } };
+    });
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="task-source-readback-cert" />);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
@@ -282,6 +303,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(row.querySelector('button'));
     await waitFor(() => expect(row).toHaveTextContent('In progress'));
     expect(commands).toBe(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit work' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
+      target: { value: 'Updated task handoff' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save audited task revision' }));
+    await waitFor(() => expect(screen.getByText('Updated task handoff', {
+      selector: '.wp-project-tasks tbody td span',
+    })).toBeVisible());
+    expect(api.patch).toHaveBeenCalledTimes(1);
     expect(persisted.status).toBe('planned');
   });
 
@@ -675,7 +705,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT
+ * VERSION: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
