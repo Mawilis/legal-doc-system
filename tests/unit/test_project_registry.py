@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.3.0-VERIFIED-PROJECT-PAGES-CERT
+VERSION: v1.4.0-DATE-COMMAND-REPLAY-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,11 +7,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.3.0-VERIFIED-PROJECT-PAGES-CERT certifies first/final page has_more truth for 511
+  v1.4.0-DATE-COMMAND-REPLAY-CERT verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
+  v1.4.0-DATE-COMMAND-REPLAY-CERT certifies first/final page has_more truth for 511
   exact-tenant projects, zero overlap, and foreign-tenant exclusion.
-  v1.3.0-VERIFIED-PROJECT-PAGES-CERT certifies tenant/status/recent project index order and
+  v1.4.0-DATE-COMMAND-REPLAY-CERT certifies tenant/status/recent project index order and
   keeps uniqueness requirements for canonical project and event identities.
-v1.3.0-VERIFIED-PROJECT-PAGES-CERT — Verifies exact compound
+v1.4.0-DATE-COMMAND-REPLAY-CERT — Verifies exact compound
   active-list index keys, preserves project/event uniqueness guards and
   confirms the listing index is intentionally nonunique.
 v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
@@ -186,6 +187,41 @@ def test_update_and_transition_advance_revision_and_audit(registry) -> None:
     assert [event["actor_principal_id"] for event in events.rows] == ["principal-a"] * 3
 
 
+def test_date_only_command_fingerprint_and_exact_replay(registry) -> None:
+    """Calendar edits persist as typed dates with deterministic command evidence."""
+    store, _, events, session = registry
+    _create(store, _project(), session, "create-1")
+    changed = store.update(
+        tenant_id="tenant-a", project_id="project-001",
+        actor_principal_id="principal-a", expected_revision=1,
+        changes={"start_date": date(2026, 11, 18),
+                 "target_date": date(2026, 11, 20)},
+        idempotency_key="calendar-1",
+        occurred_at=NOW + timedelta(seconds=1), session=session,
+    )
+    assert changed.start_date == date(2026, 11, 18)
+    assert changed.target_date == date(2026, 11, 20)
+    assert changed.revision == 2
+    replayed = store.update(
+        tenant_id="tenant-a", project_id="project-001",
+        actor_principal_id="principal-a", expected_revision=1,
+        changes={"start_date": date(2026, 11, 18),
+                 "target_date": date(2026, 11, 20)},
+        idempotency_key="calendar-1",
+        occurred_at=NOW + timedelta(seconds=2), session=session,
+    )
+    assert replayed == changed
+    assert len(events.rows) == 2
+    with pytest.raises(ProjectRegistryConflict, match="PROJECT_DIVERGENT_REPLAY"):
+        store.update(
+            tenant_id="tenant-a", project_id="project-001",
+            actor_principal_id="principal-a", expected_revision=1,
+            changes={"start_date": date(2026, 11, 19)},
+            idempotency_key="calendar-1",
+            occurred_at=NOW + timedelta(seconds=3), session=session,
+        )
+
+
 def test_stale_revision_fails_closed(registry) -> None:
     store, _, _, session = registry
     _create(store, _project(), session, "create-1")
@@ -333,7 +369,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.3.0-VERIFIED-PROJECT-PAGES-CERT
+# VERSION: v1.4.0-DATE-COMMAND-REPLAY-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
