@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.3.0-TASK-APPROVAL-REVIEW-MOUNT
+ * VERSION: v1.4.0-QUARANTINED-TASK-FILE-VIEW
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,16 +8,19 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.3.0-TASK-APPROVAL-REVIEW-MOUNT lets the
+ * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
+ *          task-bound quarantined file evidence; no preview, download,
+ *          scanner release or approval authority is created.
+ * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.3.0-TASK-APPROVAL-REVIEW-MOUNT opens a selected task's
+ * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.3.0-TASK-APPROVAL-REVIEW-MOUNT adds a
+ * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.3.0-TASK-APPROVAL-REVIEW-MOUNT adds source-backed
+ * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -34,6 +37,7 @@ import { CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
+import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -122,6 +126,7 @@ export default function ProjectTasksPanel({
   const [editor, setEditor] = useState(null);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
+  const [attachmentTaskId, setAttachmentTaskId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const generation = useRef(0);
@@ -177,6 +182,7 @@ export default function ProjectTasksPanel({
     setEditor(null);
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
+    setAttachmentTaskId(null);
     setDraft({ ...EMPTY });
     setError('');
     command.current = { fingerprint: '', key: '' };
@@ -487,6 +493,11 @@ export default function ProjectTasksPanel({
                         });
                       }}>Edit work</button>}
                   <button type="button" disabled={busy}
+                    onClick={() => setAttachmentTaskId(current => current === item.task_id ? null : item.task_id)}
+                    className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
+                    Attachments
+                  </button>
+                  <button type="button" disabled={busy}
                     onClick={() => setApprovalTaskId(current => current === item.task_id ? null : item.task_id)}
                     className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
                     Approvals
@@ -505,6 +516,11 @@ export default function ProjectTasksPanel({
           </tbody>
         </table>
       </div>
+      {attachmentTaskId && items.some(item => item.task_id === attachmentTaskId) &&
+        <ProjectTaskAttachmentsPanel key={[scope, attachmentTaskId].join(':')}
+          tenantId={tenantId} projectId={projectId} principalId={principalId}
+          taskId={attachmentTaskId} tenantHeaders={tenantHeaders}
+          onClose={() => setAttachmentTaskId(null)}/>}
       {approvalTaskId && items.some(item => item.task_id === approvalTaskId) &&
         <ProjectTaskApprovalsPanel key={[scope, approvalTaskId].join(':')}
           tenantId={tenantId} projectId={projectId} principalId={principalId}
@@ -530,7 +546,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.3.0-TASK-APPROVAL-REVIEW-MOUNT
+// VERSION: v1.4.0-QUARANTINED-TASK-FILE-VIEW
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
