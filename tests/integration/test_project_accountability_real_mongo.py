@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT
+VERSION: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,7 +8,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
+CHANGELOG: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT adds disposable real-replica certification for
+         511 source-valid tenant projects, complete indexed page traversal,
+         immutable tenant isolation and summary counts.
+         v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
+         persistence proof without creating production records.
+HISTORICAL CHANGELOG: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT establishes exact-tenant
          persistence proof without creating a real principal, tenant, IAM grant,
          employee, subscription, activation or production record.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -177,8 +182,90 @@ def test_real_replica_project_owner_department_assignment_and_revocation(monkeyp
         client.close()
 
 
+def test_real_replica_511_project_summary_and_verified_pages() -> None:
+    """Read 511 exact-tenant projects across real Mongo indexes and transactions."""
+    uri = os.environ.get("TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI")
+    if not uri:
+        pytest.skip("Disposable MongoDB replica-set URI not configured")
+    client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=4000)
+    database = client.get_database("wilsy_projects_scale_cert")
+    try:
+        client.admin.command("ping")
+        client.drop_database(database.name)
+        collection = database.get_collection("wilsy_projects")
+        events = database.get_collection("wilsy_project_events")
+        ProjectRegistry.ensure_indexes(collection, events)
+        index = collection.index_information()
+        assert index["wilsy_project_tenant_active_recent"]["key"] == [
+            ("tenant_id", 1), ("archived_at", 1), ("updated_at", -1), ("project_id", 1),
+        ]
+        assert index["wilsy_project_tenant_status_recent"]["key"] == [
+            ("tenant_id", 1), ("archived_at", 1), ("status", 1),
+            ("updated_at", -1), ("project_id", 1),
+        ]
+        instant = datetime.now(timezone.utc)
+        rows = [
+            Project(
+                tenant_id="scale-tenant-a", project_id=f"prj-{number:048x}",
+                name=f"Verified project {number}", code=f"SCALE-{number:04}",
+                summary=None, status=ProjectStatus.PLANNED,
+                owner_principal_id=None, department_id=None,
+                start_date=None, target_date=None,
+                source_type="internal", external_source_reference=None,
+                created_by_principal_id="scale-principal",
+                created_at=instant, updated_by_principal_id="scale-principal",
+                updated_at=instant,
+            ).to_dict()
+            for number in range(511)
+        ]
+        rows.append(Project(
+            tenant_id="scale-tenant-b", project_id="prj-" + "f" * 48,
+            name="Foreign tenant project", code="FOREIGN",
+            summary=None, status=ProjectStatus.ACTIVE,
+            owner_principal_id=None, department_id=None,
+            start_date=None, target_date=None,
+            source_type="internal", external_source_reference=None,
+            created_by_principal_id="foreign-principal",
+            created_at=instant, updated_by_principal_id="foreign-principal",
+            updated_at=instant,
+        ).to_dict())
+        collection.insert_many(rows, ordered=True)
+        registry = ProjectRegistry(collection, events)
+        with client.start_session() as session:
+            def read(tx: Any):
+                counts = registry.summary_for_tenant(
+                    tenant_id="scale-tenant-a", session=tx,
+                )
+                first, first_has_more = registry.list_page_for_tenant(
+                    tenant_id="scale-tenant-a", session=tx, limit=500,
+                )
+                final, final_has_more = registry.list_page_for_tenant(
+                    tenant_id="scale-tenant-a", session=tx,
+                    limit=500, offset=500,
+                )
+                return counts, first, first_has_more, final, final_has_more
+            counts, first, first_more, last, last_more = session.with_transaction(
+                read,
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+        assert counts == {
+            "total": 511, "active": 0, "planned": 511,
+            "on_hold": 0, "done": 0, "cancelled": 0,
+        }
+        assert len(first) == 500 and first_more is True
+        assert len(last) == 11 and last_more is False
+        ids = {item.project_id for item in (*first, *last)}
+        assert len(ids) == 511
+        assert all(item.tenant_id == "scale-tenant-a" for item in (*first, *last))
+    finally:
+        client.drop_database(database.name)
+        client.close()
+
+
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT
+# VERSION: v1.1.0-PROJECT-511-REPLICA-SCALE-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
