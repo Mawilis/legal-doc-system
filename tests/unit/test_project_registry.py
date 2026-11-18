@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.1.1-EXACT-ACTIVE-LIST-INDEX-CERT
+VERSION: v1.2.0-TENANT-STATUS-INDEX-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-v1.1.1-EXACT-ACTIVE-LIST-INDEX-CERT — Verifies exact compound
+  v1.2.0-TENANT-STATUS-INDEX-CERT certifies tenant/status/recent project index order and
+  keeps uniqueness requirements for canonical project and event identities.
+v1.2.0-TENANT-STATUS-INDEX-CERT — Verifies exact compound
   active-list index keys, preserves project/event uniqueness guards and
   confirms the listing index is intentionally nonunique.
 v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
@@ -297,12 +299,19 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
     assert [opts["name"] for _, opts in projects.indexes] == [
         "wilsy_project_tenant_identity_unique", "wilsy_project_tenant_code_unique",
         "wilsy_project_tenant_active_recent",
+        "wilsy_project_tenant_status_recent",
     ]
     active_keys, active_opts = projects.indexes[2]
     assert active_keys == (
         ("tenant_id", 1), ("archived_at", 1), ("updated_at", -1), ("project_id", 1),
     )
     assert "unique" not in active_opts
+    status_keys, status_opts = projects.indexes[3]
+    assert status_keys == (
+        ("tenant_id", 1), ("archived_at", 1), ("status", 1),
+        ("updated_at", -1), ("project_id", 1),
+    )
+    assert "unique" not in status_opts
     assert [opts["name"] for _, opts in events.indexes] == [
         "wilsy_project_event_tenant_identity_unique",
         "wilsy_project_event_tenant_idempotency_unique",
@@ -312,7 +321,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.1.1-EXACT-ACTIVE-LIST-INDEX-CERT
+# VERSION: v1.2.0-TENANT-STATUS-INDEX-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
