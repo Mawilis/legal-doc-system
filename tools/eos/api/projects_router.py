@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY
+VERSION: v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,15 +14,18 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY moves note-domain validation inside existing
+  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS adds exact-tenant owner-authorized participant grant,
+  revoke, and list operations; grantees require current principal/membership
+  and ACTIVE tenant business capacity. Participation is never an IAM grant.
+  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY introduces authenticated, project-existence-verified
+  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY projects verified next-page availability and exact offset
+  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY refuses a PLANNED-to-ACTIVE
+  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -73,7 +76,7 @@ from datetime import date, datetime, timezone
 import hashlib
 import logging
 import re
-from typing import Any, Callable, Final, Mapping
+from typing import Literal, Any, Callable, Final, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -139,6 +142,12 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     get_current as get_current_entitlement,
 )
 from tools.eos.saas.domain.project_note import ProjectNote, ProjectNoteError
+from tools.eos.saas.projects.project_participant_registry import (
+    COLLECTION as PROJECT_PARTICIPANT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_PARTICIPANT_EVENT_COLLECTION,
+    ProjectParticipantRegistry, ProjectParticipantError,
+    ProjectParticipantConflict, ProjectParticipantNotFound, PARTICIPANT_ROLES,
+)
 from tools.eos.saas.projects.project_note_registry import (
     COLLECTION as PROJECT_NOTE_COLLECTION,
     EVENT_COLLECTION as PROJECT_NOTE_EVENT_COLLECTION,
@@ -155,7 +164,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY"
+VERSION: Final[str] = "v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -210,6 +219,21 @@ class ProjectAssignmentRequest(BaseModel):
     expected_revision: int = Field(ge=1)
     owner_principal_id: str = Field(min_length=1, max_length=180)
     department_id: str = Field(pattern=r"^dept-[0-9a-f]{32}$")
+
+
+class ProjectParticipantGrantRequest(BaseModel):
+    """Grant a current tenant member one non-possessory project participation role."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    principal_id: str = Field(min_length=1, max_length=180)
+    role: Literal["VIEWER", "CONTRIBUTOR"]
+
+
+class ProjectParticipantRevokeRequest(BaseModel):
+    """CAS-guarded participant revocation, preserving immutable audit history."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
 
 
 class ProjectNoteCreateRequest(BaseModel):
@@ -377,6 +401,13 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectParticipantNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectParticipantConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectParticipantError as error:
+        logger.error("PROJECT_PARTICIPANT_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectNoteNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectNoteConflict as error:
@@ -772,6 +803,41 @@ def _project_owner_eligible(database: Any, tenant_id: str, principal_id: str, se
     )
 
 
+def _project_participant_eligible(
+    database: Any, tenant_id: str, principal_id: str, session: Any,
+) -> bool:
+    """Require ACTIVE principal, membership and at least one ACTIVE tenant role.
+
+    Employment, founder status, project ownership and an assignment selector are
+    not substitutes for these independent currentness sources. This eligibility
+    does NOT itself create an IAM role or permit a participant API command.
+    """
+    if not isinstance(principal_id, str) or not principal_id or principal_id != principal_id.strip():
+        return False
+    try:
+        principal = PrincipalAuthorityRepository.get(
+            principal_id, database["principal_authorities"], session=session,
+        )
+        membership = TenantMembershipRepository.resolve(
+            principal_id, tenant_id, database["tenant_memberships"], session=session,
+        )
+        roles = TenantBusinessRoleRepository.resolve_all(
+            principal_id, tenant_id, database["tenant_business_roles"], session=session,
+        )
+    except (PrincipalAuthorityNotFoundError, TenantMembershipNotFoundError):
+        return False
+    except (
+        PrincipalAuthorityRepositoryError, TenantMembershipRepositoryError,
+        TenantBusinessRoleRepositoryError,
+    ) as error:
+        raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_AUTHORITY_UNAVAILABLE") from error
+    return (
+        principal.status is PrincipalStatus.ACTIVE
+        and membership.status is TenantMembershipStatus.ACTIVE
+        and any(role.status is TenantBusinessRoleStatus.ACTIVE for role in roles)
+    )
+
+
 def _current_department(database: Any, tenant_id: str, department_id: str, session: Any) -> dict[str, object]:
     """Resolve one active, validated canonical tenant department, never a label."""
     try:
@@ -1011,6 +1077,119 @@ def _note_idempotency_key(key: str | None) -> str:
     if not isinstance(key, str) or not 1 <= len(key) <= 200 or key != key.strip():
         raise HTTPException(status_code=422, detail="PROJECT_NOTE_IDEMPOTENCY_KEY_INVALID")
     return key
+
+
+def _project_participants(
+    registry: ProjectRegistry, tenant_id: str, project_id: str, session: Any,
+) -> ProjectParticipantRegistry:
+    """Resolve an already-authorized project before exposing participant records."""
+    registry.get(tenant_id=tenant_id, project_id=project_id, session=session)
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectParticipantError("PROJECT_PARTICIPANT_SOURCE_UNAVAILABLE")
+    return ProjectParticipantRegistry(
+        database[PROJECT_PARTICIPANT_COLLECTION],
+        database[PROJECT_PARTICIPANT_EVENT_COLLECTION],
+    )
+
+
+@router.get("/{project_id}/participants")
+def list_project_participants(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """List verified active participant records for an authorized project owner."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def load(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        participants = _project_participants(registry, context.tenant_id, project_id, session)
+        items, has_more = participants.page(
+            tenant_id=context.tenant_id, project_id=project_id,
+            session=session, limit=limit, offset=offset,
+        )
+        return {
+            "schema": "WILSY-PROJECT-PARTICIPANT-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "items": [item.to_dict() for item in items],
+            "limit": limit, "offset": offset, "has_more": has_more,
+            "next_offset": offset + len(items) if has_more else None,
+        }
+
+    return _transaction(context, load)
+
+
+@router.post("/{project_id}/participants", status_code=status.HTTP_201_CREATED)
+def grant_project_participant(
+    payload: ProjectParticipantGrantRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Grant one exact-project participation, without issuing IAM or employment."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    now = datetime.now(timezone.utc)
+
+    def grant(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        participants = _project_participants(registry, context.tenant_id, project_id, session)
+        database = kernel_db.get_database()
+        if database is None:
+            raise ProjectParticipantError("PROJECT_PARTICIPANT_SOURCE_UNAVAILABLE")
+        if not _project_participant_eligible(database, context.tenant_id, payload.principal_id, session):
+            raise HTTPException(status_code=409, detail="PROJECT_PARTICIPANT_NOT_ELIGIBLE")
+        result = participants.grant(
+            tenant_id=context.tenant_id, project_id=project_id,
+            principal_id=payload.principal_id, role=payload.role,
+            actor_principal_id=context.identity.identity_id,
+            idempotency_key=key, occurred_at=now, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-PARTICIPANT-RESULT/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "participant": result.to_dict(),
+        }
+
+    return _transaction(context, grant, write=True)
+
+
+@router.post("/{project_id}/participants/{participant_principal_id}/revoke")
+def revoke_project_participant(
+    payload: ProjectParticipantRevokeRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    participant_principal_id: str = Path(min_length=1, max_length=180),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Revoke one participant under owner IAM and exact optimistic revision."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    now = datetime.now(timezone.utc)
+
+    def revoke(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        participants = _project_participants(registry, context.tenant_id, project_id, session)
+        result = participants.revoke(
+            tenant_id=context.tenant_id, project_id=project_id,
+            principal_id=participant_principal_id,
+            actor_principal_id=context.identity.identity_id,
+            expected_revision=payload.expected_revision,
+            idempotency_key=key, occurred_at=now, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-PARTICIPANT-RESULT/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "participant": result.to_dict(),
+        }
+
+    return _transaction(context, revoke, write=True)
 
 
 @router.get("/{project_id}/notes")
@@ -1314,7 +1493,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY
+# VERSION: v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
