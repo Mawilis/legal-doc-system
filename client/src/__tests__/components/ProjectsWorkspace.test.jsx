@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.6.2-ACTUAL-ACCOUNTABILITY-STYLE-HOOK-CERT
+ * VERSION: v1.6.3-RUNNER-PORTABLE-CSS-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.6.2-ACTUAL-ACCOUNTABILITY-STYLE-HOOK-CERT ensures the rendered
+ * CHANGELOG: v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
+ *            from Vitest's project root rather than transformed import.meta.url;
+ *            retains exact semantic label selectors and all assertions.
+ *            v1.6.2-ACTUAL-ACCOUNTABILITY-STYLE-HOOK-CERT ensures the rendered
  *            project accountability form is actually targeted by the
  *            contrasting semantic stylesheet; protects against dead selectors.
  *            v1.6.1-EXPLICIT-ASSIGNMENT-SOURCE-STATE-CERT certifies user-visible current
@@ -37,6 +40,7 @@
  */
 import React from 'react';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -257,7 +261,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText('EOS verified 0 eligible project owners and 0 active tenant departments.')).toBeInTheDocument();
     const accountability = screen.getByRole('region', { name: 'Project accountability' });
     expect(accountability).toHaveClass('wp-accountability');
-    const css = readFileSync(new URL('../../components/workspaces/ProjectsWorkspace.css', import.meta.url), 'utf8');
+    const css = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
     expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*color:\s*#203a5e\s*!important;/);
     expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*text-transform:\s*none\s*!important;/);
     expect(screen.getByRole('combobox', { name: 'Eligible project owner' })).toBeDisabled();
@@ -442,7 +446,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.6.2-ACTUAL-ACCOUNTABILITY-STYLE-HOOK-CERT
+ * VERSION: v1.6.3-RUNNER-PORTABLE-CSS-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
