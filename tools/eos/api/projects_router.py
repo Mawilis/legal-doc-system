@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.5.0-PROJECTS-VERIFIED-PAGINATION
+VERSION: v1.6.0-EXACT-TENANT-PROJECT-NOTES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,10 +14,13 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.5.0-PROJECTS-VERIFIED-PAGINATION projects verified next-page availability and exact offset
+  v1.6.0-EXACT-TENANT-PROJECT-NOTES introduces authenticated, project-existence-verified
+  note CRUD through the existing exact-tenant Projects IAM, entitlements,
+  majority transaction and audit boundaries. Notes never alter project state.
+  v1.6.0-EXACT-TENANT-PROJECT-NOTES projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.5.0-PROJECTS-VERIFIED-PAGINATION refuses a PLANNED-to-ACTIVE
+  v1.6.0-EXACT-TENANT-PROJECT-NOTES refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -133,6 +136,13 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     TenantProductEntitlementRegistryNotFoundError,
     get_current as get_current_entitlement,
 )
+from tools.eos.saas.domain.project_note import ProjectNote, ProjectNoteError
+from tools.eos.saas.projects.project_note_registry import (
+    COLLECTION as PROJECT_NOTE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_NOTE_EVENT_COLLECTION,
+    ProjectNoteRegistry, ProjectNoteRegistryError,
+    ProjectNoteConflict, ProjectNoteNotFound, note_id_for_command,
+)
 from tools.eos.saas.projects.project_registry import (
     COLLECTION as PROJECT_COLLECTION,
     EVENT_COLLECTION as PROJECT_EVENT_COLLECTION,
@@ -143,7 +153,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.5.0-PROJECTS-VERIFIED-PAGINATION"
+VERSION: Final[str] = "v1.6.0-EXACT-TENANT-PROJECT-NOTES"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -198,6 +208,28 @@ class ProjectAssignmentRequest(BaseModel):
     expected_revision: int = Field(ge=1)
     owner_principal_id: str = Field(min_length=1, max_length=180)
     department_id: str = Field(pattern=r"^dept-[0-9a-f]{32}$")
+
+
+class ProjectNoteCreateRequest(BaseModel):
+    """One bounded project note; tenant and author are server-derived."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    body: str = Field(min_length=1, max_length=10000)
+
+
+class ProjectNoteReviseRequest(BaseModel):
+    """Revision-guarded author-owned note content update."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
+    body: str = Field(min_length=1, max_length=10000)
+
+
+class ProjectNoteArchiveRequest(BaseModel):
+    """Revision-guarded soft archive without deleting note evidence."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=1)
 
 
 class ProjectArchiveRequest(BaseModel):
@@ -343,6 +375,15 @@ def _transaction(
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
         raise
+    except ProjectNoteNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except ProjectNoteConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except ProjectNoteError as error:
+        raise HTTPException(status_code=422, detail=error.code) from error
+    except ProjectNoteRegistryError as error:
+        logger.error("PROJECTS_NOTE_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except ProjectRegistryConflict as error:
@@ -933,6 +974,178 @@ def assign_project_accountability(
     return _transaction(context, assign, write=True)
 
 
+def _project_note_store(
+    registry: ProjectRegistry, tenant_id: str,
+    project_id: str, session: Any,
+) -> ProjectNoteRegistry:
+    """Require current readable project before resolving the notes collection."""
+    registry.get(tenant_id=tenant_id, project_id=project_id, session=session)
+    database = kernel_db.get_database()
+    if database is None:
+        raise ProjectNoteRegistryError("PROJECT_NOTE_SOURCE_UNAVAILABLE")
+    return ProjectNoteRegistry(
+        database.get_collection(PROJECT_NOTE_COLLECTION),
+        database.get_collection(PROJECT_NOTE_EVENT_COLLECTION),
+    )
+
+
+def _project_note_result(
+    context: TenantAuthorizationContext, project_id: str, note: ProjectNote,
+    *, events: tuple[dict[str, object], ...] = (),
+) -> dict[str, object]:
+    """Expose source-backed note state without creating approval authority."""
+    return {
+        "schema": "WILSY-PROJECT-NOTE-RESULT/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id,
+        "note": note.to_dict(),
+        "events": list(events),
+    }
+
+
+def _note_idempotency_key(key: str | None) -> str:
+    """Validate nonblank bounded replay keys; never generate them in the router."""
+    if not isinstance(key, str) or not 1 <= len(key) <= 200 or key != key.strip():
+        raise HTTPException(status_code=422, detail="PROJECT_NOTE_IDEMPOTENCY_KEY_INVALID")
+    return key
+
+
+@router.get("/{project_id}/notes")
+def list_project_notes(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Return one permission-checked tenant/project note page."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def load(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        values, more = notes.list_for_project(
+            tenant_id=context.tenant_id, project_id=project_id,
+            limit=limit, offset=offset, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-NOTE-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "items": [item.to_dict() for item in values],
+            "limit": limit, "offset": offset,
+            "has_more": more,
+            "next_offset": offset + len(values) if more else None,
+        }
+
+    return _transaction(context, load)
+
+
+@router.post("/{project_id}/notes", status_code=status.HTTP_201_CREATED)
+def create_project_note(
+    payload: ProjectNoteCreateRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Author one project note; replay and readback are transaction-bound."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    now = datetime.now(timezone.utc)
+    note_id = note_id_for_command(
+        context.tenant_id, project_id, context.identity.identity_id, key,
+    )
+    note = ProjectNote(
+        tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
+        author_principal_id=context.identity.identity_id,
+        body=payload.body, created_at=now, updated_at=now,
+    )
+
+    def create(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        committed = notes.create_or_replay(
+            note=note, actor_principal_id=context.identity.identity_id,
+            idempotency_key=key, occurred_at=now, session=session,
+        )
+        return _project_note_result(
+            context, project_id, committed,
+            events=notes.list_events(
+                tenant_id=context.tenant_id, project_id=project_id,
+                note_id=note_id, session=session,
+            ),
+        )
+
+    return _transaction(context, create, write=True)
+
+
+@router.patch("/{project_id}/notes/{note_id}")
+def revise_project_note(
+    payload: ProjectNoteReviseRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    note_id: str = Path(pattern=r"^pnt-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Revise only an author's visible current note with audited CAS."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    now = datetime.now(timezone.utc)
+
+    def revise(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        committed = notes.revise_or_replay(
+            tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
+            actor_principal_id=context.identity.identity_id,
+            expected_revision=payload.expected_revision, body=payload.body,
+            idempotency_key=key, occurred_at=now, session=session,
+        )
+        return _project_note_result(
+            context, project_id, committed,
+            events=notes.list_events(
+                tenant_id=context.tenant_id, project_id=project_id,
+                note_id=note_id, session=session,
+            ),
+        )
+
+    return _transaction(context, revise, write=True)
+
+
+@router.post("/{project_id}/notes/{note_id}/archive")
+def archive_project_note(
+    payload: ProjectNoteArchiveRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    note_id: str = Path(pattern=r"^pnt-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Soft-archive a note with author CAS, immutable audit and readback."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    now = datetime.now(timezone.utc)
+
+    def archive(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        committed = notes.archive_or_replay(
+            tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
+            actor_principal_id=context.identity.identity_id,
+            expected_revision=payload.expected_revision,
+            idempotency_key=key, occurred_at=now, session=session,
+        )
+        return _project_note_result(
+            context, project_id, committed,
+            events=notes.list_events(
+                tenant_id=context.tenant_id, project_id=project_id,
+                note_id=note_id, session=session,
+            ),
+        )
+
+    return _transaction(context, archive, write=True)
+
+
 @router.get("/{project_id}")
 def get_project(
     response: Response,
@@ -1100,7 +1313,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.5.0-PROJECTS-VERIFIED-PAGINATION
+# VERSION: v1.6.0-EXACT-TENANT-PROJECT-NOTES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
