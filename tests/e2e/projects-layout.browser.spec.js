@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT
+ * VERSION: v1.0.2-EXACT-DIRECT-COLUMN-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,10 +8,13 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT certifies the existing
+ * CHANGELOG: v1.0.2-EXACT-DIRECT-COLUMN-CERT measures exact direct-child table
+ *          cells, avoiding nested inline project metadata spans being
+ *          mistaken for independent columns by Playwright selectors.
+ * CHANGELOG: v1.0.2-EXACT-DIRECT-COLUMN-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT measures actual
+ * CHANGELOG: v1.0.2-EXACT-DIRECT-COLUMN-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -126,10 +129,10 @@ for (const width of [1440, 390]) {
         table: {
           clientWidth: shell.clientWidth, scrollWidth: shell.scrollWidth,
           headDisplay: getComputedStyle(document.querySelector('.wp-table-head')).display,
-          codeDisplay: getComputedStyle(row.querySelector('span:nth-child(2)')).display,
-          dateDisplay: getComputedStyle(row.querySelector('span:nth-child(4)')).display,
-          statusDisplay: getComputedStyle(row.querySelector('span:nth-child(3)')).display,
-          actionDisplay: getComputedStyle(row.querySelector('span:nth-child(5)')).display,
+          codeDisplay: getComputedStyle(row.querySelector(':scope > span:nth-child(2)')).display,
+          dateDisplay: getComputedStyle(row.querySelector(':scope > span:nth-child(4)')).display,
+          statusDisplay: getComputedStyle(row.querySelector(':scope > span:nth-child(3)')).display,
+          actionDisplay: getComputedStyle(row.querySelector(':scope > span:nth-child(5)')).display,
         },
       };
     });
@@ -177,7 +180,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.0.1-PROJECTS-MOBILE-COMPACT-TABLE-CERT
+// VERSION: v1.0.2-EXACT-DIRECT-COLUMN-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
