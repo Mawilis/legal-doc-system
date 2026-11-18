@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT
+VERSION: v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,7 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
+CHANGELOG: v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT proves
+         project-linked Operations task durability, exact provenance and
+         same-key replay/conflict against a disposable real Mongo replica.
+         v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
          persistence proof without creating a real principal, tenant, IAM grant,
          employee, subscription, activation or production record.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -34,7 +37,12 @@ from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
 
 from tools.eos.api import projects_router as router
+from tools.eos.api import project_work_router
 from tools.eos.saas.domain.project import Project, ProjectStatus
+from tools.eos.workspaces.persistence.tenant_module_work_registry import (
+    ensure_indexes as ensure_operations_indexes,
+)
+from tools.eos.workspaces.service.tenant_module_workspace_service import TenantModuleWorkspaceService
 from tools.eos.saas.projects.project_registry import (
     ProjectNotFound, ProjectRegistry,
 )
@@ -177,8 +185,107 @@ def test_real_replica_project_owner_department_assignment_and_revocation(monkeyp
         client.close()
 
 
+
+def test_real_replica_project_work_uses_existing_operations_source(monkeypatch):
+    """Prove one transaction links a Planned project to durable Operations work."""
+    uri = os.environ.get("TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI")
+    if not uri:
+        pytest.skip("Disposable MongoDB replica-set URI not configured")
+    client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=4000)
+    database = client.get_database("wilsy_project_source_work_cert")
+    try:
+        client.admin.command("ping")
+        client.drop_database(database.name)
+        project_collection = database["wilsy_projects"]
+        project_events = database["wilsy_project_events"]
+        work_collection = database[project_work_router.OPERATIONS_COLLECTION]
+        ProjectRegistry.ensure_indexes(project_collection, project_events)
+        ensure_operations_indexes(work_collection)
+        project_registry = ProjectRegistry(project_collection, project_events)
+        tenant = "cert-project-work-a"
+        principal = "source-work-actor"
+        project_id = "prj-" + "c" * 48
+        now = datetime.now(timezone.utc)
+        value = Project(
+            project_id=project_id, tenant_id=tenant, name="Generational projects",
+            code="CERT-PROJECT-WORK", summary=None, status=ProjectStatus.PLANNED,
+            owner_principal_id=None, department_id=None, start_date=None,
+            target_date=None, source_type="internal", external_source_reference=None,
+            created_by_principal_id=principal, created_at=now,
+            updated_by_principal_id=principal, updated_at=now,
+        )
+        with client.start_session() as session:
+            session.with_transaction(
+                lambda tx: project_registry.create_or_replay(
+                    project=value, actor_principal_id=principal,
+                    idempotency_key="initial-project", occurred_at=now, session=tx,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+
+        def transaction(_context, callback, **_kwargs):
+            with client.start_session() as session:
+                return session.with_transaction(
+                    lambda tx: callback(project_registry, tx),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+        monkeypatch.setattr(project_work_router, "_transaction", transaction)
+        monkeypatch.setattr(project_work_router.kernel_db, "get_database", lambda: database)
+        # This integration isolates source persistence. The independent
+        # Operations entitlement and actual HTTP IAM are separate certificates.
+        monkeypatch.setattr(
+            TenantModuleWorkspaceService, "_require_product",
+            lambda _self, _tenant, _session: object(),
+        )
+        context = SimpleNamespace(
+            tenant_id=tenant, identity=SimpleNamespace(identity_id=principal),
+        )
+        command = project_work_router.ProjectWorkCreateRequest(
+            title="Deliver canonical project execution",
+            description="Verify project-scoped source task",
+            priority="HIGH",
+        )
+        created = project_work_router.create_project_work_item(
+            command, Response(), project_id, "source-work-key", context, context, context,
+        )
+        assert created["project_status"] == "planned"
+        assert created["work_item"]["source_type"] == "PROJECT"
+        assert created["work_item"]["source_id"] == project_id
+        assert created["work_item"]["status"] == "OPEN"
+        assert not created["replayed"]
+        assert work_collection.count_documents({
+            "tenant_id": tenant, "source_type": "PROJECT", "source_id": project_id,
+        }) == 1
+
+        retry = project_work_router.create_project_work_item(
+            command, Response(), project_id, "source-work-key", context, context, context,
+        )
+        assert retry["replayed"]
+        assert retry["work_item"]["work_item_id"] == created["work_item"]["work_item_id"]
+        assert work_collection.count_documents({"tenant_id": tenant}) == 1
+
+        with pytest.raises(HTTPException) as divergent:
+            project_work_router.create_project_work_item(
+                project_work_router.ProjectWorkCreateRequest(
+                    title="Divergent task", priority="HIGH",
+                ), Response(), project_id, "source-work-key", context, context, context,
+            )
+        assert divergent.value.status_code == 409
+        assert project_collection.find_one({
+            "tenant_id": tenant, "project_id": project_id,
+        })["status"] == "planned"
+    finally:
+        client.drop_database(database.name)
+        client.close()
+
+
+
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT
+# VERSION: v1.1.0-SOURCE-OWNED-PROJECT-WORK-REPLICA-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
