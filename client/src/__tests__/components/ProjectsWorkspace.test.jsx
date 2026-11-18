@@ -1,33 +1,34 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT
+ * VERSION: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT proves a
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT adds in-place task
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT certifies task creation, verified
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT waits for the committed note row
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT certifies source-backed project note
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT proves navigation
+ * CHANGELOG: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -82,6 +83,7 @@ const project = (overrides = {}) => ({
   code: 'ROADMAP',
   summary: 'Source-confirmed project',
   status: 'planned',
+  created_by_principal_id: PRINCIPAL,
   revision: 1,
   created_at: '2026-11-16T12:00:00+00:00',
   updated_at: '2026-11-16T12:00:00+00:00',
@@ -104,6 +106,14 @@ const result = (value, events = [event('PROJECT_CREATED', value.revision)]) => (
   principal_id: PRINCIPAL,
   project: value,
   events,
+  actor_profiles: Object.fromEntries(
+    [...new Set([value.created_by_principal_id, value.owner_principal_id,
+      ...events.map(entry => entry.actor_principal_id)].filter(Boolean))]
+      .map(id => [id, {
+        first_name: id === PRINCIPAL ? 'Verified' : 'Assigned',
+        last_name: id === PRINCIPAL ? 'Creator' : 'Owner',
+      }]),
+  ),
   authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
 });
 const list = (items, tenantId = TENANT, principalId = PRINCIPAL) => ({
@@ -534,7 +544,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
-      expect(screen.getByText(ownerId)).toBeInTheDocument();
+      expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
+      expect(screen.getByText('Verified Creator')).toBeInTheDocument();
       expect(screen.getByText(departmentId)).toBeInTheDocument();
     });
     expect(current.status).toBe('planned');
@@ -641,6 +652,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Audit history' }));
     expect(screen.getByText('PROJECT_CREATED')).toBeInTheDocument();
+    expect(screen.getByText(/By Verified Creator · revision/)).toBeInTheDocument();
     expect(api.post).toHaveBeenCalledWith('/projects', expect.objectContaining({ name: 'Persisted roadmap' }), expect.objectContaining({
       headers: { 'X-Tenant-ID': TENANT, 'Idempotency-Key': 'stable-project-key-1' },
     }));
@@ -699,6 +711,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Audit history' }));
     expect(screen.getByText('PROJECT_CREATED')).toBeInTheDocument();
+    expect(screen.getByText(/By Verified Creator · revision/)).toBeInTheDocument();
   });
 
   it('rejects a foreign tenant summary instead of presenting it as verified empty', async () => {
@@ -748,7 +761,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.5.0-HUMAN-OWNER-DIRECTORY-CERT
+ * VERSION: v2.6.0-SOURCE-VERIFIED-CREATOR-AUDIT-NAMES-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
