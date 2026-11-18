@@ -1,12 +1,15 @@
 """TITLE: WILSY OS Project Reviewer Approval Real MongoDB Certificate
-VERSION: v1.0.0-EXACT-REVIEWER-APPROVAL-TRANSACTION-CERT
+VERSION: v1.1.0-PENDING-REVIEWER-INBOX-REPLICA-CERT
 AUTHORITY: Disposable replica-set decision CAS, replay, audit and isolation.
 EPITOME: Owner request -> named contributor decision, exact replay, durable
          audit, foreign review absence and independent task status retention.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_project_approvals_real_mongo.py
 COLLABORATION / OWNERSHIP: ProjectApprovalRegistry; Projects disposable CI.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-EXACT-REVIEWER-APPROVAL-TRANSACTION-CERT verifies
+CHANGELOG: v1.1.0-PENDING-REVIEWER-INBOX-REPLICA-CERT verifies the
+         exact tenant/reviewer indexed queue includes PENDING and removes
+         terminal decisions without deleting immutable audit records.
+CHANGELOG: v1.1.0-PENDING-REVIEWER-INBOX-REPLICA-CERT verifies
          immutable approval and reviewer source under real Mongo transactions.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic data in disposable isolated Mongo.
@@ -50,6 +53,7 @@ def test_project_approval_exact_review_and_replay_in_replica_set() -> None:
             db["wilsy_project_approvals"], db["wilsy_project_approval_events"],
         )
         assert db["wilsy_project_approvals"].index_information()["wilsy_project_approval_identity_unique"]["unique"]
+        assert "wilsy_project_approval_principal_inbox" in db["wilsy_project_approvals"].index_information()
         tenant, project, task = "approval-tenant", "prj-" + "a" * 48, "ptk-" + "b" * 48
         requester, reviewer = "project-owner", "reviewer-a"
         now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -75,6 +79,18 @@ def test_project_approval_exact_review_and_replay_in_replica_set() -> None:
         created = tx(request)
         assert tx(request) == created
         assert created.status == "PENDING" and created.revision == 1
+        pending = tx(lambda session: store.pending_for_reviewer(
+            tenant_id=tenant, reviewer_principal_id=reviewer, session=session,
+        ))
+        assert pending == (created,)
+        foreign_pending = tx(lambda session: store.pending_for_reviewer(
+            tenant_id="foreign", reviewer_principal_id=reviewer, session=session,
+        ))
+        assert foreign_pending == ()
+        other_pending = tx(lambda session: store.pending_for_reviewer(
+            tenant_id=tenant, reviewer_principal_id="intruder", session=session,
+        ))
+        assert other_pending == ()
         def decide(session):
             return store.decide_or_replay(
                 tenant_id=tenant, project_id=project, task_id=task,
@@ -86,6 +102,10 @@ def test_project_approval_exact_review_and_replay_in_replica_set() -> None:
         result = tx(decide)
         assert result.status == "APPROVED" and result.revision == 2
         assert tx(decide) == result
+        after = tx(lambda session: store.pending_for_reviewer(
+            tenant_id=tenant, reviewer_principal_id=reviewer, session=session,
+        ))
+        assert after == ()
         assert tx(request) == created
         page, more = tx(lambda session: store.list_page(
             tenant_id=tenant, project_id=project, task_id=task, session=session,
@@ -139,7 +159,7 @@ def test_project_approval_exact_review_and_replay_in_replica_set() -> None:
 
 
 # ARTIFACT: test_project_approvals_real_mongo.py
-# VERSION: v1.0.0-EXACT-REVIEWER-APPROVAL-TRANSACTION-CERT
+# VERSION: v1.1.0-PENDING-REVIEWER-INBOX-REPLICA-CERT
 # AUTHORITY BOUNDARY: disposable source persistence proof, not IAM or signature
 # TENANT POSTURE: foreign tenant, task and reviewer nondisclosure
 # FAIL-CLOSED POSTURE: divergent replay, nonreviewer and stale revision deny
