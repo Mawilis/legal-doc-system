@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.2.0-REPLICA-NOTES-COLLABORATION-CERT
+# VERSION: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,10 +7,13 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.2.0-REPLICA-NOTES-COLLABORATION-CERT extends exact-head CI to the
+# CHANGELOG: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT adds isolated rendered Chromium
+#            desktop/mobile geometry and selected-note surface verification;
+#            mocked API replies are presentation tests, not authenticated EOS.
+# CHANGELOG: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.2.0-REPLICA-NOTES-COLLABORATION-CERT adds a real
+# CHANGELOG: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -41,6 +44,7 @@ on:
       - tests/unit/test_project_note_domain.py
       - tests/unit/test_project_registry.py
       - tests/integration/test_project_accountability_real_mongo.py
+      - tests/e2e/projects-layout.browser.spec.js
       - client/src/components/workspaces/ProjectsWorkspace.jsx
       - client/src/components/workspaces/ProjectNotesPanel.jsx
       - client/src/__tests__/components/ProjectsWorkspace.test.jsx
@@ -113,8 +117,28 @@ jobs:
         working-directory: client
         run: npm run build
 
+      - name: Install existing browser certification tooling
+        run: npm ci --ignore-scripts --no-audit --no-fund --progress=false
+      - name: Install isolated Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Certify rendered desktop and mobile Projects layout
+        env:
+          BROWSER_CERT_BASE_URL: http://127.0.0.1:5173
+          CI: "true"
+        run: |
+          npm --prefix client run dev -- --host 127.0.0.1 --port 5173 --strictPort >/tmp/wilsy-projects-visual-vite.log 2>&1 &
+          vite_pid=$!
+          trap 'kill "$vite_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:5173/discovery; then break; fi
+            sleep 2
+          done
+          curl --fail --silent --output /dev/null http://127.0.0.1:5173/discovery
+          npx playwright test --config tests/e2e/playwright.config.js tests/e2e/projects-layout.browser.spec.js
+
+
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.2.0-REPLICA-NOTES-COLLABORATION-CERT
+# VERSION: v1.3.0-RENDERED-PROJECTS-BROWSER-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
