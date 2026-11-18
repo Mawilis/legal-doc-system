@@ -291,7 +291,7 @@ def _project_wire_iso_date(value: object) -> object:
     legitimate strings before the project domain is reached. Other values are
     returned unchanged for strict model rejection.
     """
-    if isinstance(value, str) and re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", value):
+    if isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
         try:
             return date.fromisoformat(value)
         except ValueError:
