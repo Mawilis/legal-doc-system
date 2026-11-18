@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT
+VERSION: v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,14 +9,16 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT verifies explicit project owner-only participant
+  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT certifies independent participant IAM pairs
+  and exact active project-record scope before detail or notes admission.
+  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT pins the four bounded notes endpoints to current
+  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT proves customer Projects authority is separately
+  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT asserts EOS rejects
+  v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -65,7 +67,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT"
+VERSION = "v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -140,6 +142,50 @@ def test_grantee_currentness_requires_active_principal_membership_and_capacity(m
     assert projects_router._project_participant_eligible(
         database, "tenant-a", "", object(),
     ) is False
+
+
+def test_project_participant_record_requires_current_scoped_iam(monkeypatch):
+    """A record alone or an IAM role alone never authorizes project details."""
+    participant = SimpleNamespace(role="VIEWER")
+    project = SimpleNamespace(project_id="prj-" + "c" * 48)
+    read_counts = []
+    registry = SimpleNamespace(get=lambda **kwargs: read_counts.append(kwargs) or project)
+    class Participants:
+        def get(self, **kwargs):
+            read_counts.append(kwargs)
+            if kwargs["project_id"] != project.project_id:
+                raise projects_router.ProjectParticipantNotFound("PROJECT_PARTICIPANT_NOT_FOUND")
+            return participant
+    monkeypatch.setattr(projects_router, "_project_participants", lambda *_args: Participants())
+    context = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="principal-a"),
+        decision=SimpleNamespace(authorization_role="PROJECTS_PARTICIPANT_VIEWER"),
+    )
+    result, _participants = projects_router._require_current_project_participation(
+        context, registry, project.project_id, object(),
+    )
+    assert result is project
+    assert all(row["tenant_id"] == "tenant-a" and row["project_id"] == project.project_id for row in read_counts)
+    with pytest.raises(HTTPException) as denied:
+        projects_router._require_current_project_participation(
+            context, registry, project.project_id, object(), contribute=True,
+        )
+    assert denied.value.status_code == 403
+    context.decision.authorization_role = "PROJECTS_TENANT_OWNER"
+    with pytest.raises(HTTPException) as denied:
+        projects_router._require_current_project_participation(
+            context, registry, project.project_id, object(),
+        )
+    assert denied.value.status_code == 403
+    context.decision.authorization_role = "PROJECTS_PARTICIPANT_CONTRIBUTOR"
+    participant.role = "CONTRIBUTOR"
+    projects_router._require_current_project_participation(
+        context, registry, project.project_id, object(), contribute=True,
+    )
+    with pytest.raises(projects_router.ProjectParticipantNotFound):
+        projects_router._require_current_project_participation(
+            context, registry, "prj-" + "d" * 48, object(),
+        )
 
 
 def test_department_read_requires_exact_tenant_active_record():
@@ -307,6 +353,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", ("POST",)),
         ("/projects/{project_id}/assignment", ("PATCH",)),
         ("/projects/founder-projects-admission", ("POST",)),
+        ("/projects/{project_id}/my-project", ("GET",)),
+        ("/projects/{project_id}/my-project/notes", ("GET",)),
+        ("/projects/{project_id}/my-project/notes", ("POST",)),
         ("/projects/{project_id}/participants", ("GET",)),
         ("/projects/{project_id}/participants", ("POST",)),
         ("/projects/{project_id}/participants/{participant_principal_id}/revoke", ("POST",)),
@@ -325,6 +374,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", "POST"): ("tenant:profile:write", "profile_update"),
         ("/projects/{project_id}/assignment", "PATCH"): ("project:update", "project_update"),
         ("/projects/founder-projects-admission", "POST"): ("tenant:membership:write", "membership_invite"),
+        ("/projects/{project_id}/my-project", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/notes", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/notes", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/participants", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/participants", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/participants/{participant_principal_id}/revoke", "POST"): ("project:update", "project_update"),
@@ -504,7 +556,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT
+# VERSION: v1.7.0-PROJECT-RECORD-SCOPED-ACCESS-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
