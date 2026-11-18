@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE
+ * VERSION: v1.3.0-REVIEWER-INBOX-MOUNT
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,16 +8,19 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE exposes
+ * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT exposes
+ *          the recipient-scoped pending project approvals independently
+ *          of the currently selected task or first page of project work.
+ * CHANGELOG:  v1.3.0-REVIEWER-INBOX-MOUNT exposes
  *          source-backed task approvals to current participants, allowing
  *          decisions only by the explicitly designated contributor reviewer.
- * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE rejects
+ * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT rejects
  *            impossible empty forward pages to prevent unverified project
  *            pagination evidence from controlling focused navigation.
- * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE opens a
+ * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT opens a
  *          specifically authorized project from Daily Attention even when
  *          it lies beyond the first page of participant project discovery.
- * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE adds full-width
+ * CHANGELOG: v1.3.0-REVIEWER-INBOX-MOUNT adds full-width
  *          participant project listing, selected task execution, conversations
  *          and recipient-only notification acknowledgement with verified EOS reads.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -37,6 +40,7 @@ import {
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
+import ProjectApprovalInbox from './ProjectApprovalInbox.jsx';
 
 const PROJECT_ID = /^prj-[0-9a-f]{48}$/;
 const TASK_ID = /^ptk-[0-9a-f]{48}$/;
@@ -362,6 +366,9 @@ export default function AssignedProjectsWorkspace({
         <button type="button" className="wp-button" onClick={() => void list(projectOffset)}><RefreshCw size={15}/> Refresh</button>
       </div>
     </header>
+    {listState === 'READY' &&
+      <ProjectApprovalInbox tenantId={tenantId} principalId={principalId}
+        tenantHeaders={tenantHeaders} sessionScope={sessionScope}/>}
     {listState === 'LOADING' && <p role="status" className="rounded-lg bg-white p-4 text-slate-700">Verifying current project participation…</p>}
     {(listState === 'DENIED' || listState === 'UNAVAILABLE') &&
       <p role="alert" className="rounded-lg border border-rose-200 bg-white p-4 text-rose-800">{error}</p>}
@@ -504,7 +511,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE
+// VERSION: v1.3.0-REVIEWER-INBOX-MOUNT
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
