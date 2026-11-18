@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT
+ * VERSION: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT proves navigation
+ * CHANGELOG: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT tests server-verified page metadata, source
+ *            pagination beyond the first page, and denial of phantom next pages.
+ * CHANGELOG: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -120,9 +122,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       code: `TEN-${index + 1}`,
     }));
     api.get.mockImplementation(async (path) => {
-      if (path === '/projects') return { data: list(rows.slice(0, 100)) };
+      if (path === '/projects') return { data: { ...list(rows.slice(0, 100)), has_more: true, next_offset: 100 } };
       if (path === '/projects?limit=100&offset=100') return {
-        data: { ...list(rows.slice(100)), limit: 100, offset: 100 },
+        data: { ...list(rows.slice(100)), limit: 100, offset: 100, has_more: false, next_offset: null },
       };
       if (path === '/projects/summary') return { data: summary(rows) };
       throw new Error(`Unexpected project GET ${path}`);
@@ -138,6 +140,25 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Tenant project 125/ })).toBeVisible();
     expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=100')).toBe(true);
+  });
+
+  it('does not invent a next page when exactly 100 projects exist', async () => {
+    const rows = Array.from({ length: 100 }, (_, index) => project({
+      project_id: `prj-${(index + 1).toString(16).padStart(48, '0')}`,
+      name: `Exact-page project ${index + 1}`,
+    }));
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return {
+        data: { ...list(rows), has_more: false, next_offset: null },
+      };
+      if (path === '/projects/summary') return { data: summary(rows) };
+      throw new Error(`Unexpected project GET ${path}`);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="exact-page-boundary-cert" />);
+    expect(await screen.findByText('100 shown · 100 verified')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
+    expect(api.get.mock.calls.some(([path]) => path.includes('offset=100'))).toBe(false);
   });
 
   it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
@@ -476,7 +497,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT
+ * VERSION: v1.8.0-VERIFIED-NEXT-PAGE-CLIENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
