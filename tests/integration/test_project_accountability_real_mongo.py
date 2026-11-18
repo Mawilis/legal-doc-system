@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT
+VERSION: v1.4.0-COLOUR-STICKY-REPLICA-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,11 +8,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
-CHANGELOG: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT certifies transactional note revisions,
+CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT certifies coloured note create, author colour-CAS revision, provider-independent Mongo readback and immutable event fingerprints while preserving legacy colourless note replay.
+CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
+CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT certifies transactional note revisions,
          author denial, replay, foreign-tenant absence and immutable note events
          on disposable MongoDB; no real principal or project activation.
-CHANGELOG: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT adds disposable real-replica certification for
+CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT adds disposable real-replica certification for
          511 source-valid tenant projects, complete indexed page traversal,
          immutable tenant isolation and summary counts.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
@@ -378,13 +379,55 @@ def test_real_replica_project_notes_replay_author_cas_and_tenant_isolation() -> 
                 "PROJECT_NOTE_CREATED", "PROJECT_NOTE_REVISED",
             ]
             assert events.count_documents({"tenant_id": tenant}) == 2
+
+        sticky_key = "sticky-colour-create"
+        sticky_id = note_id_for_command(tenant, project_id, actor, sticky_key)
+        sticky = ProjectNote(
+            tenant_id=tenant, project_id=project_id, note_id=sticky_id,
+            author_principal_id=actor, body="Delivery coordination",
+            colour="yellow", created_at=instant, updated_at=instant,
+        )
+        with client.start_session() as session:
+            saved = session.with_transaction(
+                lambda tx: registry.create_or_replay(
+                    note=sticky, actor_principal_id=actor,
+                    idempotency_key=sticky_key, occurred_at=instant, session=tx,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+            assert saved.colour == "yellow"
+            recoloured = session.with_transaction(
+                lambda tx: registry.revise_or_replay(
+                    tenant_id=tenant, project_id=project_id, note_id=sticky_id,
+                    actor_principal_id=actor, expected_revision=1,
+                    body="Delivery coordination", colour="mint",
+                    idempotency_key="sticky-mint", occurred_at=instant, session=tx,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+            assert recoloured.revision == 2
+            assert recoloured.colour == "mint"
+            assert recoloured.fingerprint != saved.fingerprint
+            reread = registry.get(
+                tenant_id=tenant, project_id=project_id,
+                note_id=sticky_id, session=session,
+            )
+            assert reread == recoloured
+            assert [row["event_type"] for row in registry.list_events(
+                tenant_id=tenant, project_id=project_id,
+                note_id=sticky_id, session=session,
+            )] == ["PROJECT_NOTE_CREATED", "PROJECT_NOTE_REVISED"]
     finally:
         client.drop_database(database.name)
         client.close()
 
 
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.3.0-OWNER-PERSON-PROJECTION-REPLICA-CERT
+# VERSION: v1.4.0-COLOUR-STICKY-REPLICA-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
