@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Note Domain
-VERSION: v1.0.0-GOVERNED-PROJECT-NOTE
+VERSION: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL
 AUTHORITY: Python EOS canonical tenant Projects domain facts.
 EPITOME: Immutable, independently revisioned project notes with source-verifiable
          identity, author ownership, chronological audit coordinates, soft
@@ -8,7 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/d
 COLLABORATION / OWNERSHIP: ProjectNoteRegistry and Projects router; EOS owns
          tenant, authentication, entitlement, records and transaction admission.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-GOVERNED-PROJECT-NOTE defines strict source-backed note state
+CHANGELOG: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL rejects retired platform/root tenant aliases
+         as invalid note tenancy instead of relying solely on HTTP admission.
+CHANGELOG: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL defines strict source-backed note state
          without authorizing notes as project approvals or signed decisions.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No HTML interpretation; text is bounded and no
@@ -29,11 +31,15 @@ import json
 import re
 from typing import Final
 
-VERSION: Final[str] = "v1.0.0-GOVERNED-PROJECT-NOTE"
+VERSION: Final[str] = "v1.0.1-RETIRED-TENANT-ALIAS-DENIAL"
 SCHEMA: Final[str] = "wilsy.project.note.v1"
 _NOTE_ID = re.compile(r"^pnt-[0-9a-f]{48}$")
 _PROJECT_ID = re.compile(r"^prj-[0-9a-f]{48}$")
 _HEX_512 = re.compile(r"^[0-9a-f]{128}$")
+_FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset({
+    "MASTER", "GLOBAL_ROOT", "WILSY_ROOT", "WILSY_MASTER",
+    "WILSY_GLOBAL_ROOT", "SOVEREIGN_ROOT",
+})
 
 
 class ProjectNoteError(ValueError):
@@ -101,6 +107,8 @@ class ProjectNote:
     def __post_init__(self) -> None:
         """Validate complete aggregate and verify supplied persisted fingerprint."""
         _identifier("tenant_id", self.tenant_id)
+        if self.tenant_id.upper() in _FORBIDDEN_TENANTS:
+            raise ProjectNoteError("PROJECT_NOTE_TENANT_ID_INVALID")
         _identifier("author_principal_id", self.author_principal_id)
         if not isinstance(self.project_id, str) or not _PROJECT_ID.fullmatch(self.project_id):
             raise ProjectNoteError("PROJECT_NOTE_PROJECT_ID_INVALID")
@@ -217,7 +225,7 @@ class ProjectNote:
 __all__ = ["VERSION", "SCHEMA", "ProjectNote", "ProjectNoteError"]
 
 # ARTIFACT: project_note.py
-# VERSION: v1.0.0-GOVERNED-PROJECT-NOTE
+# VERSION: v1.0.1-RETIRED-TENANT-ALIAS-DENIAL
 # AUTHORITY BOUNDARY: immutable author-owned note lifecycle only
 # TENANT POSTURE: exact tenant and project coordinates, no default tenant
 # FAIL-CLOSED POSTURE: source signature/integrity, author and CAS checks fail closed
