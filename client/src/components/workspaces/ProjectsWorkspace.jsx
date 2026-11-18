@@ -780,7 +780,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       const code = classifyFailure(cause);
       setCommandState('FAILED');
       setCommandError(code);
-      if ([409, 422].includes(cause?.response?.status) || ![401, 403].includes(cause?.response?.status)) {
+      if (cause?.response?.status === 409 || ![401, 403, 422].includes(cause?.response?.status)) {
         await refresh();
         if (selectedRef.current) await openProject(selectedRef.current);
       }
