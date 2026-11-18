@@ -3130,6 +3130,8 @@ def get_project(
         )
         response_payload = _result(context, value, events=events)
         actor_ids = {value.created_by_principal_id}
+        if value.owner_principal_id:
+            actor_ids.add(value.owner_principal_id)
         actor_ids.update(event["actor_principal_id"] for event in events)
         if len(actor_ids) > 100 or any(
             not isinstance(actor_id, str) or not actor_id or len(actor_id) > 180
