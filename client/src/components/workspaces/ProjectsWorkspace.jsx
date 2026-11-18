@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY
+ * VERSION: v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY distinguishes missing
+ * CHANGELOG: v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
+ *            server page navigation and real EOS summary-based portfolio
+ *            distribution without simulating metrics or mutating records.
+ *            v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY distinguishes missing
  *            table target-date copy from the existing detail readback.
  *            v2.0.1-SOURCE-BACKED-TABLE-CODE-COPY distinguishes the list's
  *            empty code from the source-backed detail value without changing
@@ -456,6 +459,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [pageOffset, setPageOffset] = useState(0);
+  const pageOffsetRef = useRef(0);
   const [selectedId, setSelectedId] = useState(null);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -503,7 +508,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setError('');
     try {
       const [listResponse, summaryResponse] = await Promise.all([
-        api.get('/projects', { headers: tenantHeaders }),
+        api.get(pageOffsetRef.current === 0 ? '/projects' : `/projects?limit=100&offset=${pageOffsetRef.current}`, { headers: tenantHeaders }),
         api.get('/projects/summary', { headers: tenantHeaders }),
       ]);
       if (sequence !== listSequence.current || activeScope.current !== requestScope) return null;
@@ -558,6 +563,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     createReplay.current = { fingerprint: '', key: null };
     setQuery('');
     setStatusFilter('all');
+    pageOffsetRef.current = 0;
+    setPageOffset(0);
     void refresh({ preserveSelection: false });
     return () => {
       listSequence.current += 1;
@@ -773,6 +780,20 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setCommandError('');
   };
 
+  const changePage = (nextOffset) => {
+    if (sourceState !== 'READY' || commandState === 'PENDING'
+      || nextOffset < 0 || (nextOffset > pageOffsetRef.current && items.length < 100)) return;
+    pageOffsetRef.current = nextOffset;
+    setPageOffset(nextOffset);
+    detailSequence.current += 1;
+    changeSelection(null);
+    setDetail(null);
+    setDetailState('IDLE');
+    setQuery('');
+    setStatusFilter('all');
+    void refresh({ preserveSelection: false });
+  };
+
   const statusLabel = (value) => String(value || 'unknown').replaceAll('_', ' ');
   const countLabel = summary
     ? `${summary.active ?? '—'} active · ${summary.total} total`
@@ -785,6 +806,26 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
       </header>
 
+      {sourceState === 'READY' && summary && (
+        <section className="wp-portfolio-chart" aria-label="Verified project status distribution">
+          <div className="wp-chart-heading">
+            <strong>Portfolio distribution</strong>
+            <span>EOS verified · {summary.total} projects · Read-only status counts</span>
+          </div>
+          <div className="wp-chart-bars">
+            {PROJECT_STATUSES.map((status) => (
+              <div key={status} className="wp-chart-item" data-status={status}>
+                <span className="wp-chart-value">{summary[status]}</span>
+                <div className="wp-chart-track" role="img"
+                  aria-label={`${statusLabel(status)}: ${summary[status]} of ${summary.total} projects`}>
+                  <div className="wp-chart-fill" style={{ height: `${summary.total ? (100 * summary[status] / summary.total) : 0}%` }}/>
+                </div>
+                <span className="wp-chart-caption">{statusLabel(status)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {sourceState === 'LOADING' && <div role="status" className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><LoaderCircle className="mr-2 inline animate-spin" size={15}/>Loading authorized Projects from EOS…</div>}
       {sourceState === 'DENIED' && <div role="alert" data-project-state="DENIED" className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"><ShieldCheck className="mr-2 inline" size={16}/>{error === 'AUTHENTICATION_REQUIRED' ? 'Your session needs reauthentication before Projects can be read.' : error === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects product entitlement is required for this tenant.' : 'EOS denied Projects access for this principal and selected tenant. No project records or counts are shown.'}</div>}
       {sourceState === 'UNAVAILABLE' && <div role="alert" data-project-state="UNAVAILABLE" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><span><CircleAlert className="mr-2 inline" size={16}/>{error === 'AUTHENTICATED_TENANT_REQUIRED' ? 'A verified tenant session is required.' : 'The EOS Projects source is unavailable. No empty result is inferred.'}</span><button type="button" onClick={() => void refresh()} className="rounded-md border border-amber-400 px-3 py-2 font-semibold">Retry</button></div>}
@@ -830,7 +871,18 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                 </li>)}
               </ul>
             </div>}
-            <footer className="wp-footer border-t border-slate-200 px-4 py-2 text-xs text-slate-500">{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified` : 'Source state shown above'}</footer>
+            <footer className="wp-footer border-t border-slate-200 px-4 py-2 text-xs text-slate-500">
+              <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified` : 'Source state shown above'}</span>
+              {sourceState === 'READY' && (pageOffset > 0 || items.length === 100) && (
+                <nav className="wp-pagination" aria-label="Project pages">
+                  <span>Page {Math.floor(pageOffset / 100) + 1} · Filters search this page</span>
+                  <button type="button" className="wp-button" disabled={pageOffset === 0}
+                    onClick={() => changePage(Math.max(0, pageOffset - 100))}>Previous</button>
+                  <button type="button" className="wp-button" disabled={items.length < 100}
+                    onClick={() => changePage(pageOffset + 100)}>Next</button>
+                </nav>
+              )}
+            </footer>
           </>}
         </section>
 
@@ -876,7 +928,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.0.2-SOURCE-BACKED-TABLE-NULL-COPY
+// VERSION: v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
