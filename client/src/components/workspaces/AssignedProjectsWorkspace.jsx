@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR
+ * VERSION: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,13 +8,16 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR rejects
+ * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE exposes
+ *          source-backed task approvals to current participants, allowing
+ *          decisions only by the explicitly designated contributor reviewer.
+ * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE rejects
  *            impossible empty forward pages to prevent unverified project
  *            pagination evidence from controlling focused navigation.
- * CHANGELOG: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR opens a
+ * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE opens a
  *          specifically authorized project from Daily Attention even when
  *          it lies beyond the first page of participant project discovery.
- * CHANGELOG: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR adds full-width
+ * CHANGELOG: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE adds full-width
  *          participant project listing, selected task execution, conversations
  *          and recipient-only notification acknowledgement with verified EOS reads.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -33,6 +36,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
+import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 
 const PROJECT_ID = /^prj-[0-9a-f]{48}$/;
 const TASK_ID = /^ptk-[0-9a-f]{48}$/;
@@ -106,6 +110,7 @@ export default function AssignedProjectsWorkspace({
   const [participants, setParticipants] = useState([]);
   const [workState, setWorkState] = useState('LOADING');
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
+  const [approvalTaskId, setApprovalTaskId] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const sequence = useRef(0);
@@ -174,6 +179,7 @@ export default function AssignedProjectsWorkspace({
     setNotices([]);
     setParticipants([]);
     setDiscussionTaskId(null);
+    setApprovalTaskId(null);
     setError('');
     try {
       const prefix = '/projects/' + encodeURIComponent(id) + '/my-project';
@@ -426,6 +432,10 @@ export default function AssignedProjectsWorkspace({
                           key={next} className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
                           disabled={busy} onClick={() => transition(task, next)}>{caption(next)}</button>)}
                       <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                        onClick={() => setApprovalTaskId(value => value === task.task_id ? null : task.task_id)}>
+                        <ClipboardList size={13}/> Approvals
+                      </button>
+                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
                         onClick={() => setDiscussionTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <MessageSquare size={13}/> Discuss
                       </button>
@@ -438,6 +448,13 @@ export default function AssignedProjectsWorkspace({
               </table>
             </div>
           </section>
+          {approvalTaskId && work.some(task => task.task_id === approvalTaskId) &&
+            <ProjectTaskApprovalsPanel key={scope + approvalTaskId}
+              tenantId={tenantId} projectId={selection.project.project_id}
+              taskId={approvalTaskId} principalId={principalId}
+              tenantHeaders={tenantHeaders} participantMode
+              participants={participants}
+              onClose={() => setApprovalTaskId(null)}/>}
           {discussionTaskId && work.some(task => task.task_id === discussionTaskId) &&
             <ProjectTaskCommentsPanel key={scope + discussionTaskId}
               tenantId={tenantId} projectId={selection.project.project_id}
@@ -487,7 +504,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.1.1-STRICT-PARTICIPANT-PAGE-CURSOR
+// VERSION: v1.2.0-NAMED-REVIEWER-DECISION-WORKSPACE
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
