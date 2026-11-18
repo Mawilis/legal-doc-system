@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS
+VERSION: v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,18 +14,22 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS adds exact-tenant owner-authorized participant grant,
+  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE admits exact project-bound participant detail and
+  notes through separate current IAM read/contribute pairs, a matching active
+  project participation record and canonical Projects entitlement. No tenant-wide
+  project listing, generic update or owner privilege is granted.
+  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS moves note-domain validation inside existing
+  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS introduces authenticated, project-existence-verified
+  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS projects verified next-page availability and exact offset
+  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS refuses a PLANNED-to-ACTIVE
+  v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -164,13 +168,15 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS"
+VERSION: Final[str] = "v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
 _UPDATE = RequireTenantAuthorization("project:update", "project_update")
 _ARCHIVE = RequireTenantAuthorization("project:archive", "project_archive")
+_PARTICIPANT_DETAIL = RequireTenantAuthorization("project:participant:read", "project_participant_detail")
+_PARTICIPANT_CONTRIBUTE = RequireTenantAuthorization("project:participant:contribute", "project_participant_contribute")
 _DEPARTMENT_PROVISION = RequireTenantAuthorization("tenant:profile:write", "profile_update")
 _DEPARTMENT_COLLECTION: Final[str] = "wilsy_tenant_departments"
 _DEPARTMENT_EVENTS_COLLECTION: Final[str] = "wilsy_tenant_department_events"
@@ -1093,6 +1099,134 @@ def _project_participants(
     )
 
 
+def _require_current_project_participation(
+    context: TenantAuthorizationContext, registry: ProjectRegistry,
+    project_id: str, session: Any, *, contribute: bool = False,
+) -> tuple[Project, ProjectParticipantRegistry]:
+    """Join current IAM to one ACTIVE exact-project participant assignment.
+
+    Never infer participant scope from project ownership, workforce employment,
+    founder status or tenant-wide module entitlements. Each command revalidates
+    current membership and active role through RequireTenantAuthorization,
+    product entitlement through _transaction and explicit record here.
+    """
+    if context.decision.authorization_role not in {
+        "PROJECTS_PARTICIPANT_VIEWER", "PROJECTS_PARTICIPANT_CONTRIBUTOR",
+    }:
+        raise HTTPException(status_code=403, detail="PROJECT_PARTICIPANT_IAM_REQUIRED")
+    project = registry.get(
+        tenant_id=context.tenant_id, project_id=project_id, session=session,
+    )
+    participants = _project_participants(
+        registry, context.tenant_id, project_id, session,
+    )
+    participant = participants.get(
+        tenant_id=context.tenant_id, project_id=project_id,
+        principal_id=context.identity.identity_id, session=session,
+    )
+    if contribute and (
+        participant.role != "CONTRIBUTOR"
+        or context.decision.authorization_role != "PROJECTS_PARTICIPANT_CONTRIBUTOR"
+    ):
+        raise HTTPException(status_code=403, detail="PROJECT_CONTRIBUTOR_SCOPE_REQUIRED")
+    return project, participants
+
+
+@router.get("/{project_id}/my-project")
+def read_assigned_project(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Read only the one exact project covered by a current participant record."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        project, participants = _require_current_project_participation(
+            context, registry, project_id, session,
+        )
+        own = participants.get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            principal_id=context.identity.identity_id, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-PARTICIPANT-DETAIL/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "project": project.to_dict(),
+            "participation": own.to_dict(),
+        }
+
+    return _transaction(context, read)
+
+
+@router.get("/{project_id}/my-project/notes")
+def read_assigned_project_notes(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Read project notes only after participant IAM and exact record checks."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        items, more = notes.list_for_project(
+            tenant_id=context.tenant_id, project_id=project_id,
+            limit=limit, offset=offset, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-NOTE-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "items": [item.to_dict() for item in items],
+            "limit": limit, "offset": offset,
+            "has_more": more,
+            "next_offset": offset + len(items) if more else None,
+        }
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/my-project/notes", status_code=status.HTTP_201_CREATED)
+def create_assigned_project_note(
+    payload: ProjectNoteCreateRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Author a descriptive note only with active contributor IAM and project role."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    instant = datetime.now(timezone.utc)
+
+    def create(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(
+            context, registry, project_id, session, contribute=True,
+        )
+        notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        note_id = note_id_for_command(
+            context.tenant_id, project_id, context.identity.identity_id, key,
+        )
+        note = ProjectNote(
+            tenant_id=context.tenant_id, project_id=project_id,
+            note_id=note_id, author_principal_id=context.identity.identity_id,
+            body=payload.body, created_at=instant, updated_at=instant,
+        )
+        result = notes.create_or_replay(
+            note=note, actor_principal_id=context.identity.identity_id,
+            idempotency_key=key, occurred_at=instant, session=session,
+        )
+        return _project_note_result(context, project_id, result)
+
+    return _transaction(context, create, write=True)
+
+
 @router.get("/{project_id}/participants")
 def list_project_participants(
     response: Response,
@@ -1493,7 +1627,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.7.0-GOVERNED-PROJECT-PARTICIPANT-COMMANDS
+# VERSION: v1.8.0-RECORD-SCOPED-PARTICIPANT-READ-WRITE
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
