@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Notes Workspace
- * VERSION: v1.0.0-EOS-SOURCE-BACKED-PROJECT-NOTES
+ * VERSION: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES
  * AUTHORITY: Authenticated Python EOS Projects note API exclusively.
  * EPITOME: In-project note list, author-owned create/revise/archive, source
  *          readback and explicit denial/unavailable states, without local truth.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts this presentation;
  *          api.js transports exact session and Python EOS owns all commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-EOS-SOURCE-BACKED-PROJECT-NOTES establishes one governed
+ * CHANGELOG: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES renders responsive high-contrast source-backed sticky cards and author-selected persisted colours, preserving CAS, tenant validation and legacy colourless notes.
+ * CHANGELOG: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES establishes one governed
  *          collaborative note surface with preserved idempotency across retry.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes note text; no HTML/Markdown
@@ -26,12 +27,44 @@ import api from '../../services/api.js';
 const IDENTIFIER = /^pnt-[0-9a-f]{48}$/;
 const SCHEMA_LIST = 'WILSY-PROJECT-NOTE-LIST/V1';
 const SCHEMA_RESULT = 'WILSY-PROJECT-NOTE-RESULT/V1';
+const PALETTE = Object.freeze({
+  yellow: { label: 'Sunflower', background: '#fff2b7', border: '#a9811b' },
+  blue: { label: 'Sky', background: '#dceeff', border: '#5c8eb9' },
+  mint: { label: 'Mint', background: '#dcf5e7', border: '#528b6e' },
+  rose: { label: 'Rose', background: '#ffe2e7', border: '#b87388' },
+  violet: { label: 'Lilac', background: '#eee4fc', border: '#8e70ac' },
+  slate: { label: 'Slate', background: '#e7edf4', border: '#8293a8' },
+});
+const knownColour = value => value == null ? 'yellow'
+  : Object.hasOwn(PALETTE, value) ? value : null;
+
+function StickyColourPicker({ colour, onChange, label }) {
+  return <fieldset className="mt-3">
+    <legend className="mb-2 text-sm font-semibold text-slate-900">{label}</legend>
+    <div role="group" aria-label={label} className="flex flex-wrap gap-2">
+      {Object.entries(PALETTE).map(([value, presentation]) =>
+        <button type="button" key={value} onClick={() => onChange(value)}
+          aria-label={presentation.label + ' sticky-note colour'}
+          aria-pressed={colour === value}
+          title={presentation.label}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs font-semibold text-slate-900"
+          style={{ background: presentation.background,
+            borderColor: colour === value ? '#173b73' : presentation.border,
+            boxShadow: colour === value ? '0 0 0 2px #ffffff inset' : 'none',
+          }}>
+          <span aria-hidden="true">{colour === value ? '✓' : '○'}</span>
+          {presentation.label}
+        </button>)}
+    </div>
+  </fieldset>;
+}
 
 function checkNote(note, tenantId, projectId) {
   return note && note.tenant_id === tenantId && note.project_id === projectId
     && IDENTIFIER.test(note.note_id)
     && typeof note.author_principal_id === 'string'
     && typeof note.body === 'string'
+    && knownColour(note.colour) !== null
     && Number.isSafeInteger(note.revision) && note.revision >= 1
     && typeof note.fingerprint === 'string' && /^[a-f0-9]{128}$/.test(note.fingerprint);
 }
@@ -43,6 +76,7 @@ export default function ProjectNotesPanel({
   const [items, setItems] = useState([]);
   const [state, setState] = useState('LOADING');
   const [draft, setDraft] = useState('');
+  const [draftColour, setDraftColour] = useState('yellow');
   const [editor, setEditor] = useState(null);
   const [busy, setBusy] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -107,6 +141,7 @@ export default function ProjectNotesPanel({
     setOffset(0);
     setHasMore(false);
     setDraft('');
+    setDraftColour('yellow');
     setEditor(null);
     setError('');
     commandKey.current = { fingerprint: '', key: null };
@@ -124,7 +159,7 @@ export default function ProjectNotesPanel({
     return commandKey.current.key;
   };
 
-  const verifyCommand = async (command, action) => {
+  const verifyCommand = async (command, action, expectedColour = null) => {
     if (busy || state !== 'READY') return;
     const originalScope = scope;
     setBusy(true);
@@ -139,12 +174,14 @@ export default function ProjectNotesPanel({
         || result.tenant_id !== tenantId || result.principal_id !== principalId
         || result.project_id !== projectId
         || !checkNote(result.note, tenantId, projectId)
+        || (expectedColour !== null && result.note.colour !== expectedColour)
         || !Array.isArray(result.events)
       ) throw new Error('PROJECT_NOTE_RESULT_INVALID');
       const fresh = await readPage(0);
       if (!fresh || currentScope.current !== originalScope) return;
       commandKey.current = { fingerprint: '', key: null };
       setDraft('');
+      setDraftColour('yellow');
       setEditor(null);
     } catch (cause) {
       if (currentScope.current !== originalScope) return;
@@ -161,10 +198,11 @@ export default function ProjectNotesPanel({
     event.preventDefault();
     const body = draft.trim();
     if (!body || body.length > 10000) return;
-    void verifyCommand(JSON.stringify(['create', body]), key =>
+    void verifyCommand(JSON.stringify(['create', body, draftColour]), key =>
       api.post('/projects/' + encodeURIComponent(projectId) + '/notes',
-        { body }, { headers: { ...tenantHeaders, 'Idempotency-Key': key } }),
-    );
+        { body, colour: draftColour },
+        { headers: { ...tenantHeaders, 'Idempotency-Key': key } }),
+    , draftColour);
   };
 
   const revise = (event) => {
@@ -172,11 +210,11 @@ export default function ProjectNotesPanel({
     if (!editor || !editor.body.trim()) return;
     const { note_id, revision } = editor;
     const body = editor.body.trim();
-    void verifyCommand(JSON.stringify(['revise', note_id, revision, body]), key =>
+    void verifyCommand(JSON.stringify(['revise', note_id, revision, body, editor.colour]), key =>
       api.patch('/projects/' + encodeURIComponent(projectId) + '/notes/' + encodeURIComponent(note_id),
-        { expected_revision: revision, body },
+        { expected_revision: revision, body, colour: editor.colour },
         { headers: { ...tenantHeaders, 'Idempotency-Key': key } }),
-    );
+    , editor.colour);
   };
 
   const archive = (note) => {
@@ -203,8 +241,14 @@ export default function ProjectNotesPanel({
     {state === 'UNAVAILABLE' && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {state === 'READY' && <>
       {items.length === 0 && <p className="mt-3 text-sm text-slate-600">No verified notes on this page.</p>}
-      <ul className="wp-notes-list mt-3 space-y-3">
-        {items.map(item => <li key={item.note_id} className="rounded-xl border border-slate-200 bg-white/90 p-3">
+      <ul className="wp-notes-list mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Project sticky notes board">
+        {items.map(item => <li key={item.note_id}
+          className="min-w-0 rounded-xl border p-4 shadow-sm"
+          style={{ background: PALETTE[knownColour(item.colour)].background,
+            borderColor: PALETTE[knownColour(item.colour)].border }}>
+          <p className="mb-2 text-xs font-bold uppercase tracking-normal text-slate-800">
+            {PALETTE[knownColour(item.colour)].label} note
+          </p>
           <div className="flex items-center gap-2"><FileText size={15} className="text-blue-700"/>
             <span className="min-w-0 break-all text-xs text-slate-600">{item.author_principal_id}</span>
             <span className="ml-auto text-xs text-slate-500">Revision {item.revision}</span>
@@ -212,7 +256,10 @@ export default function ProjectNotesPanel({
           <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">{item.body}</p>
           {item.author_principal_id === principalId && <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" disabled={busy} className="wp-button"
-              onClick={() => setEditor({ note_id: item.note_id, revision: item.revision, body: item.body })}>Edit note</button>
+              onClick={() => setEditor({
+                note_id: item.note_id, revision: item.revision, body: item.body,
+                colour: knownColour(item.colour),
+              })}>Edit note</button>
             <button type="button" disabled={busy} className="wp-button wp-button-danger"
               onClick={() => archive(item)}>Archive note</button>
           </div>}
@@ -224,6 +271,8 @@ export default function ProjectNotesPanel({
             onChange={event => setEditor(value => ({ ...value, body: event.target.value }))}
             className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm font-normal text-slate-900"/>
         </label>
+        <StickyColourPicker label="Edit sticky-note colour" colour={editor.colour}
+          onChange={colour => setEditor(previous => ({ ...previous, colour }))}/>
         <div className="mt-2 flex gap-2">
           <button className="wp-button wp-button-primary" type="submit" disabled={busy || !editor.body.trim()}>Save note revision</button>
           <button className="wp-button" type="button" disabled={busy} onClick={() => setEditor(null)}>Cancel</button>
@@ -236,7 +285,9 @@ export default function ProjectNotesPanel({
             placeholder="Record context, observations, and project discussion…"
             className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm font-normal text-slate-900"/>
         </label>
-        <button type="submit" disabled={busy || !draft.trim()} className="wp-button wp-button-primary mt-2">
+        <StickyColourPicker label="Choose sticky-note colour" colour={draftColour}
+          onChange={setDraftColour}/>
+        <button type="submit" disabled={busy || !draft.trim()} className="wp-button wp-button-primary mt-3">
           <Plus size={15}/> Add note to EOS
         </button>
       </form>
@@ -253,7 +304,7 @@ export default function ProjectNotesPanel({
 }
 
 // ARTIFACT: ProjectNotesPanel.jsx
-// VERSION: v1.0.0-EOS-SOURCE-BACKED-PROJECT-NOTES
+// VERSION: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES
 // AUTHORITY BOUNDARY: EOS-validated source-backed project note reads/commands only
 // TENANT POSTURE: exact tenant, principal, project and author, no fallback scope
 // FAIL-CLOSED POSTURE: invalid responses, authorization and unavailable reads deny
