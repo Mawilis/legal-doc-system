@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT
+ * VERSION: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,16 +8,18 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT verifies EOS-backed project work
+ * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT verifies source-backed
+ *          participant directory and grant entry controls at mobile/desktop.
+ * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT measures exact direct-child table
+ * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT certifies the existing
+ * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT measures actual
+ * CHANGELOG: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -80,6 +82,14 @@ for (const width of [1440, 390]) {
           tenant_id: TENANT, principal_id: PRINCIPAL, project_id: projectId,
           limit: 50, offset: 0, has_more: false, next_offset: null,
           items: [],
+        };
+      }
+      if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/participant-options') {
+        response = {
+          schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: projectId,
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [{ principal_id: 'eligible-tenant-person' }],
         };
       }
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId + '/participants') {
@@ -173,6 +183,11 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: /View project Projects operating foundation/ }).click();
     await expect(page.getByRole('heading', { name: 'Projects operating foundation' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Project notes' })).toBeVisible();
+    const participantPanel = page.getByRole('region', { name: 'Project participants' });
+    await expect(participantPanel).toBeVisible();
+    await expect(participantPanel.getByRole('combobox', { name: 'Eligible participant' })).toBeVisible();
+    await expect(participantPanel.getByRole('option', { name: 'eligible-tenant-person' })).toHaveCount(1);
+    await expect(participantPanel.getByRole('button', { name: 'Add participant' })).toBeDisabled();
     const projectWork = page.getByRole('region', { name: 'Project work execution' });
     await expect(projectWork).toBeVisible();
     await expect(projectWork.getByText('EOS verified no tasks on this page. Create work to begin execution.')).toBeVisible();
@@ -209,7 +224,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.1.0-PROJECT-TASK-BROWSER-READBACK-CERT
+// VERSION: v1.2.0-PARTICIPANT-DIRECTORY-RESPONSIVE-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
