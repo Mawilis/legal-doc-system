@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION
+ * VERSION: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,33 +16,34 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION opens
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION opens the
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION mounts exact-tenant,
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION mounts the independently source-backed
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION mounts independently source-backed note
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION exposes readable title-case
+ *            v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -563,6 +564,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [sourceState, setSourceState] = useState('LOADING');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [ownerOnly, setOwnerOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const statusFilterRef = useRef('all');
   const [pageOffset, setPageOffset] = useState(0);
@@ -691,6 +693,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setDraft(EMPTY_DRAFT);
     createReplay.current = { fingerprint: '', key: null };
     setQuery('');
+    setOwnerOnly(false);
     setStatusFilter('all');
     statusFilterRef.current = 'all';
     pageOffsetRef.current = 0;
@@ -711,10 +714,11 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     const normalized = query.trim().toLocaleLowerCase();
     return items.filter((item) => (
       (statusFilter === 'all' || item.status === statusFilter)
+      && (!ownerOnly || item.owner_principal_id === principalId)
       && (!normalized || [item.name, item.code, item.summary, item.status]
         .some((value) => String(value || '').toLocaleLowerCase().includes(normalized)))
     ));
-  }, [items, query, statusFilter]);
+  }, [items, query, statusFilter, ownerOnly, principalId]);
 
   const openProject = useCallback(async (projectId) => {
     const sequence = ++detailSequence.current;
@@ -965,8 +969,20 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     <section className="wilsy-projects mx-auto w-full max-w-[1500px] px-3 pb-6 sm:px-5" data-projects-workspace data-source-state={sourceState}>
       <header className="wp-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div><p className="wp-eyebrow text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Projects &amp; delivery</p><h1 className="wp-title mt-1 text-2xl font-bold text-slate-900">Projects</h1><p className="wp-subtitle mt-1 text-sm text-slate-600">EOS-authorized project delivery for the selected workspace.</p></div>
-        <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => setShowAssignedProjects(true)} className="wp-button"
-          aria-label="My assigned projects"><ShieldCheck size={15}/> My assigned projects</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
+        <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => {
+          setOwnerOnly(value => !value);
+          setMode('LIST');
+          setQuery('');
+          changeSelection(null);
+          setDetail(null);
+          setDetailState('IDLE');
+        }} className="wp-button" aria-pressed={ownerOnly}
+          aria-label="My owned projects"><ShieldCheck size={15}/>
+          {ownerOnly ? 'All projects' : 'My owned projects'}</button>
+          <button type="button" onClick={() => setShowAssignedProjects(true)}
+            className="wp-button" aria-label="Participant assignments"
+            title="Requires a separate, active project participant grant">
+            Participant assignments</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
       </header>
 
       {sourceState === 'READY' && summary && !selectedId && mode !== 'CREATE' && (
@@ -1019,7 +1035,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             </form>
           ) : <>
             <div className="wp-list-controls flex flex-wrap items-center gap-2 border-b border-slate-200 p-3"><label className="wp-search relative min-w-[180px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/><span className="sr-only">Search projects</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" className="min-h-10 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"/></label><label className="sr-only" htmlFor="project-status-filter">Filter by status</label><select id="project-status-filter" value={statusFilter} onChange={(event) => changeStatusFilter(event.target.value)} className="wp-filter min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="all">All statuses</option>{PROJECT_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></div>
-            {sourceState === 'READY' && items.length === 0 ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0 ? <p className="p-6 text-center text-sm text-slate-600">No projects match the current search and status filter.</p> : <div className="wp-table-shell" role="region" aria-label="Projects table" tabIndex={0}>
+            {sourceState === 'READY' && items.length === 0 ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0 ? <p className="p-6 text-center text-sm text-slate-600">{ownerOnly ? 'No projects on this verified page have you as the recorded owner. Other pages may contain owned projects.' : 'No projects match the current search and status filter.'}</p> : <div className="wp-table-shell" role="region" aria-label="Projects table" tabIndex={0}>
               <div className="wp-table-head" aria-hidden="true">
                 <span>Project</span><span>Project code</span><span>Status</span><span>Target date</span><span>Action</span>
               </div>
@@ -1040,7 +1056,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               </ul>
             </div>}
             <footer className="wp-footer border-t border-slate-200 px-4 py-2 text-xs text-slate-500">
-              <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified` : 'Source state shown above'}</span>
+              <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified${ownerOnly ? " · owner-filtered current page" : ""}` : 'Source state shown above'}</span>
               {sourceState === 'READY' && (pageOffset > 0 || hasNextPage) && (
                 <nav className="wp-pagination" aria-label="Project pages">
                   <span>Page {Math.floor(pageOffset / 100) + 1} · Search applies to this page</span>
@@ -1162,7 +1178,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.12.0-ACTIONABLE-ASSIGNMENT-ERROR-RECONCILIATION
+// VERSION: v2.13.0-OWNER-RESPONSIBILITY-VS-PARTICIPATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
