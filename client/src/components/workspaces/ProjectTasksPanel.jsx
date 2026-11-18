@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.0.0-SOURCE-BACKED-PROJECT-TASK-EXECUTION
+ * VERSION: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-SOURCE-BACKED-PROJECT-TASK-EXECUTION adds source-backed
+ * CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT adds a
+ *          single in-place owner task edit and reassignment form, using EOS
+ *          current assignee choices, exact revision CAS and fresh readback.
+ * CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -108,6 +111,7 @@ export default function ProjectTasksPanel({
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState({ ...EMPTY });
   const [creating, setCreating] = useState(false);
+  const [editor, setEditor] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const generation = useRef(0);
@@ -160,6 +164,7 @@ export default function ProjectTasksPanel({
     setOffset(0);
     setHasMore(false);
     setCreating(false);
+    setEditor(null);
     setDraft({ ...EMPTY });
     setError('');
     command.current = { fingerprint: '', key: '' };
@@ -199,6 +204,7 @@ export default function ProjectTasksPanel({
       command.current = { fingerprint: '', key: '' };
       setDraft({ ...EMPTY });
       setCreating(false);
+      setEditor(null);
     } catch (cause) {
       if (currentScope.current !== active) return;
       const status = cause?.response?.status;
@@ -226,6 +232,23 @@ export default function ProjectTasksPanel({
       api.post(root + '/tasks', body, {
         headers: { ...headers, 'Idempotency-Key': key },
       }),
+    );
+  };
+
+  const revise = event => {
+    event.preventDefault();
+    if (!editor || !editor.title.trim()) return;
+    const body = {
+      expected_revision: editor.revision,
+      title: editor.title.trim(),
+      description: editor.description.trim(),
+      due_date: editor.due_date || null,
+      assignee_principal_id: editor.assignee_principal_id || null,
+    };
+    void execute(JSON.stringify(['revise', editor.task_id, body]), key =>
+      api.patch(root + '/tasks/' + encodeURIComponent(editor.task_id), body, {
+        headers: { ...headers, 'Idempotency-Key': key },
+      }), editor.task_id,
     );
   };
 
@@ -363,6 +386,53 @@ export default function ProjectTasksPanel({
           <Plus size={14}/> Save work to EOS
         </button>
       </form>}
+      {editor && <form onSubmit={revise} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3"
+        aria-label="Edit project task">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-sm font-bold text-slate-900">Edit source task · revision {editor.revision}</h4>
+          <button type="button" disabled={busy} className="wp-button"
+            onClick={() => setEditor(null)}>Cancel edit</button>
+        </div>
+        <label className="block text-sm font-semibold text-slate-800">Work title
+          <input aria-label="Edit task title" required maxLength={180} value={editor.title}
+            onChange={event => setEditor(value => ({ ...value, title: event.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+        </label>
+        <label className="block text-sm font-semibold text-slate-800">Description
+          <textarea aria-label="Edit task description" rows={3} maxLength={5000} value={editor.description}
+            onChange={event => setEditor(value => ({ ...value, description: event.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm font-semibold text-slate-800">Due date
+            <input type="date" aria-label="Edit task due date" value={editor.due_date}
+              onChange={event => setEditor(value => ({ ...value, due_date: event.target.value }))}
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+          </label>
+          <label className="block text-sm font-semibold text-slate-800">Assigned contributor
+            <select aria-label="Reassign task" value={editor.assignee_principal_id}
+              onChange={event => setEditor(value => ({ ...value, assignee_principal_id: event.target.value }))}
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
+              <option value="">Unassigned</option>
+              {participants.map(person => <option key={person.principal_id} value={person.principal_id}>
+                {person.principal_id}
+              </option>)}
+              {editor.assignee_principal_id && !participants.some(person =>
+                person.principal_id === editor.assignee_principal_id) &&
+                <option value={editor.assignee_principal_id} disabled>
+                  Current assignee not on verified page — choose a current contributor
+                </option>}
+            </select>
+          </label>
+        </div>
+        <p className="text-xs text-slate-600">Parent, predecessors and milestone type remain immutable. Reassignment requires a current exact-project Contributor.</p>
+        <button type="submit" className="wp-button wp-button-primary"
+          disabled={busy || !editor.title.trim() || Boolean(
+            editor.assignee_principal_id && !participants.some(person =>
+              person.principal_id === editor.assignee_principal_id))}>
+          Save audited task revision
+        </button>
+      </form>}
       <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
         <table className="w-full min-w-[580px] border-collapse text-left text-sm">
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
@@ -393,6 +463,17 @@ export default function ProjectTasksPanel({
                       {next === 'DONE' ? <CheckCircle2 size={13}/> : next === 'BLOCKED' ? <CirclePause size={13}/> : null}
                       {label(next)}
                     </button>)}
+                  {TRANSITIONS[item.status].length > 0 &&
+                    <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      disabled={busy} onClick={() => {
+                        setCreating(false);
+                        setEditor({
+                          task_id: item.task_id, revision: item.revision,
+                          title: item.title, description: item.description,
+                          due_date: item.due_date || '',
+                          assignee_principal_id: item.assignee_principal_id || '',
+                        });
+                      }}>Edit work</button>}
                   {TRANSITIONS[item.status].length === 0 && <span className="text-xs text-slate-500">Terminal state</span>}
                 </div>
               </td></tr>)}
@@ -415,7 +496,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.0.0-SOURCE-BACKED-PROJECT-TASK-EXECUTION
+// VERSION: v1.1.0-REVISIONED-TASK-EDIT-REASSIGNMENT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
