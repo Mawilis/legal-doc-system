@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Enterprise Project Task Transaction Registry
-VERSION: v1.0.0-AUDITED-EXACT-PROJECT-EXECUTION
+VERSION: v1.1.0-REVISIONED-PROJECT-TASK-EDITING
 AUTHORITY: Python EOS canonical tenant/project task and milestone source truth.
 EPITOME: Source-backed tasks, nested subtasks, milestones, dependencies, due
          dates, assignees and audited lifecycle CAS with idempotent command replay.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router admits IAM, participant assignment,
          currentness, project existence and entitlement. EOS owns transactions.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-AUDITED-EXACT-PROJECT-EXECUTION establishes an immutable
+CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING adds guarded title, description,
+due date and assignee editing for active work, durable replay, CAS and
+immutable audit without rewriting dependency or completion history.
+CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING establishes an immutable
          project-work aggregate and exact-tenant Mongo transaction registry.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain text; no HTML, inferred approval,
@@ -31,7 +34,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.0.0-AUDITED-EXACT-PROJECT-EXECUTION"
+VERSION: Final[str] = "v1.1.0-REVISIONED-PROJECT-TASK-EDITING"
 SCHEMA: Final[str] = "wilsy.project.task.v1"
 COLLECTION: Final[str] = "wilsy_project_tasks"
 EVENT_COLLECTION: Final[str] = "wilsy_project_task_events"
@@ -279,6 +282,33 @@ class ProjectTask:
         except TypeError as error:
             raise ProjectTaskError("PROJECT_TASK_RECORD_INVALID") from error
 
+    def revise(
+        self, *, title: str, description: str, due_date: str | None,
+        assignee_principal_id: str | None, actor_principal_id: str,
+        expected_revision: int, occurred_at: datetime,
+    ) -> ProjectTask:
+        """Revise only non-terminal task attributes with exact CAS and source time."""
+        _id(actor_principal_id, "ACTOR")
+        if type(expected_revision) is not int or expected_revision != self.revision:
+            raise ProjectTaskConflict("PROJECT_TASK_REVISION_CONFLICT")
+        if self.status in {"DONE", "CANCELLED"}:
+            raise ProjectTaskConflict("PROJECT_TASK_TERMINAL_REVISION_DENIED")
+        _description(title, title=True)
+        _description(description)
+        _due(due_date)
+        if assignee_principal_id is not None:
+            _id(assignee_principal_id, "ASSIGNEE")
+        stamp = _timestamp(occurred_at)
+        if stamp < self.updated_at:
+            raise ProjectTaskError("PROJECT_TASK_TIME_ORDER_INVALID")
+        return replace(
+            self, title=title, description=description, due_date=due_date,
+            assignee_principal_id=assignee_principal_id, revision=self.revision + 1,
+            updated_by_principal_id=actor_principal_id, updated_at=stamp,
+            fingerprint="",
+        )
+
+
     def transition(
         self, *, status: str, actor_principal_id: str, expected_revision: int,
         occurred_at: datetime,
@@ -410,7 +440,7 @@ class ProjectTaskRegistry:
             or task.project_id != event.get("project_id")
             or task.fingerprint != event.get("result_fingerprint")
             or task.revision != event.get("revision")
-            or event.get("event_type") not in {"PROJECT_TASK_CREATED", "PROJECT_TASK_TRANSITIONED"}
+            or event.get("event_type") not in {"PROJECT_TASK_CREATED", "PROJECT_TASK_REVISED", "PROJECT_TASK_TRANSITIONED"}
         ):
             raise ProjectTaskError("PROJECT_TASK_EVENT_INVALID")
         return task
@@ -484,6 +514,60 @@ class ProjectTaskRegistry:
         )
         return task
 
+    def revise_or_replay(
+        self, *, tenant_id: str, project_id: str, task_id: str,
+        actor_principal_id: str, title: str, description: str,
+        due_date: str | None, assignee_principal_id: str | None,
+        expected_revision: int, idempotency_key: str,
+        occurred_at: datetime, session: Any,
+    ) -> ProjectTask:
+        """Persist authorized task edits under exact CAS, immutable audit and replay.
+
+        The caller must independently verify a new assignee's ACTIVE exact-project
+        CONTRIBUTOR participation and current principal/membership/role.
+        """
+        actor = _id(actor_principal_id, "ACTOR")
+        digest = _hash({
+            "command": "revise", "tenant_id": tenant_id,
+            "project_id": project_id, "task_id": task_id, "actor": actor,
+            "title": title, "description": description, "due_date": due_date,
+            "assignee_principal_id": assignee_principal_id,
+            "expected_revision": expected_revision,
+        })
+        prior = self._replay(
+            tenant_id=tenant_id, key=idempotency_key,
+            request_digest=digest, session=session,
+        )
+        if prior is not None:
+            return prior
+        source = self.get(
+            tenant_id=tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        revised = source.revise(
+            title=title, description=description, due_date=due_date,
+            assignee_principal_id=assignee_principal_id,
+            actor_principal_id=actor, expected_revision=expected_revision,
+            occurred_at=occurred_at,
+        )
+        try:
+            result = self._tasks.update_one({
+                "tenant_id": _id(tenant_id, "TENANT"),
+                "project_id": _id(project_id, "PROJECT"),
+                "task_id": _id(task_id, "TASK"),
+                "revision": source.revision, "fingerprint": source.fingerprint,
+            }, {"$set": revised.to_dict()}, session=session)
+        except PyMongoError as error:
+            raise ProjectTaskError("PROJECT_TASK_WRITE_UNAVAILABLE") from error
+        if result.matched_count != 1:
+            raise ProjectTaskConflict("PROJECT_TASK_REVISION_CONFLICT")
+        self._event(
+            task=revised, key=idempotency_key, request_digest=digest,
+            event_type="PROJECT_TASK_REVISED", session=session,
+        )
+        return revised
+
+
     def transition_or_replay(
         self, *, tenant_id: str, project_id: str, task_id: str,
         actor_principal_id: str, status: str, expected_revision: int,
@@ -555,7 +639,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_task_registry.py
-# VERSION: v1.0.0-AUDITED-EXACT-PROJECT-EXECUTION
+# VERSION: v1.1.0-REVISIONED-PROJECT-TASK-EDITING
 # AUTHORITY BOUNDARY: source lifecycle/CAS only; router owns independent IAM
 # TENANT POSTURE: exact tenant/project/assignee; no privileged fallback
 # FAIL-CLOSED POSTURE: invalid graph, dependency, replay or revision denies
