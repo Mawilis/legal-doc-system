@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES
+ * VERSION: v1.9.5-OPTIONAL-CODE-HELPER-COPY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES distinguishes verified zero candidates
+ * CHANGELOG: v1.9.5-OPTIONAL-CODE-HELPER-COPY reduces generated-code guidance to
+ *            a brief optional sentence and retains exact-tenant uniqueness;
+ *            project status, identity and assignment sources are unchanged.
+ *            v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES distinguishes verified zero candidates
  *            from an unavailable source and makes assignment prerequisites
  *            explicit instead of implying a populated selection directory.
  *            v1.9.3-DETAIL-ONLY-ACTIVATION-GATE scopes activation option disabling
@@ -823,7 +826,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   placeholder="Automatically assigned by EOS"
                   onChange={event => setEdit({ ...edit, code: event.target.value })}
                   className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/>
-                <small className="wp-code-hint">Optional advanced override: for example WOS-PLAT-001 (maximum 80 characters, unique within this tenant). EOS verifies uniqueness and stores changes as an audited revision. No code entry is required to activate the project.</small>
+                <small className="wp-code-hint">Optional: keep the generated code, or enter a unique code such as WOS-PLAT-001 (up to 80 characters). EOS validates and audits any change.</small>
               </label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
                 <ProjectDateField label="Start" value={edit?.start_date || ''} disabled={commandState === 'PENDING'}
                   onChange={value => setEdit(current => ({ ...current, start_date: value }))}/>
@@ -843,7 +846,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES
+// VERSION: v1.9.5-OPTIONAL-CODE-HELPER-COPY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
