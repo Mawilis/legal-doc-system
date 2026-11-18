@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.4.0-COLOUR-STICKY-REPLICA-CERT
+VERSION: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,12 +8,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT certifies coloured note create, author colour-CAS revision, provider-independent Mongo readback and immutable event fingerprints while preserving legacy colourless note replay.
-CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
-CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT certifies transactional note revisions,
+CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT verifies exact tenant+owner indexed pagination of 256 matching records across 511 synthetic projects, with foreign-tenant denial in an isolated real Mongo replica.
+CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT certifies coloured note create, author colour-CAS revision, provider-independent Mongo readback and immutable event fingerprints while preserving legacy colourless note replay.
+CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
+CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT certifies transactional note revisions,
          author denial, replay, foreign-tenant absence and immutable note events
          on disposable MongoDB; no real principal or project activation.
-CHANGELOG: v1.4.0-COLOUR-STICKY-REPLICA-CERT adds disposable real-replica certification for
+CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT adds disposable real-replica certification for
          511 source-valid tenant projects, complete indexed page traversal,
          immutable tenant isolation and summary counts.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
@@ -217,14 +218,18 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
             ("tenant_id", 1), ("archived_at", 1), ("status", 1),
             ("updated_at", -1), ("project_id", 1),
         ]
+        assert index["wilsy_project_tenant_owner_recent"]["key"] == [
+            ("tenant_id", 1), ("owner_principal_id", 1),
+            ("archived_at", 1), ("updated_at", -1), ("project_id", 1),
+        ]
         instant = datetime.now(timezone.utc)
         rows = [
             Project(
                 tenant_id="scale-tenant-a", project_id=f"prj-{number:048x}",
                 name=f"Verified project {number}", code=f"SCALE-{number:04}",
                 summary=None, status=ProjectStatus.PLANNED,
-                owner_principal_id=None, department_id=None,
-                start_date=None, target_date=None,
+                owner_principal_id="scale-principal" if number % 2 == 0 else "other-principal",
+                department_id=None, start_date=None, target_date=None,
                 source_type="internal", external_source_reference=None,
                 created_by_principal_id="scale-principal",
                 created_at=instant, updated_by_principal_id="scale-principal",
@@ -236,7 +241,7 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
             tenant_id="scale-tenant-b", project_id="prj-" + "f" * 48,
             name="Foreign tenant project", code="FOREIGN",
             summary=None, status=ProjectStatus.PLANNED,
-            owner_principal_id=None, department_id=None,
+            owner_principal_id="scale-principal", department_id=None,
             start_date=None, target_date=None,
             source_type="internal", external_source_reference=None,
             created_by_principal_id="foreign-principal",
@@ -257,8 +262,19 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
                     tenant_id="scale-tenant-a", session=tx,
                     limit=500, offset=500,
                 )
-                return counts, first, first_has_more, final, final_has_more
-            counts, first, first_more, last, last_more = session.with_transaction(
+                owner_pages = []
+                owner_offset = 0
+                while True:
+                    page, more = registry.list_page_for_tenant(
+                        tenant_id="scale-tenant-a", session=tx, limit=100,
+                        offset=owner_offset, owner_principal_id="scale-principal",
+                    )
+                    owner_pages.extend(page)
+                    owner_offset += len(page)
+                    if not more:
+                        break
+                return counts, first, first_has_more, final, final_has_more, owner_pages
+            counts, first, first_more, last, last_more, owned = session.with_transaction(
                 read,
                 read_concern=ReadConcern("snapshot"),
                 write_concern=WriteConcern("majority", j=True),
@@ -273,6 +289,11 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
         ids = {item.project_id for item in (*first, *last)}
         assert len(ids) == 511
         assert all(item.tenant_id == "scale-tenant-a" for item in (*first, *last))
+        assert len(owned) == 256
+        assert len({item.project_id for item in owned}) == 256
+        assert all(item.tenant_id == "scale-tenant-a"
+                   and item.owner_principal_id == "scale-principal" for item in owned)
+        assert "prj-" + "f" * 48 not in {item.project_id for item in owned}
     finally:
         client.drop_database(database.name)
         client.close()
@@ -427,7 +448,7 @@ def test_real_replica_project_notes_replay_author_cas_and_tenant_isolation() -> 
 
 
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.4.0-COLOUR-STICKY-REPLICA-CERT
+# VERSION: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
