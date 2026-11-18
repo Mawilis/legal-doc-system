@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.6.0-GOVERNED-ACCOUNTABILITY-CLIENT-CERT
+ * VERSION: v1.6.1-EXPLICIT-ASSIGNMENT-SOURCE-STATE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.6.0-GOVERNED-ACCOUNTABILITY-CLIENT-CERT covers source-backed owner/department selection,
+ * CHANGELOG: v1.6.1-EXPLICIT-ASSIGNMENT-SOURCE-STATE-CERT certifies user-visible current
+ *            directory counts and fail-closed empty selectors without
+ *            inventing principal, department or a completed assignment.
+ *            v1.6.0-GOVERNED-ACCOUNTABILITY-CLIENT-CERT covers source-backed owner/department selection,
  *            independently authorized department creation and audited CAS
  *            assignment with fresh list and detail readback.
  * v1.5.0-SOURCE-VERIFIED-AUTO-CODE-CERT verifies
@@ -247,6 +250,11 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="empty-authorities" />);
     fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Save audited assignment' })).toBeDisabled());
+    expect(screen.getByText('EOS verified 0 eligible project owners and 0 active tenant departments.')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Eligible project owner' })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'Tenant department' })).toBeDisabled();
+    expect(screen.getByText(/No eligible project owner has been verified/)).toBeInTheDocument();
+    expect(screen.getByText(/No active canonical tenant department is recorded/)).toBeInTheDocument();
     expect(api.patch).not.toHaveBeenCalled();
   });
 
