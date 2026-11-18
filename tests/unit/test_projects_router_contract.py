@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT
+VERSION: v1.20.0-EXACT-TENANT-PERSON-NAME-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,43 +9,43 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins exact owner/participant clean download IAM and
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins exact owner/participant clean download IAM and
   contributor-only provider scan reconciliation without a safety bypass.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT certifies
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT certifies
   owner-only attachment reads, current participant reads and contributor
   upload commands; no upload, download, scan or financial inherited grant.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT admits named reviewer
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT admits named reviewer
   inbox only through independent participant-contribute IAM; the route
   verifies each current exact-project record before revealing pending work.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT locks task approval
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT locks task approval
   request to owner update and named contributor decision to participant
   contribute; task approval read requires separately admitted context.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins exact-project
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins exact-project
   co-participant list to the current participant-only read operation.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins recipient-only
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins recipient-only
   notification list/read receipt routes under separate participant IAM and
   exact active project/entitlement checks; no global inbox bypass.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT locks principal-scoped
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT locks principal-scoped
   /my-projects discovery to explicit current participant IAM, no owner fallback.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins four task comment
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins four task comment
   read/create routes to owner or current participant IAM and record scope.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins owner-authorized task edit
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins owner-authorized task edit
   to project:update / project_update and retains participant scope denial.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins exact tenant candidate membership
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins exact tenant candidate membership
   choice reads to project owner detail IAM without granting participation.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins five new exact-tenant task operations
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT certifies independent participant IAM pairs
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT verifies explicit project owner-only participant
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins the four bounded notes endpoints to current
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT proves customer Projects authority is separately
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT asserts EOS rejects
+  v1.20.0-EXACT-TENANT-PERSON-NAME-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -60,6 +60,7 @@ CHANGELOG:
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
+CHANGELOG: v1.20.0-EXACT-TENANT-PERSON-NAME-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -94,7 +95,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT"
+VERSION = "v1.20.0-EXACT-TENANT-PERSON-NAME-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -767,8 +768,59 @@ def test_project_approval_evidence_refuses_duplicate_or_foreign_identity(
         assert denied.value.status_code == 422
 
 
+
+def test_project_person_names_are_tenant_bound_and_display_only() -> None:
+    """The selector's human text never becomes IAM or foreign-tenant identity."""
+    class Cursor:
+        def __init__(self, records):
+            self.records = records
+
+        def limit(self, count):
+            assert count == 2
+            return self.records[:count]
+
+    class Users:
+        def __init__(self, records):
+            self.records = records
+
+        def find(self, query, projection, *, session):
+            assert session == "source-session"
+            assert query["tenantId"] == "tenant-a"
+            assert projection["firstName"] == 1
+            assert projection["lastName"] == 1
+            allowed = {part["user_id"] for part in query["$or"] if "user_id" in part}
+            return Cursor([
+                record for record in self.records
+                if record["tenantId"] == query["tenantId"]
+                and record["user_id"] in allowed
+            ])
+
+    db = {"users": Users([
+        {"tenantId": "tenant-a", "user_id": "owner-a",
+         "firstName": "Verified", "lastName": "Owner"},
+        {"tenantId": "tenant-b", "user_id": "owner-a",
+         "firstName": "Foreign", "lastName": "Private"},
+    ])}
+    assert projects_router._exact_tenant_project_person_name(
+        db, "tenant-a", "owner-a", "source-session",
+    ) == {"first_name": "Verified", "last_name": "Owner"}
+    assert projects_router._exact_tenant_project_person_name(
+        db, "tenant-a", "owner-missing", "source-session",
+    ) == {"first_name": None, "last_name": None}
+    db["users"].records.append({
+        "tenantId": "tenant-a", "user_id": "owner-a",
+        "firstName": "Duplicate", "lastName": "Identity",
+    })
+    with pytest.raises(HTTPException) as denial:
+        projects_router._exact_tenant_project_person_name(
+            db, "tenant-a", "owner-a", "source-session",
+        )
+    assert denial.value.status_code == 503
+    assert denial.value.detail == "PROJECT_OWNER_PROFILE_COLLISION"
+
+
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT
+# VERSION: v1.20.0-EXACT-TENANT-PERSON-NAME-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
