@@ -64,6 +64,10 @@ class FakeCursor:
         assert name == "wilsy_project_tenant_active_recent"
         return self
 
+    def batch_size(self, size: int) -> FakeCursor:
+        assert size == 256
+        return self
+
     def skip(self, amount: int) -> FakeCursor:
         self.rows = self.rows[amount:]
         return self
