@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.0.0-TASK-APPROVAL-SOURCE-READBACK
+ * VERSION: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-TASK-APPROVAL-SOURCE-READBACK adds independent request,
+ * CHANGELOG: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET binds explicitly selected, source-verified scan-cleared task attachments to the immutable review packet and independently verified readback; prior rationale-only decisions remain distinct.
+ * CHANGELOG: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET adds independent request,
  *          reviewer decision, revision CAS, source readback and failure states.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Plain text; React escapes all supplied rationale;
@@ -24,6 +25,7 @@ import { Check, ClipboardCheck, RefreshCw, X } from 'lucide-react';
 import api from '../../services/api.js';
 
 const APPROVAL = /^par-[a-f0-9]{48}$/;
+const ATTACHMENT = /^pat-[a-f0-9]{48}$/;
 const SCHEMA = 'wilsy.project.approval.v1';
 const LIST = 'WILSY-PROJECT-APPROVAL-LIST/V1';
 const RESULT = 'WILSY-PROJECT-APPROVAL-RESULT/V1';
@@ -45,7 +47,40 @@ function verified(value, tenantId, projectId, taskId) {
       ? value.decided_at === null && value.decision_rationale === null
       : typeof value.decided_at === 'string'
         && typeof value.decision_rationale === 'string')
-    && /^[a-f0-9]{128}$/.test(value.fingerprint || ''),
+    && /^[a-f0-9]{128}$/.test(value.fingerprint || '')
+    && (value.evidence_attachment_ids === undefined
+      || (Array.isArray(value.evidence_attachment_ids)
+        && value.evidence_attachment_ids.length <= 10
+        && value.evidence_attachment_ids.every(id => ATTACHMENT.test(id))
+        && new Set(value.evidence_attachment_ids).size === value.evidence_attachment_ids.length)),
+  );
+}
+
+function sameEvidence(left, right) {
+  return Array.isArray(left) && Array.isArray(right)
+    && left.length === right.length
+    && left.every((id, index) => id === right[index]);
+}
+
+function verifiedAttachment(item, tenantId, projectId, taskId) {
+  return Boolean(
+    item?.schema === 'wilsy.project.attachment.v1'
+    && item.tenant_id === tenantId && item.project_id === projectId
+    && item.task_id === taskId && ATTACHMENT.test(item.attachment_id)
+    && typeof item.filename === 'string' && item.filename.length > 0
+    && item.filename.length <= 255
+    && ['application/pdf', 'image/png', 'image/jpeg'].includes(item.media_type)
+    && Number.isSafeInteger(item.size_bytes)
+    && item.size_bytes > 0 && item.size_bytes <= 20 * 1024 * 1024
+    && /^[a-f0-9]{128}$/.test(item.content_sha3_512 || '')
+    && item.state === 'QUARANTINED' && item.revision === 1
+    && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+    && (item.scan_clearance_status === 'QUARANTINED'
+      ? item.scan_clearance_fingerprint === null
+      : /^[a-f0-9]{128}$/.test(item.scan_clearance_fingerprint || ''))
+    && !Object.hasOwn(item, 'storage_receipt')
+    && !Object.hasOwn(item, 'presigned_url')
+    && !Object.hasOwn(item, 'download_url'),
   );
 }
 
@@ -60,6 +95,11 @@ export default function ProjectTaskApprovalsPanel({
   const [hasMore, setHasMore] = useState(false);
   const [reviewer, setReviewer] = useState('');
   const [rationale, setRationale] = useState('');
+  const [evidenceState, setEvidenceState] = useState('CLOSED');
+  const [evidenceItems, setEvidenceItems] = useState([]);
+  const [selectedEvidence, setSelectedEvidence] = useState([]);
+  const [evidenceOffset, setEvidenceOffset] = useState(0);
+  const [evidenceMore, setEvidenceMore] = useState(false);
   const [responses, setResponses] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -67,11 +107,49 @@ export default function ProjectTaskApprovalsPanel({
   const active = useRef(scope);
   active.current = scope;
   const generation = useRef(0);
+  const evidenceGeneration = useRef(0);
   const commands = useRef(new Map());
   const headers = tenantHeaders || {};
   const route = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
     + encodeURIComponent(taskId) + '/approvals';
+  const evidenceRoute = '/projects/' + encodeURIComponent(projectId)
+    + '/tasks/' + encodeURIComponent(taskId) + '/attachments';
+
+  const loadEvidence = async (requestedOffset = 0) => {
+    if (participantMode || busy) return;
+    const request = ++evidenceGeneration.current;
+    const requestScope = scope;
+    setEvidenceState('LOADING');
+    setSelectedEvidence([]);
+    try {
+      const { data } = await api.get(
+        evidenceRoute + '?limit=50&offset=' + requestedOffset, { headers },
+      );
+      if (active.current !== requestScope || request !== evidenceGeneration.current) return;
+      if (
+        data?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId || data.task_id !== taskId
+        || data.limit !== 50 || data.offset !== requestedOffset
+        || typeof data.has_more !== 'boolean'
+        || !Array.isArray(data.items) || data.items.length > 50
+        || (data.has_more && data.items.length === 0)
+        || data.next_offset !== (data.has_more ? requestedOffset + data.items.length : null)
+        || data.items.some(item => !verifiedAttachment(item, tenantId, projectId, taskId))
+        || new Set(data.items.map(item => item.attachment_id)).size !== data.items.length
+      ) throw new Error('PROJECT_APPROVAL_EVIDENCE_SOURCE_INVALID');
+      setEvidenceItems(data.items);
+      setEvidenceOffset(requestedOffset);
+      setEvidenceMore(data.has_more);
+      setEvidenceState('READY');
+    } catch {
+      if (active.current !== requestScope || request !== evidenceGeneration.current) return;
+      setEvidenceState('UNAVAILABLE');
+      setEvidenceItems([]);
+      setEvidenceMore(false);
+    }
+  };
 
   const load = useCallback(async (requestedOffset = 0) => {
     const request = ++generation.current;
@@ -112,9 +190,15 @@ export default function ProjectTaskApprovalsPanel({
     setResponses({});
     setReviewer('');
     setRationale('');
+    setEvidenceState('CLOSED');
+    setEvidenceItems([]);
+    setSelectedEvidence([]);
+    setEvidenceOffset(0);
+    setEvidenceMore(false);
+    evidenceGeneration.current += 1;
     commands.current.clear();
     void load(0);
-    return () => { generation.current += 1; };
+    return () => { generation.current += 1; evidenceGeneration.current += 1; };
   }, [scope, load]);
 
   const send = async (fingerprint, path, payload, approvalId = null) => {
@@ -142,6 +226,10 @@ export default function ProjectTaskApprovalsPanel({
         || data.task_id !== taskId
         || !verified(data.approval, tenantId, projectId, taskId)
         || (approvalId && data.approval.approval_id !== approvalId)
+        || (!approvalId && !sameEvidence(
+          data.approval.evidence_attachment_ids || [],
+          payload.evidence_attachment_ids || [],
+        ))
       ) throw new Error('PROJECT_APPROVAL_RESULT_INVALID');
       const confirmed = await load(0);
       if (!confirmed || active.current !== originalScope) return;
@@ -160,10 +248,15 @@ export default function ProjectTaskApprovalsPanel({
           verified(item, tenantId, projectId, taskId)
           && item.approval_id === data.approval.approval_id
           && item.revision >= data.approval.revision
+          && sameEvidence(item.evidence_attachment_ids || [],
+            data.approval.evidence_attachment_ids || [])
         )
       ) throw new Error('PROJECT_APPROVAL_READBACK_PENDING');
       commands.current.delete(fingerprint);
-      if (!approvalId) { setReviewer(''); setRationale(''); }
+      if (!approvalId) {
+        setReviewer(''); setRationale(''); setSelectedEvidence([]);
+        setEvidenceItems([]); setEvidenceState('CLOSED');
+      }
       setResponses({});
     } catch (failure) {
       if (active.current !== originalScope) return;
@@ -180,7 +273,16 @@ export default function ProjectTaskApprovalsPanel({
   const requestReview = event => {
     event.preventDefault();
     if (!reviewer || !rationale.trim() || reviewer === principalId) return;
+    const available = new Set(evidenceItems.filter(item =>
+      item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').map(item => item.attachment_id));
+    if (selectedEvidence.length && (evidenceState !== 'READY'
+      || selectedEvidence.length > 10
+      || selectedEvidence.some(id => !available.has(id)))) {
+      setError('Selected task evidence must be currently source-verified and scan-cleared.');
+      return;
+    }
     const payload = { reviewer_principal_id: reviewer, rationale: rationale.trim() };
+    if (selectedEvidence.length) payload.evidence_attachment_ids = [...selectedEvidence];
     void send(JSON.stringify(['REQUEST', projectId, taskId, payload]), route, payload);
   };
 
@@ -227,6 +329,15 @@ export default function ProjectTaskApprovalsPanel({
           <p className="break-all text-xs text-slate-600">
             Requested by {item.requester_principal_id} · Reviewer {item.reviewer_principal_id}
           </p>
+          {Array.isArray(item.evidence_attachment_ids) && item.evidence_attachment_ids.length > 0 &&
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700">
+              <strong className="text-slate-900">Bound task evidence · {item.evidence_attachment_ids.length} file(s)</strong>
+              <ul aria-label={'Approval evidence ' + item.approval_id} className="mt-1 space-y-1">
+                {item.evidence_attachment_ids.map(id =>
+                  <li key={id} className="break-all">{id}</li>)}
+              </ul>
+              <p>Inspect original files separately through authorized Task attachments. No download grant or signature is inferred.</p>
+            </div>}
           {item.decision_rationale && <p className="break-words text-slate-700">
             Decision rationale: {item.decision_rationale}</p>}
           {participantMode && item.status === 'PENDING' && item.reviewer_principal_id === principalId &&
@@ -273,6 +384,49 @@ export default function ProjectTaskApprovalsPanel({
             value={rationale} onChange={event => setRationale(event.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal text-slate-900"/>
         </label>
+        <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <legend className="text-sm font-semibold text-slate-900">Task evidence</legend>
+          <p className="text-xs text-slate-700">
+            Optional: bind up to ten independently scan-cleared task attachments to this review.
+            Without selected files, this remains a rationale-only business decision.
+          </p>
+          <button type="button" className="wp-button mt-2" disabled={busy}
+            onClick={() => void loadEvidence(0)}>Choose verified task evidence</button>
+          {evidenceState === 'LOADING' && <p role="status" className="mt-2 text-xs text-slate-700">
+            Verifying source-backed task attachments…
+          </p>}
+          {evidenceState === 'UNAVAILABLE' && <p role="alert" className="mt-2 text-xs text-rose-700">
+            EOS attachment evidence unavailable. No file can be linked without verification.
+          </p>}
+          {evidenceState === 'READY' && <>
+            <div className="mt-2 space-y-2">
+              {evidenceItems.filter(item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED')
+                .map(item => <label key={item.attachment_id}
+                  className="flex items-start gap-2 break-words text-sm text-slate-900">
+                  <input type="checkbox" className="mt-1"
+                    checked={selectedEvidence.includes(item.attachment_id)}
+                    disabled={busy || (selectedEvidence.length >= 10
+                      && !selectedEvidence.includes(item.attachment_id))}
+                    onChange={event => setSelectedEvidence(previous =>
+                      event.target.checked ? [...previous, item.attachment_id]
+                        : previous.filter(id => id !== item.attachment_id))}
+                  />
+                  <span>{item.filename} · SHA3-512 {item.content_sha3_512}</span>
+                </label>)}
+            </div>
+            {!evidenceItems.some(item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED') &&
+              <p className="mt-2 text-xs text-slate-700">No scan-cleared attachments on this page.</p>}
+            {(evidenceOffset > 0 || evidenceMore) &&
+              <nav aria-label="Review evidence pages" className="mt-2 flex gap-2">
+                <button type="button" className="wp-button"
+                  disabled={busy || evidenceOffset === 0}
+                  onClick={() => void loadEvidence(Math.max(0, evidenceOffset - 50))}>Previous files</button>
+                <button type="button" className="wp-button"
+                  disabled={busy || !evidenceMore}
+                  onClick={() => void loadEvidence(evidenceOffset + 50)}>Next files</button>
+              </nav>}
+          </>}
+        </fieldset>
         <button type="submit" className="wp-button wp-button-primary"
           disabled={busy || !reviewer || !rationale.trim() || !options.some(person => person.principal_id === reviewer)}>
           Request EOS review
@@ -287,7 +441,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.0.0-TASK-APPROVAL-SOURCE-READBACK
+// VERSION: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies
