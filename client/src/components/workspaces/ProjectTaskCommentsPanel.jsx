@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.0.0-TASK-COMMENT-MENTION-EXECUTION
+ * VERSION: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-TASK-COMMENT-MENTION-EXECUTION introduces task-threaded
+ * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
+ *          separately authorized owner or participant task-thread routes;
+ *          presentation never upgrades a participant to owner IAM.
+ * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -43,7 +46,7 @@ function checkComment(value, tenantId, projectId, taskId) {
 /** @description Source-owned comments with explicit bounded mentions. */
 export default function ProjectTaskCommentsPanel({
   tenantId, projectId, principalId, taskId, participants,
-  tenantHeaders, onClose,
+  tenantHeaders, onClose, participantMode = false,
 }) {
   const [items, setItems] = useState([]);
   const [body, setBody] = useState('');
@@ -58,7 +61,9 @@ export default function ProjectTaskCommentsPanel({
   currentScope.current = scope;
   const generation = useRef(0);
   const command = useRef({ fingerprint: '', key: '' });
-  const route = '/projects/' + encodeURIComponent(projectId) + '/tasks/' + encodeURIComponent(taskId) + '/comments';
+  const route = '/projects/' + encodeURIComponent(projectId)
+    + (participantMode ? '/my-project/tasks/' : '/tasks/')
+    + encodeURIComponent(taskId) + '/comments';
   const headers = tenantHeaders || {};
 
   const load = useCallback(async (nextOffset = 0) => {
@@ -228,7 +233,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.0.0-TASK-COMMENT-MENTION-EXECUTION
+// VERSION: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
