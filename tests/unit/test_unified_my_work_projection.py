@@ -1,3 +1,20 @@
+"""TITLE: WILSY OS Unified My Work Source Projection Certificate
+VERSION: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT
+AUTHORITY: Synthetic read-only EOS source composition and denial tests.
+EPITOME: Verify independently admitted Legal, Operations, Intelligence, CRM,
+         HR and Projects work shapes, cross-tenant rejection and blocked work.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_unified_my_work_projection.py
+COLLABORATION / OWNERSHIP: unified_my_work_projection composes only sources
+         already admitted by the canonical authenticated My Work router.
+CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT adds Projects
+         delegated/blocked task tests and seals the complete existing artifact.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only, no real users.
+TENANT BOUNDARY: All source envelopes and rows require an exact tenant.
+AUTHORITY BOUNDARY: Source-specific commands, IAM and approval stay separate.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -200,3 +217,11 @@ def test_rejects_malformed_source_item_instead_of_silently_dropping_it():
             now=NOW,
             operations={"tenant_id": TENANT, "items": [{"title": "No source id", "status": "OPEN"}]},
         )
+
+# ARTIFACT: test_unified_my_work_projection.py
+# VERSION: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT
+# AUTHORITY BOUNDARY: pure projection checks; no IAM or source mutation
+# TENANT POSTURE: exact source envelope and row validation
+# FAIL-CLOSED POSTURE: malformed, forged or foreign project work denies
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
