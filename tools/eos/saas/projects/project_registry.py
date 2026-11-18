@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.2.0-TENANT-STATUS-PAGE-INDEX
+VERSION: v1.3.0-VERIFIED-NEXT-PAGE
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,10 +9,12 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.2.0-TENANT-STATUS-PAGE-INDEX — Adds a compound tenant/archive/status/sort index for
+  v1.3.0-VERIFIED-NEXT-PAGE — Adds bounded look-ahead paging with verified has-more
+  metadata while preserving the existing page-only registry API.
+  v1.3.0-VERIFIED-NEXT-PAGE — Adds a compound tenant/archive/status/sort index for
   bounded project-list status filtering at enterprise project volumes.
   This is index DDL only: no tenant, role, grant or record is changed.
-  v1.2.0-TENANT-STATUS-PAGE-INDEX — Streams validated exact-tenant
+  v1.3.0-VERIFIED-NEXT-PAGE — Streams validated exact-tenant
   project summaries without the former 500-record ceiling, returns bounded
   list pages without rejecting a valid next page, and adds a tenant-oriented
   active-recent listing index. No IAM or project data changes.
@@ -57,7 +59,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.2.0-TENANT-STATUS-PAGE-INDEX"
+VERSION: Final[str] = "v1.3.0-VERIFIED-NEXT-PAGE"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -203,7 +205,17 @@ class ProjectRegistry:
     def list_for_tenant(self, *, tenant_id: str, session: Any, limit: int = 200,
                         offset: int = 0, status: ProjectStatus | str | None = None,
                         include_archived: bool = False) -> tuple[Project, ...]:
-        """List a bounded deterministic page for one tenant, excluding archives by default."""
+        """Return a backwards-compatible bounded tenant page of project records."""
+        page, _has_more = self.list_page_for_tenant(
+            tenant_id=tenant_id, session=session, limit=limit, offset=offset,
+            status=status, include_archived=include_archived,
+        )
+        return page
+
+    def list_page_for_tenant(self, *, tenant_id: str, session: Any, limit: int = 200,
+                             offset: int = 0, status: ProjectStatus | str | None = None,
+                             include_archived: bool = False) -> tuple[tuple[Project, ...], bool]:
+        """Return exact-tenant page and verified next-page existence in one snapshot."""
         tenant = _exact("tenant_id", tenant_id)
         if type(limit) is not int or not 1 <= limit <= 500 or type(offset) is not int or offset < 0:
             raise ProjectRegistryError("PROJECT_PAGE_INVALID")
@@ -219,10 +231,11 @@ class ProjectRegistry:
         try:
             rows = list(self._projects.find(query, session=_session(session))
                         .sort([("updated_at", DESCENDING), ("project_id", ASCENDING)])
-                        .skip(offset).limit(limit))
+                        .skip(offset).limit(limit + 1))
         except PyMongoError as error:
             raise ProjectRegistryError("PROJECT_LIST_UNAVAILABLE") from error
-        return tuple(_hydrate(row) for row in rows)
+        validated = tuple(_hydrate(row) for row in rows)
+        return validated[:limit], len(validated) > limit
 
     def summary_for_tenant(self, *, tenant_id: str, session: Any) -> dict[str, int]:
         """Derive status counts from fully validated, exact-tenant active records."""
@@ -466,7 +479,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.2.0-TENANT-STATUS-PAGE-INDEX
+# VERSION: v1.3.0-VERIFIED-NEXT-PAGE
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
