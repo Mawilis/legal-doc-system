@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Quarantined Project Attachment S3 Write Adapter
-VERSION: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION
+VERSION: v1.2.0-PINNED-SCANNED-VERSION-READBACK
 AUTHORITY: Python EOS server-owned binary storage transport, not evidence release.
 EPITOME: Bind bounded exact-task bytes to an opaque immutable versioned S3
          object with required KMS, SHA3-512 and provider HEAD readback.
@@ -8,10 +8,13 @@ COLLABORATION / OWNERSHIP: Projects multipart router admits IAM and validates
          exact task; ProjectAttachmentRegistry owns canonical metadata/audit.
          AWS S3 is an external byte capability, never the Projects truth source.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION verifies
+CHANGELOG: v1.2.0-PINNED-SCANNED-VERSION-READBACK permits bounded
+         server-only exact-version GET after a fresh independent clean scan
+         verification and complete byte SHA3-512 readback; no presigned URLs.
+CHANGELOG: v1.2.0-PINNED-SCANNED-VERSION-READBACK verifies
          exact immutable S3 object/version/sha3 and GuardDuty clean tag only
          under a pinned, deployment-governed bucket security policy.
-CHANGELOG: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION stores S3 bytes at
+CHANGELOG: v1.2.0-PINNED-SCANNED-VERSION-READBACK stores S3 bytes at
          opaque task-command coordinates with KMS, versioning, checksum and
          exact-version HEAD reconciliation; scanner and download are excluded.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -41,7 +44,7 @@ from tools.eos.saas.projects.project_attachment_registry import (
     attachment_id_for_command,
 )
 
-VERSION: Final[str] = "v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION"
+VERSION: Final[str] = "v1.2.0-PINNED-SCANNED-VERSION-READBACK"
 CHUNK_BYTES: Final[int] = 1024 * 1024
 
 
@@ -269,13 +272,72 @@ def verify_guardduty_clean_attachment(
         ) from error
 
 
+def read_verified_scanned_attachment(
+    attachment: ProjectAttachment,
+) -> bytes:
+    """Read bounded exact object bytes only after a fresh trusted clean scan.
+
+    Nothing is streamed to an HTTP recipient until full content digest,
+    observed version and server-side KMS metadata are independently checked.
+    Caller must separately enforce tenant/participant/task/clearance records
+    both before and after this provider operation.
+    """
+    verify_guardduty_clean_attachment(attachment)
+    bucket, region, kms = _require_config()
+    opaque = sha3_512("\0".join((
+        attachment.tenant_id, attachment.project_id,
+        attachment.task_id, attachment.attachment_id,
+    )).encode("utf-8")).hexdigest()
+    key = "quarantine/v1/" + opaque[:2] + "/" + opaque[2:5] + "/" + opaque
+    client = boto3.client("s3", region_name=region)
+    try:
+        observation = client.head_object(Bucket=bucket, Key=key)
+        version = observation.get("VersionId")
+        if not isinstance(version, str) or not version or version == "null":
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_VERSION_UNVERIFIED")
+        receipt = sha3_512(("\0".join((
+            "aws-s3", region, bucket, key, version,
+        ))).encode("utf-8")).hexdigest()
+        if not compare_digest(receipt, attachment.storage_receipt):
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_VERSION_CHANGED")
+        response = client.get_object(Bucket=bucket, Key=key, VersionId=version)
+        try:
+            if (
+                response.get("VersionId") != version
+                or response.get("ContentLength") != attachment.size_bytes
+                or response.get("ServerSideEncryption") != "aws:kms"
+                or response.get("SSEKMSKeyId") != kms
+            ):
+                raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_PROVIDER_MISMATCH")
+            stream = response.get("Body")
+            if stream is None:
+                raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_BYTES_UNAVAILABLE")
+            data = stream.read(MAX_ATTACHMENT_BYTES + 1)
+            if (
+                not isinstance(data, bytes)
+                or len(data) != attachment.size_bytes
+                or not compare_digest(
+                    sha3_512(data).hexdigest(), attachment.content_sha3_512,
+                )
+            ):
+                raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_BYTES_MISMATCH")
+            return data
+        finally:
+            body = response.get("Body")
+            if body is not None:
+                body.close()
+    except (BotoCoreError, ClientError, OSError) as error:
+        raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_BYTES_UNAVAILABLE") from error
+
+
 __all__ = [
     "VERSION", "CHUNK_BYTES", "ProjectAttachmentStorageError",
     "store_quarantined_attachment", "verify_guardduty_clean_attachment",
+    "read_verified_scanned_attachment",
 ]
 
 # ARTIFACT: project_attachment_storage.py
-# VERSION: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION
+# VERSION: v1.2.0-PINNED-SCANNED-VERSION-READBACK
 # AUTHORITY BOUNDARY: external immutable encrypted bytes, not scan/release
 # TENANT POSTURE: opaque digest-derived coordinates, no raw identifiers in S3
 # FAIL-CLOSED POSTURE: missing KMS/version, malformed signature/digest denies
