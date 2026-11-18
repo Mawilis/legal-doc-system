@@ -459,10 +459,16 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
           <select aria-label="Eligible project owner" value={owner} disabled={options.principals.length === 0} onChange={event => setOwner(event.target.value)}
             className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
             <option value="">Select a verified principal</option>
-            {options.principals.map(value => <option key={value.principal_id} value={value.principal_id}>
-              {[value.first_name, value.last_name].filter(Boolean).join(' ') || 'Name not recorded — verified principal'}
-              {' · '} {value.principal_id}
-            </option>)}
+            {options.principals.map(value => {
+              const name = [value.first_name, value.last_name].filter(Boolean).join(' ');
+              const duplicate = name && options.principals.some(other =>
+                other.principal_id !== value.principal_id
+                && [other.first_name, other.last_name].filter(Boolean).join(' ') === name);
+              return <option key={value.principal_id} value={value.principal_id}>
+                {name || 'Verified principal (name not recorded)'}
+                {(duplicate || !name) ? ' · ' + value.principal_id.slice(-6) : ''}
+              </option>;
+            })}
           </select>
         </label>
         <label className="block text-xs font-semibold text-slate-700">Tenant department
