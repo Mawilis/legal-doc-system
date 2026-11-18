@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.6.0-EXACT-TENANT-PROJECT-NOTES
+VERSION: v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,13 +14,15 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.6.0-EXACT-TENANT-PROJECT-NOTES introduces authenticated, project-existence-verified
+  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY moves note-domain validation inside existing
+  authenticated transaction exception mapping; malformed text yields safe 422.
+  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.6.0-EXACT-TENANT-PROJECT-NOTES projects verified next-page availability and exact offset
+  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.6.0-EXACT-TENANT-PROJECT-NOTES refuses a PLANNED-to-ACTIVE
+  v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -153,7 +155,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.6.0-EXACT-TENANT-PROJECT-NOTES"
+VERSION: Final[str] = "v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1057,14 +1059,13 @@ def create_project_note(
     note_id = note_id_for_command(
         context.tenant_id, project_id, context.identity.identity_id, key,
     )
-    note = ProjectNote(
-        tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
-        author_principal_id=context.identity.identity_id,
-        body=payload.body, created_at=now, updated_at=now,
-    )
-
     def create(registry: ProjectRegistry, session: Any) -> dict[str, object]:
         notes = _project_note_store(registry, context.tenant_id, project_id, session)
+        note = ProjectNote(
+            tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
+            author_principal_id=context.identity.identity_id,
+            body=payload.body, created_at=now, updated_at=now,
+        )
         committed = notes.create_or_replay(
             note=note, actor_principal_id=context.identity.identity_id,
             idempotency_key=key, occurred_at=now, session=session,
@@ -1313,7 +1314,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.6.0-EXACT-TENANT-PROJECT-NOTES
+# VERSION: v1.6.1-NOTE-VALIDATION-TRANSACTION-BOUNDARY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
