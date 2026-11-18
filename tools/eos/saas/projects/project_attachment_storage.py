@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Quarantined Project Attachment S3 Write Adapter
-VERSION: v1.0.0-ENCRYPTED-IMMUTABLE-QUARANTINE-STORE
+VERSION: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION
 AUTHORITY: Python EOS server-owned binary storage transport, not evidence release.
 EPITOME: Bind bounded exact-task bytes to an opaque immutable versioned S3
          object with required KMS, SHA3-512 and provider HEAD readback.
@@ -8,7 +8,10 @@ COLLABORATION / OWNERSHIP: Projects multipart router admits IAM and validates
          exact task; ProjectAttachmentRegistry owns canonical metadata/audit.
          AWS S3 is an external byte capability, never the Projects truth source.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-ENCRYPTED-IMMUTABLE-QUARANTINE-STORE stores S3 bytes at
+CHANGELOG: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION verifies
+         exact immutable S3 object/version/sha3 and GuardDuty clean tag only
+         under a pinned, deployment-governed bucket security policy.
+CHANGELOG: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION stores S3 bytes at
          opaque task-command coordinates with KMS, versioning, checksum and
          exact-version HEAD reconciliation; scanner and download are excluded.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -26,6 +29,7 @@ from __future__ import annotations
 
 from hashlib import sha3_512
 from hmac import compare_digest
+import json
 import os
 from typing import BinaryIO, Final
 
@@ -33,11 +37,11 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
 from tools.eos.saas.projects.project_attachment_registry import (
-    MAX_ATTACHMENT_BYTES, ProjectAttachmentError,
+    MAX_ATTACHMENT_BYTES, ProjectAttachment, ProjectAttachmentError,
     attachment_id_for_command,
 )
 
-VERSION: Final[str] = "v1.0.0-ENCRYPTED-IMMUTABLE-QUARANTINE-STORE"
+VERSION: Final[str] = "v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION"
 CHUNK_BYTES: Final[int] = 1024 * 1024
 
 
@@ -172,13 +176,106 @@ def store_quarantined_attachment(
         raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_PROVIDER_UNAVAILABLE") from error
 
 
+def verify_guardduty_clean_attachment(
+    attachment: ProjectAttachment,
+) -> tuple[str, str]:
+    """Verify a trusted GuardDuty clean tag for the original immutable object.
+
+    Trust additionally requires a pinned, externally reviewed S3 bucket policy
+    which reserves scan-tag writing to the GuardDuty service role. Environment
+    configuration is not itself a scan verdict or scanner credential; missing
+    policy pin, identity mismatch or unknown tag denies clearance.
+    Returns the policy digest and canonical scan observation digest only.
+    """
+    if attachment.state != "QUARANTINED":
+        raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_STATE_INVALID")
+    bucket, region, kms = _require_config()
+    expected_policy = os.getenv(
+        "WILSY_PROJECT_ATTACHMENTS_BUCKET_POLICY_SHA3_512", "",
+    ).strip().lower()
+    if (
+        len(expected_policy) != 128
+        or any(char not in "0123456789abcdef" for char in expected_policy)
+    ):
+        raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_SCAN_POLICY_UNAVAILABLE")
+    opaque = sha3_512("\0".join((
+        attachment.tenant_id, attachment.project_id,
+        attachment.task_id, attachment.attachment_id,
+    )).encode("utf-8")).hexdigest()
+    key = "quarantine/v1/" + opaque[:2] + "/" + opaque[2:5] + "/" + opaque
+    client = boto3.client("s3", region_name=region)
+    try:
+        raw_policy = client.get_bucket_policy(Bucket=bucket).get("Policy")
+        if not isinstance(raw_policy, str):
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_SCAN_POLICY_UNAVAILABLE")
+        try:
+            parsed = json.loads(raw_policy)
+        except (ValueError, TypeError) as error:
+            raise ProjectAttachmentStorageError(
+                "PROJECT_ATTACHMENT_SCAN_POLICY_INVALID",
+            ) from error
+        current_policy = sha3_512(json.dumps(
+            parsed, sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")).hexdigest()
+        if not compare_digest(current_policy, expected_policy):
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_SCAN_POLICY_DRIFT")
+        if client.get_bucket_versioning(Bucket=bucket).get("Status") != "Enabled":
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_VERSIONING_REQUIRED")
+        observed = client.head_object(Bucket=bucket, Key=key)
+        version = observed.get("VersionId")
+        if not isinstance(version, str) or not version or version == "null":
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_VERSION_UNVERIFIED")
+        receipt = sha3_512(("\0".join((
+            "aws-s3", region, bucket, key, version,
+        ))).encode("utf-8")).hexdigest()
+        if not compare_digest(receipt, attachment.storage_receipt):
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_VERSION_CHANGED")
+        exact = client.head_object(Bucket=bucket, Key=key, VersionId=version)
+        metadata = exact.get("Metadata") or {}
+        if (
+            exact.get("VersionId") != version
+            or exact.get("ContentLength") != attachment.size_bytes
+            or metadata.get("sha3-512") != attachment.content_sha3_512
+            or metadata.get("bytes") != str(attachment.size_bytes)
+            or metadata.get("manifest") != attachment.attachment_id
+            or exact.get("ServerSideEncryption") != "aws:kms"
+            or exact.get("SSEKMSKeyId") != kms
+        ):
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_PROVIDER_MISMATCH")
+        tag_response = client.get_object_tagging(
+            Bucket=bucket, Key=key, VersionId=version,
+        )
+        tags = tag_response.get("TagSet")
+        if not isinstance(tags, list) or any(
+            not isinstance(tag, dict) for tag in tags
+        ):
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_SCAN_UNVERIFIED")
+        scan = [
+            tag.get("Value") for tag in tags
+            if tag.get("Key") == "GuardDutyMalwareScanStatus"
+        ]
+        if len(scan) != 1 or scan[0] != "NO_THREATS_FOUND":
+            raise ProjectAttachmentStorageError("PROJECT_ATTACHMENT_SCAN_UNVERIFIED")
+        scan_evidence_digest = sha3_512(("\0".join((
+            attachment.tenant_id, attachment.project_id,
+            attachment.task_id, attachment.attachment_id,
+            attachment.fingerprint, attachment.storage_receipt,
+            current_policy, version, "NO_THREATS_FOUND",
+        ))).encode("utf-8")).hexdigest()
+        return current_policy, scan_evidence_digest
+    except (BotoCoreError, ClientError) as error:
+        raise ProjectAttachmentStorageError(
+            "PROJECT_ATTACHMENT_SCAN_PROVIDER_UNAVAILABLE",
+        ) from error
+
+
 __all__ = [
     "VERSION", "CHUNK_BYTES", "ProjectAttachmentStorageError",
-    "store_quarantined_attachment",
+    "store_quarantined_attachment", "verify_guardduty_clean_attachment",
 ]
 
 # ARTIFACT: project_attachment_storage.py
-# VERSION: v1.0.0-ENCRYPTED-IMMUTABLE-QUARANTINE-STORE
+# VERSION: v1.1.0-PINNED-GUARDDUTY-SCAN-RECONCILIATION
 # AUTHORITY BOUNDARY: external immutable encrypted bytes, not scan/release
 # TENANT POSTURE: opaque digest-derived coordinates, no raw identifiers in S3
 # FAIL-CLOSED POSTURE: missing KMS/version, malformed signature/digest denies
