@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Accountability Real Replica-Set Certificate
-VERSION: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT
+VERSION: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT
 AUTHORITY: Synthetic integration evidence for Python EOS project persistence.
 EPITOME: Exercise principal membership/role currentness, tenant department
          immutable command evidence, project CAS, readback and revocation
@@ -8,13 +8,14 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Projects router, canonical tenant IAM repositories,
          ProjectRegistry and disposable CI replica set only.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT verifies exact tenant+owner indexed pagination of 256 matching records across 511 synthetic projects, with foreign-tenant denial in an isolated real Mongo replica.
-CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT certifies coloured note create, author colour-CAS revision, provider-independent Mongo readback and immutable event fingerprints while preserving legacy colourless note replay.
-CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
-CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT certifies transactional note revisions,
+CHANGELOG: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT certifies source-valid indexed summary execution plans and bounded repeated warm exact-tenant transaction reads on the disposable Mongo replica; this is not an authenticated Atlas latency claim.
+CHANGELOG: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT verifies exact tenant+owner indexed pagination of 256 matching records across 511 synthetic projects, with foreign-tenant denial in an isolated real Mongo replica.
+CHANGELOG: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT certifies coloured note create, author colour-CAS revision, provider-independent Mongo readback and immutable event fingerprints while preserving legacy colourless note replay.
+CHANGELOG: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT verifies tenant-bound first/last name reads from a synthetic durable auth user while project owner commands still use exact principal identity; foreign identity names cannot leak.
+CHANGELOG: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT certifies transactional note revisions,
          author denial, replay, foreign-tenant absence and immutable note events
          on disposable MongoDB; no real principal or project activation.
-CHANGELOG: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT adds disposable real-replica certification for
+CHANGELOG: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT adds disposable real-replica certification for
          511 source-valid tenant projects, complete indexed page traversal,
          immutable tenant isolation and summary counts.
          v1.0.0-PROJECT-ACCOUNTABILITY-REPLICA-CERT establishes exact-tenant
@@ -31,6 +32,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import os
+from time import perf_counter
 from types import SimpleNamespace
 from typing import Any
 
@@ -284,6 +286,29 @@ def test_real_replica_511_project_summary_and_verified_pages() -> None:
             "total": 511, "active": 0, "planned": 511,
             "on_hold": 0, "done": 0, "cancelled": 0,
         }
+        # Inspect actual MongoDB index execution rather than assuming a
+        # compound index declaration guarantees the chosen query plan.
+        plan = collection.find({
+            "tenant_id": "scale-tenant-a", "archived_at": None,
+        }).hint("wilsy_project_tenant_active_recent").explain()
+        assert "wilsy_project_tenant_active_recent" in str(plan["queryPlanner"]["winningPlan"])
+        warm_ms: list[float] = []
+        with client.start_session() as session:
+            for _ in range(5):
+                started = perf_counter()
+                observed = session.with_transaction(
+                    lambda tx: registry.summary_for_tenant(
+                        tenant_id="scale-tenant-a", session=tx,
+                    ),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+                assert observed == counts
+                warm_ms.append((perf_counter() - started) * 1000)
+        p95_ms = sorted(warm_ms)[-1]
+        print(f"PROJECTS_REPLICA_SUMMARY_WARM p95_upper_bound_ms={p95_ms:.2f} samples=5")
+        assert p95_ms < 2500, "Disposable local 511-project summary latency regression"
         assert len(first) == 500 and first_more is True
         assert len(last) == 11 and last_more is False
         ids = {item.project_id for item in (*first, *last)}
@@ -448,7 +473,7 @@ def test_real_replica_project_notes_replay_author_cas_and_tenant_isolation() -> 
 
 
 # ARTIFACT: test_project_accountability_real_mongo.py
-# VERSION: v1.5.0-INDEXED-OWNER-PROJECT-REPLICA-CERT
+# VERSION: v1.6.0-SUMMARY-INDEX-WARM-LATENCY-CERT
 # AUTHORITY BOUNDARY: Synthetic transaction and source-currentness evidence only.
 # TENANT POSTURE: Disposable exact-tenant records; no outside persistence.
 # FAIL-CLOSED POSTURE: Revoked owner and foreign-tenant reads deny.
