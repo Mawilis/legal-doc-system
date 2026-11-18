@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.2.0-TENANT-STATUS-INDEX-CERT
+VERSION: v1.3.0-VERIFIED-PROJECT-PAGES-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,9 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.2.0-TENANT-STATUS-INDEX-CERT certifies tenant/status/recent project index order and
+  v1.3.0-VERIFIED-PROJECT-PAGES-CERT certifies first/final page has_more truth for 511
+  exact-tenant projects, zero overlap, and foreign-tenant exclusion.
+  v1.3.0-VERIFIED-PROJECT-PAGES-CERT certifies tenant/status/recent project index order and
   keeps uniqueness requirements for canonical project and event identities.
-v1.2.0-TENANT-STATUS-INDEX-CERT — Verifies exact compound
+v1.3.0-VERIFIED-PROJECT-PAGES-CERT — Verifies exact compound
   active-list index keys, preserves project/event uniqueness guards and
   confirms the listing index is intentionally nonunique.
 v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
@@ -250,6 +252,16 @@ def test_large_tenant_summary_and_bounded_pages_over_500(registry) -> None:
     first = store.list_for_tenant(tenant_id="tenant-a", session=session, limit=500)
     last = store.list_for_tenant(tenant_id="tenant-a", session=session, limit=500, offset=500)
     assert len(first) == 500 and len(last) == 11
+    first_page, first_more = store.list_page_for_tenant(
+        tenant_id="tenant-a", session=session, limit=500,
+    )
+    last_page, last_more = store.list_page_for_tenant(
+        tenant_id="tenant-a", session=session, limit=500, offset=500,
+    )
+    assert first_more is True and last_more is False
+    assert [value.project_id for value in first_page] == [value.project_id for value in first]
+    assert [value.project_id for value in last_page] == [value.project_id for value in last]
+
     assert {p.project_id for p in first}.isdisjoint({p.project_id for p in last})
     assert all(p.tenant_id == "tenant-a" for p in (*first, *last))
 
@@ -321,7 +333,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.2.0-TENANT-STATUS-INDEX-CERT
+# VERSION: v1.3.0-VERIFIED-PROJECT-PAGES-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
