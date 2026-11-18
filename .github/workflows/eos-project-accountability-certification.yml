@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT
+# VERSION: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,25 +7,28 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT compiles and tests source-owned
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT tracks and runs
+#            the mounted task and participant list/editor surfaces and
+#            their desktop/mobile browser checks in the existing certificate.
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT compiles and tests source-owned
 #            task, subtask, milestone, dependency, assignee and lifecycle
 #            contracts with exact tenant disposable Mongo persistence.
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT executes the central roles,
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT executes the central roles,
 #            permission namespace, tenant operation and authorization tests
 #            with the Projects-specific and disposable Mongo contracts.
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT adds indexed exact-tenant project participant
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT adds indexed exact-tenant project participant
 #            domain and disposable MongoDB grant/revoke/replay certification,
 #            retaining browser, Python, source and frontend release gates.
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT honors the root manifest's
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT honors the root manifest's
 #            existing legacy React peer-lock agreement for test tooling,
 #            without relaxing the client's locked dependency resolution.
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT adds isolated rendered Chromium
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT adds isolated rendered Chromium
 #            desktop/mobile geometry and selected-note surface verification;
 #            mocked API replies are presentation tests, not authenticated EOS.
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT extends exact-head CI to the
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT adds a real
+# CHANGELOG: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -73,6 +76,8 @@ on:
       - tests/e2e/projects-layout.browser.spec.js
       - client/src/components/workspaces/ProjectsWorkspace.jsx
       - client/src/components/workspaces/ProjectNotesPanel.jsx
+      - client/src/components/workspaces/ProjectTasksPanel.jsx
+      - client/src/components/workspaces/ProjectParticipantsPanel.jsx
       - client/src/__tests__/components/ProjectsWorkspace.test.jsx
       - .github/workflows/eos-project-accountability-certification.yml
   workflow_dispatch:
@@ -164,7 +169,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.6.0-PROJECT-TASK-LIFECYCLE-REPLICA-CERT
+# VERSION: v1.7.0-PROJECTS-DELEGATION-CLIENT-BROWSER-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
