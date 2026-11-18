@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE
+ * VERSION: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE prevents global uppercase, tracked
+ * CHANGELOG: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS targets the mounted
+ *            .wp-accountability element (previous .wp-section selector never
+ *            matched), restoring navy label text and normal letter spacing.
+ *            v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE prevents global uppercase, tracked
  *            label rules from transforming ordinary project-code helper text;
  *            uses readable sentence case and subdued type hierarchy.
  *            v1.3.1-ACCOUNTABILITY-FORM-CONTRAST locks readable dark
@@ -140,32 +143,32 @@
   position:static;overflow-y:auto;
   scrollbar-color:#a9c2df #f0f4fa;
 }
-/* Source-backed accountability must remain readable under global themes.
-   These are semantic form labels, not decorative gold eyebrow text. */
-.wilsy-projects .wp-detail .wp-section form label {
+/* Mounted semantic accountability panel: form labels must never inherit
+   gold, uppercase or tracked decorative heading rules from the host theme. */
+.wilsy-projects .wp-detail .wp-accountability form label {
   color: #203a5e !important;
   -webkit-text-fill-color: #203a5e !important;
   font-weight: 750;
   letter-spacing: normal !important;
   text-transform: none !important;
 }
-.wilsy-projects .wp-detail .wp-section form :is(input, select, textarea) {
+.wilsy-projects .wp-detail .wp-accountability form :is(input, select, textarea) {
   color: #142b4d !important;
   -webkit-text-fill-color: #142b4d !important;
   letter-spacing: normal !important;
   text-transform: none !important;
   font-weight: 500;
 }
-.wilsy-projects .wp-detail .wp-section form :is(input, select, textarea)::placeholder {
+.wilsy-projects .wp-detail .wp-accountability form :is(input, select, textarea)::placeholder {
   color: #4b607b !important;
   -webkit-text-fill-color: #4b607b !important;
   opacity: 1;
 }
-.wilsy-projects .wp-detail .wp-section form p {
+.wilsy-projects .wp-detail .wp-accountability form p {
   color: #3c526d !important;
   -webkit-text-fill-color: #3c526d !important;
 }
-.wilsy-projects .wp-detail .wp-section form :is(input, select, textarea):focus-visible {
+.wilsy-projects .wp-detail .wp-accountability form :is(input, select, textarea):focus-visible {
   outline: 3px solid #145da0 !important;
   outline-offset: 2px;
 }
@@ -328,7 +331,7 @@
   .wilsy-projects .wp-button {transition:none;}
 }
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE
+ * VERSION: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
