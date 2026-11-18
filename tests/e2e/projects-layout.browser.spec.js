@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT
+ * VERSION: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,30 +8,33 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT renders
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT verifies
+ *          the separately admitted reviewer inbox is rendered and usable
+ *          without navigation through the owner-only project registry.
+ * CHANGELOG:  v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT renders
  *          the task-review approval history and named reviewer decision
  *          controls at desktop and mobile widths without simulated IAM grants.
- * CHANGELOG:  v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT renders
+ * CHANGELOG:  v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT renders
  *          the separately authorized Assigned Projects task/notification
  *          journey at desktop and mobile widths without simulated grants.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT verifies source-backed
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT makes the shared
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT verifies source-backed
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT verifies EOS-backed project work
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT measures exact direct-child table
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT certifies the existing
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT measures actual
+ * CHANGELOG: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -110,6 +113,26 @@ for (const width of [1440, 390]) {
       const pathname = url.pathname;
       let response = null;
       if (request.method() === 'GET' && pathname === '/api/projects') response = envelope;
+      if (request.method() === 'GET' && pathname === '/api/projects/my-approvals') {
+        response = {
+          schema: 'WILSY-PROJECT-PENDING-APPROVALS/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [{
+            schema: 'wilsy.project.approval.v1',
+            tenant_id: TENANT, project_id: projectId,
+            task_id: assignedTask.task_id,
+            approval_id: 'par-' + 'e'.repeat(48),
+            requester_principal_id: 'separately-authorized-project-owner',
+            reviewer_principal_id: PRINCIPAL,
+            rationale: 'Independently review task delivery evidence.',
+            status: 'PENDING', revision: 1,
+            requested_at: '2026-11-18T08:00:00+00:00',
+            decided_at: null, decision_rationale: null,
+            fingerprint: 'f'.repeat(128),
+          }],
+        };
+      }
       if (request.method() === 'GET' && pathname === '/api/projects/my-projects') {
         response = {
           schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
@@ -332,6 +355,12 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('region', { name: 'Project notes' })).toHaveCount(0);
     await page.getByRole('button', { name: 'My assigned projects' }).click();
     await expect(page.getByRole('heading', { name: 'My assigned projects' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Pending project approvals' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Approve', exact: true })).toBeDisabled();
+    await page.getByRole('textbox', { name: /^Review rationale/ })
+      .fill('Evidence needs independent project review.');
+    await expect(page.getByRole('button', { name: 'Approve', exact: true })).toBeEnabled();
+
     await expect(page.getByRole('button', { name: /Projects operating foundation/ })).toBeVisible();
     await page.getByRole('button', { name: /Projects operating foundation/ }).click();
     await expect(page.getByRole('region', { name: 'Participant task table' })).toBeVisible();
@@ -358,7 +387,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.5.0-NAMED-TASK-REVIEWER-CHROMIUM-CERT
+// VERSION: v1.6.0-REVIEWER-INBOX-CHROMIUM-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
