@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.3.0-VERIFIED-NEXT-PAGE
+VERSION: v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,12 +9,13 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.3.0-VERIFIED-NEXT-PAGE — Adds bounded look-ahead paging with verified has-more
+  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
+  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT — Adds bounded look-ahead paging with verified has-more
   metadata while preserving the existing page-only registry API.
-  v1.3.0-VERIFIED-NEXT-PAGE — Adds a compound tenant/archive/status/sort index for
+  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT — Adds a compound tenant/archive/status/sort index for
   bounded project-list status filtering at enterprise project volumes.
   This is index DDL only: no tenant, role, grant or record is changed.
-  v1.3.0-VERIFIED-NEXT-PAGE — Streams validated exact-tenant
+  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT — Streams validated exact-tenant
   project summaries without the former 500-record ceiling, returns bounded
   list pages without rejecting a valid next page, and adds a tenant-oriented
   active-recent listing index. No IAM or project data changes.
@@ -48,7 +49,7 @@ for those events.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import hashlib
 import json
 from typing import Any, Final, cast
@@ -59,7 +60,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.3.0-VERIFIED-NEXT-PAGE"
+VERSION: Final[str] = "v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -118,10 +119,18 @@ def _occurred_at(value: object) -> datetime:
     return value
 
 
+def _date_only_command_value(value: object) -> str:
+    """Serialize only an exact date type, not timestamps or arbitrary objects."""
+    if type(value) is not date:
+        raise TypeError("Unsupported project command value")
+    return value.isoformat()
+
+
 def _canonical_fingerprint(payload: Mapping[str, object]) -> str:
-    """Fingerprint deterministic command semantics with SHA3-512."""
+    """Fingerprint deterministic command semantics, including ISO dates, with SHA3-512."""
     try:
-        raw = json.dumps(dict(payload), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        raw = json.dumps(dict(payload), sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=False, default=_date_only_command_value).encode("utf-8")
     except (TypeError, ValueError) as error:
         raise ProjectRegistryError("PROJECT_COMMAND_FINGERPRINT_INVALID") from error
     return hashlib.sha3_512(raw).hexdigest()
@@ -479,7 +488,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.3.0-VERIFIED-NEXT-PAGE
+# VERSION: v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
