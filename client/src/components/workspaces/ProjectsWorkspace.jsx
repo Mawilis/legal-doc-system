@@ -8,6 +8,13 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: No token or permission claims are read here;
+ *                             the existing api.js owns authenticated transport.
+ * TENANT BOUNDARY: Tenant selector is an EOS transport hint only; EOS requires
+ *                  equality with authenticated session scope and tenant-scopes persistence.
+ * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
+ *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
  * CHANGELOG: v2.11.0-VERIFIED-CREATOR-AND-AUDIT-NAMES renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
@@ -94,13 +101,6 @@
  *            create command's idempotency key through uncertain retries and
  *            resets it when the draft or authenticated scope changes. v1.1.0
  *            rejects late tenant/session reads and prioritizes HTTP status.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * SECURITY / PRIVACY POSTURE: No token or permission claims are read here;
- *                             the existing api.js owns authenticated transport.
- * TENANT BOUNDARY: Tenant selector is an EOS transport hint only; EOS requires
- *                  equality with authenticated session scope and tenant-scopes persistence.
- * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
- *                     and returns committed project/event state.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
