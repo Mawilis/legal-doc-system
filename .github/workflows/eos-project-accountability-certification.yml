@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.17.0-REVIEWER-DECISION-CLIENT-CERT
+# VERSION: v1.18.0-PENDING-REVIEWER-INBOX-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,58 +7,61 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT validates the
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT gates indexed
+#            principal-scoped reviewer discovery, source inbox decisions,
+#            and exact reviewer readback in the existing Projects CI suite.
+# CHANGELOG:  v1.18.0-PENDING-REVIEWER-INBOX-CERT validates the
 #            task approval UI's exact source readback, independent reviewer
 #            decision and foreign-principal denial with no inherited IAM.
-# CHANGELOG:  v1.17.0-REVIEWER-DECISION-CLIENT-CERT certifies
+# CHANGELOG:  v1.18.0-PENDING-REVIEWER-INBOX-CERT certifies
 #            P1 project task review request/decision, exact reviewer IAM,
 #            replica-set CAS/replay and immutable audit; no payment authority.
-# CHANGELOG:  v1.17.0-REVIEWER-DECISION-CLIENT-CERT verifies
+# CHANGELOG:  v1.18.0-PENDING-REVIEWER-INBOX-CERT verifies
 #            full 511-item delegated project attention projection with
 #            indexed real Mongo reads and immediate project revocation exclusion.
-# CHANGELOG:  v1.17.0-REVIEWER-DECISION-CLIENT-CERT runs
+# CHANGELOG:  v1.18.0-PENDING-REVIEWER-INBOX-CERT runs
 #            exact PROJECTS source contract in the shared My Work client,
 #            including blocked, own-assignee and no fake due-at deadlines.
-# CHANGELOG:  v1.17.0-REVIEWER-DECISION-CLIENT-CERT includes
+# CHANGELOG:  v1.18.0-PENDING-REVIEWER-INBOX-CERT includes
 #            independently admitted project attention source and pure My Work
 #            projection tests with revoked scope, blockers and no owner bypass.
-# CHANGELOG:  v1.17.0-REVIEWER-DECISION-CLIENT-CERT includes a
+# CHANGELOG:  v1.18.0-PENDING-REVIEWER-INBOX-CERT includes a
 #            participant-only assigned-project/task/notification source
 #            readback and denial UI certificate alongside owner Projects.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT compiles and tests
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT compiles and tests
 #            atomic recipient-scoped mention inbox creation, exact tenant
 #            and principal read gates and source-owned read receipt CAS.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT includes task
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT includes task
 #            comment discussion rendering, mocked EOS publish/readback, and
 #            explicit mention choice denial in the governed frontend gate.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT adds exact-task
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT adds exact-task
 #            comment/mention domain, caller transaction, audited replay and
 #            foreign-tenant Mongo integration to the governed Projects gate.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT executes exact-source
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT executes exact-source
 #            project participant grant/revoke client tests with Projects UI
 #            and rendered browser certification.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT tracks and runs
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT tracks and runs
 #            the mounted task and participant list/editor surfaces and
 #            their desktop/mobile browser checks in the existing certificate.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT compiles and tests source-owned
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT compiles and tests source-owned
 #            task, subtask, milestone, dependency, assignee and lifecycle
 #            contracts with exact tenant disposable Mongo persistence.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT executes the central roles,
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT executes the central roles,
 #            permission namespace, tenant operation and authorization tests
 #            with the Projects-specific and disposable Mongo contracts.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT adds indexed exact-tenant project participant
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT adds indexed exact-tenant project participant
 #            domain and disposable MongoDB grant/revoke/replay certification,
 #            retaining browser, Python, source and frontend release gates.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT honors the root manifest's
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT honors the root manifest's
 #            existing legacy React peer-lock agreement for test tooling,
 #            without relaxing the client's locked dependency resolution.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT adds isolated rendered Chromium
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT adds isolated rendered Chromium
 #            desktop/mobile geometry and selected-note surface verification;
 #            mocked API replies are presentation tests, not authenticated EOS.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT extends exact-head CI to the
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.17.0-REVIEWER-DECISION-CLIENT-CERT adds a real
+# CHANGELOG: v1.18.0-PENDING-REVIEWER-INBOX-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -125,6 +128,8 @@ on:
       - client/src/components/workspaces/ProjectTasksPanel.jsx
       - client/src/components/workspaces/ProjectTaskCommentsPanel.jsx
       - client/src/components/workspaces/ProjectTaskApprovalsPanel.jsx
+      - client/src/components/workspaces/ProjectApprovalInbox.jsx
+      - client/src/__tests__/components/ProjectApprovalInbox.test.jsx
       - client/src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx
       - client/src/components/workspaces/AssignedProjectsWorkspace.jsx
       - client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
@@ -199,7 +204,7 @@ jobs:
         run: npm ci --include=dev --no-audit --no-fund --progress=false
       - name: Certify project source-backed interaction
         working-directory: client
-        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx src/__tests__/components/AssignedProjectsWorkspace.test.jsx src/__tests__/services/unifiedMyWorkProjection.test.js
+        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx src/__tests__/components/ProjectApprovalInbox.test.jsx src/__tests__/components/AssignedProjectsWorkspace.test.jsx src/__tests__/services/unifiedMyWorkProjection.test.js
       - name: Build certified frontend
         working-directory: client
         run: npm run build
@@ -225,7 +230,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.17.0-REVIEWER-DECISION-CLIENT-CERT
+# VERSION: v1.18.0-PENDING-REVIEWER-INBOX-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
