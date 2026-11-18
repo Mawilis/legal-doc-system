@@ -7,7 +7,8 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT requires scanner-owned QUARANTINED status and null clearance fingerprint, and proves fail-closed denial of fabricated clean clearance.\n * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT checks exact task
+ * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT requires scanner-owned QUARANTINED status and null clearance fingerprint, and proves fail-closed denial of fabricated clean clearance.
+ * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT checks exact task
  *          S3 quarantine response, replay key, independent EOS list readback.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic file only; no provider bytes leaked.
@@ -89,7 +90,7 @@ it('uploads a safe-type file to EOS quarantine with independent manifest readbac
   });
   fireEvent.click(screen.getByRole('button', { name: 'Submit to EOS quarantine' }));
   await waitFor(() => expect(screen.getByText('design.pdf')).toBeVisible());
-  expect(screen.getByText(/Quarantined · application\/pdf/)).toBeVisible();
+  expect(screen.getByText(/Quarantined · malware scan clearance unavailable · application\/pdf/)).toBeVisible();
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
   expect(api.post).toHaveBeenCalledTimes(1);
 });
