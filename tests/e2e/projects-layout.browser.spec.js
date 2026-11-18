@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT
+ * VERSION: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,43 +8,44 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT renders
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT separately verifies indexed owner-list navigation and explicit participant assignments in 1440px/390px Chromium; no implicit role grants, mutations or false owner totals.
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT renders
  *          task attachments as quarantined evidence with no preview/download
  *          and a bounded contributor upload control at desktop/mobile sizes.
- * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT scopes
+ * CHANGELOG:  v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT scopes
  *          review rationale assertions to the selected task's accessible
  *          region when that source text also appears in the reviewer inbox.
- * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies
+ * CHANGELOG:  v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT verifies
  *          the separately admitted reviewer inbox is rendered and usable
  *          without navigation through the owner-only project registry.
- * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT renders
+ * CHANGELOG:  v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT renders
  *          the task-review approval history and named reviewer decision
  *          controls at desktop and mobile widths without simulated IAM grants.
- * CHANGELOG:  v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT renders
+ * CHANGELOG:  v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT renders
  *          the separately authorized Assigned Projects task/notification
  *          journey at desktop and mobile widths without simulated grants.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT makes the shared
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT verifies EOS-backed project work
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT measures exact direct-child table
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT certifies the existing
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT measures actual
+ * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -67,7 +68,7 @@ const project = {
   status: 'planned', revision: 1, archived_at: null,
   created_at: '2026-11-18T09:00:00+00:00',
   updated_at: '2026-11-18T09:00:00+00:00',
-  owner_principal_id: null, department_id: null, target_date: null,
+  owner_principal_id: PRINCIPAL, department_id: null, target_date: null,
 };
 const projectEvent = {
   tenant_id: TENANT, project_id: projectId,
@@ -122,7 +123,14 @@ for (const width of [1440, 390]) {
       const url = new URL(request.url());
       const pathname = url.pathname;
       let response = null;
-      if (request.method() === 'GET' && pathname === '/api/projects') response = envelope;
+      if (request.method() === 'GET' && pathname === '/api/projects') {
+        response = envelope;
+        if (url.searchParams.get('owned_by_me') === 'true') {
+          expect(url.searchParams.get('limit')).toBe('100');
+          expect(url.searchParams.get('offset')).toBe('0');
+          response = { ...envelope, items: [project] };
+        }
+      }
       if (request.method() === 'GET' && pathname === '/api/projects/my-approvals') {
         response = {
           schema: 'WILSY-PROJECT-PENDING-APPROVALS/V1',
@@ -407,7 +415,12 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Back to projects table' }).click();
     await expect(page.locator('.wp-body')).toHaveAttribute('data-layout', 'list');
     await expect(page.getByRole('region', { name: 'Project notes' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'My assigned projects' }).click();
+    await page.getByRole('button', { name: 'My owned projects' }).click();
+    await expect(page.getByText(/1 shown · 1 verified · EOS owner-filtered page/)).toBeVisible();
+    await expect(page.getByText('Projects operating foundation')).toBeVisible();
+    await page.getByRole('button', { name: 'My owned projects' }).click();
+    await expect(page.getByText('1 shown · 1 verified')).toBeVisible();
+    await page.getByRole('button', { name: 'Participant assignments' }).click();
     await expect(page.getByRole('heading', { name: 'My assigned projects' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Pending project approvals' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Approve', exact: true })).toBeDisabled();
@@ -451,7 +464,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.1.0-READABLE-FORMS-STICKY-PALETTE-BROWSER-CERT
+// VERSION: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
