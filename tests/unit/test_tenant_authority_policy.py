@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authority Policy Certification.
-VERSION: v1.15.1-CRM-ELIGIBILITY-VERSION-CERT
+VERSION: v1.16.0-PROJECT-PARTICIPANT-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, WILSY platform-employer
@@ -13,8 +13,11 @@ role separation, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
+CHANGELOG: v1.16.0-PROJECT-PARTICIPANT-ELIGIBILITY-CERT checks participant-only project read/write
+capacity across existing tenant business models while preserving the
+owner-exclusive project-wide operations and fail-closed unknown roles.
 CHANGELOG:
-2026-11-17 v1.15.1-CRM-ELIGIBILITY-VERSION-CERT aligns the expected
+2026-11-17 v1.16.0-PROJECT-PARTICIPANT-ELIGIBILITY-CERT aligns the expected
 canonical runtime version after its separately governed CRM edit eligibility
 release; all policy eligibility assertions and denial coverage are preserved.
 2026-11-16 v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT verifies the exact five Project operations are eligible only for existing tenant_owner capacity; authorization-role assignment and entitlement remain independent.
@@ -137,7 +140,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.59.0-CRM-WORK-EDIT-ELIGIBILITY"
+    assert VERSION == "v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY"
 
 
 def test_projects_have_exact_operation_vocabulary_and_owner_capacity_only() -> None:
@@ -161,6 +164,25 @@ def test_projects_have_exact_operation_vocabulary_and_owner_capacity_only() -> N
             tenant_role_operation_eligibility(role, operation) == DENY
             for role in TENANT_ROLES - {"tenant_owner"}
         )
+
+
+def test_projects_participant_operation_eligibility_is_not_owner_authority() -> None:
+    """Participant-capacity eligibility is non-authorizing and role independent."""
+    for operation, permission in {
+        "project_participant_detail": "project:participant:read",
+        "project_participant_contribute": "project:participant:contribute",
+    }.items():
+        assert operation in OPERATIONS
+        assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
+        assert permission_for_business_role_operation(operation) == permission
+        assert requires_system_authority(operation) is (
+            SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+        )
+        assert all(
+            tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+            for role in TENANT_ROLES
+        )
+        assert tenant_role_operation_eligibility("unknown_role", operation) == DENY
 
 
 def test_headcount_business_eligibility_preserves_independent_roles() -> None:
@@ -1085,7 +1107,7 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
 
 
 # ARTIFACT: tests/unit/test_tenant_authority_policy.py
-# VERSION: v1.15.1-CRM-ELIGIBILITY-VERSION-CERT
+# VERSION: v1.16.0-PROJECT-PARTICIPANT-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only; no role or permission assignment
 # TENANT POSTURE: Projects business eligibility is owner-capacity only and remains conjunctive with tenant-scoped assignment, membership and entitlement
 # FAIL-CLOSED POSTURE: every non-owner business capacity remains denied; eligibility alone creates no IAM assignment or entitlement
