@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL
+ * VERSION: v2.3.0-VERIFIED-PROJECT-NOTES-WORKSPACE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,14 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL exposes readable title-case
+ * CHANGELOG: v2.3.0-VERIFIED-PROJECT-NOTES-WORKSPACE adds source-confirmed
+ *            project notes listing, authored create/revise/redact commands,
+ *            independent denied/unavailable states and paginated history.
+ *            v2.2.0-SOURCE-OWNED-PROJECT-WORK-ACTION adds a governed
+ *            Operations work creation action in project detail, verifies the
+ *            EOS work source binding, retains uncertain replay keys and never
+ *            represents task creation as assignment or project activation.
+ *            v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -451,6 +458,290 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       </form>
     </>}
     {localError && <p role="alert" className="mt-2 text-sm text-rose-700">{localError}</p>}
+  </section>;
+}
+
+/**
+ * @description Create one EOS source-owned Operations task associated with an
+ * authenticated, existing Project. No client-owned work truth or delegation.
+ * @authority Projects and Operations independently authorize on the server.
+ */
+function ProjectLinkedWorkPanel({ project, tenantId, principalId, tenantHeaders }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState('NORMAL');
+  const [dueLocal, setDueLocal] = useState('');
+  const [state, setState] = useState('IDLE');
+  const [created, setCreated] = useState(null);
+  const replay = useRef({ fingerprint: '', key: null });
+  const save = async (event) => {
+    event.preventDefault();
+    if (state === 'PENDING' || !title.trim()) return;
+    const dueInstant = dueLocal ? new Date(dueLocal) : null;
+    if (dueInstant && Number.isNaN(dueInstant.getTime())) {
+      setState('INVALID_DATE');
+      return;
+    }
+    const body = {
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+      due_at: dueInstant ? dueInstant.toISOString() : null,
+    };
+    const fingerprint = JSON.stringify([tenantId, project.project_id, body]);
+    try {
+      if (replay.current.fingerprint !== fingerprint || !replay.current.key) {
+        if (typeof globalThis.crypto?.randomUUID !== 'function') {
+          setState('KEY_UNAVAILABLE');
+          return;
+        }
+        replay.current = { fingerprint, key: globalThis.crypto.randomUUID() };
+      }
+      setState('PENDING');
+      setCreated(null);
+      const { data } = await api.post(
+        `/projects/${encodeURIComponent(project.project_id)}/work-items`, body,
+        { headers: { ...tenantHeaders, 'Idempotency-Key': replay.current.key } },
+      );
+      if (
+        data?.schema !== 'WILSY-PROJECT-WORK-RESULT/V1'
+        || data.tenant_id !== tenantId
+        || data.principal_id !== principalId
+        || data.project_id !== project.project_id
+        || data.authority?.source !== 'OPERATIONS_WORK_ITEM'
+        || data.authority?.financial_execution !== false
+        || data.work_item?.tenant_id !== tenantId
+        || data.work_item?.source_type !== 'PROJECT'
+        || data.work_item?.source_id !== project.project_id
+        || typeof data.work_item?.work_item_id !== 'string'
+        || !data.work_item.work_item_id
+      ) throw new Error('PROJECT_WORK_READBACK_INVALID');
+      setCreated(data.work_item);
+      setTitle('');
+      setDescription('');
+      setDueLocal('');
+      setPriority('NORMAL');
+      replay.current = { fingerprint: '', key: null };
+      setState('CONFIRMED');
+    } catch (cause) {
+      setState(classifyFailure(cause));
+    }
+  };
+  return <section aria-label="Project execution work" className="wp-project-work">
+    <h3>Project execution</h3>
+    <p>Create a source-linked Operations task. EOS independently checks Projects and Operations permissions.
+      This does not delegate ownership, activate the project or approve work.</p>
+    <form onSubmit={save} className="wp-work-form">
+      <label>Task title
+        <input required maxLength={240} value={title}
+          onChange={event => setTitle(event.target.value)}
+          placeholder="Describe a specific deliverable"/>
+      </label>
+      <label>Execution notes
+        <textarea rows={3} maxLength={4000} value={description}
+          onChange={event => setDescription(event.target.value)}
+          placeholder="Scope, instructions and acceptance evidence"/>
+      </label>
+      <div className="wp-work-fields">
+        <label>Priority
+          <select value={priority} onChange={event => setPriority(event.target.value)}>
+            <option value="NORMAL">Normal</option>
+            <option value="LOW">Low</option>
+            <option value="HIGH">High</option>
+            <option value="CRITICAL">Critical</option>
+          </select>
+        </label>
+        <label>Due date and time (optional)
+          <input aria-label="Project task due date and time" type="datetime-local"
+            value={dueLocal} onChange={event => setDueLocal(event.target.value)}/>
+        </label>
+      </div>
+      <button type="submit" className="wp-button wp-button-primary"
+        disabled={state === 'PENDING' || !title.trim()}>
+        {state === 'PENDING' ? 'Saving to EOS…' : 'Create Operations task'}
+      </button>
+    </form>
+    {state === 'CONFIRMED' && created && <p role="status" className="wp-work-confirmed">
+      EOS confirmed task {created.work_item_id}. It is now owned by the Operations task source.
+    </p>}
+    {state !== 'IDLE' && state !== 'PENDING' && state !== 'CONFIRMED' && <p role="alert" className="wp-work-error">
+      {state === 'ACCESS_DENIED' || state === 'PROJECTS_ENTITLEMENT_REQUIRED'
+        ? 'EOS denied one or more required authorities. No task was confirmed.'
+        : state === 'INVALID_DATE' ? 'Enter a valid due date and time.'
+        : state === 'KEY_UNAVAILABLE' ? 'Secure request identity is unavailable.'
+        : 'EOS did not confirm this task. Your draft is preserved; retry after checking source availability.'}
+    </p>}
+  </section>;
+}
+
+/**
+ * @description Project-scoped authored notes, revision and redaction. Displays
+ * only committed EOS state and keeps denied/unavailable separate from zero.
+ * @authority Python EOS owns project visibility, authorship and note events.
+ */
+function ProjectNotesPanel({ project, tenantId, principalId, tenantHeaders }) {
+  const [items, setItems] = useState([]);
+  const [sourceState, setSourceState] = useState('LOADING');
+  const [offset, setOffset] = useState(0);
+  const [body, setBody] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editingBody, setEditingBody] = useState('');
+  const [confirmRedact, setConfirmRedact] = useState(null);
+  const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+  const replay = useRef({ fingerprint: '', key: null });
+  const sequence = useRef(0);
+  const notePath = `/projects/${encodeURIComponent(project.project_id)}/notes`;
+  const verifyList = (data) => {
+    if (data?.schema !== 'WILSY-PROJECT-NOTES-LIST/V1'
+      || data.tenant_id !== tenantId || data.principal_id !== principalId
+      || data.project_id !== project.project_id || !Array.isArray(data.items)
+      || data.items.some(item => !item || item.tenant_id !== tenantId
+        || item.project_id !== project.project_id
+        || typeof item.note_id !== 'string'
+        || typeof item.body !== 'string'
+        || !Number.isSafeInteger(item.revision) || item.revision < 1)) {
+      throw new Error('PROJECT_NOTES_SOURCE_INVALID');
+    }
+    return data.items;
+  };
+  const load = async (nextOffset = 0) => {
+    const current = ++sequence.current;
+    setSourceState('LOADING');
+    try {
+      const path = nextOffset ? `${notePath}?limit=50&offset=${nextOffset}` : notePath;
+      const { data } = await api.get(path, { headers: tenantHeaders });
+      const verified = verifyList(data);
+      if (current !== sequence.current) return;
+      setItems(verified);
+      setOffset(nextOffset);
+      setSourceState('READY');
+      setError('');
+    } catch (cause) {
+      if (current !== sequence.current) return;
+      setItems([]);
+      setSourceState(cause?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+      setError(classifyFailure(cause));
+    }
+  };
+  useEffect(() => {
+    void load(0);
+    return () => { sequence.current += 1; };
+  }, [project.project_id, tenantId, principalId]);
+  const commandKey = (kind, noteId, revision, value) => {
+    const fingerprint = JSON.stringify([tenantId, project.project_id, kind, noteId, revision, value]);
+    if (replay.current.fingerprint !== fingerprint || !replay.current.key) {
+      if (typeof globalThis.crypto?.randomUUID !== 'function') {
+        throw new Error('IDEMPOTENCY_KEY_GENERATOR_UNAVAILABLE');
+      }
+      replay.current = { fingerprint, key: globalThis.crypto.randomUUID() };
+    }
+    return replay.current.key;
+  };
+  const execute = async (kind, note = null) => {
+    if (pending) return;
+    const draft = kind === 'CREATE' ? body.trim() : editingBody.trim();
+    if (kind !== 'REDACT' && !draft) return;
+    setPending(true);
+    setError('');
+    try {
+      const key = commandKey(kind, note?.note_id || null, note?.revision || null, draft);
+      const headers = { ...tenantHeaders, 'Idempotency-Key': key };
+      const noteId = note?.note_id && encodeURIComponent(note.note_id);
+      const path = noteId ? `${notePath}/${noteId}` : notePath;
+      const response = kind === 'CREATE'
+        ? await api.post(path, { body: draft }, { headers })
+        : kind === 'REVISE'
+          ? await api.patch(path, { expected_revision: note.revision, body: draft }, { headers })
+          : await api.post(`${path}/redact`, { expected_revision: note.revision }, { headers });
+      const data = response?.data;
+      if (data?.schema !== 'WILSY-PROJECT-NOTE-RESULT/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== project.project_id
+        || data.note?.tenant_id !== tenantId
+        || data.note?.project_id !== project.project_id
+        || data.authority?.source !== 'PYTHON_EOS_PROJECT_NOTES'
+        || data.authority?.financial_execution !== false) {
+        throw new Error('PROJECT_NOTE_READBACK_INVALID');
+      }
+      replay.current = { fingerprint: '', key: null };
+      setBody('');
+      setEditingId(null);
+      setEditingBody('');
+      setConfirmRedact(null);
+      await load(0);
+    } catch (cause) {
+      setError(classifyFailure(cause));
+    } finally {
+      setPending(false);
+    }
+  };
+  return <section className="wp-notes" aria-label="Project collaboration notes">
+    <h3>Project notes</h3>
+    <p>Versioned project context and authored discussion evidence. Notes are not
+      approvals or delegation. Visibility is restricted to the current project
+      creator or recorded owner until participant policy is established.</p>
+    {sourceState === 'LOADING' && <p role="status">Loading authorized notes from EOS…</p>}
+    {sourceState === 'DENIED' && <p role="alert">Project notes are not authorized for this principal.</p>}
+    {sourceState === 'UNAVAILABLE' && <p role="alert">Project notes source is unavailable.
+      <button type="button" onClick={() => void load(offset)} className="wp-notes-link">Retry</button></p>}
+    {sourceState === 'READY' && <>
+      <details className="wp-notes-compose">
+        <summary>Add a project note</summary>
+        <label>Note content
+          <textarea value={body} maxLength={4000} rows={4}
+            onChange={event => setBody(event.target.value)}
+            placeholder="Record context, questions, implementation evidence or a discussion topic"/>
+        </label>
+        <button type="button" disabled={pending || !body.trim()}
+          className="wp-button wp-button-primary" onClick={() => void execute('CREATE')}>
+          {pending ? 'Saving…' : 'Save note to EOS'}
+        </button>
+      </details>
+      {items.length === 0 && <p role="status">EOS verified no notes on this page.</p>}
+      <ol className="wp-notes-list">
+        {items.map(note => <li key={note.note_id}>
+          <div className="wp-notes-meta">
+            <strong>{note.redacted_at ? 'Redacted note' : 'Project note'}</strong>
+            <span>Revision {note.revision} · {note.created_by_principal_id}</span>
+          </div>
+          {note.redacted_at ? <p>Content redacted. Revision evidence retained.</p>
+            : <p className="wp-notes-body">{note.body}</p>}
+          {!note.redacted_at && note.created_by_principal_id === principalId && <>
+            {editingId === note.note_id ? <div className="wp-notes-editor">
+              <label>Revise note
+                <textarea rows={3} maxLength={4000} value={editingBody}
+                  onChange={event => setEditingBody(event.target.value)}/>
+              </label>
+              <button type="button" className="wp-button" disabled={pending || !editingBody.trim()}
+                onClick={() => void execute('REVISE', note)}>Save revision</button>
+              <button type="button" className="wp-button" disabled={pending}
+                onClick={() => setEditingId(null)}>Cancel</button>
+            </div> : <div className="wp-notes-actions">
+              <button type="button" className="wp-notes-link" disabled={pending}
+                onClick={() => { setEditingId(note.note_id); setEditingBody(note.body); }}>Edit</button>
+              {confirmRedact === note.note_id
+                ? <button type="button" className="wp-notes-link" disabled={pending}
+                    onClick={() => void execute('REDACT', note)}>Confirm redaction</button>
+                : <button type="button" className="wp-notes-link" disabled={pending}
+                    onClick={() => setConfirmRedact(note.note_id)}>Redact</button>}
+              {confirmRedact === note.note_id && <button type="button"
+                className="wp-notes-link" onClick={() => setConfirmRedact(null)}>Cancel</button>}
+            </div>}
+          </>}
+        </li>)}
+      </ol>
+      {(offset > 0 || items.length === 50) && <nav className="wp-pagination" aria-label="Project note pages">
+        <button type="button" className="wp-button" disabled={offset === 0}
+          onClick={() => void load(Math.max(0, offset - 50))}>Previous notes</button>
+        <span>Page {Math.floor(offset / 50) + 1}</span>
+        <button type="button" className="wp-button" disabled={items.length < 50}
+          onClick={() => void load(offset + 50)}>Next notes</button>
+      </nav>}
+    </>}
+    {error && <p role="alert" className="wp-work-error">
+      EOS did not confirm the notes command or read. The source remains authoritative.
+    </p>}
   </section>;
 }
 
@@ -904,6 +1195,10 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             <ProjectAccountabilityPanel key={detail.project.project_id} project={detail.project} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders} runCommand={runCommand}
               refresh={refresh} openProject={openProject}/>
+            <ProjectLinkedWorkPanel key={detail.project.project_id + ':work'} project={detail.project}
+              tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>
+            <ProjectNotesPanel key={detail.project.project_id + ':notes'} project={detail.project}
+              tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>
             {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
             <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code <span className="wp-code-optional">(optional override)</span>
                 <input aria-label="Project code" maxLength={80} value={edit?.code || ''}
@@ -930,7 +1225,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.1.1-ACCESSIBLE-STATUS-CHART-LABEL
+// VERSION: v2.3.0-VERIFIED-PROJECT-NOTES-WORKSPACE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct

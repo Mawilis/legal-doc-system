@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT
+ * VERSION: v1.8.0-AUTHORED-NOTES-COMMAND-UI-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT proves navigation
+ * CHANGELOG: v1.8.0-AUTHORED-NOTES-COMMAND-UI-CERT certifies authenticated
+ *            notes read, create, edit and redaction with EOS readback and
+ *            unchanged Planned project state; no optimistic records.
+ *            v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -44,7 +47,7 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn() }));
@@ -138,6 +141,79 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Tenant project 125/ })).toBeVisible();
     expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=100')).toBe(true);
+  });
+
+  it('creates, revises and redacts source-confirmed project notes without changing Project status', async () => {
+    const current = project();
+    const noteId = 'pnote-' + 'a'.repeat(32);
+    let notes = [];
+    const notePath = `/projects/${PROJECT_ID}/notes`;
+    const response = (note) => ({
+      schema: 'WILSY-PROJECT-NOTE-RESULT/V1',
+      tenant_id: TENANT, principal_id: PRINCIPAL,
+      project_id: PROJECT_ID, note,
+      authority: { source: 'PYTHON_EOS_PROJECT_NOTES', financial_execution: false },
+    });
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([current]) };
+      if (path === '/projects/summary') return { data: summary([current]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(current) };
+      if (path === notePath) return { data: {
+        schema: 'WILSY-PROJECT-NOTES-LIST/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        project_id: PROJECT_ID, items: notes, limit: 50, offset: 0,
+      } };
+      throw new Error(`Unexpected GET ${path}`);
+    });
+    api.post.mockImplementation(async (path, payload) => {
+      if (path === notePath) {
+        expect(payload.body).toBe('Evidence-backed project note');
+        notes = [{
+          tenant_id: TENANT, project_id: PROJECT_ID, note_id: noteId,
+          created_by_principal_id: PRINCIPAL, body: payload.body,
+          revision: 1, redacted_at: null,
+        }];
+        return { data: response(notes[0]) };
+      }
+      if (path === `${notePath}/${noteId}/redact`) {
+        expect(payload.expected_revision).toBe(2);
+        notes = [{ ...notes[0], body: '', revision: 3,
+          redacted_at: '2026-11-18T12:00:00+00:00' }];
+        return { data: response(notes[0]) };
+      }
+      throw new Error(`Unexpected POST ${path}`);
+    });
+    api.patch.mockImplementation(async (path, payload) => {
+      expect(path).toBe(`${notePath}/${noteId}`);
+      expect(payload).toEqual({
+        expected_revision: 1, body: 'Reviewed with governance evidence',
+      });
+      notes = [{ ...notes[0], body: payload.body, revision: 2 }];
+      return { data: response(notes[0]) };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="project-note-lifecycle-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    const notesRegion = await screen.findByRole('region', { name: 'Project collaboration notes' });
+    expect(await screen.findByText('EOS verified no notes on this page.')).toBeVisible();
+    fireEvent.click(screen.getByText('Add a project note'));
+    fireEvent.change(screen.getByPlaceholderText(/Record context, questions/), {
+      target: { value: 'Evidence-backed project note' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save note to EOS' }));
+    expect(await screen.findByText('Evidence-backed project note')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Revise note' }), {
+      target: { value: 'Reviewed with governance evidence' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save revision' }));
+    expect(await screen.findByText('Reviewed with governance evidence')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Redact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm redaction' }));
+    expect(await screen.findByText('Content redacted. Revision evidence retained.')).toBeVisible();
+    expect(within(notesRegion).getByText('Redacted note')).toBeVisible();
+    expect(current.status).toBe('planned');
+    expect(api.patch).toHaveBeenCalledTimes(1);
   });
 
   it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
@@ -476,7 +552,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.7.0-SOURCE-BACKED-PORTFOLIO-PAGES-CERT
+ * VERSION: v1.8.0-AUTHORED-NOTES-COMMAND-UI-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
