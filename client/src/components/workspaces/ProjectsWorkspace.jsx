@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.4.0-GOVERNED-PROJECT-NOTES-INTEGRATION
+ * VERSION: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,16 +8,19 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.4.0-GOVERNED-PROJECT-NOTES-INTEGRATION mounts independently source-backed note
+ * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION mounts the independently source-backed
+ *            task/subtask/milestone table and lifecycle editor inside the
+ *            selected exact-tenant project detail without local work truth.
+ * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.4.0-GOVERNED-PROJECT-NOTES-INTEGRATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.4.0-GOVERNED-PROJECT-NOTES-INTEGRATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.4.0-GOVERNED-PROJECT-NOTES-INTEGRATION exposes readable title-case
+ *            v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -93,6 +96,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api.js';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
+import ProjectTasksPanel from './ProjectTasksPanel.jsx';
 import './ProjectsWorkspace.css';
 
 /**
@@ -949,6 +953,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               principalId={principalId} tenantHeaders={tenantHeaders} runCommand={runCommand}
               refresh={refresh} openProject={openProject}/>
             {detail.project.summary && <ProjectSummary value={detail.project.summary} expanded={summaryExpanded} onToggle={() => setSummaryExpanded((value) => !value)}/>}
+            <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
+              projectId={detail.project.project_id} tenantId={tenantId}
+              principalId={principalId} tenantHeaders={tenantHeaders}/>
             <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
               tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>
             <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code <span className="wp-code-optional">(optional override)</span>
@@ -976,7 +983,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.4.0-GOVERNED-PROJECT-NOTES-INTEGRATION
+// VERSION: v2.5.0-GOVERNED-PROJECT-EXECUTION-INTEGRATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
