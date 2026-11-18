@@ -1,7 +1,7 @@
 """Direct certificate for the D22B2 tenant product entitlement registry.
 
 TITLE: Tenant Product Entitlement Registry Direct Certificate
-VERSION: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY-CERT
+VERSION: v1.1.0-OPTIONAL-POINTER-HISTORY-PHASE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove immutable entitlement history, explicit exact-entitlement
          currentness, domain-derived lifecycle transitions, CAS/replay semantics,
@@ -11,7 +11,8 @@ COLLABORATION / OWNERSHIP: Direct in-memory certificate for D22B2 persistence.
                             Real-Mongo operational certification remains a
                             separate gate. D22B1 remains lifecycle authority.
 CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY-CERT establishes
+CHANGELOG: v1.1.0-OPTIONAL-POINTER-HISTORY-PHASE-CERT verifies opt-in pointer and immutable history read timings without skipping exact currentness correlation or affecting uninstrumented callers.
+CHANGELOG: v1.1.0-OPTIONAL-POINTER-HISTORY-PHASE-CERT establishes
            adversarial evidence for exact indexes, revision-zero creation,
            exact replay, stale replay rejection, legal transitions, transition
            replay, CAS races, transient transaction retry classification,
@@ -360,6 +361,13 @@ def test_current_read_is_exact_and_cross_tenant_absence_is_silent() -> None:
         )
         == value
     )
+    diagnostic: dict[str, float] = {}
+    assert registry.get_current(
+        value.tenant_id, value.entitlement_id,
+        history, current, session=session, phase_timings=diagnostic,
+    ) == value
+    assert set(diagnostic) == {"entitlement_pointer_ms", "entitlement_history_ms"}
+    assert all(0 <= measured < 5000 for measured in diagnostic.values())
     with pytest.raises(registry.TenantProductEntitlementRegistryNotFoundError):
         registry.get_current(
             "tenant-b",
@@ -740,7 +748,7 @@ def test_no_transaction_ownership_or_runtime_side_effect_surface() -> None:
 
 
 # ARTIFACT: test_tenant_product_entitlement_registry.py
-# VERSION: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY-CERT
+# VERSION: v1.1.0-OPTIONAL-POINTER-HISTORY-PHASE-CERT
 # AUTHORITY BOUNDARY: direct D22B2 persistence/currentness evidence only; no profile, asset, browser, IAM or financial authority
 # TENANT POSTURE: exact tenant/entitlement persistence and foreign-absence behavior only
 # FAIL-CLOSED POSTURE: transaction absence, corruption, stale/divergent replay, CAS and transient races reject
