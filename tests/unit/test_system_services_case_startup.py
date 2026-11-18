@@ -1,24 +1,26 @@
 """WILSY OS system-services startup regression certificate.
 
 TITLE: System Services Case Startup Certificate
-VERSION: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT
+VERSION: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves canonical startup installs system-service case indexes without
          creating cases, permission grants, or tenant authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_services_case_startup.py
 COLLABORATION / OWNERSHIP: Python EOS API composition and system-services owners.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT pins recipient inbox and receipt
+CHANGELOG: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT pins exact reviewer
+business decision and idempotent event indexes at EOS startup.
+CHANGELOG: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT pins recipient inbox and receipt
 indexes at canonical EOS startup; no messages or recipients are created.
-CHANGELOG: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT pins exact-task comment
+CHANGELOG: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT pins exact-task comment
 indexes in canonical EOS readiness, without creating message records.
-CHANGELOG: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT pins additive task/dependency indexes
+CHANGELOG: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT pins additive task/dependency indexes
 at canonical EOS startup; no synthetic tasks or IAM are created.
-CHANGELOG: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
- 2026-11-18 v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT aligns canonical
+CHANGELOG: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
+ 2026-11-18 v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT aligns canonical
 server-version certification with additive Project Notes startup indexes;
 no existing Global Principal or System Services authority is changed.
-CHANGELOG: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT aligns the public composition
+CHANGELOG: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT aligns the public composition
            version assertion with the mounted authenticated QR router release.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Static source inspection; no database or secret access.
@@ -69,11 +71,11 @@ def test_system_services_startup_does_not_create_cases_or_grants() -> None:
 
 
 def test_system_services_server_version_tracks_governed_router_composition() -> None:
-    assert server.VERSION == "v1.50.0-PROJECT-NOTIFICATION-INBOX-BOOTSTRAP"
+    assert server.VERSION == "v1.51.0-PROJECT-APPROVAL-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: System Services Case Startup Certificate
-# VERSION: v1.0.5-PROJECT-NOTIFICATION-INDEX-COMPOSITION-CERT
+# VERSION: v1.0.6-PROJECT-APPROVAL-INDEX-COMPOSITION-CERT
 # AUTHORITY BOUNDARY: startup index ownership and composition version only
 # TENANT POSTURE: no tenant data is read or mutated
 # FAIL-CLOSED POSTURE: readiness is not converted into case or IAM authority
