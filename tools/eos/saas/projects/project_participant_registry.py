@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Governed Project Participant Registry
-VERSION: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK
+VERSION: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY
 AUTHORITY: Python EOS project-scoped participant persistence and immutable audit.
 EPITOME: Explicit project participation roles, source-backed grant/revoke, exact
          tenant/project/principal matching, revision CAS and durable replay.
@@ -8,10 +8,13 @@ COLLABORATION / OWNERSHIP: Projects router authorizes owner commands and
          current principal/membership; task and notes services must additionally
          revalidate current IAM and resource visibility on every operation.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK binds replay metadata to
+CHANGELOG: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY adds exact-principal project
+         discovery through an indexed, bounded tenant/ACTIVE state projection.
+         It does not bypass IAM, project entitlement or participant record scope.
+CHANGELOG: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY binds replay metadata to
          verified participant revision/fingerprint/type and prevents
          clock rollback during revocation; no previous authority is broadened.
-CHANGELOG: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK introduces bounded,
+CHANGELOG: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY introduces bounded,
          tenant-scoped participant grants and revocations with immutable audit.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque principals, no employee admission, secrets
@@ -38,7 +41,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK"
+VERSION: Final[str] = "v1.1.0-PRINCIPAL-PROJECT-DISCOVERY"
 COLLECTION: Final[str] = "wilsy_project_participants"
 EVENT_COLLECTION: Final[str] = "wilsy_project_participant_events"
 SCHEMA: Final[str] = "wilsy.project.participant.v1"
@@ -240,6 +243,11 @@ class ProjectParticipantRegistry:
                  ("state", ASCENDING), ("principal_id", ASCENDING)],
                 name="wilsy_project_participant_active_list",
             )
+            participants.create_index(
+                [("tenant_id", ASCENDING), ("principal_id", ASCENDING),
+                 ("state", ASCENDING), ("project_id", ASCENDING)],
+                name="wilsy_project_participant_principal_projects",
+            )
             events.create_index(
                 [("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
                 unique=True, name="wilsy_project_participant_replay_unique",
@@ -298,6 +306,39 @@ class ProjectParticipantRegistry:
         except PyMongoError as error:
             raise ProjectParticipantError("PROJECT_PARTICIPANT_LIST_UNAVAILABLE") from error
         return rows[:limit], len(rows) > limit
+
+    def projects_for_principal(
+        self, *, tenant_id: str, principal_id: str,
+        session: Any, limit: int = 50, offset: int = 0,
+    ) -> tuple[tuple[ProjectParticipant, ...], bool]:
+        """Discover only ACTIVE project assignments for this exact principal.
+
+        This registry reveals only participation facts. The caller separately
+        requires current IAM, membership, entitlement and source project read
+        for each returned project before displaying business content.
+        """
+        if session is None:
+            raise ProjectParticipantError("PROJECT_PARTICIPANT_SESSION_REQUIRED")
+        if (
+            type(limit) is not int or not 1 <= limit <= 100
+            or type(offset) is not int or offset < 0
+        ):
+            raise ProjectParticipantError("PROJECT_PARTICIPANT_PAGE_INVALID")
+        query = {
+            "tenant_id": _identifier(tenant_id, "TENANT"),
+            "principal_id": _identifier(principal_id, "PRINCIPAL"),
+            "state": "ACTIVE",
+        }
+        try:
+            cursor = self._participants.find(query, session=session).sort(
+                [("project_id", ASCENDING)],
+            ).skip(offset).limit(limit + 1)
+            records = tuple(ProjectParticipant.hydrate(
+                {key: value for key, value in row.items() if key != "_id"},
+            ) for row in cursor)
+        except PyMongoError as error:
+            raise ProjectParticipantError("PROJECT_PARTICIPANT_LIST_UNAVAILABLE") from error
+        return records[:limit], len(records) > limit
 
     def _replay(
         self, *, tenant_id: str, key: str, request_digest: str,
@@ -444,7 +485,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_participant_registry.py
-# VERSION: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK
+# VERSION: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY
 # AUTHORITY BOUNDARY: record persistence only; EOS HTTP admission remains necessary
 # TENANT POSTURE: exact tenant, project and principal; no privileged fallback
 # FAIL-CLOSED POSTURE: absent, revoked, foreign, stale, divergent and tampered deny
