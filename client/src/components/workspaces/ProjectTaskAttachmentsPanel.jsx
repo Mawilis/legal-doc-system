@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.0.0-QUARANTINE-UPLOAD-MANIFEST-READBACK
+ * VERSION: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-QUARANTINE-UPLOAD-MANIFEST-READBACK requires exact
+ * CHANGELOG: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD shows
+ *          source-owned GuardDuty clearance, recipient-triggered scan
+ *          reconciliation and authenticated clean-only byte download.
+ * CHANGELOG:  v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD requires exact
  *          source readback after a contributor's quarantined file receipt,
  *          refusing inferred safe/approved attachment states or direct URLs.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -41,6 +44,10 @@ function valid(record, tenantId, projectId, taskId) {
     && record.size_bytes > 0 && record.size_bytes <= LIMIT
     && /^[a-f0-9]{128}$/.test(record.content_sha3_512 || '')
     && record.state === 'QUARANTINED' && record.revision === 1
+    && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(record.scan_clearance_status)
+    && (record.scan_clearance_status === 'QUARANTINED'
+      ? record.scan_clearance_fingerprint === null
+      : /^[a-f0-9]{128}$/.test(record.scan_clearance_fingerprint || ''))
     && !Object.hasOwn(record, 'storage_receipt')
     && !Object.hasOwn(record, 'download_url')
     && !Object.hasOwn(record, 'presigned_url'),
@@ -113,6 +120,94 @@ export default function ProjectTaskAttachmentsPanel({
     void load(0);
     return () => { generation.current += 1; };
   }, [scope, load]);
+
+  const verifyScan = async item => {
+    if (!participantMode || busy || state !== 'READY'
+      || item.scan_clearance_status !== 'QUARANTINED'
+      || !valid(item, tenantId, projectId, taskId)) return;
+    const active = scope;
+    if (typeof globalThis.crypto?.randomUUID !== 'function') {
+      setError('Cannot establish an idempotent scan observation key.');
+      return;
+    }
+    const key = globalThis.crypto.randomUUID();
+    setBusy(true);
+    setError('');
+    try {
+      const { data } = await api.post(root + '/attachments/'
+        + encodeURIComponent(item.attachment_id) + '/verify-scan',
+      null, { headers: { ...headers, 'Idempotency-Key': key } });
+      if (current.current !== active) return;
+      if (
+        data?.schema !== 'WILSY-PROJECT-ATTACHMENT-SCAN-RESULT/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId || data.task_id !== taskId
+        || data.attachment_id !== item.attachment_id
+        || data.scan_status !== 'NO_THREATS_FOUND'
+        || !/^[a-f0-9]{128}$/.test(data.clearance_fingerprint || '')
+      ) throw new Error('PROJECT_ATTACHMENT_SCAN_RESULT_INVALID');
+      const confirmed = await load(0);
+      if (!confirmed || current.current !== active) return;
+      const { data: verify } = await api.get(
+        root + '/attachments?limit=50&offset=0', { headers },
+      );
+      if (
+        current.current !== active
+        || verify?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
+        || verify.tenant_id !== tenantId || verify.principal_id !== principalId
+        || verify.project_id !== projectId || verify.task_id !== taskId
+        || !Array.isArray(verify.items)
+        || !verify.items.some(value =>
+          valid(value, tenantId, projectId, taskId)
+          && value.attachment_id === item.attachment_id
+          && value.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
+          && value.scan_clearance_fingerprint === data.clearance_fingerprint
+        )
+      ) throw new Error('PROJECT_ATTACHMENT_SCAN_READBACK_UNVERIFIED');
+    } catch (failure) {
+      if (current.current !== active) return;
+      setError('Scan clearance is not verified. EOS requires a completed clean scan and approved S3 security policy.');
+    } finally {
+      if (current.current === active) setBusy(false);
+    }
+  };
+
+  const download = async item => {
+    if (busy || state !== 'READY'
+      || item.scan_clearance_status !== 'SCAN_CLEAN_VERIFIED'
+      || !valid(item, tenantId, projectId, taskId)) return;
+    const active = scope;
+    setBusy(true);
+    setError('');
+    try {
+      const { data, headers: resultHeaders } = await api.get(
+        root + '/attachments/' + encodeURIComponent(item.attachment_id) + '/download',
+        { headers, responseType: 'blob', timeout: 120000 },
+      );
+      if (current.current !== active) return;
+      if (
+        !(data instanceof Blob) || data.size !== item.size_bytes
+        || !(resultHeaders?.['content-type'] || '').startsWith(item.media_type)
+      ) throw new Error('PROJECT_ATTACHMENT_DOWNLOAD_SOURCE_INVALID');
+      const objectUrl = URL.createObjectURL(data);
+      try {
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = item.filename;
+        anchor.rel = 'noopener';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    } catch (failure) {
+      if (current.current !== active) return;
+      setError('EOS did not verify an authorized clean attachment download.');
+    } finally {
+      if (current.current === active) setBusy(false);
+    }
+  };
 
   const upload = async event => {
     event.preventDefault();
@@ -201,8 +296,9 @@ export default function ProjectTaskAttachmentsPanel({
       </div>
     </header>
     <p className="mt-2 text-xs text-amber-900">
-      Uploaded files remain quarantined pending independent malware scanning and evidence release.
-      Quarantined files cannot be downloaded, previewed or treated as approved evidence.
+      Newly uploaded files remain quarantined until independent GuardDuty verification.
+      Only files whose EOS clearance is recorded may be downloaded or linked as review evidence.
+      Scan clearance does not prove document authenticity, legal validity or electronic signature.
     </p>
     {state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">
       Verifying file manifests with EOS…
@@ -214,8 +310,19 @@ export default function ProjectTaskAttachmentsPanel({
         {items.map(item => <li key={item.attachment_id} className="p-3 text-sm">
           <p className="break-words font-semibold text-slate-900">{item.filename}</p>
           <p className="mt-1 text-xs text-slate-600">
-            Quarantined · {item.media_type} · {item.size_bytes.toLocaleString()} bytes
+            {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
+              ? 'GuardDuty scan verified clean · not an electronic signature'
+              : 'Quarantined · malware scan clearance unavailable'}
+            {' · '}{item.media_type} · {item.size_bytes.toLocaleString()} bytes
           </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {participantMode && item.scan_clearance_status === 'QUARANTINED' &&
+              <button type="button" disabled={busy} className="wp-button"
+                onClick={() => void verifyScan(item)}>Check malware scan result</button>}
+            {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED' &&
+              <button type="button" disabled={busy} className="wp-button"
+                onClick={() => void download(item)}>Download verified file</button>}
+          </div>
           <p className="mt-1 break-all text-xs text-slate-600">
             SHA3-512 {item.content_sha3_512}
           </p>
@@ -250,7 +357,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.0.0-QUARANTINE-UPLOAD-MANIFEST-READBACK
+// VERSION: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
