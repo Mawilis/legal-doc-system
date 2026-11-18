@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT
+VERSION: v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,42 +9,43 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins exact owner/participant clean download IAM and
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins exact owner/participant clean download IAM and
   contributor-only provider scan reconciliation without a safety bypass.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT certifies
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT certifies
   owner-only attachment reads, current participant reads and contributor
   upload commands; no upload, download, scan or financial inherited grant.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT admits named reviewer
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT admits named reviewer
   inbox only through independent participant-contribute IAM; the route
   verifies each current exact-project record before revealing pending work.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT locks task approval
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT locks task approval
   request to owner update and named contributor decision to participant
   contribute; task approval read requires separately admitted context.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins exact-project
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins exact-project
   co-participant list to the current participant-only read operation.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins recipient-only
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins recipient-only
   notification list/read receipt routes under separate participant IAM and
   exact active project/entitlement checks; no global inbox bypass.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT locks principal-scoped
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT locks principal-scoped
   /my-projects discovery to explicit current participant IAM, no owner fallback.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins four task comment
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins four task comment
   read/create routes to owner or current participant IAM and record scope.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins owner-authorized task edit
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins owner-authorized task edit
   to project:update / project_update and retains participant scope denial.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins exact tenant candidate membership
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins exact tenant candidate membership
   choice reads to project owner detail IAM without granting participation.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins five new exact-tenant task operations
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT certifies independent participant IAM pairs
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT verifies explicit project owner-only participant
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT pins the four bounded notes endpoints to current
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT proves customer Projects authority is separately
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT asserts EOS rejects
+  v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -93,7 +94,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT"
+VERSION = "v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -660,8 +661,114 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
     assert Path("tools/eos/saas/projects/project_registry.py").is_file()
 
 
+
+def test_project_approval_evidence_requires_current_provider_and_exact_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A saved scan event cannot replace a current original-version provider check."""
+    tenant = "synthetic-tenant"
+    project = "prj-" + "a" * 48
+    task = "ptk-" + "b" * 48
+    attachment = "pat-" + "c" * 48
+    manifest = SimpleNamespace(attachment_id=attachment, fingerprint="d" * 128)
+    clearance = SimpleNamespace(
+        fingerprint="e" * 128,
+        policy_sha3_512="a" * 128,
+        scan_evidence_sha3_512="b" * 128,
+    )
+    context = SimpleNamespace(tenant_id=tenant)
+    checks = []
+
+    def transaction(authorized, operation):
+        assert authorized is context
+        return operation(object(), object())
+
+    def source(registry, tenant_id, project_id, task_id, attachment_id, session):
+        assert (tenant_id, project_id, task_id, attachment_id) == (
+            tenant, project, task, attachment,
+        )
+        checks.append("source")
+        return manifest, clearance
+
+    def provider(original):
+        assert original is manifest
+        checks.append("provider")
+        return "a" * 128, "b" * 128
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    monkeypatch.setattr(projects_router, "_require_cleared_project_attachment", source)
+    monkeypatch.setattr(projects_router, "verify_guardduty_clean_attachment", provider)
+    result = projects_router._fresh_project_approval_evidence(
+        context, project, task, (attachment,), participant=False,
+    )
+    assert result == {attachment: ("d" * 128, "e" * 128)}
+    assert checks == ["source", "provider"]
+
+
+def test_project_approval_provider_drift_fails_before_decision_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A changed scan observation or provider outage cannot authorize a review."""
+    context = SimpleNamespace(tenant_id="synthetic-tenant")
+    project, task, attachment = (
+        "prj-" + "a" * 48, "ptk-" + "b" * 48, "pat-" + "c" * 48,
+    )
+    manifest = SimpleNamespace(attachment_id=attachment, fingerprint="d" * 128)
+    clearance = SimpleNamespace(
+        fingerprint="e" * 128, policy_sha3_512="a" * 128,
+        scan_evidence_sha3_512="b" * 128,
+    )
+    monkeypatch.setattr(
+        projects_router, "_transaction",
+        lambda authorized, operation: operation(object(), object()),
+    )
+    monkeypatch.setattr(
+        projects_router, "_require_cleared_project_attachment",
+        lambda *args: (manifest, clearance),
+    )
+    monkeypatch.setattr(
+        projects_router, "verify_guardduty_clean_attachment",
+        lambda record: ("f" * 128, "b" * 128),
+    )
+    with pytest.raises(HTTPException) as drift:
+        projects_router._fresh_project_approval_evidence(
+            context, project, task, (attachment,), participant=False,
+        )
+    assert drift.value.status_code == 409
+    assert drift.value.detail == "PROJECT_APPROVAL_EVIDENCE_PROVIDER_CHANGED"
+
+    def unavailable(record):
+        raise projects_router.ProjectAttachmentStorageError(
+            "PROJECT_ATTACHMENT_SCAN_POLICY_UNAVAILABLE",
+        )
+
+    monkeypatch.setattr(
+        projects_router, "verify_guardduty_clean_attachment", unavailable,
+    )
+    with pytest.raises(HTTPException) as denied:
+        projects_router._fresh_project_approval_evidence(
+            context, project, task, (attachment,), participant=False,
+        )
+    assert denied.value.status_code == 503
+
+
+def test_project_approval_evidence_refuses_duplicate_or_foreign_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Malformed or duplicate file references never reach provider inspection."""
+    context = SimpleNamespace(tenant_id="synthetic-tenant")
+    project, task = "prj-" + "a" * 48, "ptk-" + "b" * 48
+    attachment = "pat-" + "c" * 48
+    for references in ((attachment, attachment), ("pat-foreign",)):
+        with pytest.raises(HTTPException) as denied:
+            projects_router._fresh_project_approval_evidence(
+                context, project, task, references, participant=False,
+            )
+        assert denied.value.status_code == 422
+
+
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.18.0-SCANNED-ATTACHMENT-ROUTE-IAM-CERT
+# VERSION: v1.19.0-FRESH-APPROVAL-PROVIDER-READBACK-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
