@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT
+# VERSION: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,40 +7,43 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT compiles and tests
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT includes a
+#            participant-only assigned-project/task/notification source
+#            readback and denial UI certificate alongside owner Projects.
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT compiles and tests
 #            atomic recipient-scoped mention inbox creation, exact tenant
 #            and principal read gates and source-owned read receipt CAS.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT includes task
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT includes task
 #            comment discussion rendering, mocked EOS publish/readback, and
 #            explicit mention choice denial in the governed frontend gate.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT adds exact-task
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT adds exact-task
 #            comment/mention domain, caller transaction, audited replay and
 #            foreign-tenant Mongo integration to the governed Projects gate.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT executes exact-source
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT executes exact-source
 #            project participant grant/revoke client tests with Projects UI
 #            and rendered browser certification.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT tracks and runs
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT tracks and runs
 #            the mounted task and participant list/editor surfaces and
 #            their desktop/mobile browser checks in the existing certificate.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT compiles and tests source-owned
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT compiles and tests source-owned
 #            task, subtask, milestone, dependency, assignee and lifecycle
 #            contracts with exact tenant disposable Mongo persistence.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT executes the central roles,
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT executes the central roles,
 #            permission namespace, tenant operation and authorization tests
 #            with the Projects-specific and disposable Mongo contracts.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT adds indexed exact-tenant project participant
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT adds indexed exact-tenant project participant
 #            domain and disposable MongoDB grant/revoke/replay certification,
 #            retaining browser, Python, source and frontend release gates.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT honors the root manifest's
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT honors the root manifest's
 #            existing legacy React peer-lock agreement for test tooling,
 #            without relaxing the client's locked dependency resolution.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT adds isolated rendered Chromium
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT adds isolated rendered Chromium
 #            desktop/mobile geometry and selected-note surface verification;
 #            mocked API replies are presentation tests, not authenticated EOS.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT extends exact-head CI to the
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT adds a real
+# CHANGELOG: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -96,6 +99,8 @@ on:
       - client/src/components/workspaces/ProjectNotesPanel.jsx
       - client/src/components/workspaces/ProjectTasksPanel.jsx
       - client/src/components/workspaces/ProjectTaskCommentsPanel.jsx
+      - client/src/components/workspaces/AssignedProjectsWorkspace.jsx
+      - client/src/__tests__/components/AssignedProjectsWorkspace.test.jsx
       - client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
       - client/src/components/workspaces/ProjectParticipantsPanel.jsx
       - client/src/__tests__/components/ProjectsWorkspace.test.jsx
@@ -164,7 +169,7 @@ jobs:
         run: npm ci --include=dev --no-audit --no-fund --progress=false
       - name: Certify project source-backed interaction
         working-directory: client
-        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
+        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx src/__tests__/components/AssignedProjectsWorkspace.test.jsx
       - name: Build certified frontend
         working-directory: client
         run: npm run build
@@ -190,7 +195,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.11.0-PROJECT-NOTIFICATION-ATOMIC-CERT
+# VERSION: v1.12.0-PARTICIPANT-EXECUTION-INBOX-CLIENT-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
