@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK
+ * VERSION: v2.0.0-SOURCE-BACKED-PROJECT-TABLE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK connects the actual accountability
+ * CHANGELOG: v2.0.0-SOURCE-BACKED-PROJECT-TABLE replaces card-like project rows
+ *            with a responsive table sourced exclusively from existing EOS list
+ *            fields, retaining search, status filtering, selection and commands.
+ *            v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK connects the actual accountability
  *            panel with scoped semantic label styling, preventing the global
  *            gold/uppercase form-label rules from leaking into this workflow.
  *            v1.9.5-OPTIONAL-CODE-HELPER-COPY reduces generated-code guidance to
@@ -802,7 +805,26 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             </form>
           ) : <>
             <div className="wp-list-controls flex flex-wrap items-center gap-2 border-b border-slate-200 p-3"><label className="wp-search relative min-w-[180px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/><span className="sr-only">Search projects</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" className="min-h-10 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"/></label><label className="sr-only" htmlFor="project-status-filter">Filter by status</label><select id="project-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="wp-filter min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="all">All statuses</option>{PROJECT_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></div>
-            {sourceState === 'READY' && items.length === 0 ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0 ? <p className="p-6 text-center text-sm text-slate-600">No projects match the current search and status filter.</p> : <ul className="divide-y divide-slate-200" aria-label="Projects returned by EOS">{visibleItems.map((item) => <li key={item.project_id}><button type="button" aria-current={selectedId === item.project_id ? 'true' : undefined} data-selected={selectedId === item.project_id} onClick={() => void openProject(item.project_id)} className="wp-row flex min-h-[76px] w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-600"><span className="min-w-0"><strong className="wp-row-title block truncate text-sm text-slate-900">{item.name}</strong><span className="wp-row-meta mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600"><span>{item.code || 'No code'}</span><span className="capitalize">{statusLabel(item.status)}</span>{item.target_date && <span className="inline-flex items-center gap-1"><CalendarDays size={12}/>{item.target_date}</span>}</span></span><span className="wp-status shrink-0 rounded-full border border-slate-200 px-2.5 py-1 text-xs capitalize text-slate-700" data-status={item.status}>{statusLabel(item.status)}</span></button></li>)}</ul>}
+            {sourceState === 'READY' && items.length === 0 ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0 ? <p className="p-6 text-center text-sm text-slate-600">No projects match the current search and status filter.</p> : <div className="wp-table-shell" role="region" aria-label="Projects table" tabIndex={0}>
+              <div className="wp-table-head" aria-hidden="true">
+                <span>Project</span><span>Project code</span><span>Status</span><span>Target date</span><span>Action</span>
+              </div>
+              <ul className="divide-y divide-slate-200" aria-label="Projects returned by EOS">
+                {visibleItems.map((item) => <li key={item.project_id}>
+                  <button type="button" aria-current={selectedId === item.project_id ? 'true' : undefined}
+                    data-selected={selectedId === item.project_id}
+                    onClick={() => void openProject(item.project_id)}
+                    className="wp-table-row focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-600"
+                    aria-label={`View project ${item.name}, ${statusLabel(item.status)}`}>
+                    <span><strong className="wp-row-title">{item.name}</strong><span className="wp-row-meta">{item.project_id}</span></span>
+                    <span className="text-sm text-slate-700">{item.code || 'Not recorded'}</span>
+                    <span><span className="wp-status" data-status={item.status}>{statusLabel(item.status)}</span></span>
+                    <span className="text-sm text-slate-700">{item.target_date || 'Not scheduled'}</span>
+                    <span className="wp-table-action">View details</span>
+                  </button>
+                </li>)}
+              </ul>
+            </div>}
             <footer className="wp-footer border-t border-slate-200 px-4 py-2 text-xs text-slate-500">{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified` : 'Source state shown above'}</footer>
           </>}
         </section>
@@ -849,7 +871,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK
+// VERSION: v2.0.0-SOURCE-BACKED-PROJECT-TABLE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
