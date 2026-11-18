@@ -1,12 +1,14 @@
 """TITLE: WILSY OS Project Note Domain Certificate
-VERSION: v1.0.0-PROJECT-NOTE-LIFECYCLE-CERT
+VERSION: v1.0.1-RETIRED-TENANT-ALIAS-CERT
 AUTHORITY: Synthetic domain-unit verification; Python EOS owns source truth.
 EPITOME: Proves author ownership, exact note scope, revision guards, lifecycle
          immutability, integrity and validation without touching Mongo or IAM.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_note_domain.py
 COLLABORATION / OWNERSHIP: tools.eos.saas.domain.project_note domain only.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-PROJECT-NOTE-LIFECYCLE-CERT establishes fail-closed evidence.
+CHANGELOG: v1.0.1-RETIRED-TENANT-ALIAS-CERT rejects retired tenant aliases at note domain
+         boundary, not merely after HTTP authorization.
+CHANGELOG: v1.0.1-RETIRED-TENANT-ALIAS-CERT establishes fail-closed evidence.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic IDs and descriptive text only.
 TENANT BOUNDARY: No default tenant and cross-tenant equality is not inferred.
@@ -98,16 +100,12 @@ def test_author_only_cas_revisions_and_soft_archive() -> None:
 ])
 def test_project_note_validation(changes: dict[str, object]) -> None:
     """Malformed immutable coordinates and bounded business state reject."""
-    if changes == {"tenant_id": "MASTER"}:
-        # Exact IDs are syntax only: domain cannot authoritatively resolve tenant.
-        assert note(**changes).tenant_id == "MASTER"
-    else:
-        with pytest.raises(ProjectNoteError):
-            note(**changes)
+    with pytest.raises(ProjectNoteError):
+        note(**changes)
 
 
 # ARTIFACT: test_project_note_domain.py
-# VERSION: v1.0.0-PROJECT-NOTE-LIFECYCLE-CERT
+# VERSION: v1.0.1-RETIRED-TENANT-ALIAS-CERT
 # AUTHORITY BOUNDARY: isolated domain tests; no IAM, API, employment or financial execution
 # TENANT POSTURE: synthetic exact-coordinate only
 # FAIL-CLOSED POSTURE: tampering, foreign author and stale revision fail
