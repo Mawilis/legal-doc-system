@@ -5,14 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.5.0-STRATEGY-PROJECT-DELIVERY-HANDOFF
+ * VERSION: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v4.5.0-STRATEGY-PROJECT-DELIVERY-HANDOFF hands source-verified Strategy projects
+ * CHANGELOG: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT routes exact
+ *            source-verified PROJECTS Daily Attention work to assigned
+ *            project task execution, without owner workspace privilege.
+ * CHANGELOG: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT hands source-verified Strategy projects
  *            to the existing Projects workspace with an exact project ID;
  *            EOS must reauthorize list and detail before presenting actions.
  * CHANGELOG: v4.4.0-SOURCE-VERIFIED-OWNER-DRAFT-COUNT resolves
@@ -20,7 +23,7 @@
  *            projection, validates each source record and exact principal,
  *            and exposes a numbered Draft filter only after verification.
  *            Stale scope, denied and unavailable results never claim zero.
- * CHANGELOG: v4.5.0-STRATEGY-PROJECT-DELIVERY-HANDOFF surfaces overdue,
+ * CHANGELOG: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT surfaces overdue,
  *            Open and In Progress counts from the exact verified My Work
  *            snapshot and makes them actionable filters. Drafts route to
  *            separate owner-scoped reads without inventing draft counts.
@@ -327,6 +330,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const operatingCapacity = authUser.businessRole || (authUser.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION' ? authUser.role : null);
   const [operatingDocumentClass, setOperatingDocumentClass] = useState(null);
   const [projectDeliveryFocus, setProjectDeliveryFocus] = useState(null);
+  const [attentionProjectFocus, setAttentionProjectFocus] = useState(null);
   useEffect(() => {
     const focusAuthorizedSearch = (event) => {
       if (event.defaultPrevented) return;
@@ -803,7 +807,15 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   scopeKey={workScope} principalId={authUser.id} tenantId={workTenantId}
                   view={workView} onViewChange={setWorkView}
                   selectedKey={myWorkFocusItem} onSelect={setMyWorkFocusItem}
-                  onOpen={openMyWork}
+                  onOpen={(item) => {
+                    if (item?.source === 'PROJECTS'
+                      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
+                      setAttentionProjectFocus(item.project_id);
+                      navigateSection('projects');
+                    } else {
+                      openMyWork(item);
+                    }
+                  }}
                   onRefresh={() => {
                     myWorkRetryRef.current = { scope: workScope, attempts: 0 };
                     invalidateUnifiedMyWork(workScope);
@@ -957,7 +969,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
               onRefresh={() => setRequisitionsRefresh((value) => value + 1)}
             />
           ) : section === 'projects' ? (
-            <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus}/>
+            <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusAssignedProjectId={attentionProjectFocus}/>
           ) : section === 'onboarding' ? (
             <>
               <PageHeading eyebrow="People lifecycle" title="Employee onboarding" subtitle="Employment record, then separately governed identity and access admission."/>
@@ -1465,7 +1477,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.5.0-STRATEGY-PROJECT-DELIVERY-HANDOFF
+ * VERSION: v4.6.0-ATTENTION-TO-PARTICIPANT-PROJECT
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
