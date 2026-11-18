@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Notes and Revision Evidence Registry
-VERSION: v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION
+VERSION: v1.0.2-BSON-MILLISECOND-FINGERPRINT-CERT
 AUTHORITY: Python EOS tenant-scoped project collaboration persistence.
 EPITOME: Store source-owned project notes with author ownership, bounded pages,
          compare-and-set revisions, immutable event snapshots and replay guards.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router proves project access/record visibility;
          this registry owns note persistence only and receives caller Mongo sessions.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION supports ISO UTC
+CHANGELOG: v1.0.2-BSON-MILLISECOND-FINGERPRINT-CERT normalizes command
+         UTC instants to BSON milliseconds before hashing and persistence,
+         preventing false fingerprint corruption after database readback.
+         v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION supports ISO UTC
          timestamps from immutable event snapshots as well as trusted BSON UTC
          readbacks, retaining command-time timezone strictness.
          v1.0.0-AUTHORED-PROJECT-NOTES establishes exact-tenant authored
@@ -34,7 +37,7 @@ from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 
-VERSION: Final[str] = "v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION"
+VERSION: Final[str] = "v1.0.2-BSON-MILLISECOND-FINGERPRINT-CERT"
 COLLECTION: Final[str] = "wilsy_project_notes"
 EVENT_COLLECTION: Final[str] = "wilsy_project_note_events"
 _FIELDS: Final[frozenset[str]] = frozenset({
@@ -116,7 +119,10 @@ def _command_instant(value: object) -> datetime:
         or value.tzinfo is None or value.utcoffset() is None
     ):
         raise ProjectNoteError("PROJECT_NOTE_TIMESTAMP_INVALID")
-    return value.astimezone(timezone.utc)
+    normalized = value.astimezone(timezone.utc)
+    # BSON dates persist millisecond precision. Fingerprints must bind the
+    # exact persisted instant, not microseconds Mongo will discard.
+    return normalized.replace(microsecond=(normalized.microsecond // 1000) * 1000)
 
 
 def _digest(material: Mapping[str, object]) -> str:
@@ -415,7 +421,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_notes_registry.py
-# VERSION: v1.0.1-IMMUTABLE-NOTE-EVENT-HYDRATION
+# VERSION: v1.0.2-BSON-MILLISECOND-FINGERPRINT-CERT
 # AUTHORITY BOUNDARY: persistence-only, caller-owned session and author-only edits
 # TENANT POSTURE: exact tenant and project filters for reads, writes, replay and events
 # FAIL-CLOSED POSTURE: corruption, foreign scope, replay conflict and stale revisions deny
