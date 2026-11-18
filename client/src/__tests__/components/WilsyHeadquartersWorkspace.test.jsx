@@ -321,8 +321,6 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(await screen.findByRole('button', { name: 'Projects: 0 verified' })).toBeTruthy();
     expect(screen.getByText('Commercial source not connected')).toBeTruthy();
     expect(api.get.mock.calls.some(([path]) => path === '/hr/workforce')).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: /Organisation/ }));
-    expect(await screen.findByText('Verified active directory result')).toBeTruthy();
     expect(screen.queryByText('247')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Overdue (1)' })).toBeTruthy();
@@ -332,6 +330,9 @@ describe('WILSY Headquarters authenticated shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Overdue (1)' }));
     expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open authorized record: Ship work release' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
+    expect(await screen.findByText('Test Directory Person')).toBeTruthy();
+    expect(api.get.mock.calls.some(([path]) => path === '/hr/workforce')).toBe(true);
   });
 
 
@@ -495,12 +496,13 @@ describe('WILSY Headquarters authenticated shell', () => {
     });
     try {
       renderHeadquarters();
-      await waitFor(() => expect(pendingReads.length).toBeGreaterThan(0));
+      expect(pendingReads).toHaveLength(0);
       fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
+      await waitFor(() => expect(pendingReads.length).toBeGreaterThan(0));
       expect(screen.getByText('Verifying the current tenant workforce directory…')).toBeTruthy();
       expect(screen.queryByText(/No employees recorded/)).toBeNull();
       expect(screen.queryByText(/^0 active employees$/)).toBeNull();
-      await waitFor(() => expect(pendingReads.length).toBeGreaterThanOrEqual(2));
+      await waitFor(() => expect(pendingReads.length).toBeGreaterThanOrEqual(1));
       await act(async () => { pendingReads.forEach((resolve) => resolve()); });
       expect(await screen.findByText('Cold Mount Person')).toBeTruthy();
     } finally {
@@ -600,6 +602,7 @@ describe('WILSY Headquarters authenticated shell', () => {
     });
     try {
       const view = renderHeadquarters();
+      fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
       await waitFor(() => expect(resolvePrevious).toBeTypeOf('function'));
       view.rerender(
         <AuthContext.Provider value={nextAuth}>
@@ -608,7 +611,6 @@ describe('WILSY Headquarters authenticated shell', () => {
           </MemoryRouter>
         </AuthContext.Provider>,
       );
-      fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
       expect(await screen.findByText('New Tenant Directory Person')).toBeTruthy();
       expect(api.get.mock.calls.some(([path, config]) => (
         path === '/hr/workforce' && config.headers?.['X-Tenant-ID'] === nextTenant
