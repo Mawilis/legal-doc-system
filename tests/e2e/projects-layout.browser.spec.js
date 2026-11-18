@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT
+ * VERSION: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,41 +8,42 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT renders
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT renders
  *          task attachments as quarantined evidence with no preview/download
  *          and a bounded contributor upload control at desktop/mobile sizes.
- * CHANGELOG:  v1.9.0-SCANNER-QUARANTINE-LABEL-CERT scopes
+ * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT scopes
  *          review rationale assertions to the selected task's accessible
  *          region when that source text also appears in the reviewer inbox.
- * CHANGELOG:  v1.9.0-SCANNER-QUARANTINE-LABEL-CERT verifies
+ * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies
  *          the separately admitted reviewer inbox is rendered and usable
  *          without navigation through the owner-only project registry.
- * CHANGELOG:  v1.9.0-SCANNER-QUARANTINE-LABEL-CERT renders
+ * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT renders
  *          the task-review approval history and named reviewer decision
  *          controls at desktop and mobile widths without simulated IAM grants.
- * CHANGELOG:  v1.9.0-SCANNER-QUARANTINE-LABEL-CERT renders
+ * CHANGELOG:  v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT renders
  *          the separately authorized Assigned Projects task/notification
  *          journey at desktop and mobile widths without simulated grants.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT verifies source-backed
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT makes the shared
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT verifies source-backed
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT verifies EOS-backed project work
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT measures exact direct-child table
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT certifies the existing
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT measures actual
+ * CHANGELOG: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -343,12 +344,10 @@ for (const width of [1440, 390]) {
 
     await page.getByRole('button', { name: /View project Projects operating foundation/ }).click();
     await expect(page.getByRole('heading', { name: 'Projects operating foundation' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Project notes' })).toBeVisible();
-    const participantPanel = page.getByRole('region', { name: 'Project participants' });
-    await expect(participantPanel).toBeVisible();
-    await expect(participantPanel.getByRole('combobox', { name: 'Eligible participant' })).toBeVisible();
-    await expect(participantPanel.getByRole('option', { name: 'eligible-tenant-person' })).toHaveCount(1);
-    await expect(participantPanel.getByRole('button', { name: 'Add participant' })).toBeDisabled();
+    await expect(page.locator('.wp-list-panel')).toBeHidden();
+    await expect(page.getByRole('region', { name: 'Verified project status distribution' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Project workspace views' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Project notes' })).toHaveCount(0);
     const projectWork = page.getByRole('region', { name: 'Project work execution' });
     await expect(projectWork).toBeVisible();
     await expect(projectWork.getByText('EOS verified no tasks on this page. Create work to begin execution.')).toBeVisible();
@@ -362,25 +361,30 @@ for (const width of [1440, 390]) {
 
 
     const after = await page.evaluate(() => {
-      const list = document.querySelector('.wp-list-panel').getBoundingClientRect();
+      const workspace = document.querySelector('.wilsy-projects').getBoundingClientRect();
+      const list = document.querySelector('.wp-list-panel');
       const detail = document.querySelector('.wp-detail').getBoundingClientRect();
       return {
         viewport: document.documentElement.clientWidth,
         documentWidth: document.documentElement.scrollWidth,
-        list: { x: list.x, y: list.y, right: list.right, bottom: list.bottom, width: list.width },
+        workspace: { x: workspace.x, width: workspace.width },
+        listHidden: getComputedStyle(list).display === 'none',
         detail: { x: detail.x, y: detail.y, right: detail.right, width: detail.width },
       };
     });
     expect(after.documentWidth, 'selected-project horizontal overflow').toBeLessThanOrEqual(after.viewport + 1);
-    if (width === 1440) {
-      expect(after.detail.x).toBeGreaterThanOrEqual(after.list.right - 2);
-      expect(after.list.width).toBeGreaterThan(300);
-      expect(after.detail.width).toBeGreaterThan(300);
-    } else {
-      expect(after.detail.y).toBeGreaterThanOrEqual(after.list.bottom - 2);
-      expect(after.detail.width).toBeGreaterThan(320);
-    }
-    await page.getByRole('button', { name: 'Close project details' }).click();
+    expect(after.listHidden, 'list disappears rather than being compressed').toBe(true);
+    expect(after.detail.width, 'detail fills selected project workspace')
+      .toBeGreaterThan(after.workspace.width - 5);
+    await page.getByRole('button', { name: 'People', exact: true }).click();
+    const participantPanel = page.getByRole('region', { name: 'Project participants' });
+    await expect(participantPanel).toBeVisible();
+    await expect(participantPanel.getByRole('combobox', { name: 'Eligible participant' })).toBeVisible();
+    await expect(participantPanel.getByRole('option', { name: 'eligible-tenant-person' })).toHaveCount(1);
+    await expect(participantPanel.getByRole('button', { name: 'Add participant' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Notes', exact: true }).click();
+    await expect(page.getByRole('region', { name: 'Project notes' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back to projects table' }).click();
     await expect(page.locator('.wp-body')).toHaveAttribute('data-layout', 'list');
     await expect(page.getByRole('region', { name: 'Project notes' })).toHaveCount(0);
     await page.getByRole('button', { name: 'My assigned projects' }).click();
@@ -427,7 +431,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v1.9.0-SCANNER-QUARANTINE-LABEL-CERT
+// VERSION: v2.0.0-FULL-WIDTH-TASK-FIRST-PROJECT-BROWSER-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
