@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.30.0-SUMMARY-LATENCY-OBSERVABILITY
+VERSION: v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,8 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.30.0-SUMMARY-LATENCY-OBSERVABILITY logs safe bounded summary endpoint total and source-count latency only when slow or failing, separating Mongo/entitlement transaction overhead from validated registry scanning. No tenant/principal/record values, IAM changes, new queries or source-data fallbacks.
+  v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY separates per-attempt entitlement read, transaction wrapper, and source cursor/validation times for slow summary reads without extra Mongo queries or weaker tenant/IAM gates.
+  v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY logs safe bounded summary endpoint total and source-count latency only when slow or failing, separating Mongo/entitlement transaction overhead from validated registry scanning. No tenant/principal/record values, IAM changes, new queries or source-data fallbacks.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY narrows each immutable event actor to a bounded string before set insertion and exact-tenant identity lookup; rejects malformed event identity without coercion or privilege changes.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds current-principal owned_by_me owner-read filtering before paginating the exact tenant's projects. It never grants participant IAM, modifies project assignment or exposes foreign project records.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
@@ -579,6 +580,7 @@ def _transaction(
     callback: Callable[[ProjectRegistry, Any], Any],
     *,
     write: bool = False,
+    phase_timings: dict[str, float] | None = None,
 ) -> Any:
     """Run one exact-tenant operation in a caller-owned majority transaction.
 
@@ -602,15 +604,36 @@ def _transaction(
     )
     registry = ProjectRegistry(projects, events)
     try:
+        if phase_timings is None:
+            with client.start_session() as mongo_session:
+                return mongo_session.with_transaction(
+                    lambda current: _execute_with_entitlement(
+                        context, registry, callback, current
+                    ),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+        session_started = perf_counter()
         with client.start_session() as mongo_session:
-            return mongo_session.with_transaction(
-                lambda current: _execute_with_entitlement(
-                    context, registry, callback, current
-                ),
-                read_concern=ReadConcern("snapshot"),
-                write_concern=WriteConcern("majority", j=True),
-                read_preference=ReadPreference.PRIMARY,
+            phase_timings["session_open_ms"] = round(
+                (perf_counter() - session_started) * 1000, 2
             )
+            transaction_started = perf_counter()
+            try:
+                return mongo_session.with_transaction(
+                    lambda current: _execute_with_entitlement(
+                        context, registry, callback, current,
+                        phase_timings=phase_timings,
+                    ),
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+            finally:
+                phase_timings["transaction_ms"] = round(
+                    (perf_counter() - transaction_started) * 1000, 2
+                )
     except HTTPException as error:
         if error.status_code == 503:
             logger.error("PROJECTS_TRANSACTION_FAILURE failure_class=AUTHORITY status=503 code=%s", str(error.detail)[:100])
@@ -693,9 +716,20 @@ def _execute_with_entitlement(
     registry: ProjectRegistry,
     callback: Callable[[ProjectRegistry, Any], Any],
     session: Any,
+    phase_timings: dict[str, float] | None = None,
 ) -> Any:
     """Compose entitlement before invoking the source-owned project operation."""
-    _require_active_projects_entitlement(context.tenant_id, session)
+    if phase_timings is None:
+        _require_active_projects_entitlement(context.tenant_id, session)
+        return callback(registry, session)
+    phase_timings["attempts"] = phase_timings.get("attempts", 0.0) + 1
+    entitlement_started = perf_counter()
+    try:
+        _require_active_projects_entitlement(context.tenant_id, session)
+    finally:
+        phase_timings["entitlement_ms"] = phase_timings.get("entitlement_ms", 0.0) + round(
+            (perf_counter() - entitlement_started) * 1000, 2
+        )
     return callback(registry, session)
 
 
@@ -896,13 +930,15 @@ def project_summary(
     response.headers["Cache-Control"] = "no-store"
     started = perf_counter()
     count_elapsed_ms: float | None = None
+    phase_timings: dict[str, float] = {}
 
     def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
         nonlocal count_elapsed_ms
         scan_started = perf_counter()
         try:
             counts = registry.summary_for_tenant(
-                tenant_id=context.tenant_id, session=session
+                tenant_id=context.tenant_id, session=session,
+                phase_timings=phase_timings,
             )
         finally:
             count_elapsed_ms = round((perf_counter() - scan_started) * 1000, 2)
@@ -914,19 +950,37 @@ def project_summary(
         }
 
     try:
-        result = _transaction(context, read)
+        result = _transaction(context, read, phase_timings=phase_timings)
     except Exception:
         elapsed_ms = round((perf_counter() - started) * 1000, 2)
         logger.warning(
-            "PROJECTS_SUMMARY_READ outcome=FAILED total_ms=%.2f count_ms=%s",
+            "PROJECTS_SUMMARY_READ outcome=FAILED total_ms=%.2f count_ms=%s "
+            "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
+            "cursor_first_ms=%s cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
             elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            phase_timings.get("entitlement_ms", "NOT_REACHED"),
+            phase_timings.get("transaction_ms", "NOT_REACHED"),
+            phase_timings.get("session_open_ms", "NOT_REACHED"),
+            phase_timings.get("cursor_first_ms", "NOT_REACHED"),
+            phase_timings.get("cursor_remaining_ms", "NOT_REACHED"),
+            phase_timings.get("hydrate_ms", "NOT_REACHED"),
+            int(phase_timings.get("attempts", 0)),
         )
         raise
     elapsed_ms = round((perf_counter() - started) * 1000, 2)
     if elapsed_ms >= 1000:
         logger.warning(
-            "PROJECTS_SUMMARY_READ outcome=SLOW total_ms=%.2f count_ms=%s",
+            "PROJECTS_SUMMARY_READ outcome=SLOW total_ms=%.2f count_ms=%s "
+            "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
+            "cursor_first_ms=%s cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
             elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            phase_timings.get("entitlement_ms", "NOT_REACHED"),
+            phase_timings.get("transaction_ms", "NOT_REACHED"),
+            phase_timings.get("session_open_ms", "NOT_REACHED"),
+            phase_timings.get("cursor_first_ms", "NOT_REACHED"),
+            phase_timings.get("cursor_remaining_ms", "NOT_REACHED"),
+            phase_timings.get("hydrate_ms", "NOT_REACHED"),
+            int(phase_timings.get("attempts", 0)),
         )
     return result
 
@@ -3375,7 +3429,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.30.0-SUMMARY-LATENCY-OBSERVABILITY
+# VERSION: v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
