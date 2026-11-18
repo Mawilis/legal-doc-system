@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.9.5-OPTIONAL-CODE-HELPER-COPY
+ * VERSION: v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.9.5-OPTIONAL-CODE-HELPER-COPY reduces generated-code guidance to
+ * CHANGELOG: v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK connects the actual accountability
+ *            panel with scoped semantic label styling, preventing the global
+ *            gold/uppercase form-label rules from leaking into this workflow.
+ *            v1.9.5-OPTIONAL-CODE-HELPER-COPY reduces generated-code guidance to
  *            a brief optional sentence and retains exact-tenant uniqueness;
  *            project status, identity and assignment sources are unchanged.
  *            v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES distinguishes verified zero candidates
@@ -387,7 +390,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
     if (!confirmed) setLocalError('EOS did not confirm the assignment. The previous values remain authoritative.');
   };
 
-  return <section aria-label="Project accountability" className="mb-5 border-t border-slate-200 pt-4">
+  return <section aria-label="Project accountability" className="wp-accountability mb-5 border-t border-slate-200 pt-4">
     <h3 className="font-semibold text-slate-900">Owner and department governance</h3>
     <p className="mt-1 text-xs text-slate-600">Only current verified EOS identities and tenant departments are selectable. No role or employment is created.</p>
     {state === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying authorized assignment sources…</p>}
@@ -846,7 +849,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.9.5-OPTIONAL-CODE-HELPER-COPY
+// VERSION: v1.9.6-ACCOUNTABILITY-SEMANTIC-STYLE-HOOK
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
