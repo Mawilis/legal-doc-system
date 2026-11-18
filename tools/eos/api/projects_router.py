@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE
+VERSION: v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,61 +14,64 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE binds optional
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION adds a verified
+  scan-clearance field to exact-task attachment lists; missing scans remain
+  quarantined and no signed document or download authority is asserted.
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE independently
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE accepts exact task
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE lists the named
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE adds owner-requested,
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE permits exact-project
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE atomically persists comment
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE exposes a bounded my-projects
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE adds source-owned task comments
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE permits owner-only task edit and
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE exposes bounded exact-tenant project
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE exposes owner and exact-project participant task
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE admits exact project-bound participant detail and
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE adds exact-tenant owner-authorized participant grant,
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE moves note-domain validation inside existing
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE introduces authenticated, project-existence-verified
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE projects verified next-page availability and exact offset
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE refuses a PLANNED-to-ACTIVE
+  v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -252,7 +255,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE"
+VERSION: Final[str] = "v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1655,6 +1658,8 @@ def _attachment_projection(attachment: ProjectAttachment) -> dict[str, object]:
     record = attachment.to_dict()
     record.pop("storage_receipt")
     record.pop("fingerprint")
+    record["scan_clearance_status"] = "QUARANTINED"
+    record["scan_clearance_fingerprint"] = None
     return record
 
 
@@ -1669,12 +1674,34 @@ def _attachment_page(
         tenant_id=context.tenant_id, project_id=project_id,
         task_id=task_id, session=session, limit=limit, offset=offset,
     )
+    clearances = _project_attachment_clearances(
+        registry, context.tenant_id, project_id, task_id, session,
+    )
+    rendered: list[dict[str, object]] = []
+    for item in items:
+        visible = _attachment_projection(item)
+        try:
+            verified = clearances.get(
+                tenant_id=context.tenant_id,
+                project_id=project_id, task_id=task_id,
+                attachment_id=item.attachment_id, session=session,
+            )
+        except ProjectAttachmentClearanceNotFound:
+            pass
+        else:
+            if verified.attachment_fingerprint != item.fingerprint:
+                raise ProjectAttachmentClearanceError(
+                    "PROJECT_ATTACHMENT_CLEARANCE_SOURCE_MISMATCH",
+                )
+            visible["scan_clearance_status"] = "SCAN_CLEAN_VERIFIED"
+            visible["scan_clearance_fingerprint"] = verified.fingerprint
+        rendered.append(visible)
     return {
         "schema": "WILSY-PROJECT-ATTACHMENT-LIST/V1",
         "tenant_id": context.tenant_id,
         "principal_id": context.identity.identity_id,
         "project_id": project_id, "task_id": task_id,
-        "items": [_attachment_projection(item) for item in items],
+        "items": rendered,
         "limit": limit, "offset": offset, "has_more": more,
         "next_offset": offset + len(items) if more else None,
     }
@@ -3015,7 +3042,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.20.0-APPROVAL-TO-SCANNED-EVIDENCE-GATE
+# VERSION: v1.21.0-SOURCE-CLEARANCE-READ-PROJECTION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
