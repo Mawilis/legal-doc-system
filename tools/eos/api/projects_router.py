@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY
+VERSION: v1.30.0-SUMMARY-LATENCY-OBSERVABILITY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,7 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.30.0-SUMMARY-LATENCY-OBSERVABILITY logs safe bounded summary endpoint total and source-count latency only when slow or failing, separating Mongo/entitlement transaction overhead from validated registry scanning. No tenant/principal/record values, IAM changes, new queries or source-data fallbacks.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY narrows each immutable event actor to a bounded string before set insertion and exact-tenant identity lookup; rejects malformed event identity without coercion or privilege changes.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds current-principal owned_by_me owner-read filtering before paginating the exact tenant's projects. It never grants participant IAM, modifies project assignment or exposes foreign project records.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
@@ -133,6 +134,7 @@ from datetime import date, datetime, timezone
 import hashlib
 import logging
 import re
+from time import perf_counter
 from typing import Literal, Any, Callable, Final, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
@@ -892,17 +894,41 @@ def project_summary(
 ) -> dict[str, object]:
     """Return tenant-scoped status counts derived from validated project records."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(
-        context,
-        lambda registry, session: {
+    started = perf_counter()
+    count_elapsed_ms: float | None = None
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        nonlocal count_elapsed_ms
+        scan_started = perf_counter()
+        try:
+            counts = registry.summary_for_tenant(
+                tenant_id=context.tenant_id, session=session
+            )
+        finally:
+            count_elapsed_ms = round((perf_counter() - scan_started) * 1000, 2)
+        return {
             "schema": "WILSY-PROJECT-SUMMARY/V1",
             "tenant_id": context.tenant_id,
             "principal_id": context.identity.identity_id,
-            "counts": registry.summary_for_tenant(
-                tenant_id=context.tenant_id, session=session
-            ),
-        },
-    )
+            "counts": counts,
+        }
+
+    try:
+        result = _transaction(context, read)
+    except Exception:
+        elapsed_ms = round((perf_counter() - started) * 1000, 2)
+        logger.warning(
+            "PROJECTS_SUMMARY_READ outcome=FAILED total_ms=%.2f count_ms=%s",
+            elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+        )
+        raise
+    elapsed_ms = round((perf_counter() - started) * 1000, 2)
+    if elapsed_ms >= 1000:
+        logger.warning(
+            "PROJECTS_SUMMARY_READ outcome=SLOW total_ms=%.2f count_ms=%s",
+            elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+        )
+    return result
 
 
 def _generated_project_code(project_id: str) -> str:
@@ -3349,7 +3375,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY
+# VERSION: v1.30.0-SUMMARY-LATENCY-OBSERVABILITY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
