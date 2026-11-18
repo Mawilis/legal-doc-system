@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP
+VERSION: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -17,7 +17,8 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-11-13
+CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX provisions a nonunique exact tenantId+user_id credential lookup index at connected startup before HTTP admission. The ObjectId-shaped identity collision query retains its legacy _id branch, bounded collision verification and exact tenant scope; no request-time DDL or user data write.
 CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP creates
 standalone exact-task scanner clearance and replay indexes at EOS startup.
 Scan authority and provider status remain external and fail closed.
@@ -663,6 +664,20 @@ class WilsyAPIServer:
             database, client = get_database(), get_client()
             if database is None:
                 return
+            # The ObjectId-shaped credential-currentness query checks both
+            # user_id and _id within the exact tenant. Mongo indexes _id, but
+            # the canonical tenant/user_id leg also requires an index.
+            # Nonunique DDL preserves historical identity collisions so that
+            # the credential resolver, not the index, rejects them fail closed.
+            credential_lookup_index = "wilsy_auth_users_tenant_identity_lookup"
+            installed_index = database["users"].create_index(
+                [("tenantId", 1), ("user_id", 1)],
+                name=credential_lookup_index,
+            )
+            if installed_index != credential_lookup_index:
+                raise RuntimeError("AUTH_CREDENTIAL_LOOKUP_INDEX_UNAVAILABLE")
+            logger.info("[AUTH_CREDENTIAL] Exact tenant identity lookup index ready")
+
             # Project identity, code and immutable-event uniqueness must be
             # established before any Projects HTTP operation is admitted.
             # This is metadata-only DDL; startup creates no project or event data.
@@ -1291,7 +1306,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP
+# VERSION: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
