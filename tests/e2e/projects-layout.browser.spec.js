@@ -361,7 +361,7 @@ for (const width of [1440, 390]) {
 
 
     const after = await page.evaluate(() => {
-      const workspace = document.querySelector('.wilsy-projects').getBoundingClientRect();
+      const workspace = document.querySelector('.wp-body').getBoundingClientRect();
       const list = document.querySelector('.wp-list-panel');
       const detail = document.querySelector('.wp-detail').getBoundingClientRect();
       return {
