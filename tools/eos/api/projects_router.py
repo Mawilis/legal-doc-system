@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY
+VERSION: v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,8 +30,9 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY separates per-attempt entitlement read, transaction wrapper, and source cursor/validation times for slow summary reads without extra Mongo queries or weaker tenant/IAM gates.
-  v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY logs safe bounded summary endpoint total and source-count latency only when slow or failing, separating Mongo/entitlement transaction overhead from validated registry scanning. No tenant/principal/record values, IAM changes, new queries or source-data fallbacks.
+  v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS records separately the existing current entitlement pointer and immutable history read times on slow Projects summaries without skipping either integrity check or altering non-profiled routes.
+  v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS separates per-attempt entitlement read, transaction wrapper, and source cursor/validation times for slow summary reads without extra Mongo queries or weaker tenant/IAM gates.
+  v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS logs safe bounded summary endpoint total and source-count latency only when slow or failing, separating Mongo/entitlement transaction overhead from validated registry scanning. No tenant/principal/record values, IAM changes, new queries or source-data fallbacks.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY narrows each immutable event actor to a bounded string before set insertion and exact-tenant identity lookup; rejects malformed event identity without coercion or privilege changes.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds current-principal owned_by_me owner-read filtering before paginating the exact tenant's projects. It never grants participant IAM, modifies project assignment or exposes foreign project records.
   v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
@@ -536,7 +537,9 @@ def _require_project_role_tenant(context: TenantAuthorizationContext) -> None:
         )
 
 
-def _require_active_projects_entitlement(tenant_id: str, session: Any) -> None:
+def _require_active_projects_entitlement(
+    tenant_id: str, session: Any, phase_timings: dict[str, float] | None = None,
+) -> None:
     """Require exact active canonical Projects entitlement in this transaction."""
     database = kernel_db.get_database()
     if database is None:
@@ -551,6 +554,7 @@ def _require_active_projects_entitlement(tenant_id: str, session: Any) -> None:
             database[ENTITLEMENT_HISTORY_COLLECTION],
             database[ENTITLEMENT_CURRENT_COLLECTION],
             session=session,
+            **({"phase_timings": phase_timings} if phase_timings is not None else {}),
         )
     except TenantProductEntitlementRegistryNotFoundError as error:
         raise HTTPException(
@@ -725,7 +729,9 @@ def _execute_with_entitlement(
     phase_timings["attempts"] = phase_timings.get("attempts", 0.0) + 1
     entitlement_started = perf_counter()
     try:
-        _require_active_projects_entitlement(context.tenant_id, session)
+        _require_active_projects_entitlement(
+            context.tenant_id, session, phase_timings=phase_timings,
+        )
     finally:
         phase_timings["entitlement_ms"] = phase_timings.get("entitlement_ms", 0.0) + round(
             (perf_counter() - entitlement_started) * 1000, 2
@@ -956,11 +962,14 @@ def project_summary(
         logger.warning(
             "PROJECTS_SUMMARY_READ outcome=FAILED total_ms=%.2f count_ms=%s "
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
-            "cursor_first_ms=%s cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
+            "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
+            "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
             elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
+            phase_timings.get("entitlement_pointer_ms", "NOT_REACHED"),
+            phase_timings.get("entitlement_history_ms", "NOT_REACHED"),
             phase_timings.get("cursor_first_ms", "NOT_REACHED"),
             phase_timings.get("cursor_remaining_ms", "NOT_REACHED"),
             phase_timings.get("hydrate_ms", "NOT_REACHED"),
@@ -972,11 +981,14 @@ def project_summary(
         logger.warning(
             "PROJECTS_SUMMARY_READ outcome=SLOW total_ms=%.2f count_ms=%s "
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
-            "cursor_first_ms=%s cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
+            "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
+            "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
             elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
+            phase_timings.get("entitlement_pointer_ms", "NOT_REACHED"),
+            phase_timings.get("entitlement_history_ms", "NOT_REACHED"),
             phase_timings.get("cursor_first_ms", "NOT_REACHED"),
             phase_timings.get("cursor_remaining_ms", "NOT_REACHED"),
             phase_timings.get("hydrate_ms", "NOT_REACHED"),
@@ -3429,7 +3441,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.31.0-PROJECTS-SUMMARY-PHASE-TELEMETRY
+# VERSION: v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
