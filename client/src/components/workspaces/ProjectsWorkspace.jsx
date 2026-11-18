@@ -960,7 +960,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   };
   const statusLabel = (value) => String(value || 'unknown').replaceAll('_', ' ');
   const countLabel = summary
-    ? `${summary.active ?? '—'} active · ${summary.total} total`
+    ? `${ownerOnly ? 'Tenant · ' : ''}${summary.active ?? '—'} active · ${summary.total} total`
     : 'Counts unavailable';
 
   if (showAssignedProjects) {
@@ -997,7 +997,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             Participant assignments</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
       </header>
 
-      {sourceState === 'READY' && summary && !selectedId && mode !== 'CREATE' && (
+      {sourceState === 'READY' && summary && !ownerOnly && !selectedId && mode !== 'CREATE' && (
         <section className="wp-portfolio-chart" aria-label="Verified project status distribution">
           <div className="wp-chart-heading">
             <strong>Portfolio distribution</strong>
