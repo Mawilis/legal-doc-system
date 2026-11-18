@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION
+VERSION: v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,14 +9,15 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION lists owner-responsibility records using exact tenant/principal indexed predicates before pagination; no role or participant IAM claims are inferred from ownership.
-  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
-  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION — Adds bounded look-ahead paging with verified has-more
+  v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES profiles cursor first row, remaining iteration and strict full-record hydration without changing complete tenant summary, archive filtering, index ownership or query count.
+  v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES lists owner-responsibility records using exact tenant/principal indexed predicates before pagination; no role or participant IAM claims are inferred from ownership.
+  v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
+  v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES — Adds bounded look-ahead paging with verified has-more
   metadata while preserving the existing page-only registry API.
-  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION — Adds a compound tenant/archive/status/sort index for
+  v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES — Adds a compound tenant/archive/status/sort index for
   bounded project-list status filtering at enterprise project volumes.
   This is index DDL only: no tenant, role, grant or record is changed.
-  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION — Streams validated exact-tenant
+  v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES — Streams validated exact-tenant
   project summaries without the former 500-record ceiling, returns bounded
   list pages without rejecting a valid next page, and adds a tenant-oriented
   active-recent listing index. No IAM or project data changes.
@@ -53,6 +54,7 @@ from collections.abc import Mapping
 from datetime import date, datetime, timezone
 import hashlib
 import json
+from time import perf_counter
 from typing import Any, Final, cast
 
 from pymongo import ASCENDING, DESCENDING
@@ -61,7 +63,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION"
+VERSION: Final[str] = "v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -254,20 +256,49 @@ class ProjectRegistry:
         validated = tuple(_hydrate(row) for row in rows)
         return validated[:limit], len(validated) > limit
 
-    def summary_for_tenant(self, *, tenant_id: str, session: Any) -> dict[str, int]:
-        """Derive status counts from fully validated, exact-tenant active records."""
+    def summary_for_tenant(self, *, tenant_id: str, session: Any,
+                           phase_timings: dict[str, float] | None = None) -> dict[str, int]:
+        """Derive status counts from fully validated, exact-tenant active records.
+
+        Timing captures only the existing cursor path; no extra database query,
+        unverified count or cross-tenant record is introduced.
+        """
         tenant = _exact("tenant_id", tenant_id)
         counts = {item.value: 0 for item in ProjectStatus}
         total = 0
         try:
-            # Stream validated tenant records rather than truncating at 500;
-            # no unverified count or foreign-tenant data enters the projection.
+            cursor_started = perf_counter()
             cursor = self._projects.find(
                 {"tenant_id": tenant, "archived_at": None},
                 session=_session(session),
             )
-            for row in cursor:
-                value = _hydrate(row)
+            first_row = True
+            iterator = iter(cursor)
+            while True:
+                read_started = perf_counter()
+                try:
+                    row = next(iterator)
+                except StopIteration:
+                    if phase_timings is not None:
+                        key = "cursor_first_ms" if first_row else "cursor_remaining_ms"
+                        phase_timings[key] = phase_timings.get(key, 0.0) + round(
+                            (perf_counter() - read_started) * 1000, 2
+                        )
+                    break
+                if phase_timings is not None:
+                    key = "cursor_first_ms" if first_row else "cursor_remaining_ms"
+                    phase_timings[key] = phase_timings.get(key, 0.0) + round(
+                        (perf_counter() - (cursor_started if first_row else read_started)) * 1000, 2
+                    )
+                first_row = False
+                hydration_started = perf_counter()
+                try:
+                    value = _hydrate(row)
+                finally:
+                    if phase_timings is not None:
+                        phase_timings["hydrate_ms"] = phase_timings.get("hydrate_ms", 0.0) + round(
+                            (perf_counter() - hydration_started) * 1000, 2
+                        )
                 counts[cast(ProjectStatus, value.status).value] += 1
                 total += 1
         except PyMongoError as error:
@@ -496,7 +527,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION
+# VERSION: v1.6.0-VALIDATED-SUMMARY-CURSOR-PHASES
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
