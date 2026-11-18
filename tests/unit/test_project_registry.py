@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.0.2-BSON-UTC-EVENT-REGRESSION
+VERSION: v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
+  fully counted portfolio truth and consecutive bounded list pages with
+  foreign-tenant exclusion.
 v1.0.2-BSON-UTC-EVENT-REGRESSION — Proves default PyMongo BSON UTC
   event readback and strict rejection of malformed event timestamps.
 v1.0.1-TENANT-PROJECT-REGISTRY-TESTS — Governance metadata synchronized with unchanged executable behavior.
@@ -219,6 +222,34 @@ def test_summary_and_status_filter_use_authoritative_tenant_records(registry) ->
     assert len(store.list_for_tenant(tenant_id="tenant-a", session=session, status="active")) == 1
 
 
+
+def test_large_tenant_summary_and_bounded_pages_over_500(registry) -> None:
+    """No cap may turn an ordinary >500-project tenant into an unavailable portfolio."""
+    store, projects, _, session = registry
+    projects.rows.extend([
+        {"_id": f"tenant-a:project-{i:04}", **_project(
+            "tenant-a", f"project-{i:04}", code=f"CODE-{i:04}",
+        ).to_dict()}
+        for i in range(511)
+    ])
+    projects.rows.append({"_id": "tenant-b:foreign", **_project(
+        "tenant-b", "foreign", code="FOREIGN",
+    ).to_dict()})
+
+    counts = store.summary_for_tenant(tenant_id="tenant-a", session=session)
+    assert counts == {
+        "total": 511, "active": 0, "planned": 511,
+        "on_hold": 0, "done": 0, "cancelled": 0,
+    }
+    assert projects.last_query == {"tenant_id": "tenant-a", "archived_at": None}
+    first = store.list_for_tenant(tenant_id="tenant-a", session=session, limit=500)
+    last = store.list_for_tenant(tenant_id="tenant-a", session=session, limit=500, offset=500)
+    assert len(first) == 500 and len(last) == 11
+    assert {p.project_id for p in first}.isdisjoint({p.project_id for p in last})
+    assert all(p.tenant_id == "tenant-a" for p in (*first, *last))
+
+
+
 def test_event_read_is_tenant_scoped_and_returns_documented_fields(registry) -> None:
     store, _, events, session = registry
     _create(store, _project(), session, "create-1")
@@ -272,7 +303,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.0.2-BSON-UTC-EVENT-REGRESSION
+# VERSION: v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
