@@ -1,14 +1,17 @@
 """WILSY OS system-services startup regression certificate.
 
 TITLE: System Services Case Startup Certificate
-VERSION: v1.0.0-EOS-QR-MOUNT-COMPOSITION-CERT
+VERSION: v1.0.1-PROJECT-NOTE-COMPOSITION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves canonical startup installs system-service case indexes without
          creating cases, permission grants, or tenant authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_services_case_startup.py
 COLLABORATION / OWNERSHIP: Python EOS API composition and system-services owners.
 CERTIFICATION / UPDATE DATE: 2026-11-10
-CHANGELOG: v1.0.0-EOS-QR-MOUNT-COMPOSITION-CERT aligns the public composition
+CHANGELOG: 2026-11-18 v1.0.1-PROJECT-NOTE-COMPOSITION-CERT aligns canonical
+server-version certification with additive Project Notes startup indexes;
+no existing Global Principal or System Services authority is changed.
+CHANGELOG: v1.0.1-PROJECT-NOTE-COMPOSITION-CERT aligns the public composition
            version assertion with the mounted authenticated QR router release.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Static source inspection; no database or secret access.
@@ -59,11 +62,11 @@ def test_system_services_startup_does_not_create_cases_or_grants() -> None:
 
 
 def test_system_services_server_version_tracks_governed_router_composition() -> None:
-    assert server.VERSION == "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
+    assert server.VERSION == "v1.46.0-PROJECT-NOTES-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: System Services Case Startup Certificate
-# VERSION: v1.0.0-EOS-QR-MOUNT-COMPOSITION-CERT
+# VERSION: v1.0.1-PROJECT-NOTE-COMPOSITION-CERT
 # AUTHORITY BOUNDARY: startup index ownership and composition version only
 # TENANT POSTURE: no tenant data is read or mutated
 # FAIL-CLOSED POSTURE: readiness is not converted into case or IAM authority
