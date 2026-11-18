@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY
+ * VERSION: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,10 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY enforces the intended
+ * CHANGELOG: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS restores WCAG-conscious operating label contrast for task and note panels against inherited brand styles; no data, authority or layout changes.
+ * CHANGELOG: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS enforces the intended
  *            narrow-screen compact table column visibility under global
  *            display overrides; visible project, status and action remain.
- * CHANGELOG: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY adds subdued fluid
+ * CHANGELOG: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS adds subdued fluid
  *            glass portfolio bar-chart styling and accessible pagination;
  *            visualized counts come only from validated EOS response data.
  *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
@@ -245,6 +246,28 @@
 .wilsy-projects .wp-summary .wp-list-line>span:first-child {flex-shrink:0;font-weight:800;min-width:20px;color:#84531b !important;}
 .wilsy-projects .wp-summary-toggle {background:none;border:0;padding:8px 0;color:#064a9a !important;text-decoration:underline;font-weight:750;font-size:13px;}
 .wilsy-projects .wp-form {padding:16px 0;display:grid;gap:13px;}
+/* The inherited global label styling previously produced pale gold on pale inputs.
+   Keep legitimate branding accents elsewhere; operating form names must be readable. */
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes) :is(label, legend) {
+  color: #152c4c !important;
+  -webkit-text-fill-color: #152c4c !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  opacity: 1 !important;
+}
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes) :is(input, textarea, select) {
+  background-color: #ffffff !important;
+  color: #102845 !important;
+  -webkit-text-fill-color: #102845 !important;
+  font-weight: 450 !important;
+  letter-spacing: normal !important;
+}
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes) :is(input, textarea)::placeholder {
+  color: #516582 !important;
+  -webkit-text-fill-color: #516582 !important;
+  opacity: 1 !important;
+}
 .wilsy-projects .wp-form label {font-size:12px;font-weight:750;color:#2a4365 !important;display:block;}
 .wilsy-projects .wp-form label :is(input,textarea) {margin-top:7px;font-weight:450;}
 .wilsy-projects .wp-form-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -540,7 +563,7 @@
 }
 
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.5.1-MOBILE-SECONDARY-COLUMN-VISIBILITY
+ * VERSION: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
