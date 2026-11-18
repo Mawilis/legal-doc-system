@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.5.0-EXACT-PROJECT-NOTE-ROUTE-CERT
+VERSION: v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,12 +9,14 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.5.0-EXACT-PROJECT-NOTE-ROUTE-CERT pins the four bounded notes endpoints to current
+  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT verifies explicit project owner-only participant
+  grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
+  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.5.0-EXACT-PROJECT-NOTE-ROUTE-CERT proves customer Projects authority is separately
+  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.5.0-EXACT-PROJECT-NOTE-ROUTE-CERT asserts EOS rejects
+  v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -63,7 +65,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.5.0-EXACT-PROJECT-NOTE-ROUTE-CERT"
+VERSION = "v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -109,6 +111,35 @@ def test_project_owner_eligibility_requires_current_principal_membership_and_ten
     membership.status = TenantMembershipStatus.ACTIVE
     roles = (SimpleNamespace(status=TenantBusinessRoleStatus.ACTIVE, business_role="tenant_manager"),)
     assert not projects_router._project_owner_eligible(db, "tenant-a", "principal-a", object())
+
+
+def test_grantee_currentness_requires_active_principal_membership_and_capacity(monkeypatch):
+    """A participant grant never substitutes for current tenant identity."""
+    principal = SimpleNamespace(status=PrincipalStatus.ACTIVE)
+    membership = SimpleNamespace(status=TenantMembershipStatus.ACTIVE)
+    roles = (SimpleNamespace(status=TenantBusinessRoleStatus.ACTIVE, business_role="tenant_manager"),)
+    monkeypatch.setattr(projects_router.PrincipalAuthorityRepository, "get", lambda *_a, **_k: principal)
+    monkeypatch.setattr(projects_router.TenantMembershipRepository, "resolve", lambda *_a, **_k: membership)
+    monkeypatch.setattr(projects_router.TenantBusinessRoleRepository, "resolve_all", lambda *_a, **_k: roles)
+    database = {
+        "principal_authorities": object(), "tenant_memberships": object(),
+        "tenant_business_roles": object(),
+    }
+    eligible = lambda: projects_router._project_participant_eligible(
+        database, "tenant-a", "participant-a", object(),
+    )
+    assert eligible() is True
+    principal.status = PrincipalStatus.SUSPENDED
+    assert eligible() is False
+    principal.status = PrincipalStatus.ACTIVE
+    membership.status = TenantMembershipStatus.REVOKED
+    assert eligible() is False
+    membership.status = TenantMembershipStatus.ACTIVE
+    roles[0].status = TenantBusinessRoleStatus.REVOKED
+    assert eligible() is False
+    assert projects_router._project_participant_eligible(
+        database, "tenant-a", "", object(),
+    ) is False
 
 
 def test_department_read_requires_exact_tenant_active_record():
@@ -276,6 +307,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", ("POST",)),
         ("/projects/{project_id}/assignment", ("PATCH",)),
         ("/projects/founder-projects-admission", ("POST",)),
+        ("/projects/{project_id}/participants", ("GET",)),
+        ("/projects/{project_id}/participants", ("POST",)),
+        ("/projects/{project_id}/participants/{participant_principal_id}/revoke", ("POST",)),
         ("/projects/{project_id}/notes", ("GET",)),
         ("/projects/{project_id}/notes", ("POST",)),
         ("/projects/{project_id}/notes/{note_id}", ("PATCH",)),
@@ -291,6 +325,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", "POST"): ("tenant:profile:write", "profile_update"),
         ("/projects/{project_id}/assignment", "PATCH"): ("project:update", "project_update"),
         ("/projects/founder-projects-admission", "POST"): ("tenant:membership:write", "membership_invite"),
+        ("/projects/{project_id}/participants", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/participants", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/participants/{participant_principal_id}/revoke", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/notes", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/notes", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/notes/{note_id}", "PATCH"): ("project:update", "project_update"),
@@ -467,7 +504,7 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.5.0-EXACT-PROJECT-NOTE-ROUTE-CERT
+# VERSION: v1.6.0-PROJECT-PARTICIPANT-AUTHORITY-ROUTE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
