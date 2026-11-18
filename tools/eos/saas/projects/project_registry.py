@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT
+VERSION: v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,13 +9,14 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
-  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT — Adds bounded look-ahead paging with verified has-more
+  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION lists owner-responsibility records using exact tenant/principal indexed predicates before pagination; no role or participant IAM claims are inferred from ownership.
+  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
+  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION — Adds bounded look-ahead paging with verified has-more
   metadata while preserving the existing page-only registry API.
-  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT — Adds a compound tenant/archive/status/sort index for
+  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION — Adds a compound tenant/archive/status/sort index for
   bounded project-list status filtering at enterprise project volumes.
   This is index DDL only: no tenant, role, grant or record is changed.
-  v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT — Streams validated exact-tenant
+  v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION — Streams validated exact-tenant
   project summaries without the former 500-record ceiling, returns bounded
   list pages without rejecting a valid next page, and adds a tenant-oriented
   active-recent listing index. No IAM or project data changes.
@@ -60,7 +61,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT"
+VERSION: Final[str] = "v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -186,6 +187,10 @@ class ProjectRegistry:
                                    ("status", ASCENDING), ("updated_at", DESCENDING),
                                    ("project_id", ASCENDING)],
                                   name="wilsy_project_tenant_status_recent")
+            projects.create_index([("tenant_id", ASCENDING), ("owner_principal_id", ASCENDING),
+                                   ("archived_at", ASCENDING), ("updated_at", DESCENDING),
+                                   ("project_id", ASCENDING)],
+                                  name="wilsy_project_tenant_owner_recent")
             events.create_index([("tenant_id", ASCENDING), ("event_id", ASCENDING)],
                                 unique=True, name=EVENT_ID_INDEX)
             events.create_index([("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
@@ -223,12 +228,15 @@ class ProjectRegistry:
 
     def list_page_for_tenant(self, *, tenant_id: str, session: Any, limit: int = 200,
                              offset: int = 0, status: ProjectStatus | str | None = None,
-                             include_archived: bool = False) -> tuple[tuple[Project, ...], bool]:
+                             include_archived: bool = False,
+                             owner_principal_id: str | None = None) -> tuple[tuple[Project, ...], bool]:
         """Return exact-tenant page and verified next-page existence in one snapshot."""
         tenant = _exact("tenant_id", tenant_id)
         if type(limit) is not int or not 1 <= limit <= 500 or type(offset) is not int or offset < 0:
             raise ProjectRegistryError("PROJECT_PAGE_INVALID")
         query: dict[str, object] = {"tenant_id": tenant}
+        if owner_principal_id is not None:
+            query["owner_principal_id"] = _exact("owner_principal_id", owner_principal_id)
         if include_archived is not True:
             query["archived_at"] = None
         if status is not None:
@@ -488,7 +496,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.4.0-CANONICAL-DATE-ONLY-COMMAND-FINGERPRINT
+# VERSION: v1.5.0-INDEXED-EXACT-TENANT-OWNER-PAGINATION
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
