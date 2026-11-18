@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Execution Real-Mongo Certificate
-VERSION: v1.0.0-PROJECT-TASK-REPLICA-LIFECYCLE-CERT
+VERSION: v1.1.0-PROJECT-TASK-EDIT-REPLAY-REPLICA-CERT
 AUTHORITY: Synthetic disposable replica-set source certification only.
 EPITOME: Test nested work, milestone/dependency index, idempotent task CRUD,
          verified predecessor/child completion gates and exact tenant absence.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Existing Projects disposable Mongo CI and
          ProjectTaskRegistry; no operator account or active tenant is touched.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-PROJECT-TASK-REPLICA-LIFECYCLE-CERT proves source-backed
+CHANGELOG: v1.1.0-PROJECT-TASK-EDIT-REPLAY-REPLICA-CERT certifies
+audited task edits, assignee changes, deterministic replay and stale
+revision rejection in an isolated disposable replica transaction.
+CHANGELOG: v1.1.0-PROJECT-TASK-EDIT-REPLAY-REPLICA-CERT proves source-backed
          dependency, subtask and lifecycle commands in majority transactions.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: All IDs and timestamps synthetic; no provider calls.
@@ -143,8 +146,90 @@ def test_disposable_source_project_task_milestone_dependency_lifecycle() -> None
         client.close()
 
 
+def test_disposable_task_edit_and_reassignment_replay() -> None:
+    """Audited task revisions retain original project graph and exact CAS."""
+    uri = os.environ.get("TEST_PROJECTS_ACCOUNTABILITY_MONGO_URI")
+    if not uri:
+        pytest.skip("Disposable MongoDB replica-set URI not configured")
+    client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=4000)
+    database = client.get_database("wilsy_projects_task_revision_cert")
+    try:
+        client.admin.command("ping")
+        client.drop_database(database.name)
+        tasks = database["wilsy_project_tasks"]
+        events = database["wilsy_project_task_events"]
+        ProjectTaskRegistry.ensure_indexes(tasks, events)
+        store = ProjectTaskRegistry(tasks, events)
+        tenant, project, owner = "task-edit-tenant", "prj-" + "e" * 48, "owner-a"
+        instant = datetime.now(timezone.utc).replace(microsecond=0)
+        key = "create-editable-task"
+        task_id = task_id_for_command(tenant, project, owner, key)
+        initial = ProjectTask(
+            tenant_id=tenant, project_id=project, task_id=task_id,
+            kind="TASK", parent_task_id=None,
+            title="Initial work title", description="First context",
+            status="TODO", assignee_principal_id=None, due_date=None,
+            depends_on=(), created_by_principal_id=owner,
+            updated_by_principal_id=owner,
+            created_at=instant, updated_at=instant,
+        )
+        def tx(work):
+            with client.start_session() as session:
+                return session.with_transaction(
+                    work, read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern("majority", j=True),
+                    read_preference=ReadPreference.PRIMARY,
+                )
+        tx(lambda session: store.create_or_replay(
+            task=initial, idempotency_key=key, session=session,
+        ))
+        def edit(session):
+            return store.revise_or_replay(
+                tenant_id=tenant, project_id=project, task_id=task_id,
+                actor_principal_id=owner, title="Revised work",
+                description="Governed handoff", due_date="2026-12-30",
+                assignee_principal_id="assigned-contributor",
+                expected_revision=1, idempotency_key="revise-1",
+                occurred_at=instant + timedelta(seconds=1), session=session,
+            )
+        revised = tx(edit)
+        assert tx(edit) == revised
+        assert revised.revision == 2
+        assert revised.assignee_principal_id == "assigned-contributor"
+        assert revised.title == "Revised work"
+        assert revised.project_id == project
+        with pytest.raises(ProjectTaskConflict, match="DIVERGENT_REPLAY"):
+            tx(lambda session: store.revise_or_replay(
+                tenant_id=tenant, project_id=project, task_id=task_id,
+                actor_principal_id=owner, title="Tampered replay",
+                description="Governed handoff", due_date="2026-12-30",
+                assignee_principal_id="assigned-contributor",
+                expected_revision=1, idempotency_key="revise-1",
+                occurred_at=instant + timedelta(seconds=2), session=session,
+            ))
+        with pytest.raises(ProjectTaskConflict, match="REVISION_CONFLICT"):
+            tx(lambda session: store.revise_or_replay(
+                tenant_id=tenant, project_id=project, task_id=task_id,
+                actor_principal_id=owner, title="Stale edit",
+                description="", due_date=None, assignee_principal_id=None,
+                expected_revision=1, idempotency_key="stale-1",
+                occurred_at=instant + timedelta(seconds=3), session=session,
+            ))
+        assert events.count_documents({"tenant_id": tenant}) == 2
+        assert tasks.count_documents({"tenant_id": tenant, "revision": 2}) == 1
+        with client.start_session() as session:
+            with pytest.raises(ProjectTaskNotFound):
+                store.get(
+                    tenant_id="foreign-tenant", project_id=project,
+                    task_id=task_id, session=session,
+                )
+    finally:
+        client.drop_database(database.name)
+        client.close()
+
+
 # ARTIFACT: test_project_tasks_real_mongo.py
-# VERSION: v1.0.0-PROJECT-TASK-REPLICA-LIFECYCLE-CERT
+# VERSION: v1.1.0-PROJECT-TASK-EDIT-REPLAY-REPLICA-CERT
 # AUTHORITY BOUNDARY: synthetic registry proof, not an IAM/employee grant
 # TENANT POSTURE: exact tenant/project with cross-scope absence
 # FAIL-CLOSED POSTURE: stale state, divergence, child/precedence blockers reject
