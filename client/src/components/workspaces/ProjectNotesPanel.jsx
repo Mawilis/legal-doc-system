@@ -202,7 +202,7 @@ export default function ProjectNotesPanel({
       api.post('/projects/' + encodeURIComponent(projectId) + '/notes',
         { body, colour: draftColour },
         { headers: { ...tenantHeaders, 'Idempotency-Key': key } }),
-    , draftColour);
+      draftColour);
   };
 
   const revise = (event) => {
@@ -214,7 +214,7 @@ export default function ProjectNotesPanel({
       api.patch('/projects/' + encodeURIComponent(projectId) + '/notes/' + encodeURIComponent(note_id),
         { expected_revision: revision, body, colour: editor.colour },
         { headers: { ...tenantHeaders, 'Idempotency-Key': key } }),
-    , editor.colour);
+      editor.colour);
   };
 
   const archive = (note) => {
