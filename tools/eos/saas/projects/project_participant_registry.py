@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Governed Project Participant Registry
-VERSION: v1.0.0-EXACT-TENANT-PARTICIPANT-AUTHORITY
+VERSION: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK
 AUTHORITY: Python EOS project-scoped participant persistence and immutable audit.
 EPITOME: Explicit project participation roles, source-backed grant/revoke, exact
          tenant/project/principal matching, revision CAS and durable replay.
@@ -8,7 +8,10 @@ COLLABORATION / OWNERSHIP: Projects router authorizes owner commands and
          current principal/membership; task and notes services must additionally
          revalidate current IAM and resource visibility on every operation.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-EXACT-TENANT-PARTICIPANT-AUTHORITY introduces bounded,
+CHANGELOG: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK binds replay metadata to
+         verified participant revision/fingerprint/type and prevents
+         clock rollback during revocation; no previous authority is broadened.
+CHANGELOG: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK introduces bounded,
          tenant-scoped participant grants and revocations with immutable audit.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque principals, no employee admission, secrets
@@ -35,7 +38,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.0.0-EXACT-TENANT-PARTICIPANT-AUTHORITY"
+VERSION: Final[str] = "v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK"
 COLLECTION: Final[str] = "wilsy_project_participants"
 EVENT_COLLECTION: Final[str] = "wilsy_project_participant_events"
 SCHEMA: Final[str] = "wilsy.project.participant.v1"
@@ -198,9 +201,12 @@ class ProjectParticipant:
             raise ProjectParticipantConflict("PROJECT_PARTICIPANT_TRANSITION_DENIED")
         if role != self.role:
             raise ProjectParticipantConflict("PROJECT_PARTICIPANT_ROLE_CHANGE_DENIED")
+        stamp = _time(occurred_at)
+        if stamp < self.updated_at:
+            raise ProjectParticipantError("PROJECT_PARTICIPANT_TIMESTAMP_ORDER_INVALID")
         return replace(
             self, state="REVOKED", revision=self.revision + 1,
-            updated_by_principal_id=actor_principal_id, updated_at=_time(occurred_at),
+            updated_by_principal_id=actor_principal_id, updated_at=stamp,
             fingerprint="",
         )
 
@@ -317,7 +323,18 @@ class ProjectParticipantRegistry:
         if not isinstance(snapshot, dict):
             raise ProjectParticipantError("PROJECT_PARTICIPANT_EVENT_INVALID")
         result = ProjectParticipant.hydrate(snapshot)
-        if result.tenant_id != tenant_id or result.project_id != row.get("project_id") or result.principal_id != row.get("principal_id"):
+        if (
+            result.tenant_id != tenant_id
+            or result.project_id != row.get("project_id")
+            or result.principal_id != row.get("principal_id")
+            or result.revision != row.get("revision")
+            or result.fingerprint != row.get("result_fingerprint")
+            or result.updated_by_principal_id != row.get("actor_principal_id")
+            or row.get("schema") != "wilsy.project.participant.event.v1"
+            or row.get("event_type") not in {
+                "PROJECT_PARTICIPANT_GRANTED", "PROJECT_PARTICIPANT_REVOKED",
+            }
+        ):
             raise ProjectParticipantError("PROJECT_PARTICIPANT_EVENT_INVALID")
         return result
 
@@ -427,7 +444,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_participant_registry.py
-# VERSION: v1.0.0-EXACT-TENANT-PARTICIPANT-AUTHORITY
+# VERSION: v1.0.1-PARTICIPANT-EVENT-INTEGRITY-LOCK
 # AUTHORITY BOUNDARY: record persistence only; EOS HTTP admission remains necessary
 # TENANT POSTURE: exact tenant, project and principal; no privileged fallback
 # FAIL-CLOSED POSTURE: absent, revoked, foreign, stale, divergent and tampered deny
