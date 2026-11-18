@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Governed Project Task Approval Registry
-VERSION: v1.0.0-EXACT-REVIEWER-DECISION-REPLAY
+VERSION: v1.1.0-PENDING-REVIEWER-INBOX
 AUTHORITY: Python EOS project task business approval evidence.
 EPITOME: Explicit task review request, named reviewer, immutable business
          approval/rejection and revision-bound audit without financial authority.
@@ -8,7 +8,10 @@ COLLABORATION / OWNERSHIP: Projects router owns exact tenant IAM, entitlement,
          task/project existence, participant currentness, reviewer authority and
          caller-owned MongoDB transactions; this registry owns decision truth.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.0-EXACT-REVIEWER-DECISION-REPLAY creates source-owned
+CHANGELOG: v1.1.0-PENDING-REVIEWER-INBOX adds indexed reviewer-only pending decision
+         discovery with bounded source scanning. The router still verifies
+         current IAM, ACTIVE participation and project/task existence.
+CHANGELOG: v1.1.0-PENDING-REVIEWER-INBOX creates source-owned
          PENDING -> APPROVED/REJECTED decisions with idempotency, CAS and events.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain-text rationale, opaque identities,
@@ -34,7 +37,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.0.0-EXACT-REVIEWER-DECISION-REPLAY"
+VERSION: Final[str] = "v1.1.0-PENDING-REVIEWER-INBOX"
 SCHEMA: Final[str] = "wilsy.project.approval.v1"
 COLLECTION: Final[str] = "wilsy_project_approvals"
 EVENT_COLLECTION: Final[str] = "wilsy_project_approval_events"
@@ -268,6 +271,11 @@ class ProjectApprovalRegistry:
                 ("tenant_id", ASCENDING), ("project_id", ASCENDING),
                 ("task_id", ASCENDING), ("requested_at", DESCENDING),
             ], name="wilsy_project_approval_task_timeline")
+            approvals.create_index([
+                ("tenant_id", ASCENDING), ("reviewer_principal_id", ASCENDING),
+                ("status", ASCENDING), ("requested_at", DESCENDING),
+                ("approval_id", ASCENDING),
+            ], name="wilsy_project_approval_principal_inbox")
             events.create_index([
                 ("tenant_id", ASCENDING), ("actor_principal_id", ASCENDING),
                 ("idempotency_key", ASCENDING),
@@ -327,6 +335,45 @@ class ProjectApprovalRegistry:
         except PyMongoError as error:
             raise ProjectApprovalError("PROJECT_APPROVAL_READ_UNAVAILABLE") from error
         return rows[:limit], len(rows) > limit
+
+    def pending_for_reviewer(
+        self, *, tenant_id: str, reviewer_principal_id: str,
+        session: Any, max_items: int = 10000,
+    ) -> tuple[ProjectApproval, ...]:
+        """Read pending reviewer-only source records for further IAM filtering.
+
+        This query never constitutes authorization: caller must check each
+        returned project's ACTIVE contributor record and current entitlement
+        in the same snapshot. A safety bound rejects oversized inboxes rather
+        than silently claiming a truncated verified result.
+        """
+        if session is None:
+            raise ProjectApprovalError("PROJECT_APPROVAL_SESSION_REQUIRED")
+        if type(max_items) is not int or not 1 <= max_items <= 10000:
+            raise ProjectApprovalError("PROJECT_APPROVAL_CAPACITY_INVALID")
+        query = {
+            "tenant_id": _id(tenant_id, "TENANT"),
+            "reviewer_principal_id": _id(reviewer_principal_id, "REVIEWER"),
+            "status": "PENDING",
+        }
+        try:
+            cursor = self._approvals.find(query, session=session).sort([
+                ("requested_at", DESCENDING), ("approval_id", ASCENDING),
+            ]).limit(max_items + 1)
+            rows = tuple(ProjectApproval.hydrate({
+                key: value for key, value in row.items() if key != "_id"
+            }) for row in cursor)
+        except PyMongoError as error:
+            raise ProjectApprovalError("PROJECT_APPROVAL_INBOX_UNAVAILABLE") from error
+        if len(rows) > max_items:
+            raise ProjectApprovalError("PROJECT_APPROVAL_INBOX_CAPACITY_EXCEEDED")
+        if any(
+            row.tenant_id != tenant_id
+            or row.reviewer_principal_id != reviewer_principal_id
+            or row.status != "PENDING" for row in rows
+        ):
+            raise ProjectApprovalError("PROJECT_APPROVAL_INBOX_INVALID")
+        return rows
 
     def _replay(
         self, *, tenant_id: str, actor_principal_id: str,
@@ -499,7 +546,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_approval_registry.py
-# VERSION: v1.0.0-EXACT-REVIEWER-DECISION-REPLAY
+# VERSION: v1.1.0-PENDING-REVIEWER-INBOX
 # AUTHORITY BOUNDARY: source business review only, not financial or IAM
 # TENANT POSTURE: exact tenant/project/task/reviewer and transaction replay
 # FAIL-CLOSED POSTURE: unknown, self-review, stale, divergent, foreign denied
