@@ -1,28 +1,31 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT
+ * VERSION: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT adds in-place task
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT proves a
+ *            Daily Attention participant-focused project opens the separately
+ *            authorized Assigned Projects UI without owner-list side effects.
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT certifies task creation, verified
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT waits for the committed note row
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT certifies source-backed project note
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT proves navigation
+ * CHANGELOG: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -128,6 +131,27 @@ afterEach(() => {
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
+  it('opens participant-focused project execution without owner registry reads', async () => {
+    api.get.mockImplementation(async path => {
+      if (path === '/projects/my-projects?limit=50&offset=0') return { data: {
+        schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected owner-only project read: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="participant-attention-focus"
+      focusAssignedProjectId={PROJECT_ID}/>);
+    expect(await screen.findByRole('heading', { name: 'My assigned projects' })).toBeVisible();
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith(
+      '/projects/my-projects?limit=50&offset=0',
+      expect.any(Object),
+    ));
+    expect(api.get.mock.calls.some(([path]) => path === '/projects' || path === '/projects/summary')).toBe(false);
+  });
+
+
   it('navigates 125 source-backed tenant projects without truncating to the first 100', async () => {
     const rows = Array.from({ length: 125 }, (_, index) => project({
       project_id: `prj-${(index + 1).toString(16).padStart(48, '0')}`,
@@ -705,7 +729,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.2.0-PROJECT-TASK-EDIT-READBACK-CERT
+ * VERSION: v2.3.0-ATTENTION-PARTICIPANT-HANDOFF-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
