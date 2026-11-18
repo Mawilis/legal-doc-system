@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY
+ * VERSION: v4.8.0-SCOPED-PROJECT-SUMMARY-RECOVERY
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.8.0-SCOPED-PROJECT-SUMMARY-RECOVERY adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
  * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY adds a
  *            verified Blocked attention filter and renders project date-only
  *            deadlines without manufacturing a timezone or overdue instant.
@@ -400,6 +401,8 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const [projectsSummaryScope, setProjectsSummaryScope] = useState(null);
   const [projectsSummaryState, setProjectsSummaryState] = useState('LOADING');
   const [projectsSummaryError, setProjectsSummaryError] = useState('');
+  const [projectsSummaryRefresh, setProjectsSummaryRefresh] = useState(0);
+  const projectsSummaryRetryRef = useRef({ scope: null, attempts: 0 });
   const kennelHealth = useKennelHealth({ pollInterval: 60000 });
   const [myWorkSnapshot, setMyWorkSnapshot] = useState(null);
   const [myWorkSnapshotScope, setMyWorkSnapshotScope] = useState(null);
@@ -643,6 +646,9 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       return undefined;
     }
     const requestedScope = workScope;
+    if (projectsSummaryRetryRef.current.scope !== requestedScope) {
+      projectsSummaryRetryRef.current = { scope: requestedScope, attempts: 0 };
+    }
     const controller = new AbortController();
     let current = true;
     setProjectsSummaryState('LOADING');
@@ -665,6 +671,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           || statuses.reduce((total, key) => total + counts[key], 0) !== counts.total
         ) throw new Error('PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID');
         if (current) {
+          projectsSummaryRetryRef.current = { scope: requestedScope, attempts: 0 };
           setProjectsSummary(counts);
           setProjectsSummaryScope(requestedScope);
           setProjectsSummaryState('READY');
@@ -680,14 +687,53 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             : status === 403 ? 'ACCESS_DENIED'
               : status === 404 && eosCode === 'Not Found' ? 'PROJECTS_ROUTE_NOT_MOUNTED'
                 : Number.isInteger(status) && status >= 500 ? 'PROJECTS_SERVICE_UNAVAILABLE'
-                  : 'PROJECT_SOURCE_UNAVAILABLE';
+                  : error?.code === 'ECONNABORTED' || /timeout/i.test(String(error?.message || ''))
+                    ? 'PROJECTS_REQUEST_TIMEOUT'
+                    : error?.message === 'PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID'
+                      ? 'PROJECTS_RESPONSE_INVALID'
+                      : status === 404 ? 'PROJECTS_RESOURCE_NOT_FOUND'
+                        : status === 422 ? 'PROJECTS_REQUEST_INVALID'
+                          : 'PROJECT_SOURCE_UNAVAILABLE';
         setProjectsSummary(null);
         setProjectsSummaryScope(requestedScope);
         setProjectsSummaryError(code);
         setProjectsSummaryState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       });
     return () => { current = false; controller.abort(); };
-  }, [auth.sessionGeneration, authUser.id, section, showMyWork, workScope, workTenantId]);
+  }, [auth.sessionGeneration, authUser.id, projectsSummaryRefresh, section, showMyWork, workScope, workTenantId]);
+  useEffect(() => {
+    if (section !== 'overview' || showMyWork || !workScope
+      || projectsSummaryScope !== workScope || projectsSummaryState !== 'UNAVAILABLE'
+      || !['PROJECTS_SERVICE_UNAVAILABLE', 'PROJECTS_REQUEST_TIMEOUT',
+        'PROJECT_SOURCE_UNAVAILABLE'].includes(projectsSummaryError)) return undefined;
+    if (projectsSummaryRetryRef.current.scope !== workScope) {
+      projectsSummaryRetryRef.current = { scope: workScope, attempts: 0 };
+    }
+    if (projectsSummaryRetryRef.current.attempts >= 2) return undefined;
+    const retry = () => {
+      if (document.visibilityState !== 'visible'
+        || projectsSummaryRetryRef.current.scope !== workScope) return;
+      projectsSummaryRetryRef.current.attempts += 1;
+      setProjectsSummaryRefresh((value) => value + 1);
+    };
+    const delay = projectsSummaryRetryRef.current.attempts === 0 ? 3000 : 10000;
+    const timer = window.setTimeout(retry, delay);
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      window.clearTimeout(timer);
+      retry();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [projectsSummaryError, projectsSummaryScope, projectsSummaryState,
+    projectsSummaryRefresh, section, showMyWork, workScope]);
+  const retryProjectsSummary = () => {
+    projectsSummaryRetryRef.current = { scope: workScope, attempts: 0 };
+    setProjectsSummaryRefresh((value) => value + 1);
+  };
   const currentProjectsSummary = projectsSummaryScope === workScope ? projectsSummary : null;
   const currentProjectsSummaryState = !workScope ? 'DENIED'
     : projectsSummaryScope === workScope ? projectsSummaryState : 'LOADING';
@@ -795,11 +841,11 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   <div className="hq-glance-row"><Users size={18}/><span>Employees</span><strong>{workforceMetricValue(currentWorkforce, currentWorkforceLoading, currentWorkforceError)}</strong></div>
                   <div className="hq-glance-row"><CheckCircle2 size={18}/><span>Active work</span><strong>{currentSnapshot && !myWorkLoading && !myWorkError ? currentSnapshot.summary.active_count : '—'}</strong></div>
                   <div className="hq-glance-row"><Activity size={18}/><span>EOS kernel API</span><strong>{kernelMetricValue(kennelHealth)}</strong></div>
-                  <details className="hq-source-note"><summary>Source coverage</summary><p>Projects: {currentProjectsSummaryState === 'READY' ? 'verified EOS summary' : currentProjectsSummaryError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'entitlement required' : currentProjectsSummaryError === 'ACCESS_DENIED' ? 'access denied' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'EOS route not mounted' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'EOS service unavailable' : currentProjectsSummaryState === 'LOADING' ? 'verifying current session' : 'unavailable'}</p><p>Commercial source not connected</p><p>Kernel response does not establish platform uptime.</p></details>
+                  <details className="hq-source-note"><summary>Source coverage</summary><p>Projects: {currentProjectsSummaryState === 'READY' ? 'verified EOS summary' : currentProjectsSummaryError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'entitlement required' : currentProjectsSummaryError === 'ACCESS_DENIED' ? 'access denied' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'EOS route not mounted' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'EOS service unavailable' : currentProjectsSummaryState === 'LOADING' ? 'verifying current session' : 'unavailable'}</p><p>Commercial source not connected</p><p>Kernel response does not establish platform uptime.</p>{currentProjectsSummaryState === 'UNAVAILABLE' && <><p>Projects feed: {currentProjectsSummaryError === 'PROJECTS_REQUEST_TIMEOUT' ? 'request timed out' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'server unavailable' : currentProjectsSummaryError === 'PROJECTS_RESPONSE_INVALID' ? 'invalid EOS summary response' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'route not mounted' : currentProjectsSummaryError === 'PROJECTS_REQUEST_INVALID' ? 'request rejected' : 'read failed'}.</p><button type="button" onClick={retryProjectsSummary} className="hq-text-button" aria-label="Retry Projects source">Retry Projects source <RefreshCw size={12}/></button></>}</details>
                 </section>
                 <section className="hq-kpis" aria-label="Executive operating indicators">
                   <button type="button" onClick={() => openMyWork()} className="hq-kpi"><span className="hq-round hq-blue"><CheckCircle2 size={22}/></span><span><small>My Work</small><strong>{currentSnapshot && !myWorkLoading && !myWorkError ? currentSnapshot.summary.active_count : '—'}</strong><em>View tasks <ArrowUpRight size={12}/></em></span></button>
-                  <button type="button" onClick={() => navigateSection('projects')} className="hq-kpi" data-source-state={currentProjectsSummaryState} aria-label={currentProjectsSummaryState === 'READY' ? `Projects: ${currentProjectsSummary.total} verified` : `Projects: ${currentProjectsSummaryError || currentProjectsSummaryState}`}><span className="hq-round hq-purple"><Code2 size={22}/></span><span><small>Projects</small><strong className="hq-kpi-label">{currentProjectsSummaryState === 'READY' ? currentProjectsSummary.total : currentProjectsSummaryState === 'LOADING' ? 'Verifying…' : currentProjectsSummaryError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'Entitlement required' : currentProjectsSummaryError === 'ACCESS_DENIED' ? 'Access denied' : currentProjectsSummaryError === 'AUTHENTICATION_REQUIRED' ? 'Sign in required' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'EOS route unavailable' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'Service unavailable' : 'Source unavailable'}</strong><em>{currentProjectsSummaryState === 'READY' ? `${currentProjectsSummary.active} active · View projects` : currentProjectsSummaryState === 'LOADING' ? 'Checking authorized EOS source' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'Running EOS has no Projects route' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'EOS returned a server failure' : 'Open Projects for source details'} <ArrowUpRight size={12}/></em></span></button>
+                  <button type="button" onClick={() => navigateSection('projects')} className="hq-kpi" data-source-state={currentProjectsSummaryState} aria-label={currentProjectsSummaryState === 'READY' ? `Projects: ${currentProjectsSummary.total} verified` : `Projects: ${currentProjectsSummaryError || currentProjectsSummaryState}`}><span className="hq-round hq-purple"><Code2 size={22}/></span><span><small>Projects</small><strong className="hq-kpi-label">{currentProjectsSummaryState === 'READY' ? currentProjectsSummary.total : currentProjectsSummaryState === 'LOADING' ? 'Verifying…' : currentProjectsSummaryError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'Entitlement required' : currentProjectsSummaryError === 'ACCESS_DENIED' ? 'Access denied' : currentProjectsSummaryError === 'AUTHENTICATION_REQUIRED' ? 'Sign in required' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'EOS route unavailable' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'Service unavailable' : currentProjectsSummaryError === 'PROJECTS_REQUEST_TIMEOUT' ? 'Request timed out' : currentProjectsSummaryError === 'PROJECTS_RESPONSE_INVALID' ? 'Invalid source response' : 'Source unavailable'}</strong><em>{currentProjectsSummaryState === 'READY' ? `${currentProjectsSummary.active} active · View projects` : currentProjectsSummaryState === 'LOADING' ? 'Checking authorized EOS source' : currentProjectsSummaryError === 'PROJECTS_ROUTE_NOT_MOUNTED' ? 'Running EOS has no Projects route' : currentProjectsSummaryError === 'PROJECTS_SERVICE_UNAVAILABLE' ? 'EOS returned a server failure' : 'Open Projects for source details'} <ArrowUpRight size={12}/></em></span></button>
                   <button type="button" onClick={() => navigateSection('hiring')} className="hq-kpi"><span className="hq-round hq-green"><BriefcaseBusiness size={22}/></span><span><small>Approvals</small><strong>{pendingApprovalCount === null ? '—' : pendingApprovalCount}</strong><em>{pendingApprovalCount === null ? 'Authorized queue unavailable' : 'Submitted requisitions'}</em></span></button>
                   <button type="button" onClick={() => setSection('people')} className="hq-kpi"><span className="hq-round hq-blue"><Users size={22}/></span><span><small>Team</small><strong>{Number.isSafeInteger(currentWorkforce?.total) ? currentWorkforce.total.toLocaleString() : '—'}</strong><em>{Number.isSafeInteger(currentWorkforce?.total) ? 'View directory' : workforceStateLabel(null, currentWorkforceLoading, currentWorkforceError)} <ArrowUpRight size={12}/></em></span></button>
                 </section>
@@ -1483,7 +1529,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY
+ * VERSION: v4.8.0-SCOPED-PROJECT-SUMMARY-RECOVERY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
