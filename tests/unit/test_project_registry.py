@@ -60,6 +60,10 @@ class FakeCursor:
             self.rows.sort(key=lambda row: str(row.get(field, "")), reverse=order < 0)
         return self
 
+    def hint(self, name: str) -> FakeCursor:
+        assert name == "wilsy_project_tenant_active_recent"
+        return self
+
     def skip(self, amount: int) -> FakeCursor:
         self.rows = self.rows[amount:]
         return self
