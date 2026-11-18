@@ -1073,7 +1073,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_registry.py
-# VERSION: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY
+# VERSION: v1.1.0-OPTIONAL-ENTITLEMENT-READ-PHASES
 # AUTHORITY BOUNDARY: immutable D22B1 revision persistence and explicit exact-entitlement currentness only; no commercial, IAM, route, VAS or financial authority
 # TENANT POSTURE: every history/current read, write, replay and CAS is exact-tenant and exact-entitlement scoped
 # FAIL-CLOSED POSTURE: active caller transaction required; schema drift, corruption, stale revision, divergent replay, races and outages reject
