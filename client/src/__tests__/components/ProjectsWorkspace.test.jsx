@@ -1,22 +1,25 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.0.1-PERSISTED-NOTE-READBACK-CERT
+ * VERSION: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT waits for the committed note row
+ * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT certifies task creation, verified
+ *            EOS readback, revision-guarded transition and unmodified Planned
+ *            project state in the existing authenticated client harness.
+ * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT certifies source-backed project note
+ * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.0.1-PERSISTED-NOTE-READBACK-CERT proves navigation
+ * CHANGELOG: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -195,6 +198,91 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: /Verified active project/ })).toBeVisible();
     expect(screen.queryByRole('button', { name: /Unfiltered planned project/ })).not.toBeInTheDocument();
     expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=0&project_status=active')).toBe(true);
+  });
+
+  it('creates and transitions source-backed project tasks without activating the project', async () => {
+    const persisted = project();
+    const taskId = `ptk-${'b'.repeat(48)}`;
+    const originalTask = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT,
+      project_id: PROJECT_ID, task_id: taskId, kind: 'TASK',
+      parent_task_id: null, title: 'Build milestone execution', description: '',
+      status: 'TODO', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL,
+      updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-18T06:00:00+00:00',
+      updated_at: '2026-11-18T06:00:00+00:00',
+      revision: 1, fingerprint: 'a'.repeat(128),
+    };
+    let work = [];
+    let commands = 0;
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return {
+        data: {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          limit: 50, offset: 0, items: work, has_more: false, next_offset: null,
+        },
+      };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return {
+        data: {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          limit: 100, offset: 0, items: [], has_more: false, next_offset: null,
+        },
+      };
+      throw new Error('Unexpected source GET ' + path);
+    });
+    api.post.mockImplementation(async (path, body, options) => {
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      commands += 1;
+      if (commands === 1) {
+        expect(path).toBe(`/projects/${PROJECT_ID}/tasks`);
+        expect(body).toEqual({
+          kind: 'TASK', title: 'Build milestone execution',
+          description: '', due_date: null, assignee_principal_id: null,
+          parent_task_id: null, depends_on: [],
+        });
+        work = [originalTask];
+      } else {
+        expect(path).toBe(`/projects/${PROJECT_ID}/tasks/${taskId}/transition`);
+        expect(body).toEqual({ expected_revision: 1, status: 'IN_PROGRESS' });
+        work = [{
+          ...originalTask, status: 'IN_PROGRESS', revision: 2,
+          fingerprint: 'b'.repeat(128),
+        }];
+      }
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        project_id: PROJECT_ID, task: work[0],
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="task-source-readback-cert" />);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const panel = await screen.findByRole('region', { name: 'Project work execution' });
+    expect(panel).toBeVisible();
+    fireEvent.click(await screen.findByRole('button', { name: 'Create task' }));
+    fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
+      target: { value: 'Build milestone execution' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
+    await waitFor(() => expect(screen.getByText('Build milestone execution', {
+      selector: '.wp-project-tasks tbody td span',
+    })).toBeVisible());
+    const row = screen.getByText('Build milestone execution', {
+      selector: '.wp-project-tasks tbody td span',
+    }).closest('tr');
+    expect(row).toHaveAttribute('data-task-id', taskId);
+    fireEvent.click(row.querySelector('button'));
+    await waitFor(() => expect(row).toHaveTextContent('In progress'));
+    expect(commands).toBe(2);
+    expect(persisted.status).toBe('planned');
   });
 
   it('creates source-backed notes in selected project detail without changing Planned', async () => {
@@ -587,7 +675,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.0.1-PERSISTED-NOTE-READBACK-CERT
+ * VERSION: v2.1.0-PROJECT-TASK-EXECUTION-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
