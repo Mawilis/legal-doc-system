@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT
+# VERSION: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,19 +7,22 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
-# CHANGELOG: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT adds indexed exact-tenant project participant
+# CHANGELOG: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT executes the central roles,
+#            permission namespace, tenant operation and authorization tests
+#            with the Projects-specific and disposable Mongo contracts.
+# CHANGELOG: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT adds indexed exact-tenant project participant
 #            domain and disposable MongoDB grant/revoke/replay certification,
 #            retaining browser, Python, source and frontend release gates.
-# CHANGELOG: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT honors the root manifest's
+# CHANGELOG: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT honors the root manifest's
 #            existing legacy React peer-lock agreement for test tooling,
 #            without relaxing the client's locked dependency resolution.
-# CHANGELOG: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT adds isolated rendered Chromium
+# CHANGELOG: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT adds isolated rendered Chromium
 #            desktop/mobile geometry and selected-note surface verification;
 #            mocked API replies are presentation tests, not authenticated EOS.
-# CHANGELOG: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT extends exact-head CI to the
+# CHANGELOG: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT extends exact-head CI to the
 #            Projects note domain, audited registry, browser notes component
 #            and guarded startup indexes, preserving disposable Mongo tests.
-# CHANGELOG: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT adds a real
+# CHANGELOG: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT adds a real
 #            disposable Mongo replica-set transaction certificate for exact
 #            tenant owner currentness, department replay and project audit.
 #            v1.0.0-TENANT-PROJECT-ACCOUNTABILITY-CERT establishes exact-head
@@ -43,6 +46,14 @@ on:
       - tools/eos/saas/domain/project.py
       - tools/eos/saas/domain/project_note.py
       - tools/eos/saas/projects/project_note_registry.py
+      - tools/eos/auth/roles.py
+      - tools/eos/auth/permission_namespace.py
+      - tools/eos/auth/tenant_authority_policy.py
+      - tools/eos/auth/tenant_authorization.py
+      - tests/unit/test_roles.py
+      - tests/unit/test_permission_namespace.py
+      - tests/unit/test_tenant_authorization.py
+      - tests/unit/test_tenant_authority_policy.py
       - tools/eos/saas/projects/project_participant_registry.py
       - tools/eos/api/server.py
       - tools/eos/saas/projects/project_registry.py
@@ -89,7 +100,7 @@ jobs:
           python -m py_compile tools/eos/api/projects_router.py tools/eos/saas/domain/project.py tools/eos/saas/projects/project_registry.py tests/unit/test_projects_router_contract.py tools/eos/saas/domain/project_note.py tools/eos/saas/projects/project_note_registry.py tests/unit/test_project_note_domain.py tools/eos/saas/projects/project_participant_registry.py tests/unit/test_project_participant_registry.py
       - name: Certify project IAM, schema, registry, replay and assignment
         run: |
-          python -m pytest -q tests/unit/test_projects_router_contract.py tests/unit/test_project_domain.py tests/unit/test_project_registry.py tests/unit/test_project_note_domain.py tests/unit/test_project_participant_registry.py
+          python -m pytest -q tests/unit/test_projects_router_contract.py tests/unit/test_project_domain.py tests/unit/test_project_registry.py tests/unit/test_project_note_domain.py tests/unit/test_project_participant_registry.py tests/unit/test_roles.py tests/unit/test_permission_namespace.py tests/unit/test_tenant_authorization.py tests/unit/test_tenant_authority_policy.py
       - name: Start disposable MongoDB replica set
         run: |
           docker run -d --name wilsy-projects-accountability-mongo -p 27017:27017 mongo:7.0.37 mongod --replSet wilsyProjectAccountabilityCertRS --bind_ip_all
@@ -147,7 +158,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.4.0-PROJECT-PARTICIPANT-REAL-MONGO-CERT
+# VERSION: v1.5.0-PROJECT-PARTICIPANT-IAM-MATRIX-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
