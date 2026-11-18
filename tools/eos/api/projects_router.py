@@ -1103,7 +1103,11 @@ def _exact_tenant_project_person_name(
             status_code=503, detail="PROJECT_OWNER_PROFILE_COLLISION",
         )
     profile = profiles[0] if profiles else {}
-    if profile and profile.get("tenantId") != tenant_id:
+    if profile and (
+        profile.get("tenantId") != tenant_id
+        or (profile.get("user_id") is not None
+            and profile.get("user_id") != principal_id)
+    ):
         raise HTTPException(
             status_code=503, detail="PROJECT_OWNER_PROFILE_INVALID",
         )
