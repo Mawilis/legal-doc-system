@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.47.0-PROJECT-PARTICIPANT-INDEX-BOOTSTRAP
+VERSION: v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -18,14 +18,17 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-13
-CHANGELOG: v1.47.0-PROJECT-PARTICIPANT-INDEX-BOOTSTRAP establishes mandatory participant identity,
+CHANGELOG: v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP installs source-task identity,
+project listing, child/dependency, assignee queue and durable replay indexes
+before Projects readiness without creating task or employee records.
+CHANGELOG: v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP establishes mandatory participant identity,
 active-project list and immutable event indexes before Projects readiness.
 No grants, principals or project records are generated at startup.
-CHANGELOG: 2026-11-18 v1.47.0-PROJECT-PARTICIPANT-INDEX-BOOTSTRAP adds exact-tenant project
+CHANGELOG: 2026-11-18 v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP adds exact-tenant project
 note indexes before Projects readiness; no note data or IAM is created.
 CHANGELOG: 2026-11-16 v1.45.0-PROJECTS-ROUTER-AND-INDEX-BOOTSTRAP mounts the authenticated Projects router once under /api and provisions only the project registry unique indexes before route readiness; no business records, permissions, assignments or entitlements are created.
 2026-11-13 v1.44.0-COMPANY-OPERATING-DOCUMENT-ROUTER mounts the exact-company Mission/Strategy router once under /api, without automatic indexes, content publication, IAM assignments or employment changes.
-2026-11-10 v1.47.0-PROJECT-PARTICIPANT-INDEX-BOOTSTRAP mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
+2026-11-10 v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
 QR issue/verify IAM remains router-owned and no invoice or key mutation occurs.
 2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
 Daily Attention feed, counts, calendar and source-coverage read surfaces
@@ -181,6 +184,11 @@ from .hr_document_router import router as hr_document_router
 from .hr_workforce_directory_router import router as hr_workforce_directory_router
 from .company_operating_document_router import router as company_operating_document_router
 from .projects_router import router as projects_router
+from tools.eos.saas.projects.project_task_registry import (
+    COLLECTION as PROJECT_TASK_COLLECTION,
+    EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
+    ProjectTaskRegistry,
+)
 from tools.eos.saas.projects.project_participant_registry import (
     COLLECTION as PROJECT_PARTICIPANT_COLLECTION,
     EVENT_COLLECTION as PROJECT_PARTICIPANT_EVENT_COLLECTION,
@@ -319,7 +327,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.47.0-PROJECT-PARTICIPANT-INDEX-BOOTSTRAP"
+VERSION = "v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -630,6 +638,10 @@ class WilsyAPIServer:
                 ProjectParticipantRegistry.ensure_indexes(
                     database[PROJECT_PARTICIPANT_COLLECTION],
                     database[PROJECT_PARTICIPANT_EVENT_COLLECTION],
+                )
+                ProjectTaskRegistry.ensure_indexes(
+                    database[PROJECT_TASK_COLLECTION],
+                    database[PROJECT_TASK_EVENT_COLLECTION],
                 )
                 app.state.projects_indexes_ready = True
             except Exception as error:
@@ -1219,7 +1231,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.47.0-PROJECT-PARTICIPANT-INDEX-BOOTSTRAP
+# VERSION: v1.48.0-PROJECT-TASK-INDEX-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
