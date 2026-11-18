@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER
+VERSION: v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,73 +30,74 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds current-principal owned_by_me owner-read filtering before paginating the exact tenant's projects. It never grants participant IAM, modifies project assignment or exposes foreign project records.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER allows bounded
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY narrows each immutable event actor to a bounded string before set insertion and exact-tenant identity lookup; rejects malformed event identity without coercion or privilege changes.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds current-principal owned_by_me owner-read filtering before paginating the exact tenant's projects. It never grants participant IAM, modifies project assignment or exposes foreign project records.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY canonicalizes only exact YYYY-MM-DD JSON dates and known project-status strings at the strict HTTP boundary. Rejects malformed values, extra fields, unsafe coercion; preserves domain status/date invariants and exact-tenant command authority.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds a verified
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER binds optional
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER independently
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER accepts exact task
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER lists the named
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds owner-requested,
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER permits exact-project
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER atomically persists comment
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER exposes a bounded my-projects
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds source-owned task comments
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER permits owner-only task edit and
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER exposes bounded exact-tenant project
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER exposes owner and exact-project participant task
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER admits exact project-bound participant detail and
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER adds exact-tenant owner-authorized participant grant,
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER moves note-domain validation inside existing
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER introduces authenticated, project-existence-verified
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER projects verified next-page availability and exact offset
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER refuses a PLANNED-to-ACTIVE
+  v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -267,7 +268,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER"
+VERSION: Final[str] = "v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -3182,7 +3183,13 @@ def get_project(
         actor_ids = {value.created_by_principal_id}
         if value.owner_principal_id:
             actor_ids.add(value.owner_principal_id)
-        actor_ids.update(event["actor_principal_id"] for event in events)
+        for event in events:
+            actor_id = event["actor_principal_id"]
+            if not isinstance(actor_id, str) or not actor_id or len(actor_id) > 180:
+                raise HTTPException(
+                    status_code=503, detail="PROJECT_ACTOR_DIRECTORY_PAGE_REQUIRED",
+                )
+            actor_ids.add(actor_id)
         if len(actor_ids) > 100 or any(
             not isinstance(actor_id, str) or not actor_id or len(actor_id) > 180
             for actor_id in actor_ids
@@ -3342,7 +3349,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.28.0-OWNER-RESPONSIBILITY-READ-FILTER
+# VERSION: v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
