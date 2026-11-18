@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Named Project Reviewer Inbox Client Certificate
- * VERSION: v1.0.0-REVIEWER-INBOX-DECISION-READBACK-CERT
+ * VERSION: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT
  * AUTHORITY: Synthetic source-controlled EOS reviewer inbox contract.
  * EPITOME: Reject foreign inboxes, read exact named decisions and validate
  *          approved review disappearance after a source-owned CAS command.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectApprovalInbox.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectApprovalInbox and mocked api.js.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-REVIEWER-INBOX-DECISION-READBACK-CERT verifies
+ * CHANGELOG: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT certifies bound evidence identifiers, the existing participant-authorized attachment viewer, and refusal of a decision ACK with changed file references.
+ * CHANGELOG: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT verifies
  *          recipient-only inbox, approval request identity and readback.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic tenant/project/actor records only.
@@ -103,8 +104,70 @@ it('blocks foreign tenant inbox without exposing any review decision', async () 
   expect(api.post).not.toHaveBeenCalled();
 });
 
+
+
+it('shows bound file references and opens existing participant-scoped task attachments', async () => {
+  const attachment = 'pat-' + 'd'.repeat(48);
+  api.get.mockImplementation(async path => {
+    if (path === '/projects/my-approvals?limit=50&offset=0') {
+      return { data: list([{ ...pending, evidence_attachment_ids: [attachment] }]) };
+    }
+    expect(path).toBe('/projects/' + project + '/my-project/tasks/' + task
+      + '/attachments?limit=50&offset=0');
+    return { data: {
+      schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1',
+      tenant_id: tenant, principal_id: principal, project_id: project,
+      task_id: task, limit: 50, offset: 0, has_more: false,
+      next_offset: null, items: [{
+        schema: 'wilsy.project.attachment.v1',
+        tenant_id: tenant, project_id: project, task_id: task,
+        attachment_id: attachment, uploader_principal_id: principal,
+        filename: 'review-evidence.pdf', media_type: 'application/pdf',
+        size_bytes: 12, content_sha3_512: 'a'.repeat(128),
+        state: 'QUARANTINED', revision: 1,
+        scan_clearance_status: 'QUARANTINED',
+        scan_clearance_fingerprint: null,
+      }],
+    } };
+  });
+  mount();
+  expect(await screen.findByText('Evidence-backed review · 1 bound file(s)')).toBeVisible();
+  expect(screen.getByText(attachment)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect task evidence' }));
+  expect(await screen.findByText('review-evidence.pdf')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Download verified file' })).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('refuses decision confirmation when EOS changes bound evidence references', async () => {
+  const attachment = 'pat-' + 'd'.repeat(48);
+  const changed = 'pat-' + 'e'.repeat(48);
+  api.get.mockResolvedValue({
+    data: list([{ ...pending, evidence_attachment_ids: [attachment] }]),
+  });
+  api.post.mockResolvedValue({ data: {
+    schema: 'WILSY-PROJECT-APPROVAL-RESULT/V1',
+    tenant_id: tenant, principal_id: principal, project_id: project,
+    task_id: task, approval: {
+      ...pending, evidence_attachment_ids: [changed],
+      status: 'APPROVED', revision: 2,
+      decided_at: '2026-11-18T08:02:00+00:00',
+      decision_rationale: 'Verified source.',
+      fingerprint: 'b'.repeat(128),
+    },
+  } });
+  mount();
+  expect(await screen.findByText('Evidence-backed review · 1 bound file(s)')).toBeVisible();
+  fireEvent.change(screen.getByRole('textbox', { name: 'Review rationale ' + approval }), {
+    target: { value: 'Verified source.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('not been verified');
+  expect(screen.getByText('Accept completed deliverable.')).toBeVisible();
+});
+
 // ARTIFACT: ProjectApprovalInbox.test.jsx
-// VERSION: v1.0.0-REVIEWER-INBOX-DECISION-READBACK-CERT
+// VERSION: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT
 // AUTHORITY BOUNDARY: client source evidence only, no IAM financial approvals
 // TENANT POSTURE: exact tenant, recipient and approval command
 // FAIL-CLOSED POSTURE: foreign or unverified inbox cannot expose decisions
