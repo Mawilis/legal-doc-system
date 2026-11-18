@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES
+VERSION: v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,70 +30,71 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES allows bounded
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT admits bounded palette colour on original owner/contributor note create and owner-only author revision, passes it to signed note state, without modifying note IAM, archive or legacy body-only requests.
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT returns bounded creator/event-actor descriptive names in exact-tenant authorized project detail without modifying immutable audit actor IDs or the project result authority; absent names stay null.
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT projects only first/last name from a bounded exact-tenant durable user identity to eligible project-owner selector records, preserving opaque ID as command authority; missing names remain missing and conflicting identity records deny the directory. No new IAM or role is created.
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT requires fresh exact-version GuardDuty tag and pinned-policy provider readback outside Mongo transactions before evidence-backed approval requests and pending decisions; the write snapshot rechecks the exact immutable manifest and clearance fingerprints, with no new IAM/financial authority.
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT allows bounded
   browser download only after current owner/participant IAM, a persisted
   matched scan clearance and fresh exact-version S3 tag and SHA3 byte checks.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds a verified
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds a verified
   scan-clearance field to exact-task attachment lists; missing scans remain
   quarantined and no signed document or download authority is asserted.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES binds optional
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT binds optional
   task approval attachments exclusively after source-owned GuardDuty clearance;
   a named reviewer must revalidate every immutable evidence reference before
   deciding. Legacy rationale-only approvals remain distinct and unchanged.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES independently
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT independently
   verifies exact-version GuardDuty clean tags and pinned S3 policy before
   storing immutable clearance. The principal cannot self-assert scan safety.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES accepts exact task
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT accepts exact task
   encrypted provider-verified bytes in quarantine only; independently
   reauthorizes the contributor before immutable Mongo manifest commit.
   GET reads redact provider receipt; no scan, download or approval release.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES lists the named
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT lists the named
   current Contributor's pending reviews, checking every project's active
   participation and exact source task before showing reviewer inbox rows.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds owner-requested,
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES permits exact-project
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES atomically persists comment
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES exposes a bounded my-projects
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds source-owned task comments
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES permits owner-only task edit and
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES exposes bounded exact-tenant project
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES exposes owner and exact-project participant task
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES admits exact project-bound participant detail and
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES adds exact-tenant owner-authorized participant grant,
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES moves note-domain validation inside existing
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES introduces authenticated, project-existence-verified
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES projects verified next-page availability and exact offset
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES refuses a PLANNED-to-ACTIVE
+  v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -264,7 +265,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES"
+VERSION: Final[str] = "v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -408,6 +409,7 @@ class ProjectNoteCreateRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", strict=True)
     body: str = Field(min_length=1, max_length=10000)
+    colour: Literal["yellow", "blue", "mint", "rose", "violet", "slate"] | None = None
 
 
 class ProjectNoteReviseRequest(BaseModel):
@@ -416,6 +418,7 @@ class ProjectNoteReviseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     expected_revision: int = Field(ge=1)
     body: str = Field(min_length=1, max_length=10000)
+    colour: Literal["yellow", "blue", "mint", "rose", "violet", "slate"] | None = None
 
 
 class ProjectNoteArchiveRequest(BaseModel):
@@ -2816,7 +2819,7 @@ def create_assigned_project_note(
         note = ProjectNote(
             tenant_id=context.tenant_id, project_id=project_id,
             note_id=note_id, author_principal_id=context.identity.identity_id,
-            body=payload.body, created_at=instant, updated_at=instant,
+            body=payload.body, colour=payload.colour, created_at=instant, updated_at=instant,
         )
         result = notes.create_or_replay(
             note=note, actor_principal_id=context.identity.identity_id,
@@ -3029,7 +3032,7 @@ def create_project_note(
         note = ProjectNote(
             tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
             author_principal_id=context.identity.identity_id,
-            body=payload.body, created_at=now, updated_at=now,
+            body=payload.body, colour=payload.colour, created_at=now, updated_at=now,
         )
         committed = notes.create_or_replay(
             note=note, actor_principal_id=context.identity.identity_id,
@@ -3066,7 +3069,7 @@ def revise_project_note(
             tenant_id=context.tenant_id, project_id=project_id, note_id=note_id,
             actor_principal_id=context.identity.identity_id,
             expected_revision=payload.expected_revision, body=payload.body,
-            idempotency_key=key, occurred_at=now, session=session,
+            colour=payload.colour, idempotency_key=key, occurred_at=now, session=session,
         )
         return _project_note_result(
             context, project_id, committed,
@@ -3296,7 +3299,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.25.0-EXACT-TENANT-PROJECT-ACTOR-PROFILES
+# VERSION: v1.26.0-GOVERNED-NOTE-COLOUR-TRANSPORT
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
