@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v1.9.3-DETAIL-ONLY-ACTIVATION-GATE
+ * VERSION: v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.9.3-DETAIL-ONLY-ACTIVATION-GATE scopes activation option disabling
+ * CHANGELOG: v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES distinguishes verified zero candidates
+ *            from an unavailable source and makes assignment prerequisites
+ *            explicit instead of implying a populated selection directory.
+ *            v1.9.3-DETAIL-ONLY-ACTIVATION-GATE scopes activation option disabling
  *            exclusively to selected project detail; list status filters stay
  *            independent and safe before any project is selected.
  *            v1.9.2-PREACTIVATION-ACCOUNTABILITY-AFFORDANCE prevents the ACTIVE
@@ -390,23 +393,31 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
       loadOptions().then(data => { setOptions(data); setState('READY'); }).catch(() => setState('UNAVAILABLE'));
     }} className="underline">Retry</button></p>}
     {state === 'READY' && <>
+      <p role="status" aria-live="polite" className="mt-3 text-sm font-semibold text-slate-800" data-assignment-directory-status>
+        EOS verified {options.principals.length} eligible project {options.principals.length === 1 ? 'owner' : 'owners'} and {options.departments.length} active tenant {options.departments.length === 1 ? 'department' : 'departments'}.
+      </p>
+      {options.principals.length === 0 && <p role="status" className="mt-2 text-sm text-amber-900">
+        No eligible project owner has been verified in the current tenant. A current principal, active tenant membership and eligible tenant-owner capacity are required; the form cannot create those authorities.
+      </p>}
+      {options.departments.length === 0 && <p role="status" className="mt-2 text-sm text-amber-900">
+        No active canonical tenant department is recorded. Use the separately authorized department-creation command below before assigning this project.
+      </p>}
       <form onSubmit={saveAssignment} className="mt-3 grid gap-3">
         <label className="block text-xs font-semibold text-slate-700">Eligible project owner
-          <select aria-label="Eligible project owner" value={owner} onChange={event => setOwner(event.target.value)}
+          <select aria-label="Eligible project owner" value={owner} disabled={options.principals.length === 0} onChange={event => setOwner(event.target.value)}
             className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
             <option value="">Select a verified principal</option>
             {options.principals.map(value => <option key={value.principal_id} value={value.principal_id}>{value.principal_id}</option>)}
           </select>
         </label>
         <label className="block text-xs font-semibold text-slate-700">Tenant department
-          <select aria-label="Tenant department" value={department} onChange={event => setDepartment(event.target.value)}
+          <select aria-label="Tenant department" value={department} disabled={options.departments.length === 0} onChange={event => setDepartment(event.target.value)}
             className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
             <option value="">Select a verified department</option>
             {options.departments.map(value => <option key={value.department_id} value={value.department_id}>{value.name}</option>)}
           </select>
         </label>
-        {(!options.principals.length || !options.departments.length) && <p className="text-xs text-amber-900">No eligible owner or active department is currently recorded. The project remains unassigned.</p>}
-        <button type="submit" disabled={!owner || !department}
+        <button type="submit" disabled={!owner || !department || !options.principals.some(value => value.principal_id === owner) || !options.departments.some(value => value.department_id === department)}
           className="min-h-11 rounded-lg bg-blue-900 px-4 text-sm font-semibold text-white disabled:opacity-50">Save audited assignment</button>
       </form>
       <form onSubmit={createDepartment} className="mt-4 grid gap-2 border-t border-slate-200 pt-3">
@@ -832,7 +843,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v1.9.3-DETAIL-ONLY-ACTIVATION-GATE
+// VERSION: v1.9.4-VERIFIED-ASSIGNMENT-DIRECTORY-STATES
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
