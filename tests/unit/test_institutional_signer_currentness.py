@@ -1,3 +1,25 @@
+"""TITLE: Institutional Signer Currentness Orchestration Certificate.
+VERSION: v1.0.1-P12C-INSTITUTIONAL-SIGNER-CURRENTNESS-CERT
+AUTHORITY: Direct orchestration certificate for verified enrollment currentness.
+EPITOME: Proves active enrollment is read in a short transaction, remote
+         evidence is checked outside transactions, and only a successful
+         verifier result is persisted through a separate revision-guarded write.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_institutional_signer_currentness.py
+COLLABORATION / OWNERSHIP: Exercises the canonical currentness orchestrator,
+                           verifier contract, and enrollment registry boundary.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.1-P12C-INSTITUTIONAL-SIGNER-CURRENTNESS-CERT asserts that a
+           non-active enrollment completes only its short read transaction and
+           never invokes remote evidence verification or persistence, and
+           narrows the optional persisted-result fixture before dereferencing it.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic references only; no external evidence is
+                            fetched or persisted by these tests.
+TENANT BOUNDARY: Exact tenant and certificate fingerprint are passed unchanged.
+AUTHORITY BOUNDARY: Currentness orchestration does not establish signer approval.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+"""
+
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -79,6 +101,7 @@ def test_currentness_orchestration_performs_remote_recheck_between_short_transac
         "read-transaction-complete", "verify", "write-transaction-start",
     ]
     assert calls[1][1]["expected_enrollment_revision"] == 7
+    assert registry.persisted is not None
     assert registry.persisted["session"] == "write-session"
 
 
@@ -87,7 +110,7 @@ def test_currentness_orchestration_never_checks_sources_for_non_active_enrollmen
     registry = _Registry(_enrollment(status="REVOKED"))
     with pytest.raises(InstitutionalSignerRegistryConflict, match="ACTIVE_ENROLLMENT_REQUIRED"):
         _run(registry, _Verifier(calls), calls)
-    assert calls == []
+    assert calls == [("read-transaction-complete", None)]
     assert registry.persisted is None
 
 
@@ -108,3 +131,13 @@ def test_currentness_orchestration_propagates_revision_conflict_from_persist_pha
     registry.record_verified_currentness = conflict
     with pytest.raises(InstitutionalSignerRegistryConflict, match="CURRENTNESS_REVISION_CONFLICT"):
         _run(registry, _Verifier(calls), calls)
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_institutional_signer_currentness.py
+# VERSION: v1.0.1-P12C-INSTITUTIONAL-SIGNER-CURRENTNESS-CERT
+# AUTHORITY BOUNDARY: enrollment currentness orchestration only
+# TENANT POSTURE: exact tenant and certificate fingerprint stay bound
+# FAIL-CLOSED POSTURE: inactive, unavailable, incomplete, and conflicting state rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

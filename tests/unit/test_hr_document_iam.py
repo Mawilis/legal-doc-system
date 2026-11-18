@@ -1,7 +1,7 @@
 """WILSY OS HR Document IAM Direct Certificate.
 
 TITLE: HR Document IAM Direct Certificate
-VERSION: v1.0.0-P0-C12F7B-HR-DOCUMENT-IAM-CERT
+VERSION: v1.0.2-P0-C12F7B-HR-DOCUMENT-IAM-CERT
 AUTHORITY: Direct certification of sensitivity-specific own-tenant HR document authorization.
 
 PURPOSE:
@@ -30,7 +30,14 @@ ownership and system administration never imply HR document access.
 ABSOLUTE CANONICAL PATH:
 /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_document_iam.py
 
-CERTIFICATION / UPDATE DATE: 2026-10-05
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.2-P0-C12F7B-HR-DOCUMENT-IAM-CERT records the verified sovereign metadata correction; test and production behavior are unchanged.
+           v1.0.1-P0-C12F7B-HR-DOCUMENT-IAM-CERT keeps the certificate scoped to its exact fourteen canonical HR document permissions and rejects duplicate namespace identifiers without freezing unrelated permissions added by other governed domains.
+COLLABORATION / OWNERSHIP: Certifies the canonical HR document permission and role contracts; it owns test evidence only.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic permission metadata and role names only; no personnel records or document contents.
+TENANT BOUNDARY: Exact own-tenant permission contracts only; current membership is separately required.
+FINANCIAL AUTHORITY BOUNDARY: No payment, execution, settlement, payroll, or ledger authority; Kennel EOS exclusively owns financial execution.
 """
 
 from __future__ import annotations
@@ -605,19 +612,13 @@ def test_exact_fourteen_permissions_are_present_in_canonical_namespace() -> None
         )
     )
 
-    assert len(
-        [
-            row
-            for row in rows
-            if row[
-                "disposition"
-            ] == "CANONICAL"
-        ]
-    ) == 100
-
-    assert len(
-        rows
-    ) == 103
+    canonical_ids = [
+        row["permission_id"]
+        for row in rows
+        if row["disposition"] == "CANONICAL"
+    ]
+    assert len(canonical_ids) == len(set(canonical_ids))
+    assert PERMISSIONS <= set(canonical_ids)
 
 
 def test_each_permission_has_exact_non_financial_tenant_metadata() -> None:
@@ -1076,7 +1077,7 @@ def test_document_iam_surface_does_not_create_financial_execution() -> None:
 
 
 # ARTIFACT: tests/unit/test_hr_document_iam.py
-# VERSION: v1.0.0-P0-C12F7B-HR-DOCUMENT-IAM-CERT
+# VERSION: v1.0.2-P0-C12F7B-HR-DOCUMENT-IAM-CERT
 # PERMISSIONS: fourteen sensitivity-specific own-tenant permissions
 # OPERATIONS: fourteen exact read/write operation bindings
 # BUSINESS ROLE ELIGIBILITY: explicit subsets of the 101-role HR canon only
@@ -1091,4 +1092,7 @@ def test_document_iam_surface_does_not_create_financial_execution() -> None:
 # RETENTION / DISPOSAL EXECUTION AUTHORITY: none
 # IAM / HTTP COMPOSITION: IAM only; no HTTP route created here
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
+# AUTHORITY BOUNDARY: HR document IAM permission-contract evidence only; no access grant or disposal authority
+# TENANT POSTURE: Exact own-tenant permission contracts; current membership remains separately required
+# FAIL-CLOSED POSTURE: Unknown permissions, roles, and sensitivity combinations reject
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,15 +1,16 @@
 """TITLE: WILSY OS Tenant Authorization Decision Evidence Registry Certificate.
-VERSION: v1.1.0-M11-R8-R3B-P6A-CERT
+VERSION: v1.2.0-SCOPED-REPLAY-LOOKUP-CERT
 AUTHORITY: Durable generic tenant privilege evidence certification only.
 EPITOME: Proves exact operation, permission, principal, tenant, opaque subject,
 and current policy-version capture without typed collection issuance.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization_decision_evidence_registry.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-09.
-CHANGELOG: v1.1.0-M11-R8-R3B-P6A-CERT adds the dedicated inbound collection
+CERTIFICATION / UPDATE DATE: 2026-11-14.
+CHANGELOG: v1.2.0-SCOPED-REPLAY-LOOKUP-CERT certifies exact scoped absence, strict hydration, transaction propagation and outage distinction.
+Prior certification adds the dedicated inbound collection
 authorization-request evidence composition and current-version assertions.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Tenant-scoped transaction evidence; no provider or
+SECURITY / PRIVACY POSTURE: Tenant-scoped transaction evidence; no provider or
 financial execution authority is created.
 TENANT BOUNDARY: Exact tenant and principal identity are required for reads,
 idempotency, and durable evidence.
@@ -184,8 +185,36 @@ def test_inbound_collection_privilege_real_authorization_and_evidence_capture(mo
     assert value.tenant_authorization_composition_version == tenant_authorization.VERSION
     assert len(c.rows) == 1
 
+
+def test_scoped_replay_lookup_preserves_absence_scope_and_session():
+    """Absent/foreign keys never disclose evidence and settled authority is never cached."""
+    c = Collection(); r = registry(c); tx = cast(Any, Session())
+    assert r.find_by_idempotency(tenant_id="t1", idempotency_key="i1", session=tx) is None
+    issued = r.issue(**kwargs(session=tx))
+    assert r.find_by_idempotency(tenant_id="t1", idempotency_key="i1", session=tx) == issued
+    assert r.find_by_idempotency(tenant_id="foreign", idempotency_key="i1", session=tx) is None
+    assert all(call[-1] is tx for call in c.calls)
+    with pytest.raises(TenantAuthorizationDecisionEvidenceTransactionRequiredError):
+        r.find_by_idempotency(tenant_id="t1", idempotency_key="i1")
+
+
+def test_scoped_replay_lookup_never_turns_corruption_or_outage_into_absence():
+    """Malformed and unavailable sources raise; neither is a lawful missing record."""
+    from pymongo.errors import AutoReconnect
+    c = Collection(); r = registry(c); r.issue(**kwargs())
+    c.rows[0]["subject_evidence_fingerprint"] = "b" * 128
+    with pytest.raises(TenantAuthorizationDecisionEvidencePersistenceError):
+        r.find_by_idempotency(tenant_id="t1", idempotency_key="i1", session=cast(Any, Session()))
+    class Unavailable(Collection):
+        def find_one(self, query, *, session):
+            raise AutoReconnect("Synthetic outage")
+    with pytest.raises(TenantAuthorizationDecisionEvidencePersistenceError):
+        registry(Unavailable()).find_by_idempotency(tenant_id="t1", idempotency_key="i1", session=cast(Any, Session()))
+
 # ARTIFACT: test_tenant_authorization_decision_evidence_registry.py
-# VERSION: v1.1.0-M11-R8-R3B-P6A-CERT
+# VERSION: v1.2.0-SCOPED-REPLAY-LOOKUP-CERT
 # AUTHORITY BOUNDARY: durable evidence certificate only; no financial execution.
 # TENANT POSTURE: transaction and tenant scope are explicit.
+# FAIL-CLOSED POSTURE: Source corruption and outage reject; absence stays explicit.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT

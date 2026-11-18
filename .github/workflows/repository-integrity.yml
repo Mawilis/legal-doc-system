@@ -1,3 +1,19 @@
+# TITLE: WILSY Repository Integrity Certification
+# VERSION: v1.0.0-CHANGED-GIT-BLOB-ARTIFACT-GUARD
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Validates the exact Git snapshot, changed-file sovereign contracts,
+#          repository paths, production surfaces, and public status consistency.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/repository-integrity.yml
+# COLLABORATION / OWNERSHIP: Python EOS governance and repository integrity owners.
+# CERTIFICATION / UPDATE DATE: 2026-11-10
+# CHANGELOG: v1.0.0-CHANGED-GIT-BLOB-ARTIFACT-GUARD validates changed Git blobs
+#            for complete sovereign metadata in the existing integrity gate.
+# COMPLIANCE: AGENTS.md v1.2.0; repository production-surface policy.
+# SECURITY / PRIVACY POSTURE: Read-only repository snapshot checks; no secrets or tenant records.
+# TENANT BOUNDARY: No tenant data or authority is accessed.
+# AUTHORITY BOUNDARY: CI integrity evidence only; no runtime or business authority.
+# FINANCIAL AUTHORITY BOUNDARY: No payment, settlement or ledger execution authority.
+
 name: WILSY Repository Integrity
 
 on:
@@ -34,3 +50,11 @@ jobs:
       - name: Enforce public status consistency
         run: |
           python tools/eos/governance/public_status.py --check
+
+# ARTIFACT: WILSY Repository Integrity Certification
+# VERSION: v1.0.0-CHANGED-GIT-BLOB-ARTIFACT-GUARD
+# AUTHORITY BOUNDARY: CI repository-integrity evidence only.
+# TENANT POSTURE: No tenant records or authority are accessed.
+# FAIL-CLOSED POSTURE: Any changed applicable artifact contract failure blocks CI.
+# FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively owns execution.
+# END OF WILSY OS SOVEREIGN ARTIFACT

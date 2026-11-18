@@ -1,11 +1,23 @@
-"""WILSY OS durable tenant authorization decision evidence registry.
-
-VERSION: v1.0.0-TENANT-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY
-AUTHORITY: Python EOS durable authorization-decision evidence owner.
-EPITOME: Issues immutable evidence inside a caller-owned active transaction.
-TENANT BOUNDARY: All identity and idempotency lookups are tenant scoped.
-FINANCIAL AUTHORITY: Kennel EOS exclusively executes financial operations.
-TRANSACTION BOUNDARY: Caller owns ClientSession and transaction lifecycle.
+"""TITLE: WILSY OS Tenant Authorization Decision Evidence Registry.
+VERSION: v1.1.0-SCOPED-AUTHORIZATION-EVIDENCE-REPLAY-READ
+AUTHORITY: Existing Python EOS immutable authorization-decision evidence owner.
+EPITOME: Issue or read scoped authorization evidence in caller-owned transactions;
+historical evidence is never current permission or a role-assignment authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization_decision_evidence_registry.py
+COLLABORATION / OWNERSHIP: Existing IAM grant/revocation command owners and
+TenantAuthorizationDecisionEvidence own semantics; this registry owns storage.
+CERTIFICATION / UPDATE DATE: 2026-11-14
+CHANGELOG: v1.1.0-SCOPED-AUTHORIZATION-EVIDENCE-REPLAY-READ adds an exact
+transaction-scoped idempotency lookup with strict hydration and explicit absence.
+v1.0.0-TENANT-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY established issuance/replay.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No credential, cookie, token, raw exception logging
+or index creation in ordinary reads. Corruption and persistence failure reject.
+TENANT BOUNDARY: Exact tenant plus idempotency key; never cross-tenant fallback.
+AUTHORITY BOUNDARY: Evidence persistence only; historical rows grant no permission
+and never authorize an assignment, publication, settlement or command replay.
+TRANSACTION BOUNDARY: Caller owns all sessions, transactions and retries.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 """
 from __future__ import annotations
 from datetime import datetime, timezone
@@ -23,14 +35,19 @@ from .tenant_membership_repository import TenantMembershipRepository
 from .role_assignment_repository import RoleAssignmentRepository
 from .tenant_business_role_repository import TenantBusinessRoleRepository
 
-VERSION = "v1.0.0-TENANT-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY"
+VERSION = "v1.1.0-SCOPED-AUTHORIZATION-EVIDENCE-REPLAY-READ"
 COLLECTION = "tenant_authorization_decision_evidence"
 
-class TenantAuthorizationDecisionEvidenceRegistryError(RuntimeError): pass
-class TenantAuthorizationDecisionEvidenceTransactionRequiredError(TenantAuthorizationDecisionEvidenceRegistryError): pass
-class TenantAuthorizationDecisionEvidenceAuthorizationDeniedError(TenantAuthorizationDecisionEvidenceRegistryError): pass
-class TenantAuthorizationDecisionEvidenceConflictError(TenantAuthorizationDecisionEvidenceRegistryError): pass
-class TenantAuthorizationDecisionEvidencePersistenceError(TenantAuthorizationDecisionEvidenceRegistryError): pass
+class TenantAuthorizationDecisionEvidenceRegistryError(RuntimeError):
+    """Base bounded evidence persistence error."""
+class TenantAuthorizationDecisionEvidenceTransactionRequiredError(TenantAuthorizationDecisionEvidenceRegistryError):
+    """Caller omitted an active transaction; no persistence is permitted."""
+class TenantAuthorizationDecisionEvidenceAuthorizationDeniedError(TenantAuthorizationDecisionEvidenceRegistryError):
+    """Current central IAM did not authorize issuance."""
+class TenantAuthorizationDecisionEvidenceConflictError(TenantAuthorizationDecisionEvidenceRegistryError):
+    """Exact replay diverged or a duplicate requires whole-transaction retry."""
+class TenantAuthorizationDecisionEvidencePersistenceError(TenantAuthorizationDecisionEvidenceRegistryError):
+    """Persistence or strict evidence hydration could not be verified."""
 
 class TenantAuthorizationDecisionEvidenceRegistry:
     """Durable issuer; never creates or owns sessions or transactions."""
@@ -58,6 +75,32 @@ class TenantAuthorizationDecisionEvidenceRegistry:
         except TenantAuthorizationDecisionEvidencePersistenceError: raise
         except (TenantAuthorizationDecisionEvidenceError, PyMongoError, TypeError, ValueError) as error:
             raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_PERSISTED_RECORD_INVALID") from error
+
+    def find_by_idempotency(self, *, tenant_id: str, idempotency_key: str,
+                            session: Optional[ClientSession] = None) -> TenantAuthorizationDecisionEvidence | None:
+        """Read immutable evidence by exact tenant/key inside the caller transaction.
+
+        Lawful absence returns None. Corrupt/foreign records and source outages
+        raise; this read never issues evidence, creates indexes or authorizes a
+        command. The caller must independently revalidate current authority.
+        """
+        tx = self._require_transaction(session)
+        if any(not isinstance(value, str) or not value or value != value.strip()
+               for value in (tenant_id, idempotency_key)):
+            raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_SCOPE_INVALID")
+        try:
+            row = self._collection.find_one({"tenant_id": tenant_id, "idempotency_key": idempotency_key}, session=tx)
+            if row is None:
+                return None
+            body = dict(row); body.pop("_id", None)
+            value = TenantAuthorizationDecisionEvidence.from_persisted(body)
+            if value.tenant_id != tenant_id or value.idempotency_key != idempotency_key:
+                raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_SCOPE_INVALID")
+            return value
+        except TenantAuthorizationDecisionEvidencePersistenceError:
+            raise
+        except (TenantAuthorizationDecisionEvidenceError, PyMongoError, TypeError, ValueError) as error:
+            raise TenantAuthorizationDecisionEvidencePersistenceError("EVIDENCE_READ_UNAVAILABLE_OR_INVALID") from error
 
     @staticmethod
     def _require_transaction(session: Optional[ClientSession]) -> ClientSession:
@@ -97,7 +140,7 @@ class TenantAuthorizationDecisionEvidenceRegistry:
 __all__ = ["VERSION", "COLLECTION", "TenantAuthorizationDecisionEvidenceRegistry", "TenantAuthorizationDecisionEvidenceRegistryError", "TenantAuthorizationDecisionEvidenceTransactionRequiredError", "TenantAuthorizationDecisionEvidenceAuthorizationDeniedError", "TenantAuthorizationDecisionEvidenceConflictError", "TenantAuthorizationDecisionEvidencePersistenceError"]
 
 # ARTIFACT: tenant_authorization_decision_evidence_registry.py
-# VERSION: v1.0.0-TENANT-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY
+# VERSION: v1.1.0-SCOPED-AUTHORIZATION-EVIDENCE-REPLAY-READ
 # AUTHORITY BOUNDARY: durable evidence issuance only; no approval or execution.
 # TENANT POSTURE: exact tenant/idempotency scope; no cross-tenant replay.
 # FAIL-CLOSED POSTURE: absent transaction, denial, corruption, and conflicts reject.

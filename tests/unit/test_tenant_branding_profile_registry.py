@@ -1,7 +1,7 @@
 """Direct certificate for the D21B4B tenant branding profile registry.
 
 TITLE: Tenant Branding Profile Registry Direct Certificate
-VERSION: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
+VERSION: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove immutable profile/selection persistence, explicit currentness,
          tenant isolation, strict hydration and caller-owned transaction CAS.
@@ -10,8 +10,11 @@ COLLABORATION / OWNERSHIP: Direct in-memory persistence certificate for D21B4B.
                             Real-Mongo operational certification remains a
                             separate gate; runtime entitlement freshness and
                             browser/asset projection remain outside this scope.
-CERTIFICATION / UPDATE DATE: 2026-09-25
-CHANGELOG: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT adds an explicit regression assertion that the durable
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT verifies
+           provider-SDK import purity in a fresh interpreter while retaining
+           the no-transaction-ownership assertion.
+           v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT adds an explicit regression assertion that the durable
            current pointer stores the canonical D21B1 branding-tier value rather
            than an Enum-qualified string representation.
            v1.0.0-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT established adversarial evidence for exact indexes, active
@@ -816,10 +819,25 @@ def test_current_pointer_contains_no_raw_brand_or_financial_material() -> None:
 
 def test_no_runtime_side_effect_or_transaction_ownership_imports() -> None:
     """Registry imports no provider SDK and exposes no transaction lifecycle."""
+    import subprocess
     import sys
+    from pathlib import Path
 
-    assert "requests" not in sys.modules
-    assert "boto3" not in sys.modules
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.billing.tenant_branding_profile_registry'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
     assert not any(
         name in dir(registry.TenantBrandingProfileRegistry)
         for name in (
@@ -832,7 +850,7 @@ def test_no_runtime_side_effect_or_transaction_ownership_imports() -> None:
 
 
 # ARTIFACT: test_tenant_branding_profile_registry.py
-# VERSION: v1.0.1-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
+# VERSION: v1.0.2-D21B4B-TENANT-BRANDING-PROFILE-REGISTRY-CERT
 # AUTHORITY BOUNDARY: direct registry semantics only; no real-Mongo operational certificate, entitlement freshness, browser, asset resolution, IAM or financial authority
 # TENANT POSTURE: synthetic tenant-scoped profile/selection/current-pointer persistence only
 # FAIL-CLOSED POSTURE: transaction absence, divergence, corruption, duplicate currentness, stale lineage and race signals reject

@@ -1,5 +1,11 @@
-"""TITLE: Wilsy OS Authentication Router.
-VERSION: v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: Wilsy OS Authentication Router.
+VERSION: v1.19.1-MANIFEST-FAILURE-CLASSIFICATION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -7,8 +13,12 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION/UPDATE DATE: 2026-11-06.
+CERTIFICATION / UPDATE DATE: 2026-11-13.
 CHANGELOG:
+  v1.19.1-MANIFEST-FAILURE-CLASSIFICATION: Records only the
+  stable bounded module-manifest failure class and exception type on 503;
+  the public error remains generic and no entitlement or IAM changes occur.
+  v1.19.0-PLATFORM-OWNER-MANIFEST-CONTRACT: Uses the explicit stable module-manifest wire contract while the source enforces exact WILSY platform-owner navigation policy. Authentication, MFA, membership, entitlement reads and response fields remain unchanged.
   v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP: Adds a separate authenticated module-manifest endpoint. It revalidates current principal, membership, business role and tenant before opening one bounded read-only transaction over canonical D22B2 product entitlement and CRM Core resolver evidence. The returned module list is presentation-only; no role, Legal Practice, G68, route or resource permission is projected. Existing workspace-bootstrap response remains unchanged.
   v1.17.0-REQUIRED-ASGI-REQUEST-FAILURE-THROTTLE: Requires FastAPI's concrete Request injection so the direct transport peer is always available and avoids unsupported optional-Request route signatures. All failure-only throttling, generic 429, fail-closed 503, and privacy-safe telemetry behavior is preserved.
   v1.16.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-ADMISSION: Applies EOS-owned dual-dimension failure-only throttling before legacy credential verification. Failed passwords increment normalized-email and direct transport-peer buckets; successful credential verification clears only the email bucket. Exhaustion returns generic 429 with bounded Retry-After; throttle persistence uncertainty returns 503. No raw email is included in login-failure telemetry. The route remains tenant-bound until the global principal/membership/MFA session flow is wired.
@@ -77,7 +87,7 @@ CHANGELOG:
   bounded to success, status, user.id, and user.email with no tenant, role, permission,
   or credential response projection.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Raw credentials and database documents are never returned;
+SECURITY / PRIVACY POSTURE: Raw credentials and database documents are never returned;
 verify-token is limited to governed public fields; authentication failure remains
 fail-closed through get_current_identity.
 TENANT BOUNDARY: verify-token does not certify tenant membership. Workspace-bootstrap
@@ -93,7 +103,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP"
+VERSION = "v1.19.1-MANIFEST-FAILURE-CLASSIFICATION"
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from datetime import datetime, timezone
@@ -915,10 +925,18 @@ async def workspace_module_manifest(
         raise _workspace_bootstrap_http_error(error) from error
 
     try:
-        from tools.eos.auth.tenant_module_manifest import VERSION
+        from tools.eos.auth.tenant_module_manifest import CONTRACT_VERSION as VERSION
 
         modules = _workspace_module_manifest_projection(projection.tenant_id)
     except WorkspaceModuleManifestProjectionError as error:
+        failure_class = str(error)
+        if not failure_class.startswith("WORKSPACE_MODULE_MANIFEST_") or len(failure_class) > 100:
+            failure_class = "WORKSPACE_MODULE_MANIFEST_UNKNOWN"
+        logger.error(
+            "WORKSPACE_MODULE_MANIFEST_UNAVAILABLE failure_class=%s cause_type=%s",
+            failure_class,
+            type(error.__cause__).__name__ if error.__cause__ is not None else "NONE",
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Workspace module availability is unavailable.",
@@ -1912,7 +1930,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP
+# VERSION: v1.19.1-MANIFEST-FAILURE-CLASSIFICATION
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.

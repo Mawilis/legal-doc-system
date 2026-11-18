@@ -1,7 +1,7 @@
 """Direct certificate for the authorization-role revocation server mount.
 
 TITLE: Authorization Role Revocation Server Mount Certificate
-VERSION: v1.0.1-P1-R3E-SERVER-MOUNT-PRESERVATION-HARNESS-REPAIR
+VERSION: v1.0.2-P1-R3E-SERVER-V1.43-ALIGNMENT
 AUTHORITY: Wilsy OS Core Governance / sovereign API composition certification.
 EPITOME: Prove the certified revocation router is imported and mounted exactly
          once without importing unrelated privileged-security bootstraps.
@@ -9,6 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Certifies only server composition of the already
                             certified authorization-role revocation router.
 CERTIFICATION / UPDATE DATE: 2026-10-18
+CHANGELOG: v1.0.2-P1-R3E-SERVER-V1.43-ALIGNMENT pins the certificate to the current v1.43 server composition; router assertions are unchanged.
+CHANGELOG: v1.0.1-P1-R3E-SERVER-MOUNT-PRESERVATION-HARNESS-REPAIR corrects the composition harness without changing router authority.
 CHANGELOG: v1.0.0-P1-R3E establishes exact import, mount, route, preservation,
            version-alignment, and privileged-bootstrap exclusion evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -129,7 +131,7 @@ def test_server_version_and_authority_surfaces_are_aligned() -> None:
     """Certify one current version across header, runtime, changelog, and seal."""
     source = SERVER.read_text(encoding="utf-8")
     current = server_api.VERSION
-    assert current == "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
+    assert current == "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
     assert f"VERSION: {current}" in source
     assert f'VERSION = "{current}"' in source
     assert f"# VERSION: {current}" in source
@@ -140,7 +142,7 @@ def test_server_version_and_authority_surfaces_are_aligned() -> None:
 
 
 # ARTIFACT: test_authorization_role_revocation_server_mount.py
-# VERSION: v1.0.1-P1-R3E-SERVER-MOUNT-PRESERVATION-HARNESS-REPAIR
+# VERSION: v1.0.2-P1-R3E-SERVER-V1.43-ALIGNMENT
 # AUTHORITY BOUNDARY: server composition verification only; no IAM or mutation authority
 # TENANT POSTURE: mounted router retains authenticated tenant admission ownership
 # FAIL-CLOSED POSTURE: absent, duplicate, widened, or mixed-authority mounts fail

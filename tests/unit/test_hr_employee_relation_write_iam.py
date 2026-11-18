@@ -1,14 +1,18 @@
 """TITLE: WILSY OS HR Employee Relation Write IAM Certification.
-VERSION: v1.0.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-IAM-CERT
+VERSION: v1.0.1-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-IAM-CERT
 AUTHORITY: Direct certification of bounded own-tenant EmployeeRelation write authorization.
-EPITOME: Proves one exact HR EmployeeRelation write permission, five single-purpose
+EPITOME: Proves one exact HR EmployeeRelation write permission, five granting
 authorization roles, five eligible HR business roles, 96 denied HR business
 roles, exact operation-permission binding, full current-truth composition,
 and preserved Legal, general-enterprise and financial authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_employee_relation_write_iam.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-04.
+CERTIFICATION/UPDATE DATE: 2026-11-11.
 CHANGELOG:
+2026-11-11 v1.0.1-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-IAM-CERT
+updates the tenant business-role inventory count and verifies the employee
+relation permission grant independently of other separately governed grants
+on HR_DIRECTOR and HR_MANAGER.
 2026-10-04 v1.0.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-IAM-CERT
 establishes the first direct HR IAM certificate. It proves the frozen 101-role
 HR business vocabulary is canonical while exactly tenant_hr_director,
@@ -411,9 +415,7 @@ def test_all_101_hr_roles_are_canonical_business_role_vocabulary() -> None:
         ALL_HR_BUSINESS_ROLES
     ) == 101
 
-    assert len(
-        TENANT_ROLES
-    ) == 119
+    assert len(TENANT_ROLES) == 120
 
     assert (
         ALL_HR_BUSINESS_ROLES
@@ -446,17 +448,10 @@ def test_exact_five_static_auth_roles_grant_permission() -> None:
     "role",
     AUTH_ROLES,
 )
-def test_each_new_static_auth_role_is_single_purpose(
+def test_each_authorized_static_auth_role_grants_employee_relation_write(
     role: str,
 ) -> None:
-    assert (
-        ROLE_PERMISSIONS_MAP[
-            role
-        ]
-        == [
-            PERMISSION
-        ]
-    )
+    assert PERMISSION in ROLE_PERMISSIONS_MAP[role]
 
 
 def test_operation_permission_binding_is_exact_and_unique() -> None:
@@ -692,7 +687,7 @@ def test_financial_execution_remains_prohibited() -> None:
     )
 
 # ARTIFACT: tests/unit/test_hr_employee_relation_write_iam.py
-# VERSION: v1.0.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-IAM-CERT
+# VERSION: v1.0.1-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-IAM-CERT
 # AUTHORITY BOUNDARY: direct IAM certification only; no HTTP, persistence, payroll or financial execution authority
 # TENANT POSTURE: exact ACTIVE principal, ACTIVE membership, eligible HR business role, exact permission-operation pair and ACTIVE granting role required
 # FAIL-CLOSED POSTURE: unknown, excluded, missing, crossed, inactive, projected and financial paths deny

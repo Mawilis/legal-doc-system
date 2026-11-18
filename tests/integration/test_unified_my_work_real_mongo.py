@@ -1,13 +1,28 @@
-"""Replica-set proof for authenticated My Work source aggregation.
-
-The HTTP boundary is exercised with an already-admitted source context while the
-owning Operations entitlement, queue registry, snapshot transaction and route
-read are backed by an isolated real Mongo replica-set database. IAM decision
-semantics are certified separately by the optional-authorization HTTP tests.
+"""TITLE: WILSY OS Unified My Work replica-set integration certification.
+VERSION: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Proves authenticated My Work source aggregation against an isolated,
+         writable MongoDB replica set without canonical tenant mutation.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_unified_my_work_real_mongo.py
+COLLABORATION / OWNERSHIP: unified_my_work_router and owner-bound registries.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
+CHANGELOG: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT gives the synthetic
+           source-integration subscription both legal.core and crm.core
+           because the fixture creates real CRM tasks. It does not alter
+           canonical customer or Founder records or weaken IAM.
+CHANGELOG: v1.1.0-HR-DEPENDENCY-ISOLATION-CERT explicitly denies new HR
+           dependencies in the existing Operations replica-set fixture and
+           proves a real owner-transaction HR projection releases only generic
+           action metadata. v1.0.0 established the proof.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Disposable synthetic database and opaque fixtures only.
+TENANT BOUNDARY: Every fixture asserts an exact tenant-scoped source read.
+AUTHORITY BOUNDARY: IAM is read-only; source commands are never executed.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import os
 import uuid
 from typing import Any, Iterator
@@ -22,6 +37,8 @@ from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
 from tools.eos.api import unified_my_work_router as my_work
+from tools.eos.api import headcount_requisition_router as headcount_source
+from tools.eos.api import hiring_lifecycle_router as hiring_source
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -63,6 +80,8 @@ from tools.eos.workspaces.domain.tenant_module_work_item import (
     ModuleWorkKind,
     ModuleWorkPriority,
 )
+from tools.eos.saas.domain.headcount_requisition import HeadcountRequisition
+from tools.eos.saas.domain.hiring_lifecycle import EmploymentOffer, OfferTerms
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
 EXPECTED_REPLICA_SET = parse_qs(urlparse(URI or "").query).get("replicaSet", [None])[0]
@@ -220,6 +239,13 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     app.dependency_overrides[my_work._OPERATIONS_READ] = _context
     app.dependency_overrides[my_work._INTELLIGENCE_READ] = _context
     app.dependency_overrides[my_work._CRM_READ] = lambda: None
+    app.dependency_overrides[my_work._HEADCOUNT_READ] = lambda: None
+    app.dependency_overrides[my_work._HEADCOUNT_SUBMIT] = lambda: None
+    app.dependency_overrides[my_work._HEADCOUNT_DECIDE] = lambda: None
+    app.dependency_overrides[my_work._OFFER_READ] = lambda: None
+    app.dependency_overrides[my_work._OFFER_SUBMIT] = lambda: None
+    app.dependency_overrides[my_work._OFFER_DECIDE] = lambda: None
+    app.dependency_overrides[my_work._OFFER_SEND] = lambda: None
 
     with TestClient(app) as browser:
         response = browser.get("/api/my-work", headers={"X-Tenant-ID": TENANT})
@@ -232,6 +258,115 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     assert {item["source"] for item in payload["items"]} == {"OPERATIONS", "INTELLIGENCE"}
     assert payload["items"][0]["action_authority"] == "SOURCE_SERVICE_ONLY"
     assert payload["authority"]["permits_completion"] is False
+
+
+def test_hr_my_work_projection_reads_only_sanitized_action_metadata_from_owner_transactions(
+    mongo_context,
+    monkeypatch: Any,
+) -> None:
+    """Use real owner transactions while proving no HR record fields escape."""
+    client, database = mongo_context
+    monkeypatch.setattr(headcount_source, "get_client", lambda: client)
+    monkeypatch.setattr(headcount_source, "get_database", lambda: database)
+    monkeypatch.setattr(hiring_source, "get_client", lambda: client)
+    monkeypatch.setattr(hiring_source, "get_database", lambda: database)
+
+    requisition = HeadcountRequisition(
+        tenant_id=TENANT,
+        requisition_id="REQ-HR-MY-WORK-1",
+        department_id="INTERNAL-DEPARTMENT",
+        position_title="INTERNAL-POSITION",
+        employment_type="PERMANENT",
+        work_location="INTERNAL-LOCATION",
+        headcount=1,
+        business_justification="INTERNAL-RESTRICTED-JUSTIFICATION",
+        requested_by_principal_id=PRINCIPAL,
+    )
+    headcount_source._transaction(
+        lambda registry, session: registry.create_or_replay(
+            requisition,
+            idempotency_key="hr-my-work-headcount-create",
+            actor_principal_id=PRINCIPAL,
+            occurred_at=NOW,
+            session=session,
+        )
+    )
+    draft_offer = EmploymentOffer(
+        tenant_id=TENANT,
+        offer_id="OFFER-HR-MY-WORK-1",
+        requisition_id="REQ-HR-MY-WORK-1",
+        candidate_id="INTERNAL-CANDIDATE",
+        terms=OfferTerms(
+            position_title="INTERNAL-POSITION",
+            employment_type="PERMANENT",
+            work_location="INTERNAL-LOCATION",
+            currency="ZAR",
+            gross_compensation_minor=123456,
+            pay_frequency="MONTHLY",
+            start_date=date(2026, 12, 1),
+            expires_at=NOW + timedelta(days=7),
+        ),
+        prepared_by_principal_id="other-hr-principal",
+        created_at=NOW,
+    )
+    submitted_offer = draft_offer.submit(
+        actor_principal_id="other-hr-principal",
+        submitted_at=NOW + timedelta(minutes=1),
+        expected_revision=1,
+    )
+
+    def seed_offer(registry: Any, session: Any) -> None:
+        registry.create_offer(
+            draft_offer,
+            actor_principal_id="other-hr-principal",
+            occurred_at=NOW,
+            session=session,
+            idempotency_key="hr-my-work-offer-create",
+        )
+        registry.transition_offer(
+            current=draft_offer,
+            updated=submitted_offer,
+            actor_principal_id="other-hr-principal",
+            action="OFFER_SUBMITTED",
+            occurred_at=NOW + timedelta(minutes=1),
+            expected_revision=1,
+            session=session,
+            idempotency_key="hr-my-work-offer-submit",
+            command_fingerprint="c" * 128,
+        )
+
+    hiring_source._transaction(seed_offer)
+    payload = my_work._read_hr(
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        headcount_read=_context(),
+        headcount_submit=_context(),
+        headcount_decide=None,
+        offer_read=_context(),
+        offer_submit=None,
+        offer_decide=_context(),
+        offer_send=None,
+    )
+
+    assert payload == {
+        "tenant_id": TENANT,
+        "items": [
+            {
+                "work_item_id": "HEADCOUNT:REQ-HR-MY-WORK-1:SUBMIT",
+                "title": "Submit headcount requisition",
+                "status": "PENDING_ACTION",
+                "priority": "NORMAL",
+                "kind": "HR_HEADCOUNT_SUBMIT",
+            },
+            {
+                "work_item_id": "OFFER:OFFER-HR-MY-WORK-1:DECIDE",
+                "title": "Independently decide employment offer",
+                "status": "PENDING_ACTION",
+                "priority": "HIGH",
+                "kind": "HR_OFFER_DECISION",
+            },
+        ],
+    }
 
 
 class _LivePrincipalReader:
@@ -419,7 +554,7 @@ def _seed_live_legal_subscription(
         "planType": "ENTERPRISE",
         "idempotencyKey": f"my-work-plan-{tenant_id}",
         "active": True,
-        "features": ["legal.core"],
+        "features": ["legal.core", "crm.core"],
         "metadata": {"certificate": "MY-WORK-CRM-REAL-MONGO"},
         "tags": ["my-work-real-mongo"],
         "user": "MY-WORK-REAL-MONGO-CERT",
@@ -601,3 +736,12 @@ def test_legal_partner_my_work_reads_live_assigned_legal_work_from_replica_set(
     assert payload["items"][0]["source"] == "LEGAL"
     assert payload["items"][0]["visibility_provenance"] == ["LEGAL_ASSIGNED"]
     assert payload["authority"]["permits_completion"] is False
+
+
+# ARTIFACT: test_unified_my_work_real_mongo.py
+# VERSION: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT
+# AUTHORITY BOUNDARY: Isolated authenticated source-read certification only.
+# TENANT POSTURE: Disposable exact-tenant fixtures; no canonical mutation.
+# FAIL-CLOSED POSTURE: Dependency errors cannot become verified empty queues.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

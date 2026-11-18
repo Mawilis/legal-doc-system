@@ -1,16 +1,22 @@
 """Direct certificate for the M13-P4 WILSY AI entitlement domain.
 
 TITLE: WILSY AI Entitlement Direct Certificate
-VERSION: v1.0.0-M13-P4
+VERSION: v1.0.2-M13-P4
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove immutable tenant/module entitlement evidence and closed
          lifecycle semantics without persistence or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_entitlement.py
 COLLABORATION / OWNERSHIP: Direct certificate for the P4 domain owner.
-CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M13-P4 certifies P3 binding, lifecycle shape, hashing,
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.2-M13-P4 records the verified sovereign metadata correction; test and production behavior are unchanged.
+           v1.0.1-M13-P4 verifies provider-SDK import purity in a fresh interpreter, independent of suite order.
+           v1.0.0-M13-P4 certifies P3 binding, lifecycle shape, hashing,
            strict hydration, immutability, and authority firewalls.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic immutable entitlement evidence only; no provider credentials or customer content.
+TENANT BOUNDARY: Every entitlement fixture uses one exact synthetic tenant.
+AUTHORITY BOUNDARY: Immutable entitlement-domain test only; no IAM, execution, or command authority.
+FINANCIAL AUTHORITY BOUNDARY: No payment, execution, settlement, or ledger authority; Kennel EOS exclusively owns financial execution.
 """
 from datetime import datetime, timezone
 from dataclasses import replace
@@ -116,5 +122,32 @@ def test_transition_chronology_is_strict() -> None:
 
 
 def test_no_runtime_side_effect_imports() -> None:
+    import subprocess
     import sys
-    assert "requests" not in sys.modules and "boto3" not in sys.modules
+    from pathlib import Path
+
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.domain.wilsy_ai_entitlement'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_wilsy_ai_entitlement.py
+# VERSION: v1.0.2-M13-P4
+# AUTHORITY BOUNDARY: direct immutable entitlement-domain tests only
+# TENANT POSTURE: synthetic exact tenant and product bindings
+# FAIL-CLOSED POSTURE: invalid lifecycle and provider-import behavior rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

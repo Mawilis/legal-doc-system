@@ -1,13 +1,17 @@
 """
 TITLE: WILSY OS P9 Legal Work Reassignment Business Eligibility RED Certificate
-VERSION: v1.1.0-P9-R39-REASSIGNMENT-BINDING-TRANSITION
+VERSION: v1.2.1-P9-REASSIGNMENT-CURRENT-POLICY-CERT
 AUTHORITY: Wilsy OS Core Engineering / Python EOS business policy
 EPITOME: Freeze exact Partner/Attorney-only reassignment business eligibility.
-ABSOLUTE CANONICAL PATH:
-    tests/unit/test_legal_work_reassignment_business_role_eligibility.py
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_work_reassignment_business_role_eligibility.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-19
+CERTIFICATION / UPDATE DATE: 2026-11-11
 CHANGELOG:
+           v1.2.1-P9-REASSIGNMENT-CURRENT-POLICY-CERT records the verified sovereign metadata correction; test and production behavior are unchanged.
+    2026-11-11 v1.2.0-P9-REASSIGNMENT-CURRENT-POLICY-CERT updates the current
+    canonical operation, tenant-role, and eligibility inventory counts while
+    preserving exact Partner/Attorney-only reassignment eligibility and alias
+    denial.
     2026-10-19 v1.1.0-P9-R39-REASSIGNMENT-BINDING-TRANSITION
     transitions the P9-R30 eligibility-only assertion to the exact
     reassignment permission lookup contract. Eligibility, lookup and
@@ -47,8 +51,8 @@ ALLOWED_ROLES = frozenset({
 
 def test_reassignment_operation_is_recognized_with_exact_business_eligibility() -> None:
     assert OPERATION in OPERATIONS
-    assert len(OPERATIONS) == 131
-    assert len(TENANT_ROLES) == 119
+    assert len(OPERATIONS) == 169
+    assert len(TENANT_ROLES) == 120
 
     eligible = {
         role for role in TENANT_ROLES
@@ -63,7 +67,7 @@ def test_reassignment_operation_is_recognized_with_exact_business_eligibility() 
 
 
 def test_unrelated_roles_and_operation_aliases_remain_denied() -> None:
-    assert len(ELIGIBILITY) == 51
+    assert len(ELIGIBILITY) == 52
 
     for role in (
         "tenant_legal_paralegal",
@@ -114,7 +118,7 @@ def test_eligibility_binding_is_exact_but_not_execution_authority() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_legal_work_reassignment_business_role_eligibility.py
-# VERSION: v1.1.0-P9-R39-REASSIGNMENT-BINDING-TRANSITION
+# VERSION: v1.2.1-P9-REASSIGNMENT-CURRENT-POLICY-CERT
 # AUTHORITY BOUNDARY: business eligibility only, non-authorizing
 # TENANT POSTURE: exact current membership separately required
 # FAIL-CLOSED POSTURE: all unauthorized roles and aliases denied

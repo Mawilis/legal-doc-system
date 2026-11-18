@@ -1,12 +1,34 @@
-"""TITLE: Tenant Authority Policy Certification.
-VERSION: v1.8.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY-CERT
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: Tenant Authority Policy Certification.
+VERSION: v1.15.1-CRM-ELIGIBILITY-VERSION-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
-billing-intelligence evidence-read eligibility, and non-authority boundaries.
+billing-intelligence evidence-read eligibility, WILSY platform-employer
+role separation, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-21.
+CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
+2026-11-17 v1.15.1-CRM-ELIGIBILITY-VERSION-CERT aligns the expected
+canonical runtime version after its separately governed CRM edit eligibility
+release; all policy eligibility assertions and denial coverage are preserved.
+2026-11-16 v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT verifies the exact five Project operations are eligible only for existing tenant_owner capacity; authorization-role assignment and entitlement remain independent.
+2026-11-13 v1.14.0-PROJECT-OPERATION-POLICY-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
+    2026-11-12 v1.12.0-PLATFORM-EMPLOYEE-ADMISSION-ELIGIBILITY-CERT certifies
+    the employee-admission mapping as HR Director business eligibility requiring
+    the separately assigned admission-officer IAM role. Manager, owner and all
+    other business roles are denied for admission. The policy creates no IAM
+    possession, route, command or employee; offer acceptance remains unmapped.
+    2026-11-12 v1.10.0-MUTABLE-POLICY-MAP-CERT
+    Keeps the runtime policy-version assertion aligned with v1.53 and
+    confirms the policy typing correction does not alter eligibility.
+    2026-11-12 v1.10.0-MUTABLE-POLICY-MAP-CERT
+    Certifies headcount operation vocabulary, canonical permission bindings, and HR Manager initiation versus HR Director decision eligibility without granting IAM.
     2026-10-21 v1.8.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY-CERT
     Adds the exact Partner/Attorney work-assignment eligibility facts to the
     frozen Legal role matrix while preserving non-authority boundaries.
@@ -102,7 +124,7 @@ business-role eligibility mappings.
 v1.2.0-M11-R8-R3B-P6A-CERT certifies the explicit inbound
 collection authorization operation and dedicated tenant business-role eligibility.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY/PRIVACY POSTURE: No network, persistence, or sensitive data.
+SECURITY / PRIVACY POSTURE: No network, persistence, or sensitive data.
 TENANT BOUNDARY: Policy facts do not prove membership or scope; WILSY AI
 capacity-read and billing-intelligence evidence-read eligibility remain
 own-tenant and separately composed.
@@ -115,7 +137,65 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+    assert VERSION == "v1.59.0-CRM-WORK-EDIT-ELIGIBILITY"
+
+
+def test_projects_have_exact_operation_vocabulary_and_owner_capacity_only() -> None:
+    """Only the established owner capacity is eligible; this does not authorize."""
+    expected = {
+        "project_list": "project:read",
+        "project_detail": "project:read",
+        "project_create": "project:create",
+        "project_update": "project:update",
+        "project_archive": "project:archive",
+    }
+    assert set(expected).issubset(OPERATIONS)
+    for operation, permission in expected.items():
+        assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
+        assert permission_for_business_role_operation(operation) == permission
+        assert requires_system_authority(operation) is (
+            SystemAuthorityClassification.SYSTEM_NOT_INHERENTLY_REQUIRED
+        )
+        assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
+        assert all(
+            tenant_role_operation_eligibility(role, operation) == DENY
+            for role in TENANT_ROLES - {"tenant_owner"}
+        )
+
+
+def test_headcount_business_eligibility_preserves_independent_roles() -> None:
+    expected = {
+        "hr_headcount_requisition_read": "hr:headcount_requisition:read",
+        "hr_headcount_requisition_create": "hr:headcount_requisition:create",
+        "hr_headcount_requisition_decide": "hr:headcount_requisition:decide",
+    }
+    assert set(expected).issubset(OPERATIONS)
+    for operation, permission in expected.items():
+        assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
+        assert permission_for_business_role_operation(operation) == permission
+
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_manager", "hr_headcount_requisition_read"
+    ) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_manager", "hr_headcount_requisition_create"
+    ) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_manager", "hr_headcount_requisition_decide"
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_director", "hr_headcount_requisition_read"
+    ) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_director", "hr_headcount_requisition_decide"
+    ) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_director", "hr_headcount_requisition_create"
+    ) == DENY
+    assert all(
+        tenant_role_operation_eligibility("tenant_owner", operation) == DENY
+        for operation in expected
+    )
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -199,7 +279,7 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     expected["tenant_legal_attorney"].add("legal_work_assignment_write")
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
-        assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed
+        assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed | {"company_operating_document_read"}
         assert tenant_role_operation_eligibility(role, "financial_execution") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_client", "legal_instruction_read") == DENY
     assert tenant_role_operation_eligibility("tenant_deputy", "legal_instruction_read") == DENY
@@ -617,7 +697,7 @@ def test_inbound_provider_vocabulary_is_explicit_and_separated() -> None:
     }
     for role, allowed in expected.items():
         assert role in TENANT_ROLES
-        assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed
+        assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed | {"company_operating_document_read"}
     assert tenant_role_operation_eligibility("tenant_owner", "tenant_inbound_provider_policy_activate") == DENY
     assert tenant_role_operation_eligibility("tenant_admin", "tenant_inbound_provider_policy_create") == DENY
     assert tenant_role_operation_eligibility("tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activate") == DENY
@@ -907,10 +987,107 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
     ) == DENY
 
 
-# ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.8.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY-CERT
-# AUTHORITY BOUNDARY: certification of policy facts only
-# TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
-# FAIL-CLOSED POSTURE: unknown values deny
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+def test_platform_employer_operations_have_granular_least_privilege_eligibility() -> None:
+    expected = {
+        "platform_employer_employee_directory_read": "platform_employer:employee_directory:read",
+        "platform_employer_headcount_requisition_read": "platform_employer:headcount_requisition:read",
+        "platform_employer_headcount_requisition_create": "platform_employer:headcount_requisition:create",
+        "platform_employer_headcount_requisition_decide": "platform_employer:headcount_requisition:decide",
+        "platform_employer_hiring_candidate_read": "platform_employer:hiring_candidate:read",
+        "platform_employer_hiring_candidate_create": "platform_employer:hiring_candidate:create",
+        "platform_employer_hiring_candidate_transition": "platform_employer:hiring_candidate:transition",
+        "platform_employer_hiring_candidate_evidence_upload": "platform_employer:hiring_candidate_evidence:upload",
+        "platform_employer_hiring_candidate_evidence_read": "platform_employer:hiring_candidate_evidence:read",
+        "platform_employer_hiring_offer_read": "platform_employer:hiring_offer:read",
+        "platform_employer_hiring_offer_create": "platform_employer:hiring_offer:create",
+        "platform_employer_hiring_offer_submit": "platform_employer:hiring_offer:submit",
+        "platform_employer_hiring_offer_decide": "platform_employer:hiring_offer:decide",
+        "platform_employer_hiring_offer_send": "platform_employer:hiring_offer:send",
+        "platform_employer_hiring_offer_sign": "platform_employer:hiring_offer:sign",
+        "platform_employer_employee_admission_create":
+            "platform_employer:employee_admission:create",
+    }
+    assert len(expected) == 16
+    assert set(expected) == set(PLATFORM_EMPLOYER_OPERATIONS)
+    for operation, permission in expected.items():
+        assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
+        assert permission_for_business_role_operation(operation) == permission
+
+    manager_operations = {
+        "platform_employer_employee_directory_read",
+        "platform_employer_headcount_requisition_read",
+        "platform_employer_headcount_requisition_create",
+        "platform_employer_hiring_candidate_read",
+        "platform_employer_hiring_candidate_create",
+        "platform_employer_hiring_candidate_transition",
+        "platform_employer_hiring_candidate_evidence_upload",
+        "platform_employer_hiring_candidate_evidence_read",
+        "platform_employer_hiring_offer_read",
+        "platform_employer_hiring_offer_create",
+        "platform_employer_hiring_offer_submit",
+        "platform_employer_hiring_offer_send",
+    }
+    director_operations = {
+        "platform_employer_employee_directory_read",
+        "platform_employer_headcount_requisition_read",
+        "platform_employer_headcount_requisition_decide",
+        "platform_employer_hiring_candidate_read",
+        "platform_employer_hiring_candidate_evidence_read",
+        "platform_employer_hiring_offer_read",
+        "platform_employer_hiring_offer_decide",
+        "platform_employer_employee_admission_create",
+    }
+    for operation in manager_operations:
+        assert tenant_role_operation_eligibility("tenant_hr_manager", operation) == ELIGIBLE
+    for operation in director_operations:
+        assert tenant_role_operation_eligibility("tenant_hr_director", operation) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_manager", "platform_employer_headcount_requisition_decide"
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_director", "platform_employer_headcount_requisition_create"
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_manager", "platform_employer_hiring_offer_decide"
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_director", "platform_employer_hiring_offer_send"
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_owner", "platform_employer_hiring_offer_sign"
+    ) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_hr_manager", "platform_employer_employee_admission_create"
+    ) == DENY
+    assert tenant_role_operation_eligibility(
+        "tenant_owner", "platform_employer_employee_admission_create"
+    ) == DENY
+
+    excluded = {
+        "tenant_hr_manager",
+        "tenant_hr_director",
+        "tenant_owner",
+    }
+    assert all(
+        tenant_role_operation_eligibility(role, operation) == DENY
+        for role in TENANT_ROLES - excluded
+        for operation in PLATFORM_EMPLOYER_OPERATIONS
+    )
+    for disabled_operation in (
+        "platform_employer_hiring_offer_accept",
+    ):
+        assert disabled_operation not in OPERATIONS
+        assert permission_for_business_role_operation(disabled_operation) is None
+        assert all(
+            tenant_role_operation_eligibility(role, disabled_operation) == DENY
+            for role in TENANT_ROLES
+        )
+
+
+# ARTIFACT: tests/unit/test_tenant_authority_policy.py
+# VERSION: v1.15.1-CRM-ELIGIBILITY-VERSION-CERT
+# AUTHORITY BOUNDARY: certification of policy facts only; no role or permission assignment
+# TENANT POSTURE: Projects business eligibility is owner-capacity only and remains conjunctive with tenant-scoped assignment, membership and entitlement
+# FAIL-CLOSED POSTURE: every non-owner business capacity remains denied; eligibility alone creates no IAM assignment or entitlement
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

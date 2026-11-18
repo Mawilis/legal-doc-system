@@ -1,6 +1,6 @@
 """
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT
+VERSION: v1.10.2-P14-DEVICE-LOCATION-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5, L8-8J and L8-8H recipient authority remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service and bounded
          human conflict-review command input boundaries, bound-Deputy field evidence
@@ -12,7 +12,11 @@ COLLABORATION / OWNERSHIP: L8-3/L8-6/L8-8K command certificate; canonical intake
                             acceptance/receipt, directory, lifecycle, persistence, field-service,
                             conflict-review domain/orchestration/registry and authorization remain
                             read-only authorities under test.
-CERTIFICATION DATE: 2026-10-16
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.10.2-P14-DEVICE-LOCATION-COMMAND-API-CERT records the verified sovereign metadata correction; test and production behavior are unchanged.
+           v1.10.1-P14-DEVICE-LOCATION-COMMAND-API-CERT 2026-11-11  adds the mounted deputy device-challenge and location-evidence command paths to the exact route inventory and supplies required session references to synthetic identities while preserving tenant-bound command models and authority-free browser payload checks.
+           2026-11-11 v1.10.0-P14-DEVICE-LOCATION-COMMAND-API-CERT adds the mounted deputy device-challenge and location-evidence command paths to the exact route inventory while preserving tenant-bound command models and authority-free browser payload checks.
+           2026-10-16 v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT adds the exact workflow-transition route, authority-free request model and one-transaction service delegation while preserving Sheriff allocation-capability and attempt-authority tests.
 CHANGELOG: 2026-10-16 v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT adds the exact workflow-transition route, authority-free request model and one-transaction service delegation while preserving Sheriff allocation-capability and attempt-authority tests.
            2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
            adds the three exact recipient-binding command routes to the frozen
@@ -82,6 +86,7 @@ FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution authority; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Extra authority fields, path divergence, invalid state,
                          and failed transactions reject without partial success.
+SECURITY / PRIVACY POSTURE: Synthetic authenticated command requests only; request bodies cannot supply tenant, authorization, clearance, or financial truth.
 """
 from __future__ import annotations
 
@@ -162,6 +167,7 @@ def context() -> TenantAuthorizationContext:
         username="operator",
         email="operator@example.test",
         auth_method="TEST",
+        session_reference="command-router-test-session",
         status=PrincipalStatus.ACTIVE,
     )
     decision = TenantAuthorizationDecision(
@@ -181,6 +187,7 @@ def deputy_context() -> TenantAuthorizationContext:
         username="deputy",
         email="deputy@example.test",
         auth_method="TEST",
+        session_reference="command-router-deputy-test-session",
         status=PrincipalStatus.ACTIVE,
     )
     decision = TenantAuthorizationDecision(
@@ -200,6 +207,7 @@ def intake_context() -> TenantAuthorizationContext:
         username="legal-partner",
         email="partner@example.test",
         auth_method="TEST",
+        session_reference="command-router-legal-test-session",
         status=PrincipalStatus.ACTIVE,
     )
     decision = TenantAuthorizationDecision(
@@ -257,6 +265,11 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         "/legal-operations/attempts/{attempt_id}/outcome",
         "/legal-operations/deputy/attempts/{attempt_id}/transition",
         "/legal-operations/deputy/attempts/{attempt_id}/outcome",
+        "/legal-operations/deputy/attempts/{attempt_id}/location-evidence",
+        "/legal-operations/deputy/attempts/{attempt_id}/location-permission-grants",
+        "/legal-operations/deputy/attempts/{attempt_id}/location-permission-grants/{grant_id}/revoke",
+        "/legal-operations/deputy/device-challenges",
+        "/legal-operations/deputy/device-challenges/{challenge_id}/verify",
         "/legal-operations/conflict-reviews",
         "/legal-operations/notification-recipient-bindings",
         "/legal-operations/notification-recipient-bindings/revocations",
@@ -1473,7 +1486,7 @@ def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT
+# VERSION: v1.10.2-P14-DEVICE-LOCATION-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service plus bounded human conflict-review command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject

@@ -1,8 +1,24 @@
+# TITLE: WILSY OS Owner Commercial Source Certification
+# VERSION: v1.1.0-DAILY-WORK-CRM-LIFECYCLE-GATE
+# AUTHORITY: Repository CI certification only; no business command or deployment.
+# EPITOME: Validate source-owned CRM work IAM, durable task revisions,
+#          replay and audit against an isolated Mongo replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/owner-commercial-workspace-certification.yml
+# COLLABORATION / OWNERSHIP: CRM owner source, tenant IAM, Python EOS and disposable Mongo certification.
+# CERTIFICATION / UPDATE DATE: 2026-11-17
+# CHANGELOG: v1.1.0-DAILY-WORK-CRM-LIFECYCLE-GATE admits the current
+#            Daily Attention PR target branch for real-source certification.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Synthetic fixture only; no live database credentials.
+# TENANT BOUNDARY: Source tests must reject foreign tenant reads and writes.
+# AUTHORITY BOUNDARY: CI never grants permission, entitlement or role possession.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
+# FAIL-CLOSED POSTURE: Test failure blocks certification, never silently skips.
 name: Owner commercial workspace certification
 
 on:
   pull_request:
-    branches: [main, eos/atomic-owner-genesis-integration, eos/executive-command-workbench]
+    branches: [main, eos/atomic-owner-genesis-integration, eos/executive-command-workbench, eos/p0-daily-work-persistence-cert-20261109]
     paths:
       - "tools/eos/crm/domain/owner_commercial_work_item.py"
       - "tools/eos/crm/persistence/owner_commercial_work_registry.py"
@@ -131,3 +147,11 @@ jobs:
       - name: Stop isolated Mongo replica set
         if: always()
         run: docker rm -f owner-commercial-cert-mongo 2>/dev/null || true
+
+# ARTIFACT: .github/workflows/owner-commercial-workspace-certification.yml
+# VERSION: v1.1.0-DAILY-WORK-CRM-LIFECYCLE-GATE
+# AUTHORITY BOUNDARY: CI checks only; no mutation authority.
+# TENANT POSTURE: Synthetic current-tenant fixtures, foreign scope denied.
+# FAIL-CLOSED POSTURE: Real Mongo and regression failures block release.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

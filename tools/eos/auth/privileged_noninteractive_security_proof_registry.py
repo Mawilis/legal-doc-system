@@ -1,8 +1,22 @@
+# TITLE: WILSY OS Privileged Noninteractive Security Proof Registry
+# VERSION: v1.1.0-P3-R3E-EXACT-INDEX-READINESS
+# AUTHORITY: WILSY OS Core Governance
+# EPITOME: Immutable security-proof revisions and exact existing-index readiness.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/privileged_noninteractive_security_proof_registry.py
+# COLLABORATION / OWNERSHIP: Python EOS registry and server startup; caller owns transactions.
+# CERTIFICATION / UPDATE DATE: 2026-11-13
+# CHANGELOG: v1.1.0-P3-R3E-EXACT-INDEX-READINESS verifies complete existing index metadata without startup index writes, rejects incompatible specifications, and preserves first-time provisioning.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: No TTL or implicit proof authority; fail closed on metadata errors.
+# TENANT BOUNDARY: Security proof registry is infrastructure; authority decisions remain tenant scoped upstream.
+# AUTHORITY BOUNDARY: Index metadata never confers authorization or verified-proof currentness.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+
 """
 Revisioned immutable registry for noninteractive privileged security proofs.
 
 VERSION:
-v1.0.0-P3-R3E-PRIVILEGED-NONINTERACTIVE-SECURITY-PROOF-REGISTRY
+v1.1.0-P3-R3E-EXACT-INDEX-READINESS
 
 One logical proof is identified by proof_id.
 
@@ -64,8 +78,7 @@ from tools.eos.auth.privileged_noninteractive_security_proof import (
 
 
 VERSION: Final[str] = (
-    "v1.0.0-P3-R3E-"
-    "PRIVILEGED-NONINTERACTIVE-SECURITY-PROOF-REGISTRY"
+    "v1.1.0-P3-R3E-EXACT-INDEX-READINESS"
 )
 
 SCHEMA: Final[str] = (
@@ -674,6 +687,63 @@ class PrivilegedNoninteractiveSecurityProofRegistry:
     def ensure_indexes(
         self,
     ) -> None:
+        """Verify existing indexes before provisioning missing indexes.
+
+        A fully indexed Mongo collection requires only metadata reads.
+        Incompatible existing specifications are not silently rewritten.
+        Newly created databases retain the established index-provisioning
+        contract; callers must authorize that initialization.
+        """
+        expected = (
+            (PROOF_REVISION_INDEX, [("proof_id", ASCENDING), ("revision", ASCENDING)], True, None),
+            (PROOF_REFERENCE_REVISION_INDEX, [("proof_reference", ASCENDING), ("revision", ASCENDING)], True, None),
+            (CREDENTIAL_ATTESTATION_REFERENCE_REVISION_INDEX, [("credential_or_attestation_reference", ASCENDING), ("revision", ASCENDING)], True, None),
+            (PROOF_IDEMPOTENCY_INDEX, [("proof_id", ASCENDING), ("idempotency_key", ASCENDING)], True, None),
+            (PRINCIPAL_OBSERVED_TIMELINE_INDEX, [("principal_id", ASCENDING), ("observed_at", ASCENDING)], False, None),
+            (STATUS_CHANGED_TIMELINE_INDEX, [("proof_status", ASCENDING), ("status_changed_at", ASCENDING)], False, None),
+            (PROOF_REFERENCE_INITIAL_IDENTITY_INDEX, [("proof_reference", ASCENDING)], True, {"revision": 1}),
+            (CREDENTIAL_REFERENCE_INITIAL_IDENTITY_INDEX, [("credential_or_attestation_reference", ASCENDING)], True, {"revision": 1}),
+        )
+        try:
+            observed = {
+                entry["name"]: entry
+                for entry in self._collection.list_indexes()
+            }
+        except AttributeError:
+            # Existing lightweight test collection supports provisioning only.
+            observed = None
+        except PyMongoError as error:
+            if getattr(error, "code", None) == 26:
+                # NamespaceNotFound: first-time index creation on a new database.
+                observed = {}
+            else:
+                _transient_or_raise(error)
+                raise PrivilegedNoninteractiveSecurityProofPersistenceError(
+                    "INDEX_VERIFICATION_FAILED"
+                ) from error
+
+        if observed is not None:
+            for name, keys, unique, partial in expected:
+                installed = observed.get(name)
+                if installed is None:
+                    continue
+                if (
+                    list(installed.get("key", {}).items()) != keys
+                    or bool(installed.get("unique", False)) != unique
+                    or installed.get("partialFilterExpression") != partial
+                    or any(
+                        option in installed
+                        for option in (
+                            "expire" "AfterSeconds", "sparse", "collation", "hidden"
+                        )
+                    )
+                ):
+                    raise PrivilegedNoninteractiveSecurityProofPersistenceError(
+                        "INDEX_SPECIFICATION_MISMATCH:" + name
+                    )
+            if all(name in observed for name, *_ in expected):
+                return
+
         indexes = (
             (
                 [
@@ -1565,3 +1635,11 @@ __all__ = [
     "PrivilegedNoninteractiveSecurityProofPersistedInvalidError",
     "PrivilegedNoninteractiveSecurityProofPersistenceError",
 ]
+
+# ARTIFACT: privileged_noninteractive_security_proof_registry.py
+# VERSION: v1.1.0-P3-R3E-EXACT-INDEX-READINESS
+# AUTHORITY BOUNDARY: Index readiness does not confer principal or tenant authority.
+# TENANT POSTURE: Tenant isolation and proof validation remain unchanged.
+# FAIL-CLOSED POSTURE: Incompatible index metadata and unreadable existing metadata reject startup.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

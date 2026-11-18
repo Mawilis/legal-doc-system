@@ -1,18 +1,21 @@
-"""WILSY OS positive tenant-product entitlement composition authority.
+"""
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+WILSY OS positive tenant-product entitlement composition authority.
 
 TITLE: Tenant Product Entitlement Composer
-VERSION: v1.3.0-D22B3-ALL-PRODUCT-COMPOSITION
+VERSION: v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derive and persist one tenant-product entitlement lineage from an
          exact canonical subscription feature mapping; preserve the exact
-         perpetual Founder exception for Legal Operations only.
+         the exact Founder-perpetual Legal exception and an explicit internal-use Projects entitlement tied to the same canonical Founder subscription.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/entitlement/tenant_product_entitlement_composer.py
 COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription truth; D22A
                             owns product identity; Product Commercial Feature
                             owns mapping metadata; D22B1 owns lifecycle; D22B2
                             owns persistence. This composer correlates them only.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
+CHANGELOG: v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT allows audited Projects entitlement composition only when the shared policy identifies the exact canonical Founder subscription; ordinary tenants still require projects.core.
+           v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
            Founder-perpetual versus ordinary finite billing-period decision
            before entitlement reads or writes. v1.0.0-D22B3 establishes stable
            tenant/product lineage IDs, server-derived source/activation evidence,
@@ -77,7 +80,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-D22B3-ALL-PRODUCT-COMPOSITION"
+VERSION: Final[str] = "v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT"
 ENTITLEMENT_ID_NAMESPACE: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-ID/V1"
 SOURCE_EVIDENCE_SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-SOURCE/V1"
 ACTIVATION_EVIDENCE_SCHEMA: Final[str] = (
@@ -455,18 +458,29 @@ def compose_tenant_product_entitlement(
         subscription_registry,
     )
     term = evaluate_subscription_term(subscription, evaluated_at=when)
-    founder_perpetual = (
-        product is TenantProductId.LEGAL_OPERATIONS
-        and term.kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+    exact_platform_founder_term = (
+        term.kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
     )
-    if mapping.feature_id not in subscription.plan_features and not founder_perpetual:
+    founder_legal_perpetual = (
+        product is TenantProductId.LEGAL_OPERATIONS
+        and exact_platform_founder_term
+    )
+    founder_projects_internal_use = (
+        product is TenantProductId.PROJECTS
+        and exact_platform_founder_term
+    )
+    founder_exception = founder_legal_perpetual or founder_projects_internal_use
+    if mapping.feature_id not in subscription.plan_features and not founder_exception:
         _raise(
             TenantProductEntitlementComposerCommercialError,
             "D22B3_COMMERCIAL_FEATURE_ABSENT",
         )
-    commercial_authority_kind = (
-        "PLATFORM_FOUNDER_PERPETUAL" if founder_perpetual else "PLAN_FEATURE"
-    )
+    if founder_projects_internal_use:
+        commercial_authority_kind = "PLATFORM_FOUNDER_INTERNAL_USE"
+    elif founder_legal_perpetual:
+        commercial_authority_kind = "PLATFORM_FOUNDER_PERPETUAL"
+    else:
+        commercial_authority_kind = "PLAN_FEATURE"
 
     entitlement_id = derive_tenant_product_entitlement_id(tenant, product)
     (
@@ -646,7 +660,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_composer.py
-# VERSION: v1.3.0-D22B3-ALL-PRODUCT-COMPOSITION
+# VERSION: v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT
 # AUTHORITY BOUNDARY: positive Legal Operations subscription-to-entitlement composition only; no commercial mutation, reconciliation, IAM, route or classification authority
 # TENANT POSTURE: exact tenant-scoped subscription read and entitlement lineage inside one caller-owned transaction
 # FAIL-CLOSED POSTURE: invalid/ambiguous commercial proof, divergent evidence, terminal lifecycle, stale CAS and persistence failures reject

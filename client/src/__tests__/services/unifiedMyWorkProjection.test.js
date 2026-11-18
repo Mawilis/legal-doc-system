@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Unified My Work Projection Contract Tests
- * VERSION: v1.0.0-SOURCE-COVERAGE-CONTRACT
+ * VERSION: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies one shared fail-closed client contract for EOS aggregate
  *          scope, source coverage, row identity and summary reconciliation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/unifiedMyWorkProjection.test.js
  * COLLABORATION / OWNERSHIP: unifiedMyWorkProjection.js and EOS /api/my-work.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-SOURCE-COVERAGE-CONTRACT covers exact tenant/principal
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT-CERT certifies the existing,
+ *            server-owned HR source label and count coverage without granting
+ *            browser HR capability. v1.0.0-SOURCE-COVERAGE-CONTRACT covers exact tenant/principal
  *            matching, included-source parity, row counts, overdue summaries
  *            and stable labels without creating client permissions.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -76,12 +78,11 @@ describe('unified My Work projection contract', () => {
     })).toThrow('MY_WORK_SCOPE_MISMATCH');
   });
 
-  it('rejects unknown source coverage and permits an included empty source', () => {
-    const unknown = valid();
-    unknown.sources_included = ['OPERATIONS', 'CRM', 'HR'];
-    unknown.summary.source_counts = { OPERATIONS: 1, CRM: 1, HR: 0 };
-    expect(() => assertUnifiedMyWorkProjection(unknown))
-      .toThrow('ATTENTION_SOURCE_COVERAGE_INVALID');
+  it('recognizes the EOS-owned HR source and permits an included empty source', () => {
+    const hr = valid();
+    hr.sources_included = ['OPERATIONS', 'CRM', 'HR'];
+    hr.summary.source_counts = { OPERATIONS: 1, CRM: 1, HR: 0 };
+    expect(assertUnifiedMyWorkProjection(hr)).toBe(hr);
 
     const empty = valid();
     empty.items = [];
@@ -112,13 +113,14 @@ describe('unified My Work projection contract', () => {
 
   it('returns a known source label without labelling unknown sources', () => {
     expect(unifiedMyWorkSourceLabel('LEGAL')).toBe('Legal');
-    expect(unifiedMyWorkSourceLabel('HR')).toBeNull();
+    expect(unifiedMyWorkSourceLabel('HR')).toBe('HR & Hiring');
+    expect(unifiedMyWorkSourceLabel('UNKNOWN')).toBeNull();
   });
 });
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.test.js
- * VERSION: v1.0.0-SOURCE-COVERAGE-CONTRACT
+ * VERSION: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT-CERT
  * AUTHORITY BOUNDARY: Deterministic projection contract evidence only.
  * TENANT POSTURE: Synthetic exact-scope and mismatch tests.
  * FAIL-CLOSED POSTURE: Unknown or divergent source metadata is rejected.

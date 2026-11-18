@@ -1,310 +1,443 @@
-/* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║                                                                                                                                        ║
- * ║   ██████╗ ██╗██╗     ██╗     ██╗███╗   ██╗ ██████╗     ██████╗ ██╗   ██╗████████╗███████╗███████╗                               ║
- * ║   ██╔══██╗██║██║     ██║     ██║████╗  ██║██╔════╝     ██╔══██╗██╔═══██╗██║   ██║╚══██╔══╝██╔════╝╚════██║                       ║
- * ║   ██████╔╝██║██║     ██║     ██║██╔██╗ ██║██║  ███╗    ██████╔╝██║   ██║██║   ██║   ██║   █████╗   █████╔╝                       ║
- * ║   ██╔══██╗██║██║     ██║     ██║██║╚██╗██║██║   ██║    ██╔══██╗██║   ██║██║   ██║   ██║   ██╔══╝  ██╔═══╝                        ║
- * ║   ██████╔╝██║███████╗███████╗██║██║ ╚████║╚██████╔╝    ██║  ██║╚██████╔╝╚██████╔╝   ██║   ███████╗███████╗                       ║
- * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
- * ║                                                                                                                                        ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - SOVEREIGN FORENSIC PROOF BLOCK [v1.5.0‑ENV‑FIX]
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ EPITOME: Forensic proof block with persistent verification using POST endpoint, fixed environment variable handling.                  ║
- * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001                                                                           ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.5.0‑ENV‑FIX | PRODUCTION READY                                                                                             ║
- * ║ ABSOLUTE PATH: /client/src/components/billing/ForensicProofBlock.jsx                                                                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                              ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated fix for `process is not defined`. 2026‑08‑12.                                   ║
- * ║ • AI Engineering – v1.5.0: Replaced `process.env` with `import.meta.env` for Vite compatibility.                                    ║
- * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 FIXES (v1.5.0):                                                                                                                   ║
- * ║   1. Fixed `process is not defined` error by using `import.meta.env` for QR base URL.                                               ║
- * ║   2. Uses POST /api/qr/audit/:traceId/verify for persistent verification.                                                           ║
- * ║   3. Disables verify button when already verified (`qrVerified === true`).                                                           ║
- * ║   4. Displays `pkiVerified` badge and anomaly score.                                                                                 ║
- * ║   5. Preserves all existing functionality.                                                                                           ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY OS Billing Forensic Proof Display
+ * VERSION: v3.0.0-EOS-LEGACY-QR-VERIFY
+ * AUTHORITY: Wilsy OS Core Governance; Python EOS owns billing evidence and IAM.
+ * EPITOME: Displays invoice proof references, requests the compatible signed QR
+ *          envelope, and verifies it against a persisted invoice in current tenant scope.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/ForensicProofBlock.jsx
+ * COLLABORATION / OWNERSHIP: BillingHUD supplies a read projection; the
+ *                            authenticated API client and Python EOS bind access.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG:
+ *   v3.0.0-EOS-LEGACY-QR-VERIFY adds authenticated legacy-compatible QR issue
+ *     and signature verification while retaining the separate seal-reference check.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ECT Act section 15.
+ * SECURITY / PRIVACY POSTURE: Only the invoice reference is sent; API bearer and
+ *                             authenticated tenant scope come from the shared client.
+ * TENANT BOUNDARY: Python EOS derives tenant scope from TenantAuthorizationContext;
+ *                  invoice props and encoded tenant labels never authorize lookup.
+ * AUTHORITY BOUNDARY: Signed QR validity establishes neither PKI document signature,
+ *                     legal-content correctness, payment, execution, nor settlement.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution and settlement.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import sovereignClient from '../../utils/sovereignClient';
+import api from '../../services/api.js';
+
+const textValue = (value) => (
+  typeof value === 'string' && value.trim() ? value.trim() : ''
+);
+
+const isSha3Reference = (value) => /^[A-Fa-f0-9]{128}$/.test(value);
+
+const referenceLabels = Object.freeze({
+  not_checked: 'NOT CHECKED',
+  checking: 'CHECKING',
+  matched: 'SEAL REFERENCE MATCHED',
+  missing: 'SEAL REFERENCE NOT FOUND',
+  unavailable: 'VERIFICATION UNAVAILABLE',
+});
+
+const qrLabels = Object.freeze({
+  loading: 'QR CONFIGURATION CHECK',
+  ready: 'SIGNED QR AVAILABLE',
+  unavailable: 'SIGNED QR UNAVAILABLE',
+  checking: 'VERIFYING SIGNED QR',
+  valid: 'SIGNED QR VERIFIED',
+  invalid: 'SIGNED QR NOT VERIFIED',
+});
+
+const safeHttpsUrl = (value) => {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : '';
+  } catch {
+    return '';
+  }
+};
+
+const encodedPayloadFromUrl = (value) => {
+  const safeUrl = safeHttpsUrl(value);
+  if (!safeUrl) return '';
+  try {
+    const segments = new URL(safeUrl).pathname.split('/').filter(Boolean);
+    const token = decodeURIComponent(segments.at(-1) || '');
+    return token.includes('.') ? token : '';
+  } catch {
+    return '';
+  }
+};
+
+const apiErrorCode = (error) => (
+  error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'QR_SERVICE_UNAVAILABLE'
+);
 
 /**
- * @function ForensicProofBlock
- * @description Renders and verifies a tenant-scoped billing proof. Uses POST to persist verification status.
- * @param {{invoice: object, className?: string, status?: string}} props - Proof rendering inputs.
- * @returns {JSX.Element} The forensic proof surface.
- * @collaboration Persists verification status so it survives page reloads.
+ * @description Renders source proof references and authenticated Python EOS checks.
+ * @collaboration BillingHUD supplies the invoice ID and display projection; the
+ * shared API client forwards the current bearer and authenticated workspace scope.
+ * @institutional Keeps legacy QR signature verification distinct from stored
+ *                 seal-reference lookup and stored browser QR flags.
+ * @param {{invoice: object, className?: string, status?: string}} props
+ * @returns {JSX.Element} Bounded invoice QR and seal-reference verification controls.
  */
-const ForensicProofBlock = ({ invoice, className = '', status: initialStatus = 'pending' }) => {
-  // Determine initial status from invoice.qrVerified if available
-  const getInitialStatus = useCallback(() => {
-    if (invoice?.qrVerified === true) return 'verified';
-    return initialStatus;
-  }, [invoice, initialStatus]);
-
-  const [status, setStatus] = useState(getInitialStatus);
-  const [proofData, setProofData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export default function ForensicProofBlock({ invoice, className = '' }) {
   const [qrImage, setQrImage] = useState(null);
+  const [qrUrl, setQrUrl] = useState('');
+  const [qrState, setQrState] = useState('loading');
+  const [qrMessage, setQrMessage] = useState('Checking authenticated Python EOS QR availability.');
+  const [displayError, setDisplayError] = useState('');
+  const [referenceCheck, setReferenceCheck] = useState({
+    kind: 'not_checked',
+    message: 'No persisted seal-reference check has been performed.',
+  });
+  const [qrCheck, setQrCheck] = useState({ kind: 'not_checked', message: '' });
+  const referenceController = useRef(null);
+  const qrController = useRef(null);
 
-  // ─── QR code generation from verification URL ──────────────────────────
-  const getVerificationUrl = useCallback(() => {
-    const url = String(invoice?.qrVerificationUrl || '').trim();
-    if (/^https?:\/\//i.test(url)) return url;
-
-    // Fallback: construct from traceId using environment variable
-    const trace = invoice?.traceId || null;
-    if (trace) {
-      // Use import.meta.env for Vite
-      const base = import.meta.env.VITE_QR_BASE_URL || import.meta.env.QR_VERIFICATION_BASE_URL || 'http://localhost:5173';
-      return `${base}/verify/${encodeURIComponent(trace)}`;
-    }
-    return null;
-  }, [invoice]);
+  const invoiceId = textValue(
+    invoice?.invoiceId || invoice?.invoice_id || invoice?.id || invoice?.invoiceNumber,
+  );
+  const invoiceNumber = textValue(invoice?.invoiceNumber || invoice?.invoice_number || invoiceId) || 'Not provided';
+  const traceId = textValue(invoice?.traceId || invoice?.trace_id) || 'Not provided';
+  const sealHash = textValue(invoice?.sealHash || invoice?.seal_hash || invoice?.proofHash || invoice?.proof_hash);
+  const merkleRoot = textValue(invoice?.merkleRoot || invoice?.merkle_root);
+  const currency = textValue(invoice?.currency) || 'Not provided';
+  const rawAmount = Number(invoice?.totalAmount ?? invoice?.total_amount ?? invoice?.amount);
+  const amount = Number.isFinite(rawAmount) ? rawAmount.toFixed(2) : 'Not provided';
+  const storedLegacyFlag = invoice?.qrVerified === true;
+  const suppliedUrl = useMemo(
+    () => safeHttpsUrl(invoice?.qrVerificationUrl || invoice?.qr_verification_url),
+    [invoice?.qrVerificationUrl, invoice?.qr_verification_url],
+  );
+  const encodedPayload = useMemo(() => encodedPayloadFromUrl(qrUrl), [qrUrl]);
 
   useEffect(() => {
-    const url = getVerificationUrl();
-    if (url) {
-      QRCode.toDataURL(url, {
-        width: 200,
-        margin: 2,
-        errorCorrectionLevel: 'M',
-      })
-        .then(setQrImage)
-        .catch((err) => {
-          console.error('[ForensicProofBlock] QR generation failed:', err);
-          setQrImage(null);
-        });
-    } else {
-      setQrImage(null);
-    }
-  }, [getVerificationUrl]);
+    let active = true;
+    const controller = new AbortController();
+    qrController.current?.abort();
+    qrController.current = controller;
+    setQrUrl('');
+    setQrImage(null);
+    setQrCheck({ kind: 'not_checked', message: '' });
 
-  // ─── Verify and persist ──────────────────────────────────────────────
-  const verifyInvoice = useCallback(async () => {
-    const trace = invoice?.traceId || null;
-    if (!trace) {
-      setError('No trace ID available for verification.');
-      return;
+    if (suppliedUrl) {
+      setQrUrl(suppliedUrl);
+      setQrState('ready');
+      setQrMessage('Using the supplied HTTPS QR URL; Python EOS will validate its signed payload on request.');
+      return () => {
+        active = false;
+        controller.abort();
+      };
     }
-    if (invoice?.qrVerified === true) {
-      setError('Invoice already verified.');
-      return;
+
+    if (!invoiceId) {
+      setQrState('unavailable');
+      setQrMessage('A persisted invoice identifier is not available for authenticated QR issuance.');
+      return () => {
+        active = false;
+        controller.abort();
+      };
     }
-    setLoading(true);
-    setError(null);
-    try {
-      // Use POST to verify and persist status
-      const response = await sovereignClient.post(`/qr/audit/${encodeURIComponent(trace)}/verify`);
-      const data = response?.data ?? response;
-      if (data.valid) {
-        setStatus('verified');
-        setProofData(data);
-        // Update invoice reference to reflect persisted status (optional)
-        if (invoice && typeof invoice === 'object') {
-          invoice.qrVerified = true;
-          invoice.qrVerifiedAt = data.document?.qrVerifiedAt || new Date().toISOString();
-        }
-      } else {
-        setStatus('invalid');
-        setProofData(data);
-        setError(data.error || 'Verification failed.');
+
+    setQrState('loading');
+    setQrMessage('Requesting a signed QR URL from authenticated Python EOS.');
+    api.get(`/billing/invoices/${encodeURIComponent(invoiceId)}/qr`, {
+      signal: controller.signal,
+    }).then((response) => {
+      if (!active) return;
+      const payload = response?.data ?? response;
+      const generatedUrl = safeHttpsUrl(payload?.verificationUrl);
+      if (!generatedUrl || typeof payload?.encodedPayload !== 'string') {
+        setQrState('unavailable');
+        setQrMessage('Python EOS did not return a bounded HTTPS signed QR reference.');
+        return;
       }
-    } catch (err) {
-      setStatus('invalid');
-      const errData = err.response?.data || {};
-      setError(errData.message || err.message || 'Network error.');
-      setProofData(errData);
-    } finally {
-      setLoading(false);
-    }
-  }, [invoice]);
+      setQrUrl(generatedUrl);
+      setQrState('ready');
+      setQrMessage('Signed QR reference issued from the persisted tenant-owned invoice.');
+    }).catch((error) => {
+      if (!active || error?.name === 'AbortError' || error?.name === 'CanceledError') return;
+      setQrUrl('');
+      setQrState('unavailable');
+      setQrMessage(`Signed QR issuance unavailable: ${apiErrorCode(error)}`);
+    });
 
-  // ─── Export JSON ──────────────────────────────────────────────────────
-  const exportJSON = useCallback(() => {
-    if (!proofData) {
-      setError('No proof data available.');
+    return () => {
+      active = false;
+      controller.abort();
+      if (qrController.current === controller) qrController.current = null;
+    };
+  }, [invoiceId, suppliedUrl]);
+
+  useEffect(() => {
+    let active = true;
+    setQrImage(null);
+    if (!qrUrl) return () => { active = false; };
+
+    QRCode.toDataURL(qrUrl, {
+      width: 200,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+    }).then((image) => {
+      if (active) setQrImage(image);
+    }).catch(() => {
+      if (active) setDisplayError('The signed QR URL could not be rendered locally.');
+    });
+
+    return () => { active = false; };
+  }, [qrUrl]);
+
+  useEffect(() => {
+    setReferenceCheck({
+      kind: 'not_checked',
+      message: 'No persisted seal-reference check has been performed.',
+    });
+    referenceController.current?.abort();
+    referenceController.current = null;
+    return () => {
+      referenceController.current?.abort();
+      referenceController.current = null;
+    };
+  }, [sealHash]);
+
+  const verifySealReference = async () => {
+    if (!isSha3Reference(sealHash)) {
+      setReferenceCheck({
+        kind: 'unavailable',
+        message: 'A valid SHA3-512 seal reference is not available for this invoice.',
+      });
       return;
     }
-    const json = JSON.stringify(proofData, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `proof-${invoice?.invoiceNumber || 'document'}-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  }, [proofData, invoice]);
 
-  if (!invoice) {
-    return <div className="w-full p-4 border border-red-500/20 rounded bg-red-50/5 text-red-400 text-sm font-mono">No invoice data provided.</div>;
+    referenceController.current?.abort();
+    const controller = new AbortController();
+    referenceController.current = controller;
+    setReferenceCheck({
+      kind: 'checking',
+      message: 'Checking the persisted reference in the authenticated tenant scope.',
+    });
+    setDisplayError('');
+
+    try {
+      const response = await api.post(
+        '/billing/merkle/verify',
+        { seal_hash: sealHash },
+        { signal: controller.signal },
+      );
+      if (controller.signal.aborted) return;
+      const result = response?.data ?? response;
+      if (result?.valid === true) {
+        setReferenceCheck({
+          kind: 'matched',
+          message: 'Python EOS found this persisted seal reference in the authenticated tenant scope.',
+        });
+      } else if (result?.valid === false) {
+        setReferenceCheck({
+          kind: 'missing',
+          message: 'Python EOS found no matching persisted seal reference in the authenticated tenant scope.',
+        });
+      } else {
+        setReferenceCheck({
+          kind: 'unavailable',
+          message: 'Python EOS returned no bounded seal-reference result.',
+        });
+      }
+    } catch (error) {
+      if (controller.signal.aborted || error?.name === 'CanceledError' || error?.name === 'AbortError') return;
+      setReferenceCheck({
+        kind: 'unavailable',
+        message: 'The authenticated seal-reference check is unavailable.',
+      });
+    } finally {
+      if (referenceController.current === controller) referenceController.current = null;
+    }
+  };
+
+  const verifySignedQr = async () => {
+    if (!encodedPayload) {
+      setQrCheck({
+        kind: 'unavailable',
+        message: 'A compatible signed QR payload is not available for verification.',
+      });
+      return;
+    }
+
+    qrController.current?.abort();
+    const controller = new AbortController();
+    qrController.current = controller;
+    setQrState('checking');
+    setQrCheck({
+      kind: 'checking',
+      message: 'Validating signature, expiry, tenant scope, and persisted invoice match in Python EOS.',
+    });
+    try {
+      const response = await api.get(
+        `/qr/verify/${encodeURIComponent(encodedPayload)}`,
+        { signal: controller.signal },
+      );
+      if (controller.signal.aborted) return;
+      const result = response?.data ?? response;
+      if (result?.valid === true && result?.verificationMode === 'LEGACY_SIGNED_QR_PERSISTED_INVOICE_MATCH') {
+        setQrState('valid');
+        setQrCheck({
+          kind: 'valid',
+          message: 'Python EOS verified the legacy signature and matched the invoice inside the authenticated tenant scope. PKI, payment, and settlement were not evaluated.',
+        });
+      } else {
+        setQrState('unavailable');
+        setQrCheck({ kind: 'invalid', message: 'Python EOS returned no verified legacy QR result.' });
+      }
+    } catch (error) {
+      if (controller.signal.aborted || error?.name === 'CanceledError' || error?.name === 'AbortError') return;
+      setQrState('unavailable');
+      setQrCheck({
+        kind: 'invalid',
+        message: `Signed QR validation failed closed: ${apiErrorCode(error)}`,
+      });
+    } finally {
+      if (qrController.current === controller) qrController.current = null;
+    }
+  };
+
+  const copySeal = async () => {
+    if (!sealHash) return;
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+      setDisplayError('Clipboard access is unavailable. Select and copy the seal manually.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(sealHash);
+      setDisplayError('');
+    } catch {
+      setDisplayError('Clipboard access is unavailable. Select and copy the seal manually.');
+    }
+  };
+
+  if (!invoice || typeof invoice !== 'object') {
+    return (
+      <div className="w-full rounded border border-red-500/20 bg-red-50/5 p-4 text-sm text-red-300">
+        No invoice proof references were supplied.
+      </div>
+    );
   }
 
-  const { invoiceNumber, traceId, sealHash, merkleRoot, totalAmount, currency, qrVerified, qrVerifiedAt } = invoice;
-  const canVerify = Boolean(traceId) && !qrVerified;
-
   return (
-    <div className={`w-full max-w-3xl mx-auto p-6 bg-stone-900 border border-amber-500/30 rounded-xl shadow-2xl font-sans ${className}`}>
-      {/* ── HEADER ── */}
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-700">
-        <h3 className="text-base font-mono font-bold uppercase tracking-wider text-amber-400">🔐 Forensic Proof Block</h3>
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-mono font-semibold ${
-          qrVerified ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' :
-          status === 'invalid' ? 'bg-red-500/20 border border-red-500/30 text-red-400' :
-          'bg-amber-500/20 border border-amber-500/30 text-amber-400'
-        }`}>
-          {qrVerified ? '✅ VERIFIED' : status === 'invalid' ? '❌ INVALID' : '⏳ PENDING'}
-          {qrVerified && qrVerifiedAt && (
-            <span className="ml-2 text-[10px] text-stone-400 font-normal">
-              (persisted {new Date(qrVerifiedAt).toLocaleString()})
-            </span>
-          )}
+    <section
+      className={`mx-auto w-full max-w-3xl rounded-xl border border-amber-500/30 bg-stone-900 p-6 font-sans shadow-2xl ${className}`}
+      aria-labelledby="forensic-proof-title"
+      aria-busy={referenceCheck.kind === 'checking' || qrState === 'checking'}
+      data-testid="forensic-proof-block"
+    >
+      <header className="mb-4 flex items-center justify-between border-b border-stone-700 pb-3">
+        <div>
+          <h3 id="forensic-proof-title" className="font-mono text-base font-bold uppercase tracking-wider text-amber-400">
+            Forensic proof references
+          </h3>
+          <p className="mt-1 text-xs text-stone-400">Invoice {invoiceNumber}</p>
+        </div>
+        <span
+          className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-xs font-semibold text-amber-300"
+          data-testid="forensic-proof-status"
+        >
+          {referenceLabels[referenceCheck.kind]}
         </span>
+      </header>
+
+      <div className="mb-4 rounded border border-amber-500/20 bg-amber-950/20 p-3 font-mono text-xs text-amber-100" role="status">
+        {referenceCheck.message}
+        {storedLegacyFlag && (
+          <p className="mt-2 text-amber-200">
+            A stored legacy qrVerified flag is present. It has not been revalidated and is not shown as verified.
+          </p>
+        )}
+        <p className="mt-2 text-stone-300">
+          Seal-reference lookup does not verify a QR signature or invoice content. Signed QR verification does not prove PKI authenticity, legal correctness, payment execution, or settlement.
+        </p>
       </div>
 
-      {/* ── QR CODE ── */}
-      <div className="flex justify-center mb-4">
+      <div className="mb-2 flex items-center justify-center">
         {qrImage ? (
           <img
             src={qrImage}
-            alt={`QR Code for invoice ${invoiceNumber}`}
-            className="w-32 h-32 border-2 border-amber-500/30 rounded-lg object-contain bg-white/5"
+            alt={`Signed QR reference for invoice ${invoiceNumber}; not verified until EOS validation succeeds`}
+            className="h-36 w-36 rounded-lg border-2 border-amber-500/30 bg-white/5 object-contain"
           />
         ) : (
-          <div className="w-32 h-32 flex items-center justify-center border-2 border-dashed border-stone-600 rounded-lg text-stone-500 text-xs">
-            QR not available
+          <div className="flex h-36 w-36 items-center justify-center rounded-lg border-2 border-dashed border-stone-600 p-3 text-center text-xs text-stone-500">
+            {qrState === 'unavailable' ? 'QR unavailable' : 'Preparing signed QR'}
           </div>
         )}
       </div>
+      <p className="mb-4 text-center font-mono text-xs text-stone-400" data-testid="signed-qr-state">
+        {qrLabels[qrState] || qrLabels.unavailable}: {qrCheck.message || qrMessage}
+      </p>
 
-      {/* ── METADATA ── */}
-      <div className="grid grid-cols-2 gap-2 text-xs font-mono text-stone-400 mb-4">
-        <div><span className="text-amber-400">Invoice:</span> {invoiceNumber || 'N/A'}</div>
-        <div><span className="text-amber-400">Trace ID:</span> {traceId || 'N/A'}</div>
-        <div><span className="text-amber-400">Amount:</span> {currency} {Number(totalAmount || 0).toFixed(2)}</div>
-        <div><span className="text-amber-400">Seal:</span> <span className="text-stone-300 truncate">{sealHash ? sealHash.slice(0, 16) + '…' : 'N/A'}</span></div>
-        <div className="col-span-2"><span className="text-amber-400">Merkle Root:</span> <span className="text-stone-300 truncate">{merkleRoot ? merkleRoot.slice(0, 24) + '…' : 'N/A'}</span></div>
-      </div>
-
-      {/* ── STATUS DETAILS ── */}
-      {proofData && (
-        <div className="mb-4 p-3 rounded bg-stone-800 border border-stone-700 text-xs font-mono text-stone-300">
-          <div className="flex flex-wrap justify-between items-center gap-2">
-            <span>
-              <span className="text-amber-400">Status:</span> {proofData.valid ? '✅ Verified' : '❌ Invalid'}
-              {proofData.document?.anomalyScore !== undefined && (
-                <span className="ml-3 text-stone-400">
-                  Anomaly Score: <span className={proofData.document.anomalyScore > 50 ? 'text-red-400' : 'text-emerald-400'}>
-                    {proofData.document.anomalyScore.toFixed(0)}
-                  </span>
-                </span>
-              )}
-            </span>
-            {(proofData.proof?.pkiVerified !== undefined || invoice.pkiSignature) && (
-              <span className={proofData.proof?.pkiVerified ? 'text-emerald-400' : invoice.pkiSignature ? 'text-amber-400' : 'text-red-400'}>
-                PKI: {proofData.proof?.pkiVerified ? '✅ Signature verified' : invoice.pkiSignature ? '⚠️ Signature present, verification failed' : '❌ Not signed'}
-              </span>
-            )}
-            {proofData.document?.qrVerified === true && (
-              <span className="text-emerald-400">🔒 Persisted: {new Date(proofData.document.qrVerifiedAt).toLocaleString()}</span>
-            )}
-          </div>
-          {proofData.error && <div className="mt-1 text-red-400">Error: {proofData.error}</div>}
+      <dl className="mb-4 grid grid-cols-2 gap-2 font-mono text-xs text-stone-400">
+        <div><dt className="inline text-amber-400">Invoice:</dt> <dd className="inline">{invoiceNumber}</dd></div>
+        <div><dt className="inline text-amber-400">Trace ID:</dt> <dd className="inline">{traceId || 'Not provided'}</dd></div>
+        <div><dt className="inline text-amber-400">Amount:</dt> <dd className="inline">{currency} {amount}</dd></div>
+        <div><dt className="inline text-amber-400">Legacy flag:</dt> <dd className="inline">{storedLegacyFlag ? 'present, unverified' : 'absent'}</dd></div>
+        <div className="col-span-2">
+          <dt className="inline text-amber-400">Seal reference:</dt>{' '}
+          <dd className="inline break-all text-stone-300">{sealHash || 'Not provided'}</dd>
         </div>
+        <div className="col-span-2">
+          <dt className="inline text-amber-400">Merkle reference:</dt>{' '}
+          <dd className="inline break-all text-stone-300">{merkleRoot || 'Not provided'}</dd>
+        </div>
+      </dl>
+
+      {displayError && (
+        <p className="mb-3 rounded border border-amber-500/20 bg-amber-950/30 p-2 font-mono text-xs text-amber-200" role="alert">
+          {displayError}
+        </p>
       )}
 
-      {/* ── ACTIONS ── */}
-      <div className="flex flex-wrap gap-3">
-        {/* Verify button – disabled if already verified */}
+      <div className="flex flex-wrap gap-2">
         <button
-          onClick={verifyInvoice}
-          disabled={loading || !canVerify}
-          className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors ${
-            loading || !canVerify
-              ? qrVerified
-                ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 cursor-default'
-                : 'bg-stone-700 text-stone-400 cursor-not-allowed'
-              : 'bg-amber-500 hover:bg-amber-600 text-black'
-          }`}
+          type="button"
+          onClick={verifySignedQr}
+          disabled={!encodedPayload || qrState === 'checking' || qrState === 'loading'}
+          className="rounded bg-cyan-800 px-3 py-2 text-xs font-semibold text-cyan-50 transition-colors hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Validate the legacy signature and invoice only inside the authenticated tenant scope"
         >
-          {loading ? '⏳ Verifying…' : qrVerified ? '✅ Verified' : canVerify ? '🔒 Verify Online' : 'Trace unavailable'}
+          {qrState === 'checking' ? 'Verifying signed QR…' : 'Verify signed QR'}
         </button>
-
-        <button
-          onClick={exportJSON}
-          disabled={!proofData}
-          className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors ${
-            !proofData ? 'bg-stone-700 text-stone-500 cursor-not-allowed' : 'bg-stone-700 hover:bg-stone-600 text-stone-200'
-          }`}
-        >
-          📥 Export JSON
-        </button>
-
+        {isSha3Reference(sealHash) && (
+          <button
+            type="button"
+            onClick={verifySealReference}
+            disabled={referenceCheck.kind === 'checking'}
+            className="rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-amber-50 transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Check this persisted seal reference inside the authenticated tenant scope"
+          >
+            {referenceCheck.kind === 'checking' ? 'Checking seal reference…' : 'Check seal reference'}
+          </button>
+        )}
         {sealHash && (
           <button
-            onClick={async () => {
-              try {
-                await navigator.clipboard?.writeText(sealHash);
-                setError(null);
-              } catch {
-                setError('Clipboard access was unavailable. Select and copy the seal manually.');
-              }
-            }}
-            className="px-3 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs transition-colors"
-            title="Copy Seal Hash"
+            type="button"
+            onClick={copySeal}
+            className="rounded bg-stone-800 px-3 py-2 text-xs text-stone-300 transition-colors hover:bg-stone-700"
+            title="Copy the displayed seal reference"
           >
-            📋 Copy Seal
+            Copy seal reference
           </button>
         )}
       </div>
-
-      {error && (
-        <div className="mt-3 text-xs text-red-400 font-mono border border-red-500/20 rounded p-2 bg-red-950/30">
-          ⚠️ {error}
-        </div>
-      )}
-      {!traceId && (
-        <div className="mt-3 text-xs text-amber-300 font-mono border border-amber-500/20 rounded p-2 bg-amber-950/20">
-          This invoice has no persisted forensic trace. Its proof cannot be verified until a trace is issued by the ledger.
-        </div>
-      )}
-      {traceId && !getVerificationUrl() && (
-        <div className="mt-3 text-xs text-stone-400 font-mono border border-stone-700 rounded p-2 bg-stone-800/60">
-          Online proof lookup is available. A scannable QR will appear only after the server issues a signed verification URL.
-        </div>
-      )}
-    </div>
+    </section>
   );
-};
-
-export default ForensicProofBlock;
+}
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — ForensicProofBlock v1.5.0‑ENV‑FIX
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT — ENVIRONMENT FIXED
- * Phase:           Phase 2 — QR Verification with Persistence
- * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
- * ────────────────────────────────────────────────────────────────────────────────
- * ✅ Verification Checklist:
- *   1. Uses `import.meta.env` for environment variables (Vite compatibility).
- *   2. Disables verify button when already verified.
- *   3. Displays PKI badge, anomaly score, persistence timestamp.
- *   4. All async operations wrapped in try/catch with error feedback.
- *   5. Full JSDoc with @collaboration, @epitome, @institutional tags.
- * ────────────────────────────────────────────────────────────────────────────────
- * 🔒 This component is ready for deployment.
- * ────────────────────────────────────────────────────────────────────────────────
+ * ARTIFACT: WILSY OS Billing Forensic Proof Display
+ * VERSION: v3.0.0-EOS-LEGACY-QR-VERIFY
+ * AUTHORITY BOUNDARY: Authenticated Python EOS QR and seal-reference checks only.
+ * TENANT POSTURE: EOS derives scope from the current authorized session.
+ * FAIL-CLOSED POSTURE: Missing config, malformed payload, mismatch, and transport errors never report verification.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

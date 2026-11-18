@@ -3,18 +3,19 @@
  * WILSY OS — Founder Command Center
  *
  * TITLE: WILSY OS Founder Command Center
- * VERSION: v60.2.1-LEGAL-DASHBOARD-DEDUPE
+ * VERSION: v60.3.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY
  * AUTHORITY: Wilsy OS Core Governance
- * EPITOME: Preserve strict Founder command isolation while removing the stale
- *          legacy LegalDashboard lazy reference so every Founder Legal route
- *          converges on the canonical standalone LEGAL workspace resolved by
- *          DashboardRegistry and client dashboard constants.
+ * EPITOME: Composes Founder navigation and operational projections while
+ *          removing ungoverned global tenant lifecycle commands. The Tenant
+ *          Manager route shows only authenticated current-tenant state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/FounderDashboard.jsx
  * COLLABORATION / OWNERSHIP: Founder command/navigation composition only. The
  *                            canonical Legal Operations client surface remains
  *                            client/src/components/industry/LegalDashboard.jsx.
- * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v60.2.1-LEGAL-DASHBOARD-DEDUPE removes the unused
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG:
+ *   2026-11-10 v60.3.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY removes Founder create/suspend commands and labels the read-only current-tenant view; no role-derived C2 authority is implied.
+ *            2026-09-23 v60.2.1-LEGAL-DASHBOARD-DEDUPE removes the unused
  *            ../legal/LegalDashboard lazy declaration. LEGAL_DASHBOARD already
  *            redirects to /legal and the canonical dashboard registry resolves
  *            that workspace to ../components/industry/LegalDashboard. No Founder
@@ -23,10 +24,11 @@
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Navigation composition only; no new data,
  *                             credentials, PII, or authority-bearing payloads.
- * TENANT BOUNDARY: Existing authenticated active-tenant context is preserved;
- *                  this deduplication creates no tenant fallback or inference.
- * AUTHORITY BOUNDARY: Founder navigation/command presentation only. Legal
- *                     business truth remains Python EOS sovereign authority.
+ * TENANT BOUNDARY: Only the authenticated active-tenant projection is presented;
+ *                  no global list, tenant fallback, or cross-tenant inference.
+ * AUTHORITY BOUNDARY: Founder navigation presentation only. Cross-tenant
+ *                     lifecycle commands remain unavailable pending governed C2;
+ *                     Python EOS alone owns tenant truth and authorization.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement authority;
  *                               Kennel EOS remains exclusive.
  * FAIL-CLOSED DECLARATION: Non-Founder dashboards remain standalone redirects;
@@ -314,7 +316,7 @@ const INSTITUTIONAL_HUB_KEYS = ['REVENUE_LEDGER', 'BILLING_HUB', 'AUDIT_VAULT', 
 const INDUSTRY_KEYS = ['AGRICULTURE_DASHBOARD', 'HOSPITALITY_DASHBOARD', 'PRODUCTION_DASHBOARD', 'RETAIL_DASHBOARD', 'PUBLIC_DASHBOARD', 'INDUSTRY_FINANCE_DASHBOARD', 'TECH_DASHBOARD', 'SPORTS_DASHBOARD', 'EDUCATION_DASHBOARD', 'HEALTHCARE_DASHBOARD', 'CONSULTING_DASHBOARD', 'ENERGY_DASHBOARD', 'ENTERTAINMENT_DASHBOARD', 'PROPERTY_DASHBOARD', 'INDUSTRY_LEGAL_DASHBOARD', 'PROJECT_DASHBOARD', 'LOGISTICS_DASHBOARD', 'NONPROFIT_DASHBOARD'];
 
 // RESTORED MISSING SIDEBAR SHORTCUTS
-// ⚡ SURGICAL ELEVATION: Appended 'TENANT_MANAGER' for instant Founder access to shard provisioning.
+// Tenant Manager opens the authenticated current-tenant view; lifecycle controls await governed C2.
 const SIDEBAR_SHORTCUTS = ['INVESTOR_PROOF', 'SINGULARITY_MATRIX', 'EXECUTIVE_CONTROL_ROOM', 'BILLING_HUB', 'EXECUTIVE_OVERSIGHT', 'HR_DASHBOARD', 'TENANT_MANAGER'];
 
 const MODULE_OPERATING_MAP = {
@@ -334,7 +336,7 @@ const MODULE_OPERATING_MAP = {
   CLIENT_COVENANT: { layer: 'CUSTOMER', label: 'Client Covenant', contract: 'Client agreements and trust posture', feed: 'Client registry' },
   CRISIS_COMMAND: { layer: 'RESILIENCE', label: 'Crisis Command', contract: 'Incident response and key rotation', feed: 'Security telemetry' },
   NUCLEUS_MONITOR: { layer: 'OBSERVABILITY', label: 'Nucleus Monitor', contract: 'Raw system event stream', feed: 'Telemetry mesh' },
-  TENANT_MANAGER: { layer: 'TENANCY', label: 'Tenant Manager', contract: 'Shard provisioning and suspension', feed: 'Tenant APIs' },
+  TENANT_MANAGER: { layer: 'TENANCY', label: 'Tenant Manager', contract: 'Authenticated current-tenant projection; cross-tenant lifecycle requires governed Python EOS C2', feed: 'Workspace bootstrap' },
   STATEMENT_ENGINE: { layer: 'EVIDENCE', label: 'Statement Engine', contract: 'Investor and compliance artifacts', feed: 'Statement APIs' },
   EXECUTIVE_CONTROL_ROOM: { layer: 'COMMAND', label: 'Executive Control Room', contract: 'Authoritative kernel window and operator gateway', feed: 'POST /execution and GET /dashboard' },
   CEO_DASHBOARD: { layer: 'LEADERSHIP', label: 'CEO Dashboard', contract: 'Chief Executive Officer view', feed: 'Executive APIs' },
@@ -574,7 +576,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
   }, [activeTenant, founderProfile, user]);
 
   const founderPatentSystems = useMemo(() => ([
-    { title: 'Founder Sovereignty Graph', text: 'Ties owner identity, tenant authority, boardroom actions and audit proof into one visible command graph.', icon: Fingerprint },
+    { title: 'Founder Sovereignty Graph', text: 'Shows owner identity, authenticated tenant scope, boardroom surfaces and available audit proof without granting cross-tenant authority.', icon: Fingerprint },
     { title: 'Real-Data Investor Theatre', text: 'Demo surfaces reject placeholders and expose whether every figure is database-backed, cached or unavailable.', icon: BadgeCheck },
     { title: 'Jurisdiction Revenue Router', text: 'Links billing, courts, compliance, collections and tenant geography so money movement has legal context.', icon: Scale },
     { title: 'Forensic Operating Memory', text: 'Every executive action becomes explainable, exportable and sealed for institutional diligence.', icon: FileCheck2 }
@@ -851,8 +853,6 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
     { id: 'ACTION_STMT_REVENUE', label: 'Revenue Artifact', icon: <FileText size={16} />, handler: () => executeOmegaStrike('STMT_REVENUE', '/statements/revenue') },
     { id: 'ACTION_STMT_COMPLIANCE', label: 'Compliance Proof', icon: <ShieldCheck size={16} />, handler: () => executeOmegaStrike('STMT_COMPLIANCE', '/statements/compliance') },
     { id: 'ACTION_STMT_FORENSIC', label: 'Forensic Seal', icon: <Fingerprint size={16} />, handler: () => executeOmegaStrike('STMT_FORENSIC', '/statements/forensics') },
-    { id: 'ACTION_ADD_TENANT', label: 'Spawn Shard', icon: <Users size={16} />, handler: () => executeOmegaStrike('TENANT_ADD', '/tenants/create', 'POST') },
-    { id: 'ACTION_SUSPEND_TENANT', label: 'Freeze Shard', icon: <ShieldAlert size={16} />, handler: () => executeOmegaStrike('TENANT_SUSPEND', '/tenants/suspend', 'POST') },
     { id: 'ACTION_TRIGGER_SNAPSHOT', label: 'Cold Storage Snapshot', icon: <Database size={16} />, handler: () => executeOmegaStrike('COLD_STORAGE_SNAPSHOT', '/revenue/snapshot/cold-storage', 'POST') },
     { id: 'ACTION_CLEAR_SUSPENSE', label: 'Open Invoice Sentinel', icon: <Receipt size={16} />, handler: () => activateModule('INVOICE_SENTINEL') },
     { id: 'ACTION_LOGOUT', label: 'Logout / Terminate Session', icon: <LogOut size={16} />, handler: logout }
@@ -909,7 +909,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
       { title: 'Diligence-Ready Evidence', claim: 'Every critical executive claim can route to Audit Vault, Statement Engine or a forensic feed.', proof: forensics ? 'Forensic feed linked' : 'Forensic feed pending', ready: Boolean(forensics), module: 'AUDIT_VAULT', action: 'Open Audit Vault' },
       { title: 'Founder-Controlled Tenancy', claim: 'The owner, tenant, role authority and expansion path are visible from the command center.', proof: `${tenantLabel} / ${tenantId}`, ready: Boolean(activeTenant || tenantId), module: 'IDENTITY_HUB', action: 'Open Identity Hub' },
       { title: 'Revenue-To-Court Loop', claim: 'Collections, court registry, receivables and statements belong to one operating workflow.', proof: billingMetrics ? 'Billing metrics linked' : 'Billing metrics pending', ready: Boolean(billingMetrics), module: 'BILLING_HUB', action: 'Open Billing Hub' },
-      { title: 'Multi-Tenant Expansion Rail', claim: 'New businesses can become governed tenants without losing audit, identity or jurisdiction context.', proof: activeTenant?.jurisdiction || founderProfile.jurisdictionFocus || 'Founder jurisdiction configured', ready: Boolean(activeTenant?.jurisdiction || founderProfile.jurisdictionFocus), module: 'TENANT_MANAGER', action: 'Open Tenant Manager' },
+      { title: 'Governed Tenant Lifecycle', claim: 'Cross-tenant listing, creation and suspension remain disabled until a Python EOS C2 capability is formally governed.', proof: 'GOVERNED_C2_REQUIRED', ready: false, module: 'TENANT_MANAGER', action: 'View current tenant' },
       { title: 'Live Operating Telemetry', claim: 'A CEO sees posture, risk, uptime signals and command history without asking engineering.', proof: `${telemetryCount} events / ${statsCount} stat samples`, ready: telemetryCount > 0 || statsCount > 0, module: 'NUCLEUS_MONITOR', action: 'Open Nucleus Monitor' }
     ];
   }, [activeTenant, billingMetrics, forensics, founderProfile, osSpine, telemetryEvents, telemetryStats]);
@@ -932,7 +932,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
   const sovereignValueLoops = useMemo(() => ([
     { title: 'Money To Law Loop', path: 'Invoice -> receivable -> court route -> statement -> forensic seal', module: 'BILLING_HUB', action: 'Inspect Billing' },
     { title: 'Identity To Authority Loop', path: 'Founder profile -> role graph -> tenant scope -> command permission', module: 'IDENTITY_HUB', action: 'Inspect Identity' },
-    { title: 'Tenant To Node Loop', path: 'Founder tenant -> shard registry -> topology -> expansion readiness', module: 'GLOBAL_ORCHESTRATOR', action: 'Inspect Topology' },
+    { title: 'Tenant To Node Loop', path: 'Authenticated tenant -> current node projection -> separately governed topology evidence', module: 'GLOBAL_ORCHESTRATOR', action: 'Inspect Topology' },
     { title: 'Action To Evidence Loop', path: 'Command -> telemetry -> audit vault -> exportable diligence proof', module: 'AUDIT_VAULT', action: 'Inspect Evidence' }
   ]), []);
 
@@ -1105,7 +1105,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
                     <div className={styles.proofHeroCopy}>
                       <span className={styles.proofPill}><BadgeCheck size={14} /> Investor-Grade Operating Thesis</span>
                       <h2>Why WILSY OS Wins</h2>
-                      <p>WILSY OS is built as a business operating system: revenue, legal execution, identity, audit evidence, tenant expansion and executive command share one evidence layer.</p>
+                      <p>WILSY OS presents revenue, legal execution, identity, audit evidence and executive work through bounded tenant scope; global tenant lifecycle awaits governed C2.</p>
                     </div>
                     <div className={styles.proofMetrics}>
                       <div><span>Mounted Modules</span><strong>{osSpine.mounted}</strong></div>
@@ -1505,7 +1505,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
         {/* RE-FORGED DUAL-SIDED INSTITUTIONAL FOOTER WITH LIVE KENNEL STATUS */}
         <footer className={styles.footer} style={{ height: '40px', minHeight: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>
-            ⚡ KENNEL: {kennelConnected ? 'OPERATIONAL' : 'FRACTURE'} • v1.1.1 • BILLION‑TENANT SCALE • TOP 0.01% LATENCY • PQE‑256 SEALED
+            ⚡ KENNEL: {kennelConnected ? 'CONNECTED' : 'UNAVAILABLE'} • Tenant scope: authenticated workspace • Global C2 lifecycle: unavailable
           </span>
           <span className={styles.footerBrand}>
             WILSY OS — LEGAL SOVEREIGN STANDARD • FOUNDER COMMAND CENTER • FORENSIC SEAL: ACTIVE
@@ -1521,10 +1521,10 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
 const useDynamicNarrative = () => {
   const [narrativeIndex, setNarrativeIndex] = useState(0);
   const narrativePool = useMemo(() => [
-    "AI BOARDROOM NARRATIVE: Master Shard running at optimal capacity allocation. P95 telemetry latency remains securely stabilised within designated architectural boundaries, guaranteeing zero database connection jitter.",
+    "AI BOARDROOM NARRATIVE: Master-shard capacity and production latency are not established by this client projection.",
     "AI BOARDROOM NARRATIVE: ARR trajectory indicates a definitive confidence tier milestone, laying the infrastructure foundations for upcoming continental expansion frameworks.",
     "AI BOARDROOM NARRATIVE: Forensic auditing parameters confirm data protection compliance records are completely locked. Post-Quantum Encryption vault layers verify absolute transaction immutability.",
-    "AI BOARDROOM NARRATIVE: Active operational command centre routing loops are processing multi-tenant data pipelines with flawless transactional performance signatures."
+    "AI BOARDROOM NARRATIVE: Data pipelines remain tenant-scoped and require Python EOS authorization; no cross-tenant lifecycle capability is implied."
   ], []);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1632,10 +1632,10 @@ export default FounderDashboard;
 /**
  * SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: FounderDashboard.jsx
- * VERSION: v60.2.1-LEGAL-DASHBOARD-DEDUPE
- * AUTHORITY BOUNDARY: Founder command/navigation composition only; canonical Legal Operations truth remains Python EOS-owned
- * TENANT POSTURE: Existing authenticated active-tenant scope preserved; no fallback or cross-tenant inference introduced
- * FAIL-CLOSED POSTURE: All non-Founder dashboards remain standalone workspace redirects; no legacy Legal dashboard fallback
+ * VERSION: v60.3.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY
+ * AUTHORITY BOUNDARY: Founder navigation only; Python EOS owns tenant and Legal truth; global lifecycle awaits governed C2
+ * TENANT POSTURE: Exact authenticated active-tenant projection only; no global list or fallback
+ * FAIL-CLOSED POSTURE: Tenant creation and suspension commands are absent; non-Founder dashboards retain standalone redirects
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

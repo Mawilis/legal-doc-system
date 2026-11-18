@@ -1,7 +1,13 @@
-"""WILSY OS sovereign Python API server composition root.
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION
+VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -11,8 +17,15 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: 2026-11-03 v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP mounts the additive global login/selection/MFA/refresh/logout routes, installs global TOTP factor indexes, and accepts an injected platform KMS decryptor; absent KMS wiring keeps MFA completion unavailable.
+CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: 2026-11-16 v1.45.0-PROJECTS-ROUTER-AND-INDEX-BOOTSTRAP mounts the authenticated Projects router once under /api and provisions only the project registry unique indexes before route readiness; no business records, permissions, assignments or entitlements are created.
+2026-11-13 v1.44.0-COMPANY-OPERATING-DOCUMENT-ROUTER mounts the exact-company Mission/Strategy router once under /api, without automatic indexes, content publication, IAM assignments or employment changes.
+2026-11-10 v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
+QR issue/verify IAM remains router-owned and no invoice or key mutation occurs.
+2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
+Daily Attention feed, counts, calendar and source-coverage read surfaces
+under /api without granting a second command or transaction authority.
+2026-11-03 v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP mounts the additive global login/selection/MFA/refresh/logout routes, installs global TOTP factor indexes, and accepts an injected platform KMS decryptor; absent KMS wiring keeps MFA completion unavailable.
 2026-11-03 v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP installs the durable tenant-neutral global authentication rate-limit indexes alongside global credential and one-time membership/MFA challenge indexes during canonical connected startup; readiness remains false until every required index succeeds.
 2026-11-03 v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP installs unique global-principal credential and single-use membership/MFA challenge indexes during canonical connected startup; no credentials, memberships, capacities, permissions, sessions, or identity authority are created.
 2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
@@ -89,7 +102,7 @@ from pymongo.write_concern import WriteConcern
 from .auth_router import router as auth_router
 from .global_principal_auth_router import router as global_principal_auth_router
 from .authority_bridge_router import router as authority_bridge_router
-from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
+from .billing_router import evaluate_all_tenant_dunning_lifecycles, qr_router, router as billing_router
 from .forensic_merkle_router import router as forensic_merkle_router
 from .artifact_pdf_router import router as artifact_pdf_router
 from .employee_router import router as employee_router
@@ -125,6 +138,7 @@ from .hiring_lifecycle_router import router as hiring_lifecycle_router
 from .candidate_evidence_upload_router import router as candidate_evidence_upload_router
 from .tenant_module_workspace_router import router as tenant_module_workspace_router
 from .unified_my_work_router import router as unified_my_work_router
+from .attention_router import router as attention_router
 from .pos_workspace_router import router as pos_workspace_router, ensure_pos_workspace_indexes
 from .commercial_agreement_router import router as commercial_agreement_router
 from tools.eos.saas.entitlement.commercial_agreement_execution_verifier import CommercialAgreementExecutionVerifier
@@ -160,6 +174,13 @@ from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
 from .hr_workforce_directory_router import router as hr_workforce_directory_router
+from .company_operating_document_router import router as company_operating_document_router
+from .projects_router import router as projects_router
+from tools.eos.saas.projects.project_registry import (
+    COLLECTION as PROJECT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_EVENT_COLLECTION,
+    ProjectRegistry,
+)
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
@@ -283,7 +304,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
+VERSION = "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -349,6 +370,7 @@ class WilsyAPIServer:
         app.state.wilsy_ai_legal_services_orchestrator = None
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
+        app.state.projects_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
         app.state.global_principal_session_indexes_ready = False
         app.state.global_principal_system_session_indexes_ready = False
@@ -540,6 +562,7 @@ class WilsyAPIServer:
             except InstitutionalPKIError as error:
                 logger.warning("[INSTITUTIONAL_PKI] Verification unavailable: %s", error.code)
             app.state.p12c_binding_indexes_ready = False
+            app.state.projects_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
             app.state.global_principal_system_session_indexes_ready = False
@@ -577,6 +600,21 @@ class WilsyAPIServer:
             database, client = get_database(), get_client()
             if database is None:
                 return
+            # Project identity, code and immutable-event uniqueness must be
+            # established before any Projects HTTP operation is admitted.
+            # This is metadata-only DDL; startup creates no project or event data.
+            try:
+                ProjectRegistry.ensure_indexes(
+                    database[PROJECT_COLLECTION],
+                    database[PROJECT_EVENT_COLLECTION],
+                )
+                app.state.projects_indexes_ready = True
+            except Exception as error:
+                app.state.projects_indexes_ready = False
+                logger.error(
+                    "[PROJECTS] Canonical index bootstrap unavailable: %s",
+                    type(error).__name__,
+                )
             try:
                 InstitutionalSignerEnrollmentRegistry.ensure_indexes(
                     database[INSTITUTIONAL_SIGNER_COLLECTION],
@@ -1074,6 +1112,7 @@ class WilsyAPIServer:
         app.include_router(candidate_evidence_upload_router, prefix="/api")
         app.include_router(tenant_module_workspace_router, prefix="/api")
         app.include_router(unified_my_work_router, prefix="/api")
+        app.include_router(attention_router, prefix="/api")
         app.include_router(pos_workspace_router, prefix="/api")
         app.include_router(commercial_agreement_router, prefix="/api")
         app.include_router(legal_operations_command_router, prefix="/api")
@@ -1127,6 +1166,8 @@ class WilsyAPIServer:
 
         app.include_router(billing_router)
         app.include_router(billing_router, prefix="/api")
+        app.include_router(qr_router)
+        app.include_router(qr_router, prefix="/api")
 
         app.include_router(employee_router)
         app.include_router(authority_bridge_router)
@@ -1136,6 +1177,8 @@ class WilsyAPIServer:
         app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
         app.include_router(hr_workforce_directory_router)
+        app.include_router(company_operating_document_router, prefix="/api")
+        app.include_router(projects_router, prefix="/api")
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
@@ -1153,7 +1196,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION
+# VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

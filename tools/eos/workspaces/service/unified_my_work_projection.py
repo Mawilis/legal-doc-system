@@ -1,13 +1,17 @@
 """TITLE: WILSY OS Unified My Work Read Projection
-VERSION: v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING
+VERSION: v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Deterministically compose independently admitted EOS source work while
          preserving source identity, tenant scope and visibility provenance.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/workspaces/service/unified_my_work_projection.py
 COLLABORATION / OWNERSHIP: unified_my_work_router admits Legal, Operations,
-                           Intelligence and CRM through their own authorities.
-CERTIFICATION / UPDATE DATE: 2026-11-09.
-CHANGELOG: v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING makes the existing identity
+                           Intelligence, CRM and HR through their own authorities.
+CERTIFICATION / UPDATE DATE: 2026-11-15.
+CHANGELOG: v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION accepts only the sanitized,
+           independently admitted HR action envelope supplied by the existing
+           headcount and hiring source owners. It never reads personnel
+           collections or introduces HR command authority.
+           v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING makes the existing identity
            validation explicit so static analysis proves source-key types;
            adds the complete sovereign header, API contract and end seal.
            v1.0.0-UNIFIED-MY-WORK-PROJECTION established source-owned aggregation.
@@ -30,10 +34,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Iterable, Mapping
 
-VERSION = "v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING"
+VERSION = "v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION"
 SCHEMA = "WILSY-OS-UNIFIED-MY-WORK/V1"
 
-_SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM")
+_SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR")
 _PRIORITY = {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3}
 _TERMINAL = frozenset({"COMPLETED", "CANCELLED"})
 
@@ -77,7 +81,7 @@ def _source_items(
         return ()
     if not isinstance(payload, Mapping) or payload.get("tenant_id") != tenant_id:
         raise UnifiedMyWorkProjectionError("SOURCE_TENANT_MISMATCH")
-    if source in {"OPERATIONS", "INTELLIGENCE", "CRM"}:
+    if source in {"OPERATIONS", "INTELLIGENCE", "CRM", "HR"}:
         items = payload.get("items")
         if not isinstance(items, (list, tuple)):
             raise UnifiedMyWorkProjectionError("SOURCE_ITEMS_INVALID")
@@ -104,6 +108,7 @@ def build_unified_my_work(
     operations: Mapping[str, Any] | None = None,
     intelligence: Mapping[str, Any] | None = None,
     crm: Mapping[str, Any] | None = None,
+    hr: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compose authorized source projections without becoming an authority.
 
@@ -133,6 +138,7 @@ def build_unified_my_work(
         "OPERATIONS": operations,
         "INTELLIGENCE": intelligence,
         "CRM": crm,
+        "HR": hr,
     }
     merged: dict[tuple[str, str], dict[str, Any]] = {}
     visibility: dict[tuple[str, str], set[str]] = {}
@@ -243,7 +249,7 @@ def build_unified_my_work(
 __all__ = ["SCHEMA", "VERSION", "UnifiedMyWorkProjectionError", "build_unified_my_work"]
 
 # ARTIFACT: unified_my_work_projection.py
-# VERSION: v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING
+# VERSION: v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION
 # AUTHORITY BOUNDARY: Read projection of independently admitted source work only.
 # TENANT POSTURE: Exact envelope and explicit item tenant binding; no cross-tenant lookup.
 # FAIL-CLOSED POSTURE: Malformed, foreign and divergent source evidence rejects.

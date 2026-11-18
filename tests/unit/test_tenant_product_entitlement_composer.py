@@ -1,7 +1,7 @@
 """Direct certificate for the D22B3 tenant-product entitlement composer.
 
 TITLE: Tenant Product Entitlement Composer Direct Certificate
-VERSION: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER-CERT
+VERSION: v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify deterministic lineage, canonical commercial proof, derived
          evidence, lifecycle replay/closure and caller transaction ownership.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Bounded dependency doubles exercise D22B3 composition;
                             real Mongo is certified separately.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER-CERT establishes
+CHANGELOG: v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT proves exact-Founder-only Projects internal-use entitlement composition and ordinary tenant feature enforcement.
+           v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER-CERT establishes
            adversarial coverage for all positive, replay and fail-closed paths.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic tenants and evidence only.
@@ -278,6 +279,59 @@ def test_exact_zero_rated_founder_subscription_composes_legal_without_plan_featu
     assert calls[0][0] == "create"
     assert calls[1][0] == "transition"
 
+
+
+def test_exact_founder_subscription_composes_projects_as_internal_use(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The canonical Founder term can issue only an explicit Projects entitlement."""
+    Registry.items = (
+        subscription(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="WILSYSUB-93455E4E",
+            plan_id="WILSYPLAN-37B8164F",
+            features=("tenant.branding",),
+            period_end=NOW - timedelta(days=29),
+            amount=0.0,
+            billing_mode="PLATFORM",
+        ),
+    )
+    captured: list[str] = []
+    original = composer._evidence
+
+    def evidence(*args: Any, **kwargs: Any) -> tuple[str, str, str, str]:
+        captured.append(str(args[6]))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(composer, "_evidence", evidence)
+    calls = install_flow(monkeypatch)
+    result = invoke(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        product_id=TenantProductId.PROJECTS,
+    )
+    assert result.outcome is composer.TenantProductEntitlementCompositionOutcome.COMPOSED
+    assert result.entitlement.lifecycle_state is TenantProductEntitlementState.ACTIVE
+    assert result.entitlement.product_id is TenantProductId.PROJECTS
+    assert result.entitlement.source_evidence_reference.startswith(
+        "tpe-source:WILSYSUB-93455E4E:PROJECTS:"
+    )
+    assert captured == ["PLATFORM_FOUNDER_INTERNAL_USE"]
+    assert [call[0] for call in calls] == ["create", "transition"]
+
+
+def test_non_founder_projects_requires_projects_plan_feature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An ordinary tenant cannot borrow the internal Founder exception."""
+    Registry.items = (subscription(features=("tenant.branding",)),)
+    monkeypatch.setattr(
+        composer,
+        "get_current",
+        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),
+    )
+    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:
+        invoke(product_id=TenantProductId.PROJECTS)
+    assert raised.value.code == "D22B3_COMMERCIAL_FEATURE_ABSENT"
 
 
 def test_exact_founder_subscription_wins_over_expired_active_legacy_row(
@@ -553,7 +607,7 @@ def test_source_imports_exclude_forbidden_authorities_and_result_is_immutable() 
 
 
 # ARTIFACT: test_tenant_product_entitlement_composer.py
-# VERSION: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER-CERT
+# VERSION: v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: direct composer behavior only; no external commercial, IAM, route or financial authority
 # TENANT POSTURE: synthetic exact-tenant dependency calls only
 # FAIL-CLOSED POSTURE: cardinality, proof, evidence divergence, terminal lifecycle and transaction absence reject

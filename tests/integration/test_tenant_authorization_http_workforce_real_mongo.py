@@ -1,15 +1,20 @@
 """
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Workforce-Aware Tenant Authorization HTTP Real-Mongo Certificate
-VERSION: v1.0.0-W3D-R8C-R4-REAL-MONGO-WORKFORCE-HTTP
+VERSION: v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE
 AUTHORITY: Integration evidence for the production RequireTenantAuthorization seam.
 EPITOME: Proves explicit workforce-required permissions consume current TENANT
          workforce truth in one Mongo transaction with current IAM while
          non-workforce permissions retain the sessionless path.
 ABSOLUTE CANONICAL PATH:
-    tests/integration/test_tenant_authorization_http_workforce_real_mongo.py
+    /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_tenant_authorization_http_workforce_real_mongo.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-13.
+CERTIFICATION / UPDATE DATE: 2026-11-12.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 CHANGELOG:
+    v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE aligns the test module version, changelog, canonical path and sovereign seal; test behavior is unchanged.
+    v1.3.0-SEPARATE-HR-ENTITLEMENT-TRANSACTION-CERT adds source-owned D22B2 active customer HR entitlement evidence and verifies its separate read-only snapshot after current IAM/workforce authorization.
+    v1.1.0-HR-ENTITLEMENT-WORKFORCE-HTTP-CERT seeds active customer HR product truth through D22B2 and certifies the separate entitlement transaction after current IAM/workforce admission.
     v1.0.0-W3D-R8C-R4-REAL-MONGO-WORKFORCE-HTTP establishes the dedicated
     real-Mongo certificate for W3D conditional workforce admission.
 SECURITY / PRIVACY POSTURE:
@@ -21,8 +26,9 @@ TENANT BOUNDARY:
     Cross-tenant workforce cannot satisfy the selected tenant.
 AUTHORITY BOUNDARY:
     Workforce currentness is a prerequisite only when canonical permission
-    metadata explicitly requires it. Workforce facts never grant permission,
-    business role, authorization role, commercial entitlement or system power.
+    metadata explicitly requires it. Customer hr: operations additionally
+    require exact active D22B2 HR entitlement after IAM admission. Workforce
+    facts never grant permission, role, entitlement or system power.
 FINANCIAL AUTHORITY BOUNDARY:
     None. Kennel EOS remains the exclusive financial execution authority.
 """
@@ -48,6 +54,9 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from pymongo import MongoClient, monitoring
 from pymongo.errors import PyMongoError
+from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
 
 import tools.eos.api.tenant_authorization_http as http_subject
 import tools.eos.api.hr_workforce_directory_router as hr_directory_router
@@ -90,6 +99,21 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepository,
 )
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
+from tools.eos.saas.domain.tenant_product_entitlement import (
+    TenantProductEntitlementState,
+    create_tenant_product_entitlement,
+)
+from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
+    derive_tenant_product_entitlement_id,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    CURRENT_COLLECTION as PRODUCT_ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as PRODUCT_ENTITLEMENT_HISTORY_COLLECTION,
+    create_or_replay as create_product_entitlement_or_replay,
+    ensure_indexes as ensure_product_entitlement_indexes,
+    transition as transition_product_entitlement,
+)
 from tools.eos.workforce.domain.workforce_relationship import (
     WorkforceRelationship,
     WorkforceRelationshipStatus,
@@ -103,7 +127,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 )
 
 
-VERSION = "v1.0.0-W3D-R8C-R4-REAL-MONGO-WORKFORCE-HTTP"
+VERSION = "v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE"
 
 URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
@@ -549,6 +573,7 @@ def context(
 
         _create_tenant(TENANT)
         _create_tenant(OTHER_TENANT)
+        _activate_hr_entitlement(context)
 
         _seed_user(
             context,
@@ -588,6 +613,44 @@ def context(
         mongo.close()
 
 
+
+def _activate_hr_entitlement(context: Context) -> None:
+    """Persist exact active customer HR product truth in this disposable DB."""
+    history = context.database[PRODUCT_ENTITLEMENT_HISTORY_COLLECTION]
+    current = context.database[PRODUCT_ENTITLEMENT_CURRENT_COLLECTION]
+    ensure_product_entitlement_indexes(history, current)
+    entitlement_id = derive_tenant_product_entitlement_id(
+        TENANT, TenantProductId.HR,
+    )
+    pending = create_tenant_product_entitlement(
+        tenant_id=TENANT,
+        entitlement_id=entitlement_id,
+        product_id=TenantProductId.HR,
+        source_evidence_reference="w3d-r8c-r4-disposable-hr-source",
+        source_evidence_fingerprint="a" * 128,
+    )
+    with context.mongo.start_session() as session:
+        with session.start_transaction(
+            read_concern=ReadConcern("snapshot"),
+            write_concern=WriteConcern(w="majority", j=True),
+            read_preference=ReadPreference.PRIMARY,
+        ):
+            create_product_entitlement_or_replay(
+                pending, history, current, session=session,
+            )
+            transition_product_entitlement(
+                tenant_id=TENANT,
+                entitlement_id=entitlement_id,
+                target_state=TenantProductEntitlementState.ACTIVE,
+                expected_revision=0,
+                evidence_reference="w3d-r8c-r4-disposable-hr-activation",
+                evidence_fingerprint="b" * 128,
+                occurred_at=NOW,
+                history_collection=history,
+                current_collection=current,
+                session=session,
+            )
+
 def _client() -> TestClient:
     return TestClient(
         _build_app(),
@@ -617,7 +680,9 @@ def test_active_workforce_plus_current_iam_authorizes_real_http(
 
     assert response.status_code == 200
     assert response.json()["authorized"] is True
-    assert context.counter.start_session_calls == 1
+    # The exact HR authorization and workforce-currentness transaction is
+    # followed by the independent read-only D22B2 product-entitlement snapshot.
+    assert context.counter.start_session_calls == 2
 
 
 def test_authenticated_hr_director_reads_only_own_tenant_directory_from_real_mongo(
@@ -896,7 +961,9 @@ def test_real_transaction_uses_one_session_for_iam_and_workforce(
     )
 
     assert response.status_code == 200
-    assert context.counter.start_session_calls == 1
+    # The HTTP dependency owns one IAM/workforce currentness transaction and
+    # one separate D22B2 entitlement snapshot transaction.
+    assert context.counter.start_session_calls == 2
 
     transaction_reads = tuple(
         event
@@ -1030,8 +1097,10 @@ def test_certificate_contains_no_authentication_bypass_or_financial_authority() 
     assert NON_WORKFORCE_OPERATION == "legal_client_matter_read"
 
 
-# ARTIFACT: test_tenant_authorization_http_workforce_real_mongo.py
+# ARTIFACT: tests/integration/test_tenant_authorization_http_workforce_real_mongo.py
+# VERSION: v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE
 # AUTHORITY BOUNDARY: certification evidence only; creates no runtime authority.
 # TENANT POSTURE: exact tenant/principal workforce currentness and IAM isolation.
 # FAIL-CLOSED POSTURE: missing, stale, cross-tenant or unavailable workforce denies.
-# FINANCIAL AUTHORITY BOUNDARY: none; Kennel EOS remains exclusive.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

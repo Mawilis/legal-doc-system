@@ -1,15 +1,16 @@
 """WILSY OS real-Mongo certification for membership-selection challenge transactions.
 
 TITLE: Membership Selection Challenge Real-Mongo Certification
-VERSION: v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS
+VERSION: v1.0.2-CONSOLIDATION-EXPLICIT-REPLICA-CERT
 AUTHORITY: Certifies challenge persistence and caller-owned transaction semantics only.
 EPITOME: Exercises digest indexes, single-use challenge consumption, MFA binding
          and rollback against a disposable MongoDB replica set.
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_membership_selection_challenge_mongo.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-11-03.
+CERTIFICATION / UPDATE DATE: 2026-11-10.
 CHANGELOG:
+    v1.0.2-CONSOLIDATION-EXPLICIT-REPLICA-CERT honors the existing explicit test replica-set selector while requiring a writable primary; retains all replay, expiry and rollback proofs.
     v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS uses an explicit
     hashlib import for deterministic persisted-digest inspection.
     v1.0.0 adds real replica-set coverage for committed selection/MFA transitions,
@@ -93,7 +94,8 @@ def mongo_challenge_service():
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
     hello = client.admin.command("hello")
-    if hello.get("setName") != "wilsyGlobalPrincipalCertRS":
+    expected = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS")
+    if hello.get("setName") != expected or hello.get("isWritablePrimary") is not True:
         pytest.fail("wrong membership-challenge certification replica set")
     database = client[f"membership_challenge_{uuid.uuid4().hex}"]
     collection = database["eos_authentication_challenges"]
@@ -200,13 +202,6 @@ def test_real_mongo_abort_restores_selection_challenge_for_safe_retry(mongo_chal
     assert collection.count_documents({"purpose": MFA_PURPOSE}) == 1
 
 
-# ARTIFACT: test_membership_selection_challenge_mongo.py
-# VERSION: v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS
-# AUTHORITY BOUNDARY: real-Mongo challenge persistence and transaction certification only
-# TENANT POSTURE: isolated synthetic principal/tenant/capacity scope
-# FAIL-CLOSED POSTURE: replay, expiry and transaction failures reject; abort restores uncommitted state
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 def test_real_mongo_expired_selection_challenge_cannot_be_consumed(mongo_challenge_service):
@@ -234,3 +229,12 @@ def test_real_mongo_expired_selection_challenge_cannot_be_consumed(mongo_challen
     assert persisted is not None
     assert persisted["consumed_at"] is None
     assert collection.count_documents({"purpose": MFA_PURPOSE}) == 0
+
+
+# ARTIFACT: test_membership_selection_challenge_mongo.py
+# VERSION: v1.0.2-CONSOLIDATION-EXPLICIT-REPLICA-CERT
+# AUTHORITY BOUNDARY: real-Mongo challenge persistence and transaction certification only
+# TENANT POSTURE: isolated synthetic principal/tenant/capacity scope
+# FAIL-CLOSED POSTURE: replay, expiry and transaction failures reject; abort restores uncommitted state
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

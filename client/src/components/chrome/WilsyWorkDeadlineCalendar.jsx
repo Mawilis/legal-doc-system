@@ -1,14 +1,19 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.1.0-CIVIL-DATES-KEYBOARD-AGENDA
+ * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
- *          local instant display, keyboard date navigation and actionable agendas.
+ *          local instant display, accessible day/week/month navigation and
+ *          actionable agendas over one authorised work projection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyWorkDeadlineCalendar.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-CIVIL-DATES-KEYBOARD-AGENDA preserves date-only deadlines
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS adds one-day and Monday-first
+ *            seven-day views with matching agenda dates and period navigation;
+ *            the month view remains the default and existing source handoff
+ *            stays unchanged.
+ *            v1.1.0-CIVIL-DATES-KEYBOARD-AGENDA preserves date-only deadlines
  *            without UTC conversion, rejects malformed date values, provides
  *            roving date focus and day/week/month/year keyboard navigation,
  *            and exposes an agenda of source-declared overdue work.
@@ -27,6 +32,9 @@ import { ArrowRight, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 const SOURCES = Object.freeze({
   LEGAL: 'Legal', OPERATIONS: 'Operations', INTELLIGENCE: 'Intelligence', CRM: 'CRM',
 });
+const VIEWS = Object.freeze([
+  ['DAY', 'Day'], ['WEEK', 'Week'], ['MONTH', 'Month'],
+]);
 const CIVIL_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 
@@ -52,6 +60,20 @@ const workDate = (value) => {
   if (!INSTANT.test(value) || !parseCivilDate(value.slice(0, 10))) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+const mondayOfWeek = (date) => civilDate(date.getFullYear(), date.getMonth(),
+  date.getDate() - ((date.getDay() + 6) % 7));
+const makeWeek = (date, month) => {
+  const monday = mondayOfWeek(date);
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = civilDate(monday.getFullYear(), monday.getMonth(), monday.getDate() + index);
+    return {
+      key: localWorkDay(day),
+      date: day,
+      currentMonth: day.getMonth() === month.getMonth()
+        && day.getFullYear() === month.getFullYear(),
+    };
+  });
 };
 
 /**
@@ -100,6 +122,23 @@ const deadlineTime = (value) => {
   return workDate(value)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     || 'Due time unavailable';
 };
+const formatRangeTitle = (view, focusDate, month) => {
+  if (view === 'MONTH') {
+    return month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  }
+  if (view === 'DAY') {
+    return focusDate.toLocaleDateString(undefined, { dateStyle: 'full' });
+  }
+  const start = mondayOfWeek(focusDate);
+  const end = civilDate(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+  const options = { month: 'short', day: 'numeric' };
+  const left = start.toLocaleDateString(undefined, options);
+  const right = end.toLocaleDateString(undefined, {
+    ...options,
+    year: start.getFullYear() === end.getFullYear() ? undefined : 'numeric',
+  });
+  return left + ' – ' + right + ', ' + end.getFullYear();
+};
 
 /**
  * @description Render authorized deadlines and delegate actions to owning sources.
@@ -110,19 +149,26 @@ const deadlineTime = (value) => {
  * @param {Object[]} props.items EOS-validated active work; never a notification inbox.
  * @param {Function} props.onOpenWork Navigate to the source-governed work item.
  * @param {Function} [props.onOpenWorkforce] Navigate to the governed HR workspace.
- * @returns {JSX.Element} Navigable calendar and dated, undated or overdue agenda.
+ * @returns {JSX.Element} Day/week/month deadline calendar and source-owned agenda.
  * No persistence, permissions, financial authority or transaction is created.
  */
 export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWorkforce }) {
   const [month, setMonth] = useState(() => civilDate(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selected, setSelected] = useState(() => localWorkDay(new Date()));
   const [focusedDay, setFocusedDay] = useState(() => localWorkDay(new Date()));
+  const [view, setView] = useState('MONTH');
   const dayButtons = useRef(new Map());
   const pendingFocus = useRef(false);
   const helpId = useId();
-  const cells = useMemo(() => monthWorkDays(month), [month]);
-  const focusKey = cells.some((cell) => cell.key === focusedDay)
-    ? focusedDay : cells.find((cell) => cell.currentMonth)?.key;
+  const monthCells = useMemo(() => monthWorkDays(month), [month]);
+  const focusKey = monthCells.some((cell) => cell.key === focusedDay)
+    ? focusedDay : monthCells.find((cell) => cell.currentMonth)?.key;
+  const focusDate = parseCivilDate(focusKey) || civilDate(month.getFullYear(), month.getMonth(), 1);
+  const weekCells = useMemo(() => makeWeek(focusDate, month), [focusKey, month]);
+  const visibleCells = view === 'MONTH' ? monthCells
+    : view === 'WEEK' ? weekCells
+      : [{ key: focusKey, date: focusDate, currentMonth: true }];
+  const rangeTitle = formatRangeTitle(view, focusDate, month);
   const counts = useMemo(() => {
     const byDay = new Map();
     for (const item of items) {
@@ -141,7 +187,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
       dayButtons.current.get(focusKey)?.focus();
       pendingFocus.current = false;
     }
-  }, [focusKey, month]);
+  }, [focusKey, month, view]);
 
   const chooseDate = (date, focus = false) => {
     const key = localWorkDay(date);
@@ -152,9 +198,14 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
       setMonth(civilDate(date.getFullYear(), date.getMonth(), 1));
     }
   };
-  const changeMonth = (delta) => {
-    const current = parseCivilDate(focusKey);
-    chooseDate(shiftedMonth(current, delta));
+  const changePeriod = (delta) => {
+    if (view === 'DAY') {
+      chooseDate(civilDate(focusDate.getFullYear(), focusDate.getMonth(), focusDate.getDate() + delta));
+    } else if (view === 'WEEK') {
+      chooseDate(civilDate(focusDate.getFullYear(), focusDate.getMonth(), focusDate.getDate() + delta * 7));
+    } else {
+      chooseDate(shiftedMonth(focusDate, delta));
+    }
   };
   const handleDateKey = (event, date) => {
     const offsets = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
@@ -174,6 +225,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
   const dateTitle = selected === null ? 'Work without a due date'
     : selected === 'OVERDUE' ? 'Overdue work'
       : parseCivilDate(selected).toLocaleDateString(undefined, { dateStyle: 'full' });
+  const periodLabel = view.toLowerCase();
 
   return (
     <div aria-label="EOS work deadline calendar" className="space-y-3">
@@ -184,15 +236,23 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
         Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.
         Dates without a time stay on their recorded day.
       </p>
+      <div role="group" aria-label="Calendar view" className="flex gap-1 rounded-xl bg-[#0a1628] p-1">
+        {VIEWS.map(([id, label]) => (
+          <button key={id} type="button" aria-pressed={view === id}
+            onClick={() => setView(id)}
+            className={'flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition '
+              + (view === id ? 'bg-amber-300 text-slate-950' : 'text-slate-300 hover:bg-white/10')}>
+            {label} view
+          </button>
+        ))}
+      </div>
       <div className="flex items-center justify-between gap-2">
-        <button type="button" aria-label="Previous month" onClick={() => changeMonth(-1)}
+        <button type="button" aria-label={'Previous ' + periodLabel} onClick={() => changePeriod(-1)}
           className="rounded-lg border border-white/10 p-2 text-slate-200 hover:bg-white/10">
           <ChevronLeft size={16}/>
         </button>
-        <h3 aria-live="polite" className="font-semibold text-white">
-          {month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-        </h3>
-        <button type="button" aria-label="Next month" onClick={() => changeMonth(1)}
+        <h3 aria-live="polite" className="text-center font-semibold text-white">{rangeTitle}</h3>
+        <button type="button" aria-label={'Next ' + periodLabel} onClick={() => changePeriod(1)}
           className="rounded-lg border border-white/10 p-2 text-slate-200 hover:bg-white/10">
           <ChevronRight size={16}/>
         </button>
@@ -201,12 +261,14 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
         Arrow keys move by day or week. Home and End move within the week.
         Page Up and Page Down change month; hold Shift to change year.
       </p>
-      <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400" aria-hidden="true">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((name) => <span key={name}>{name}</span>)}
-      </div>
+      {(view === 'MONTH' || view === 'WEEK') && (
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400" aria-hidden="true">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((name) => <span key={name}>{name}</span>)}
+        </div>
+      )}
       <div role="group" aria-label="Choose work deadline date" aria-describedby={helpId}
-        className="grid grid-cols-7 gap-1">
-        {cells.map(({ key, date, currentMonth }) => {
+        className={'grid gap-1 ' + (view === 'DAY' ? 'grid-cols-1' : 'grid-cols-7')}>
+        {visibleCells.map(({ key, date, currentMonth }) => {
           const count = counts.get(key) || 0;
           return (
             <button key={key} type="button" aria-pressed={selected === key}
@@ -218,11 +280,15 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
               onFocus={() => setFocusedDay(key)}
               onKeyDown={(event) => handleDateKey(event, date)}
               onClick={() => chooseDate(date)}
-              className={'flex min-h-11 flex-col items-center justify-center rounded-lg border text-xs transition '
+              className={'flex flex-col items-center justify-center rounded-lg border text-xs transition '
+                + (view === 'DAY' ? 'min-h-20 ' : 'min-h-11 ')
                 + 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 '
                 + (selected === key ? 'border-amber-300 bg-amber-300/15 text-amber-100'
                   : currentMonth ? 'border-white/10 text-slate-200 hover:bg-white/10'
                     : 'border-transparent text-slate-500 hover:bg-white/10')}>
+              {view === 'DAY' && <span className="text-[10px] uppercase text-slate-400">
+                {date.toLocaleDateString(undefined, { weekday: 'long' })}
+              </span>}
               <span>{date.getDate()}</span>
               {count > 0 && <span className="mt-0.5 text-[10px] font-bold text-amber-300">{count} due</span>}
             </button>
@@ -276,12 +342,13 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
     </div>
   );
 }
+
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.1.0-CIVIL-DATES-KEYBOARD-AGENDA
+ * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
- * FAIL-CLOSED POSTURE: Malformed date helpers reject; no invented events or shifts.
+ * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

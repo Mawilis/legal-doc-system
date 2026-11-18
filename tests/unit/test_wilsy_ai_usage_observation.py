@@ -1,16 +1,22 @@
 """Direct P5A certificate for immutable WILSY AI usage observations.
 
 TITLE: WILSY AI Usage Observation Direct Certificate
-VERSION: v1.0.0-M13-P5A
+VERSION: v1.0.2-M13-P5A
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove strict source-evidenced consumption facts without persistence,
          quota, commercial, execution, or settlement authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_usage_observation.py
 COLLABORATION / OWNERSHIP: Direct certificate for the P5A domain owner.
-CERTIFICATION / UPDATE DATE: 2026-09-12
-CHANGELOG: v1.0.0-M13-P5A certifies deterministic identity, strict hydration,
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.2-M13-P5A records the verified sovereign metadata correction; test and production behavior are unchanged.
+           v1.0.1-M13-P5A verifies provider-SDK import purity in a fresh interpreter, independent of suite order.
+           v1.0.0-M13-P5A certifies deterministic identity, strict hydration,
            numeric/timestamp validation, immutability, and authority firewall.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic source-usage evidence only; no provider credentials or customer content.
+TENANT BOUNDARY: Each observation is bound to its exact synthetic tenant and source evidence.
+AUTHORITY BOUNDARY: Immutable usage-observation evidence only; no quota, payment, or execution authority.
+FINANCIAL AUTHORITY BOUNDARY: No payment, execution, settlement, or ledger authority; Kennel EOS exclusively owns financial execution.
 """
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -85,5 +91,32 @@ def test_immutable_and_financial_quota_execution_firewall() -> None:
 
 
 def test_import_is_side_effect_free() -> None:
+    import subprocess
     import sys
-    assert "requests" not in sys.modules and "boto3" not in sys.modules
+    from pathlib import Path
+
+    script = (
+        "import importlib, sys; "
+        "importlib.import_module('tools.eos.saas.domain.wilsy_ai_usage_observation'); "
+        "bad = sorted(name for name in sys.modules if name == 'requests' or "
+        "name.startswith('requests.') or name == 'boto3' or name.startswith('boto3.')); "
+        "assert not bad, bad"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_wilsy_ai_usage_observation.py
+# VERSION: v1.0.2-M13-P5A
+# AUTHORITY BOUNDARY: immutable source-observation domain tests only
+# TENANT POSTURE: exact synthetic source and tenant bindings are mandatory
+# FAIL-CLOSED POSTURE: invalid observations and provider imports reject
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

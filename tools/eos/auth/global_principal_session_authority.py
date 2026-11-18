@@ -1,13 +1,34 @@
-"""TITLE: WILSY OS Global Principal Session and Refresh Authority.
-VERSION: v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: WILSY OS Global Principal Session and Refresh Authority.
+VERSION: v1.4.0-REVALIDATION-TRACE-HANDOFF
 AUTHORITY: Server-owned selected-membership session issuance, refresh and revocation.
 EPITOME: Revalidates principal, credential, exact tenant membership, selected
          business capacity, canonical tenant and tenant-aware workspace binding.
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/global_principal_session_authority.py
 COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-11-08.
+CERTIFICATION / UPDATE DATE: 2026-11-15.
 CHANGELOG:
+    2026-11-15 v1.4.0-REVALIDATION-TRACE-HANDOFF captures the validated opaque
+    request trace in the caller and passes only that trace into existing read
+    timing wrappers. Five-worker executor behavior and all authority decisions
+    remain unchanged; telemetry remains opt-in and fault-isolated.
+    2026-11-15 v1.3.0-REVALIDATION-READ-TIMING emits opt-in, correlated,
+    privacy-safe elapsed timings for each independent revalidation read and
+    the complete revalidation wall clock. Instrumentation is non-authoritative
+    and fault-isolated; it changes no session, transaction, cache, decision,
+    persistence, or concurrency behavior.
+    2026-11-15 v1.2.0-SESSIONLESS-CURRENTNESS-CONCURRENCY resolves the five
+    independent, durable revalidation facts concurrently only for sessionless
+    request currentness. Caller-owned transaction paths remain serial because
+    a Mongo client session cannot safely be used concurrently. Every request
+    still reads session, principal, credential/MFA, membership, capacity, and
+    tenant truth afresh; no result or authorization decision is cached.
     2026-11-08 v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION revalidates the selected workspace against the exact
     tenant identifier. Only the canonical WILSY company tenant's tenant_owner
     capacity selects WILSY_HEADQUARTERS; customer tenant owners retain the
@@ -28,8 +49,12 @@ FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 from __future__ import annotations
 
 import hashlib
+import os
+import re
 import secrets
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -62,11 +87,25 @@ from tools.eos.auth.workspace_bootstrap_projection import (
 )
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 
-VERSION = "v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION"
+VERSION = "v1.4.0-REVALIDATION-TRACE-HANDOFF"
 SESSION_COLLECTION = "global_principal_sessions"
 REFRESH_COLLECTION = "global_principal_refresh_tokens"
 ACCESS_TTL_SECONDS = 900
 REFRESH_TTL_SECONDS = 60 * 60 * 24 * 30
+_TIMING_ENVIRONMENT_VARIABLE = "WILSY_MY_WORK_TIMING"
+_TRACE_CORRELATION_PATTERN = re.compile(
+    r"TRC-(?:[A-Z0-9]{8}-[A-Z0-9]{6}|SERVER-[A-F0-9]{12})\Z"
+)
+_REVALIDATION_TIMING_STAGES = frozenset(
+    {
+        "GLOBAL_SESSION_REVALIDATE_PRINCIPAL",
+        "GLOBAL_SESSION_REVALIDATE_CREDENTIAL",
+        "GLOBAL_SESSION_REVALIDATE_MEMBERSHIP",
+        "GLOBAL_SESSION_REVALIDATE_CAPACITY",
+        "GLOBAL_SESSION_REVALIDATE_TENANT",
+        "GLOBAL_SESSION_REVALIDATE",
+    }
+)
 
 
 class GlobalPrincipalSessionError(RuntimeError):
@@ -118,6 +157,77 @@ def _require_transaction(session: ClientSession | Any) -> None:
 
 def _digest(token: str) -> str:
     return hashlib.sha3_512(token.encode("utf-8")).hexdigest()
+
+
+def _emit_revalidation_timing(
+    *,
+    stage: str,
+    outcome: str,
+    started_at: float,
+    correlation: str | None,
+) -> None:
+    """Emit one closed, opt-in timing observation without influencing access.
+
+    The authentication module owns the established correlation and logging
+    contract. This lazy import avoids the inverse import cycle because that
+    module depends on this session authority. Diagnostics are deliberately
+    best-effort: an absent trace context, unavailable logger, or telemetry
+    error cannot change a currentness decision.
+    """
+
+    if (
+        stage not in _REVALIDATION_TIMING_STAGES
+        or outcome not in {"OK", "REJECTED", "UNAVAILABLE"}
+        or os.getenv(_TIMING_ENVIRONMENT_VARIABLE, "").strip() != "1"
+        or not isinstance(correlation, str)
+        or _TRACE_CORRELATION_PATTERN.fullmatch(correlation) is None
+    ):
+        return
+    try:
+        from tools.eos.auth.authentication import (
+            emit_request_timing,
+            request_timing_enabled,
+        )
+
+        if request_timing_enabled() is not True:
+            return
+        emit_request_timing(
+            stage=stage,
+            outcome=outcome,
+            started_ns=0,
+            correlation=correlation,
+            duration_ms=max(0.0, (time.perf_counter() - started_at) * 1_000),
+        )
+    except Exception:
+        # The observation channel has no authentication or authorization
+        # authority and must never turn a valid request into a denial.
+        return
+
+
+def _timed_revalidation_read(
+    stage: str,
+    operation: Any,
+    correlation: str | None,
+) -> Any:
+    """Execute one canonical read and classify only its closed timing outcome."""
+
+    started_at = time.perf_counter()
+    outcome = "UNAVAILABLE"
+    try:
+        value = operation()
+    except GlobalPrincipalSessionRejected:
+        outcome = "REJECTED"
+        raise
+    else:
+        outcome = "OK"
+        return value
+    finally:
+        _emit_revalidation_timing(
+            stage=stage,
+            outcome=outcome,
+            started_at=started_at,
+            correlation=correlation,
+        )
 
 
 def _target(collection: Collection | None, name: str) -> Collection:
@@ -188,19 +298,92 @@ class GlobalPrincipalSessionAuthority:
             name="global_principal_refresh_expiry_ttl",
         )
 
-    def _revalidate(self, selected: SelectedMembershipContext, session: Any) -> None:
+    def _revalidate(
+        self,
+        selected: SelectedMembershipContext,
+        session: Any,
+        *,
+        correlation: str | None = None,
+    ) -> None:
+        """Re-read every exact currentness fact without caching authority.
+
+        Sessionless request authentication has no caller-owned Mongo session,
+        so its independent point reads can overlap safely through PyMongo's
+        thread-safe client pool. Issuance and refresh pass a transaction
+        session; those reads stay serial because a client session is never
+        shared concurrently. Both paths preserve the same predicates,
+        hydration, revisions, MFA requirement, exception classification, and
+        fail-closed behavior.
+        """
+
         _validate_selected_context(selected)
         try:
-            principal = self._principals.get(selected.principal_id, session=session)
-            credential = self._credentials.get_by_principal(selected.principal_id, session=session)
-            membership = self._memberships.resolve(
-                selected.principal_id, selected.tenant_id, session=session,
-            )
-            capacity = self._capacities.resolve_business_role(
-                selected.principal_id, selected.tenant_id, selected.business_role,
-                session=session,
-            )
-            tenant = self._tenant_resolver(selected.tenant_id, session=session)
+            if session is None:
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    principal_future = executor.submit(
+                        _timed_revalidation_read,
+                        "GLOBAL_SESSION_REVALIDATE_PRINCIPAL",
+                        lambda: self._principals.get(
+                            selected.principal_id,
+                            session=None,
+                        ),
+                        correlation,
+                    )
+                    credential_future = executor.submit(
+                        _timed_revalidation_read,
+                        "GLOBAL_SESSION_REVALIDATE_CREDENTIAL",
+                        lambda: self._credentials.get_by_principal(
+                            selected.principal_id,
+                            session=None,
+                        ),
+                        correlation,
+                    )
+                    membership_future = executor.submit(
+                        _timed_revalidation_read,
+                        "GLOBAL_SESSION_REVALIDATE_MEMBERSHIP",
+                        lambda: self._memberships.resolve(
+                            selected.principal_id,
+                            selected.tenant_id,
+                            session=None,
+                        ),
+                        correlation,
+                    )
+                    capacity_future = executor.submit(
+                        _timed_revalidation_read,
+                        "GLOBAL_SESSION_REVALIDATE_CAPACITY",
+                        lambda: self._capacities.resolve_business_role(
+                            selected.principal_id,
+                            selected.tenant_id,
+                            selected.business_role,
+                            session=None,
+                        ),
+                        correlation,
+                    )
+                    tenant_future = executor.submit(
+                        _timed_revalidation_read,
+                        "GLOBAL_SESSION_REVALIDATE_TENANT",
+                        lambda: self._tenant_resolver(
+                            selected.tenant_id,
+                            session=None,
+                        ),
+                        correlation,
+                    )
+                    principal = principal_future.result()
+                    credential = credential_future.result()
+                    membership = membership_future.result()
+                    capacity = capacity_future.result()
+                    tenant = tenant_future.result()
+            else:
+                principal = self._principals.get(selected.principal_id, session=session)
+                credential = self._credentials.get_by_principal(selected.principal_id, session=session)
+                membership = self._memberships.resolve(
+                    selected.principal_id, selected.tenant_id, session=session,
+                )
+                capacity = self._capacities.resolve_business_role(
+                    selected.principal_id, selected.tenant_id, selected.business_role,
+                    session=session,
+                )
+                tenant = self._tenant_resolver(selected.tenant_id, session=session)
         except (PrincipalAuthorityRepositoryError, PrincipalCredentialRepositoryError,
                 TenantMembershipRepositoryError, TenantBusinessRoleRepositoryError,
                 TenantRegistryError) as error:
@@ -420,7 +603,41 @@ class GlobalPrincipalSessionAuthority:
                 membership_revision=row["membership_revision"],
                 capacity_revision=row["capacity_revision"],
             )
-            self._revalidate(selected, session)
+            correlation: str | None = None
+            try:
+                from tools.eos.auth.authentication import (
+                    current_request_timing_correlation,
+                    request_timing_enabled,
+                )
+
+                if request_timing_enabled() is True:
+                    candidate = current_request_timing_correlation()
+                    if (
+                        isinstance(candidate, str)
+                        and _TRACE_CORRELATION_PATTERN.fullmatch(candidate) is not None
+                    ):
+                        correlation = candidate
+            except Exception:
+                # Trace capture is diagnostic-only and cannot affect currentness.
+                correlation = None
+            revalidation_started_at = time.perf_counter()
+            revalidation_outcome = "UNAVAILABLE"
+            try:
+                self._revalidate(selected, session, correlation=correlation)
+            except GlobalPrincipalSessionRejected:
+                revalidation_outcome = "REJECTED"
+                raise
+            except GlobalPrincipalSessionUnavailable:
+                raise
+            else:
+                revalidation_outcome = "OK"
+            finally:
+                _emit_revalidation_timing(
+                    stage="GLOBAL_SESSION_REVALIDATE",
+                    outcome=revalidation_outcome,
+                    started_at=revalidation_started_at,
+                    correlation=correlation,
+                )
             return True
         except GlobalPrincipalSessionError:
             return False
@@ -462,7 +679,7 @@ __all__ = [
 ]
 
 # ARTIFACT: global_principal_session_authority.py
-# VERSION: v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION
+# VERSION: v1.4.0-REVALIDATION-TRACE-HANDOFF
 # AUTHORITY BOUNDARY: global selected-membership session and refresh lifecycle only
 # TENANT POSTURE: exact principal, canonical tenant, membership and capacity revisions
 # FAIL-CLOSED POSTURE: stale, revoked, malformed, mismatched or unavailable authority rejects

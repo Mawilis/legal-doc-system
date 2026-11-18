@@ -1,9 +1,0 @@
-{
-  "reporter": "spec",
-  "recursive": true,
-  "timeout": 60000,
-  "exit": true,
-  "extension": ["js", "mjs"],
-  "node-option": ["experimental-vm-modules"],
-  "file": ["tests/setup.mjs"]
-}

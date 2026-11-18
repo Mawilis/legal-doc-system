@@ -1,7 +1,7 @@
 """C1B-R19 HTTP certificate for authenticated reasoning composition.
 
 TITLE: WILSY AI Authenticated Reasoning HTTP Unit Certificate
-VERSION: v1.0.0-C1B-R19
+VERSION: v1.0.2-C1B-R19-SOVEREIGN-BOUNDARY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify the single HTTP command's tenant/IAM boundary, server-owned
          identity, transaction ordering, provider isolation, and replay-safe
@@ -9,24 +9,36 @@ EPITOME: Certify the single HTTP command's tenant/IAM boundary, server-owned
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_http.py
 COLLABORATION / OWNERSHIP: Certifies tools/eos/api/wilsy_ai_reasoning_router.py
                             and its mount in tools/eos/api/server.py.
-CERTIFICATION / UPDATE DATE: 2026-09-16
-CHANGELOG: v1.0.0 establishes the C1B-R19 HTTP certificate.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.2-C1B-R19-SOVEREIGN-BOUNDARY-CERT adds the explicit financial
+           authority boundary to the test artifact and terminal seal; test
+           behavior and production semantics are unchanged.
+           v1.0.1-C1B-R19-CANONICAL-NO-STORE-CERT sends the cache-control
+           contract through the canonical application without starting the
+           unrelated Mongo-dependent lifespan; startup readiness remains
+           covered by real-database and authenticated-browser certification.
+           v1.0.0 establishes the C1B-R19 HTTP certificate.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Caller authority fields are rejected and provider
                              errors are never returned or logged.
 TENANT BOUNDARY: Tests inject only a TenantAuthorizationContext.
 AUTHORITY BOUNDARY: Reasoning evidence/admission only; no legal or financial truth.
+FINANCIAL AUTHORITY BOUNDARY: No payment, execution, settlement, or ledger
+                              authority; Kennel EOS exclusively owns financial
+                              execution.
 FAIL-CLOSED DECLARATION: Invalid scope, key, provider binding, and replay fail.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import asyncio
 from types import SimpleNamespace
 from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 import pytest
 
 import tools.eos.api.wilsy_ai_reasoning_router as module
@@ -200,14 +212,28 @@ def test_reasoning_response_is_not_cached_on_canonical_server() -> None:
     paths = app.openapi()["paths"]
     assert "/api/wilsy-ai/reasoning" in paths
     app.dependency_overrides[module._REASONING_AUTH] = lambda: _context()
-    with TestClient(app) as client:
-        response = client.post("/api/wilsy-ai/reasoning", json={"prompt": "hello"}, headers={"Idempotency-Key": "cache-check"})
+
+    async def request_without_unrelated_startup() -> Any:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://testserver",
+        ) as client:
+            return await client.post(
+                "/api/wilsy-ai/reasoning",
+                json={"prompt": "hello"},
+                headers={"Idempotency-Key": "cache-check"},
+            )
+
+    response = asyncio.run(request_without_unrelated_startup())
     assert response.status_code == 503
     assert response.headers["cache-control"] == "no-store"
 
 
+# WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_wilsy_ai_reasoning_http.py
-# VERSION: v1.0.0-C1B-R19
+# VERSION: v1.0.2-C1B-R19-SOVEREIGN-BOUNDARY-CERT
 # AUTHORITY BOUNDARY: HTTP reasoning certificate only
+# TENANT POSTURE: exact synthetic tenant authorization context; no cross-tenant reads
 # FAIL-CLOSED POSTURE: caller authority injection and missing binding reject
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

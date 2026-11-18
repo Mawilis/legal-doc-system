@@ -1,0 +1,573 @@
+/**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+ * TITLE: WILSY OS Daily Attention Inbox Window Certificate
+ * VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
+ * AUTHORITY: Disposable client component test evidence only.
+ * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
+ *          bounds mounted rows while retaining access to a 500-item snapshot.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
+ * COLLABORATION / OWNERSHIP: DailyAttentionWorkspace owns display/windowing;
+ *          attentionFeedClient validates exact EOS source identity; source
+ *          services continue to own every business transition.
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT proves the
+ *          explicit CRM Save Draft intent goes through the real source
+ *          callback with its own stable idempotency key, not an active
+ *          in-browser row or unsupported non-CRM action.
+ * CHANGELOG: v2.8.0-TECHNICAL-IDENTITY-DISCLOSURE-CERT keeps raw source
+ *          coordinates in a collapsed technical disclosure while preserving
+ *          human-readable owner unavailability and task inspection.
+ *          v2.7.0-RESPONSIVE-OPERATING-PANE-CERT certifies the
+ *          38/62 desktop pane, full-width mobile detail and list restoration.
+ *          v2.6.0-FUNCTIONAL-FILTER-AND-BULK-MODE-CERT verifies
+ *          source-backed counters operate the canonical filters and bulk
+ *          checkboxes remain hidden until explicitly selected.
+ *          v2.5.0-READBACK-SUCCESS-FEEDBACK-CERT asserts success is visible only after the source owner confirms completion and the parent receives fresh-readback confirmation.
+ *          v2.4.0-IN-PANEL-SOURCE-COMPLETION-CERT verifies action gating, direct row-to-evidence focus, and failed completion preservation.
+ *          v2.3.0-COMPACT-EXECUTION-BAR-CERT verifies one compact control
+ *          toolbar, collapsed source details, canonical default ordering, and
+ *          source-priority labels on rows without a duplicate severity legend.
+ *          v2.2.0-VERIFIED-RESULT-STATE-CERT aligns the
+ *          assertions with explicit last-verified source evidence, current
+ *          selection feedback and the create form's mutually exclusive view.
+ *          v2.1.0-SOURCE-CONFIRMED-RAIL-CERT ensures
+ *          successful source command closes the mobile rail and a denied
+ *          command retains the inspected item without false success.
+ *          v2.0.0-CAPABILITY-OUTAGE-ACTION-ENTRY-CERT
+ *          verifies an admitted module has a real create form even when
+ *          optional preflight cannot determine its source permission.
+ *          v1.9.0-AUTHORITATIVE-TASK-EXECUTION-CERT
+ *          proves in-panel create/complete remains available for an
+ *          admitted EOS source despite optional command-probe failures;
+ *          the source service exclusively accepts or denies writes.
+ *          v1.8.0-SEMANTIC-SEVERITY-TRIAGE-CERT checks
+ *          source-priority colour labels, overdue override and detail
+ *          semantics without fabricating urgency or financial authority.
+ *          v1.7.0-MODULE-SPECIFIC-EMPTY-CERT asserts
+ *          one-source empty queue copy and an authorized create-work path.
+ *          v1.6.0-BOUNDED-BULK-EXECUTION-CERT proves
+ *          capability-gated selection, source-owned result reconciliation,
+ *          and retention of unsuccessful selected work.
+ *          v1.5.0-SOURCE-COMPLETION-UI-CERT verifies
+ *          capability-gated completion evidence and no uncontrolled mutation.
+ *          v1.4.0-EXECUTIVE-TRIAGE-SELECTION-CERT checks
+ *          multi-select, inspection handoff and clear controls without
+ *          authorising a business mutation.
+ *          v1.3.0-SEARCH-FOCUS-CONTINUITY-CERT proves
+ *          existing rail selection survives same-page query edits.
+ *          v1.2.0-DENSE-WINDOW-GEOMETRY-CERT verifies
+ *          scroll access and bounded rendering with 44px executive rows.
+ *          v1.1.0-EXECUTIVE-SOURCE-EVIDENCE-CERT verifies
+ *          admitted-source evidence expansion and honest partial-scope
+ *          empty copy alongside bounded 500-item rendering.
+ *          v1.0.0-500-ITEM-BOUNDED-RENDER-CERT proves a bounded DOM row
+ *          window, accessible position metadata, priority/status visibility,
+ *          and keyboard-independent scroll access to the final loaded row.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic disposable AttentionItems; no tenant
+ *          records, credentials, network calls or commands are used.
+ * TENANT BOUNDARY: Synthetic items share one fixture tenant and source.
+ * AUTHORITY BOUNDARY: OPEN callbacks are inert test spies; no source command.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement evidence.
+ */
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import DailyAttentionWorkspace from '../../components/attention/DailyAttentionWorkspace.jsx';
+
+afterEach(cleanup);
+
+const fixtureFeed = (count) => ({
+  schema: 'WILSY-OS-ATTENTION-FEED/V1',
+  tenantId: 'WILSY-ATTENTION-TEST-TENANT',
+  principalId: 'WILSY-ATTENTION-TEST-PRINCIPAL',
+  syncedAt: '2026-11-10T10:00:00+00:00',
+  view: 'active',
+  items: Array.from({ length: count }, (_, index) => ({
+    id: `OPERATIONS:attention-${index}`,
+    tenantId: 'WILSY-ATTENTION-TEST-TENANT',
+    sourceModule: 'OPERATIONS',
+    sourceType: 'TASK',
+    sourceRecordId: `attention-${index}`,
+    title: `Attention item ${index}`,
+    summary: 'Source-owned test record',
+    priority: index === 0 ? 'HIGH' : 'NORMAL',
+    urgencyScore: index === 0 ? 70 : 10,
+    whyRanked: index === 0 ? 'High source priority' : 'Authorised active work',
+    dueAt: '2026-11-12T12:00:00+00:00',
+    slaBreachAt: null,
+    assigneeId: null,
+    requesterId: null,
+    status: 'OPEN',
+    actionHints: ['OPEN'],
+    deepLink: '/my-work',
+    authzScope: 'SOURCE_SERVICE_ONLY',
+    updatedAt: '2026-11-10T09:00:00+00:00',
+    isOverdue: false,
+  })),
+  counts: { active: count, overdue: 0, dueToday: 0, highPriority: 1 },
+  sources: [{ moduleId: 'OPERATIONS', state: count ? 'ok' : 'empty', count }],
+  coverage: {
+    admittedSources: ['OPERATIONS'],
+    notRepresentedSources: ['LEGAL', 'INTELLIGENCE', 'CRM', 'FINANCE', 'PEOPLE'],
+    completeEnterpriseCoverage: false,
+  },
+  filteredTotal: count,
+  nextCursor: null,
+  authority: { commandsOwnedBy: 'SOURCE_SERVICES', attentionCommandsEnabled: false },
+});
+
+describe('Daily Attention bounded inbox', () => {
+  it('renders a bounded 500-item window and keeps trailing rows reachable', async () => {
+    const inert = vi.fn();
+    const { container } = render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(500)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query=""
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onOpenOperations={inert}
+        onOpenWorkforce={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+
+    const firstWindow = container.querySelectorAll('[data-attention-row]');
+    expect(firstWindow.length).toBeGreaterThan(0);
+    expect(firstWindow.length).toBeLessThanOrEqual(32);
+    expect(firstWindow[0].getAttribute('aria-setsize')).toBe('500');
+    expect(firstWindow[0].getAttribute('aria-posinset')).toBe('1');
+    expect(firstWindow[0].querySelector('[aria-label="Severity High; priority HIGH"]'))
+      .not.toBeNull();
+    expect(firstWindow[0].textContent).toContain('OPEN');
+
+    const scroller = container.querySelector('[data-attention-scroll-container="true"]');
+    Object.defineProperty(scroller, 'scrollTop', {
+      configurable: true,
+      writable: true,
+      value: 499 * 44,
+    });
+    fireEvent.scroll(scroller);
+
+    const finalItem = await screen.findByRole('button', {
+      name: 'Inspect Attention item 499',
+    });
+    expect(finalItem.closest('[data-attention-row]')?.getAttribute('aria-posinset'))
+      .toBe('500');
+    expect(container.querySelectorAll('[data-attention-row]').length)
+      .toBeLessThanOrEqual(32);
+  });
+  it('lets executives inspect exact admitted-source evidence without claiming platform clearance', () => {
+    const inert = vi.fn();
+    const feed = fixtureFeed(0);
+    render(
+      <DailyAttentionWorkspace
+        feed={feed}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query=""
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onOpenOperations={inert}
+        onWorkforce={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+
+    expect(screen.getByText('No active Operations work')).toBeTruthy();
+    expect(screen.getByText(/were not verified for this session/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Source details' }));
+    const evidence = screen.getByRole('region', { name: 'Last verified attention source details' });
+    expect(evidence.textContent).toContain('Operations');
+    expect(evidence.textContent).toContain('Verified · empty');
+    expect(evidence.textContent).toContain('Not verified in this session');
+    fireEvent.click(screen.getByRole('button', { name: 'Recheck authorised sources' }));
+    expect(inert).toHaveBeenCalledTimes(1);
+  });
+
+  it('provides accurate no-matches recovery even when active counts are zero', () => {
+    const clearFilter = vi.fn();
+    const clearSource = vi.fn();
+    const clearQuery = vi.fn();
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(0)}
+        calendarItems={[]}
+        filter="HIGH"
+        setFilter={clearFilter}
+        source="ALL"
+        setSource={clearSource}
+        query=""
+        setQuery={clearQuery}
+        onRefresh={vi.fn()}
+        onOpenWork={vi.fn()}
+        onLoadMore={vi.fn()}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    expect(screen.getByText('No matches in this view')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(clearFilter).toHaveBeenCalledWith('ALL');
+    expect(clearSource).toHaveBeenCalledWith('ALL');
+    expect(clearQuery).toHaveBeenCalledWith('');
+  });
+
+  it('preserves inspected work while search input changes before server revalidation', () => {
+    const inert = vi.fn();
+    const feed = fixtureFeed(1);
+    const build = (query) => (
+      <DailyAttentionWorkspace
+        feed={feed}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query={query}
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />
+    );
+    const { rerender } = render(build(''));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+    rerender(build('attention'));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+  });
+
+  it('uses the four EOS-backed counters as real source-filter controls', () => {
+    const setFilter = vi.fn();
+    render(
+      <DailyAttentionWorkspace feed={fixtureFeed(2)} calendarItems={[]}
+        filter="ALL" setFilter={setFilter}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError="" />,
+    );
+    expect(screen.getByRole('button', { name: 'Active: 2' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Overdue: 0' }));
+    expect(setFilter).toHaveBeenCalledWith('OVERDUE');
+    fireEvent.click(screen.getByRole('button', { name: 'Due today: 0' }));
+    expect(setFilter).toHaveBeenCalledWith('TODAY');
+    fireEvent.click(screen.getByRole('button', { name: 'High priority: 1' }));
+    expect(setFilter).toHaveBeenCalledWith('HIGH');
+    expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
+  });
+
+  it('does not promote raw record identifiers to the operating overview', () => {
+    render(
+      <DailyAttentionWorkspace feed={fixtureFeed(1)} calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError="" />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
+    const technical = screen.getByLabelText('Technical source details');
+    expect(technical).not.toHaveAttribute('open');
+    expect(screen.getByText('Technical source details')).toBeTruthy();
+    expect(technical.textContent).toContain('attention-0');
+    expect(screen.getAllByText('Not supplied by source').length).toBeGreaterThan(0);
+  });
+
+  it('opens majority-width source detail and restores the full work list', () => {
+    render(
+      <DailyAttentionWorkspace feed={fixtureFeed(3)} calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError="" />,
+    );
+    const layout = document.querySelector('[data-attention-detail-layout]');
+    const list = document.querySelector('[data-attention-work-list]');
+    expect(layout).toHaveAttribute('data-attention-detail-layout', 'list');
+    expect(list.className).toContain('flex flex-1');
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
+    expect(layout).toHaveAttribute('data-attention-detail-layout', 'split');
+    expect(layout.className).toContain('md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)]');
+    expect(list.className).toContain('hidden md:flex');
+    const detail = screen.getByRole('complementary', { name: 'Attention detail rail' });
+    expect(detail.className).toContain('w-full');
+    expect(detail.className).toContain('overflow-y-auto');
+    fireEvent.click(screen.getByRole('button', { name: 'Close attention detail' }));
+    expect(layout).toHaveAttribute('data-attention-detail-layout', 'list');
+    expect(list.className).toContain('flex flex-1');
+  });
+
+  it('selects and inspects multiple verified work rows without inventing a mutation', () => {
+    const inert = vi.fn();
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(3)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={inert}
+        source="ALL"
+        setSource={inert}
+        query=""
+        setQuery={inert}
+        onRefresh={inert}
+        onOpenWork={inert}
+        onLoadMore={inert}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Select work' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
+    expect(screen.getByText('3 selected · 0 permitted to complete')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect first selected' }));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(screen.queryByText('3 selected · 0 permitted to complete')).toBeNull();
+    expect(inert).not.toHaveBeenCalled();
+  });
+
+  it('gates completion on verified source action and opens the evidence form from the row', async () => {
+    const onComplete = vi.fn();
+    const feed = fixtureFeed(1);
+    const base = {
+      feed, calendarItems: [], filter: 'ALL', setFilter: vi.fn(),
+      source: 'ALL', setSource: vi.fn(), query: '', setQuery: vi.fn(),
+      onRefresh: vi.fn(), onOpenWork: vi.fn(), onLoadMore: vi.fn(),
+      loadingMore: false, pageError: '', onCompleteWork: onComplete,
+    };
+    const { rerender } = render(<DailyAttentionWorkspace {...base} authorisedActions={{}} />);
+    expect(screen.queryByRole('button', { name: 'Complete Attention item 0' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open details for Attention item 0' }));
+    expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Confirm completion' })).toBeNull();
+
+    rerender(<DailyAttentionWorkspace {...base}
+      authorisedActions={{ OPERATIONS: ['COMPLETE'] }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Complete Attention item 0' }));
+    const evidence = screen.getByPlaceholderText('Record what was completed and the evidence for this decision');
+    await waitFor(() => expect(evidence).toHaveFocus());
+    fireEvent.change(evidence, {
+      target: { value: 'Verified operational delivery and recorded completion evidence' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm completion' }));
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete.mock.calls[0][0].sourceRecordId).toBe('attention-0');
+    expect(onComplete.mock.calls[0][1]).toContain('Verified operational delivery');
+  });
+
+  it('keeps failed selected work when independently confirmed bulk completions succeed', async () => {
+    const onBulkComplete = vi.fn().mockResolvedValue({
+      completedIds: ['OPERATIONS:attention-0', 'OPERATIONS:attention-1'],
+      failedIds: ['OPERATIONS:attention-2'],
+    });
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(3)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={vi.fn()}
+        source="ALL"
+        setSource={vi.fn()}
+        query=""
+        setQuery={vi.fn()}
+        onRefresh={vi.fn()}
+        onOpenWork={vi.fn()}
+        onLoadMore={vi.fn()}
+        authorisedActions={{ OPERATIONS: ['COMPLETE'] }}
+        onBulkComplete={onBulkComplete}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    expect(screen.queryByRole('checkbox', { name: 'Select all loaded work' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Select work' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all loaded work' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Bulk completion evidence' }), {
+      target: { value: 'All selected operations tasks verified and completed' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete up to 3' }));
+    await waitFor(() => expect(onBulkComplete).toHaveBeenCalledTimes(1));
+    expect(onBulkComplete.mock.calls[0][0]).toHaveLength(3);
+    await waitFor(() => expect(screen.getByText('1 selected · 1 permitted to complete')).toBeTruthy());
+    expect(screen.getByRole('checkbox', { name: 'Select Attention item 2' }).checked).toBe(true);
+  });
+
+
+  it('saves a CRM Draft as a separate source intent without publishing active work', async () => {
+    const source = fixtureFeed(0);
+    source.sources = [{ moduleId: 'CRM', state: 'empty', count: 0 }];
+    source.coverage = {
+      ...source.coverage,
+      admittedSources: ['CRM'],
+      notRepresentedSources: ['LEGAL', 'OPERATIONS', 'INTELLIGENCE', 'FINANCE', 'PEOPLE'],
+    };
+    const onCreateWork = vi.fn().mockResolvedValue(true);
+    render(
+      <DailyAttentionWorkspace
+        feed={source} calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()}
+        onCreateWork={onCreateWork}
+        authorisedActions={{ CRM: ['CREATE'] }}
+        onLoadMore={vi.fn()} loadingMore={false} pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create CRM work' }));
+    fireEvent.change(screen.getByPlaceholderText('What needs to be done?'), {
+      target: { value: 'Unpublished investor notes' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(onCreateWork).toHaveBeenCalledWith(
+      'CRM',
+      expect.objectContaining({
+        title: 'Unpublished investor notes', initial_status: 'DRAFT',
+      }),
+      expect.any(String),
+    ));
+  });
+
+
+  it('offers a source-owned create work action when the admitted empty source can create', () => {
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(0)}
+        calendarItems={[]}
+        filter="ALL"
+        setFilter={vi.fn()}
+        source="ALL"
+        setSource={vi.fn()}
+        query=""
+        setQuery={vi.fn()}
+        onRefresh={vi.fn()}
+        onOpenWork={vi.fn()}
+        onCreateWork={vi.fn().mockResolvedValue(true)}
+        authorisedActions={{ OPERATIONS: ['CREATE'] }}
+        onLoadMore={vi.fn()}
+        loadingMore={false}
+        pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create Operations work' }));
+    expect(screen.getByRole('form', { name: 'Create source work' })).toBeTruthy();
+    expect(screen.getByRole('heading', {name: 'Create work in Operations'})).toBeTruthy();
+  });
+
+  it('keeps priority and overdue semantics on source rows without duplicate legend controls', () => {
+    const feed = fixtureFeed(5);
+    feed.items[0].priority = 'CRITICAL';
+    feed.items[1].priority = 'HIGH';
+    feed.items[2].priority = 'NORMAL';
+    feed.items[3].priority = 'LOW';
+    feed.items[4].priority = 'LOW';
+    feed.items[4].isOverdue = true;
+    feed.counts.overdue = 1;
+    render(
+      <DailyAttentionWorkspace
+        feed={feed}
+        calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        loadingMore={false} pageError=""
+      />,
+    );
+    expect(screen.queryByRole('group', { name: 'Severity of loaded work' })).toBeNull();
+    expect(screen.getByLabelText('Verified current-source workload').textContent)
+      .toContain('Overdue1');
+    for (const level of ['Critical', 'High', 'Normal', 'Low']) {
+      expect(screen.getByLabelText('Severity ' + level + '; priority ' + level.toUpperCase())).toBeTruthy();
+    }
+    expect(screen.getByLabelText('Severity Overdue; priority LOW')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 4' }));
+    expect(screen.getByText('Overdue severity')).toBeTruthy();
+    expect(screen.getByText('LOW source priority · deadline passed')).toBeTruthy();
+  });
+  
+  it('exposes a real source command attempt when command preflight fails', () => {
+    render(
+      <DailyAttentionWorkspace
+        feed={fixtureFeed(0)}
+        calendarItems={[]}
+        filter="ALL" setFilter={vi.fn()}
+        source="ALL" setSource={vi.fn()}
+        query="" setQuery={vi.fn()}
+        onRefresh={vi.fn()} onOpenWork={vi.fn()} onLoadMore={vi.fn()}
+        onCreateWork={vi.fn()}
+        authorisedActions={{}}
+        actionAvailabilityUnavailable
+        unavailableActionSources={['OPERATIONS']}
+        loadingMore={false} pageError=""
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create Operations work' }));
+    expect(screen.getByRole('form', { name: 'Create source work' })).toBeTruthy();
+    expect(screen.getByText(/Source create permission is not preverified/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Submit task to EOS' })).toBeTruthy();
+  });
+
+  it('releases the detail rail only after source-owned completion confirmation', async () => {
+    const complete = vi.fn().mockResolvedValue(true);
+    const base = {
+      feed: fixtureFeed(1), calendarItems: [],
+      filter: 'ALL', setFilter: vi.fn(), source: 'ALL',
+      setSource: vi.fn(), query: '', setQuery: vi.fn(),
+      onRefresh: vi.fn(), onOpenWork: vi.fn(),
+      onLoadMore: vi.fn(), onCompleteWork: complete,
+      authorisedActions: { OPERATIONS: ['COMPLETE'] },
+      loadingMore: false, pageError: '',
+    };
+    const { rerender } = render(<DailyAttentionWorkspace {...base}/>);
+    fireEvent.click(screen.getByRole('button', {name: 'Inspect Attention item 0'}));
+    fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
+      target: {value: 'Verified source completion evidence'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Confirm completion'}));
+    await waitFor(() => expect(screen.queryByRole('complementary', {name: 'Attention detail rail'})).toBeNull());
+    expect(await screen.findByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeTruthy();
+    complete.mockResolvedValue(false);
+    rerender(<DailyAttentionWorkspace {...base} onCompleteWork={complete}/>);
+    fireEvent.click(screen.getByRole('button', {name: 'Inspect Attention item 0'}));
+    fireEvent.change(screen.getByPlaceholderText('Record what was completed and the evidence for this decision'), {
+      target: {value: 'Evidence for a denied completion'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Confirm completion'}));
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('complementary', {name: 'Attention detail rail'})).toBeTruthy();
+  });
+
+});
+
+// ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
+// VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
+// AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
+// TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
+// FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.
+// FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+// END OF WILSY OS SOVEREIGN ARTIFACT

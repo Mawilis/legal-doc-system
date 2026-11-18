@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Tenant Context
- * VERSION: v6.4.0-SUBSCRIPTION-LIFECYCLE-AUTHORITY-BOUNDARY
+ * VERSION: v6.5.0-GOVERNED-C2-TENANT-DIRECTORY-DENY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Projects the exact server-certified authenticated workspace tenant
  *          into browser context without demanding a second, independently
@@ -11,6 +11,10 @@
  *                            owns bounded client hydration and same-tenant UI state.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
+ *   v6.5.0-GOVERNED-C2-TENANT-DIRECTORY-DENY — Keeps only the exact authenticated
+ *     workspace tenant in browser context; refresh and alias resolution cannot
+ *     enumerate or fetch arbitrary tenants while global directory authority is
+ *     outside governed Python EOS C2.
  *   v6.4.0-SUBSCRIPTION-LIFECYCLE-AUTHORITY-BOUNDARY — Stops loading restricted billing dunning
  *     projections in global post-MFA tenant hydration. Dunning evidence is
  *     not subscription lifecycle or entitlement truth. Until a separately
@@ -35,8 +39,8 @@
  *                             server-owned workspace-bootstrap projection.
  * TENANT BOUNDARY: authenticatedTenantId must exactly equal the initialTenant
  *                  canonical identifier before any authenticated tenant is
- *                  exposed. Cross-tenant mismatch fails closed without a tenant
- *                  profile or directory request.
+ *                  exposed. Refresh and alias resolution expose only that exact
+ *                  projection; no global directory or arbitrary profile read occurs.
  * AUTHORITY BOUNDARY: Client projection only. Python EOS owns authentication,
  *                     ACTIVE principal/membership/business-role truth and
  *                     canonical tenant resolution. This context grants no
@@ -48,7 +52,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import tenantApi from '../services/api/tenantApi'; // ✅ Corrected path
 // Subscription lifecycle authority is not inferred from a dunning projection.
 
 // ─── Context Definition ──────────────────────────────────────────────────────
@@ -121,16 +124,6 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
     let cancelled = false;
     const expectedId = String(authenticatedTenantId || '').trim();
 
-    let persisted = null;
-    if (!expectedId) {
-      try {
-        const saved = localStorage.getItem('wilsy_active_tenant');
-        persisted = saved ? JSON.parse(saved) : null;
-      } catch {
-        persisted = null;
-      }
-    }
-
     const finish = () => {
       if (!cancelled) setBootstrapReady(true);
     };
@@ -163,69 +156,51 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
       return () => { cancelled = true; };
     }
 
-    const candidate = initialTenant || persisted;
-    const candidateId = tenantIdentifier(candidate);
-    if (candidate) {
-      setActiveTenant((previous) => (
-        tenantIdentifier(previous) === candidateId ? previous : candidate
-      ));
-      setAuthorityMismatch(false);
-      setError(null);
-    }
+    // A missing authenticated workspace is not repaired from browser storage
+    // or an unverified initial projection. Only EOS bootstrap can set scope.
+    setActiveTenant(null);
+    setTenants([]);
+    setAuthorityMismatch(false);
+    setError(null);
+    setLoading(false);
     finish();
     return () => { cancelled = true; };
   }, [authenticatedTenantId, initialTenant, tenantIdentifier]);
 
-  // ─── Refresh tenant list from Kennel ──────────────────────────────────────
+  // ─── Refresh the authenticated tenant projection without global listing ────
   const refreshTenants = useCallback(async () => {
-    setLoading(true);
+    const authenticatedId = String(authenticatedTenantId || '').trim();
+    const activeId = tenantIdentifier(activeTenant);
+    const authorizedProjection = Boolean(
+      authenticatedId && activeTenant && activeId === authenticatedId && !authorityMismatch
+    );
+    const current = authorizedProjection ? [activeTenant] : [];
+    setTenants(current);
+    setLoading(false);
     setError(null);
-    try {
-      const response = await tenantApi.getTenants();
-      const tenantList = Array.isArray(response?.data) ? response.data : [];
-      setTenants(tenantList);
-      if (tenantList.length && activeTenant && !tenantList.some(t => tenantIdentifier(t) === tenantIdentifier(activeTenant))) {
-        setActiveTenant(null);
-        localStorage.removeItem('wilsy_active_tenant');
-      }
-    } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to load tenants.';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTenant, tenantIdentifier]);
+    return current;
+  }, [activeTenant, authenticatedTenantId, authorityMismatch, tenantIdentifier]);
 
   useEffect(() => {
     refreshAccessPosture(activeTenant);
   }, [activeTenant, refreshAccessPosture]);
 
-  // ─── Resolve tenant by alias ──────────────────────────────────────────────
+  // ─── Resolve only the authenticated workspace projection ──────────────────
   const resolveTenant = useCallback(async (alias) => {
-    if (!alias) return null;
-    const clean = alias.trim().toLowerCase();
-    const found = tenants.find(t =>
-      t.tenant_id?.toLowerCase() === clean ||
-      t.name?.toLowerCase() === clean ||
-      t.alias?.toLowerCase() === clean
-    );
-    if (found) return found;
-
-    try {
-      const response = await tenantApi.getTenant(clean);
-      const tenant = response?.data;
-      if (tenant) {
-        setTenants(prev => {
-          if (prev.some(t => t.tenant_id === tenant.tenant_id)) return prev;
-          return [...prev, tenant];
-        });
-        return tenant;
-      }
-    } catch {
-      // ignore
-    }
-    return null;
-  }, [tenants]);
+    const authenticatedId = String(authenticatedTenantId || '').trim();
+    const activeId = tenantIdentifier(activeTenant);
+    if (!alias || !authenticatedId || activeId !== authenticatedId || authorityMismatch) return null;
+    const clean = String(alias).trim().toLowerCase();
+    const identifiers = [
+      activeTenant?.tenant_id,
+      activeTenant?.tenantId,
+      activeTenant?.id,
+      activeTenant?._id,
+      activeTenant?.name,
+      activeTenant?.alias,
+    ].filter((value) => typeof value === 'string').map((value) => value.trim().toLowerCase());
+    return identifiers.includes(clean) ? activeTenant : null;
+  }, [activeTenant, authenticatedTenantId, authorityMismatch, tenantIdentifier]);
 
   // ─── Switch active tenant ─────────────────────────────────────────────────
   const switchTenant = useCallback(async (tenantId) => {
@@ -291,7 +266,7 @@ export default TenantContext;
 
 /**
  * ARTIFACT: client/src/contexts/tenantContext.jsx
- * VERSION: v6.4.0-SUBSCRIPTION-LIFECYCLE-AUTHORITY-BOUNDARY
+ * VERSION: v6.5.0-GOVERNED-C2-TENANT-DIRECTORY-DENY
  * AUTHORITY BOUNDARY: browser tenant projection only; Python EOS workspace-bootstrap remains authoritative
  * TENANT POSTURE: authenticated initialTenant must exactly match authenticatedTenantId; persisted browser state cannot establish authenticated scope
  * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant and performs no compensating privileged tenant-profile request
