@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.0.0-SOURCE-OWNED-QUARANTINE-UPLOAD-CERT
+ * VERSION: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.0.0-SOURCE-OWNED-QUARANTINE-UPLOAD-CERT checks exact task
+ * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT requires scanner-owned QUARANTINED status and null clearance fingerprint, and proves fail-closed denial of fabricated clean clearance.\n * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT checks exact task
  *          S3 quarantine response, replay key, independent EOS list readback.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic file only; no provider bytes leaked.
@@ -36,6 +36,7 @@ const record = {
   size_bytes: 19, content_sha3_512: 'd'.repeat(128),
   created_at: '2026-11-18T08:00:00+00:00',
   state: 'QUARANTINED', revision: 1,
+  scan_clearance_status: 'QUARANTINED', scan_clearance_fingerprint: null,
 };
 const memberRoute = '/projects/' + projectId + '/my-project/tasks/' + taskId;
 const ownerRoute = '/projects/' + projectId + '/tasks/' + taskId;
@@ -115,8 +116,19 @@ it('fails closed on a foreign tenant source record or fabricated download URL', 
   expect(api.post).not.toHaveBeenCalled();
 });
 
+it('rejects fabricated or incomplete scan clearance evidence without download capability', async () => {
+  api.get.mockResolvedValue({ data: list([{
+    ...record, scan_clearance_status: 'SCAN_CLEAN_VERIFIED',
+    scan_clearance_fingerprint: null,
+  }]) });
+  mount(false);
+  expect(await screen.findByRole('alert')).toHaveTextContent('could not verify');
+  expect(screen.queryByText('design.pdf')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Download verified file' })).not.toBeInTheDocument();
+});
+
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.0.0-SOURCE-OWNED-QUARANTINE-UPLOAD-CERT
+// VERSION: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
