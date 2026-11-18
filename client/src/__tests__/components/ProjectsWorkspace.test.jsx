@@ -1,17 +1,20 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.9.0-TENANT-STATUS-PAGING-CERT
+ * VERSION: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
- * CHANGELOG: v1.9.0-TENANT-STATUS-PAGING-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT certifies source-backed project note
+ *            creation/readback without modifying Planned status, propagating
+ *            current principal/tenant scope or granting participant authority.
+ * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v1.9.0-TENANT-STATUS-PAGING-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v1.9.0-TENANT-STATUS-PAGING-CERT proves navigation
+ * CHANGELOG: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -190,6 +193,57 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: /Verified active project/ })).toBeVisible();
     expect(screen.queryByRole('button', { name: /Unfiltered planned project/ })).not.toBeInTheDocument();
     expect(api.get.mock.calls.some(([path]) => path === '/projects?limit=100&offset=0&project_status=active')).toBe(true);
+  });
+
+  it('creates source-backed notes in selected project detail without changing Planned', async () => {
+    const persisted = project();
+    const noteId = `pnt-${'a'.repeat(48)}`;
+    const approvedNote = {
+      tenant_id: TENANT, project_id: PROJECT_ID, note_id: noteId,
+      author_principal_id: PRINCIPAL, revision: 1,
+      body: 'Project operating context', fingerprint: 'f'.repeat(128),
+      created_at: '2026-11-18T06:30:00+00:00',
+      updated_at: '2026-11-18T06:30:00+00:00',
+      archived_at: null,
+    };
+    let notes = [];
+    api.get.mockImplementation(async (path) => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/notes?limit=50&offset=0`) return {
+        data: {
+          schema: 'WILSY-PROJECT-NOTE-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: notes, limit: 50, offset: 0, has_more: false, next_offset: null,
+        },
+      };
+      throw new Error(`Unexpected source read ${path}`);
+    });
+    api.post.mockImplementation(async (path, body, options) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/notes`);
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      expect(body).toEqual({ body: 'Project operating context' });
+      notes = [approvedNote];
+      return { data: {
+        schema: 'WILSY-PROJECT-NOTE-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        note: approvedNote, events: [],
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="notes-client-certificate" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
+    expect(await screen.findByRole('region', { name: 'Project notes' })).toBeVisible();
+    const input = screen.getByRole('textbox', { name: 'New project note' });
+    fireEvent.change(input, { target: { value: 'Project operating context' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add note to EOS/ }));
+    expect(await screen.findByText('Project operating context')).toBeVisible();
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(persisted.status).toBe('planned');
+    expect(screen.getByRole('button', { name: 'Edit note' })).toBeVisible();
   });
 
   it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
@@ -528,7 +582,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v1.9.0-TENANT-STATUS-PAGING-CERT
+ * VERSION: v2.0.0-GOVERNED-PROJECT-NOTE-CLIENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
