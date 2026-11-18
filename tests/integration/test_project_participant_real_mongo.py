@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Participant Replica-Set Certificate
-VERSION: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT
+VERSION: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY-REPLICA-CERT
 AUTHORITY: Disposable MongoDB test-owned authority; never a real tenant grant.
 EPITOME: Certify indexes, transactional participant grant/replay/revocation,
          source CAS, foreign-tenant absence and immutable event history.
@@ -7,9 +7,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: ProjectParticipantRegistry; existing Projects
          accountability CI owns the disposable replica and cleanup.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT certifies revoked participants
+CHANGELOG: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY-REPLICA-CERT proves
+         principal-scoped project discovery and revocation immediately
+         withdraws visibility without an inherited owner privilege.
+CHANGELOG: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY-REPLICA-CERT certifies revoked participants
          are hidden like unknown/foreign records even for stale retries.
-CHANGELOG: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT adds a test of durable
+CHANGELOG: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY-REPLICA-CERT adds a test of durable
          explicit role evidence with cross-tenant denial and revision replay.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No real principal, subscription or project data.
@@ -72,6 +75,22 @@ def test_disposable_project_participant_grant_replay_revoke() -> None:
                 idempotency_key="grant-1", occurred_at=instant, session=session,
             )
         first = transaction(grant)
+        own_page, own_more = transaction(lambda session: store.projects_for_principal(
+            tenant_id=tenant, principal_id=principal, session=session,
+        ))
+        assert own_page == (first,) and own_more is False
+        foreign_principal_page, foreign_principal_more = transaction(
+            lambda session: store.projects_for_principal(
+                tenant_id=tenant, principal_id="unassigned-person", session=session,
+            ),
+        )
+        assert foreign_principal_page == () and foreign_principal_more is False
+        foreign_tenant_page, foreign_tenant_more = transaction(
+            lambda session: store.projects_for_principal(
+                tenant_id=foreign, principal_id=principal, session=session,
+            ),
+        )
+        assert foreign_tenant_page == () and foreign_tenant_more is False
         replay = transaction(grant)
         assert first == replay
         assert first.state == "ACTIVE" and first.revision == 1
@@ -118,6 +137,12 @@ def test_disposable_project_participant_grant_replay_revoke() -> None:
             )
         removed = transaction(revoke)
         assert removed.state == "REVOKED" and removed.revision == 2
+        revoked_page, revoked_more = transaction(
+            lambda session: store.projects_for_principal(
+                tenant_id=tenant, principal_id=principal, session=session,
+            ),
+        )
+        assert revoked_page == () and revoked_more is False
         assert transaction(revoke) == removed
         with client.start_session() as session:
             with pytest.raises(ProjectParticipantNotFound):
@@ -148,7 +173,7 @@ def test_disposable_project_participant_grant_replay_revoke() -> None:
 
 
 # ARTIFACT: test_project_participant_real_mongo.py
-# VERSION: v1.0.1-REVOKED-PARTICIPANT-NONDISCLOSURE-CERT
+# VERSION: v1.1.0-PRINCIPAL-PROJECT-DISCOVERY-REPLICA-CERT
 # AUTHORITY BOUNDARY: only synthetic source persistence, no live IAM
 # TENANT POSTURE: foreign tenant and project reads return absence
 # FAIL-CLOSED POSTURE: diverging replay, stale revision, revoked access denied
