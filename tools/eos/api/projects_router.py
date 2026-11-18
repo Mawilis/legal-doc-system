@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.16.0-PROJECT-TASK-REVIEW-COMMANDS
+VERSION: v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -14,47 +14,50 @@ COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            independent admission; server.py mounts this router.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS adds owner-requested,
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER lists the named
+  current Contributor's pending reviews, checking every project's active
+  participation and exact source task before showing reviewer inbox rows.
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER adds owner-requested,
   independently reviewed project-task business approvals with explicit
   currently active contributor reviewers, CAS and no financial authority.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS permits exact-project
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER permits exact-project
   participants to see current co-participants for controlled mentions;
   tenant-wide membership directory access remains owner-only.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS atomically persists comment
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER atomically persists comment
   mention inbox evidence and exposes recipient-only project notification
   read and CAS read-receipt commands with current participant IAM gates.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS exposes a bounded my-projects
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER exposes a bounded my-projects
   discovery route, using exact current participant IAM, membership,
   entitlement, ACTIVE project records and nondisclosing tenant scope.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS adds source-owned task comments
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER adds source-owned task comments
   for owners and project contributors. Mentions require current ACTIVE exact-
   project participants; no notification delivery or approval is inferred.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS permits owner-only task edit and
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER permits owner-only task edit and
   reassignment with current tenant/project contributor readback, guarded
   revision, idempotent Mongo transaction and immutable source task event.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS exposes bounded exact-tenant project
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER exposes bounded exact-tenant project
   participant candidate pages from current membership and EOS principal/role
   sources; client cannot invent a principal or bypass grantee eligibility.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS exposes owner and exact-project participant task
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER exposes owner and exact-project participant task
   listing, audited owner-authorized creation/assignment and revisioned
   lifecycle transitions; contributor completion requires personal assignment.
   Dependencies and unfinished child work are enforced in source transactions.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS admits exact project-bound participant detail and
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER admits exact project-bound participant detail and
   notes through separate current IAM read/contribute pairs, a matching active
   project participation record and canonical Projects entitlement. No tenant-wide
   project listing, generic update or owner privilege is granted.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS adds exact-tenant owner-authorized participant grant,
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER adds exact-tenant owner-authorized participant grant,
   revoke, and list operations; grantees require current principal/membership
   and ACTIVE tenant business capacity. Participation is never an IAM grant.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS moves note-domain validation inside existing
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER moves note-domain validation inside existing
   authenticated transaction exception mapping; malformed text yields safe 422.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS introduces authenticated, project-existence-verified
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER introduces authenticated, project-existence-verified
   note CRUD through the existing exact-tenant Projects IAM, entitlements,
   majority transaction and audit boundaries. Notes never alter project state.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS projects verified next-page availability and exact offset
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER projects verified next-page availability and exact offset
   into the authenticated list envelope; preserves page limits, IAM, tenant
   sessions, and all existing lifecycle command behavior.
-  v1.16.0-PROJECT-TASK-REVIEW-COMMANDS refuses a PLANNED-to-ACTIVE
+  v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER refuses a PLANNED-to-ACTIVE
   transition unless the project has a current eligible owner and active
   tenant department. The check runs in the caller-owned project transaction;
   no activation or IAM grants occur during this change.
@@ -218,7 +221,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.16.0-PROJECT-TASK-REVIEW-COMMANDS"
+VERSION: Final[str] = "v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1583,6 +1586,79 @@ def _approval_page(
     }
 
 
+@router.get("/my-approvals")
+def list_my_pending_project_approvals(
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Read only pending approvals assigned to this active reviewer.
+
+    A reviewer principal's IAM is necessary but not sufficient. Each project
+    must independently have a current ACTIVE CONTRIBUTOR participation record
+    and the referenced task must still exist in exact tenant scope. Filter
+    before page boundaries; source capacity overflow fails closed.
+    """
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        database = kernel_db.get_database()
+        if database is None:
+            raise ProjectApprovalError("PROJECT_APPROVAL_SOURCE_UNAVAILABLE")
+        approvals = ProjectApprovalRegistry(
+            database[PROJECT_APPROVAL_COLLECTION],
+            database[PROJECT_APPROVAL_EVENT_COLLECTION],
+        )
+        eligible = []
+        known: dict[str, bool] = {}
+        for approval in approvals.pending_for_reviewer(
+            tenant_id=context.tenant_id,
+            reviewer_principal_id=context.identity.identity_id,
+            session=session,
+        ):
+            if approval.project_id not in known:
+                try:
+                    _project, participants = _require_current_project_participation(
+                        context, registry, approval.project_id, session,
+                    )
+                    assignment = participants.get(
+                        tenant_id=context.tenant_id,
+                        project_id=approval.project_id,
+                        principal_id=context.identity.identity_id,
+                        session=session,
+                    )
+                    known[approval.project_id] = assignment.role == "CONTRIBUTOR"
+                except (ProjectParticipantNotFound, ProjectNotFound):
+                    known[approval.project_id] = False
+            if not known[approval.project_id]:
+                continue
+            try:
+                _project_task_store(
+                    registry, context.tenant_id, approval.project_id, session,
+                ).get(
+                    tenant_id=context.tenant_id,
+                    project_id=approval.project_id,
+                    task_id=approval.task_id,
+                    session=session,
+                )
+            except ProjectTaskNotFound:
+                continue
+            eligible.append(approval)
+        items = eligible[offset:offset + limit]
+        more = len(eligible) > offset + limit
+        return {
+            "schema": "WILSY-PROJECT-PENDING-APPROVALS/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "items": [item.to_dict() for item in items],
+            "offset": offset, "limit": limit, "has_more": more,
+            "next_offset": offset + len(items) if more else None,
+        }
+
+    return _transaction(context, read)
+
+
 @router.get("/{project_id}/tasks/{task_id}/approvals")
 def list_project_task_approvals(
     response: Response,
@@ -2577,7 +2653,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.16.0-PROJECT-TASK-REVIEW-COMMANDS
+# VERSION: v1.17.0-REVIEWER-INBOX-EXACT-PROJECT-FILTER
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
