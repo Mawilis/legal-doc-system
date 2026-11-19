@@ -10,7 +10,7 @@
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic exact-scope fixtures only; no tokens,
  *          real identities, private comments or production credentials.
- * TENANT BOUNDARY / POSTURE: Exact tenant and project checks; no root fallback.
+ * TENANT BOUNDARY: Exact tenant and project checks; no root fallback.
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
