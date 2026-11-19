@@ -630,7 +630,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       expect.stringContaining('Approval requested'),
       expect.stringContaining('Work created'),
     ]);
-    expect(screen.getByRole('button', { name: 'Open governed decision' })).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Open governed decision' })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Open governed attachment' })).toBeVisible();
     expect(screen.getByText(/revision 1/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'All discussions' }));
