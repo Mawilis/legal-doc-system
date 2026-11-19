@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.25.1-SEALED-SECONDARY-WORK-CONTROLS
+ * VERSION: v1.26.0-ACCESSIBLE-WORK-ERROR-TOAST
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.26.0-ACCESSIBLE-WORK-ERROR-TOAST presents
+ *          a dismissible role-alert error on failed task commands, without
+ *          faking rollback or exposing backend error payloads.
  * CHANGELOG: v1.25.1-SEALED-SECONDARY-WORK-CONTROLS hides
  *          checklist mutation shortcuts and disables stale editor submits
  *          unless the independently verified exact-project update permission
@@ -1173,12 +1176,17 @@ export default function ProjectTasksPanel({
           onClick={() => void load(offset + 50)}>Next work</button>
       </nav>}
     </>)}
-    {state === 'READY' && error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
+    {state === 'READY' && error && <div role="alert"
+      className="fixed bottom-4 left-4 right-4 z-[120] flex max-w-md items-start justify-between gap-3 rounded-xl border border-rose-300 bg-white p-4 text-sm text-rose-900 shadow-xl sm:left-auto sm:right-6">
+      <span className="min-w-0 flex-1">{error}</span>
+      <button type="button" className="shrink-0 rounded-md border border-rose-300 px-2 py-1 font-semibold text-rose-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+        onClick={() => setError('')}>Dismiss error</button>
+    </div>}
   </section>;
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.25.1-SEALED-SECONDARY-WORK-CONTROLS
+// VERSION: v1.26.0-ACCESSIBLE-WORK-ERROR-TOAST
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
