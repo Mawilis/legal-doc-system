@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.1-KEYBOARD-WORK-DRAWER-CERT
+ * VERSION: v2.28.2-ACTION-READBACK-REGRESSION
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.28.2-ACTION-READBACK-REGRESSION awaits source-ready row actions after
+ *          each command, opens contextual overflow rather than removed
+ *          peer buttons, and exercises on-demand checklist/assignment state.
  * CHANGELOG: v2.28.1-KEYBOARD-WORK-DRAWER-CERT verifies
  *          keyboard Enter opens the exact source work drawer and Close
  *          returns focus without mutating persisted EOS task data.
@@ -526,8 +529,12 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
     expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
     expect(screen.getByRole('button', { name: /Filter work to To do: 1 of 1 verified on page/ })).toBeVisible();
-    fireEvent.click(within(row).getByRole('button', { name: 'Start: Build milestone execution' }));
-    await waitFor(() => expect(row).toHaveTextContent('In progress'));
+    const startWork = within(row).getByRole('button', { name: 'Start: Build milestone execution' });
+    await waitFor(() => expect(startWork).toBeEnabled());
+    fireEvent.click(startWork);
+    await waitFor(() => expect(
+      screen.getByRole('row', { name: /Build milestone execution/ }),
+    ).toHaveTextContent('In progress'));
     expect(screen.getByRole('button', { name: /Filter work to In progress: 1 of 1 verified on page/ })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /Filter work to To do: 0 of 1 verified on page/ }));
     expect(screen.getByText(/No work items on this verified page match/)).toBeVisible();
@@ -602,7 +609,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="source-checklist-readback-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
-    fireEvent.click(screen.getByText(/Checklist mode · 0\/1 completed/));
+    fireEvent.click(await screen.findByText(/Checklist mode · 0\/1 completed/));
     const checkbox = await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
     });
@@ -781,7 +788,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td span' });
     fireEvent.click(within(screen.getByRole('row', { name: /Current project delivery/ }))
-      .getByRole('button', { name: 'Activity & discussion' }));
+      .getByRole('button', { name: /More actions for Current project delivery/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
@@ -913,7 +921,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByText('Main delivery', {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible();
-    fireEvent.click(screen.getByText(/Checklist mode ·/));
+    fireEvent.click(await screen.findByText(/Checklist mode ·/));
     fireEvent.click(screen.getByRole('button', { name: 'Add checklist step to Main delivery' }));
     expect(screen.getByRole('combobox', { name: 'Work type' })).toHaveValue('SUBTASK');
     expect(screen.getByRole('combobox', { name: 'Parent task' })).toHaveValue(parentId);
@@ -922,9 +930,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       target: { value: 'Draft deliverable' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
-    await waitFor(() => expect(screen.getByText('Draft deliverable', {
-      selector: '.wp-project-tasks tbody td span',
-    })).toBeVisible());
+    await waitFor(() => expect(screen.getByRole('row', { name: /Draft deliverable/ })).toBeVisible());
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'SUBTASK' },
     });
@@ -1277,6 +1283,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save audited assignment' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
@@ -1590,7 +1597,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.1-KEYBOARD-WORK-DRAWER-CERT
+ * VERSION: v2.28.2-ACTION-READBACK-REGRESSION
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
