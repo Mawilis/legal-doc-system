@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.6.1-BOUNDED-ACTIVITY-PAGINATION
+ * VERSION: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY folds
+ *          exact-task approval requests/decisions and attachment uploads into
+ *          the same chronological task activity projection as comments and
+ *          immutable transitions. Each source verifies its own scoped page
+ *          independently; errors never imply no records and evidence remains
+ *          accessible only through authorized task panels.
  * CHANGELOG: v1.6.1-BOUNDED-ACTIVITY-PAGINATION retains
  *          independent bounded comment and task-event page controls, with
  *          source-verified offsets and no duplicate event-page injection into
@@ -46,7 +52,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.6.1-BOUNDED-ACTIVITY-PAGINATION introduces task-threaded
+ * CHANGELOG: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -147,6 +153,12 @@ export default function ProjectTaskCommentsPanel({
   const [eventState, setEventState] = useState('LOADING');
   const [eventHasMore, setEventHasMore] = useState(false);
   const [eventOffset, setEventOffset] = useState(0);
+  const [approvals, setApprovals] = useState([]);
+  const [attachments, setAttachments] = useState([]);
+  const [approvalState, setApprovalState] = useState('LOADING');
+  const [attachmentState, setAttachmentState] = useState('LOADING');
+  const [approvalHasMore, setApprovalHasMore] = useState(false);
+  const [attachmentHasMore, setAttachmentHasMore] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [body, setBody] = useState('');
   const [mentions, setMentions] = useState([]);
@@ -169,6 +181,9 @@ export default function ProjectTaskCommentsPanel({
   const eventRoute = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
     + encodeURIComponent(taskId) + '/events';
+  const sourceBase = '/projects/' + encodeURIComponent(projectId)
+    + (participantMode ? '/my-project/tasks/' : '/tasks/')
+    + encodeURIComponent(taskId);
   const headers = tenantHeaders || {};
 
   const loadEvents = useCallback(async (nextOffset = 0) => {
@@ -204,6 +219,57 @@ export default function ProjectTaskCommentsPanel({
       setEventState('UNAVAILABLE');
     }
   }, [scope, eventRoute, tenantHeaders, tenantId, principalId, projectId, taskId]);
+
+  const loadEvidence = useCallback(async (kind) => {
+    const active = scope;
+    const approval = kind === 'approvals';
+    const setSourceState = approval ? setApprovalState : setAttachmentState;
+    const setSourceItems = approval ? setApprovals : setAttachments;
+    const setSourceHasMore = approval ? setApprovalHasMore : setAttachmentHasMore;
+    setSourceState('LOADING');
+    try {
+      const { data } = await api.get(sourceBase + '/' + kind + '?limit=50&offset=0', { headers });
+      if (currentScope.current !== active) return;
+      const validItem = item => {
+        if (item?.tenant_id !== tenantId || item.project_id !== projectId || item.task_id !== taskId) return false;
+        if (approval) {
+          return item.schema === 'wilsy.project.approval.v1'
+            && /^pap-[a-f0-9]{48}$/.test(item.approval_id || '')
+            && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
+            && typeof item.requester_principal_id === 'string'
+            && typeof item.reviewer_principal_id === 'string'
+            && Number.isFinite(Date.parse(item.requested_at))
+            && (item.status === 'PENDING' ? item.decided_at === null
+              : Number.isFinite(Date.parse(item.decided_at)));
+        }
+        return item.schema === 'wilsy.project.attachment.v1'
+          && /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
+          && typeof item.filename === 'string' && item.filename.length > 0
+          && typeof item.uploader_principal_id === 'string'
+          && Number.isFinite(Date.parse(item.created_at))
+          && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status);
+      };
+      if (data?.schema !== (approval ? 'WILSY-PROJECT-APPROVAL-LIST/V1'
+        : 'WILSY-PROJECT-ATTACHMENT-LIST/V1')
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId || data.task_id !== taskId
+        || data.limit !== 50 || data.offset !== 0 || typeof data.has_more !== 'boolean'
+        || !Array.isArray(data.items) || data.items.length > 50
+        || data.next_offset !== (data.has_more ? data.items.length : null)
+        || data.items.some(item => !validItem(item))
+        || new Set(data.items.map(item => approval ? item.approval_id : item.attachment_id)).size !== data.items.length) {
+        throw new Error('TASK_ACTIVITY_EVIDENCE_SOURCE_INVALID');
+      }
+      setSourceItems(data.items);
+      setSourceHasMore(data.has_more);
+      setSourceState('READY');
+    } catch {
+      if (currentScope.current !== active) return;
+      setSourceItems([]);
+      setSourceHasMore(false);
+      setSourceState('UNAVAILABLE');
+    }
+  }, [scope, sourceBase, tenantHeaders, tenantId, projectId, taskId, principalId]);
 
   const load = useCallback(async (nextOffset = 0) => {
     const sequence = ++generation.current;
@@ -245,6 +311,12 @@ export default function ProjectTaskCommentsPanel({
     generation.current += 1;
     setItems([]);
     setEvents([]);
+    setApprovals([]);
+    setAttachments([]);
+    setApprovalState('LOADING');
+    setAttachmentState('LOADING');
+    setApprovalHasMore(false);
+    setAttachmentHasMore(false);
     setEventState('LOADING');
     setEventHasMore(false);
     setEventOffset(0);
@@ -257,8 +329,10 @@ export default function ProjectTaskCommentsPanel({
     command.current = { fingerprint: '', key: '' };
     void load(0);
     void loadEvents();
+    void loadEvidence('approvals');
+    void loadEvidence('attachments');
     return () => { generation.current += 1; };
-  }, [scope, load, loadEvents]);
+  }, [scope, load, loadEvents, loadEvidence]);
 
   useEffect(() => {
     if (state !== 'READY' || navigatedScope.current === scope) return;
@@ -273,6 +347,18 @@ export default function ProjectTaskCommentsPanel({
   }, [showComposer, state]);
 
   const activity = [
+    ...(approvalState === 'READY' ? approvals.flatMap(item => [
+      { id: 'approval-request:' + item.approval_id, type: 'approval-request',
+        time: item.requested_at, actor: item.requester_principal_id, item },
+      ...(item.decided_at ? [{
+        id: 'approval-decision:' + item.approval_id, type: 'approval-decision',
+        time: item.decided_at, actor: item.reviewer_principal_id, item,
+      }] : []),
+    ]) : []),
+    ...(attachmentState === 'READY' ? attachments.map(item => ({
+      id: 'attachment:' + item.attachment_id, type: 'attachment',
+      time: item.created_at, actor: item.uploader_principal_id, item,
+    })) : []),
     ...items.map(item => ({
       id: 'comment:' + item.comment_id, type: 'comment',
       time: item.created_at, actor: item.author_principal_id, item,
@@ -360,7 +446,10 @@ export default function ProjectTaskCommentsPanel({
       </h4>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="wp-button" disabled={busy}
-          onClick={() => { void load(offset); void loadEvents(eventOffset); }}><RefreshCw size={14}/> Refresh</button>
+          onClick={() => {
+            void load(offset); void loadEvents(eventOffset);
+            void loadEvidence('approvals'); void loadEvidence('attachments');
+          }}><RefreshCw size={14}/> Refresh</button>
         <button type="button" className="wp-button" disabled={busy}
           onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>
       </div>
@@ -438,18 +527,30 @@ export default function ProjectTaskCommentsPanel({
             <button type="button" className="wp-button" onClick={onViewAttachments}>Attachments &amp; evidence</button>}
         </div>
       </div>
-      {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
+      {(approvalState === 'UNAVAILABLE' || attachmentState === 'UNAVAILABLE') &&
+        <p role="status" className="mt-2 text-sm text-amber-900">
+          {approvalState === 'UNAVAILABLE' ? 'Approval evidence unavailable. ' : ''}
+          {attachmentState === 'UNAVAILABLE' ? 'Attachment evidence unavailable. ' : ''}
+          Other verified activity remains readable; missing records are not inferred.
+        </p>}
+            {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
         Task lifecycle evidence is unavailable. Verified comments remain readable; no missing events are inferred.
       </p>}
+      {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
+        <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
       {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
       <p className="mt-2 text-xs text-slate-600">Newest first across the two current verified source pages.
-        {hasMore || eventHasMore ? ' Additional source pages exist; this is not the complete history.' : ''}
+        {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
+          ? ' Additional source pages exist; this is not the complete history.' : ''}
         {' '}Project Notes remain separate project-wide records.</p>
       <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
         {activity.map(entry => <li className="p-3 text-sm" key={entry.id}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <strong className="break-words text-slate-900">
               {entry.type === 'comment' ? 'Progress update / comment'
+                : entry.type === 'approval-request' ? 'Approval requested'
+                  : entry.type === 'approval-decision' ? 'Decision · ' + entry.item.status.toLowerCase()
+                    : entry.type === 'attachment' ? 'Evidence attached'
                 : entry.item.event_type === 'PROJECT_TASK_CREATED' ? 'Work created'
                   : entry.item.event_type === 'PROJECT_TASK_REVISED' ? 'Work revised'
                     : 'Lifecycle transition'}
@@ -460,6 +561,21 @@ export default function ProjectTaskCommentsPanel({
             By {displayActor(entry.actor)}
             {entry.type === 'event' ? ' · revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase() : ''}
           </p>
+          {entry.type === 'approval-request' && <p className="mt-2 break-words text-sm text-slate-800">
+            {entry.item.rationale}
+          </p>}
+          {entry.type === 'approval-decision' && entry.item.decision_rationale &&
+            <p className="mt-2 break-words text-sm text-slate-800">{entry.item.decision_rationale}</p>}
+          {entry.type === 'attachment' && <p className="mt-2 break-words text-sm text-slate-800">
+            {entry.item.filename} · {entry.item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
+              ? 'Scan verified clean' : 'Quarantined'}
+          </p>}
+          {entry.type.startsWith('approval') && typeof onViewApprovals === 'function' &&
+            <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
+              onClick={onViewApprovals}>Open governed decision</button>}
+          {entry.type === 'attachment' && typeof onViewAttachments === 'function' &&
+            <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
+              onClick={onViewAttachments}>Open governed attachment</button>}
           {entry.type === 'comment' && <div className="mt-2"><MarkdownText value={entry.item.body}/></div>}
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
@@ -492,7 +608,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.6.1-BOUNDED-ACTIVITY-PAGINATION
+// VERSION: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
