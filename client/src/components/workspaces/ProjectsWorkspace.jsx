@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.26.0-LOW-CHROME-PROJECT-LIST
+ * VERSION: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,7 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.26.0-LOW-CHROME-PROJECT-LIST reduces
+ * CHANGELOG: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY distinguishes unverified
+ *          activation outcomes from confirmed rejections, offers an
+ *          authorized project-list recovery path, and never invites
+ *          duplicate creation after ambiguous transport/readback.
+ * CHANGELOG: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY reduces
  *          the persistent list toolbar to an operating title, current
  *          counts and action controls. Removes nonfunctional hero copy.
  * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH corrects
@@ -1334,9 +1338,14 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                       <ProjectDateField label="Start date" value={templateStart} disabled={commandState === 'PENDING'}
                         onChange={value => { createReplay.current = { fingerprint: '', key: null }; setTemplateStart(value); }}/>
                       {templateError && <p role="alert" className="text-sm text-rose-700">{templateError}</p>}
-                      {commandError && <p role="alert" className="text-sm text-rose-700">
-                        EOS has not verified template activation. Check the source before retrying.
-                      </p>}
+                      {commandError && <div role="alert" className="space-y-2 border-l-2 border-amber-600 pl-3 text-sm text-slate-800">
+                        <p>The activation outcome is not verified. A request can commit in EOS even if its response fails or a subsequent read times out. Check the authorized Projects list before issuing another create command.</p>
+                        <button type="button" className="wp-button" onClick={() => {
+                          setQuery(templateName.trim());
+                          setMode('LIST');
+                          void refresh({ preserveSelection: false });
+                        }}>Check Projects list</button>
+                      </div>}
                       <button type="submit" disabled={commandState === 'PENDING'}
                         className="wp-button wp-button-primary">
                         {commandState === 'PENDING' ? 'Activating in EOS…' : 'Create project and work in EOS'}
@@ -1568,7 +1577,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.26.0-LOW-CHROME-PROJECT-LIST
+// VERSION: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
