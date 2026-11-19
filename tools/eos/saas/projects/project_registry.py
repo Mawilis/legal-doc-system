@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH
+VERSION: v1.9.0-AUDITED-SCHEDULE-CHANGE-REASON
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.9.0-AUDITED-SCHEDULE-CHANGE-REASON requires a nonempty bounded
+  rationale when changing an established target date, binds that reason
+  into the command replay fingerprint and the immutable event document,
+  and projects it in audit reads. Legacy changes without target-date
+  changes retain their original replay fingerprints.
   v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH requests bounded 256-record Mongo cursor batches on indexed exact-tenant summary scans, reducing getMore round trips beyond 500 records while preserving full persisted-record integrity checks.
   v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH pins full validated summary reads to the startup-certified exact tenant+archived compound index; missing index aborts rather than broadening source scope or returning unverified count.
   v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH profiles cursor first row, remaining iteration and strict full-record hydration without changing complete tenant summary, archive filtering, index ownership or query count.
@@ -368,12 +373,14 @@ class ProjectRegistry:
 
     def update(self, *, tenant_id: str, project_id: str, actor_principal_id: str,
                expected_revision: int, changes: Mapping[str, object],
-               idempotency_key: str, occurred_at: datetime, session: Any) -> Project:
+               idempotency_key: str, occurred_at: datetime, session: Any,
+               target_change_reason: str | None = None) -> Project:
         """Update bounded project facts with tenant, revision and replay guards."""
         return self._updated_value(
             tenant_id=tenant_id, project_id=project_id, actor_principal_id=actor_principal_id,
             expected_revision=expected_revision, changes=changes, occurred_at=occurred_at,
-            action="UPDATED", idempotency_key=idempotency_key, session=session)
+            action="UPDATED", idempotency_key=idempotency_key, session=session,
+            target_change_reason=target_change_reason)
 
     def transition(self, *, tenant_id: str, project_id: str, actor_principal_id: str,
                    expected_revision: int, resulting_status: ProjectStatus | str,
@@ -434,7 +441,8 @@ class ProjectRegistry:
     def _updated_value(self, *, tenant_id: str, project_id: str,
                        actor_principal_id: str, expected_revision: int,
                        changes: Mapping[str, object], occurred_at: datetime,
-                       action: str, idempotency_key: str, session: Any) -> Project:
+                       action: str, idempotency_key: str, session: Any,
+                       target_change_reason: str | None = None) -> Project:
         tenant = _exact("tenant_id", tenant_id)
         identity = _exact("project_id", project_id)
         actor = _exact("actor_principal_id", actor_principal_id)
@@ -442,14 +450,28 @@ class ProjectRegistry:
         tx = _session(session)
         occurred = _occurred_at(occurred_at)
         command_fields = dict(changes)
-        fingerprint = _canonical_fingerprint({
+        reason = target_change_reason
+        if reason is not None and (not isinstance(reason, str)
+                or not 12 <= len(reason) <= 1000 or reason != reason.strip()):
+            raise ProjectRegistryConflict("PROJECT_TARGET_CHANGE_REASON_INVALID")
+        if reason is not None and "target_date" not in command_fields:
+            raise ProjectRegistryConflict("PROJECT_TARGET_CHANGE_REASON_UNEXPECTED")
+        fingerprint_fields: dict[str, object] = {
             "action": action, "tenant_id": tenant, "project_id": identity,
             "actor_principal_id": actor, "expected_revision": expected_revision,
-            "idempotency_key": key, "changes": command_fields})
+            "idempotency_key": key, "changes": command_fields}
+        if reason is not None:
+            fingerprint_fields["target_change_reason"] = reason
+        fingerprint = _canonical_fingerprint(fingerprint_fields)
         replay = self._find_replay(tenant, key, fingerprint, tx)
         if replay is not None:
             return replay
         current = self.get(tenant_id=tenant, project_id=identity, session=tx)
+        if (action == "UPDATED" and "target_date" in command_fields
+                and current.target_date is not None
+                and command_fields["target_date"] != current.target_date
+                and reason is None):
+            raise ProjectRegistryConflict("PROJECT_TARGET_CHANGE_REASON_REQUIRED")
         try:
             if "status" in command_fields:
                 updated = current.transition(
@@ -462,7 +484,8 @@ class ProjectRegistry:
                     expected_revision=expected_revision, changes=command_fields)
         except ProjectError as error:
             raise ProjectRegistryConflict(error.code) from error
-        return self._persist_revision(current, updated, actor, action, key, fingerprint, occurred, tx)
+        return self._persist_revision(current, updated, actor, action, key, fingerprint, occurred, tx,
+                                      target_change_reason=reason)
 
     def _find_replay(self, tenant: str, key: str, fingerprint: str,
                      session: object) -> Project | None:
@@ -481,7 +504,8 @@ class ProjectRegistry:
 
     def _persist_revision(self, prior: Project, updated: Project, actor: str,
                           action: str, key: str, request_fingerprint: str,
-                          occurred: datetime, session: object) -> Project:
+                          occurred: datetime, session: object,
+                          target_change_reason: str | None = None) -> Project:
         try:
             result = self._projects.update_one(
                 {"tenant_id": prior.tenant_id, "project_id": prior.project_id,
@@ -491,7 +515,8 @@ class ProjectRegistry:
                 raise ProjectRegistryConflict("PROJECT_REVISION_CONFLICT")
             self._insert_event(project=updated, actor=actor, action=action, key=key,
                                request_fingerprint=request_fingerprint, prior=prior,
-                               occurred_at=occurred, session=session)
+                               occurred_at=occurred, session=session,
+                               target_change_reason=target_change_reason)
             return updated
         except ProjectRegistryConflict:
             raise
@@ -502,7 +527,8 @@ class ProjectRegistry:
 
     def _insert_event(self, *, project: Project, actor: str, action: str,
                       key: str, request_fingerprint: str, prior: Project | None,
-                      occurred_at: datetime, session: object) -> None:
+                      occurred_at: datetime, session: object,
+                      target_change_reason: str | None = None) -> None:
         event = {
             "tenant_id": project.tenant_id, "event_id": f"project:{request_fingerprint}",
             "project_id": project.project_id, "event_type": f"PROJECT_{action}",
@@ -512,6 +538,8 @@ class ProjectRegistry:
             "request_fingerprint": request_fingerprint, "idempotency_key": key,
             "occurred_at": occurred_at, "result_snapshot": project.to_dict(),
             "schema": "wilsy.project.event.v1"}
+        if target_change_reason is not None:
+            event["target_change_reason"] = target_change_reason
         try:
             self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
@@ -540,6 +568,12 @@ class ProjectRegistry:
             raise ProjectRegistryError("PROJECT_EVENT_TIMESTAMP_INVALID")
         event = {key: row[key] for key in _EVENT_FIELDS}
         event["occurred_at"] = occurred.astimezone(timezone.utc)
+        reason = row.get("target_change_reason")
+        if reason is not None:
+            if (not isinstance(reason, str) or not 12 <= len(reason) <= 1000
+                    or reason != reason.strip()):
+                raise ProjectRegistryError("PROJECT_AUDIT_REASON_INVALID")
+            event["target_change_reason"] = reason
         return event
 
 
@@ -547,7 +581,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH
+# VERSION: v1.9.0-AUDITED-SCHEDULE-CHANGE-REASON
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject
