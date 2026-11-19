@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION
+VERSION: v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION exposes seven audited read-only industry blueprints and an explicit
+  v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK reconciles retried activation against the immutable original
+  project creation snapshot, avoiding divergent timestamp fingerprints;
+  only identical tenant, actor, template, revision, dates and command replay.
+  v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK exposes seven audited read-only industry blueprints and an explicit
   jointly create/update-authorized atomic materialization of one PLANNED
   exact-tenant project, milestones, tasks and dependency topology. Each task
   is independently replay-bound; no staff, IAM or finance authority is issued.
@@ -300,7 +303,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION"
+VERSION: Final[str] = "v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1145,10 +1148,35 @@ def activate_project_template(
     )
 
     def materialize(registry: ProjectRegistry, session: Any) -> dict[str, object]:
-        committed = registry.create_or_replay(
-            project=project, actor_principal_id=actor,
-            idempotency_key=project_key, occurred_at=instant, session=session,
+        # Project creation fingerprints include source timestamps. Recover the
+        # original immutable snapshot before replay instead of regenerating
+        # creation timestamps and falsely treating a valid retry as divergent.
+        previous = registry.list_events(
+            tenant_id=tenant, project_id=project_id, session=session,
         )
+        replay = next((event for event in previous
+                       if event.get("idempotency_key") == project_key), None)
+        if replay is None:
+            committed = registry.create_or_replay(
+                project=project, actor_principal_id=actor,
+                idempotency_key=project_key, occurred_at=instant, session=session,
+            )
+        else:
+            snapshot = replay.get("result_snapshot")
+            if (replay.get("event_type") != "PROJECT_CREATED"
+                or replay.get("actor_principal_id") != actor
+                or not isinstance(snapshot, Mapping)):
+                raise ProjectRegistryConflict("PROJECT_TEMPLATE_REPLAY_CONFLICT")
+            committed = Project.from_dict(dict(snapshot))
+            expected = project.to_dict()
+            persisted = committed.to_dict()
+            fields = (
+                "project_id", "tenant_id", "name", "code", "summary", "status",
+                "owner_principal_id", "department_id", "start_date", "target_date",
+                "source_type", "created_by_principal_id",
+            )
+            if any(persisted.get(field) != expected.get(field) for field in fields):
+                raise ProjectRegistryConflict("PROJECT_TEMPLATE_REPLAY_CONFLICT")
         if committed.project_id != project_id or committed.name != payload.name:
             raise ProjectRegistryConflict("PROJECT_TEMPLATE_REPLAY_CONFLICT")
         tasks = _project_task_store(registry, tenant, project_id, session)
@@ -3760,7 +3788,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION
+# VERSION: v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
