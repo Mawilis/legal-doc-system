@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.0.0-EXTRACTED-REUSABLE-WORK-ROW
+ * VERSION: v1.1.0-TERMINAL-PRIORITY-VISUAL-SEMANTICS
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.1.0-TERMINAL-PRIORITY-VISUAL-SEMANTICS mutes
+ *          terminal work title without hiding evidence and optionally
+ *          signals caller-verified high/critical priority as a small dot.
  * CHANGELOG: v1.0.0-EXTRACTED-REUSABLE-WORK-ROW extracts existing
  *          Project Work presentation with controlled selection, density,
  *          explicit handlers and independently supplied action capabilities.
@@ -32,6 +35,7 @@ const statusLabel = status => ({
  */
 export default function ProjectWorkRow({
   item, selected = false, density = 'comfortable', busy = false,
+  priority = null,
   pendingStatus = null, todayISO, assigneeName,
   onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
   onAttachments, onApprovals, onActivity, capabilities = {},
@@ -77,7 +81,15 @@ export default function ProjectWorkRow({
               <td className={density === 'compact' ? 'p-2' : 'p-3'}>
                 <div className="flex items-center gap-2 font-semibold text-slate-900">
                   {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
-                  <span className="block min-w-0 truncate" title={item.title}>{item.title}</span>
+                  {['critical', 'high'].includes(priority) && <span
+                    aria-label={priority === 'critical' ? 'Critical priority' : 'High priority'}
+                    title={priority === 'critical' ? 'Critical priority' : 'High priority'}
+                    className={'inline-block h-2 w-2 shrink-0 rounded-full '
+                      + (priority === 'critical' ? 'bg-rose-700' : 'bg-amber-600')}/>}
+                  <span className={'block min-w-0 truncate '
+                    + (['DONE', 'CANCELLED'].includes(item.status)
+                      ? 'text-slate-500 line-through' : '')}
+                    title={item.title}>{item.title}</span>
                 </div>
                 <div className="mt-1 text-xs text-slate-600">
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
@@ -142,7 +154,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.0.0-EXTRACTED-REUSABLE-WORK-ROW
+// VERSION: v1.1.0-TERMINAL-PRIORITY-VISUAL-SEMANTICS
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
