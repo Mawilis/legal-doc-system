@@ -585,7 +585,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
     expect(discussion.querySelector('textarea').compareDocumentPosition(
       discussion.querySelector('[aria-label="Verified task comment history"] ul'),
-    ) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
     expect(discussion.querySelector('textarea')).not.toBeInTheDocument();
     expect(discussion.querySelector('[aria-label="Verified task comment history"]'))
