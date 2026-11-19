@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.30.0-FOCUSED-WORK-KEYBOARD-CERT
+ * VERSION: v2.30.1-COMMITTED-TEMPLATE-COPY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.30.1-COMMITTED-TEMPLATE-COPY-CERT asserts a confirmed
+ *          201 activation uses the committed-pending-readback message, not
+ *          the distinct ambiguous-save warning.
  * CHANGELOG: v2.30.0-FOCUSED-WORK-KEYBOARD-CERT proves J/K focus,
  *          A opens a bounded edit sheet, and no keyboard shortcut creates
  *          an unauthorized work transition or completion attestation.
@@ -1260,7 +1263,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       target: { value: '2026-11-19' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Create project and work in EOS' }));
-    expect(await screen.findByText(/EOS accepted the project and work/)).toBeVisible();
+    expect(await screen.findByText(/Project and work saved. Current project details are being verified/)).toBeVisible();
+    expect(screen.queryByText(/Save outcome not confirmed/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Verify project' })).toBeVisible();
     expect(screen.queryByText(/EOS has not verified template activation/)).not.toBeInTheDocument();
     expect(api.post).toHaveBeenCalledTimes(1);
@@ -1785,7 +1789,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.30.0-FOCUSED-WORK-KEYBOARD-CERT
+ * VERSION: v2.30.1-COMMITTED-TEMPLATE-COPY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
