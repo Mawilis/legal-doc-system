@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.1.0-SOURCE-NAMED-PARTICIPANTS
+ * VERSION: v1.2.0-HUMAN-IDENTITY-AUDIT-SEPARATION
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-HUMAN-IDENTITY-AUDIT-SEPARATION removes raw
+ *          principal IDs and record revisions from operating People cards;
+ *          identifiers remain stored and used exclusively for EOS commands.
  * CHANGELOG: v1.1.0-SOURCE-NAMED-PARTICIPANTS presents exact-tenant
  *          source-supplied first/last names ahead of opaque principal IDs,
  *          validates optional name fields and improves form contrast and
@@ -226,9 +229,8 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
             <div className="flex items-center gap-2 font-semibold text-slate-900">
               <ShieldCheck size={15}/> <span className="break-words">{optionName(choices.find(person => person.principal_id === item.principal_id) || {}) || 'Verified project participant'}</span>
             </div>
-            <p className="mt-1 break-all text-xs text-slate-600">Principal: {item.principal_id}</p>
             <p className="mt-1 text-xs text-slate-600">
-              {item.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer'} · Revision {item.revision}
+              {item.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer'}
             </p>
           </div>
           <button type="button" disabled={busy} onClick={() => revoke(item)}
@@ -289,7 +291,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.1.0-SOURCE-NAMED-PARTICIPANTS
+// VERSION: v1.2.0-HUMAN-IDENTITY-AUDIT-SEPARATION
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
