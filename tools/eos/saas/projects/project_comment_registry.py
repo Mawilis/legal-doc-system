@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Task Comment Authority and Audit Registry
-VERSION: v1.0.0-EXACT-PROJECT-THREADED-COMMENTS
+VERSION: v1.1.0-NEWEST-FIRST-INDEXED-COMMENTS
 AUTHORITY: Python EOS immutable project-task collaboration source.
 EPITOME: One tenant/project/task-bound comment per command, explicit verified
          mentions, deterministic replay, indexed reads and immutable audit.
@@ -8,6 +8,10 @@ COLLABORATION / OWNERSHIP: Projects router owns authenticated IAM, entitled
          exact-project admission, task existence and current mentioned-member
          validation; this registry owns comments and their immutable event truth.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.0-NEWEST-FIRST-INDEXED-COMMENTS indexes
+         exact task comments newest-first with deterministic tie-breaking,
+         retaining the original index name for existing deployments.
+         List pagination now returns the most recent source evidence first.
 CHANGELOG: v1.0.0-EXACT-PROJECT-THREADED-COMMENTS establishes task-scoped
          append-only plain-text collaboration with source-backed audit/replay.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -31,10 +35,10 @@ import json
 import re
 from typing import Any, Final
 
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.0.0-EXACT-PROJECT-THREADED-COMMENTS"
+VERSION: Final[str] = "v1.1.0-NEWEST-FIRST-INDEXED-COMMENTS"
 SCHEMA: Final[str] = "wilsy.project.comment.v1"
 COLLECTION: Final[str] = "wilsy_project_comments"
 EVENT_COLLECTION: Final[str] = "wilsy_project_comment_events"
@@ -237,6 +241,11 @@ class ProjectCommentRegistry:
                 ("task_id", ASCENDING), ("created_at", ASCENDING),
                 ("comment_id", ASCENDING),
             ], name="wilsy_project_task_comment_timeline")
+            comments.create_index([
+                ("tenant_id", ASCENDING), ("project_id", ASCENDING),
+                ("task_id", ASCENDING), ("created_at", DESCENDING),
+                ("comment_id", DESCENDING),
+            ], name="wilsy_project_task_comment_recent_v2")
             events.create_index([
                 ("tenant_id", ASCENDING), ("idempotency_key", ASCENDING),
             ], unique=True, name="wilsy_project_comment_replay_unique")
@@ -264,7 +273,7 @@ class ProjectCommentRegistry:
             rows = tuple(ProjectComment.hydrate({
                 k: v for k, v in row.items() if k != "_id"
             }) for row in self._comments.find(query, session=session).sort([
-                ("created_at", ASCENDING), ("comment_id", ASCENDING),
+                ("created_at", DESCENDING), ("comment_id", DESCENDING),
             ]).skip(offset).limit(limit + 1))
         except PyMongoError as error:
             raise ProjectCommentError("PROJECT_COMMENT_READ_UNAVAILABLE") from error
@@ -346,7 +355,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_comment_registry.py
-# VERSION: v1.0.0-EXACT-PROJECT-THREADED-COMMENTS
+# VERSION: v1.1.0-NEWEST-FIRST-INDEXED-COMMENTS
 # AUTHORITY BOUNDARY: immutable text/evidence only, no notification or approval
 # TENANT POSTURE: all reads, writes and replay bind exact tenant/project/task
 # FAIL-CLOSED POSTURE: malformed scope, mentions, tamper and divergent replay deny
