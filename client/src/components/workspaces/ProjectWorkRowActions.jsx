@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.3.0-ACTION-CAPABILITY-CONTRACT
+ * VERSION: v1.4.0-DENY-BY-DEFAULT-ACTION-PRESENTER
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.4.0-DENY-BY-DEFAULT-ACTION-PRESENTER makes omitted
+ *          callback capabilities deny by default and prevents an untrusted
+ *          reuse caller from displaying action buttons before EOS admission.
  * CHANGELOG: v1.3.0-ACTION-CAPABILITY-CONTRACT accepts per-action
  *          presentation capability flags, separates Assign from Edit and
  *          uses desktop menu semantics plus mobile modal sheet semantics.
@@ -42,9 +45,9 @@ const nextAction = {
 export default function ProjectWorkRowActions({
   item, busy, onTransition, onComplete, onEdit, onAssign = onEdit,
   onAttachments, onApprovals, onActivity,
-  canStart = true, canComplete = true, canBlock = true, canCancel = true,
-  canAssign = true, canEdit = true, canAttachments = true,
-  canActivity = true, canApprovals = true,
+  canStart = false, canComplete = false, canBlock = false, canCancel = false,
+  canAssign = false, canEdit = false, canAttachments = false,
+  canActivity = false, canApprovals = false,
 }) {
   const [open, setOpen] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -53,7 +56,9 @@ export default function ProjectWorkRowActions({
   const panel = useRef(null);
   const dragStartY = useRef(null);
   const suggested = nextAction[item.status];
-  const primary = suggested && (suggested[1] === 'DONE' ? canComplete : canStart) ? suggested : null;
+  const primary = suggested && (suggested[1] === 'DONE'
+    ? canComplete && typeof onComplete === 'function'
+    : canStart && typeof onTransition === 'function') ? suggested : null;
   const canChange = ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status);
   const close = () => {
     setOpen(false);
@@ -90,17 +95,17 @@ export default function ProjectWorkRowActions({
   }, [open]);
 
   const actions = [
-    ...(canChange && item.status !== 'BLOCKED' && canBlock
+    ...(canChange && item.status !== 'BLOCKED' && canBlock && typeof onTransition === 'function'
       ? [{ id: 'block', name: 'Mark blocked', onClick: () => onTransition(item, 'BLOCKED') }] : []),
-    ...(canChange && canAssign
+    ...(canChange && canAssign && typeof onAssign === 'function'
       ? [{ id: 'assign', name: item.assignee_principal_id ? 'Reassign' : 'Assign',
         onClick: () => onAssign(item, true) }] : []),
-    ...(canChange && canEdit
+    ...(canChange && canEdit && typeof onEdit === 'function'
       ? [{ id: 'edit', name: 'Edit', onClick: () => onEdit(item) }] : []),
-    ...(canAttachments ? [{ id: 'attachments', name: 'Attachments', onClick: () => onAttachments(item) }] : []),
-    ...(canActivity ? [{ id: 'activity', name: 'Activity & discussion', onClick: () => onActivity(item) }] : []),
-    ...(canApprovals ? [{ id: 'approvals', name: 'Approvals', onClick: () => onApprovals(item) }] : []),
-    ...(canChange && canCancel ? [{ id: 'cancel', name: 'Cancel work', danger: true,
+    ...(canAttachments && typeof onAttachments === 'function' ? [{ id: 'attachments', name: 'Attachments', onClick: () => onAttachments(item) }] : []),
+    ...(canActivity && typeof onActivity === 'function' ? [{ id: 'activity', name: 'Activity & discussion', onClick: () => onActivity(item) }] : []),
+    ...(canApprovals && typeof onApprovals === 'function' ? [{ id: 'approvals', name: 'Approvals', onClick: () => onApprovals(item) }] : []),
+    ...(canChange && canCancel && typeof onTransition === 'function' ? [{ id: 'cancel', name: 'Cancel work', danger: true,
       onClick: () => setConfirmCancel(true) }] : []),
   ];
 
@@ -197,7 +202,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.3.0-ACTION-CAPABILITY-CONTRACT
+// VERSION: v1.4.0-DENY-BY-DEFAULT-ACTION-PRESENTER
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
