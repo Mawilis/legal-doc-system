@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.33.0-WORK-ROW-SELECTION-DENSITY-CERT
+ * VERSION: v2.34.0-CAPABILITY-AWARE-MENU-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.34.0-CAPABILITY-AWARE-MENU-CERT pins desktop menu
+ *          keyboard/ARIA and separate Assign/Edit, ensuring explicitly
+ *          forbidden action flags hide commands without invoking EOS.
  * CHANGELOG: v2.33.0-WORK-ROW-SELECTION-DENSITY-CERT proves
  *          selected rows toggle independently and page selection is visual
  *          only; work density switches without a server mutation.
@@ -307,31 +310,31 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       onEdit, onAttachments, onApprovals, onActivity };
     const view = render(<ProjectWorkRowActions {...handlers}/>);
     expect(screen.getByRole('button', { name: 'Start: Validate deliverable' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Mark blocked' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Mark blocked' })).not.toBeInTheDocument();
     const trigger = screen.getByRole('button', { name: 'More actions for Validate deliverable' });
     fireEvent.click(trigger);
-    const actionDialog = screen.getByRole('dialog', { name: 'Actions for Validate deliverable' });
+    const actionDialog = screen.getByRole('menu', { name: 'Actions for Validate deliverable' });
     expect(actionDialog).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Mark blocked' })).toHaveFocus();
+    expect(screen.getByRole('menuitem', { name: 'Mark blocked' })).toHaveFocus();
     fireEvent.keyDown(actionDialog, { key: 'ArrowDown' });
-    expect(screen.getByRole('button', { name: 'Edit / assign' })).toHaveFocus();
+    expect(screen.getByRole('menuitem', { name: 'Assign' })).toHaveFocus();
     fireEvent.keyDown(actionDialog, { key: 'End' });
     expect(screen.getByRole('button', { name: 'Close actions' })).toHaveFocus();
     fireEvent.keyDown(actionDialog, { key: 'Home' });
-    expect(screen.getByRole('button', { name: 'Mark blocked' })).toHaveFocus();
+    expect(screen.getByRole('menuitem', { name: 'Mark blocked' })).toHaveFocus();
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menu', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole('button', { name: 'Mark blocked' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Mark blocked' }));
     expect(onTransition).toHaveBeenCalledWith(item, 'BLOCKED');
-    expect(screen.queryByRole('dialog', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menu', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
     view.rerender(<ProjectWorkRowActions {...handlers}
       item={{ ...item, status: 'IN_PROGRESS' }}/>);
     fireEvent.click(screen.getByRole('button', { name: 'Complete: Validate deliverable' }));
     expect(onComplete).toHaveBeenCalledWith({ ...item, status: 'IN_PROGRESS' });
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel work' }));
     expect(onTransition).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
     expect(onTransition).toHaveBeenCalledWith({ ...item, status: 'IN_PROGRESS' }, 'CANCELLED');
@@ -339,6 +342,31 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
 
+
+  it('hides actions explicitly disallowed by the caller without changing authority', () => {
+    const item = { task_id: 'ptk-' + 'f'.repeat(48),
+      title: 'Read-only work', status: 'IN_PROGRESS' };
+    const onTransition = vi.fn();
+    render(<ProjectWorkRowActions item={item} busy={false}
+      onTransition={onTransition} onComplete={vi.fn()} onEdit={vi.fn()}
+      onAttachments={vi.fn()} onActivity={vi.fn()} onApprovals={vi.fn()}
+      canStart={false} canComplete={false} canBlock={false}
+      canCancel={false} canAssign={false} canEdit={false}
+      canAttachments={false} canApprovals={false}/>);
+    expect(screen.queryByRole('button', { name: 'Complete: Read-only work' }))
+      .not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for Read-only work' }));
+    const menu = screen.getByRole('menu', { name: 'Actions for Read-only work' });
+    expect(within(menu).getByRole('menuitem', { name: 'Activity & discussion' }))
+      .toBeVisible();
+    expect(within(menu).queryByRole('menuitem', { name: 'Mark blocked' }))
+      .not.toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: 'Cancel work' }))
+      .not.toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: 'Edit' }))
+      .not.toBeInTheDocument();
+    expect(onTransition).not.toHaveBeenCalled();
+  });
 
   it('dismisses the mobile work actions sheet without mutating work', () => {
     vi.stubGlobal('innerWidth', 390);
@@ -1848,7 +1876,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.33.0-WORK-ROW-SELECTION-DENSITY-CERT
+ * VERSION: v2.34.0-CAPABILITY-AWARE-MENU-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
