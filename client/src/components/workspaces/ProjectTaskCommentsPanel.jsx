@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE
+ * VERSION: v1.6.1-BOUNDED-ACTIVITY-PAGINATION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.1-BOUNDED-ACTIVITY-PAGINATION retains
+ *          independent bounded comment and task-event page controls, with
+ *          source-verified offsets and no duplicate event-page injection into
+ *          subsequent comment pages.
  * CHANGELOG: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE unifies
  *          bounded verified comment pages and immutable task lifecycle event
  *          pages in a newest-first activity display, with source-failure
@@ -42,7 +46,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE introduces task-threaded
+ * CHANGELOG: v1.6.1-BOUNDED-ACTIVITY-PAGINATION introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -142,6 +146,7 @@ export default function ProjectTaskCommentsPanel({
   const [events, setEvents] = useState([]);
   const [eventState, setEventState] = useState('LOADING');
   const [eventHasMore, setEventHasMore] = useState(false);
+  const [eventOffset, setEventOffset] = useState(0);
   const [showComposer, setShowComposer] = useState(false);
   const [body, setBody] = useState('');
   const [mentions, setMentions] = useState([]);
@@ -166,18 +171,18 @@ export default function ProjectTaskCommentsPanel({
     + encodeURIComponent(taskId) + '/events';
   const headers = tenantHeaders || {};
 
-  const loadEvents = useCallback(async () => {
+  const loadEvents = useCallback(async (nextOffset = 0) => {
     const active = scope;
     setEventState('LOADING');
     try {
-      const { data } = await api.get(eventRoute + '?limit=50&offset=0', { headers });
+      const { data } = await api.get(eventRoute + '?limit=50&offset=' + nextOffset, { headers });
       if (currentScope.current !== active) return;
       if (data?.schema !== 'WILSY-PROJECT-TASK-EVENT-LIST/V1'
         || data.tenant_id !== tenantId || data.principal_id !== principalId
         || data.project_id !== projectId || data.task_id !== taskId
-        || data.limit !== 50 || data.offset !== 0 || typeof data.has_more !== 'boolean'
+        || data.limit !== 50 || data.offset !== nextOffset || typeof data.has_more !== 'boolean'
         || !Array.isArray(data.items) || data.items.length > 50
-        || data.next_offset !== (data.has_more ? data.items.length : null)
+        || data.next_offset !== (data.has_more ? nextOffset + data.items.length : null)
         || data.items.some(entry => entry.schema !== 'wilsy.project.task.event.v1'
           || entry.tenant_id !== tenantId || entry.project_id !== projectId || entry.task_id !== taskId
           || !Number.isSafeInteger(entry.revision) || entry.revision < 1
@@ -189,6 +194,7 @@ export default function ProjectTaskCommentsPanel({
         throw new Error('TASK_ACTIVITY_SOURCE_INVALID');
       }
       setEvents(data.items);
+      setEventOffset(nextOffset);
       setEventHasMore(data.has_more);
       setEventState('READY');
     } catch {
@@ -241,6 +247,7 @@ export default function ProjectTaskCommentsPanel({
     setEvents([]);
     setEventState('LOADING');
     setEventHasMore(false);
+    setEventOffset(0);
     setShowComposer(false);
     navigatedScope.current = null;
     setBody('');
@@ -353,7 +360,7 @@ export default function ProjectTaskCommentsPanel({
       </h4>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="wp-button" disabled={busy}
-          onClick={() => { void load(offset); void loadEvents(); }}><RefreshCw size={14}/> Refresh</button>
+          onClick={() => { void load(offset); void loadEvents(eventOffset); }}><RefreshCw size={14}/> Refresh</button>
         <button type="button" className="wp-button" disabled={busy}
           onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>
       </div>
@@ -435,7 +442,7 @@ export default function ProjectTaskCommentsPanel({
         Task lifecycle evidence is unavailable. Verified comments remain readable; no missing events are inferred.
       </p>}
       {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
-      <p className="mt-2 text-xs text-slate-600">Newest first across the current verified comment page and task-event page.
+      <p className="mt-2 text-xs text-slate-600">Newest first across the two current verified source pages.
         {hasMore || eventHasMore ? ' Additional source pages exist; this is not the complete history.' : ''}
         {' '}Project Notes remain separate project-wide records.</p>
       <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
@@ -461,6 +468,14 @@ export default function ProjectTaskCommentsPanel({
           No EOS-verified activity is available on these pages.
         </li>}
       </ul>
+      {(eventOffset > 0 || eventHasMore) &&
+        <nav aria-label="Task event pages" className="mt-3 flex items-center justify-between gap-2">
+          <button type="button" className="wp-button" disabled={eventOffset === 0 || eventState === 'LOADING'}
+            onClick={() => void loadEvents(Math.max(0, eventOffset - 50))}>Previous lifecycle events</button>
+          <span className="text-xs text-slate-600">Lifecycle page {Math.floor(eventOffset / 50) + 1}</span>
+          <button type="button" className="wp-button" disabled={!eventHasMore || eventState === 'LOADING'}
+            onClick={() => void loadEvents(eventOffset + 50)}>Next lifecycle events</button>
+        </nav>}
       {(offset > 0 || hasMore) &&
         <nav aria-label="Task comment pages" className="mt-2 flex items-center justify-between gap-2">
           <button className="wp-button" type="button" disabled={busy || offset === 0}
@@ -477,7 +492,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE
+// VERSION: v1.6.1-BOUNDED-ACTIVITY-PAGINATION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
