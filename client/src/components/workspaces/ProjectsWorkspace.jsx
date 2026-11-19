@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.29.0-HUMAN-OVERVIEW-VERIFIED-DEPARTMENT
+ * VERSION: v2.30.0-IMMUTABLE-BASELINE-AUDITED-TARGET
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.30.0-IMMUTABLE-BASELINE-AUDITED-TARGET makes code/start read-only
+ *          after creation and asks for a persisted, audited reason when
+ *          changing a previously committed project target date.
  * CHANGELOG: v2.29.0-HUMAN-OVERVIEW-VERIFIED-DEPARTMENT capitalizes lifecycle status,
  *          resolves assigned department names from exact-tenant EOS source,
  *          hides generated opaque project codes and audit-only revision from
@@ -662,6 +665,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   );
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [edit, setEdit] = useState(null);
+  const [targetChangeReason, setTargetChangeReason] = useState('');
   const [commandState, setCommandState] = useState('IDLE');
   const [commandError, setCommandError] = useState('');
   const listSequence = useRef(0);
@@ -1098,14 +1102,19 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     event.preventDefault();
     if (!detail?.project || !edit || !selectedId) return;
     const project = detail.project;
+    const targetChanged = (edit.target_date || null) !== (project.target_date || null);
+    const reason = targetChangeReason.trim();
+    if (targetChanged && project.target_date && reason.length < 12) {
+      setCommandError('PROJECT_TARGET_CHANGE_REASON_REQUIRED');
+      return;
+    }
     await runCommand(async () => {
       const response = await api.patch(`/projects/${encodeURIComponent(selectedId)}`, {
         expected_revision: project.revision,
         name: edit.name,
-        code: edit.code || null,
         summary: edit.summary || null,
-        start_date: edit.start_date || null,
         target_date: edit.target_date || null,
+        ...(targetChanged && project.target_date ? { target_change_reason: reason } : {}),
       }, { headers: { ...tenantHeaders, 'Idempotency-Key': newIdempotencyKey() } });
       const result = assertProjectResult(response?.data, tenantId, principalId, selectedId, project.revision + 1);
       const projection = await refresh();
@@ -1113,6 +1122,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         throw new Error('PROJECT_UPDATE_LIST_READBACK_UNAVAILABLE');
       }
       if (!await openProject(selectedId)) throw new Error('PROJECT_UPDATE_DETAIL_READBACK_UNAVAILABLE');
+      setTargetChangeReason('');
     });
   };
 
@@ -1576,21 +1586,34 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {projectView === 'notes' && <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
               tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>}
             {projectView === 'settings' && <div className="max-w-5xl">
-            <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold text-slate-700">Project code <span className="wp-code-optional">(optional override)</span>
-                <input aria-label="Project code" maxLength={80} value={edit?.code || ''}
-                  placeholder="Automatically assigned by EOS"
-                  onChange={event => setEdit({ ...edit, code: event.target.value })}
-                  className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/>
-                <small className="wp-code-hint">Optional: keep the generated code, or enter a unique code such as WOS-PLAT-001 (up to 80 characters). EOS validates and audits any change.</small>
-              </label><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
-                <ProjectDateField label="Start" value={edit?.start_date || ''} disabled={commandState === 'PENDING'}
-                  onChange={value => setEdit(current => ({ ...current, start_date: value }))}/>
+            <form onSubmit={submitUpdate} className="wp-form space-y-3 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Update project</h3><label className="block text-xs font-semibold text-slate-700">Name<input value={edit?.name || ''} onChange={(event) => setEdit({ ...edit, name: event.target.value })} maxLength={180} className="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal"/></label><div className="text-sm text-slate-700">
+                <span className="block text-xs font-semibold">Project code · immutable</span>
+                <span>{detail.project.code && !/^PRJ-[0-9A-F]{16}$/.test(detail.project.code)
+                  ? detail.project.code : 'Automatically assigned'}</span>
+              </div><label className="block text-xs font-semibold text-slate-700">Summary<textarea rows={2} value={edit?.summary || ''} onChange={(event) => setEdit({ ...edit, summary: event.target.value })} maxLength={4000} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"/></label><div className="wp-form-grid">
+                <div className="text-sm text-slate-700">
+                  <span className="block text-xs font-semibold">Original start date · immutable</span>
+                  <span>{detail.project.start_date || 'Not recorded'}</span>
+                </div>
                 <ProjectDateField label="Target" value={edit?.target_date || ''} disabled={commandState === 'PENDING'}
                   onChange={value => setEdit(current => ({ ...current, target_date: value }))}/>
-              </div><button type="submit" disabled={commandState === 'PENDING'} className="wp-button min-h-10 w-full rounded-lg border border-blue-700 px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">{commandState === 'PENDING' ? 'Saving…' : 'Save revision'}</button></form>
+              </div>
+              {(edit?.target_date || null) !== (detail.project.target_date || null)
+                && detail.project.target_date && <label className="block text-sm font-semibold text-slate-800">
+                  Reason for changing the original target date
+                  <textarea required minLength={12} maxLength={1000} rows={3}
+                    aria-label="Target date change reason" value={targetChangeReason}
+                    onChange={event => setTargetChangeReason(event.target.value)}
+                    placeholder="Record delays, risks and planned recovery actions."
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-950"/>
+                  <small className="mt-1 block font-normal text-slate-600">
+                    This rationale is bound to the immutable EOS project revision and audit.
+                  </small>
+                </label>}
+              <button type="submit" disabled={commandState === 'PENDING'} className="wp-button min-h-10 w-full rounded-lg border border-blue-700 px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">{commandState === 'PENDING' ? 'Saving…' : 'Save revision'}</button></form>
             <div className="wp-actions mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><label className="sr-only" htmlFor="project-status">Project status</label><select id="project-status" value={detail.project.status} disabled={commandState === 'PENDING'} onChange={(event) => void transitionStatus(event.target.value)} className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm capitalize">{PROJECT_STATUSES.map((value) => <option key={value} value={value} disabled={value === 'active' && (!detail.project.owner_principal_id || !detail.project.department_id)}>{statusLabel(value)}</option>)}</select><button type="button" disabled={commandState === 'PENDING' || Boolean(detail.project.archived_at)} onClick={() => void archiveProject()} className="wp-button wp-button-danger inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-300 px-3 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-50"><Archive size={14}/> Archive</button></div>
             {(!detail.project.owner_principal_id || !detail.project.department_id) && detail.project.status === 'planned' && <p role="status" className="mt-2 text-xs text-amber-900">Activation requires a verified project owner and tenant department. The project remains Planned until EOS confirms both.</p>}
-            {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. Refresh the source before retrying.' : commandError === 'PROJECT_INPUT_INVALID' ? 'EOS rejected the supplied fields. Check the network response detail, including validation paths.' : /^PROJECT_[A-Z0-9_]{1,90}$/.test(commandError) ? 'EOS response: ' + commandError + '. No success has been inferred.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
+            {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. Refresh the source before retrying.' : commandError === 'PROJECT_TARGET_CHANGE_REASON_REQUIRED' ? 'Explain the target date change in at least 12 characters before saving.' : commandError === 'PROJECT_INPUT_INVALID' ? 'EOS rejected the supplied fields. Check the network response detail, including validation paths.' : /^PROJECT_[A-Z0-9_]{1,90}$/.test(commandError) ? 'EOS response: ' + commandError + '. No success has been inferred.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
             {commandState === 'CONFIRMED' && <p role="status" className="mt-3 text-sm font-medium text-emerald-800">EOS confirmed the project change and returned persisted state.</p>}
             </div>}
             {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4" aria-label="Project audit timeline">
@@ -1647,7 +1670,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.29.0-HUMAN-OVERVIEW-VERIFIED-DEPARTMENT
+// VERSION: v2.30.0-IMMUTABLE-BASELINE-AUDITED-TARGET
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
