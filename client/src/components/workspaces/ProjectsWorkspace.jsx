@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.26.0-LOW-CHROME-PROJECT-LIST reduces
+ *          the persistent list toolbar to an operating title, current
+ *          counts and action controls. Removes nonfunctional hero copy.
  * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH corrects
  *          date-only template activation admission to exactly ten characters
  *          and numeric YYYY-MM-DD groups; Python EOS still strictly parses
@@ -53,9 +56,6 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.26.0-LOW-CHROME-PROJECT-LIST reduces
- *          the persistent list toolbar to an operating title, current
- *          counts and action controls. Removes nonfunctional hero copy.
  * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH never shows a
  *          misleading verified-empty notice while a committed template
  *          project still awaits independent list/detail reconciliation.
