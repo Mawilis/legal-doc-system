@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.29.0-PROJECT-MY-WORK-FILTER-CERT
+ * VERSION: v2.29.1-UNCERTAIN-TEMPLATE-OUTCOME-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.29.1-UNCERTAIN-TEMPLATE-OUTCOME-CERT proves an ambiguous
+ *          activation response prompts a source-based list inspection, not
+ *          a duplicate POST or a fabricated saved/failed claim.
  * CHANGELOG: v2.29.0-PROJECT-MY-WORK-FILTER-CERT verifies that current
  *          assignee filtering uses only the source-backed current project page,
  *          remains reversible and performs no unauthorized write.
@@ -1139,6 +1142,60 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(persisted.status).toBe('planned');
   });
 
+  it('recovers an ambiguous template response in the list without a duplicate write', async () => {
+    const persisted = project({ name: 'Recovered legal delivery' });
+    const steps = [
+      { id: 'scope', kind: 'TASK', title: 'Review scope', role: 'project_lead',
+        day: 1, acceptance: 'Scope verified', depends_on: [] },
+      { id: 'gate', kind: 'MILESTONE', title: 'Matter gate', role: 'sponsor',
+        day: 3, acceptance: 'Approved evidence', depends_on: ['scope'] },
+    ];
+    const industries = ['Legal', 'Construction', 'Football', 'Imports',
+      'Software', 'Healthcare', 'General business'];
+    let committed = false;
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list(committed ? [persisted] : []) };
+      if (path === '/projects/summary') return { data: summary(committed ? [persisted] : []) };
+      if (path === '/projects/templates') return { data: {
+        schema: 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, ownership: 'PLATFORM_STARTERS',
+        items: industries.map((industry, index) => ({
+          slug: index === 0 ? 'legal-litigation' : 'template-' + index,
+          industry, title: industry + ' delivery', revision: 1, steps,
+        })),
+      } };
+      throw new Error('Unexpected activation recovery read: ' + path);
+    });
+    api.post.mockImplementationOnce(async (path, body, options) => {
+      expect(path).toBe('/projects/templates/legal-litigation/activate');
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      expect(body.start_date).toBe('2026-11-19');
+      committed = true;
+      throw Object.assign(new Error('Response unavailable after commit'),
+        { response: { status: 503 } });
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="ambiguous-template-outcome-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Create project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Browse industry templates' }));
+    const picker = await screen.findByRole('listbox', { name: 'Verified industry templates' });
+    fireEvent.click(within(picker).getByRole('option', { name: /Legal/ }));
+    fireEvent.change(screen.getByLabelText('Project name'), {
+      target: { value: 'Recovered legal delivery' },
+    });
+    fireEvent.change(screen.getByLabelText('Start date date'), {
+      target: { value: '2026-11-19' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create project and work in EOS' }));
+    expect(await screen.findByText(/Save outcome not confirmed/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Refresh matching projects' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Create project and work in EOS' }))
+      .not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /View project Recovered legal delivery/ }))
+      .toBeVisible();
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
   it('retains committed EOS template activation when immediate list readback is unavailable', async () => {
     const persisted = project({ name: 'Software implementation' });
     const step = { id: 'scope', kind: 'TASK', title: 'Scope release',
@@ -1712,7 +1769,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.29.0-PROJECT-MY-WORK-FILTER-CERT
+ * VERSION: v2.29.1-UNCERTAIN-TEMPLATE-OUTCOME-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
