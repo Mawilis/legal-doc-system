@@ -300,7 +300,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.29.0-TYPED-AUDIT-ACTOR-BOUNDARY"
+VERSION: Final[str] = "v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -3760,7 +3760,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ
+# VERSION: v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
