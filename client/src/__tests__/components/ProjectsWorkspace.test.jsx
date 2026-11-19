@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.35.0-EOS-CAPABILITY-PROJECTION-CERT
+ * VERSION: v2.36.0-EOS-ACTION-DENIAL-READ-ONLY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.36.0-EOS-ACTION-DENIAL-READ-ONLY-CERT proves
+ *          that denied task update authority hides row mutations after
+ *          refresh without concealing source-verified task records.
  * CHANGELOG: v2.35.0-EOS-CAPABILITY-PROJECTION-CERT supplies only
  *          synthetic exact-project capability records for existing work
  *          journeys; no test fixture grants actual update authority.
@@ -486,6 +489,17 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(work).queryByText('Other contributor delivery')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'All work on this page' }));
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
+    const formerTransport = api.get.getMockImplementation();
+    api.get.mockImplementation((path, ...args) =>
+      typeof path === 'string' && path.endsWith('/task-action-capabilities')
+        ? Promise.reject({ response: { status: 403 } }) : formerTransport(path, ...args));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh work' }));
+    expect(await screen.findByText(/Project work is read-only/)).toBeVisible();
+    expect(within(work).getByText('My accountable delivery')).toBeVisible();
+    expect(within(work).queryByRole('button', { name: 'Start: My accountable delivery' }))
+      .not.toBeInTheDocument();
+    expect(within(work).queryByRole('button', { name: 'Reassign: My accountable delivery' }))
+      .not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
     expect(api.patch).not.toHaveBeenCalled();
   });
@@ -1895,7 +1909,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.35.0-EOS-CAPABILITY-PROJECTION-CERT
+ * VERSION: v2.36.0-EOS-ACTION-DENIAL-READ-ONLY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
