@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.3.0-DENY-BY-DEFAULT-REUSE
+ * VERSION: v1.4.0-STRICT-CAPABILITY-BOOLEAN-GATES
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.4.0-STRICT-CAPABILITY-BOOLEAN-GATES requires
+ *          literal true for each row assignment/keyboard capability;
+ *          missing or malformed caller flags can never imply permissions.
  * CHANGELOG: v1.3.0-DENY-BY-DEFAULT-REUSE prevents new
  *          My Work or external callers from receiving write/menu affordances
  *          until they pass explicit source-backed capability flags.
@@ -69,11 +72,11 @@ export default function ProjectWorkRow({
                   const index = rows.indexOf(event.currentTarget);
                   rows[Math.min(rows.length - 1, Math.max(0,
                     index + (key === 'j' ? 1 : -1)))]?.focus();
-                } else if (key === 'a' && !busy && capabilities.canAssign !== false
+                } else if (key === 'a' && !busy && capabilities?.canAssign === true
                   && !['DONE', 'CANCELLED'].includes(item.status)) {
                   event.preventDefault();
                   onAssign(item);
-                } else if (key === 'c' && !busy && capabilities.canComplete !== false
+                } else if (key === 'c' && !busy && capabilities?.canComplete === true
                   && item.status === 'IN_PROGRESS') {
                   event.preventDefault();
                   onComplete(item);
@@ -132,7 +135,7 @@ export default function ProjectWorkRow({
               </td>
               <td className="p-3 text-xs text-slate-700">
                 {item.assignee_principal_id
-                  ? capabilities.canAssign !== false && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
+                  ? capabilities?.canAssign === true && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
                     ? <button type="button" disabled={busy}
                       aria-label={'Reassign: ' + item.title}
                       className="text-xs font-semibold text-blue-800 underline underline-offset-2"
@@ -140,7 +143,7 @@ export default function ProjectWorkRow({
                       {assigneeName(item.assignee_principal_id)}
                     </button>
                     : <span title="Verified exact-project contributor">{assigneeName(item.assignee_principal_id)}</span>
-                   : capabilities.canAssign !== false && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
+                   : capabilities?.canAssign === true && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
                   <button type="button" disabled={busy}
                     className="text-xs font-semibold text-blue-800 underline underline-offset-2"
                     aria-label={'Assign: ' + item.title}
@@ -155,7 +158,7 @@ export default function ProjectWorkRow({
                   && !['DONE', 'CANCELLED'].includes(item.status) && <span className="block text-xs text-rose-700">Overdue</span>}
               </td>
               <td className="p-3">
-                <ProjectWorkRowActions item={item} busy={busy} {...capabilities}
+                <ProjectWorkRowActions item={item} busy={busy} {...(capabilities || NO_ACTION_CAPABILITIES)}
                   onTransition={onTransition}
                   onComplete={onComplete}
                   onEdit={onEdit}
@@ -167,7 +170,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.3.0-DENY-BY-DEFAULT-REUSE
+// VERSION: v1.4.0-STRICT-CAPABILITY-BOOLEAN-GATES
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
