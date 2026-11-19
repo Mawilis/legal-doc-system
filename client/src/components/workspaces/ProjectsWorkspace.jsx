@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.32.0-GOVERNED-WILSY-AI-TEMPLATE-DRAFT
+ * VERSION: v2.33.0-OVERVIEW-JSX-STRUCTURE-REPAIR
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.33.0-OVERVIEW-JSX-STRUCTURE-REPAIR closes conditional
+ *          creator/owner badge expressions after removing internal title IDs;
+ *          restores valid JSX without re-exposing backend identities.
  * CHANGELOG: v2.32.0-GOVERNED-WILSY-AI-TEMPLATE-DRAFT uses the existing
  *          tenant-authorized WILSY AI reasoning endpoint to propose strictly
  *          validated edits to a reviewed template. Model output is staged
@@ -1740,7 +1743,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               >Generate and save code</button>}
             </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">
               {personLabel(detail.project.owner_principal_id)}
-              {detail.project.owner_principal_id && <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">Verified owner</small>
+              {detail.project.owner_principal_id && <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">Verified owner</small>}
             </dd><dt className="text-slate-500">Created by</dt><dd className="text-slate-900">
               {personLabel(detail.project.created_by_principal_id)}
               <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">Audited creator</small>
@@ -1855,7 +1858,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.32.0-GOVERNED-WILSY-AI-TEMPLATE-DRAFT
+// VERSION: v2.33.0-OVERVIEW-JSX-STRUCTURE-REPAIR
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
