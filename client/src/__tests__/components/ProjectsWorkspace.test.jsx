@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.31.1-SOURCE-REASSIGN-NOOP-CERT
+ * VERSION: v2.32.0-PENDING-WORK-TRANSITION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.32.0-PENDING-WORK-TRANSITION-CERT verifies immediate
+ *          pending feedback without premature task completion, then requires
+ *          authoritative readback to clear the pending presentation.
  * CHANGELOG: v2.31.1-SOURCE-REASSIGN-NOOP-CERT proves an assigned
  *          contributor is actionable and an unchanged selection cannot
  *          issue a no-op task revision through EOS.
@@ -771,7 +774,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(readCount).toBe(2));
     expect(checkbox).not.toBeChecked();
+    expect(screen.getByText('Updating to Done…')).toBeVisible();
     await act(async () => { releaseReadback(taskList(completedTask)); });
+    await waitFor(() => expect(screen.queryByText('Updating to Done…')).not.toBeInTheDocument());
     expect(await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
     })).toBeChecked();
@@ -1825,7 +1830,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.31.1-SOURCE-REASSIGN-NOOP-CERT
+ * VERSION: v2.32.0-PENDING-WORK-TRANSITION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
