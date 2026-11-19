@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.40.0-ASSIGN-VERSUS-EDIT-CAPABILITY-CERT
+ * VERSION: v2.41.0-VERIFIED-ASSIGNEE-AVATAR-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.41.0-VERIFIED-ASSIGNEE-AVATAR-CERT validates a compact name-derived
+ *          assignee identity marker and prohibits displaying backend IDs;
+ *          no principal name is invented when missing.
  * CHANGELOG: v2.40.0-ASSIGN-VERSUS-EDIT-CAPABILITY-CERT verifies that a signed
  *          exact-project canAssign response enables the dedicated assignment
  *          picker independently of the canEdit flag.
@@ -387,6 +390,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
 
+
+  it('shows a verified contributor identity marker without a backend ID', () => {
+    const item = { task_id: 'ptk-' + 'f'.repeat(48),
+      title: 'Named delivery', kind: 'TASK', status: 'IN_PROGRESS',
+      parent_task_id: null, due_date: null, depends_on: [],
+      assignee_principal_id: 'opaque-principal-123', description: '' };
+    const { container } = render(<table><tbody><ProjectWorkRow item={item}
+      todayISO="2026-11-19" assigneeName={() => 'Verified Contributor'}
+      capabilities={{}} onToggleSelect={vi.fn()} onOpen={vi.fn()}
+      onComplete={vi.fn()} onAssign={vi.fn()} onEdit={vi.fn()}
+      onTransition={vi.fn()} onAttachments={vi.fn()} onApprovals={vi.fn()}
+      onActivity={vi.fn()}/></tbody></table>);
+    expect(container.querySelector('[data-assignee-avatar]')).toHaveTextContent('VC');
+    expect(screen.getByText('Verified Contributor')).toBeVisible();
+    expect(screen.queryByText('opaque-principal-123')).not.toBeInTheDocument();
+  });
 
   it('fails closed when a reused Work Row receives an incomplete capability projection', () => {
     const item = { task_id: 'ptk-' + 'e'.repeat(48),
@@ -2016,7 +2035,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.40.0-ASSIGN-VERSUS-EDIT-CAPABILITY-CERT
+ * VERSION: v2.41.0-VERIFIED-ASSIGNEE-AVATAR-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
