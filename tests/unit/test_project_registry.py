@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH
+VERSION: v1.7.0-AUDITED-TARGET-REPLAY-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.7.0-AUDITED-TARGET-REPLAY-CERT certifies committed baseline
+  immutability, evidenced target-date amendments, replay stability and
+  divergence detection without downgrading source transaction semantics.
   v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH verifies profiled summary still validates every active exact-tenant aggregate, excludes archived/foreign rows and fails closed on corrupted records with no extra reads.
   v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH proves full 511-record exact-tenant owner filters are applied before pagination, preserve verified next offsets, exclude foreign principals and use a dedicated compound index.
   v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
@@ -198,25 +201,36 @@ def test_update_and_transition_advance_revision_and_audit(registry) -> None:
 
 
 def test_date_only_command_fingerprint_and_exact_replay(registry) -> None:
-    """Calendar edits persist as typed dates with deterministic command evidence."""
+    """Target date amendment is evidence-bound; baseline remains immutable."""
     store, _, events, session = registry
     _create(store, _project(), session, "create-1")
+    reason = "Replanned delivery after evidence-backed milestone assessment."
+    with pytest.raises(ProjectRegistryConflict, match="PROJECT_TARGET_CHANGE_REASON_REQUIRED"):
+        store.update(
+            tenant_id="tenant-a", project_id="project-001",
+            actor_principal_id="principal-a", expected_revision=1,
+            changes={"target_date": date(2026, 12, 10)},
+            idempotency_key="calendar-without-reason",
+            occurred_at=NOW + timedelta(seconds=1), session=session,
+        )
     changed = store.update(
         tenant_id="tenant-a", project_id="project-001",
         actor_principal_id="principal-a", expected_revision=1,
-        changes={"start_date": date(2026, 11, 18),
-                 "target_date": date(2026, 11, 20)},
+        changes={"target_date": date(2026, 12, 10)},
+        target_change_reason=reason,
         idempotency_key="calendar-1",
         occurred_at=NOW + timedelta(seconds=1), session=session,
     )
-    assert changed.start_date == date(2026, 11, 18)
-    assert changed.target_date == date(2026, 11, 20)
+    assert changed.start_date == date(2026, 11, 1)
+    assert changed.target_date == date(2026, 12, 10)
     assert changed.revision == 2
+    assert events.rows[-1]["target_change_reason"] == reason
+    assert store.list_events(tenant_id="tenant-a", project_id="project-001", session=session)[-1]["target_change_reason"] == reason
     replayed = store.update(
         tenant_id="tenant-a", project_id="project-001",
         actor_principal_id="principal-a", expected_revision=1,
-        changes={"start_date": date(2026, 11, 18),
-                 "target_date": date(2026, 11, 20)},
+        changes={"target_date": date(2026, 12, 10)},
+        target_change_reason=reason,
         idempotency_key="calendar-1",
         occurred_at=NOW + timedelta(seconds=2), session=session,
     )
@@ -226,7 +240,8 @@ def test_date_only_command_fingerprint_and_exact_replay(registry) -> None:
         store.update(
             tenant_id="tenant-a", project_id="project-001",
             actor_principal_id="principal-a", expected_revision=1,
-            changes={"start_date": date(2026, 11, 19)},
+            changes={"target_date": date(2026, 12, 11)},
+            target_change_reason=reason,
             idempotency_key="calendar-1",
             occurred_at=NOW + timedelta(seconds=3), session=session,
         )
@@ -450,7 +465,7 @@ def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH
+# VERSION: v1.7.0-AUDITED-TARGET-REPLAY-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required
