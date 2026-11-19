@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.0.0-EXACT-TENANT-PROJECT-PARTICIPATION
+ * VERSION: v1.1.0-SOURCE-NAMED-PARTICIPANTS
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,10 +8,14 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.1.0-SOURCE-NAMED-PARTICIPANTS presents exact-tenant
+ *          source-supplied first/last names ahead of opaque principal IDs,
+ *          validates optional name fields and improves form contrast and
+ *          keyboard accessibility without changing IAM or submission IDs.
  * CHANGELOG: v1.0.0-EXACT-TENANT-PROJECT-PARTICIPATION adds a choice-based,
  *          source-backed participant lifecycle, not an IAM/admission shortcut.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
- * SECURITY / PRIVACY POSTURE: Opaque principal IDs, no fake display names,
+ * SECURITY / PRIVACY POSTURE: Names only from EOS scoped projections; no fake names,
  *          employee details, raw tokens or inferred project permissions.
  * TENANT BOUNDARY: Each response validates exact tenant, principal and project.
  * AUTHORITY BOUNDARY: Project participation is never a substitute for current
@@ -54,9 +58,20 @@ function validOptions(data, { tenantId, principalId, projectId }, offset) {
     || !Array.isArray(data.items) || data.items.length > 50
     || typeof data.has_more !== 'boolean'
     || data.next_offset !== (data.has_more ? offset + 50 : null)
-    || data.items.some(item => typeof item.principal_id !== 'string' || !item.principal_id)
+    || data.items.some(item => typeof item.principal_id !== 'string' || !item.principal_id
+      || !['first_name', 'last_name'].every(field => item[field] === undefined
+        || item[field] === null || (typeof item[field] === 'string'
+          && item[field].trim() === item[field] && item[field].length > 0
+          && item[field].length <= 100)))
   ) throw new Error('PROJECT_PARTICIPANT_CHOICES_INVALID');
   return data;
+}
+
+/** Display-only source names; identity and commands continue using principal_id. */
+function optionName(person) {
+  const parts = [person.first_name, person.last_name].filter(value =>
+    typeof value === 'string' && value.trim());
+  return parts.length ? parts.join(' ') : null;
 }
 
 /** @description A source-owned project participant management surface. */
@@ -209,8 +224,9 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
           className="flex flex-wrap items-center justify-between gap-2 bg-white p-3">
           <div>
             <div className="flex items-center gap-2 font-semibold text-slate-900">
-              <ShieldCheck size={15}/> <span className="break-all">{item.principal_id}</span>
+              <ShieldCheck size={15}/> <span className="break-words">{optionName(choices.find(person => person.principal_id === item.principal_id) || {}) || 'Verified project participant'}</span>
             </div>
+            <p className="mt-1 break-all text-xs text-slate-600">Principal: {item.principal_id}</p>
             <p className="mt-1 text-xs text-slate-600">
               {item.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer'} · Revision {item.revision}
             </p>
@@ -230,26 +246,29 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50, optionOffset)}>Next participants</button>
       </nav>}
-      <form onSubmit={grant} className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(130px,.55fr)]">
-        <label className="block text-sm font-semibold text-slate-800">Eligible tenant member
+      <form onSubmit={grant} className="mt-4 grid gap-4 rounded-xl border border-slate-300 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.6fr)]">
+        <label className="block text-sm font-semibold text-slate-950">Eligible tenant member
           <select aria-label="Eligible participant" required value={selectedPrincipal}
             onChange={event => setSelectedPrincipal(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
-            <option value="">Select a verified member</option>
+            className="mt-2 min-h-12 w-full min-w-0 rounded-lg border border-slate-400 bg-white px-3 py-2.5 text-base font-medium text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            <option value="">Select a verified member by name</option>
             {choices.map(person =>
-              <option key={person.principal_id} value={person.principal_id}>{person.principal_id}</option>)}
+              <option key={person.principal_id} value={person.principal_id}>{optionName(person) || 'Verified member — name unavailable'}</option>)}
           </select>
+          {selectedPrincipal && <span className="mt-2 block break-all text-xs text-slate-600">
+            Source principal: {selectedPrincipal}
+          </span>}
         </label>
-        <label className="block text-sm font-semibold text-slate-800">Project role
+        <label className="block text-sm font-semibold text-slate-950">Project role
           <select aria-label="Project participation role" value={selectedRole}
             onChange={event => setSelectedRole(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
+            className="mt-2 min-h-12 w-full min-w-0 rounded-lg border border-slate-400 bg-white px-3 py-2.5 text-base font-medium text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
             <option value="CONTRIBUTOR">Contributor</option>
             <option value="VIEWER">Viewer</option>
           </select>
         </label>
         <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-600">
+          <div className="text-sm text-slate-700">
             Participation never grants IAM. The member must separately hold the matching role to access project work.
           </div>
           <button type="submit" disabled={busy || !selectedPrincipal}
@@ -270,7 +289,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.0.0-EXACT-TENANT-PROJECT-PARTICIPATION
+// VERSION: v1.1.0-SOURCE-NAMED-PARTICIPANTS
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
