@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.34.1-CONTEXTUAL-MENU-REGRESSION-CERT
+ * VERSION: v2.35.0-EOS-CAPABILITY-PROJECTION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.35.0-EOS-CAPABILITY-PROJECTION-CERT supplies only
+ *          synthetic exact-project capability records for existing work
+ *          journeys; no test fixture grants actual update authority.
  * CHANGELOG: v2.34.1-CONTEXTUAL-MENU-REGRESSION-CERT adapts
  *          existing task edit/activity journeys to desktop menu roles.
  * CHANGELOG: v2.34.0-CAPABILITY-AWARE-MENU-CERT pins desktop menu
@@ -281,11 +284,25 @@ const summary = (items, tenantId = TENANT, principalId = PRINCIPAL) => {
   return { schema: 'WILSY-PROJECT-SUMMARY/V1', tenant_id: tenantId, principal_id: principalId, counts };
 };
 
+// Synthetic EOS permission fixture: never a real grant or authenticated claim.
+const mockProjectGet = handler => api.get.mockImplementation((path, ...args) => {
+  if (typeof path === 'string' && path.endsWith('/task-action-capabilities')) {
+    const id = path.split('/')[2];
+    return Promise.resolve({ data: {
+      schema: 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1',
+      tenant_id: TENANT, principal_id: PRINCIPAL, project_id: id,
+      can_start: true, can_complete: true, can_block: true,
+      can_cancel: true, can_assign: true, can_edit: true,
+    } });
+  }
+  return handler(path, ...args);
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   let keySequence = 0;
   vi.stubGlobal('crypto', { randomUUID: vi.fn(() => `stable-project-key-${++keySequence}`) });
-  api.get.mockImplementation(async (path) => {
+  mockProjectGet(async (path) => {
     if (path === '/projects') return { data: list([]) };
     if (path === '/projects/summary') return { data: summary([]) };
     throw new Error(`Unexpected project GET ${path}`);
@@ -408,7 +425,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       title: 'My accountable delivery', assignee_principal_id: PRINCIPAL };
     const someoneElse = { ...base, task_id: 'ptk-' + 'b'.repeat(48),
       title: 'Other contributor delivery', assignee_principal_id: 'other-principal' };
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([source]) };
       if (path === '/projects/summary') return { data: summary([source]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
@@ -482,7 +499,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       project_id: 'prj-' + 'b'.repeat(48), name: 'Another team project',
       owner_principal_id: 'another-principal', code: 'OTHER',
     });
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([owned, another]) };
       if (path === '/projects?limit=100&offset=0&owned_by_me=true') {
         return { data: list([owned]) };
@@ -510,7 +527,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 
   it('opens participant-focused project execution without owner registry reads', async () => {
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects/my-projects?limit=50&offset=0') return { data: {
         schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
         tenant_id: TENANT, principal_id: PRINCIPAL,
@@ -536,7 +553,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       name: `Tenant project ${index + 1}`,
       code: `TEN-${index + 1}`,
     }));
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: { ...list(rows.slice(0, 100)), has_more: true, next_offset: 100 } };
       if (path === '/projects?limit=100&offset=100') return {
         data: { ...list(rows.slice(100)), limit: 100, offset: 100, has_more: false, next_offset: null },
@@ -564,7 +581,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       project_id: `prj-${(index + 1).toString(16).padStart(48, '0')}`,
       name: `Exact-page project ${index + 1}`,
     }));
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return {
         data: { ...list(rows), has_more: false, next_offset: null },
       };
@@ -585,7 +602,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       name: 'Verified active project',
       status: 'active',
     });
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return {
         data: { ...list([planned, active]), has_more: false, next_offset: null },
       };
@@ -623,7 +640,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     };
     let work = [];
     let commands = 0;
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -774,7 +791,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       principal_id: PRINCIPAL, project_id: PROJECT_ID,
       limit: 50, offset: 0, items: [item], has_more: false, next_offset: null,
     } });
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -848,7 +865,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       created_at: '2026-11-18T06:00:00+00:00',
       updated_at: '2026-11-18T06:00:00+00:00', fingerprint: 'a'.repeat(128),
     };
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -960,7 +977,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       created_at: '2026-11-18T06:00:00+00:00',
       updated_at: '2026-11-18T06:00:00+00:00', fingerprint: 'a'.repeat(128),
     };
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1030,7 +1047,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const persisted = project();
     const memberId = 'employee-' + 'b'.repeat(24);
     const namelessId = 'employee-' + 'c'.repeat(24);
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1081,7 +1098,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const milestone = { ...base, task_id: milestoneId, kind: 'MILESTONE',
       parent_task_id: null, title: 'Sign-off checkpoint' };
     let rows = [parent];
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1159,7 +1176,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   it('keeps automatic hexadecimal IDs out of the operating project list and header', async () => {
     const generated = 'PRJ-' + 'A'.repeat(16);
     const source = project({ name: 'Human-readable delivery', code: generated });
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([source]) };
       if (path === '/projects/summary') return { data: summary([source]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
@@ -1192,7 +1209,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       industry, title: industry + ' delivery', revision: 1, steps,
     }));
     let activated = false;
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list(activated ? [persisted] : []) };
       if (path === '/projects/summary') return { data: summary(activated ? [persisted] : []) };
       if (path === '/projects/templates') return { data: {
@@ -1261,7 +1278,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const industries = ['Legal', 'Construction', 'Football', 'Imports',
       'Software', 'Healthcare', 'General business'];
     let committed = false;
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list(committed ? [persisted] : []) };
       if (path === '/projects/summary') return { data: summary(committed ? [persisted] : []) };
       if (path === '/projects/templates') return { data: {
@@ -1314,7 +1331,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       depends_on: ['scope'] };
     const industries = ['Legal', 'Construction', 'Football', 'Imports',
       'Software', 'Healthcare', 'General business'];
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects' || path.startsWith('/projects?')) return { data: list([]) };
       if (path === '/projects/summary') return { data: summary([]) };
       if (path === '/projects/templates') return { data: {
@@ -1374,7 +1391,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       archived_at: null,
     };
     let notes = [];
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1429,7 +1446,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
   it('opens a Strategy-handoff project only after EOS lists it for the selected scope', async () => {
     const persisted = project({ name: 'WILSY OS — Unified Operating Platform Foundation' });
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1457,7 +1474,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       code: null, owner_principal_id: null, department_id: null, target_date: null,
       summary: 'Strategy reference (descriptive only).\\n**Project objective**\\nDeliver a real platform.\\n**Scope of execution**\\n1. **Unified identity:** Secure access.\\n**Definition of done**\\nConfirmed EOS result. '.repeat(4),
     });
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: list([source]) };
       if (path === '/projects/summary') return { data: summary([source]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
@@ -1486,7 +1503,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
   it('exposes native calendar pickers and preserves exact source-backed date drafts', async () => {
     const current = project({ name: 'Scheduled milestone', target_date: null });
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([current]) };
       if (path === '/projects/summary') return { data: summary([current]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(current) };
@@ -1525,7 +1542,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const ownerId = 'verified-owner';
     const departmentId = 'dept-' + 'b'.repeat(32);
     let current = project({ owner_principal_id: null, department_id: null });
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: list([current]) };
       if (path === '/projects/summary') return { data: summary([current]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(current) };
@@ -1579,7 +1596,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
   it('does not offer assignment when current owner and department directories are empty', async () => {
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: list([project()]) };
       if (path === '/projects/summary') return { data: summary([project()]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(project()) };
@@ -1609,7 +1626,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   it('generates a code for an existing legacy project and verifies EOS list/detail readback', async () => {
     let persisted = project({ code: null });
     const generated = 'PRJ-' + PROJECT_ID.slice(-16).toUpperCase();
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1639,7 +1656,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   it('creates, reads, updates, changes status, archives and reads back through EOS routes', async () => {
     let current = null;
     let events = [];
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') return { data: list(current && !current.archived_at ? [current] : []) };
       if (path === '/projects/summary') return { data: summary(current && !current.archived_at ? [current] : []) };
       if (path === `/projects/${PROJECT_ID}` && current && !current.archived_at) return { data: result(current, events) };
@@ -1714,7 +1731,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       event('PROJECT_CREATED', 1), event('PROJECT_UPDATED', 3),
       event('PROJECT_STATUS_TRANSITION', 4), event('PROJECT_UPDATED', 2),
     ];
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([current]) };
       if (path === '/projects/summary') return { data: summary([current]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(current, evidence) };
@@ -1737,7 +1754,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   it('reuses the same create idempotency key after an uncertain outcome and requires list/detail readback', async () => {
     let listReads = 0;
     let present = false;
-    api.get.mockImplementation(async (path) => {
+    mockProjectGet(async (path) => {
       if (path === '/projects') {
         listReads += 1;
         return { data: list(present && listReads >= 3 ? [project()] : []) };
@@ -1769,7 +1786,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
   it('keeps an independently verified project accessible when summary returns HTTP 503', async () => {
     const persisted = project();
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') throw Object.assign(new Error('temporary summary outage'), {
         response: { status: 503 },
@@ -1790,7 +1807,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const persisted = project();
     let rejectSummary;
     const delayed = new Promise((resolve, reject) => { rejectSummary = reject; });
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return delayed;
       if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
@@ -1814,7 +1831,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
   it('shows source-honest department and readable audit labels in project overview', async () => {
     const current = project({ department_id: 'dept-' + 'a'.repeat(32) });
-    api.get.mockImplementation(async path => {
+    mockProjectGet(async path => {
       if (path === '/projects') return { data: list([current]) };
       if (path === '/projects/summary') return { data: summary([current]) };
       if (path === `/projects/${PROJECT_ID}`) return { data: result(current) };
@@ -1832,7 +1849,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
   it('rejects a foreign tenant summary instead of presenting it as verified empty', async () => {
-    api.get.mockImplementation(async (path) => path === '/projects'
+    mockProjectGet(async (path) => path === '/projects'
       ? { data: list([]) }
       : { data: summary([], 'another-tenant') });
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="foreign-response-test"/>);
@@ -1855,7 +1872,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     let resolvePriorList;
     let listCalls = 0;
     const priorList = new Promise((resolve) => { resolvePriorList = resolve; });
-    api.get.mockImplementation(async (path, config = {}) => {
+    mockProjectGet(async (path, config = {}) => {
       if (path === '/projects') {
         listCalls += 1;
         if (listCalls === 1) return priorList;
@@ -1878,7 +1895,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.34.1-CONTEXTUAL-MENU-REGRESSION-CERT
+ * VERSION: v2.35.0-EOS-CAPABILITY-PROJECTION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
