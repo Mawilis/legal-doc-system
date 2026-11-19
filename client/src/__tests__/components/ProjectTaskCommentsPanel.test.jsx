@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.0.0-PROJECT-TASK-COMMENT-READBACK-CERT
+ * VERSION: v1.1.0-READ-FIRST-ACTIVITY-COMPOSER-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.1.0-READ-FIRST-ACTIVITY-COMPOSER-CERT certifies
+ *          read-first source activity, explicit Write update disclosure,
+ *          source-preserving comment publication and bounded mention counts.
  * CHANGELOG: v1.0.0-PROJECT-TASK-COMMENT-READBACK-CERT covers verified task
  *          comment read/write and no inferred notifications.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -81,6 +84,7 @@ it('publishes a comment and mention only after verified source list readback', a
     } };
   });
   mount();
+  fireEvent.click(await screen.findByRole('button', { name: 'Write update' }));
   const message = await screen.findByRole('textbox', { name: 'New task comment' });
   const mention = screen.getByRole('checkbox', { name: member });
   fireEvent.click(mention);
@@ -88,7 +92,7 @@ it('publishes a comment and mention only after verified source list readback', a
   fireEvent.click(screen.getByRole('button', { name: 'Publish to EOS' }));
   await waitFor(() => expect(screen.getByText('Please verify this dependency.')).toBeVisible());
   expect(api.post).toHaveBeenCalledTimes(1);
-  expect(screen.getByText('Mentioned: ' + member)).toBeVisible();
+  expect(screen.getByText('Mentions: 1 source references')).toBeVisible();
   expect(screen.getByText(/not a delivered notification/)).toBeVisible();
 });
 
@@ -107,7 +111,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.0.0-PROJECT-TASK-COMMENT-READBACK-CERT
+// VERSION: v1.1.0-READ-FIRST-ACTIVITY-COMPOSER-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
