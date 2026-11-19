@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.29.1-UNCERTAIN-TEMPLATE-OUTCOME-CERT
+ * VERSION: v2.30.0-FOCUSED-WORK-KEYBOARD-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.30.0-FOCUSED-WORK-KEYBOARD-CERT proves J/K focus,
+ *          A opens a bounded edit sheet, and no keyboard shortcut creates
+ *          an unauthorized work transition or completion attestation.
  * CHANGELOG: v2.29.1-UNCERTAIN-TEMPLATE-OUTCOME-CERT proves an ambiguous
  *          activation response prompts a source-based list inspection, not
  *          a duplicate POST or a fabricated saved/failed claim.
@@ -377,6 +380,19 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="project-my-work-page-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     const work = await screen.findByRole('region', { name: 'Verified project tasks' });
+    const rows = [...work.querySelectorAll('tbody tr[data-task-id]')];
+    expect(rows).toHaveLength(2);
+    rows[0].focus();
+    fireEvent.keyDown(rows[0], { key: 'j' });
+    expect(rows[1]).toHaveFocus();
+    fireEvent.keyDown(rows[1], { key: 'k' });
+    expect(rows[0]).toHaveFocus();
+    fireEvent.keyDown(rows[0], { key: 'c' });
+    expect(screen.queryByRole('dialog', { name: 'Confirm verified task completion' }))
+      .not.toBeInTheDocument();
+    fireEvent.keyDown(rows[0], { key: 'a' });
+    expect(screen.getByRole('dialog', { name: 'Edit work' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
     expect(within(work).getByText('My accountable delivery')).toBeVisible();
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'My work on this page' }));
@@ -1769,7 +1785,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.29.1-UNCERTAIN-TEMPLATE-OUTCOME-CERT
+ * VERSION: v2.30.0-FOCUSED-WORK-KEYBOARD-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
