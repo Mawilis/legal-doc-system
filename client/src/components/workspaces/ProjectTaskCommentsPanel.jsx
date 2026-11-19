@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.5.0-ONE-CLICK-DISCUSSION-READING
+ * VERSION: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE unifies
+ *          bounded verified comment pages and immutable task lifecycle event
+ *          pages in a newest-first activity display, with source-failure
+ *          separation and governed links to approvals and attachments.
+ *          No inferred events, unverified actors or fabricated totals.
  * CHANGELOG: v1.5.0-ONE-CLICK-DISCUSSION-READING makes a
  *          task's verified discussion immediately visible on Discuss, scrolls
  *          the selected conversation below fixed chrome, and moves the large
@@ -37,7 +42,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.5.0-ONE-CLICK-DISCUSSION-READING introduces task-threaded
+ * CHANGELOG: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -131,9 +136,12 @@ function MarkdownText({ value }) {
 /** @description Source-owned comments with explicit bounded mentions. */
 export default function ProjectTaskCommentsPanel({
   tenantId, projectId, principalId, taskId, participants,
-  tenantHeaders, onClose, participantMode = false,
+  tenantHeaders, onClose, participantMode = false, onViewApprovals, onViewAttachments,
 }) {
   const [items, setItems] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [eventState, setEventState] = useState('LOADING');
+  const [eventHasMore, setEventHasMore] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [body, setBody] = useState('');
   const [mentions, setMentions] = useState([]);
@@ -153,7 +161,42 @@ export default function ProjectTaskCommentsPanel({
   const route = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
     + encodeURIComponent(taskId) + '/comments';
+  const eventRoute = '/projects/' + encodeURIComponent(projectId)
+    + (participantMode ? '/my-project/tasks/' : '/tasks/')
+    + encodeURIComponent(taskId) + '/events';
   const headers = tenantHeaders || {};
+
+  const loadEvents = useCallback(async () => {
+    const active = scope;
+    setEventState('LOADING');
+    try {
+      const { data } = await api.get(eventRoute + '?limit=50&offset=0', { headers });
+      if (currentScope.current !== active) return;
+      if (data?.schema !== 'WILSY-PROJECT-TASK-EVENT-LIST/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId || data.task_id !== taskId
+        || data.limit !== 50 || data.offset !== 0 || typeof data.has_more !== 'boolean'
+        || !Array.isArray(data.items) || data.items.length > 50
+        || data.next_offset !== (data.has_more ? data.items.length : null)
+        || data.items.some(entry => entry.schema !== 'wilsy.project.task.event.v1'
+          || entry.tenant_id !== tenantId || entry.project_id !== projectId || entry.task_id !== taskId
+          || !Number.isSafeInteger(entry.revision) || entry.revision < 1
+          || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(entry.event_type)
+          || typeof entry.actor_principal_id !== 'string' || !entry.actor_principal_id
+          || typeof entry.occurred_at !== 'string' || !Number.isFinite(Date.parse(entry.occurred_at)))
+        || new Set(data.items.map(entry => entry.revision)).size !== data.items.length) {
+        throw new Error('TASK_ACTIVITY_SOURCE_INVALID');
+      }
+      setEvents(data.items);
+      setEventHasMore(data.has_more);
+      setEventState('READY');
+    } catch {
+      if (currentScope.current !== active) return;
+      setEvents([]);
+      setEventHasMore(false);
+      setEventState('UNAVAILABLE');
+    }
+  }, [scope, eventRoute, tenantHeaders, tenantId, principalId, projectId, taskId]);
 
   const load = useCallback(async (nextOffset = 0) => {
     const sequence = ++generation.current;
@@ -194,6 +237,9 @@ export default function ProjectTaskCommentsPanel({
   useEffect(() => {
     generation.current += 1;
     setItems([]);
+    setEvents([]);
+    setEventState('LOADING');
+    setEventHasMore(false);
     setShowComposer(false);
     navigatedScope.current = null;
     setBody('');
@@ -202,8 +248,9 @@ export default function ProjectTaskCommentsPanel({
     setHasMore(false);
     command.current = { fingerprint: '', key: '' };
     void load(0);
+    void loadEvents();
     return () => { generation.current += 1; };
-  }, [scope, load]);
+  }, [scope, load, loadEvents]);
 
   useEffect(() => {
     if (state !== 'READY' || navigatedScope.current === scope) return;
@@ -216,6 +263,22 @@ export default function ProjectTaskCommentsPanel({
       composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
     }
   }, [showComposer, state]);
+
+  const activity = [
+    ...items.map(item => ({
+      id: 'comment:' + item.comment_id, type: 'comment',
+      time: item.created_at, actor: item.author_principal_id, item,
+    })),
+    ...(eventState === 'READY' ? events.map(item => ({
+      id: 'event:' + item.revision, type: 'event',
+      time: item.occurred_at, actor: item.actor_principal_id, item,
+    })) : []),
+  ].sort((a, b) => (Date.parse(b.time) || 0) - (Date.parse(a.time) || 0)
+    || a.id.localeCompare(b.id));
+  const displayTime = value => Number.isFinite(Date.parse(value))
+    ? new Date(value).toLocaleString() : 'Timestamp not verified';
+  const displayActor = id => id === principalId ? 'You (authenticated author)'
+    : 'Verified principal · ' + String(id).slice(0, 12) + '…';
 
   const submit = async event => {
     event.preventDefault();
@@ -285,11 +348,11 @@ export default function ProjectTaskCommentsPanel({
     className="mt-4 scroll-mt-28 rounded-xl border border-blue-200 bg-slate-50 p-3">
     <div className="flex items-center justify-between gap-3">
       <h4 className="flex items-center gap-2 font-semibold text-slate-900">
-        <MessageSquare size={16}/> Task discussion
+        <MessageSquare size={16}/> Activity &amp; discussion
       </h4>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="wp-button" disabled={busy}
-          onClick={() => void load(offset)}><RefreshCw size={14}/> Refresh</button>
+          onClick={() => { void load(offset); void loadEvents(); }}><RefreshCw size={14}/> Refresh</button>
         <button type="button" className="wp-button" disabled={busy}
           onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>
       </div>
@@ -305,7 +368,7 @@ export default function ProjectTaskCommentsPanel({
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
         aria-label="Verified discussion availability">
         <div className="min-w-0">
-          <h5 className="text-sm font-semibold text-slate-900">Verified discussion · page {Math.floor(offset / 50) + 1}</h5>
+          <h5 className="text-sm font-semibold text-slate-900">Source-verified activity</h5>
           <p role="status" className="mt-1 text-xs text-slate-600">
             {items.length > 0
               ? items.length + (hasMore ? '+ verified comments on this page' : ' verified comments')
@@ -358,19 +421,43 @@ export default function ProjectTaskCommentsPanel({
       </form>
       </div>}
       <div id="verified-task-comment-history" aria-label="Verified task comment history">
-      <h5 className="mt-4 text-sm font-semibold text-slate-900">Verified discussion history · page {Math.floor(offset / 50) + 1}</h5>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <h5 className="text-sm font-semibold text-slate-900">Activity &amp; discussion · newest first</h5>
+        <div className="flex flex-wrap gap-2">
+          {typeof onViewApprovals === 'function' &&
+            <button type="button" className="wp-button" onClick={onViewApprovals}>Decisions &amp; approvals</button>}
+          {typeof onViewAttachments === 'function' &&
+            <button type="button" className="wp-button" onClick={onViewAttachments}>Attachments &amp; evidence</button>}
+        </div>
+      </div>
+      {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
+        Task lifecycle evidence is unavailable. Verified comments remain readable; no missing events are inferred.
+      </p>}
+      {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
+      <p className="mt-2 text-xs text-slate-600">Newest first across the current verified comment page and task-event page.
+        {hasMore || eventHasMore ? ' Additional source pages exist; this is not the complete history.' : ''}
+        {' '}Project Notes remain separate project-wide records.</p>
       <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-        {items.map(item => <li className="p-3 text-sm" key={item.comment_id}>
+        {activity.map(entry => <li className="p-3 text-sm" key={entry.id}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <strong className="break-all text-slate-800">{item.author_principal_id}</strong>
-            <time className="text-xs text-slate-500" dateTime={item.created_at}>{item.created_at}</time>
+            <strong className="break-words text-slate-900">
+              {entry.type === 'comment' ? 'Progress update / comment'
+                : entry.item.event_type === 'PROJECT_TASK_CREATED' ? 'Work created'
+                  : entry.item.event_type === 'PROJECT_TASK_REVISED' ? 'Work revised'
+                    : 'Lifecycle transition'}
+            </strong>
+            <time className="text-xs text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
           </div>
-          <div className="mt-2"><MarkdownText value={item.body}/></div>
-          {item.mentions.length > 0 &&
-            <p className="mt-1 break-words text-xs text-slate-600">Mentioned: {item.mentions.join(', ')}</p>}
+          <p className="mt-1 text-xs text-slate-600" title={entry.actor}>
+            By {displayActor(entry.actor)}
+            {entry.type === 'event' ? ' · revision ' + entry.item.revision : ''}
+          </p>
+          {entry.type === 'comment' && <div className="mt-2"><MarkdownText value={entry.item.body}/></div>}
+          {entry.type === 'comment' && entry.item.mentions.length > 0 &&
+            <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
         </li>)}
-        {items.length === 0 && <li className="p-4 text-sm text-slate-600">
-          No EOS comments for this task on this page.
+        {activity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
+          No EOS-verified activity is available on these pages.
         </li>}
       </ul>
       {(offset > 0 || hasMore) &&
@@ -389,7 +476,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.5.0-ONE-CLICK-DISCUSSION-READING
+// VERSION: v1.6.0-VERIFIED-TASK-ACTIVITY-TIMELINE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
