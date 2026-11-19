@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART
+ * VERSION: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION exposes a checkable
+ *          project To-do list backed entirely by existing EOS task/subtask
+ *          status transitions, explicit completion confirmation and live
+ *          source readback. A checkbox never creates local completion truth;
+ *          milestone progress and task evidence remain separate authorities.
  * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART replaces the decorative
  *          strip with accessible, filterable status bars and source-backed
  *          completed/open progress metrics. Every chart change follows the
@@ -26,16 +31,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART lets the
+ * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART opens a selected task's
+ * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART adds a
+ * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART adds source-backed
+ * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -189,6 +194,8 @@ export default function ProjectTasksPanel({
   const [workStatus, setWorkStatus] = useState('ALL');
   const [workKind, setWorkKind] = useState('ALL');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
+  const [completionCandidate, setCompletionCandidate] = useState(null);
+  const [completionAttested, setCompletionAttested] = useState(false);
   const [editor, setEditor] = useState(null);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
@@ -250,6 +257,8 @@ export default function ProjectTasksPanel({
     setWorkStatus('ALL');
     setWorkKind('ALL');
     setWorkOrder('DUE_ASC');
+    setCompletionCandidate(null);
+    setCompletionAttested(false);
     setEditor(null);
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
@@ -406,6 +415,21 @@ export default function ProjectTasksPanel({
     && !['DONE', 'CANCELLED'].includes(item.status)).length;
   const availableParents = items.filter(item => item.kind === 'TASK'
     && !['DONE', 'CANCELLED'].includes(item.status));
+  const todoRows = items.filter(item => item.kind === 'TASK'
+    && item.status !== 'CANCELLED');
+  const doneTodos = todoRows.filter(item => item.status === 'DONE').length;
+  const completingItem = todoRows.find(item => item.task_id === completionCandidate
+    && item.status === 'IN_PROGRESS');
+  useEffect(() => {
+    // Completion confirmation closes only when a fresh EOS page reports DONE,
+    // or when the selected record disappears from the authorized source page.
+    if (!completionCandidate || state !== 'READY') return;
+    const current = items.find(item => item.task_id === completionCandidate);
+    if (!current || current.status === 'DONE' || current.status === 'CANCELLED') {
+      setCompletionCandidate(null);
+      setCompletionAttested(false);
+    }
+  }, [completionCandidate, items, state]);
 
   return <section className="wp-project-tasks mt-5 border-t border-slate-200 pt-4" aria-label="Project work execution">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -474,6 +498,76 @@ export default function ProjectTasksPanel({
           {overdueOnPage > 0 ? overdueOnPage + ' overdue on this page.' : 'No overdue items on this page.'}
           {' '}Lifecycle actions update this chart only after a fresh verified EOS list read.
         </p>
+      </section>
+      <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4" aria-label="EOS verified To-do checklist">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">To-do checklist · current verified page</h4>
+            <p className="mt-1 text-xs text-slate-600">Each checkbox is an actual EOS task or subtask, not a browser-only checklist item. Work must be In progress before it can be completed.</p>
+          </div>
+          <span role="status" className="text-sm font-semibold tabular-nums text-slate-800">{doneTodos} of {todoRows.length} completed</span>
+        </div>
+        <div role="progressbar" aria-label="Verified To-do completion on this page"
+          aria-valuemin={0} aria-valuemax={todoRows.length || 1}
+          aria-valuenow={doneTodos}
+          aria-valuetext={doneTodos + ' of ' + todoRows.length + ' verified tasks completed'}
+          className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-emerald-700"
+            style={{ width: (todoRows.length ? 100 * doneTodos / todoRows.length : 0) + '%' }}/>
+        </div>
+        {todoRows.length === 0
+          ? <p className="mt-3 text-xs text-slate-600">No verified tasks or subtasks on this page. Create a task to begin a persisted checklist.</p>
+          : <ul className="mt-3 divide-y divide-slate-200" aria-label="Persisted project task checklist">
+            {todoRows.map(item => {
+              const complete = item.status === 'DONE';
+              const canComplete = item.status === 'IN_PROGRESS';
+              return <li key={item.task_id} className="flex flex-wrap items-center gap-3 py-3">
+                <label className="flex min-w-[200px] flex-1 items-start gap-3 text-sm text-slate-900">
+                  <input type="checkbox" className="mt-1 size-4 accent-emerald-700"
+                    aria-label={'Mark completed: ' + item.title}
+                    checked={complete} disabled={busy || !canComplete}
+                    onChange={() => {
+                      if (!canComplete) return;
+                      setCompletionCandidate(item.task_id);
+                      setCompletionAttested(false);
+                    }}/>
+                  <span className={complete ? 'text-slate-600 line-through' : ''}>
+                    <span className="block font-semibold">{item.title}</span>
+                    <span className="mt-0.5 block text-xs text-slate-600">{item.parent_task_id ? 'Subtask' : 'Task'} · {label(item.status)}{item.due_date ? ' · due ' + item.due_date : ''}</span>
+                  </span>
+                </label>
+                {item.status === 'TODO' && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                  disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Start work</button>}
+                {item.status === 'BLOCKED' && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                  disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Resume work</button>}
+                {canComplete && <span className="text-xs text-slate-600">Tick to verify completion</span>}
+                {complete && <span className="text-xs font-semibold text-emerald-800">EOS confirmed Done</span>}
+                <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+                  onClick={() => setDiscussionTaskId(item.task_id)}>Update notes</button>
+              </li>;
+            })}
+          </ul>}
+        {completingItem && <div role="group" aria-label="Confirm verified task completion"
+          className="mt-3 rounded-lg border border-blue-300 bg-blue-50 p-4">
+          <h5 className="text-sm font-bold text-slate-900">Confirm completion · {completingItem.title}</h5>
+          <p className="mt-2 text-xs text-slate-700">This is a terminal EOS lifecycle command. Verify acceptance and supporting evidence first; a checkbox alone does not certify evidence, an approval or a milestone.</p>
+          <label className="mt-3 flex items-start gap-2 text-sm text-slate-900">
+            <input type="checkbox" className="mt-1 size-4" checked={completionAttested}
+              onChange={event => setCompletionAttested(event.target.checked)}/>
+            <span>I reviewed this task's acceptance and supporting evidence.</span>
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="wp-button wp-button-primary" disabled={busy || !completionAttested}
+              onClick={() => transition(completingItem, 'DONE')}>Confirm Done in EOS</button>
+            <button type="button" className="wp-button" disabled={busy} onClick={() => {
+              setCompletionCandidate(null);
+              setCompletionAttested(false);
+            }}>Cancel</button>
+            <button type="button" className="wp-button" disabled={busy}
+              onClick={() => setAttachmentTaskId(completingItem.task_id)}>Review attachments</button>
+          </div>
+        </div>}
+        {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
         <label className="min-w-[180px] flex-[2] text-xs font-semibold text-slate-800">Search this verified page
@@ -737,7 +831,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART
+// VERSION: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
