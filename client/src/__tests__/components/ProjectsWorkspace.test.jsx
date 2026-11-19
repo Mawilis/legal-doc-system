@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.12.1-PARENT-BOUND-CHECKLIST-CERT
+ * VERSION: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies
+ *          focused discussion replacing the long work table and composer
+ *          preceding comment history; verifies sourced participant names and
+ *          unknown-name fallback without deriving identity from opaque IDs.
  * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies
  *          Add checklist step selects the EOS-verified active parent before
  *          submitting the existing idempotent task create command.
@@ -21,30 +25,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT proves a
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT adds in-place task
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies task creation, verified
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT waits for the committed note row
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies source-backed project note
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT proves navigation
+ * CHANGELOG: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -491,6 +495,94 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText('1 of 1 completed')).toBeVisible();
     expect(screen.queryByRole('group', { name: 'Confirm verified task completion' }))
       .not.toBeInTheDocument();
+  });
+
+  it('opens a focused EOS task discussion with composer before the history and restores the queue', async () => {
+    const persisted = project();
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const entry = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null,
+      title: 'Current project delivery', description: '',
+      status: 'TODO', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL,
+      updated_by_principal_id: PRINCIPAL, revision: 1,
+      created_at: '2026-11-18T06:00:00+00:00',
+      updated_at: '2026-11-18T06:00:00+00:00', fingerprint: 'a'.repeat(128),
+    };
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [entry], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [], limit: 100, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/comments?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId,
+        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected project GET ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="focused-discussion-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td span' });
+    fireEvent.click(screen.getByRole('button', { name: 'Discuss' }));
+    expect(await screen.findByRole('region', { name: 'Task discussion' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
+    const discussion = screen.getByRole('region', { name: 'Task discussion' });
+    expect(discussion.querySelector('textarea[aria-label="New task comment"]')).toBeVisible();
+    expect(discussion.querySelector('textarea').compareDocumentPosition(
+      discussion.querySelector('ul'),
+    ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to work queue' }));
+    expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
+  });
+
+  it('labels eligible exact-tenant participants using sourced names, not opaque IDs', async () => {
+    const persisted = project();
+    const memberId = 'employee-' + 'b'.repeat(24);
+    const namelessId = 'employee-' + 'c'.repeat(24);
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [
+          { principal_id: memberId, first_name: 'Alex', last_name: 'Mokoena' },
+          { principal_id: namelessId, first_name: null, last_name: null },
+        ], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected GET ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="verified-member-names-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'People' }));
+    const option = await screen.findByRole('option', { name: 'Alex Mokoena' });
+    expect(option).toHaveValue(memberId);
+    expect(screen.getByRole('option', { name: 'Verified member — name unavailable' }))
+      .toHaveValue(namelessId);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Eligible participant' }),
+      { target: { value: memberId } });
+    expect(screen.getByText('Source principal: ' + memberId)).toBeVisible();
   });
 
   it('operates real task, subtask and milestone commands from the verified work queue', async () => {
@@ -1029,7 +1121,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.12.1-PARENT-BOUND-CHECKLIST-CERT
+ * VERSION: v2.13.0-FOCUSED-ACTION-NAMED-MEMBER-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
