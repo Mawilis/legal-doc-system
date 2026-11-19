@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.15.0-DENSE-CONTEXTUAL-WORK-QUEUE
+ * VERSION: v1.16.0-WORK-EDIT-CONTEXT-SHEET
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.16.0-WORK-EDIT-CONTEXT-SHEET opens
+ *          task revision/assignment in a contextual, scroll-independent
+ *          responsive sheet; sourced contributor names replace opaque IDs
+ *          in selection while EOS continues to receive exact principal IDs.
  * CHANGELOG: v1.15.0-DENSE-CONTEXTUAL-WORK-QUEUE shortens row identity,
  *          moves long descriptions behind per-item disclosure, makes
  *          assignment an explicit action and uses only verified participant
@@ -799,7 +803,7 @@ export default function ProjectTasksPanel({
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
               <option value="">Unassigned</option>
               {participants.map(person => <option key={person.principal_id} value={person.principal_id}>
-                {person.principal_id}
+                {contributorName(person.principal_id)}
               </option>)}
             </select>
           </label>
@@ -840,8 +844,11 @@ export default function ProjectTasksPanel({
           <Plus size={14}/> Save work to EOS
         </button>
       </form>}
-      {editor && <form onSubmit={revise} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3"
-        aria-label="Edit project task">
+      {editor && <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 md:items-center md:p-5"
+        onClick={event => { if (event.target === event.currentTarget && !busy) setEditor(null); }}>
+        <div role="dialog" aria-modal="true" aria-label="Edit work"
+          className="max-h-[95vh] w-full overflow-y-auto rounded-t-xl bg-white p-4 shadow-2xl md:max-w-2xl md:rounded-xl">
+        <form onSubmit={revise} className="space-y-3" aria-label="Edit project task">
         <div className="flex items-center justify-between gap-2">
           <h4 className="text-sm font-bold text-slate-900">Edit source task · revision {editor.revision}</h4>
           <button type="button" disabled={busy} className="wp-button"
@@ -881,9 +888,11 @@ export default function ProjectTasksPanel({
           disabled={busy || !editor.title.trim() || Boolean(
             editor.assignee_principal_id && !participants.some(person =>
               person.principal_id === editor.assignee_principal_id))}>
-          Save audited task revision
+          Save changes to EOS
         </button>
-      </form>}
+        </form>
+        </div>
+      </div>}
       <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
         <table className="w-full min-w-[580px] border-collapse text-left text-sm">
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
@@ -980,7 +989,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.15.0-DENSE-CONTEXTUAL-WORK-QUEUE
+// VERSION: v1.16.0-WORK-EDIT-CONTEXT-SHEET
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
