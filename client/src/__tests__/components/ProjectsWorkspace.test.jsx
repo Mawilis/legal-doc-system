@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.18.0-ONE-CLICK-DISCUSSION-CERT
+ * VERSION: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies
+ *          the primary Discussions tab opens an EOS-verified task chooser
+ *          without rendering the work dashboard, and selected task comments
+ *          remain independently scoped to their canonical project/task.
  * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT verifies
  *          Discuss exposes EOS source-backed comments immediately with the
  *          composer closed, and Write update opens the safe Markdown editor
@@ -47,30 +51,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT proves a
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT adds in-place task
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies task creation, verified
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT waits for the committed note row
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies source-backed project note
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT proves navigation
+ * CHANGELOG: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -107,7 +111,7 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { within, act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn() }));
@@ -517,6 +521,56 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText('1 of 1 completed')).toBeVisible();
     expect(screen.queryByRole('group', { name: 'Confirm verified task completion' }))
       .not.toBeInTheDocument();
+  });
+
+  it('opens project Discussions from top navigation and reads the selected milestone without work dashboard', async () => {
+    const persisted = project();
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const entry = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null,
+      title: 'Current project delivery', description: '',
+      status: 'TODO', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL,
+      updated_by_principal_id: PRINCIPAL, revision: 1,
+      created_at: '2026-11-18T06:00:00+00:00',
+      updated_at: '2026-11-18T06:00:00+00:00', fingerprint: 'a'.repeat(128),
+    };
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [entry], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [], limit: 100, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/comments?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId,
+        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected project GET ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="top-level-discussions-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discussions' }));
+    expect(await screen.findByRole('region', { name: 'Project discussions workspace' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'EOS verified To-do checklist' })).not.toBeInTheDocument();
+    const options = await screen.findByRole('list', { name: 'Verified discussion work items' });
+    fireEvent.click(within(options).getByRole('button', { name: /Current project delivery/ }));
+    expect(await screen.findByRole('region', { name: 'Task discussion' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Write update' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByLabelText('Verified task comment history')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'All discussions' }));
+    expect(await screen.findByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
   });
 
   it('opens a focused EOS task discussion with composer before the history and restores the queue', async () => {
@@ -1230,7 +1284,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.18.0-ONE-CLICK-DISCUSSION-CERT
+ * VERSION: v2.19.0-TOP-LEVEL-DISCUSSIONS-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
