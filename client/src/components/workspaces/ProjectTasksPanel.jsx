@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.5.0-ACCESSIBLE-WORK-CALENDAR
+ * VERSION: v1.6.0-OPERATIONAL-WORK-QUEUE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,22 +8,27 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE exposes three EOS-supported workflows
+ *          (task, parent-bound subtask and milestone), validates a selectable
+ *          active parent, and adds current-page search, status/type filters,
+ *          due-date sorting and actionable overdue cues over verified EOS data.
+ *          No new domain kind, permission, or global portfolio count is inferred.
  * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR adds accessible calendar
  *          triggers and local quick dates to create/edit without changing
  *          EOS task authority, schemas, idempotency or source readback.
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR lets the
+ * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR opens a selected task's
+ * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR adds a
+ * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR adds source-backed
+ * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -35,7 +40,7 @@
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
  */
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
@@ -172,6 +177,11 @@ export default function ProjectTasksPanel({
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState({ ...EMPTY });
   const [creating, setCreating] = useState(false);
+  const [workType, setWorkType] = useState('TASK');
+  const [workQuery, setWorkQuery] = useState('');
+  const [workStatus, setWorkStatus] = useState('ALL');
+  const [workKind, setWorkKind] = useState('ALL');
+  const [workOrder, setWorkOrder] = useState('DUE_ASC');
   const [editor, setEditor] = useState(null);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
@@ -228,6 +238,11 @@ export default function ProjectTasksPanel({
     setOffset(0);
     setHasMore(false);
     setCreating(false);
+    setWorkType('TASK');
+    setWorkQuery('');
+    setWorkStatus('ALL');
+    setWorkKind('ALL');
+    setWorkOrder('DUE_ASC');
     setEditor(null);
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
@@ -287,12 +302,20 @@ export default function ProjectTasksPanel({
   const create = event => {
     event.preventDefault();
     const title = draft.title.trim();
-    if (!title || title.length > 180 || participantHasMore && draft.assignee_principal_id) return;
+    if (!title || title.length > 180 || (participantHasMore && draft.assignee_principal_id)) return;
+    const isSubtask = workType === 'SUBTASK';
+    const activeParent = items.some(item => item.task_id === draft.parent_task_id
+      && item.kind === 'TASK' && !['DONE', 'CANCELLED'].includes(item.status));
+    if (isSubtask && !activeParent) {
+      setError('Choose an active, EOS-verified parent task from the current page.');
+      return;
+    }
     const body = {
-      kind: draft.kind, title, description: draft.description.trim(),
+      kind: workType === 'MILESTONE' ? 'MILESTONE' : 'TASK',
+      title, description: draft.description.trim(),
       due_date: draft.due_date || null,
       assignee_principal_id: draft.assignee_principal_id || null,
-      parent_task_id: draft.kind === 'MILESTONE' ? null : draft.parent_task_id || null,
+      parent_task_id: isSubtask ? draft.parent_task_id : null,
       depends_on: draft.depends_on,
     };
     void execute(JSON.stringify(['create', body]), key =>
@@ -332,6 +355,36 @@ export default function ProjectTasksPanel({
     status, count: items.filter(item => item.status === status).length,
   }));
   const chartTotal = items.length;
+  // All operators below work only on the EOS-verified current page; nothing
+  // implies a global cross-page count, sort, search or hidden project record.
+  const workRows = useMemo(() => {
+    const term = workQuery.trim().toLocaleLowerCase();
+    const result = items.filter(item => {
+      const kind = item.kind === 'MILESTONE' ? 'MILESTONE'
+        : item.parent_task_id ? 'SUBTASK' : 'TASK';
+      return (workStatus === 'ALL' || item.status === workStatus)
+        && (workKind === 'ALL' || kind === workKind)
+        && (!term || [item.title, item.description, item.task_id]
+          .some(value => String(value || '').toLocaleLowerCase().includes(term)));
+    });
+    result.sort((a, b) => {
+      const dueOrder = (a.due_date === null) - (b.due_date === null)
+        || (a.due_date || '').localeCompare(b.due_date || '');
+      const titleOrder = a.title.localeCompare(b.title);
+      return (workOrder === 'DUE_DESC' ? -((a.due_date === null) - (b.due_date === null))
+        || -((a.due_date || '').localeCompare(b.due_date || ''))
+        : workOrder === 'TITLE_ASC' ? titleOrder : dueOrder)
+        || a.task_id.localeCompare(b.task_id);
+    });
+    return result;
+  }, [items, workQuery, workStatus, workKind, workOrder]);
+  const currentDay = new Date();
+  const todayISO = currentDay.getFullYear() + '-' + String(currentDay.getMonth() + 1).padStart(2, '0')
+    + '-' + String(currentDay.getDate()).padStart(2, '0');
+  const overdueOnPage = items.filter(item => item.due_date && item.due_date < todayISO
+    && !['DONE', 'CANCELLED'].includes(item.status)).length;
+  const availableParents = items.filter(item => item.kind === 'TASK'
+    && !['DONE', 'CANCELLED'].includes(item.status));
 
   return <section className="wp-project-tasks mt-5 border-t border-slate-200 pt-4" aria-label="Project work execution">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -376,27 +429,65 @@ export default function ProjectTasksPanel({
               })[status],
             }}/>)}
       </div>
-      <p className="mt-1 text-xs text-slate-500">Distribution covers this verified task page, not every project task.</p>
+      <p className="mt-1 text-xs text-slate-500">Distribution covers this verified task page, not every project task. {overdueOnPage > 0 ? overdueOnPage + ' overdue on this page.' : 'No overdue items on this page.'}</p>
+      <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
+        <label className="min-w-[180px] flex-[2] text-xs font-semibold text-slate-800">Search this verified page
+          <input type="search" value={workQuery} onChange={event => setWorkQuery(event.target.value)}
+            placeholder="Title, details or work ID"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+        </label>
+        <label className="min-w-[125px] flex-1 text-xs font-semibold text-slate-800">Status
+          <select aria-label="Filter work status" value={workStatus} onChange={event => setWorkStatus(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
+            <option value="ALL">All statuses</option>
+            {STATUSES.map(status => <option key={status} value={status}>{label(status)}</option>)}
+          </select>
+        </label>
+        <label className="min-w-[125px] flex-1 text-xs font-semibold text-slate-800">Work type
+          <select aria-label="Filter work type" value={workKind} onChange={event => setWorkKind(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
+            <option value="ALL">All types</option>
+            <option value="TASK">Tasks</option>
+            <option value="SUBTASK">Subtasks</option>
+            <option value="MILESTONE">Milestones</option>
+          </select>
+        </label>
+        <label className="min-w-[145px] flex-1 text-xs font-semibold text-slate-800">Sort page
+          <select aria-label="Sort work page" value={workOrder} onChange={event => setWorkOrder(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
+            <option value="DUE_ASC">Due soonest</option>
+            <option value="DUE_DESC">Due latest</option>
+            <option value="TITLE_ASC">Title A–Z</option>
+          </select>
+        </label>
+        <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
+      </div>
       {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
-        <p className="text-xs text-slate-600">{draft.kind === 'MILESTONE'
-          ? 'Milestone — define a delivery checkpoint and choose its target date.'
-          : 'Task — define accountable work, its due date and dependencies.'}</p>
+        <p className="text-xs text-slate-600">{workType === 'MILESTONE'
+          ? 'Milestone — a delivery checkpoint with a target date and accountable owner.'
+          : workType === 'SUBTASK'
+            ? 'Subtask — work linked to an active parent task; choose that parent below.'
+            : 'Task — top-level accountable work, its due date and dependencies.'}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-semibold text-slate-800">Work type
             <select className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"
-              value={draft.kind} onChange={event => setDraft(value => ({
-                ...value, kind: event.target.value,
-                parent_task_id: event.target.value === 'MILESTONE' ? '' : value.parent_task_id,
-              }))}>
-              <option value="TASK">Task or subtask</option>
+              value={workType} onChange={event => {
+                setWorkType(event.target.value);
+                setDraft(value => ({ ...value,
+                  kind: event.target.value === 'MILESTONE' ? 'MILESTONE' : 'TASK',
+                  parent_task_id: '',
+                }));
+              }}>
+              <option value="TASK">Task</option>
+              <option value="SUBTASK">Subtask — requires parent</option>
               <option value="MILESTONE">Milestone</option>
             </select>
           </label>
-          <ProjectWorkDateField label="Task due date" value={draft.due_date}
+          <ProjectWorkDateField label={workType === 'MILESTONE' ? 'Milestone target date' : 'Task due date'} value={draft.due_date}
             onChange={date => setDraft(previous => ({ ...previous, due_date: date }))}/>
         </div>
-        <label className="block text-sm font-semibold text-slate-800">Task title
+        <label className="block text-sm font-semibold text-slate-800">{workType === 'MILESTONE' ? 'Milestone title' : workType === 'SUBTASK' ? 'Subtask title' : 'Task title'}
           <input required maxLength={180} value={draft.title} onChange={event => setDraft(value => ({
             ...value, title: event.target.value,
           }))} placeholder="Deliverable and action" className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
@@ -417,14 +508,13 @@ export default function ProjectTasksPanel({
               </option>)}
             </select>
           </label>
-          <label className="block text-sm font-semibold text-slate-800">Parent task
-            <select aria-label="Parent task" disabled={draft.kind === 'MILESTONE'}
-              value={draft.kind === 'MILESTONE' ? '' : draft.parent_task_id}
+          <label className="block text-sm font-semibold text-slate-800">Parent task {workType === 'SUBTASK' ? '(required)' : '(not applicable)'}
+            <select aria-label="Parent task" required={workType === 'SUBTASK'} disabled={workType !== 'SUBTASK'}
+              value={workType === 'SUBTASK' ? draft.parent_task_id : ''}
               onChange={event => setDraft(value => ({ ...value, parent_task_id: event.target.value }))}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
               <option value="">Top-level work</option>
-              {items.filter(item => item.kind === 'TASK'
-                && !['DONE', 'CANCELLED'].includes(item.status)).map(item =>
+              {availableParents.map(item =>
                 <option key={item.task_id} value={item.task_id}>{item.title}</option>)}
             </select>
           </label>
@@ -447,8 +537,10 @@ export default function ProjectTasksPanel({
               </label>)}
           </div>
         </fieldset>
+        {workType === 'SUBTASK' && availableParents.length === 0 && <p role="status" className="text-xs text-amber-800">No eligible parent task is verified on this page. Create a top-level task or navigate to a page with an eligible parent.</p>}
         {participantHasMore && <p className="text-xs text-amber-800">Only the first verified participant page is selectable. Further assignments require a complete directory read.</p>}
-        <button type="submit" disabled={busy || !draft.title.trim()}
+        <button type="submit" disabled={busy || !draft.title.trim()
+          || (workType === 'SUBTASK' && !availableParents.some(item => item.task_id === draft.parent_task_id))}
           className="wp-button wp-button-primary">
           <Plus size={14}/> Save work to EOS
         </button>
@@ -505,7 +597,7 @@ export default function ProjectTasksPanel({
               <th scope="col" className="p-3">Lifecycle action</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {items.map(item => <tr key={item.task_id} data-task-id={item.task_id} className="bg-white align-top">
+            {workRows.map(item => <tr key={item.task_id} data-task-id={item.task_id} className="bg-white align-top">
               <td className="p-3"><div className="flex items-center gap-2 font-semibold text-slate-900">
                 {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
                 <span className="break-words">{item.title}</span></div>
@@ -517,7 +609,14 @@ export default function ProjectTasksPanel({
                 </div></td>
               <td className="p-3 text-slate-800">{label(item.status)}</td>
               <td className="break-all p-3 text-xs text-slate-700">{item.assignee_principal_id || 'Unassigned'}</td>
-              <td className="p-3 text-xs text-slate-700">{item.due_date || 'Not set'}</td>
+              <td className="p-3 text-xs text-slate-700">
+                <span className={item.due_date && item.due_date < todayISO
+                  && !['DONE', 'CANCELLED'].includes(item.status) ? 'font-semibold text-rose-700' : ''}>
+                  {item.due_date || 'Not set'}
+                </span>
+                {item.due_date && item.due_date < todayISO
+                  && !['DONE', 'CANCELLED'].includes(item.status) && <span className="block text-xs text-rose-700">Overdue</span>}
+              </td>
               <td className="p-3">
                 <div className="flex flex-wrap gap-1.5">
                   {TRANSITIONS[item.status].map(next =>
@@ -556,8 +655,9 @@ export default function ProjectTasksPanel({
                   {TRANSITIONS[item.status].length === 0 && <span className="text-xs text-slate-500">Terminal state</span>}
                 </div>
               </td></tr>)}
-            {items.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-sm text-slate-600">
-              EOS verified no tasks on this page. Create work to begin execution.
+            {workRows.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-sm text-slate-600">
+              {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
+                : 'No work items on this verified page match the selected search and filters.'}
             </td></tr>}
           </tbody>
         </table>
@@ -592,7 +692,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.5.0-ACCESSIBLE-WORK-CALENDAR
+// VERSION: v1.6.0-OPERATIONAL-WORK-QUEUE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
