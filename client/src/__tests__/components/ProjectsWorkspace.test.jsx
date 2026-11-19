@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.43.0-COMPACT-DENSITY-STRUCTURAL-CERT
+ * VERSION: v2.44.0-HUMAN-OVERVIEW-AND-IDENTITY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.44.0-HUMAN-OVERVIEW-AND-IDENTITY-CERT pins readable department names,
+ *          capitalized status and suppression of opaque principal IDs in
+ *          operating views; verifies source-verified assignment display.
  * CHANGELOG: v2.43.0-COMPACT-DENSITY-STRUCTURAL-CERT checks compact rows hide
  *          expanded detail disclosures and bound action controls to
  *          preserve the 44px density target.
@@ -1253,7 +1256,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       .toHaveValue(namelessId);
     fireEvent.change(screen.getByRole('combobox', { name: 'Eligible participant' }),
       { target: { value: memberId } });
-    expect(screen.getByText('Source principal: ' + memberId)).toBeVisible();
+    expect(screen.queryByText('Source principal: ' + memberId)).not.toBeInTheDocument();
   });
 
   it('operates real task, subtask and milestone commands from the verified work queue', async () => {
@@ -1763,9 +1766,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await waitFor(() => {
       expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
       expect(screen.getByText('Verified Creator')).toBeInTheDocument();
-      expect(screen.getByText('Assigned · name not yet verified')).toHaveAttribute(
-        'title', departmentId,
-      );
+      expect(screen.getByText('Platform Engineering')).toBeVisible();
       expect(screen.queryByText(departmentId)).not.toBeInTheDocument();
     });
     expect(current.status).toBe('planned');
@@ -2018,9 +2019,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="readable-overview-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Overview' }));
-    expect(await screen.findByText('Assigned · name not yet verified')).toHaveAttribute(
-      'title', current.department_id,
-    );
+    expect(await screen.findByText('Assigned department · name unavailable')).toBeVisible();
     expect(screen.getByText('Audited creator')).toHaveClass('text-slate-800');
     expect(screen.queryByText(current.department_id)).not.toBeInTheDocument();
   });
@@ -2072,7 +2071,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.43.0-COMPACT-DENSITY-STRUCTURAL-CERT
+ * VERSION: v2.44.0-HUMAN-OVERVIEW-AND-IDENTITY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
