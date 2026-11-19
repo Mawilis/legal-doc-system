@@ -627,12 +627,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setSourceState((current) => current === 'READY' || current === 'STALE' ? 'REFRESHING' : 'LOADING');
     setSummary(null);
     setError('');
+    let listFailed = false;
     try {
       // Portfolio aggregation is independent of the authorized project page.
       // A healthy /projects response must not wait on a slower /summary.
       // Both results retain their own exact session scope checks.
       let summaryFailure = null;
-      let listFailed = false;
       void api.get('/projects/summary', { headers: tenantHeaders }).then(response => {
         if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
         setSummary(assertProjectSummary(response?.data, tenantId, principalId));
@@ -689,6 +689,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       }
       return { items: nextItems };
     } catch (cause) {
+      listFailed = true;
       if (sequence !== listSequence.current || activeScope.current !== requestScope) return null;
       setSummary(null);
       const code = classifyFailure(cause);
