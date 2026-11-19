@@ -638,7 +638,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="focused-discussion-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td span' });
-    fireEvent.click(screen.getByRole('button', { name: 'Activity & discussion' }));
+    fireEvent.click(within(screen.getByRole('row', { name: /Current project delivery/ }))
+      .getByRole('button', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Task discussion' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
