@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.38.0-ISOLATED-CANCEL-DIALOG-CERT
+ * VERSION: v2.39.0-STRICT-ROW-CAPABILITY-BOOLEAN-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.39.0-STRICT-ROW-CAPABILITY-BOOLEAN-CERT certifies that missing row
+ *          capability flags never expose assignment or lifecycle actions,
+ *          even when callbacks are supplied by a reused consumer.
  * CHANGELOG: v2.38.0-ISOLATED-CANCEL-DIALOG-CERT verifies cancel confirmation is a
  *          separately focused modal, not a stacked menu, and requires
  *          explicit confirmation before any EOS transition callback.
@@ -239,6 +242,7 @@ vi.mock('../../services/api.js', () => ({ default: api }));
 
 import ProjectsWorkspace from '../../components/workspaces/ProjectsWorkspace.jsx';
 import ProjectWorkRowActions from '../../components/workspaces/ProjectWorkRowActions.jsx';
+import ProjectWorkRow from '../../components/workspaces/ProjectWorkRow.jsx';
 
 const TENANT = 'projects-cert-tenant';
 const PRINCIPAL = 'projects-cert-principal';
@@ -380,6 +384,26 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
 
+
+  it('fails closed when a reused Work Row receives an incomplete capability projection', () => {
+    const item = { task_id: 'ptk-' + 'e'.repeat(48),
+      title: 'Restricted source work', kind: 'TASK', status: 'TODO',
+      parent_task_id: null, due_date: null, depends_on: [],
+      assignee_principal_id: null, description: '' };
+    const onAssign = vi.fn();
+    render(<table><tbody><ProjectWorkRow item={item} todayISO="2026-11-19"
+      assigneeName={() => 'Verified contributor'} capabilities={{}}
+      onAssign={onAssign} onToggleSelect={vi.fn()} onOpen={vi.fn()}
+      onComplete={vi.fn()} onEdit={vi.fn()} onTransition={vi.fn()}
+      onAttachments={vi.fn()} onActivity={vi.fn()} onApprovals={vi.fn()}/></tbody></table>);
+    expect(screen.queryByRole('button', { name: 'Assign: Restricted source work' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start: Restricted source work' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More actions for Restricted source work' }))
+      .toBeDisabled();
+    expect(onAssign).not.toHaveBeenCalled();
+  });
 
   it('denies every action by default for an unadmitted reusable Work Row caller', () => {
     const item = { task_id: 'ptk-' + 'e'.repeat(48),
@@ -1939,7 +1963,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.38.0-ISOLATED-CANCEL-DIALOG-CERT
+ * VERSION: v2.39.0-STRICT-ROW-CAPABILITY-BOOLEAN-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
