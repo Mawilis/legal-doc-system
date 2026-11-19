@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.20.0-CONTRIBUTOR-ASSIGNMENT-SHEET
+ * VERSION: v1.20.1-INLINE-REASSIGN-CONTROL
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.20.1-INLINE-REASSIGN-CONTROL makes the current
+ *          contributor an action for active work and prevents no-op
+ *          assignment revisions without altering source ownership semantics.
  * CHANGELOG: v1.20.0-CONTRIBUTOR-ASSIGNMENT-SHEET lets Assign/Reassign
  *          open a compact contributor picker instead of the entire editor,
  *          preserving exact-project authorization and revisioned EOS readback.
@@ -946,7 +949,9 @@ export default function ProjectTasksPanel({
         <button type="submit" className="wp-button wp-button-primary"
           disabled={busy || !editor.title.trim() || Boolean(
             editor.assignee_principal_id && !participants.some(person =>
-              person.principal_id === editor.assignee_principal_id))}>
+              person.principal_id === editor.assignee_principal_id))
+            || (assignmentOnly && (editor.assignee_principal_id || null)
+              === (items.find(item => item.task_id === editor.task_id)?.assignee_principal_id || null))}>
           {assignmentOnly ? 'Save assignment' : 'Save changes to EOS'}
         </button>
         </form>
@@ -1009,9 +1014,16 @@ export default function ProjectTasksPanel({
               </td>
               <td className="p-3 text-slate-800">{label(item.status)}</td>
               <td className="p-3 text-xs text-slate-700">
-                {item.assignee_principal_id ? <span title="Verified exact-project contributor">
-                  {contributorName(item.assignee_principal_id)}
-                </span> : ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
+                {item.assignee_principal_id
+                  ? ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
+                    ? <button type="button" disabled={busy}
+                      aria-label={'Reassign: ' + item.title}
+                      className="text-xs font-semibold text-blue-800 underline underline-offset-2"
+                      onClick={() => openTaskEditor(item, true)}>
+                      {contributorName(item.assignee_principal_id)}
+                    </button>
+                    : <span title="Verified exact-project contributor">{contributorName(item.assignee_principal_id)}</span>
+                  : ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
                   <button type="button" disabled={busy}
                     className="text-xs font-semibold text-blue-800 underline underline-offset-2"
                     aria-label={'Assign: ' + item.title}
@@ -1138,7 +1150,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.20.0-CONTRIBUTOR-ASSIGNMENT-SHEET
+// VERSION: v1.20.1-INLINE-REASSIGN-CONTROL
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
