@@ -534,12 +534,12 @@ export default function ProjectTaskCommentsPanel({
           Other verified activity remains readable; missing records are not inferred.
         </p>}
             {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
-        Task lifecycle evidence is unavailable. Verified comments remain readable; no missing events are inferred.
+        Task lifecycle evidence is unavailable. Other verified activity remains readable; no missing events are inferred.
       </p>}
       {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
         <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
       {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
-      <p className="mt-2 text-xs text-slate-600">Newest first across the two current verified source pages.
+      <p className="mt-2 text-xs text-slate-600">Newest first across the currently verified source pages; totals are not inferred.
         {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
           ? ' Additional source pages exist; this is not the complete history.' : ''}
         {' '}Project Notes remain separate project-wide records.</p>
