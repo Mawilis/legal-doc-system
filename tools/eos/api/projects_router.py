@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.35.0-STRICT-COMMENT-WIRE-MENTIONS
+VERSION: v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,18 +30,21 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS accepts bounded JSON arrays of string
+  v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ adds separately authorized,
+  bounded owner and active-participant task event reads exposing immutable
+  lifecycle evidence without replay tokens, command digests or snapshots.
+  v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ accepts bounded JSON arrays of string
   mentioned principal IDs as strict typed tuples at task comment admission;
   no domain permission, notification, idempotency or audit semantics change.
-  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS bounds People name
+  v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ bounds People name
   projection to one exact-tenant users query per verified option page;
   duplicate or cross-identity collisions fail closed. Names never grant IAM
   and missing names stay null, without per-option name query amplification.
-  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS enriches already-eligible exact-tenant
+  v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ enriches already-eligible exact-tenant
   participant choices with source-verified display-only first/last names;
   unknown names remain null, never inferred from IDs or emails. No IAM,
   membership scope, grant/revoke, ordering or pagination change.
-  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS also converts JSON dependency arrays to strict typed tuples
+  v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ also converts JSON dependency arrays to strict typed tuples
   only when every element remains a string; malformed values, lengths and
   dependency IDs retain strict/domain rejection. No IAM or task mutations change.
   v1.33.0-STRICT-TASK-DATE-WIRE-FIX normalizes only canonical YYYY-MM-DD task create and
@@ -2595,6 +2598,61 @@ def decide_project_task_approval(
     return _transaction(context, write, write=True)
 
 
+def _task_activity_page(
+    context: TenantAuthorizationContext, registry: ProjectRegistry,
+    project_id: str, task_id: str, session: Any, limit: int, offset: int,
+) -> dict[str, object]:
+    source = _project_task_store(registry, context.tenant_id, project_id, session)
+    events, more = source.list_event_page(
+        tenant_id=context.tenant_id, project_id=project_id,
+        task_id=task_id, session=session, limit=limit, offset=offset,
+    )
+    return {
+        "schema": "WILSY-PROJECT-TASK-EVENT-LIST/V1",
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "project_id": project_id, "task_id": task_id,
+        "items": list(events), "limit": limit, "offset": offset,
+        "has_more": more,
+        "next_offset": offset + len(events) if more else None,
+    }
+
+
+@router.get("/{project_id}/tasks/{task_id}/events")
+def list_owner_task_events(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Read immutable exact-task events through owner Projects detail IAM."""
+    response.headers["Cache-Control"] = "no-store"
+    return _transaction(context, lambda registry, session: _task_activity_page(
+        context, registry, project_id, task_id, session, limit, offset,
+    ))
+
+
+@router.get("/{project_id}/my-project/tasks/{task_id}/events")
+def list_participant_task_events(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_DETAIL),
+) -> dict[str, object]:
+    """Verify current participation before exposing scoped task events."""
+    response.headers["Cache-Control"] = "no-store"
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        _require_current_project_participation(context, registry, project_id, session)
+        return _task_activity_page(
+            context, registry, project_id, task_id, session, limit, offset,
+        )
+    return _transaction(context, read)
+
+
 @router.get("/{project_id}/tasks/{task_id}/comments")
 def list_owner_task_comments(
     response: Response,
@@ -3555,7 +3613,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.35.0-STRICT-COMMENT-WIRE-MENTIONS
+# VERSION: v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
