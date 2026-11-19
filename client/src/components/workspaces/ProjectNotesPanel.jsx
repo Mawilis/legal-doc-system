@@ -145,6 +145,8 @@ export default function ProjectNotesPanel({
     setDraft('');
     setDraftColour('yellow');
     setEditor(null);
+    setShowComposer(false);
+    setArchiveTarget(null);
     setError('');
     commandKey.current = { fingerprint: '', key: null };
     void readPage(0);
@@ -185,6 +187,8 @@ export default function ProjectNotesPanel({
       setDraft('');
       setDraftColour('yellow');
       setEditor(null);
+      setShowComposer(false);
+      setArchiveTarget(null);
     } catch (cause) {
       if (currentScope.current !== originalScope) return;
       const code = cause?.response?.status;
