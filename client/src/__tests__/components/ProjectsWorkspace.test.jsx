@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.42.0-CALENDAR-DUE-ROW-PHRASE-CERT
+ * VERSION: v2.43.0-COMPACT-DENSITY-STRUCTURAL-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.43.0-COMPACT-DENSITY-STRUCTURAL-CERT checks compact rows hide
+ *          expanded detail disclosures and bound action controls to
+ *          preserve the 44px density target.
  * CHANGELOG: v2.42.0-CALENDAR-DUE-ROW-PHRASE-CERT pins short date-only
  *          Work Row due phrases including today, tomorrow and overdue;
  *          the original EOS ISO date remains available as metadata.
@@ -393,6 +396,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
 
+
+  it('uses compact work row structure without expanding secondary content', () => {
+    const item = { task_id: 'ptk-' + 'f'.repeat(48),
+      title: 'Compact deliverable', kind: 'TASK', status: 'TODO',
+      parent_task_id: null, due_date: '2026-11-19', depends_on: [],
+      assignee_principal_id: null, description: 'Long source-backed details' };
+    const { container } = render(<table><tbody><ProjectWorkRow item={item}
+      density="compact" todayISO="2026-11-19" capabilities={{}}
+      onOpen={vi.fn()} onToggleSelect={vi.fn()}/></tbody></table>);
+    const row = container.querySelector('tr[data-task-id]');
+    expect(row).toHaveClass('h-11');
+    expect(row.querySelector('details')).toBeNull();
+    expect(row.querySelector('.hidden')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'More actions for Compact deliverable' }))
+      .toHaveClass('min-h-9');
+  });
 
   it('renders due today, tomorrow and overdue without rewriting the source dates', () => {
     const dates = ['2026-11-19', '2026-11-20', '2026-11-17'];
@@ -2053,7 +2072,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.42.0-CALENDAR-DUE-ROW-PHRASE-CERT
+ * VERSION: v2.43.0-COMPACT-DENSITY-STRUCTURAL-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
