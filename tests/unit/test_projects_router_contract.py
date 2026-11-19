@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT
+VERSION: v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT certifies all seventeen
+  platform blueprint DAGs through the existing atomic project test suite.
   v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT pins an
   exact-project update-authorized read-only capability endpoint and confirms
   zero IAM/grant mutations at this boundary.
@@ -424,7 +426,7 @@ def test_industry_template_activation_certificate_in_projects_ci(monkeypatch) ->
 
     spec = Path(__file__).with_name("test_project_template_activation.py")
     checks = run_path(str(spec))
-    checks["test_seven_reviewed_industry_blueprints_are_detached_and_topologically_valid"]()
+    checks["test_seventeen_reviewed_industry_blueprints_are_detached_and_topologically_valid"]()
     checks["test_atomic_template_activation_uses_exact_unassigned_records_and_replay"](monkeypatch)
     checks["test_template_activation_denies_unbound_actor_and_stale_revision"]()
 
@@ -1179,7 +1181,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT
+# VERSION: v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
