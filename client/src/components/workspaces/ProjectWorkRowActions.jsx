@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.5.0-ISOLATED-DESTRUCTIVE-CONFIRMATION
+ * VERSION: v1.6.0-VIEWPORT-AWARE-MENU-PLACEMENT
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.6.0-VIEWPORT-AWARE-MENU-PLACEMENT positions the
+ *          desktop menu below or above its trigger using available
+ *          viewport space rather than a fixed 345px estimate, with
+ *          bounded scroll and Alt+ArrowDown support.
  * CHANGELOG: v1.5.0-ISOLATED-DESTRUCTIVE-CONFIRMATION dismisses
  *          action menus before opening a separate modal cancel confirmation;
  *          Escape/backdrop/Keep never issue a command, and focus is returned
@@ -143,9 +147,13 @@ export default function ProjectWorkRowActions({
         className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
         onClick={event => {
           const bounds = event.currentTarget.getBoundingClientRect();
+          const height = Math.min(320, Math.max(112, 96 + 48 * actions.length));
+          const below = bounds.bottom + 5;
+          const above = bounds.top - height - 5;
           setAnchor({
-            top: Math.max(8, Math.min(window.innerHeight - 345, bounds.bottom + 5)),
-            left: Math.max(8, Math.min(window.innerWidth - 258, Math.max(8, bounds.right - 240))),
+            top: below + height <= window.innerHeight - 8
+              ? below : Math.max(8, above),
+            left: Math.max(8, Math.min(window.innerWidth - 248, bounds.right - 240)),
           });
           setOpen(old => !old);
         }}
@@ -163,7 +171,7 @@ export default function ProjectWorkRowActions({
         <div role={typeof window !== 'undefined' && window.innerWidth < 768 ? 'dialog' : 'menu'}
           aria-modal={typeof window !== 'undefined' && window.innerWidth < 768 ? 'true' : undefined} ref={panel}
           aria-label={'Actions for ' + item.title}
-          className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-2xl md:inset-x-auto md:bottom-auto md:w-60 md:rounded-xl md:border md:border-slate-200"
+          className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-2xl md:inset-x-auto md:bottom-auto md:max-h-80 md:w-60 md:rounded-xl md:border md:border-slate-200"
           style={typeof window === 'undefined' || window.innerWidth < 768
             ? undefined : { top: Math.max(8, anchor.top), left: anchor.left }}
           onKeyDown={event => {
@@ -242,7 +250,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.5.0-ISOLATED-DESTRUCTIVE-CONFIRMATION
+// VERSION: v1.6.0-VIEWPORT-AWARE-MENU-PLACEMENT
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
