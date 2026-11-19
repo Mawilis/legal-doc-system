@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION
+ * VERSION: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION corrects
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION corrects
  *          date-only template activation admission to exactly ten characters
  *          and numeric YYYY-MM-DD groups; Python EOS still strictly parses
  *          and authorizes actual due-date semantics.
@@ -53,34 +53,38 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION opens
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION opens the
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION separates successful EOS template activation from
+ *          independent list/detail reconciliation. An accepted project is
+ *          never represented as a failed save merely because readback is
+ *          slow or unavailable; no second write is initiated automatically.
  * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts the independently source-backed
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts independently source-backed note
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION exposes readable title-case
+ *            v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -620,6 +624,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [selectedTemplateSlug, setSelectedTemplateSlug] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [templateStart, setTemplateStart] = useState('');
+  const [templateReconciliation, setTemplateReconciliation] = useState(null);
   const templateSequence = useRef(0);
   const [showAssignedProjects, setShowAssignedProjects] = useState(
     Boolean(focusAssignedProjectId && /^prj-[0-9a-f]{48}$/.test(focusAssignedProjectId)),
@@ -782,6 +787,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setSelectedTemplateSlug('');
     setTemplateName('');
     setTemplateStart('');
+    setTemplateReconciliation(null);
     setDraft(EMPTY_DRAFT);
     createReplay.current = { fingerprint: '', key: null };
     setQuery('');
@@ -928,16 +934,36 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 
   const selectedTemplate = templates.find(item => item.slug === selectedTemplateSlug);
 
+  const reconcileTemplateActivation = async (persisted) => {
+    // POST already committed the template. A transient list/detail failure is
+    // strictly readback-unavailable, never a failed activation or a retry cue.
+    const projection = await refresh({ preserveSelection: false });
+    const row = projection?.items.find(item => item.project_id === persisted.project_id
+      && item.tenant_id === tenantId && item.revision >= persisted.revision);
+    if (!row) {
+      setTemplateReconciliation(previous => previous?.project_id === persisted.project_id
+        ? { ...previous, state: 'READBACK_PENDING' } : previous);
+      return;
+    }
+    const opened = await openProject(persisted.project_id);
+    setTemplateReconciliation(previous => previous?.project_id === persisted.project_id
+      ? { ...previous, state: opened ? 'VERIFIED' : 'READBACK_PENDING' } : previous);
+  };
+
   const activateTemplate = async (event) => {
     event.preventDefault();
     if (templateState !== 'READY' || !selectedTemplate || !templateName.trim()
-      || !/[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(templateStart) || templateStart.length !== 10) {
-      setTemplateError('Select a verified template, enter a name and choose a start date.');
+      || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(templateStart)) {
+      setTemplateError('Choose a verified template, enter a project name and select a start date.');
       return;
     }
-    const body = { name: templateName.trim(),
-      template_revision: selectedTemplate.revision, start_date: templateStart };
-    const successful = await runCommand(async () => {
+    const body = {
+      name: templateName.trim(),
+      template_revision: selectedTemplate.revision,
+      start_date: templateStart,
+    };
+    let persisted = null;
+    const accepted = await runCommand(async () => {
       const response = await api.post(
         '/projects/templates/' + encodeURIComponent(selectedTemplate.slug) + '/activate',
         body, { headers: {
@@ -955,26 +981,35 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         || data.authority?.auto_assignments !== false
         || data.authority?.financial_execution !== false
         || !Array.isArray(data.items) || data.items.length !== selectedTemplate.steps.length
-        || !data.project?.project_id) {
+        || !data.project?.project_id
+        || data.items.some(item => !item || typeof item.task_id !== 'string'
+          || !/^ptk-[a-f0-9]{48}$/.test(item.task_id))) {
         throw new Error('PROJECT_TEMPLATE_ACTIVATION_SOURCE_INVALID');
       }
-      const created = assertProjectResult({
-        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: tenantId,
-        principal_id: principalId, project: data.project,
-        events: [], authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+      // Reuse the authoritative project shape validator, but do not fabricate
+      // audit events: the activation response supplies an independently
+      // verified project snapshot, and project detail owns event readback.
+      persisted = assertProjectResult({
+        schema: 'WILSY-PROJECT-RESULT/V1',
+        tenant_id: tenantId, principal_id: principalId, project: data.project,
+        events: [], authority: {
+          source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false,
+        },
       }, tenantId, principalId).project;
-      const projection = await refresh({ preserveSelection: false });
-      if (!projection?.items.some(item => item.project_id === created.project_id
-        && item.tenant_id === tenantId && item.revision === created.revision)) {
-        throw new Error('PROJECT_TEMPLATE_NOT_IN_AUTHORIZED_PROJECTION');
-      }
-      if (!await openProject(created.project_id)) {
-        throw new Error('PROJECT_TEMPLATE_DETAIL_READBACK_UNAVAILABLE');
-      }
-      createReplay.current = { fingerprint: '', key: null };
-      setMode('LIST');
     });
-    if (!successful) setMode('TEMPLATE');
+    if (!accepted || !persisted) return;
+    setTemplateReconciliation({
+      project_id: persisted.project_id,
+      name: persisted.name,
+      code: persisted.code,
+      state: 'READBACK_PENDING',
+    });
+    setMode('LIST');
+    setTemplateError('');
+    createReplay.current = { fingerprint: '', key: null };
+    // Do not throw from the independent readback. An EOS-committed project must
+    // never be displayed as "saving failed" because the browser lost its read.
+    await reconcileTemplateActivation(persisted);
   };
 
   const submitCreate = async (event) => {
@@ -1194,6 +1229,23 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           </div>
         </section>
       )}
+      {templateReconciliation && <div role="status"
+        className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 px-2 py-2 text-sm text-slate-800">
+        <span>{templateReconciliation.state === 'VERIFIED'
+          ? 'Project and work verified in EOS: '
+          : 'EOS accepted the project and work. Independent list/detail verification is pending: '}
+          <strong>{templateReconciliation.name}</strong></span>
+        {templateReconciliation.state !== 'VERIFIED' &&
+          <button type="button" className="wp-button" onClick={() => void (async () => {
+            const response = await refresh({ preserveSelection: false });
+            const row = response?.items.find(item => item.project_id === templateReconciliation.project_id);
+            if (row) {
+              const opened = await openProject(row.project_id);
+              if (opened) setTemplateReconciliation(previous =>
+                previous?.project_id === row.project_id ? { ...previous, state: 'VERIFIED' } : previous);
+            }
+          })()}>Verify project</button>}
+      </div>}
       {sourceState === 'LOADING' && <div role="status" className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><LoaderCircle className="mr-2 inline animate-spin" size={15}/>Loading authorized Projects from EOS…</div>}
       {sourceState === 'DENIED' && <div role="alert" data-project-state="DENIED" className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"><ShieldCheck className="mr-2 inline" size={16}/>{error === 'AUTHENTICATION_REQUIRED' ? 'Your session needs reauthentication before Projects can be read.' : error === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects product entitlement is required for this tenant.' : 'EOS denied Projects access for this principal and selected tenant. No project records or counts are shown.'}</div>}
       {sourceState === 'UNAVAILABLE' && <div role="alert" data-project-state="UNAVAILABLE" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><span><CircleAlert className="mr-2 inline" size={16}/>{error === 'AUTHENTICATED_TENANT_REQUIRED' ? 'A verified tenant session is required.' : 'The EOS Projects source is unavailable. No empty result is inferred.'}</span><button type="button" onClick={() => void refresh()} className="rounded-md border border-amber-400 px-3 py-2 font-semibold">Retry</button></div>}
@@ -1481,7 +1533,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION
+// VERSION: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
