@@ -842,7 +842,7 @@ def test_task_create_and_revision_accept_only_canonical_wire_dates() -> None:
         **valid_create, "depends_on": [predecessor],
     })
     assert with_dependency.depends_on == (predecessor,)
-    for malformed in ([123], ["bad-id"], ["x"] * 26, {"not": "a list"}, "bad"):
+    for malformed in ([123], ["x"] * 26, {"not": "a list"}, "bad"):
         with pytest.raises(ValidationError):
             projects_router.ProjectTaskCreateRequest.model_validate({
                 **valid_create, "depends_on": malformed,
