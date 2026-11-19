@@ -4,7 +4,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS canonical Kennel database lifecycle and opt-in timing boundary.
 
 TITLE: WILSY OS Sovereign Kennel Database Anchor
-VERSION: v2.7.0-DEV-POOL-STREAMING-HEARTBEAT
+VERSION: v2.7.1-POOL-OPTION-RESTORATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns the sole EOS MongoClient lifecycle and canonical database binding;
          optionally observes request-scoped pool and command timings.
@@ -13,6 +13,10 @@ COLLABORATION / OWNERSHIP: EOS runtime owns connection startup and shutdown;
                            AuthRegistry supplies validated timing context only.
 CERTIFICATION / UPDATE DATE: 2026-11-19
 CHANGELOG:
+  v2.7.1-POOL-OPTION-RESTORATION — Restores actual source line breaks so
+    minPoolSize is passed to MongoClient: zero outside production and ten in
+    production. This is a configuration delivery fix only; no changes to TLS,
+    tenant authority, retries, timeouts or the heartbeat filter.
   v2.7.0-DEV-POOL-STREAMING-HEARTBEAT — Avoids forced minimum connection
     replenishment only outside production, while retaining production pool
     settings. Filters successful awaited streaming heartbeat durations from
@@ -614,7 +618,9 @@ def connect_db(force_reconnect=False):
         'socketTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SOCKET_TIMEOUT_MS', 45000)),
         'serverSelectionTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SERVER_SELECTION_MS', 5000)),
         'maxPoolSize': 50,
-        # Hotspot development: do not continuously replenish ten sockets per\n        # server when connectivity is unstable; production retains its baseline.\n        'minPoolSize': 10 if _is_production_environment() else 0,
+        # Hotspot development: do not continuously replenish ten sockets per
+        # server when connectivity is unstable; production retains its baseline.
+        'minPoolSize': 10 if _is_production_environment() else 0,
         'maxIdleTimeMS': 60000,
         'retryWrites': True,
         'retryReads': True,
@@ -740,7 +746,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.7.0-DEV-POOL-STREAMING-HEARTBEAT
+# VERSION: v2.7.1-POOL-OPTION-RESTORATION
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.
