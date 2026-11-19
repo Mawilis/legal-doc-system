@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Notes Workspace
- * VERSION: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES
+ * VERSION: v1.2.0-CONTEXTUAL-GOVERNED-NOTES
  * AUTHORITY: Authenticated Python EOS Projects note API exclusively.
  * EPITOME: In-project note list, author-owned create/revise/archive, source
  *          readback and explicit denial/unavailable states, without local truth.
@@ -8,8 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts this presentation;
  *          api.js transports exact session and Python EOS owns all commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-CONTEXTUAL-GOVERNED-NOTES moves note editing into its own note, collapses
+ *          the composer by default, uses compact labelled icon actions and
+ *          discrete colour swatches, and keeps revision metadata out of
+ *          everyday note presentation while preserving source CAS and audit.
  * CHANGELOG: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES renders responsive high-contrast source-backed sticky cards and author-selected persisted colours, preserving CAS, tenant validation and legacy colourless notes.
- * CHANGELOG: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES establishes one governed
+ * CHANGELOG: v1.2.0-CONTEXTUAL-GOVERNED-NOTES establishes one governed
  *          collaborative note surface with preserved idempotency across retry.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes note text; no HTML/Markdown
@@ -21,7 +25,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Notes have no financial authority; Kennel EOS only.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FileText, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
+import { FileText, LoaderCircle, Plus, RefreshCw, Pencil, Archive, X, Check } from 'lucide-react';
 import api from '../../services/api.js';
 
 const IDENTIFIER = /^pnt-[0-9a-f]{48}$/;
@@ -40,20 +44,16 @@ const knownColour = value => value == null ? 'yellow'
 
 function StickyColourPicker({ colour, onChange, label }) {
   return <fieldset className="mt-3">
-    <legend className="mb-2 text-sm font-semibold text-slate-900">{label}</legend>
+    <legend className="mb-2 text-xs font-semibold text-slate-700">{label}</legend>
     <div role="group" aria-label={label} className="flex flex-wrap gap-2">
       {Object.entries(PALETTE).map(([value, presentation]) =>
         <button type="button" key={value} onClick={() => onChange(value)}
           aria-label={presentation.label + ' sticky-note colour'}
-          aria-pressed={colour === value}
-          title={presentation.label}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs font-semibold text-slate-900"
+          aria-pressed={colour === value} title={presentation.label}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
           style={{ background: presentation.background,
-            borderColor: colour === value ? '#173b73' : presentation.border,
-            boxShadow: colour === value ? '0 0 0 2px #ffffff inset' : 'none',
-          }}>
-          <span aria-hidden="true">{colour === value ? '✓' : '○'}</span>
-          {presentation.label}
+            borderColor: colour === value ? '#173b73' : presentation.border }}>
+          {colour === value && <Check size={16} strokeWidth={3} aria-hidden="true" className="text-slate-900"/>}
         </button>)}
     </div>
   </fieldset>;
@@ -78,6 +78,8 @@ export default function ProjectNotesPanel({
   const [draft, setDraft] = useState('');
   const [draftColour, setDraftColour] = useState('yellow');
   const [editor, setEditor] = useState(null);
+  const [showComposer, setShowComposer] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState(null);
   const [busy, setBusy] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -241,56 +243,81 @@ export default function ProjectNotesPanel({
     {state === 'UNAVAILABLE' && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {state === 'READY' && <>
       {items.length === 0 && <p className="mt-3 text-sm text-slate-600">No verified notes on this page.</p>}
-      <ul className="wp-notes-list mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Project sticky notes board">
+      <ul className="wp-notes-list mt-4 grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Project sticky notes board">
         {items.map(item => <li key={item.note_id}
-          className="min-w-0 rounded-xl border p-4 shadow-sm"
+          className="group min-w-0 rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md"
           style={{ background: PALETTE[knownColour(item.colour)].background,
             borderColor: PALETTE[knownColour(item.colour)].border }}>
-          <p className="mb-2 text-xs font-bold uppercase tracking-normal text-slate-800">
-            {PALETTE[knownColour(item.colour)].label} note
-          </p>
-          <div className="flex items-center gap-2"><FileText size={15} className="text-blue-700"/>
-            <span className="min-w-0 break-all text-xs text-slate-600">{item.author_principal_id}</span>
-            <span className="ml-auto text-xs text-slate-500">Revision {item.revision}</span>
+          <div className="flex items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+              <FileText size={14} aria-hidden="true"/>
+              {item.author_principal_id === principalId ? 'Your note' : 'Shared project note'}
+            </p>
+            {item.author_principal_id === principalId && <div className="flex items-center gap-1">
+              <button type="button" disabled={busy}
+                aria-label="Edit project note" title="Edit note"
+                className="rounded-md p-2 text-slate-800 hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => { setArchiveTarget(null); setEditor({
+                  note_id: item.note_id, revision: item.revision, body: item.body,
+                  colour: knownColour(item.colour),
+                }); }}><Pencil size={16}/></button>
+              <button type="button" disabled={busy}
+                aria-label="Archive project note" title="Archive note"
+                className="rounded-md p-2 text-slate-800 hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => { setEditor(null); setArchiveTarget(item.note_id); }}><Archive size={16}/></button>
+            </div>}
           </div>
-          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">{item.body}</p>
-          {item.author_principal_id === principalId && <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" disabled={busy} className="wp-button"
-              onClick={() => setEditor({
-                note_id: item.note_id, revision: item.revision, body: item.body,
-                colour: knownColour(item.colour),
-              })}>Edit note</button>
-            <button type="button" disabled={busy} className="wp-button wp-button-danger"
-              onClick={() => archive(item)}>Archive note</button>
+          {editor?.note_id === item.note_id ? <form onSubmit={revise} className="mt-3 space-y-3">
+            <label className="sr-only" htmlFor={'edit-note-' + item.note_id}>Edit your note</label>
+            <textarea id={'edit-note-' + item.note_id} aria-label="Edit note text"
+              value={editor.body} maxLength={10000} rows={5}
+              onChange={event => setEditor(value => ({ ...value, body: event.target.value }))}
+              className="w-full rounded-lg border border-slate-400 bg-white p-3 text-sm text-slate-900"/>
+            <StickyColourPicker label="Note colour" colour={editor.colour}
+              onChange={colour => setEditor(previous => ({ ...previous, colour }))}/>
+            <div className="flex flex-wrap gap-2">
+              <button type="submit" className="wp-button wp-button-primary" disabled={busy || !editor.body.trim()}>
+                <Check size={15}/> Save changes</button>
+              <button type="button" className="wp-button" disabled={busy} onClick={() => setEditor(null)}>
+                <X size={15}/> Cancel</button>
+            </div>
+          </form> : <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-900">{item.body}</p>}
+          {archiveTarget === item.note_id && <div role="group" aria-label="Confirm note archive"
+            className="mt-3 rounded-lg border border-rose-300 bg-white/85 p-3">
+            <p className="text-sm font-semibold text-slate-900">Archive this note?</p>
+            <p className="mt-1 text-xs text-slate-700">It will leave the active notes board. EOS retains its audit evidence.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" disabled={busy} className="wp-button wp-button-danger"
+                onClick={() => archive(item)}>Confirm archive</button>
+              <button type="button" disabled={busy} className="wp-button"
+                onClick={() => setArchiveTarget(null)}>Keep note</button>
+            </div>
           </div>}
         </li>)}
       </ul>
-      {editor && <form onSubmit={revise} className="mt-3 rounded-xl border border-slate-200 p-3">
-        <label className="block text-sm font-semibold text-slate-800">Edit your note
-          <textarea aria-label="Edit note text" value={editor.body} maxLength={10000} rows={4}
-            onChange={event => setEditor(value => ({ ...value, body: event.target.value }))}
-            className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm font-normal text-slate-900"/>
-        </label>
-        <StickyColourPicker label="Edit sticky-note colour" colour={editor.colour}
-          onChange={colour => setEditor(previous => ({ ...previous, colour }))}/>
-        <div className="mt-2 flex gap-2">
-          <button className="wp-button wp-button-primary" type="submit" disabled={busy || !editor.body.trim()}>Save note revision</button>
-          <button className="wp-button" type="button" disabled={busy} onClick={() => setEditor(null)}>Cancel</button>
-        </div>
-      </form>}
-      <form onSubmit={add} className="mt-4 border-t border-slate-200 pt-3">
-        <label className="block text-sm font-semibold text-slate-800">Add a note
-          <textarea value={draft} onChange={event => setDraft(event.target.value)}
-            aria-label="New project note" rows={3} maxLength={10000}
-            placeholder="Record context, observations, and project discussion…"
-            className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm font-normal text-slate-900"/>
-        </label>
-        <StickyColourPicker label="Choose sticky-note colour" colour={draftColour}
-          onChange={setDraftColour}/>
-        <button type="submit" disabled={busy || !draft.trim()} className="wp-button wp-button-primary mt-3">
-          <Plus size={15}/> Add note to EOS
-        </button>
-      </form>
+      <div className="mt-5 border-t border-slate-200 pt-4">
+        {!showComposer && <button type="button" className="wp-button wp-button-primary"
+          aria-expanded={false} onClick={() => setShowComposer(true)}>
+          <Plus size={16}/> New note
+        </button>}
+        {showComposer && <form onSubmit={add} className="max-w-3xl rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h4 className="text-sm font-semibold text-slate-900">New project note</h4>
+            <button type="button" className="rounded-md p-2 text-slate-700 hover:bg-slate-200"
+              aria-label="Close note composer" disabled={busy}
+              onClick={() => setShowComposer(false)}><X size={16}/></button>
+          </div>
+          <label className="sr-only" htmlFor="new-project-note">Note text</label>
+          <textarea id="new-project-note" value={draft} onChange={event => setDraft(event.target.value)}
+            aria-label="New project note" rows={4} maxLength={10000}
+            placeholder="Record useful project-wide context…"
+            className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm font-normal text-slate-900"/>
+          <StickyColourPicker label="Note colour" colour={draftColour} onChange={setDraftColour}/>
+          <button type="submit" disabled={busy || !draft.trim()} className="wp-button wp-button-primary mt-3">
+            <Plus size={15}/> Save note
+          </button>
+        </form>}
+      </div>
       {(hasMore || offset > 0) && <nav aria-label="Project note pages" className="mt-3 flex items-center justify-between gap-2">
         <button type="button" className="wp-button" disabled={busy || offset === 0}
           onClick={() => void readPage(Math.max(0, offset - 50))}>Previous notes</button>
@@ -304,7 +331,7 @@ export default function ProjectNotesPanel({
 }
 
 // ARTIFACT: ProjectNotesPanel.jsx
-// VERSION: v1.1.0-SOURCE-OWNED-COLOUR-STICKY-NOTES
+// VERSION: v1.2.0-CONTEXTUAL-GOVERNED-NOTES
 // AUTHORITY BOUNDARY: EOS-validated source-backed project note reads/commands only
 // TENANT POSTURE: exact tenant, principal, project and author, no fallback scope
 // FAIL-CLOSED POSTURE: invalid responses, authorization and unavailable reads deny
