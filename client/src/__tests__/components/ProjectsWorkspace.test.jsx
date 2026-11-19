@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.41.0-VERIFIED-ASSIGNEE-AVATAR-CERT
+ * VERSION: v2.42.0-CALENDAR-DUE-ROW-PHRASE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.42.0-CALENDAR-DUE-ROW-PHRASE-CERT pins short date-only
+ *          Work Row due phrases including today, tomorrow and overdue;
+ *          the original EOS ISO date remains available as metadata.
  * CHANGELOG: v2.41.0-VERIFIED-ASSIGNEE-AVATAR-CERT validates a compact name-derived
  *          assignee identity marker and prohibits displaying backend IDs;
  *          no principal name is invented when missing.
@@ -390,6 +393,21 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
 
+
+  it('renders due today, tomorrow and overdue without rewriting the source dates', () => {
+    const dates = ['2026-11-19', '2026-11-20', '2026-11-17'];
+    render(<table><tbody>{dates.map((dueDate, index) =>
+      <ProjectWorkRow key={dueDate} item={{
+        task_id: 'ptk-' + String(index + 1).repeat(48),
+        title: 'Due phrase ' + (index + 1), kind: 'TASK', status: 'TODO',
+        parent_task_id: null, due_date: dueDate, depends_on: [],
+        assignee_principal_id: null, description: '',
+      }} todayISO="2026-11-19" capabilities={{}}
+      onOpen={vi.fn()} onToggleSelect={vi.fn()}/>)}</tbody></table>);
+    expect(screen.getByText('Due today')).toHaveAttribute('title', dates[0]);
+    expect(screen.getByText('Due tomorrow')).toHaveAttribute('title', dates[1]);
+    expect(screen.getByText('Overdue 2 days')).toHaveAttribute('title', dates[2]);
+  });
 
   it('shows a verified contributor identity marker without a backend ID', () => {
     const item = { task_id: 'ptk-' + 'f'.repeat(48),
@@ -2035,7 +2053,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.41.0-VERIFIED-ASSIGNEE-AVATAR-CERT
+ * VERSION: v2.42.0-CALENDAR-DUE-ROW-PHRASE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
