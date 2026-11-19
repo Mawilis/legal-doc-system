@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.16.1-MILESTONE-COMPLETION-ATTESTATION
+ * VERSION: v1.17.0-SELECTED-WORK-CONTEXT-DRAWER
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.17.0-SELECTED-WORK-CONTEXT-DRAWER makes
+ *          every verified work row directly open a focused, responsive
+ *          task detail drawer, with one source truth and governed contextual
+ *          actions. Esc restores focus; long content no longer fills rows.
  * CHANGELOG: v1.16.1-MILESTONE-COMPLETION-ATTESTATION routes
  *          both task and milestone primary Complete actions through
  *          the same explicit acceptance attestation and EOS readback.
@@ -235,6 +239,9 @@ export default function ProjectTasksPanel({
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
+  const [drawerTaskId, setDrawerTaskId] = useState(null);
+  const drawerReturnFocus = useRef(null);
+  const drawerRef = useRef(null);
   const [editor, setEditor] = useState(null);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
@@ -299,6 +306,7 @@ export default function ProjectTasksPanel({
     setCompletionCandidate(null);
     setCompletionAttested(false);
     setEditor(null);
+    setDrawerTaskId(null);
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
     setAttachmentTaskId(null);
@@ -488,6 +496,24 @@ export default function ProjectTasksPanel({
     }
   }, [completionCandidate, items, state]);
 
+  const drawerTask = items.find(item => item.task_id === drawerTaskId);
+  const closeDrawer = () => {
+    setDrawerTaskId(null);
+    drawerReturnFocus.current?.focus?.();
+  };
+  useEffect(() => {
+    if (!drawerTaskId) return undefined;
+    const keyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setDrawerTaskId(null);
+        drawerReturnFocus.current?.focus?.();
+      }
+    };
+    window.addEventListener('keydown', keyDown);
+    drawerRef.current?.querySelector('button')?.focus();
+    return () => window.removeEventListener('keydown', keyDown);
+  }, [drawerTaskId]);
   const focusedAction = discussionTaskId ? { id: discussionTaskId, type: 'discussion' }
     : approvalTaskId ? { id: approvalTaskId, type: 'approvals' }
       : attachmentTaskId ? { id: attachmentTaskId, type: 'attachments' } : null;
@@ -904,7 +930,21 @@ export default function ProjectTasksPanel({
               <th scope="col" className="p-3">Next action</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {workRows.map(item => <tr key={item.task_id} data-task-id={item.task_id} className="bg-white align-top">
+            {workRows.map(item => <tr key={item.task_id} data-task-id={item.task_id}
+              aria-label={'Open work details: ' + item.title}
+              tabIndex={0}
+              onClick={event => {
+                if (event.target.closest('button, a, input, select, textarea, details, summary')) return;
+                drawerReturnFocus.current = event.currentTarget;
+                setDrawerTaskId(item.task_id);
+              }}
+              onKeyDown={event => {
+                if (event.target !== event.currentTarget || event.key !== 'Enter') return;
+                event.preventDefault();
+                drawerReturnFocus.current = event.currentTarget;
+                setDrawerTaskId(item.task_id);
+              }}
+              className="cursor-pointer bg-white align-top hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
               <td className="p-3">
                 <div className="flex items-center gap-2 font-semibold text-slate-900">
                   {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
@@ -979,6 +1019,64 @@ export default function ProjectTasksPanel({
               onClick={() => setAttachmentTaskId(completingItem.task_id)}>Review attachments</button>
           </div>
         </div>}
+      {drawerTask && <div className="fixed inset-0 z-[85] bg-slate-950/35"
+        onClick={event => { if (event.target === event.currentTarget) closeDrawer(); }}>
+        <aside role="dialog" aria-modal="true"
+          aria-label={'Work details: ' + drawerTask.title} ref={drawerRef}
+          className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col overflow-auto border-l border-slate-200 bg-white p-5 shadow-2xl md:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <p className="text-xs font-semibold text-slate-600">
+              {drawerTask.kind === 'MILESTONE' ? 'Milestone'
+                : drawerTask.parent_task_id ? 'Subtask' : 'Task'}
+            </p>
+            <button type="button" onClick={closeDrawer}
+              className="wp-button" aria-label="Close work details">Close</button>
+          </div>
+          <h3 className="text-xl font-bold text-slate-950">{drawerTask.title}</h3>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-800">
+            <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold">{label(drawerTask.status)}</span>
+            <span>{drawerTask.due_date ? 'Due ' + drawerTask.due_date : 'No due date'}</span>
+            {drawerTask.assignee_principal_id
+              ? <span>{contributorName(drawerTask.assignee_principal_id)}</span>
+              : <span>Not assigned</span>}
+          </div>
+          <section className="mt-6 border-t border-slate-200 pt-4">
+            <h4 className="text-sm font-bold text-slate-900">Description</h4>
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
+              {drawerTask.description || 'No description recorded'}
+            </p>
+          </section>
+          <section className="mt-5 border-t border-slate-200 pt-4">
+            <h4 className="text-sm font-bold text-slate-900">Dependencies</h4>
+            {drawerTask.depends_on.length === 0
+              ? <p className="mt-2 text-sm text-slate-600">No predecessors</p>
+              : <ul className="mt-2 space-y-2">
+                {drawerTask.depends_on.map(id => {
+                  const predecessor = items.find(value => value.task_id === id);
+                  return <li key={id} className="text-sm text-slate-800">
+                    {predecessor ? predecessor.title + ' · ' + label(predecessor.status)
+                      : 'Predecessor outside the current verified page'}
+                  </li>;
+                })}
+              </ul>}
+          </section>
+          <div className="mt-auto flex flex-wrap gap-2 border-t border-slate-200 pt-4">
+            {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
+              <button type="button" className="wp-button" onClick={() => {
+                const item = drawerTask; closeDrawer(); openTaskEditor(item);
+              }}>Edit / assign</button>}
+            <button type="button" className="wp-button" onClick={() => {
+              const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id);
+            }}>Activity &amp; discussion</button>
+            <button type="button" className="wp-button" onClick={() => {
+              const item = drawerTask; closeDrawer(); setAttachmentTaskId(item.task_id);
+            }}>Attachments</button>
+            <button type="button" className="wp-button" onClick={() => {
+              const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id);
+            }}>Approvals</button>
+          </div>
+        </aside>
+      </div>}
       {(hasMore || offset > 0) && <nav className="mt-3 flex items-center justify-between gap-2" aria-label="Task pages">
         <button type="button" className="wp-button" disabled={busy || offset === 0}
           onClick={() => void load(Math.max(0, offset - 50))}>Previous work</button>
@@ -992,7 +1090,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.16.1-MILESTONE-COMPLETION-ATTESTATION
+// VERSION: v1.17.0-SELECTED-WORK-CONTEXT-DRAWER
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
