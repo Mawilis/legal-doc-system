@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.5.0-NAMED-CONTRIBUTOR-AVATAR
+ * VERSION: v1.6.0-READABLE-DUE-WORK-SEMANTICS
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.6.0-READABLE-DUE-WORK-SEMANTICS shows a
+ *          calendar-correct due phrase from verified date-only task fields:
+ *          today, tomorrow, overdue days or a concise day/month label;
+ *          EOS date evidence is retained verbatim in a title attribute.
  * CHANGELOG: v1.5.0-NAMED-CONTRIBUTOR-AVATAR adds a compact
  *          initials/avatar identity marker only from an EOS-verified display
  *          name, falling back to a neutral person glyph when unavailable.
@@ -47,6 +51,25 @@ const statusLabel = status => ({
   TODO: 'To do', IN_PROGRESS: 'In progress', BLOCKED: 'Blocked',
   DONE: 'Done', CANCELLED: 'Cancelled',
 }[status] || status);
+
+const duePhrase = (dueDate, todayISO) => {
+  if (!dueDate) return 'Not set';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)
+    || !/^\d{4}-\d{2}-\d{2}$/.test(todayISO || '')) return dueDate;
+  const dueTime = Date.parse(dueDate + 'T00:00:00Z');
+  const todayTime = Date.parse(todayISO + 'T00:00:00Z');
+  if (!Number.isFinite(dueTime) || !Number.isFinite(todayTime)) return dueDate;
+  const days = Math.round((dueTime - todayTime) / 86400000);
+  if (days === 0) return 'Due today';
+  if (days === 1) return 'Due tomorrow';
+  if (days < 0) return 'Overdue ' + Math.abs(days) + (days === -1 ? ' day' : ' days');
+  const formatter = new Intl.DateTimeFormat('en-ZA', {
+    day: 'numeric', month: 'short',
+    ...(dueDate.slice(0, 4) === todayISO.slice(0, 4) ? {} : { year: 'numeric' }),
+    timeZone: 'UTC',
+  });
+  return 'Due ' + formatter.format(new Date(dueTime));
+};
 
 /**
  * @description Stateless Work Row for verified source-backed callers.
@@ -168,12 +191,12 @@ export default function ProjectWorkRow({
                     onClick={() => onAssign(item)}>Assign</button> : 'Not assigned'}
               </td>
               <td className="p-3 text-xs text-slate-700">
-                <span className={item.due_date && item.due_date < todayISO
-                  && !['DONE', 'CANCELLED'].includes(item.status) ? 'font-semibold text-rose-700' : ''}>
-                  {item.due_date || 'Not set'}
+                <span title={item.due_date || undefined}
+                  className={item.due_date && item.due_date < todayISO
+                    && !['DONE', 'CANCELLED'].includes(item.status)
+                    ? 'font-semibold text-rose-700' : ''}>
+                  {duePhrase(item.due_date, todayISO)}
                 </span>
-                {item.due_date && item.due_date < todayISO
-                  && !['DONE', 'CANCELLED'].includes(item.status) && <span className="block text-xs text-rose-700">Overdue</span>}
               </td>
               <td className="p-3">
                 <ProjectWorkRowActions item={item} busy={busy} {...(capabilities || NO_ACTION_CAPABILITIES)}
@@ -188,7 +211,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.5.0-NAMED-CONTRIBUTOR-AVATAR
+// VERSION: v1.6.0-READABLE-DUE-WORK-SEMANTICS
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
