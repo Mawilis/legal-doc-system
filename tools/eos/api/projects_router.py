@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS
+VERSION: v1.33.0-STRICT-TASK-DATE-WIRE-FIX
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.33.0-STRICT-TASK-DATE-WIRE-FIX normalizes only canonical YYYY-MM-DD task create and
+  revision JSON dates through the existing strict project date parser.
+  Malformed, non-date, or noncanonical inputs remain rejected; IAM,
+  idempotency, transactions, and task-domain invariants are unchanged.
   v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS records separately the existing current entitlement pointer and immutable history read times on slow Projects summaries without skipping either integrity check or altering non-profiled routes.
   v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS separates per-attempt entitlement read, transaction wrapper, and source cursor/validation times for slow summary reads without extra Mongo queries or weaker tenant/IAM gates.
   v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS logs safe bounded summary endpoint total and source-count latency only when slow or failing, separating Mongo/entitlement transaction overhead from validated registry scanning. No tenant/principal/record values, IAM changes, new queries or source-data fallbacks.
@@ -382,6 +386,12 @@ class ProjectTaskCreateRequest(BaseModel):
     assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
     depends_on: tuple[str, ...] = Field(default=(), max_length=25)
 
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def parse_wire_date(cls, value: object) -> object:
+        """Admit canonical calendar strings without weakening strict validation."""
+        return _project_wire_iso_date(value)
+
 
 class ProjectApprovalRequest(BaseModel):
     """Owner requests one separately reviewed task business decision."""
@@ -425,6 +435,12 @@ class ProjectTaskReviseRequest(BaseModel):
     description: str = Field(default="", max_length=5000)
     due_date: date | None = None
     assignee_principal_id: str | None = Field(default=None, min_length=1, max_length=180)
+
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def parse_wire_date(cls, value: object) -> object:
+        """Retain strict revision admission for canonical calendar strings."""
+        return _project_wire_iso_date(value)
 
 
 class ProjectTaskTransitionRequest(BaseModel):
@@ -3441,7 +3457,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.32.0-ENTITLEMENT-POINTER-HISTORY-TIMINGS
+# VERSION: v1.33.0-STRICT-TASK-DATE-WIRE-FIX
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
