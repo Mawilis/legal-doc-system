@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.2.0-DISCUSSION-COMPOSER-FIRST
+ * VERSION: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION renders source-owned
+ *          discussion Markdown safely as React text nodes (never raw HTML),
+ *          and provides immediate live formatting preview while editing;
+ *          preserving 5000-character EOS payload, mentions, idempotency,
+ *          immutable comment audit, readback and pagination unchanged.
  * CHANGELOG: v1.2.0-DISCUSSION-COMPOSER-FIRST places the
  *          EOS comment composer above the paginated conversation so entry
  *          stays accessible even with many comments, without changing EOS
@@ -15,7 +20,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.2.0-DISCUSSION-COMPOSER-FIRST introduces task-threaded
+ * CHANGELOG: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -45,6 +50,65 @@ function checkComment(value, tenantId, projectId, taskId) {
     && value.mentions.every(person => typeof person === 'string' && person.length > 0)
     && /^[a-f0-9]{128}$/.test(value.fingerprint || ''),
   );
+}
+
+/**
+ * Bounded plain-text Markdown projection; React escapes all content, including
+ * attempted HTML. This is presentation only and never trusts remote markup.
+ * Supports headings, paragraphs, bullets, ordered lists, bold, italic and code.
+ * @authority EOS owns the unchanged Markdown source and comment audit.
+ */
+function MarkdownText({ value }) {
+  const source = String(value || '').replace(/\r\n?/g, '\n');
+  const inline = (line, prefix) => {
+    const tokens = line.split(/(\*\*[^*\n]+\*\*|`[^`\n]+`|\*[^*\n]+\*)/g);
+    return tokens.map((part, index) => {
+      const key = prefix + ':' + index;
+      if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+        return <strong key={key}>{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+        return <code key={key} className="rounded bg-slate-100 px-1 font-mono text-xs">{part.slice(1, -1)}</code>;
+      }
+      if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+        return <em key={key}>{part.slice(1, -1)}</em>;
+      }
+      return <React.Fragment key={key}>{part}</React.Fragment>;
+    });
+  };
+  const elements = [];
+  const lines = source.split('\n');
+  for (let index = 0; index < lines.length;) {
+    const line = lines[index];
+    if (!line.trim()) { index += 1; continue; }
+    const title = /^(#{1,3})\s+(.+)$/.exec(line);
+    if (title) {
+      elements.push(<h5 key={index} className="mt-2 font-bold text-slate-950">
+        {inline(title[2], index)}</h5>);
+      index += 1;
+      continue;
+    }
+    const unordered = /^\s*[-*]\s+(.+)$/.exec(line);
+    const ordered = /^\s*\d+\.\s+(.+)$/.exec(line);
+    if (unordered || ordered) {
+      const start = index;
+      const entries = [];
+      const expression = unordered ? /^\s*[-*]\s+(.+)$/ : /^\s*\d+\.\s+(.+)$/;
+      while (index < lines.length && expression.test(lines[index])) {
+        entries.push(<li key={index}>{inline(lines[index].replace(expression, '$1'), index)}</li>);
+        index += 1;
+      }
+      const styling = 'ml-5 my-2 space-y-1 text-sm text-slate-900 ' + (unordered ? 'list-disc' : 'list-decimal');
+      elements.push(unordered ? <ul key={start} className={styling}>{entries}</ul>
+        : <ol key={start} className={styling}>{entries}</ol>);
+      continue;
+    }
+    elements.push(<p key={index} className="my-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-900">
+      {inline(line, index)}
+    </p>);
+    index += 1;
+  }
+  return <div className="min-w-0" data-testid="safe-markdown-discussion">{elements}</div>;
 }
 
 /** @description Source-owned comments with explicit bounded mentions. */
@@ -186,10 +250,20 @@ export default function ProjectTaskCommentsPanel({
     {state === 'READY' && <>
       <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
         <label className="block text-sm font-semibold text-slate-800">Write a task comment
-          <textarea aria-label="New task comment" required rows={3}
+          <textarea aria-label="New task comment" required rows={5}
             maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"/>
+            placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
+            className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-normal text-slate-900"/>
         </label>
+        <section aria-label="Live formatted comment preview" className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h5 className="text-xs font-bold uppercase tracking-wide text-slate-700">Live formatted preview</h5>
+            <span className="text-xs tabular-nums text-slate-600">{body.length} / 5000 characters</span>
+          </div>
+          {body.trim() ? <MarkdownText value={body}/> : <p className="text-sm text-slate-600">
+            Formatted text will appear here as you type or paste.
+          </p>}
+        </section>
         <fieldset className="rounded-lg border border-slate-200 p-3">
           <legend className="px-1 text-xs font-semibold text-slate-800">Mention verified contributors (optional)</legend>
           <div className="grid max-h-32 gap-2 overflow-auto sm:grid-cols-2">
@@ -216,7 +290,7 @@ export default function ProjectTaskCommentsPanel({
             <strong className="break-all text-slate-800">{item.author_principal_id}</strong>
             <time className="text-xs text-slate-500" dateTime={item.created_at}>{item.created_at}</time>
           </div>
-          <p className="mt-1 whitespace-pre-wrap break-words text-slate-800">{item.body}</p>
+          <div className="mt-2"><MarkdownText value={item.body}/></div>
           {item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentioned: {item.mentions.join(', ')}</p>}
         </li>)}
@@ -239,7 +313,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.2.0-DISCUSSION-COMPOSER-FIRST
+// VERSION: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
