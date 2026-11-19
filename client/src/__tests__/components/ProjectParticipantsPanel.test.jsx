@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Project Participant Command UI Certificate
- * VERSION: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT
+ * VERSION: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT
  * AUTHORITY: Synthetic client contract tests; EOS alone owns IAM and grants.
  * EPITOME: Verify source choices, explicit role grant/revoke, fresh state
  *          readback and denial of invented members or session-scoped outcomes.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectParticipantsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectParticipantsPanel; vi mocks api.js only.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT scopes contributor label checks to the active participant list rather than the adjacent role picker.
  * CHANGELOG: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT ensures audit-only
  *          revision numbers never appear in active participant labels.
  * CHANGELOG: v1.0.0-SOURCE-VERIFIED-PARTICIPANT-LIFECYCLE-CERT adds an actual
@@ -100,7 +101,7 @@ it('grants and revokes only verified selectable tenant participants', async () =
   fireEvent.change(select, { target: { value: target } });
   fireEvent.click(screen.getByRole('button', { name: 'Add participant' }));
   await waitFor(() => expect(screen.getByRole('button', { name: 'Revoke participation' })).toBeVisible());
-  expect(screen.getByText('Contributor')).toBeVisible();
+  expect(screen.getAllByText('Contributor').some(node => node.closest('li'))).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Revoke participation' }));
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Revoke participation' })).not.toBeInTheDocument());
   expect(api.post).toHaveBeenCalledTimes(2);
@@ -128,7 +129,7 @@ it('does not expose unverified candidate options or a grant button', async () =>
 });
 
 // ARTIFACT: ProjectParticipantsPanel.test.jsx
-// VERSION: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT
+// VERSION: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT
 // AUTHORITY BOUNDARY: mocked EOS client only, no real assignments
 // TENANT POSTURE: foreign tenant options discarded
 // FAIL-CLOSED POSTURE: no grant without valid source choice and exact readback
