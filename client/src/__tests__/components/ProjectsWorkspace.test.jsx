@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION
+ * VERSION: v2.26.1-COLLAPSED-PORTFOLIO-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,8 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT verifies optional portfolio chart disclosure
+ *          while the source-backed project table remains primary.
  * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies read-first queue disclosures,
  *          direct Start/Complete controls, contextual secondary task actions,
  *          and separated accepted template activation versus readback failures.
@@ -87,30 +89,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION proves a
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION adds in-place task
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies task creation, verified
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION waits for the committed note row
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies source-backed project note
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION tests server-verified page metadata, source
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION proves navigation
+ * CHANGELOG: v2.26.1-COLLAPSED-PORTFOLIO-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -300,6 +302,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="tenant-paging-cert" />);
     expect(await screen.findByText('100 shown · 100 verified')).toBeVisible();
+    expect(screen.getByText(/Portfolio breakdown ·/)).toBeVisible();
+    fireEvent.click(screen.getByText(/Portfolio breakdown ·/));
     expect(screen.getByRole('region', { name: 'Verified project status distribution' })).toBeVisible();
     expect(screen.getByRole('img', { name: 'Planned: 125 of 125 projects' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -1465,7 +1469,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION
+ * VERSION: v2.26.1-COLLAPSED-PORTFOLIO-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
