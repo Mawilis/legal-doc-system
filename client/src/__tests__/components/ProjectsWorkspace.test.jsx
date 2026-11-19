@@ -568,7 +568,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(within(options).getByRole('button', { name: /Current project delivery/ }));
     expect(await screen.findByRole('region', { name: 'Task discussion' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Write update' })).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByLabelText('Verified task comment history')).toBeVisible();
+    expect(document.querySelector('[aria-label="Verified task comment history"]')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'All discussions' }));
     expect(await screen.findByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
   });
