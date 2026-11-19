@@ -181,6 +181,7 @@ export default function ProjectTaskCommentsPanel({
         || data.items.some(entry => entry.schema !== 'wilsy.project.task.event.v1'
           || entry.tenant_id !== tenantId || entry.project_id !== projectId || entry.task_id !== taskId
           || !Number.isSafeInteger(entry.revision) || entry.revision < 1
+          || !['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(entry.status_after)
           || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(entry.event_type)
           || typeof entry.actor_principal_id !== 'string' || !entry.actor_principal_id
           || typeof entry.occurred_at !== 'string' || !Number.isFinite(Date.parse(entry.occurred_at)))
@@ -450,7 +451,7 @@ export default function ProjectTaskCommentsPanel({
           </div>
           <p className="mt-1 text-xs text-slate-600" title={entry.actor}>
             By {displayActor(entry.actor)}
-            {entry.type === 'event' ? ' · revision ' + entry.item.revision : ''}
+            {entry.type === 'event' ? ' · revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase() : ''}
           </p>
           {entry.type === 'comment' && <div className="mt-2"><MarkdownText value={entry.item.body}/></div>}
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
