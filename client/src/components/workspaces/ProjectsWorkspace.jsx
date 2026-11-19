@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.33.0-OVERVIEW-JSX-STRUCTURE-REPAIR
+ * VERSION: v2.34.0-AUDITED-DEADLINE-RATIONALE-VIEW
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.34.0-AUDITED-DEADLINE-RATIONALE-VIEW displays the source-owned
+ *          deadline-change rationale in the immutable audit timeline and
+ *          removes opaque actor IDs from browser hover titles.
  * CHANGELOG: v2.33.0-OVERVIEW-JSX-STRUCTURE-REPAIR closes conditional
  *          creator/owner badge expressions after removing internal title IDs;
  *          restores valid JSX without re-exposing backend identities.
@@ -1844,7 +1847,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                         <time className="text-xs font-medium" dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time>
                       </div>
                       <div className="mt-3 border-t border-current/15 pt-2 text-sm">By {personLabel(event.actor_principal_id)} · revision {event.revision}</div>
-                      <div className="mt-1 text-xs opacity-80" title={event.actor_principal_id}>Immutable actor ID retained in EOS audit evidence</div>
+                      {typeof event.target_change_reason === 'string'
+                        && event.target_change_reason.trim() && <div className="mt-2 rounded-lg border border-current/20 bg-white/70 p-3 text-sm">
+                          <strong className="block text-slate-900">Reason for revised target date</strong>
+                          <p className="mt-1 whitespace-pre-wrap break-words text-slate-800">{event.target_change_reason}</p>
+                        </div>}
+                      <div className="mt-1 text-xs opacity-80">Immutable actor evidence retained securely by EOS</div>
                     </div>
                   </li>;
                 })}
@@ -1858,7 +1866,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.33.0-OVERVIEW-JSX-STRUCTURE-REPAIR
+// VERSION: v2.34.0-AUDITED-DEADLINE-RATIONALE-VIEW
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
