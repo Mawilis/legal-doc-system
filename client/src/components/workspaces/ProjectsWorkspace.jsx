@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.31.0-CUSTOMIZABLE-GOVERNED-TEMPLATE-STEPS
+ * VERSION: v2.32.0-GOVERNED-WILSY-AI-TEMPLATE-DRAFT
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.32.0-GOVERNED-WILSY-AI-TEMPLATE-DRAFT uses the existing
+ *          tenant-authorized WILSY AI reasoning endpoint to propose strictly
+ *          validated edits to a reviewed template. Model output is staged
+ *          only as a local draft, with no implicit project or IAM command.
  * CHANGELOG: v2.31.0-CUSTOMIZABLE-GOVERNED-TEMPLATE-STEPS allows review and
  *          per-project edits to source template titles, due offsets and
  *          acceptance criteria before one atomic EOS activation command;
@@ -663,6 +667,10 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [templateName, setTemplateName] = useState('');
   const [templateEditing, setTemplateEditing] = useState(false);
   const [templateOverrides, setTemplateOverrides] = useState({});
+  const [aiProjectBrief, setAiProjectBrief] = useState('');
+  const [aiProjectState, setAiProjectState] = useState('IDLE');
+  const [aiProjectError, setAiProjectError] = useState('');
+  const aiDraftReplay = useRef({ fingerprint: '', key: null });
   const [templateStart, setTemplateStart] = useState('');
   const [templateReconciliation, setTemplateReconciliation] = useState(null);
   const templateSequence = useRef(0);
@@ -830,6 +838,10 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setTemplateName('');
     setTemplateEditing(false);
     setTemplateOverrides({});
+    setAiProjectBrief('');
+    setAiProjectState('IDLE');
+    setAiProjectError('');
+    aiDraftReplay.current = { fingerprint: '', key: null };
     setTemplateStart('');
     setTemplateReconciliation(null);
     setDraft(EMPTY_DRAFT);
@@ -992,6 +1004,83 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     const opened = await openProject(persisted.project_id);
     setTemplateReconciliation(previous => previous?.project_id === persisted.project_id
       ? { ...previous, state: opened ? 'VERIFIED' : 'READBACK_PENDING' } : previous);
+  };
+
+  const askWilsyAiForTemplateDraft = async () => {
+    if (aiProjectState === 'PENDING' || templateState !== 'READY'
+      || !selectedTemplate || aiProjectBrief.trim().length < 20) {
+      setAiProjectError('Describe the business goal and expected delivery in at least 20 characters.');
+      return;
+    }
+    const brief = aiProjectBrief.trim();
+    const current = scopeKey;
+    const activeSlug = selectedTemplate.slug;
+    const fingerprint = JSON.stringify([activeSlug, selectedTemplate.revision, brief]);
+    if (aiDraftReplay.current.fingerprint !== fingerprint || !aiDraftReplay.current.key) {
+      aiDraftReplay.current = { fingerprint, key: newIdempotencyKey() };
+    }
+    const schema = selectedTemplate.steps.map(step => ({
+      id: step.id, kind: step.kind, role: step.role, day: step.day,
+      title: step.title, acceptance: step.acceptance, depends_on: step.depends_on,
+    }));
+    const prompt = [
+      'You are WILSY AI project planning support. Produce one strictly valid JSON object only.',
+      'JSON shape: {"project_name":"string","steps":[{"id":"string","title":"string","day":integer,"acceptance":"string"}]}.',
+      'Use exactly one entry per existing step ID. Never add, delete or rename IDs.',
+      'Keep predecessor scheduling valid. Days are nonnegative and <=3650.',
+      'Titles must be 1-180 chars and acceptance text 1-1000 chars.',
+      'Do not assign people, issue IAM, change project roles or authorize spending.',
+      'Existing approved platform blueprint:', JSON.stringify(schema),
+      'User reviewed planning brief:', brief,
+    ].join('\n');
+    setAiProjectState('PENDING');
+    setAiProjectError('');
+    try {
+      const { data } = await api.post('/wilsy-ai/reasoning', { prompt }, {
+        headers: { ...tenantHeaders, 'Idempotency-Key': aiDraftReplay.current.key },
+      });
+      if (activeScope.current !== current || selectedTemplateSlug !== activeSlug) return;
+      if (typeof data?.response_text !== 'string' || data.response_text.length > 16000) {
+        throw new Error('WILSY_AI_PROJECT_PROPOSAL_INVALID');
+      }
+      const proposal = JSON.parse(data.response_text.trim());
+      if (!proposal || Array.isArray(proposal) || typeof proposal !== 'object'
+        || !Array.isArray(proposal.steps)
+        || proposal.steps.length !== selectedTemplate.steps.length
+        || (proposal.project_name !== undefined && (typeof proposal.project_name !== 'string'
+          || !proposal.project_name.trim() || proposal.project_name.length > 180))) {
+        throw new Error('WILSY_AI_PROJECT_PROPOSAL_INVALID');
+      }
+      const drafts = {};
+      const days = {};
+      for (const suggestion of proposal.steps) {
+        const original = selectedTemplate.steps.find(step => step.id === suggestion?.id);
+        if (!original || Object.hasOwn(drafts, original.id)
+          || typeof suggestion.title !== 'string' || suggestion.title.trim().length < 1
+          || suggestion.title.length > 180 || typeof suggestion.acceptance !== 'string'
+          || suggestion.acceptance.trim().length < 1 || suggestion.acceptance.length > 1000
+          || !Number.isInteger(suggestion.day) || suggestion.day < 0 || suggestion.day > 3650
+          || original.depends_on.some(id => days[id] === undefined || days[id] > suggestion.day)) {
+          throw new Error('WILSY_AI_PROJECT_PROPOSAL_INVALID');
+        }
+        drafts[original.id] = { title: suggestion.title.trim(),
+          acceptance: suggestion.acceptance.trim(), day: suggestion.day };
+        days[original.id] = suggestion.day;
+      }
+      if (Object.keys(drafts).length !== selectedTemplate.steps.length) {
+        throw new Error('WILSY_AI_PROJECT_PROPOSAL_INVALID');
+      }
+      setTemplateOverrides(drafts);
+      if (proposal.project_name) setTemplateName(proposal.project_name.trim());
+      setTemplateEditing(true);
+      createReplay.current = { fingerprint: '', key: null };
+      setAiProjectState('READY');
+    } catch {
+      if (activeScope.current === current) {
+        setAiProjectState('UNAVAILABLE');
+        setAiProjectError('WILSY AI could not provide a verified editable plan. Existing template remains available.');
+      }
+    }
   };
 
   const activateTemplate = async (event) => {
@@ -1410,7 +1499,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                     style={selectedTemplateSlug === item.slug ? { background: '#e8f2ff' } : undefined}
                     onClick={() => { setSelectedTemplateSlug(item.slug);
                       setTemplateName(item.title); setTemplatePickerOpen(false); setTemplateError('');
-                      setTemplateEditing(false); setTemplateOverrides({}); createReplay.current = { fingerprint: '', key: null }; }}>
+                      setTemplateEditing(false); setTemplateOverrides({});
+                      setAiProjectBrief(''); setAiProjectState('IDLE'); setAiProjectError('');
+                      aiDraftReplay.current = { fingerprint: '', key: null }; createReplay.current = { fingerprint: '', key: null }; }}>
                     <span className="block text-sm font-semibold text-slate-950">{item.industry}</span>
                     <span className="block text-xs text-slate-700">{item.title}</span>
                   </button>)}
@@ -1420,6 +1511,32 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   {selectedTemplate && <>
                     {templatePickerOpen && <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>}
                     <p className="mt-1 text-xs text-slate-600">Template revision {selectedTemplate.revision} · {selectedTemplate.steps.length} source-defined work items</p>
+                    <section className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
+                      aria-label="WILSY AI project planning">
+                      <h4 className="text-sm font-bold text-slate-950">Plan with WILSY AI</h4>
+                      <p className="mt-1 text-xs text-slate-700">
+                        Optional governed AI assistance. Your description is sent only when you request a draft.
+                        Review every proposed work item before authorizing EOS activation.
+                      </p>
+                      <label className="mt-2 block text-xs font-semibold text-slate-800">
+                        Describe the project objective, deliverables and risks
+                        <textarea aria-label="WILSY AI project brief" rows={3} maxLength={3000}
+                          value={aiProjectBrief} onChange={event => {
+                            setAiProjectBrief(event.target.value);
+                            setAiProjectState('IDLE'); setAiProjectError('');
+                            aiDraftReplay.current = { fingerprint: '', key: null };
+                          }} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal text-slate-950"/>
+                      </label>
+                      <button type="button" className="wp-button mt-2"
+                        disabled={aiProjectState === 'PENDING' || aiProjectBrief.trim().length < 20}
+                        onClick={() => void askWilsyAiForTemplateDraft()}>
+                        {aiProjectState === 'PENDING' ? 'WILSY AI drafting…' : 'Generate a reviewable AI plan'}
+                      </button>
+                      {aiProjectError && <p role="alert" className="mt-2 text-xs text-rose-800">{aiProjectError}</p>}
+                      {aiProjectState === 'READY' && <p role="status" className="mt-2 text-xs font-semibold text-emerald-800">
+                        AI proposal staged for review. Nothing has been saved or assigned.
+                      </p>}
+                    </section>
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs text-slate-700">Edit your project draft; platform starter, roles and dependencies stay unchanged.</p>
                       <button type="button" className="wp-button" aria-pressed={templateEditing}
@@ -1738,7 +1855,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.31.0-CUSTOMIZABLE-GOVERNED-TEMPLATE-STEPS
+// VERSION: v2.32.0-GOVERNED-WILSY-AI-TEMPLATE-DRAFT
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
