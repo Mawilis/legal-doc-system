@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.7.0-PARTICIPANT-READABLE-FORMS
+ * VERSION: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,15 +8,15 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.7.0-PARTICIPANT-READABLE-FORMS scopes the proven dark
+ * CHANGELOG: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST scopes the proven dark
  *            form label/text contrast rules to governed participants as well
  *            as task and note panels; removes pale-gold labels without
  *            changing the global brand, source truth, identity or authority.
  * CHANGELOG: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS restores WCAG-conscious operating label contrast for task and note panels against inherited brand styles; no data, authority or layout changes.
- * CHANGELOG: v1.7.0-PARTICIPANT-READABLE-FORMS enforces the intended
+ * CHANGELOG: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST enforces the intended
  *            narrow-screen compact table column visibility under global
  *            display overrides; visible project, status and action remain.
- * CHANGELOG: v1.7.0-PARTICIPANT-READABLE-FORMS adds subdued fluid
+ * CHANGELOG: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST adds subdued fluid
  *            glass portfolio bar-chart styling and accessible pagination;
  *            visualized counts come only from validated EOS response data.
  *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
@@ -250,6 +250,23 @@
 .wilsy-projects .wp-summary .wp-list-line>span:first-child {flex-shrink:0;font-weight:800;min-width:20px;color:#84531b !important;}
 .wilsy-projects .wp-summary-toggle {background:none;border:0;padding:8px 0;color:#064a9a !important;text-decoration:underline;font-weight:750;font-size:13px;}
 .wilsy-projects .wp-form {padding:16px 0;display:grid;gap:13px;}
+/* Overview metadata is source evidence, not branded decoration. Host theme
+   uppercase/gold rules must never reduce semantic label legibility. */
+.wilsy-projects .wp-detail-inner .wp-facts :is(dt, dd, small) {
+  color: #213954 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+.wilsy-projects .wp-detail-inner .wp-facts dt {
+  color: #435773 !important;
+  font-weight: 650 !important;
+}
+.wilsy-projects .wp-detail-inner .wp-facts small {
+  color: #243f62 !important;
+  background: #f1f5f9 !important;
+  border-color: #b9c8d9 !important;
+}
+
 /* The inherited global label styling previously produced pale gold on pale inputs.
    Keep legitimate branding accents elsewhere; operating form names must be readable. */
 .wilsy-projects :is(.wp-project-tasks, .wp-project-notes, .wp-project-participants) :is(label, legend) {
@@ -567,7 +584,7 @@
 }
 
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.7.0-PARTICIPANT-READABLE-FORMS
+ * VERSION: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
