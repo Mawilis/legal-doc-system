@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.4.0-DENY-BY-DEFAULT-ACTION-PRESENTER
+ * VERSION: v1.4.1-EXPLICIT-ASSIGN-CALLBACK
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.4.1-EXPLICIT-ASSIGN-CALLBACK requires a separate
+ *          assignment handler instead of silently routing Assign to Edit;
+ *          unauthorised or unimplemented command paths remain hidden.
  * CHANGELOG: v1.4.0-DENY-BY-DEFAULT-ACTION-PRESENTER makes omitted
  *          callback capabilities deny by default and prevents an untrusted
  *          reuse caller from displaying action buttons before EOS admission.
@@ -43,7 +46,7 @@ const nextAction = {
 };
 
 export default function ProjectWorkRowActions({
-  item, busy, onTransition, onComplete, onEdit, onAssign = onEdit,
+  item, busy, onTransition, onComplete, onEdit, onAssign,
   onAttachments, onApprovals, onActivity,
   canStart = false, canComplete = false, canBlock = false, canCancel = false,
   canAssign = false, canEdit = false, canAttachments = false,
@@ -202,7 +205,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.4.0-DENY-BY-DEFAULT-ACTION-PRESENTER
+// VERSION: v1.4.1-EXPLICIT-ASSIGN-CALLBACK
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
