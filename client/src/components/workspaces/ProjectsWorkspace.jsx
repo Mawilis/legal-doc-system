@@ -649,8 +649,20 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
         const code = classifyFailure(cause);
         setSummary(null);
-        // Portfolio counts are independent. A transient or invalid summary
-        // is not proof that the independently verified list has failed.
+        // Invalid cross-scope or malformed envelopes are security failures, not
+        // an ordinary unavailable counter. Do not retain project visibility.
+        if (cause?.message === 'PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID') {
+          summaryAuthorityDenied = true;
+          itemsRef.current = [];
+          setItems([]);
+          setDetail(null);
+          changeSelection(null);
+          setError('PROJECT_SOURCE_UNAVAILABLE');
+          setSourceState('UNAVAILABLE');
+          return;
+        }
+        // A transient summary outage is not proof that the independently
+        // verified authorized project page has failed.
         if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED'
           || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
           summaryAuthorityDenied = true;
