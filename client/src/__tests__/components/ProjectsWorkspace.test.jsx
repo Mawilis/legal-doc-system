@@ -557,7 +557,13 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/comments?limit=50&offset=0`) return { data: {
         schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
         principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId,
-        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+        items: [{
+          schema: 'wilsy.project.comment.v1', tenant_id: TENANT,
+          project_id: PROJECT_ID, task_id: taskId, comment_id: 'pcm-' + 'a'.repeat(48),
+          author_principal_id: PRINCIPAL, body: '**Recent progress**',
+          mentions: [], fingerprint: 'b'.repeat(128),
+          created_at: '2026-11-19T09:00:00+00:00',
+        }], limit: 50, offset: 0, has_more: false, next_offset: null,
       } };
       if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/events?limit=50&offset=0`) return { data: {
         schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1', tenant_id: TENANT,
@@ -566,7 +572,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
           schema: 'wilsy.project.task.event.v1', tenant_id: TENANT,
           project_id: PROJECT_ID, task_id: taskId, revision: 1,
           event_type: 'PROJECT_TASK_CREATED', actor_principal_id: PRINCIPAL,
-          occurred_at: '2026-11-18T06:00:00+00:00',
+          status_after: 'TODO', occurred_at: '2026-11-18T06:00:00+00:00',
         }], limit: 50, offset: 0, has_more: false, next_offset: null,
       } };
       throw new Error('Unexpected project GET ' + path);
@@ -584,6 +590,11 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Write update' })).toHaveAttribute('aria-expanded', 'false');
     expect(document.querySelector('[aria-label="Verified task comment history"]')).toBeVisible();
     expect(await screen.findByText('Work created')).toBeVisible();
+    expect(screen.getByText('Recent progress')).toBeVisible();
+    const history = document.querySelector('[aria-label="Verified task comment history"]');
+    const entries = [...history.querySelectorAll('li')];
+    expect(entries[0]).toHaveTextContent('Recent progress');
+    expect(entries[1]).toHaveTextContent('Work created');
     expect(screen.getByText(/revision 1/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'All discussions' }));
     expect(await screen.findByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
