@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Project Comment Domain Boundary Certificate
-VERSION: v1.0.0-EXACT-PROJECT-COMMENT-DOMAIN-CERT
+VERSION: v1.1.0-NEWEST-FIRST-COMMENT-PAGINATION-CERT
 AUTHORITY: Synthetic immutable comment and mention domain contract tests.
 EPITOME: Reject forged authors, checksum modification, retired roots,
          duplicate mentions, foreign project records and malformed comments.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_comment_registry.py
 COLLABORATION / OWNERSHIP: ProjectCommentRegistry and Projects task API.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.0-NEWEST-FIRST-COMMENT-PAGINATION-CERT pins
+         indexed newest-first comments with exact task scope and source-backed
+         pagination; neither mutations nor IAM permissions change.
 CHANGELOG: v1.0.0-EXACT-PROJECT-COMMENT-DOMAIN-CERT establishes verified
          comment/mention invariants without pretending to send notifications.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -21,7 +24,7 @@ from datetime import datetime, timezone
 import pytest
 
 from tools.eos.saas.projects.project_comment_registry import (
-    ProjectComment, ProjectCommentError, comment_id_for_command,
+    ProjectComment, ProjectCommentError, ProjectCommentRegistry, comment_id_for_command,
 )
 
 TENANT = "tenant-a"
@@ -41,6 +44,42 @@ def comment(**changes: object) -> ProjectComment:
     )
     values.update(changes)
     return ProjectComment(**values)
+
+
+def test_comment_pages_are_source_sorted_newest_first() -> None:
+    from pymongo import DESCENDING
+    older = comment(created_at=NOW)
+    newer = comment(
+        created_at=NOW.replace(hour=9),
+        comment_id=comment_id_for_command(TENANT, PROJECT, TASK, AUTHOR, "create-two"),
+    )
+
+    class Cursor:
+        def sort(self, spec):
+            assert spec == [("created_at", DESCENDING), ("comment_id", DESCENDING)]
+            return self
+        def skip(self, offset):
+            assert offset == 0
+            return self
+        def limit(self, count):
+            assert count == 2
+            return [newer.to_dict(), older.to_dict()][:count]
+
+    class Comments:
+        def find(self, query, *, session):
+            assert query == {
+                "tenant_id": TENANT, "project_id": PROJECT, "task_id": TASK,
+            }
+            assert session == "source-session"
+            return Cursor()
+
+    registry = ProjectCommentRegistry(Comments(), object())
+    items, more = registry.list_page(
+        tenant_id=TENANT, project_id=PROJECT, task_id=TASK,
+        session="source-session", offset=0, limit=1,
+    )
+    assert more
+    assert items[0].comment_id == newer.comment_id
 
 
 def test_comment_canonical_roundtrip_and_tampering_deny() -> None:
@@ -82,7 +121,7 @@ def test_command_identity_separates_tenant_project_task_and_author() -> None:
 
 
 # ARTIFACT: test_project_comment_registry.py
-# VERSION: v1.0.0-EXACT-PROJECT-COMMENT-DOMAIN-CERT
+# VERSION: v1.1.0-NEWEST-FIRST-COMMENT-PAGINATION-CERT
 # AUTHORITY BOUNDARY: source validation only, not IAM or message delivery
 # TENANT POSTURE: exact tenant/project/task and opaque mention IDs
 # FAIL-CLOSED POSTURE: bogus claims, tampered checksum, duplicates and aliases deny
