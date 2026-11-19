@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS
+ * VERSION: v1.22.1-ASSIGN-ACTION-HANDOFF
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.22.1-ASSIGN-ACTION-HANDOFF wires explicit work
+ *          assignment to the compact exact-project contributor picker.
  * CHANGELOG: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS adds source-scoped
  *          selection, accessible work-row checkboxes, and local density.
  *          Selection does not invent or execute bulk EOS commands.
@@ -1106,6 +1108,7 @@ export default function ProjectTasksPanel({
                     setCompletionAttested(false);
                   }}
                   onEdit={openTaskEditor}
+                  onAssign={selected => openTaskEditor(selected, true)}
                   onAttachments={selected => setAttachmentTaskId(selected.task_id)}
                   onApprovals={selected => setApprovalTaskId(selected.task_id)}
                   onActivity={selected => setDiscussionTaskId(selected.task_id)}/>
@@ -1211,7 +1214,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS
+// VERSION: v1.22.1-ASSIGN-ACTION-HANDOFF
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
