@@ -235,6 +235,7 @@ def mongo_timing_scope(*, stage: str, correlation: str | None) -> Iterator[None]
         "pool_wait_ms": 0.0,
         "command_round_trip_ms": 0.0,
         "first_command_observed": False,
+        "pre_command_ms": 0.0,
     }
     token = _MONGO_TIMING_CONTEXT.set(scope)
     outcome = "OBSERVED"
@@ -248,7 +249,8 @@ def mongo_timing_scope(*, stage: str, correlation: str | None) -> Iterator[None]
         elapsed_ms = max(0.0, (time.perf_counter_ns() - scope["started_ns"]) / 1_000_000)
         residual_ms = max(
             0.0,
-            elapsed_ms - scope["pool_wait_ms"] - scope["command_round_trip_ms"],
+            elapsed_ms - scope["pool_wait_ms"] - scope["command_round_trip_ms"]
+            - scope["pre_command_ms"],
         )
         _emit_mongo_timing(
             trace_id=scope["trace_id"],
@@ -281,6 +283,7 @@ class _RequestMongoTimingListener(monitoring.CommandListener, monitoring.Connect
                     (time.perf_counter_ns() - scope["started_ns"]) / 1_000_000
                     - scope["pool_wait_ms"],
                 )
+                scope["pre_command_ms"] = precommand_ms
                 # Includes server selection plus driver setup/scheduling;
                 # this is not falsely described as pure server selection.
                 _emit_mongo_timing(
