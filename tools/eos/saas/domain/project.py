@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Domain
-VERSION: v1.0.1-TENANT-PROJECT-DOMAIN
+VERSION: v1.1.0-IMMUTABLE-BASELINE-PROJECT-FACTS
 AUTHORITY: Python EOS canonical project facts and lifecycle invariants.
 EPITOME: Defines one immutable, validated tenant project aggregate with
          deterministic serialization and permitted status transitions; it
@@ -9,6 +9,10 @@ COLLABORATION / OWNERSHIP: Wilsy Core Engineering; consumed by the tenant-scoped
                            EOS project registry and router.
 CERTIFICATION / UPDATE DATE: 2026-11-16.
 CHANGELOG:
+  v1.1.0-IMMUTABLE-BASELINE-PROJECT-FACTS denies changing committed project code or
+  the established start date on every revision path. Legacy projects without
+  a recorded code/start date may be initialized once; thereafter fields are
+  immutable across API, registry and direct aggregate callers.
   v1.0.1-TENANT-PROJECT-DOMAIN — Corrects strict type narrowing and persisted
   schema hydration for Pyright; enforces monotonic update/archive timestamps.
   v1.0.0-TENANT-PROJECT-DOMAIN — Establishes canonical internal project facts,
@@ -274,6 +278,11 @@ class Project:
         self._expect_mutable(expected_revision)
         if not isinstance(changes, Mapping) or not set(changes).issubset(_UPDATE_FIELDS):
             raise ProjectError("PROJECT_UPDATE_FIELDS_INVALID")
+        if "code" in changes and self.code is not None and changes["code"] != self.code:
+            raise ProjectError("PROJECT_CODE_IMMUTABLE")
+        if ("start_date" in changes and self.start_date is not None
+                and changes["start_date"] != self.start_date):
+            raise ProjectError("PROJECT_START_DATE_IMMUTABLE")
         actor = _required_text("actor_principal_id", actor_principal_id)
         timestamp = _timestamp("updated_at", updated_at)
         assert timestamp is not None
@@ -323,7 +332,7 @@ class Project:
 __all__ = ["VERSION", "SCHEMA", "Project", "ProjectError", "ProjectSourceType", "ProjectStatus"]
 
 # ARTIFACT: project.py
-# VERSION: v1.0.1-TENANT-PROJECT-DOMAIN
+# VERSION: v1.1.0-IMMUTABLE-BASELINE-PROJECT-FACTS
 # AUTHORITY BOUNDARY: validated tenant project facts only; authorization and persistence belong to EOS
 # TENANT POSTURE: explicit tenant identity is required and never inferred or defaulted
 # FAIL-CLOSED POSTURE: malformed fields, transitions, timestamps, persisted schema, and fingerprints reject
