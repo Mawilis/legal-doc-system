@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS
+ * VERSION: v1.12.0-DENSE-DISCUSSION-CONTEXT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT keeps selected work context
+ *          to one small toolbar and moves the source-backed activity directly
+ *          under it; no stacked explanatory cards or decorative section hero.
  * CHANGELOG: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS links
  *          activity comments to governed approval/evidence panels without
  *          bypassing their separate source authority; labels project actions
@@ -49,16 +52,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS lets the
+ * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS opens a selected task's
+ * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS adds a
+ * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS adds source-backed
+ * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -460,15 +463,15 @@ export default function ProjectTasksPanel({
   };
 
   if (discussionOnly) {
-    return <section className="wp-project-tasks mt-5 border-t border-slate-200 pt-4"
+    return <section className="wp-project-tasks border-t border-slate-200 pt-2"
       aria-label="Project discussions workspace">
       {focusedAction && selectedActionTask ? <>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-600">SELECTED EOS WORK ITEM</p>
-            <h3 className="mt-1 break-words text-base font-bold text-slate-950">{selectedActionTask.title}</h3>
-          </div>
-          <button type="button" className="wp-button" onClick={closeFocusedAction}>All discussions</button>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+          <h3 className="min-w-0 break-words text-sm font-semibold text-slate-950">
+            {selectedActionTask.title}
+          </h3>
+          <button type="button" className="text-xs font-semibold text-blue-800 underline underline-offset-2"
+            onClick={closeFocusedAction}>All discussions</button>
         </div>
         {focusedAction.type === 'discussion' && <ProjectTaskCommentsPanel
           key={[scope, focusedAction.id].join(':')}
@@ -956,7 +959,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.11.0-GOVERNED-ACTIVITY-EVIDENCE-LINKS
+// VERSION: v1.12.0-DENSE-DISCUSSION-CONTEXT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
