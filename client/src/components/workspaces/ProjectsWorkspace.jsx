@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.34.0-AUDITED-DEADLINE-RATIONALE-VIEW
+ * VERSION: v2.35.0-BILLABLE-AI-EXPLICIT-ADMISSION-CONSENT
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.35.0-BILLABLE-AI-EXPLICIT-ADMISSION-CONSENT requires explicit
+ *          user acknowledgement before invoking a potentially billable
+ *          WILSY AI reasoning operation; the existing server-owned
+ *          entitlement, consumption admission and model binding remain
+ *          authoritative and failures never activate a project.
  * CHANGELOG: v2.34.0-AUDITED-DEADLINE-RATIONALE-VIEW displays the source-owned
  *          deadline-change rationale in the immutable audit timeline and
  *          removes opaque actor IDs from browser hover titles.
@@ -674,6 +679,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [templateEditing, setTemplateEditing] = useState(false);
   const [templateOverrides, setTemplateOverrides] = useState({});
   const [aiProjectBrief, setAiProjectBrief] = useState('');
+  const [aiUsageAcknowledged, setAiUsageAcknowledged] = useState(false);
   const [aiProjectState, setAiProjectState] = useState('IDLE');
   const [aiProjectError, setAiProjectError] = useState('');
   const aiDraftReplay = useRef({ fingerprint: '', key: null });
@@ -845,6 +851,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setTemplateEditing(false);
     setTemplateOverrides({});
     setAiProjectBrief('');
+    setAiUsageAcknowledged(false);
     setAiProjectState('IDLE');
     setAiProjectError('');
     aiDraftReplay.current = { fingerprint: '', key: null };
@@ -1014,7 +1021,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 
   const askWilsyAiForTemplateDraft = async () => {
     if (aiProjectState === 'PENDING' || templateState !== 'READY'
-      || !selectedTemplate || aiProjectBrief.trim().length < 20) {
+      || !selectedTemplate || aiProjectBrief.trim().length < 20 || !aiUsageAcknowledged) {
       setAiProjectError('Describe the business goal and expected delivery in at least 20 characters.');
       return;
     }
@@ -1506,7 +1513,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                     onClick={() => { setSelectedTemplateSlug(item.slug);
                       setTemplateName(item.title); setTemplatePickerOpen(false); setTemplateError('');
                       setTemplateEditing(false); setTemplateOverrides({});
-                      setAiProjectBrief(''); setAiProjectState('IDLE'); setAiProjectError('');
+                      setAiProjectBrief(''); setAiUsageAcknowledged(false); setAiProjectState('IDLE'); setAiProjectError('');
                       aiDraftReplay.current = { fingerprint: '', key: null }; createReplay.current = { fingerprint: '', key: null }; }}>
                     <span className="block text-sm font-semibold text-slate-950">{item.industry}</span>
                     <span className="block text-xs text-slate-700">{item.title}</span>
@@ -1533,8 +1540,16 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                             aiDraftReplay.current = { fingerprint: '', key: null };
                           }} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal text-slate-950"/>
                       </label>
+                      <label className="mt-3 flex items-start gap-2 text-xs text-slate-800">
+                        <input type="checkbox" className="mt-0.5 size-4" checked={aiUsageAcknowledged}
+                          onChange={event => setAiUsageAcknowledged(event.target.checked)}/>
+                        <span>I choose to request WILSY AI reasoning using my tenant's subscribed
+                          AI service and available usage allowance. This request may consume
+                          paid AI capacity; EOS will reject it without valid entitlement and admission.
+                          No project is created by this request.</span>
+                      </label>
                       <button type="button" className="wp-button mt-2"
-                        disabled={aiProjectState === 'PENDING' || aiProjectBrief.trim().length < 20}
+                        disabled={aiProjectState === 'PENDING' || aiProjectBrief.trim().length < 20 || !aiUsageAcknowledged}
                         onClick={() => void askWilsyAiForTemplateDraft()}>
                         {aiProjectState === 'PENDING' ? 'WILSY AI drafting…' : 'Generate a reviewable AI plan'}
                       </button>
@@ -1866,7 +1881,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.34.0-AUDITED-DEADLINE-RATIONALE-VIEW
+// VERSION: v2.35.0-BILLABLE-AI-EXPLICIT-ADMISSION-CONSENT
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
