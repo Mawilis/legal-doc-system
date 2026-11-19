@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.22.1-ASSIGN-ACTION-HANDOFF
+ * VERSION: v1.23.0-OPTIMISTIC-PENDING-STATUS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.23.0-OPTIMISTIC-PENDING-STATUS immediately projects
+ *          a clearly marked provisional status chip, retains verified status
+ *          separately and reverts without local business truth on EOS failure.
+ *          The grid exposes explicit accessible selection and density.
  * CHANGELOG: v1.22.1-ASSIGN-ACTION-HANDOFF wires explicit work
  *          assignment to the compact exact-project contributor picker.
  * CHANGELOG: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS adds source-scoped
@@ -996,7 +1000,8 @@ export default function ProjectTasksPanel({
         </div>
       </div>}
       <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
-        <table className="w-full min-w-[580px] border-collapse text-left text-sm">
+        <table role="grid" aria-label="Project work grid" data-density={workDensity}
+          className="w-full min-w-[580px] border-collapse text-left text-sm">
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
             <tr><th scope="col" className="w-10 p-2">
               <input type="checkbox" aria-label="Select all visible work"
@@ -1070,7 +1075,14 @@ export default function ProjectTasksPanel({
                 <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
                   + ({ TODO: 'bg-slate-100 text-slate-800', IN_PROGRESS: 'bg-blue-50 text-blue-800',
                     BLOCKED: 'bg-amber-100 text-amber-900', DONE: 'bg-emerald-50 text-emerald-800',
-                    CANCELLED: 'bg-slate-100 text-slate-600' })[item.status]}>{label(item.status)}</span>
+                    CANCELLED: 'bg-slate-100 text-slate-600' })[pendingTransition?.taskId === item.task_id
+                    ? pendingTransition.status : item.status]}>
+                  {label(pendingTransition?.taskId === item.task_id ? pendingTransition.status : item.status)}
+                  {pendingTransition?.taskId === item.task_id ? ' · pending' : ''}
+                </span>
+                {pendingTransition?.taskId === item.task_id && <span className="sr-only">
+                  Verified status: {label(item.status)}.
+                </span>}
                 {pendingTransition?.taskId === item.task_id &&
                   <span role="status" className="mt-1 block text-xs font-semibold text-blue-800">
                     Updating to {label(pendingTransition.status)}…
@@ -1214,7 +1226,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.22.1-ASSIGN-ACTION-HANDOFF
+// VERSION: v1.23.0-OPTIMISTIC-PENDING-STATUS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
