@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION
+ * VERSION: v1.5.0-ONE-CLICK-DISCUSSION-READING
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.5.0-ONE-CLICK-DISCUSSION-READING makes a
+ *          task's verified discussion immediately visible on Discuss, scrolls
+ *          the selected conversation below fixed chrome, and moves the large
+ *          composer/Markdown preview behind Write update. No extra click or
+ *          scrolling through editor is required to read comments. EOS data,
+ *          pagination, authority, draft and idempotent persistence stay intact.
  * CHANGELOG: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION keeps lengthy
  *          EOS discussion history collapsed until explicitly requested,
  *          exposes a verified current-page comment indicator and retains
@@ -31,7 +37,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION introduces task-threaded
+ * CHANGELOG: v1.5.0-ONE-CLICK-DISCUSSION-READING introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -128,7 +134,7 @@ export default function ProjectTaskCommentsPanel({
   tenantHeaders, onClose, participantMode = false,
 }) {
   const [items, setItems] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
   const [body, setBody] = useState('');
   const [mentions, setMentions] = useState([]);
   const [state, setState] = useState('LOADING');
@@ -140,6 +146,9 @@ export default function ProjectTaskCommentsPanel({
   const currentScope = useRef(scope);
   currentScope.current = scope;
   const generation = useRef(0);
+  const discussionRef = useRef(null);
+  const composerRef = useRef(null);
+  const navigatedScope = useRef(null);
   const command = useRef({ fingerprint: '', key: '' });
   const route = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
@@ -185,7 +194,8 @@ export default function ProjectTaskCommentsPanel({
   useEffect(() => {
     generation.current += 1;
     setItems([]);
-    setShowHistory(false);
+    setShowComposer(false);
+    navigatedScope.current = null;
     setBody('');
     setMentions([]);
     setOffset(0);
@@ -194,6 +204,12 @@ export default function ProjectTaskCommentsPanel({
     void load(0);
     return () => { generation.current += 1; };
   }, [scope, load]);
+
+  useEffect(() => {
+    if (state !== 'READY' || navigatedScope.current === scope) return;
+    navigatedScope.current = scope;
+    discussionRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+  }, [state, scope]);
 
   const submit = async event => {
     event.preventDefault();
@@ -259,7 +275,8 @@ export default function ProjectTaskCommentsPanel({
     }
   };
 
-  return <section aria-label="Task discussion" className="mt-4 rounded-xl border border-blue-200 bg-slate-50 p-3">
+  return <section ref={discussionRef} aria-label="Task discussion"
+    className="mt-4 scroll-mt-28 rounded-xl border border-blue-200 bg-slate-50 p-3">
     <div className="flex items-center justify-between gap-3">
       <h4 className="flex items-center gap-2 font-semibold text-slate-900">
         <MessageSquare size={16}/> Task discussion
@@ -278,6 +295,31 @@ export default function ProjectTaskCommentsPanel({
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {state === 'READY' && <>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
+        aria-label="Verified discussion availability">
+        <div className="min-w-0">
+          <h5 className="text-sm font-semibold text-slate-900">Verified discussion · page {Math.floor(offset / 50) + 1}</h5>
+          <p role="status" className="mt-1 text-xs text-slate-600">
+            {items.length > 0
+              ? items.length + (hasMore ? '+ verified comments on this page' : ' verified comments')
+              : 'No verified comments on this page'}
+            {hasMore ? ' · More pages available' : ''}
+          </p>
+        </div>
+        <button type="button" className="wp-button" aria-expanded={showComposer}
+          aria-controls="task-comment-composer" onClick={() => {
+            setShowComposer(current => !current);
+            if (!showComposer) {
+              // The focused editor follows the header, not the history.
+              composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+            }
+          }}>
+          {showComposer ? 'Close editor' : 'Write update'}
+        </button>
+      </div>
+      {showComposer && <div id="task-comment-composer" ref={composerRef}
+        className="scroll-mt-28">
       <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
         <label className="block text-sm font-semibold text-slate-800">Write a task comment
           <textarea aria-label="New task comment" required rows={5}
@@ -313,24 +355,8 @@ export default function ProjectTaskCommentsPanel({
         <button className="wp-button wp-button-primary" type="submit"
           disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
       </form>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
-        aria-label="Verified discussion availability">
-        <div className="min-w-0">
-          <h5 className="text-sm font-semibold text-slate-900">Discussion history</h5>
-          <p role="status" className="mt-1 text-xs text-slate-600">
-            {items.length > 0
-              ? items.length + (hasMore ? '+ verified comments available' : ' verified comments available')
-              : 'No verified comments on this page'}
-            {hasMore ? ' · Additional pages available' : ''}
-          </p>
-        </div>
-        <button type="button" className="wp-button"
-          aria-expanded={showHistory} aria-controls="verified-task-comment-history"
-          onClick={() => setShowHistory(current => !current)}>
-          {showHistory ? 'Hide comments' : 'View comments'}
-        </button>
-      </div>
-      {showHistory && <div id="verified-task-comment-history" aria-label="Verified task comment history">
+      </div>}
+      <div id="verified-task-comment-history" aria-label="Verified task comment history">
       <h5 className="mt-4 text-sm font-semibold text-slate-900">Verified discussion history · page {Math.floor(offset / 50) + 1}</h5>
       <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
         {items.map(item => <li className="p-3 text-sm" key={item.comment_id}>
@@ -355,14 +381,14 @@ export default function ProjectTaskCommentsPanel({
             onClick={() => void load(offset + 50)}>Next comments</button>
         </nav>}
 
-      </div>}
+      </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
     </>}
   </section>;
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION
+// VERSION: v1.5.0-ONE-CLICK-DISCUSSION-READING
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
