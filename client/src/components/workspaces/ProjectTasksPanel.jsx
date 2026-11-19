@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION
+ * VERSION: v1.8.1-PARENT-BOUND-TODO-STEPS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS adds explicit
+ *          parent-bound checklist-step creation using the existing EOS subtask
+ *          command; no secondary checklist collection or local persistence.
  * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION exposes a checkable
  *          project To-do list backed entirely by existing EOS task/subtask
  *          status transitions, explicit completion confirmation and live
@@ -31,16 +34,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION lets the
+ * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION opens a selected task's
+ * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION adds a
+ * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION adds source-backed
+ * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -542,6 +545,15 @@ export default function ProjectTasksPanel({
                   disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Resume work</button>}
                 {canComplete && <span className="text-xs text-slate-600">Tick to verify completion</span>}
                 {complete && <span className="text-xs font-semibold text-emerald-800">EOS confirmed Done</span>}
+                {item.status !== 'DONE' && <button type="button"
+                  className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+                  aria-label={'Add checklist step to ' + item.title}
+                  onClick={() => {
+                    setCreating(true);
+                    setEditor(null);
+                    setWorkType('SUBTASK');
+                    setDraft({ ...EMPTY, kind: 'TASK', parent_task_id: item.task_id });
+                  }}>Add checklist step</button>}
                 <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
                   onClick={() => setDiscussionTaskId(item.task_id)}>Update notes</button>
               </li>;
@@ -603,6 +615,9 @@ export default function ProjectTasksPanel({
       </div>
       {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
+        {workType === 'SUBTASK' && draft.parent_task_id && <p role="status" className="text-xs font-semibold text-blue-900">
+          Adding an EOS subtask under {availableParents.find(item => item.task_id === draft.parent_task_id)?.title || 'selected source task'}.
+        </p>}
         <p className="text-xs text-slate-600">{workType === 'MILESTONE'
           ? 'Milestone — a delivery checkpoint with a target date and accountable owner.'
           : workType === 'SUBTASK'
@@ -831,7 +846,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.8.0-EOS-CHECKABLE-DAILY-EXECUTION
+// VERSION: v1.8.1-PARENT-BOUND-TODO-STEPS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
