@@ -4,15 +4,18 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS canonical Kennel database lifecycle and opt-in timing boundary.
 
 TITLE: WILSY OS Sovereign Kennel Database Anchor
-VERSION: v2.5.0-STRICT-REMOTE-MONGO-TLS
+VERSION: v2.6.0-OPT-IN-TRANSPORT-PHASE-TELEMETRY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns the sole EOS MongoClient lifecycle and canonical database binding;
          optionally observes request-scoped pool and command timings.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/db.py
 COLLABORATION / OWNERSHIP: EOS runtime owns connection startup and shutdown;
                            AuthRegistry supplies validated timing context only.
-CERTIFICATION / UPDATE DATE: 2026-11-16
+CERTIFICATION / UPDATE DATE: 2026-11-19
 CHANGELOG:
+  v2.6.0-OPT-IN-TRANSPORT-PHASE-TELEMETRY — Adds opt-in pre-command
+    driver timing, connection establishment and heartbeat observations.
+    Preserves exact-tenant authority, security settings and driver retries.
   v2.5.0-STRICT-REMOTE-MONGO-TLS — Requires TLS for every non-loopback
     MongoDB target, rejects explicit insecure remote overrides, and always
     validates certificates and hostnames for TLS connections.
@@ -174,6 +177,7 @@ def _emit_mongo_timing(
             "AUTH_MONGO_POOL_PRESSURE",
             "AUTH_MONGO_COMMAND_ROUND_TRIP",
             "AUTH_MONGO_CLIENT_RESIDUAL",
+            "AUTH_MONGO_PRE_COMMAND_DRIVER_WAIT",
         }
         or outcome not in {"OK", "FAILED", "OBSERVED"}
     ):
@@ -230,6 +234,7 @@ def mongo_timing_scope(*, stage: str, correlation: str | None) -> Iterator[None]
         "started_ns": time.perf_counter_ns(),
         "pool_wait_ms": 0.0,
         "command_round_trip_ms": 0.0,
+        "first_command_observed": False,
     }
     token = _MONGO_TIMING_CONTEXT.set(scope)
     outcome = "OBSERVED"
@@ -269,6 +274,22 @@ class _RequestMongoTimingListener(monitoring.CommandListener, monitoring.Connect
             scope = _MONGO_TIMING_CONTEXT.get()
             if scope is None or not _mongo_timing_is_enabled():
                 return
+            if not scope["first_command_observed"]:
+                scope["first_command_observed"] = True
+                precommand_ms = max(
+                    0.0,
+                    (time.perf_counter_ns() - scope["started_ns"]) / 1_000_000
+                    - scope["pool_wait_ms"],
+                )
+                # Includes server selection plus driver setup/scheduling;
+                # this is not falsely described as pure server selection.
+                _emit_mongo_timing(
+                    trace_id=scope["trace_id"],
+                    operation_stage=scope["operation_stage"],
+                    event="AUTH_MONGO_PRE_COMMAND_DRIVER_WAIT",
+                    outcome="OBSERVED",
+                    duration_ms=precommand_ms,
+                )
             key = self._command_key(event)
             with self._lock:
                 self._command_scopes[key] = scope
@@ -338,7 +359,7 @@ class _RequestMongoTimingListener(monitoring.CommandListener, monitoring.Connect
         return
 
     def pool_cleared(self, event: Any) -> None:
-        return
+        _emit_transport_phase("POOL_CLEARED", "OBSERVED", 0.0)
 
     def pool_closed(self, event: Any) -> None:
         try:
@@ -352,7 +373,15 @@ class _RequestMongoTimingListener(monitoring.CommandListener, monitoring.Connect
         return
 
     def connection_ready(self, event: Any) -> None:
-        return
+        try:
+            seconds = getattr(event, "duration", None)
+            if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
+                _emit_transport_phase(
+                    "CONNECTION_ESTABLISHMENT", "OK",
+                    max(0.0, float(seconds) * 1000.0),
+                )
+        except Exception:
+            return
 
     def connection_closed(self, event: Any) -> None:
         return
@@ -423,7 +452,61 @@ class _RequestMongoTimingListener(monitoring.CommandListener, monitoring.Connect
             return
 
 
+def _emit_transport_phase(event: str, outcome: str, duration_ms: float) -> None:
+    """Emit opt-in driver telemetry; no endpoint, user, tenant or error data.
+
+    @authority Observability only, without database or financial authority.
+    @privacy Only fixed labels and nonnegative durations are emitted.
+    """
+    if (
+        not _mongo_timing_is_enabled()
+        or event not in {"CONNECTION_ESTABLISHMENT", "HEARTBEAT", "POOL_CLEARED"}
+        or outcome not in {"OK", "FAILED", "OBSERVED"}
+    ):
+        return
+    try:
+        logger.info(
+            "WILSY_MONGO_TRANSPORT event=%s outcome=%s duration_ms=%.3f",
+            event, outcome, max(0.0, float(duration_ms)),
+        )
+    except Exception:
+        return
+
+
+class _RequestMongoHeartbeatListener(monitoring.ServerHeartbeatListener):
+    """Observe slow/failed heartbeats without affecting topology selection.
+
+    @authority Monitoring only; no tenant or financial execution.
+    @privacy Replies and network endpoints are never inspected or logged.
+    """
+
+    def started(self, event: Any) -> None:
+        return
+
+    def succeeded(self, event: Any) -> None:
+        try:
+            seconds = getattr(event, "duration", None)
+            if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
+                if float(seconds) >= 0.1:
+                    _emit_transport_phase("HEARTBEAT", "OK", float(seconds) * 1000.0)
+        except Exception:
+            return
+
+    def failed(self, event: Any) -> None:
+        try:
+            seconds = getattr(event, "duration", None)
+            value = (
+                max(0.0, float(seconds) * 1000.0)
+                if isinstance(seconds, (int, float)) and not isinstance(seconds, bool)
+                else 0.0
+            )
+            _emit_transport_phase("HEARTBEAT", "FAILED", value)
+        except Exception:
+            return
+
+
 _MONGO_TIMING_LISTENER = _RequestMongoTimingListener()
+_MONGO_HEARTBEAT_LISTENER = _RequestMongoHeartbeatListener()
 _retry_stop = None
 
 
@@ -532,7 +615,7 @@ def connect_db(force_reconnect=False):
         logger.info("[KENNEL_DB] 📡 Initiating explicit replica set link...")
         if _mongo_timing_is_enabled():
             _MONGO_TIMING_LISTENER.configure_pool_capacity(options["maxPoolSize"])
-            options["event_listeners"] = [_MONGO_TIMING_LISTENER]
+            options["event_listeners"] = [_MONGO_TIMING_LISTENER, _MONGO_HEARTBEAT_LISTENER]
         local_client = MongoClient(uri, **options)
         # Force a ping to verify connectivity
         local_client.admin.command('ping')
@@ -644,7 +727,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.5.0-STRICT-REMOTE-MONGO-TLS
+# VERSION: v2.6.0-OPT-IN-TRANSPORT-PHASE-TELEMETRY
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.
