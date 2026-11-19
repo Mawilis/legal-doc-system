@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.4.0-STRICT-CAPABILITY-BOOLEAN-GATES
+ * VERSION: v1.5.0-NAMED-CONTRIBUTOR-AVATAR
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.5.0-NAMED-CONTRIBUTOR-AVATAR adds a compact
+ *          initials/avatar identity marker only from an EOS-verified display
+ *          name, falling back to a neutral person glyph when unavailable.
+ *          Opaque principal identifiers remain internal.
  * CHANGELOG: v1.4.0-STRICT-CAPABILITY-BOOLEAN-GATES requires
  *          literal true for each row assignment/keyboard capability;
  *          missing or malformed caller flags can never imply permissions.
@@ -30,7 +34,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS executes financial authority alone.
  */
 import React from 'react';
-import { Waypoints, ClipboardList } from 'lucide-react';
+import { Waypoints, ClipboardList, UserRound } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
 
 const NO_ACTION_CAPABILITIES = Object.freeze({
@@ -55,6 +59,20 @@ export default function ProjectWorkRow({
   onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
   onAttachments, onApprovals, onActivity, capabilities = NO_ACTION_CAPABILITIES,
 }) {
+  const displayName = item.assignee_principal_id && typeof assigneeName === 'function'
+    ? assigneeName(item.assignee_principal_id) : null;
+  const hasNamedContributor = typeof displayName === 'string' && displayName.trim().length > 0
+    && !displayName.toLowerCase().includes('unavailable');
+  const initials = hasNamedContributor
+    ? displayName.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase()
+    : null;
+  const identity = <span className="inline-flex min-w-0 items-center gap-2">
+    <span data-assignee-avatar aria-hidden="true"
+      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-800">
+      {initials || <UserRound size={14}/>}
+    </span>
+    <span className="min-w-0 truncate">{displayName || 'Assigned contributor · name unavailable'}</span>
+  </span>;
   return <tr key={item.task_id} data-task-id={item.task_id}
               aria-label={'Open work details: ' + item.title}
               tabIndex={0}
@@ -140,9 +158,9 @@ export default function ProjectWorkRow({
                       aria-label={'Reassign: ' + item.title}
                       className="text-xs font-semibold text-blue-800 underline underline-offset-2"
                       onClick={() => onAssign(item)}>
-                      {assigneeName(item.assignee_principal_id)}
+                      {identity}
                     </button>
-                    : <span title="Verified exact-project contributor">{assigneeName(item.assignee_principal_id)}</span>
+                    : <span title="Verified exact-project contributor">{identity}</span>
                    : capabilities?.canAssign === true && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
                   <button type="button" disabled={busy}
                     className="text-xs font-semibold text-blue-800 underline underline-offset-2"
@@ -170,7 +188,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.4.0-STRICT-CAPABILITY-BOOLEAN-GATES
+// VERSION: v1.5.0-NAMED-CONTRIBUTOR-AVATAR
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
