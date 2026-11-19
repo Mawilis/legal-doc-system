@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT
+ * VERSION: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT explicitly opens the
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT verifies seven
+ *          source-backed industry templates, selected-template focus,
+ *          accessible project-name contrast, and omission of opaque
+ *          backend IDs at desktop and mobile widths.
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT explicitly opens the
  *          on-demand Notes editor before measuring its real form typography
  *          and testing note colours in desktop and mobile Chromium.
  * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies that the exact synthetic
@@ -16,43 +20,43 @@
  *          name while preserving its immutable principal_id as the select
  *          value, with no inferred identity or grant.
  * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT separately verifies indexed owner-list navigation and explicit participant assignments in 1440px/390px Chromium; no implicit role grants, mutations or false owner totals.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT renders
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT renders
  *          task attachments as quarantined evidence with no preview/download
  *          and a bounded contributor upload control at desktop/mobile sizes.
- * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT scopes
+ * CHANGELOG:  v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT scopes
  *          review rationale assertions to the selected task's accessible
  *          region when that source text also appears in the reviewer inbox.
- * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies
+ * CHANGELOG:  v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT verifies
  *          the separately admitted reviewer inbox is rendered and usable
  *          without navigation through the owner-only project registry.
- * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT renders
+ * CHANGELOG:  v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT renders
  *          the task-review approval history and named reviewer decision
  *          controls at desktop and mobile widths without simulated IAM grants.
- * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT renders
+ * CHANGELOG:  v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT renders
  *          the separately authorized Assigned Projects task/notification
  *          journey at desktop and mobile widths without simulated grants.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT makes the shared
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies EOS-backed project work
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT measures exact direct-child table
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT certifies the existing
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT measures actual
+ * CHANGELOG: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -241,6 +245,32 @@ for (const width of [1440, 390]) {
         };
       }
 
+      if (request.method() === 'GET' && pathname === '/api/projects/templates') {
+        const industries = [
+          ['Legal','legal-litigation','Litigation and matter delivery'],
+          ['Construction','construction-delivery','Construction project lifecycle'],
+          ['Football','football-season','Season operations and match preparation'],
+          ['Imports','imports-clearance','Procurement, shipping and customs clearance'],
+          ['Software','software-release','Product development and release'],
+          ['Healthcare','healthcare-implementation','Clinic implementation and compliance'],
+          ['General business','strategic-initiative','Strategic initiative delivery'],
+        ];
+        response = {
+          schema: 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, ownership: 'PLATFORM_STARTERS',
+          items: industries.map(([industry, slug, title]) => ({
+            slug, industry, title, revision: 1,
+            steps: [
+              { id: 'plan', kind: 'TASK', title: 'Plan accountable delivery',
+                day: 7, role: 'project_lead', acceptance: 'Scope checked',
+                depends_on: [] },
+              { id: 'gate', kind: 'MILESTONE', title: 'Verify delivery milestone',
+                day: 15, role: 'project_sponsor', acceptance: 'Evidence accepted',
+                depends_on: ['plan'] },
+            ],
+          })),
+        };
+      }
       if (request.method() === 'GET' && pathname === '/api/projects/summary') response = summary;
       if (request.method() === 'GET' && pathname === '/api/projects/' + projectId) response = detail;
       if (request.method() === 'GET' && pathname.startsWith('/api/projects/' + projectId + '/tasks/')
@@ -321,6 +351,26 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('region', { name: 'Verified project status distribution' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Planned: 1 of 1 projects' })).toBeVisible();
     await expect(page.getByRole('button', { name: /View project Projects operating foundation/ })).toBeVisible();
+    await expect(page.locator('.wp-table-row')).not.toContainText(projectId);
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await page.getByRole('button', { name: 'Browse industry templates' }).click();
+    const templates = page.getByRole('listbox', { name: 'Verified industry templates' });
+    await expect(templates.getByRole('option')).toHaveCount(7);
+    await templates.getByRole('option', { name: /Software/ }).click();
+    await expect(templates).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Change template' })).toBeVisible();
+    await expect(page.getByText('Verify delivery milestone')).toBeVisible();
+    const templateLabel = page.getByText('Project name', { exact: true });
+    const labelStyle = await templateLabel.evaluate(node => {
+      const computed = getComputedStyle(node);
+      return { color: computed.color, fill: computed.webkitTextFillColor,
+        transform: computed.textTransform, spacing: computed.letterSpacing };
+    });
+    expect(labelStyle.color, 'project name must not inherit faded gold').toBe('rgb(25, 52, 81)');
+    expect(labelStyle.fill).toBe('rgb(25, 52, 81)');
+    expect(labelStyle.transform).toBe('none');
+    await page.getByRole('button', { name: 'Back to blank project' }).click();
+    await page.getByRole('button', { name: 'Cancel project creation' }).click();
 
     const before = await page.evaluate(() => {
       const workspace = document.querySelector('.wilsy-projects');
@@ -481,7 +531,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT
+// VERSION: v2.5.0-INDUSTRY-TEMPLATE-VISUAL-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
