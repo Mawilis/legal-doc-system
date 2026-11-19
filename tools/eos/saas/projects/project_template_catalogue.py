@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Governed Project Blueprint Catalogue
-VERSION: v1.0.0-SEVEN-INDUSTRY-BLUEPRINT-CONTRACT
+VERSION: v1.1.0-SEVENTEEN-INDUSTRY-BLUEPRINTS
 AUTHORITY: Read-only platform blueprint definitions; Python EOS creates all business records.
 EPITOME: Validated reusable industry starting structures, dependencies, relative
          due dates, role requirements and evidence-based acceptance criteria.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Projects router controls IAM, tenant ownership and
          transactional materialisation. Existing Project and ProjectTask
          registries own all persisted records and immutable events.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.1.0-SEVENTEEN-INDUSTRY-BLUEPRINTS adds ten
+         validated sector-specific DAGs as neutral platform starters;
+         no project, tenant, IAM or payment records are created.
 CHANGELOG: v1.0.0-SEVEN-INDUSTRY-BLUEPRINT-CONTRACT seeds seven reviewed
          cross-industry definitions with DAG validation and no implicit grants.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -22,7 +25,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Final
 
-VERSION: Final[str] = "v1.0.0-SEVEN-INDUSTRY-BLUEPRINT-CONTRACT"
+VERSION: Final[str] = "v1.1.0-SEVENTEEN-INDUSTRY-BLUEPRINTS"
 SCHEMA: Final[str] = "WILSY-PROJECT-TEMPLATE/V1"
 
 _BLUEPRINTS: Final[tuple[dict[str, object], ...]] = (
@@ -383,11 +386,521 @@ _BLUEPRINTS: Final[tuple[dict[str, object], ...]] = (
         }
       ]
     },
+    {
+      "slug": "marketing-campaign",
+      "industry": "Marketing",
+      "title": "Campaign strategy and launch",
+      "revision": 1,
+      "description": "Governed campaign strategy and launch with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Define audience, objectives and approved scope",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Prepare channels, creative and consent evidence",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Verify assets, legal review and launch risks",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Campaign launch approved",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "automotive-parts",
+      "industry": "Automotive parts",
+      "title": "Parts procurement and inventory",
+      "revision": 1,
+      "description": "Governed parts procurement and inventory with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Confirm branch demand and exact part numbers",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Verify suppliers, quotations and purchase evidence",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Inspect received stock and discrepancies",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Inventory replenishment accepted",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "vehicle-dealership",
+      "industry": "Vehicle dealership",
+      "title": "Vehicle acquisition and listing",
+      "revision": 1,
+      "description": "Governed vehicle acquisition and listing with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Verify vehicle identity and provenance",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Inspect vehicle condition and plan preparation",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Review compliance, listing and warranty readiness",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Vehicle approved for listing",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "mechanical-service",
+      "industry": "Workshop",
+      "title": "Automotive repair and quality assurance",
+      "revision": 1,
+      "description": "Governed automotive repair and quality assurance with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Record authorised service scope and intake",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Inspect faults and approve repair work package",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Validate repairs, safety and test results",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Vehicle handover approved",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "agriculture-season",
+      "industry": "Agriculture",
+      "title": "Crop season and harvest",
+      "revision": 1,
+      "description": "Governed crop season and harvest with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Approve crop and field operations plan",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Prepare inputs, equipment and safety controls",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Review agronomy, field records and harvesting logistics",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Harvest readiness approved",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "dentistry-clinic",
+      "industry": "Dental healthcare",
+      "title": "Dental practice operational readiness",
+      "revision": 1,
+      "description": "Governed dental practice operational readiness with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Verify registration, licensing and clinical scope",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Prepare equipment, sterilisation and staff procedures",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Audit consent, safety and emergency protocols",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Dental clinic readiness approved",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "employee-onboarding",
+      "industry": "Workforce",
+      "title": "Evidence-gated employee onboarding",
+      "revision": 1,
+      "description": "Governed evidence-gated employee onboarding with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Verify signed offer and admission prerequisites",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Prepare role training and equipment plans",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Review policies and independently approved access",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Onboarding preparations accepted",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "business-finance-close",
+      "industry": "Finance operations",
+      "title": "Period-end close and reporting",
+      "revision": 1,
+      "description": "Governed period-end close and reporting with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Confirm reporting period and reviewer assignments",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Reconcile ledger and supporting schedules",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Review exceptions and substantiation evidence",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Management report accepted",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "customer-rollout",
+      "industry": "Customer success",
+      "title": "Customer onboarding and service rollout",
+      "revision": 1,
+      "description": "Governed customer onboarding and service rollout with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Confirm service scope and acceptance objectives",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Prepare user onboarding and training material",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Verify handover readiness and outstanding risks",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Customer launch acceptance",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "export-shipment",
+      "industry": "International trading",
+      "title": "Export shipping and proof of delivery",
+      "revision": 1,
+      "description": "Governed export shipping and proof of delivery with traceable acceptance evidence.",
+      "steps": [
+        {
+          "id": "scope",
+          "kind": "TASK",
+          "title": "Verify customer order and export eligibility",
+          "day": 5,
+          "role": "project_lead",
+          "acceptance": "Scope and dated evidence approved.",
+          "depends_on": []
+        },
+        {
+          "id": "prepare",
+          "kind": "TASK",
+          "title": "Prepare origin, packaging and shipping records",
+          "day": 15,
+          "role": "responsible_specialist",
+          "acceptance": "Prepared work and assigned responsibilities reviewed.",
+          "depends_on": [
+            "scope"
+          ]
+        },
+        {
+          "id": "verify",
+          "kind": "TASK",
+          "title": "Review carrier clearance and release evidence",
+          "day": 28,
+          "role": "quality_reviewer",
+          "acceptance": "Independent evidence checks and exceptions recorded.",
+          "depends_on": [
+            "prepare"
+          ]
+        },
+        {
+          "id": "milestone",
+          "kind": "MILESTONE",
+          "title": "Export dispatch accepted",
+          "day": 35,
+          "role": "project_sponsor",
+          "acceptance": "Sponsor acceptance and unresolved risks documented.",
+          "depends_on": [
+            "verify"
+          ]
+        }
+      ]
+    },
 )
 
 
 def _validate_catalogue() -> None:
-    if len(_BLUEPRINTS) != 7 or len({item["slug"] for item in _BLUEPRINTS}) != 7:
+    if len(_BLUEPRINTS) != 17 or len({item["slug"] for item in _BLUEPRINTS}) != 17:
         raise RuntimeError("PROJECT_TEMPLATE_CATALOGUE_INVALID")
     for template in _BLUEPRINTS:
         steps = template["steps"]
@@ -428,7 +941,7 @@ def get_blueprint(slug: str) -> dict[str, object] | None:
 _validate_catalogue()
 
 # ARTIFACT: project_template_catalogue.py
-# VERSION: v1.0.0-SEVEN-INDUSTRY-BLUEPRINT-CONTRACT
+# VERSION: v1.1.0-SEVENTEEN-INDUSTRY-BLUEPRINTS
 # AUTHORITY BOUNDARY: pure validated platform definitions, zero mutations
 # TENANT POSTURE: no tenant access or inherited grants
 # FAIL-CLOSED POSTURE: malformed DAG or schema prevents catalogue import
