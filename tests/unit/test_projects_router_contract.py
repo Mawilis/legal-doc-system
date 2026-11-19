@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.26.0-STRICT-COMMENT-MENTIONS-CERT
+VERSION: v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,52 +9,56 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT admits only bounded JSON string arrays
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT verifies
+  valid browser JSON enters the exact strict comment model over the
+  FastAPI HTTP parsing boundary, while malformed mention shapes fail 422;
+  no database writes or membership authority are exercised.
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT admits only bounded JSON string arrays
   as strict task-comment mention tuples; rejects scalar, heterogeneous and
   oversized inputs without broadening participant authority.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT asserts one bounded exact-
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT asserts one bounded exact-
   tenant profile lookup for eligible project member names, null-name fallback
   and duplicate identity rejection without creating grant or role authority.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins exact owner/participant clean download IAM and
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins exact owner/participant clean download IAM and
   contributor-only provider scan reconciliation without a safety bypass.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT certifies
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT certifies
   owner-only attachment reads, current participant reads and contributor
   upload commands; no upload, download, scan or financial inherited grant.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT admits named reviewer
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT admits named reviewer
   inbox only through independent participant-contribute IAM; the route
   verifies each current exact-project record before revealing pending work.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT locks task approval
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT locks task approval
   request to owner update and named contributor decision to participant
   contribute; task approval read requires separately admitted context.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins exact-project
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins exact-project
   co-participant list to the current participant-only read operation.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins recipient-only
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins recipient-only
   notification list/read receipt routes under separate participant IAM and
   exact active project/entitlement checks; no global inbox bypass.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT locks principal-scoped
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT locks principal-scoped
   /my-projects discovery to explicit current participant IAM, no owner fallback.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins four task comment
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins four task comment
   read/create routes to owner or current participant IAM and record scope.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins owner-authorized task edit
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins owner-authorized task edit
   to project:update / project_update and retains participant scope denial.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins exact tenant candidate membership
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins exact tenant candidate membership
   choice reads to project owner detail IAM without granting participation.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins five new exact-tenant task operations
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT certifies independent participant IAM pairs
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT verifies explicit project owner-only participant
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT pins the four bounded notes endpoints to current
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT proves customer Projects authority is separately
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.26.0-STRICT-COMMENT-MENTIONS-CERT asserts EOS rejects
+  v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -69,7 +73,7 @@ CHANGELOG:
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
-CHANGELOG: v1.26.0-STRICT-COMMENT-MENTIONS-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
+CHANGELOG: v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -104,7 +108,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.26.0-STRICT-COMMENT-MENTIONS-CERT"
+VERSION = "v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -875,6 +879,35 @@ def test_project_participant_page_names_are_bounded_and_tenant_scoped() -> None:
     assert denied.value.detail == "PROJECT_PARTICIPANT_NAMES_COLLISION"
 
 
+def test_task_comment_json_is_admitted_through_fastapi_http_boundary() -> None:
+    """An empty browser mentions array must not cause HTTP 422 admission."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    application = FastAPI()
+
+    @application.post("/api/projects/comment-admission", status_code=201)
+    def admit(payload: projects_router.ProjectTaskCommentRequest) -> dict[str, object]:
+        return {"accepted": True, "body": payload.body, "mentions": list(payload.mentions)}
+
+    with TestClient(application) as client:
+        accepted = client.post("/api/projects/comment-admission", json={
+            "body": "**Development progress — 19 November 2026**\\n\\n- Verified source",
+            "mentions": [],
+        })
+        assert accepted.status_code == 201, accepted.text
+        assert accepted.json()["mentions"] == []
+        assert accepted.json()["body"].startswith("**Development progress")
+        invalid = client.post("/api/projects/comment-admission", json={
+            "body": "Notes", "mentions": ["member", 123],
+        })
+        assert invalid.status_code == 422
+        extra = client.post("/api/projects/comment-admission", json={
+            "body": "Notes", "mentions": [], "timestamp": "forbidden",
+        })
+        assert extra.status_code == 422
+
+
 def test_comment_json_mentions_admit_only_bounded_string_arrays() -> None:
     """Browser comment arrays are normalized without weakening strict admission."""
     from pydantic import ValidationError
@@ -1064,7 +1097,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.26.0-STRICT-COMMENT-MENTIONS-CERT
+# VERSION: v1.27.0-COMMENT-HTTP-JSON-ADMISSION-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
