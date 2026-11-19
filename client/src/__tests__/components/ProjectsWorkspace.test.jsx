@@ -1,37 +1,40 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.9.0-INDEXED-OWNER-PAGINATION-CERT
+ * VERSION: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies distinct EOS subtask and
+ *          milestone commands, active parent selection, and current-page queue
+ *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT proves a
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT adds in-place task
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT certifies task creation, verified
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT waits for the committed note row
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT certifies source-backed project note
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT proves navigation
+ * CHANGELOG: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -388,6 +391,105 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible());
     expect(api.patch).toHaveBeenCalledTimes(1);
+    expect(persisted.status).toBe('planned');
+  });
+
+  it('operates real task, subtask and milestone commands from the verified work queue', async () => {
+    const persisted = project();
+    const parentId = 'ptk-' + 'b'.repeat(48);
+    const childId = 'ptk-' + 'c'.repeat(48);
+    const milestoneId = 'ptk-' + 'd'.repeat(48);
+    const base = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      description: '', status: 'TODO', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-18T06:00:00+00:00', updated_at: '2026-11-18T06:00:00+00:00',
+      revision: 1, fingerprint: 'a'.repeat(128),
+    };
+    const parent = { ...base, task_id: parentId, kind: 'TASK',
+      parent_task_id: null, title: 'Main delivery' };
+    const child = { ...base, task_id: childId, kind: 'TASK',
+      parent_task_id: parentId, title: 'Draft deliverable' };
+    const milestone = { ...base, task_id: milestoneId, kind: 'MILESTONE',
+      parent_task_id: null, title: 'Sign-off checkpoint' };
+    let rows = [parent];
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 50, offset: 0,
+        items: rows, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 100, offset: 0,
+        items: [], has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected GET ' + path);
+    });
+    api.post.mockImplementation(async (path, body, options) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/tasks`);
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      if (body.kind === 'TASK') {
+        expect(body).toMatchObject({ title: 'Draft deliverable',
+          parent_task_id: parentId, kind: 'TASK' });
+        rows = [parent, child];
+      } else {
+        expect(body).toMatchObject({ title: 'Sign-off checkpoint',
+          parent_task_id: null, kind: 'MILESTONE' });
+        rows = [parent, child, milestone];
+      }
+      return { data: { schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        task: body.kind === 'TASK' ? child : milestone } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="operational-work-queue-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    await screen.findByRole('region', { name: 'Project work execution' });
+    expect(await screen.findByText('Main delivery', {
+      selector: '.wp-project-tasks tbody td span',
+    })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Work type' }), {
+      target: { value: 'SUBTASK' },
+    });
+    expect(screen.getByRole('button', { name: 'Save work to EOS' })).toBeDisabled();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Parent task' }), {
+      target: { value: parentId },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
+      target: { value: 'Draft deliverable' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
+    await waitFor(() => expect(screen.getByText('Draft deliverable', {
+      selector: '.wp-project-tasks tbody td span',
+    })).toBeVisible());
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
+      target: { value: 'SUBTASK' },
+    });
+    expect(screen.getByText('1 shown / 2 verified on page 1.')).toBeVisible();
+    expect(screen.queryByText('Main delivery', {
+      selector: '.wp-project-tasks tbody td span',
+    })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
+      target: { value: 'ALL' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Work type' }), {
+      target: { value: 'MILESTONE' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
+      target: { value: 'Sign-off checkpoint' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
+    await waitFor(() => expect(screen.getByText('Sign-off checkpoint', {
+      selector: '.wp-project-tasks tbody td span',
+    })).toBeVisible());
+    expect(api.post).toHaveBeenCalledTimes(2);
     expect(persisted.status).toBe('planned');
   });
 
@@ -806,7 +908,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.9.0-INDEXED-OWNER-PAGINATION-CERT
+ * VERSION: v2.10.0-OPERATIONAL-WORK-QUEUE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
