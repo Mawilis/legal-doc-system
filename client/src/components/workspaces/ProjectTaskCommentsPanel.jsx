@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY
+ * VERSION: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE places the verified work timeline before source status
+ *          diagnostics and optional composer, makes diagnostics disclosure-only,
+ *          and reduces duplicated headers and boxed surfaces without changing
+ *          EOS source selection or authorization.
  * CHANGELOG: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY folds
  *          exact-task approval requests/decisions and attachment uploads into
  *          the same chronological task activity projection as comments and
@@ -52,7 +56,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY introduces task-threaded
+ * CHANGELOG: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -452,9 +456,9 @@ export default function ProjectTaskCommentsPanel({
   };
 
   return <section ref={discussionRef} aria-label="Activity & discussion"
-    className="mt-4 scroll-mt-28 rounded-xl border border-blue-200 bg-slate-50 p-3">
+    className="scroll-mt-24 border-t border-slate-200 pt-2">
     <div className="flex items-center justify-between gap-3">
-      <h4 className="flex items-center gap-2 font-semibold text-slate-900">
+      <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
         <MessageSquare size={16}/> Activity &amp; discussion
       </h4>
       <div className="flex flex-wrap gap-2">
@@ -475,64 +479,19 @@ export default function ProjectTaskCommentsPanel({
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {state === 'READY' && <>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
-        aria-label="Verified discussion availability">
-        <div className="min-w-0">
-          <h5 className="text-sm font-semibold text-slate-900">Source-verified activity</h5>
-          <p role="status" className="mt-1 text-xs text-slate-600">
-            {items.length > 0
-              ? items.length + (hasMore ? '+ verified comments on this page' : ' verified comments')
-              : 'No verified comments on this page'}
-            {hasMore ? ' · More pages available' : ''}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2" aria-label="Verified discussion availability">
+        <p role="status" className="text-xs text-slate-600">
+          {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
+            : 'No comments on this page'} · task activity
+        </p>
         <button type="button" className="wp-button" aria-expanded={showComposer}
-          aria-controls="task-comment-composer"
-          onClick={() => setShowComposer(current => !current)}>
+          aria-controls="task-comment-composer" onClick={() => setShowComposer(current => !current)}>
           {showComposer ? 'Close editor' : 'Write update'}
         </button>
       </div>
-      {showComposer && <div id="task-comment-composer" ref={composerRef}
-        className="scroll-mt-28">
-      <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
-        <label className="block text-sm font-semibold text-slate-800">Write a progress update
-          <textarea aria-label="New task comment" required rows={5}
-            maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
-            placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
-            className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-normal text-slate-900"/>
-        </label>
-        <section aria-label="Live formatted comment preview" className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h5 className="text-xs font-bold uppercase tracking-wide text-slate-700">Live formatted preview</h5>
-            <span className="text-xs tabular-nums text-slate-600">{body.length} / 5000 characters</span>
-          </div>
-          {body.trim() ? <MarkdownText value={body}/> : <p className="text-sm text-slate-600">
-            Formatted text will appear here as you type or paste.
-          </p>}
-        </section>
-        <fieldset className="rounded-lg border border-slate-200 p-3">
-          <legend className="px-1 text-xs font-semibold text-slate-800">Mention verified contributors (optional)</legend>
-          <div className="grid max-h-32 gap-2 overflow-auto sm:grid-cols-2">
-            {participants.filter(item => item.principal_id !== principalId).map(person =>
-              <label className="flex items-center gap-2 break-all text-xs text-slate-800"
-                key={person.principal_id}>
-                <input type="checkbox" checked={mentions.includes(person.principal_id)}
-                  disabled={!mentions.includes(person.principal_id) && mentions.length >= 10}
-                  onChange={event => setMentions(list => event.target.checked
-                    ? [...list, person.principal_id]
-                    : list.filter(value => value !== person.principal_id))}/>
-                {person.principal_id}
-              </label>)}
-          </div>
-          <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
-        </fieldset>
-        <button className="wp-button wp-button-primary" type="submit"
-          disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
-      </form>
-      </div>}
       <div id="verified-task-comment-history" aria-label="Verified task activity history">
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <h5 className="text-sm font-semibold text-slate-900">Activity &amp; discussion · newest first</h5>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
         <div className="flex flex-wrap gap-2">
           {typeof onViewApprovals === 'function' &&
             <button type="button" className="wp-button" onClick={onViewApprovals}>Decisions &amp; approvals</button>}
@@ -540,23 +499,7 @@ export default function ProjectTaskCommentsPanel({
             <button type="button" className="wp-button" onClick={onViewAttachments}>Attachments &amp; evidence</button>}
         </div>
       </div>
-      {(approvalState === 'UNAVAILABLE' || attachmentState === 'UNAVAILABLE') &&
-        <p role="status" className="mt-2 text-sm text-amber-900">
-          {approvalState === 'UNAVAILABLE' ? 'Approval evidence unavailable. ' : ''}
-          {attachmentState === 'UNAVAILABLE' ? 'Attachment evidence unavailable. ' : ''}
-          Other verified activity remains readable; missing records are not inferred.
-        </p>}
-            {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
-        Task lifecycle evidence is unavailable. Other verified activity remains readable; no missing events are inferred.
-      </p>}
-      {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
-        <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
-      {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
-      <p className="mt-2 text-xs text-slate-600">Newest first across the currently verified source pages; totals are not inferred.
-        {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
-          ? ' Additional source pages exist; this is not the complete history.' : ''}
-        {' '}Project Notes remain separate project-wide records.</p>
-      <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      <ul className="mt-2 divide-y divide-slate-200 border-t border-slate-200">
         {activity.map(entry => <li className="p-3 text-sm" key={entry.id}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <strong className="break-words text-slate-900">
@@ -615,13 +558,74 @@ export default function ProjectTaskCommentsPanel({
         </nav>}
 
       </div>
+      <details className="mt-3 text-sm text-slate-600" aria-label="Activity source diagnostics">
+        <summary className="cursor-pointer text-xs font-semibold text-slate-700">
+          Source status {eventState === 'UNAVAILABLE' || approvalState === 'UNAVAILABLE'
+            || attachmentState === 'UNAVAILABLE' ? '· some evidence unavailable' : '· source details'}
+        </summary>
+      {(approvalState === 'UNAVAILABLE' || attachmentState === 'UNAVAILABLE') &&
+        <p role="status" className="mt-2 text-sm text-amber-900">
+          {approvalState === 'UNAVAILABLE' ? 'Approval evidence unavailable. ' : ''}
+          {attachmentState === 'UNAVAILABLE' ? 'Attachment evidence unavailable. ' : ''}
+          Other verified activity remains readable; missing records are not inferred.
+        </p>}
+            {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
+        Task lifecycle evidence is unavailable. Other verified activity remains readable; no missing events are inferred.
+      </p>}
+      {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
+        <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
+      {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
+      <p className="mt-2 text-xs text-slate-600">Newest first across the currently verified source pages; totals are not inferred.
+        {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
+          ? ' Additional source pages exist; this is not the complete history.' : ''}
+        {' '}Project Notes remain separate project-wide records.</p>
+
+      </details>
+      {showComposer && <div id="task-comment-composer" ref={composerRef}
+        className="scroll-mt-28">
+      <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
+        <label className="block text-sm font-semibold text-slate-800">Write a progress update
+          <textarea aria-label="New task comment" required rows={5}
+            maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
+            placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
+            className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-normal text-slate-900"/>
+        </label>
+        <section aria-label="Live formatted comment preview" className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h5 className="text-xs font-bold uppercase tracking-wide text-slate-700">Live formatted preview</h5>
+            <span className="text-xs tabular-nums text-slate-600">{body.length} / 5000 characters</span>
+          </div>
+          {body.trim() ? <MarkdownText value={body}/> : <p className="text-sm text-slate-600">
+            Formatted text will appear here as you type or paste.
+          </p>}
+        </section>
+        <fieldset className="rounded-lg border border-slate-200 p-3">
+          <legend className="px-1 text-xs font-semibold text-slate-800">Mention verified contributors (optional)</legend>
+          <div className="grid max-h-32 gap-2 overflow-auto sm:grid-cols-2">
+            {participants.filter(item => item.principal_id !== principalId).map(person =>
+              <label className="flex items-center gap-2 break-all text-xs text-slate-800"
+                key={person.principal_id}>
+                <input type="checkbox" checked={mentions.includes(person.principal_id)}
+                  disabled={!mentions.includes(person.principal_id) && mentions.length >= 10}
+                  onChange={event => setMentions(list => event.target.checked
+                    ? [...list, person.principal_id]
+                    : list.filter(value => value !== person.principal_id))}/>
+                {person.principal_id}
+              </label>)}
+          </div>
+          <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
+        </fieldset>
+        <button className="wp-button wp-button-primary" type="submit"
+          disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
+      </form>
+      </div>}
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
     </>}
   </section>;
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.7.0-GOVERNED-FOUR-SOURCE-TASK-ACTIVITY
+// VERSION: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
