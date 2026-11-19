@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.1.0-TERMINAL-PRIORITY-VISUAL-SEMANTICS
+ * VERSION: v1.2.0-EXPLICIT-CALLER-CAPABILITY-GATES
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.2.0-EXPLICIT-CALLER-CAPABILITY-GATES hides
+ *          assignment and completion shortcuts unless the verified
+ *          caller capability projection permits those affordances.
  * CHANGELOG: v1.1.0-TERMINAL-PRIORITY-VISUAL-SEMANTICS mutes
  *          terminal work title without hiding evidence and optionally
  *          signals caller-verified high/critical priority as a small dot.
@@ -57,11 +60,12 @@ export default function ProjectWorkRow({
                   const index = rows.indexOf(event.currentTarget);
                   rows[Math.min(rows.length - 1, Math.max(0,
                     index + (key === 'j' ? 1 : -1)))]?.focus();
-                } else if (key === 'a' && !busy
+                } else if (key === 'a' && !busy && capabilities.canAssign !== false
                   && !['DONE', 'CANCELLED'].includes(item.status)) {
                   event.preventDefault();
                   onAssign(item);
-                } else if (key === 'c' && !busy && item.status === 'IN_PROGRESS') {
+                } else if (key === 'c' && !busy && capabilities.canComplete !== false
+                  && item.status === 'IN_PROGRESS') {
                   event.preventDefault();
                   onComplete(item);
                 } else if (event.key === 'Enter') {
@@ -119,7 +123,7 @@ export default function ProjectWorkRow({
               </td>
               <td className="p-3 text-xs text-slate-700">
                 {item.assignee_principal_id
-                  ? ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
+                  ? capabilities.canAssign !== false && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
                     ? <button type="button" disabled={busy}
                       aria-label={'Reassign: ' + item.title}
                       className="text-xs font-semibold text-blue-800 underline underline-offset-2"
@@ -127,7 +131,7 @@ export default function ProjectWorkRow({
                       {assigneeName(item.assignee_principal_id)}
                     </button>
                     : <span title="Verified exact-project contributor">{assigneeName(item.assignee_principal_id)}</span>
-                  : ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
+                   : capabilities.canAssign !== false && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
                   <button type="button" disabled={busy}
                     className="text-xs font-semibold text-blue-800 underline underline-offset-2"
                     aria-label={'Assign: ' + item.title}
@@ -154,7 +158,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.1.0-TERMINAL-PRIORITY-VISUAL-SEMANTICS
+// VERSION: v1.2.0-EXPLICIT-CALLER-CAPABILITY-GATES
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
