@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS
+ * VERSION: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,17 +14,21 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
- * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS validates source changes
+ * CHANGELOG: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT waits for the
+ *          committed revision before reading owner names, reacquires
+ *          work rows after filters remount them, and scopes contextual
+ *          actions to the current source row.
+ * CHANGELOG: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT validates source changes
  *          independently of collapsed optional visualizations, scopes
  *          contextual action selection, and preserves correct post-command
  *          disabled states after owner assignment.
- * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS prevents invisible
+ * CHANGELOG: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT prevents invisible
  *          template form labels and opaque internal IDs in the verified
  *          industry creation experience at the current test head.
- * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS certifies Arrow/Home/End
+ * CHANGELOG: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT certifies Arrow/Home/End
  *          navigation and focus return for the real responsive action
  *          presenter without adding fake lifecycle authority.
- * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS awaits source-ready row actions after
+ * CHANGELOG: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT awaits source-ready row actions after
  *          each command, opens contextual overflow rather than removed
  *          peer buttons, and exercises on-demand checklist/assignment state.
  * CHANGELOG: v2.28.1-KEYBOARD-WORK-DRAWER-CERT verifies
@@ -563,8 +567,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible();
     expect(commands).toBe(2);
-    fireEvent.click(within(row).getByRole('button', { name: 'More actions for Build milestone execution' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit / assign' }));
+    const reconciledRow = screen.getByRole('row', { name: /Build milestone execution/ });
+    const actionTrigger = within(reconciledRow).getByRole('button', {
+      name: 'More actions for Build milestone execution',
+    });
+    await waitFor(() => expect(actionTrigger).toBeEnabled());
+    fireEvent.click(actionTrigger);
+    fireEvent.click(within(screen.getByRole('dialog', {
+      name: 'Actions for Build milestone execution',
+    })).getByRole('button', { name: 'Edit / assign' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
       target: { value: 'Updated task handoff' },
     });
@@ -1311,8 +1322,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
-    // Assignment has been committed; a now-unchanged form may correctly
-    // disable Save. Assert the fresh source-backed detail instead.
+    // Wait for the revisioned EOS list/detail readback, not only the PATCH call.
+    await waitFor(() => expect(screen.getByText('Revision 2')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
@@ -1626,7 +1637,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS
+ * VERSION: v2.28.6-POSTCOMMAND-REVISION-BROWSER-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
