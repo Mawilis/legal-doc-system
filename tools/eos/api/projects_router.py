@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ
+VERSION: v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.37.0-ATOMIC-INDUSTRY-TEMPLATE-ACTIVATION exposes seven audited read-only industry blueprints and an explicit
+  jointly create/update-authorized atomic materialization of one PLANNED
+  exact-tenant project, milestones, tasks and dependency topology. Each task
+  is independently replay-bound; no staff, IAM or finance authority is issued.
   v1.36.0-AUTHORIZED-TASK-ACTIVITY-READ adds separately authorized,
   bounded owner and active-participant task event reads exposing immutable
   lifecycle evidence without replay tokens, command digests or snapshots.
@@ -265,6 +269,9 @@ from tools.eos.saas.projects.project_comment_registry import (
     ProjectComment, ProjectCommentRegistry, ProjectCommentError,
     ProjectCommentConflict, comment_id_for_command,
 )
+from tools.eos.saas.projects.project_template_catalogue import (
+    get_blueprint, list_blueprints, SCHEMA as PROJECT_TEMPLATE_SCHEMA,
+)
 from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as PROJECT_TASK_COLLECTION,
     EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
@@ -341,6 +348,21 @@ class ProjectCreateRequest(BaseModel):
     @classmethod
     def parse_wire_date(cls, value: object) -> object:
         """Normalize canonical date-only JSON without relaxing strict fields."""
+        return _project_wire_iso_date(value)
+
+
+class ProjectTemplateActivationRequest(BaseModel):
+    """Explicit reviewed platform-blueprint activation, without grants."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    name: str = Field(min_length=1, max_length=180)
+    template_revision: int = Field(ge=1)
+    start_date: date
+
+    @field_validator("start_date", mode="before")
+    @classmethod
+    def parse_start_date(cls, value: object) -> object:
         return _project_wire_iso_date(value)
 
 
@@ -1057,6 +1079,131 @@ def _generated_project_code(project_id: str) -> str:
     if not isinstance(project_id, str) or not re.fullmatch(r"prj-[0-9a-f]{48}", project_id):
         raise ProjectRegistryError("PROJECT_CODE_SOURCE_INVALID")
     return "PRJ-" + project_id[-16:].upper()
+
+
+@router.get("/templates")
+def list_project_templates(
+    response: Response,
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, object]:
+    """List platform-provided starting definitions under actual tenant IAM."""
+    response.headers["Cache-Control"] = "no-store"
+    def read(_registry: ProjectRegistry, _session: Any) -> dict[str, object]:
+        return {
+            "schema": "WILSY-PROJECT-TEMPLATE-CATALOGUE/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "items": list(list_blueprints()),
+            "ownership": "PLATFORM_STARTERS",
+        }
+    return _transaction(context, read)
+
+
+@router.post("/templates/{slug}/activate", status_code=status.HTTP_201_CREATED)
+def activate_project_template(
+    payload: ProjectTemplateActivationRequest,
+    response: Response,
+    slug: str = Path(pattern=r"^[a-z][a-z0-9-]{2,63}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_CREATE),
+    update_context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Atomically materialise exact-tenant project work; grant nothing."""
+    response.headers["Cache-Control"] = "no-store"
+    if (context.tenant_id != update_context.tenant_id
+        or context.identity.identity_id != update_context.identity.identity_id):
+        raise HTTPException(status_code=403, detail="PROJECT_TEMPLATE_ACTOR_SCOPE_DENIED")
+    key = _note_idempotency_key(idempotency_key)
+    template = get_blueprint(slug)
+    if template is None:
+        raise HTTPException(status_code=404, detail="PROJECT_TEMPLATE_NOT_FOUND")
+    if payload.template_revision != template["revision"]:
+        raise HTTPException(status_code=409, detail="PROJECT_TEMPLATE_REVISION_CHANGED")
+    actor = context.identity.identity_id
+    tenant = context.tenant_id
+    prefix = hashlib.sha3_512(
+        f"{tenant}\x00{actor}\x00{key}\x00{slug}\x00{payload.template_revision}".encode()
+    ).hexdigest()
+    project_key = "template-project:" + prefix
+    project_id = "prj-" + hashlib.sha3_512(
+        f"{tenant}\x00{actor}\x00{project_key}".encode()
+    ).hexdigest()[:48]
+    instant = datetime.now(timezone.utc)
+    project = Project(
+        project_id=project_id, tenant_id=tenant, name=payload.name,
+        code=_generated_project_code(project_id),
+        summary=("Activated platform template: " + str(template["title"])
+            + " (revision " + str(template["revision"]) + "). "
+            + str(template["description"])),
+        status=ProjectStatus.PLANNED, owner_principal_id=None,
+        department_id=None, start_date=payload.start_date,
+        target_date=payload.start_date + timedelta(
+            days=max(step["day"] for step in template["steps"])),
+        source_type=ProjectSourceType.INTERNAL, external_source_reference=None,
+        created_by_principal_id=actor, created_at=instant,
+        updated_by_principal_id=actor, updated_at=instant,
+    )
+
+    def materialize(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        committed = registry.create_or_replay(
+            project=project, actor_principal_id=actor,
+            idempotency_key=project_key, occurred_at=instant, session=session,
+        )
+        if committed.project_id != project_id or committed.name != payload.name:
+            raise ProjectRegistryConflict("PROJECT_TEMPLATE_REPLAY_CONFLICT")
+        tasks = _project_task_store(registry, tenant, project_id, session)
+        mapped: dict[str, str] = {}
+        manifest: list[dict[str, object]] = []
+        for step in template["steps"]:
+            task_key = "template-step:" + hashlib.sha3_512(
+                (prefix + ":" + step["id"]).encode()
+            ).hexdigest()
+            task_id = task_id_for_command(tenant, project_id, actor, task_key)
+            dependencies = tuple(mapped[value] for value in step["depends_on"])
+            expected = ProjectTask(
+                tenant_id=tenant, project_id=project_id, task_id=task_id,
+                kind=step["kind"], parent_task_id=None,
+                title=step["title"],
+                description=("Role required: " + step["role"]
+                    + ". Acceptance evidence: " + step["acceptance"]),
+                status="TODO", assignee_principal_id=None,
+                due_date=(payload.start_date + timedelta(days=step["day"])).isoformat(),
+                depends_on=dependencies, created_by_principal_id=actor,
+                updated_by_principal_id=actor, created_at=instant, updated_at=instant,
+            )
+            saved = tasks.create_or_replay(
+                task=expected, idempotency_key=task_key, session=session,
+            )
+            verified = tasks.get(
+                tenant_id=tenant, project_id=project_id, task_id=task_id, session=session,
+            )
+            if verified.fingerprint != saved.fingerprint:
+                raise ProjectTaskError("PROJECT_TEMPLATE_TASK_READBACK_MISMATCH")
+            mapped[step["id"]] = task_id
+            manifest.append({
+                "template_step_id": step["id"],
+                "task_id": task_id,
+                "revision": verified.revision,
+                "kind": verified.kind,
+                "due_date": verified.due_date,
+                "depends_on": list(verified.depends_on),
+            })
+        verified_project = registry.get(
+            tenant_id=tenant, project_id=project_id, session=session,
+        )
+        if verified_project.fingerprint != committed.fingerprint:
+            raise ProjectRegistryError("PROJECT_TEMPLATE_PROJECT_READBACK_MISMATCH")
+        return {
+            "schema": "WILSY-PROJECT-TEMPLATE-ACTIVATION/V1",
+            "tenant_id": tenant, "principal_id": actor,
+            "template_slug": slug, "template_revision": template["revision"],
+            "template_schema": PROJECT_TEMPLATE_SCHEMA,
+            "project": verified_project.to_dict(), "items": manifest,
+            "authority": {"financial_execution": False,
+                          "auto_assignments": False, "iam_grants": False},
+        }
+
+    return _transaction(context, materialize, write=True)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
