@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT
+ * VERSION: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT verifies
+ *          the actual source-backed status control after transition,
+ *          without depending on the portfolio toolbar removed from detail.
  * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies
  *          the user-renamed project draft is passed verbatim into the
  *          independently authenticated template activation contract.
@@ -81,30 +84,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT proves a
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT adds in-place task
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies task creation, verified
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT waits for the committed note row
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies source-backed project note
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT proves navigation
+ * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -1271,7 +1274,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.getByLabelText('Project status').value).toBe('active'));
     expect(api.patch.mock.calls[1][1]).toMatchObject({ expected_revision: 2, status: 'active' });
-    expect(screen.getByText('Active')).toBeVisible();
+    expect(screen.getByLabelText('Project status')).toHaveValue('active');
     expect(api.get).toHaveBeenCalledWith('/projects/summary', expect.anything());
 
     fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
@@ -1455,7 +1458,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.25.1-TEMPLATE-RENAMED-DRAFT-CERT
+ * VERSION: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
