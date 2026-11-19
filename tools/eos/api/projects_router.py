@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.33.0-STRICT-TASK-DATE-WIRE-FIX
+VERSION: v1.33.1-STRICT-TASK-JSON-BOUNDARY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,9 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.33.1-STRICT-TASK-JSON-BOUNDARY also converts JSON dependency arrays to strict typed tuples
+  only when every element remains a string; malformed values, lengths and
+  dependency IDs retain strict/domain rejection. No IAM or task mutations change.
   v1.33.0-STRICT-TASK-DATE-WIRE-FIX normalizes only canonical YYYY-MM-DD task create and
   revision JSON dates through the existing strict project date parser.
   Malformed, non-date, or noncanonical inputs remain rejected; IAM,
@@ -391,6 +394,14 @@ class ProjectTaskCreateRequest(BaseModel):
     def parse_wire_date(cls, value: object) -> object:
         """Admit canonical calendar strings without weakening strict validation."""
         return _project_wire_iso_date(value)
+
+    @field_validator("depends_on", mode="before")
+    @classmethod
+    def parse_wire_dependencies(cls, value: object) -> object:
+        """Decode JSON string arrays; retain strict element and size validation."""
+        return tuple(value) if isinstance(value, list) and all(
+            isinstance(item, str) for item in value
+        ) else value
 
 
 class ProjectApprovalRequest(BaseModel):
@@ -3457,7 +3468,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.33.0-STRICT-TASK-DATE-WIRE-FIX
+# VERSION: v1.33.1-STRICT-TASK-JSON-BOUNDARY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
