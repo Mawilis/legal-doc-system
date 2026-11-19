@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.36.0-EOS-ACTION-DENIAL-READ-ONLY-CERT
+ * VERSION: v2.37.0-DENY-BY-DEFAULT-WORK-ACTIONS-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.37.0-DENY-BY-DEFAULT-WORK-ACTIONS-CERT certifies omitted capability flags
+ *          cannot expose task mutations, while explicit EOS-verified flags
+ *          retain primary, menu and mobile action-sheet behaviour.
  * CHANGELOG: v2.36.0-EOS-ACTION-DENIAL-READ-ONLY-CERT proves
  *          that denied task update authority hides row mutations after
  *          refresh without concealing source-verified task records.
@@ -329,7 +332,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const item = { task_id: 'ptk-' + 'c'.repeat(48),
       title: 'Validate deliverable', status: 'TODO' };
     const handlers = { item, busy: false, onTransition, onComplete,
-      onEdit, onAttachments, onApprovals, onActivity };
+      onAssign: vi.fn(), onEdit, onAttachments, onApprovals, onActivity,
+      canStart: true, canComplete: true, canBlock: true, canCancel: true,
+      canAssign: true, canEdit: true, canAttachments: true,
+      canApprovals: true, canActivity: true };
     const view = render(<ProjectWorkRowActions {...handlers}/>);
     expect(screen.getByRole('button', { name: 'Start: Validate deliverable' })).toBeVisible();
     expect(screen.queryByRole('menuitem', { name: 'Mark blocked' })).not.toBeInTheDocument();
@@ -365,6 +371,20 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 
 
+  it('denies every action by default for an unadmitted reusable Work Row caller', () => {
+    const item = { task_id: 'ptk-' + 'e'.repeat(48),
+      title: 'Unadmitted work', status: 'IN_PROGRESS' };
+    const onTransition = vi.fn();
+    render(<ProjectWorkRowActions item={item} busy={false}
+      onTransition={onTransition} onComplete={vi.fn()}
+      onEdit={vi.fn()} onAssign={vi.fn()} onActivity={vi.fn()}/>);
+    expect(screen.queryByRole('button', { name: 'Complete: Unadmitted work' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More actions for Unadmitted work' }))
+      .toBeDisabled();
+    expect(onTransition).not.toHaveBeenCalled();
+  });
+
   it('hides actions explicitly disallowed by the caller without changing authority', () => {
     const item = { task_id: 'ptk-' + 'f'.repeat(48),
       title: 'Read-only work', status: 'IN_PROGRESS' };
@@ -374,7 +394,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       onAttachments={vi.fn()} onActivity={vi.fn()} onApprovals={vi.fn()}
       canStart={false} canComplete={false} canBlock={false}
       canCancel={false} canAssign={false} canEdit={false}
-      canAttachments={false} canApprovals={false}/>);
+      canAttachments={false} canApprovals={false} canActivity={true}/>);
     expect(screen.queryByRole('button', { name: 'Complete: Read-only work' }))
       .not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'More actions for Read-only work' }));
@@ -397,7 +417,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       title: 'Mobile decision', status: 'IN_PROGRESS' };
     render(<ProjectWorkRowActions item={item} busy={false} onTransition={onTransition}
       onComplete={vi.fn()} onEdit={vi.fn()} onAttachments={vi.fn()}
-      onApprovals={vi.fn()} onActivity={vi.fn()}/>);
+      onApprovals={vi.fn()} onActivity={vi.fn()} canActivity={true}/>);
     const trigger = screen.getByRole('button', { name: 'More actions for Mobile decision' });
     fireEvent.click(trigger);
     const dialog = screen.getByRole('dialog', { name: 'Actions for Mobile decision' });
@@ -1909,7 +1929,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.36.0-EOS-ACTION-DENIAL-READ-ONLY-CERT
+ * VERSION: v2.37.0-DENY-BY-DEFAULT-WORK-ACTIONS-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
