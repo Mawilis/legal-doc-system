@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.3.2-BOUNDED-COMMENT-REJECTION-DETAIL
+ * VERSION: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION keeps lengthy
+ *          EOS discussion history collapsed until explicitly requested,
+ *          exposes a verified current-page comment indicator and retains
+ *          source-backed pagination, formatting and secure readback.
  * CHANGELOG: v1.3.2-BOUNDED-COMMENT-REJECTION-DETAIL surfaces strictly
  *          allowlisted EOS string validation codes separately from field-level
  *          422 details, preserving drafts, replay keys and privacy; never
@@ -27,7 +31,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.3.2-BOUNDED-COMMENT-REJECTION-DETAIL introduces task-threaded
+ * CHANGELOG: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -124,6 +128,7 @@ export default function ProjectTaskCommentsPanel({
   tenantHeaders, onClose, participantMode = false,
 }) {
   const [items, setItems] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [body, setBody] = useState('');
   const [mentions, setMentions] = useState([]);
   const [state, setState] = useState('LOADING');
@@ -180,6 +185,7 @@ export default function ProjectTaskCommentsPanel({
   useEffect(() => {
     generation.current += 1;
     setItems([]);
+    setShowHistory(false);
     setBody('');
     setMentions([]);
     setOffset(0);
@@ -307,7 +313,25 @@ export default function ProjectTaskCommentsPanel({
         <button className="wp-button wp-button-primary" type="submit"
           disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
       </form>
-      <h5 className="mt-5 text-sm font-semibold text-slate-900">Verified discussion history · page {Math.floor(offset / 50) + 1}</h5>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
+        aria-label="Verified discussion availability">
+        <div className="min-w-0">
+          <h5 className="text-sm font-semibold text-slate-900">Discussion history</h5>
+          <p role="status" className="mt-1 text-xs text-slate-600">
+            {items.length > 0
+              ? items.length + (hasMore ? '+ verified comments available' : ' verified comments available')
+              : 'No verified comments on this page'}
+            {hasMore ? ' · Additional pages available' : ''}
+          </p>
+        </div>
+        <button type="button" className="wp-button"
+          aria-expanded={showHistory} aria-controls="verified-task-comment-history"
+          onClick={() => setShowHistory(current => !current)}>
+          {showHistory ? 'Hide comments' : 'View comments'}
+        </button>
+      </div>
+      {showHistory && <div id="verified-task-comment-history" aria-label="Verified task comment history">
+      <h5 className="mt-4 text-sm font-semibold text-slate-900">Verified discussion history · page {Math.floor(offset / 50) + 1}</h5>
       <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
         {items.map(item => <li className="p-3 text-sm" key={item.comment_id}>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -331,13 +355,14 @@ export default function ProjectTaskCommentsPanel({
             onClick={() => void load(offset + 50)}>Next comments</button>
         </nav>}
 
+      </div>}
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
     </>}
   </section>;
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.3.2-BOUNDED-COMMENT-REJECTION-DETAIL
+// VERSION: v1.4.0-ON-DEMAND-VERIFIED-DISCUSSION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
