@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION
+ * VERSION: v1.2.0-DISCUSSION-COMPOSER-FIRST
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,10 +8,14 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-DISCUSSION-COMPOSER-FIRST places the
+ *          EOS comment composer above the paginated conversation so entry
+ *          stays accessible even with many comments, without changing EOS
+ *          comment evidence, write authority or source pagination.
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION introduces task-threaded
+ * CHANGELOG: v1.2.0-DISCUSSION-COMPOSER-FIRST introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -180,29 +184,7 @@ export default function ProjectTaskCommentsPanel({
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {state === 'READY' && <>
-      <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-        {items.map(item => <li className="p-3 text-sm" key={item.comment_id}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <strong className="break-all text-slate-800">{item.author_principal_id}</strong>
-            <time className="text-xs text-slate-500" dateTime={item.created_at}>{item.created_at}</time>
-          </div>
-          <p className="mt-1 whitespace-pre-wrap break-words text-slate-800">{item.body}</p>
-          {item.mentions.length > 0 &&
-            <p className="mt-1 break-words text-xs text-slate-600">Mentioned: {item.mentions.join(', ')}</p>}
-        </li>)}
-        {items.length === 0 && <li className="p-4 text-sm text-slate-600">
-          No EOS comments for this task on this page.
-        </li>}
-      </ul>
-      {(offset > 0 || hasMore) &&
-        <nav aria-label="Task comment pages" className="mt-2 flex items-center justify-between gap-2">
-          <button className="wp-button" type="button" disabled={busy || offset === 0}
-            onClick={() => void load(Math.max(0, offset - 50))}>Previous comments</button>
-          <span className="text-xs text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
-          <button className="wp-button" type="button" disabled={busy || !hasMore}
-            onClick={() => void load(offset + 50)}>Next comments</button>
-        </nav>}
-      <form onSubmit={submit} className="mt-4 space-y-2">
+      <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
         <label className="block text-sm font-semibold text-slate-800">Write a task comment
           <textarea aria-label="New task comment" required rows={3}
             maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
@@ -227,13 +209,37 @@ export default function ProjectTaskCommentsPanel({
         <button className="wp-button wp-button-primary" type="submit"
           disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
       </form>
+      <h5 className="mt-5 text-sm font-semibold text-slate-900">Verified discussion history · page {Math.floor(offset / 50) + 1}</h5>
+      <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+        {items.map(item => <li className="p-3 text-sm" key={item.comment_id}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <strong className="break-all text-slate-800">{item.author_principal_id}</strong>
+            <time className="text-xs text-slate-500" dateTime={item.created_at}>{item.created_at}</time>
+          </div>
+          <p className="mt-1 whitespace-pre-wrap break-words text-slate-800">{item.body}</p>
+          {item.mentions.length > 0 &&
+            <p className="mt-1 break-words text-xs text-slate-600">Mentioned: {item.mentions.join(', ')}</p>}
+        </li>)}
+        {items.length === 0 && <li className="p-4 text-sm text-slate-600">
+          No EOS comments for this task on this page.
+        </li>}
+      </ul>
+      {(offset > 0 || hasMore) &&
+        <nav aria-label="Task comment pages" className="mt-2 flex items-center justify-between gap-2">
+          <button className="wp-button" type="button" disabled={busy || offset === 0}
+            onClick={() => void load(Math.max(0, offset - 50))}>Previous comments</button>
+          <span className="text-xs text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
+          <button className="wp-button" type="button" disabled={busy || !hasMore}
+            onClick={() => void load(offset + 50)}>Next comments</button>
+        </nav>}
+
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
     </>}
   </section>;
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION
+// VERSION: v1.2.0-DISCUSSION-COMPOSER-FIRST
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
