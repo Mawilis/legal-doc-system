@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.0.0-RESPONSIVE-ONE-PRIMARY-ACTION
+ * VERSION: v1.0.1-MOBILE-DISMISS-FOCUS-CERT
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,8 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.0.1-MOBILE-DISMISS-FOCUS-CERT focuses first action without
+ *          requiring animation-frame shims and supports touch scrim dismissal.
  * CHANGELOG: v1.0.0-RESPONSIVE-ONE-PRIMARY-ACTION separates core action from
  *          secondary actions and never claims success before EOS readback.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -55,13 +57,8 @@ export default function ProjectWorkRowActions({
       }
     };
     window.addEventListener('keydown', onKeyDown);
-    const focusFrame = window.requestAnimationFrame(() => {
-      panel.current?.querySelector('button')?.focus();
-    });
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.cancelAnimationFrame(focusFrame);
-    };
+    panel.current?.querySelector('button')?.focus();
+    return () => { window.removeEventListener('keydown', onKeyDown); };
   }, [open]);
 
   const actions = [
@@ -103,7 +100,7 @@ export default function ProjectWorkRowActions({
     </div>
     {open && createPortal(
       <div className="fixed inset-0 z-[100] bg-slate-950/40 md:bg-transparent"
-        onMouseDown={event => { if (event.target === event.currentTarget) close(); }}>
+        onClick={event => { if (event.target === event.currentTarget) close(); }}>
         <div role="dialog" aria-modal="true" ref={panel}
           aria-label={'Actions for ' + item.title}
           className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-2xl md:inset-x-auto md:bottom-auto md:w-60 md:rounded-xl md:border md:border-slate-200"
@@ -143,7 +140,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.0.0-RESPONSIVE-ONE-PRIMARY-ACTION
+// VERSION: v1.0.1-MOBILE-DISMISS-FOCUS-CERT
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
