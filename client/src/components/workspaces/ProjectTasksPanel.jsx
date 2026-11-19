@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.6.1-EXPLICIT-TASK-VALIDATION
+ * VERSION: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART replaces the decorative
+ *          strip with accessible, filterable status bars and source-backed
+ *          completed/open progress metrics. Every chart change follows the
+ *          existing EOS command/readback and covers only the verified page.
  * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION identifies safe task create/revision 422
  *          validation fields using an allowlist, preserving drafts and retry
  *          keys without exposing input values or bypassing EOS authority.
@@ -22,16 +26,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION lets the
+ * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION opens a selected task's
+ * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION adds a
+ * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION adds source-backed
+ * CHANGELOG: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -433,20 +437,44 @@ export default function ProjectTasksPanel({
             <strong className="mt-1 block text-lg tabular-nums text-slate-900">{count}</strong>
           </div>)}
       </div>
-      <div role="img" aria-label={'Current task page: ' + counts.map(({ status, count }) =>
-        label(status) + ' ' + count).join(', ')}
-        className="mt-2 flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        {counts.filter(({ count }) => count).map(({ status, count }) =>
-          <span key={status} title={label(status) + ': ' + count}
-            data-status={status} style={{
-              width: (chartTotal ? 100 * count / chartTotal : 0) + '%',
-              background: ({
-                TODO: '#94a3b8', IN_PROGRESS: '#2563eb', BLOCKED: '#c2410c',
-                DONE: '#15803d', CANCELLED: '#64748b',
-              })[status],
-            }}/>)}
-      </div>
-      <p className="mt-1 text-xs text-slate-500">Distribution covers this verified task page, not every project task. {overdueOnPage > 0 ? overdueOnPage + ' overdue on this page.' : 'No overdue items on this page.'}</p>
+      <section className="mt-3 rounded-xl border border-slate-200 bg-white p-4" aria-label="Verified task lifecycle chart">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">Work lifecycle · current page</h4>
+            <p className="mt-1 text-xs text-slate-600">Every bar uses EOS-verified tasks, not portfolio estimates. Select a bar to filter the work table.</p>
+          </div>
+          <div className="text-right" aria-label="Verified task completion on current page">
+            <span className="block text-2xl font-bold tabular-nums text-slate-900">{chartTotal ? Math.round(100 * counts.find(item => item.status === 'DONE').count / chartTotal) : 0}%</span>
+            <span className="text-xs text-slate-600">Done on this page · {counts.find(item => item.status === 'DONE').count} / {chartTotal}</span>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          {counts.map(({ status, count }) => {
+            const percent = chartTotal ? Math.round(100 * count / chartTotal) : 0;
+            const color = ({
+              TODO: '#64748b', IN_PROGRESS: '#2563eb', BLOCKED: '#c2410c',
+              DONE: '#15803d', CANCELLED: '#475569',
+            })[status];
+            return <button key={status} type="button"
+              aria-label={'Filter work to ' + label(status) + ': ' + count + ' of ' + chartTotal + ' verified on page'}
+              aria-pressed={workStatus === status} onClick={() => setWorkStatus(current => current === status ? 'ALL' : status)}
+              className={'grid w-full grid-cols-[minmax(75px,130px)_minmax(0,1fr)_50px] items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ' +
+                (workStatus === status ? 'bg-blue-50 ring-1 ring-blue-300' : '')}>
+              <span className="text-xs font-semibold text-slate-800">{label(status)}</span>
+              <span className="block h-3 overflow-hidden rounded-full bg-slate-100" role="img"
+                aria-label={label(status) + ': ' + percent + ' percent of the verified page'}>
+                <span className="block h-full rounded-full transition-[width] duration-200"
+                  data-lifecycle-status={status} style={{ width: percent + '%', backgroundColor: color }}/>
+              </span>
+              <span className="text-right text-xs font-semibold tabular-nums text-slate-800">{count} · {percent}%</span>
+            </button>;
+          })}
+        </div>
+        <p role="status" className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-600">
+          {overdueOnPage > 0 ? overdueOnPage + ' overdue on this page.' : 'No overdue items on this page.'}
+          {' '}Lifecycle actions update this chart only after a fresh verified EOS list read.
+        </p>
+      </section>
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
         <label className="min-w-[180px] flex-[2] text-xs font-semibold text-slate-800">Search this verified page
           <input type="search" value={workQuery} onChange={event => setWorkQuery(event.target.value)}
@@ -709,7 +737,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.6.1-EXPLICIT-TASK-VALIDATION
+// VERSION: v1.7.0-SOURCE-VERIFIED-LIFECYCLE-CHART
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
