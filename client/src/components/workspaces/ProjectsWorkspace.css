@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.10.0-OPERATING-FORM-CONTRAST-SEAL
+ * VERSION: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY applies compact
+ *          table paddings to actual task cells and keeps visible focus,
+ *          legible statuses, and 40px targets on small screens.
  * CHANGELOG: v1.10.0-OPERATING-FORM-CONTRAST-SEAL enforces dark ink and
  *          WebKit text fill across project create/edit/template labels and fields;
  *          adds the mandatory sovereign end seal without changing API authority.
@@ -652,9 +655,36 @@
   outline: 3px solid #1467d6 !important;
   outline-offset: 2px;
 }
+/* Density is an operator preference, not a change to project state. */
+.wilsy-projects .wp-project-tasks table[data-density="compact"] :is(th, td) {
+  padding: 4px 6px !important;
+}
+.wilsy-projects .wp-project-tasks table[data-density="compact"] tbody tr {
+  min-height: 44px;
+}
+.wilsy-projects .wp-project-tasks table[data-density="comfortable"] tbody tr {
+  min-height: 56px;
+}
+.wilsy-projects .wp-project-tasks table[role="grid"] tbody tr[aria-selected="true"] {
+  background-color: #eff6ff !important;
+}
+.wilsy-projects .wp-project-tasks table[role="grid"] tbody tr:focus-visible {
+  outline: 3px solid #155eac !important;
+  outline-offset: -3px;
+}
+.wilsy-projects .wp-project-tasks table[role="grid"] input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #1655a4;
+}
+@media (max-width: 767px) {
+  .wilsy-projects .wp-project-tasks table[role="grid"] :is(button, input[type="checkbox"]) {
+    touch-action: manipulation;
+  }
+}
 /*
  * ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.10.0-OPERATING-FORM-CONTRAST-SEAL
+ * VERSION: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY
  * AUTHORITY BOUNDARY: visual presentation only; EOS owns every project command
  * TENANT POSTURE: styling does not grant or infer access
  * FAIL-CLOSED POSTURE: no synthetic verified state or visual success inference
