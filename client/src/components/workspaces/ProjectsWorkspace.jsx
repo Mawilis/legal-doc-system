@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH
+ * VERSION: v2.26.0-LOW-CHROME-PROJECT-LIST
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -53,6 +53,9 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
+ * CHANGELOG: v2.26.0-LOW-CHROME-PROJECT-LIST reduces
+ *          the persistent list toolbar to an operating title, current
+ *          counts and action controls. Removes nonfunctional hero copy.
  * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH never shows a
  *          misleading verified-empty notice while a committed template
  *          project still awaits independent list/detail reconciliation.
@@ -1197,8 +1200,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 
   return (
     <section className="wilsy-projects mx-auto w-full max-w-[1500px] px-3 pb-6 sm:px-5" data-projects-workspace data-source-state={sourceState}>
-      {!(selectedId && mode !== 'CREATE') && <header className="wp-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div><p className="wp-eyebrow text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Projects &amp; delivery</p><h1 className="wp-title mt-1 text-2xl font-bold text-slate-900">Projects</h1><p className="wp-subtitle mt-1 text-sm text-slate-600">EOS-authorized project delivery for the selected workspace.</p></div>
+      {!(selectedId && mode !== 'CREATE') && <header className="wp-toolbar mb-2 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-2 py-2">
+        <h1 className="text-lg font-bold text-slate-950">Projects</h1>
         <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => {
           const next = !ownerOnlyRef.current;
           ownerOnlyRef.current = next;
@@ -1565,7 +1568,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH
+// VERSION: v2.26.0-LOW-CHROME-PROJECT-LIST
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
