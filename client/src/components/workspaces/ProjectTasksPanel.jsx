@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.24.0-REUSABLE-WORK-ROW-COMPOSITION
+ * VERSION: v1.25.0-VERIFIED-WORK-ACTION-PERMISSIONS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.25.0-VERIFIED-WORK-ACTION-PERMISSIONS requires
+ *          exact-tenant EOS update-authority before showing task writes;
+ *          denied or unavailable capabilities preserve read-only tasks.
  * CHANGELOG: v1.24.0-REUSABLE-WORK-ROW-COMPOSITION delegates the
  *          verified row to a reusable stateless component, retaining EOS
  *          source authority and exact-project command handlers in this panel.
@@ -268,6 +271,7 @@ export default function ProjectTasksPanel({
   const [items, setItems] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [participantHasMore, setParticipantHasMore] = useState(false);
+  const [actionCapabilities, setActionCapabilities] = useState(null);
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -308,13 +312,31 @@ export default function ProjectTasksPanel({
     setState(previous => previous === 'READY' ? 'REFRESHING' : 'LOADING');
     setError('');
     try {
-      const [tasks, people] = await Promise.all([
+      const [tasks, people, actionResult] = await Promise.all([
         api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers }),
         api.get(root + '/participants?limit=100&offset=0', { headers }),
+        api.get(root + '/task-action-capabilities', { headers })
+          .then(result => result?.data).catch(() => null),
       ]);
       if (request !== generation.current || currentScope.current !== active) return false;
       const verified = validList(tasks.data, tenantId, principalId, projectId, nextOffset);
       const eligible = validParticipants(people.data, tenantId, principalId, projectId);
+      const capabilityNames = ['can_start', 'can_complete', 'can_block',
+        'can_cancel', 'can_assign', 'can_edit'];
+      const admitted = actionResult?.schema === 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1'
+        && actionResult.tenant_id === tenantId
+        && actionResult.principal_id === principalId
+        && actionResult.project_id === projectId
+        && capabilityNames.every(key => typeof actionResult[key] === 'boolean');
+      setActionCapabilities({
+        canStart: admitted && actionResult.can_start,
+        canComplete: admitted && actionResult.can_complete,
+        canBlock: admitted && actionResult.can_block,
+        canCancel: admitted && actionResult.can_cancel,
+        canAssign: admitted && actionResult.can_assign,
+        canEdit: admitted && actionResult.can_edit,
+        canAttachments: true, canActivity: true, canApprovals: true,
+      });
       setItems(verified.items);
       setSelectedWorkIds(previous => previous.filter(id => nextOffset === offset && verified.items.some(item => item.task_id === id)));
       setHasMore(verified.has_more);
@@ -328,6 +350,7 @@ export default function ProjectTasksPanel({
       setItems([]);
       setParticipants([]);
       setParticipantHasMore(false);
+      setActionCapabilities(null);
       setHasMore(false);
       setSelectedWorkIds([]);
       const status = cause?.response?.status;
@@ -343,6 +366,7 @@ export default function ProjectTasksPanel({
     generation.current += 1;
     setItems([]);
     setParticipants([]);
+    setActionCapabilities(null);
     setOffset(0);
     setHasMore(false);
     setCreating(false);
@@ -381,7 +405,7 @@ export default function ProjectTasksPanel({
   };
 
   const execute = async (fingerprint, action, expectedTaskId = null) => {
-    if (busy || state !== 'READY') return;
+    if (busy || state !== 'READY' || !actionCapabilities) return;
     const active = scope;
     setBusy(true);
     setError('');
@@ -435,7 +459,8 @@ export default function ProjectTasksPanel({
   const create = event => {
     event.preventDefault();
     const title = draft.title.trim();
-    if (!title || title.length > 180 || (participantHasMore && draft.assignee_principal_id)) return;
+    if (!title || !actionCapabilities?.canEdit || title.length > 180
+      || (participantHasMore && draft.assignee_principal_id)) return;
     const isSubtask = workType === 'SUBTASK';
     const activeParent = items.some(item => item.task_id === draft.parent_task_id
       && item.kind === 'TASK' && !['DONE', 'CANCELLED'].includes(item.status));
@@ -460,7 +485,7 @@ export default function ProjectTasksPanel({
 
   const revise = event => {
     event.preventDefault();
-    if (!editor || !editor.title.trim()) return;
+    if (!editor || !editor.title.trim() || !actionCapabilities?.canEdit) return;
     const body = {
       expected_revision: editor.revision,
       title: editor.title.trim(),
@@ -476,7 +501,11 @@ export default function ProjectTasksPanel({
   };
 
   const transition = (item, status) => {
-    if (busy || state !== 'READY') return;
+    const permitted = status === 'IN_PROGRESS' ? actionCapabilities?.canStart
+      : status === 'DONE' ? actionCapabilities?.canComplete
+        : status === 'BLOCKED' ? actionCapabilities?.canBlock
+          : status === 'CANCELLED' ? actionCapabilities?.canCancel : false;
+    if (busy || state !== 'READY' || !permitted) return;
     setPendingTransition({ taskId: item.task_id, status });
     const body = { expected_revision: item.revision, status };
     void execute(JSON.stringify(['transition', item.task_id, body]), key =>
@@ -534,6 +563,7 @@ export default function ProjectTasksPanel({
     return names.length ? names.join(' ') : 'Assigned contributor · name unavailable';
   };
   const openTaskEditor = (selected, assignOnly = false) => {
+    if (!(assignOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)) return;
     setCreating(false);
     setAssignmentOnly(assignOnly);
     setEditor({
@@ -670,7 +700,7 @@ export default function ProjectTasksPanel({
         <button type="button" className="wp-button" disabled={busy} onClick={() => void load(offset)}>
           <RefreshCw size={14}/> Refresh work
         </button>
-        {state === 'READY' && <button type="button" className="wp-button wp-button-primary"
+        {state === 'READY' && actionCapabilities?.canEdit && <button type="button" className="wp-button wp-button-primary"
           disabled={busy} onClick={() => setCreating(value => !value)}>
           <Plus size={14}/> {creating ? 'Close editor' : 'Create task'}
         </button>}
@@ -1037,7 +1067,9 @@ export default function ProjectTasksPanel({
               }}
               onAttachments={selected => setAttachmentTaskId(selected.task_id)}
               onApprovals={selected => setApprovalTaskId(selected.task_id)}
-              onActivity={selected => setDiscussionTaskId(selected.task_id)}/>)}
+              onActivity={selected => setDiscussionTaskId(selected.task_id)}
+              capabilities={actionCapabilities || { canStart: false, canComplete: false,
+                canBlock: false, canCancel: false, canEdit: false, canAssign: false }}/>)}
             {workRows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-sm text-slate-600">
               {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
                 : 'No work items on this verified page match the selected search and filters.'}
@@ -1139,7 +1171,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.24.0-REUSABLE-WORK-ROW-COMPOSITION
+// VERSION: v1.25.0-VERIFIED-WORK-ACTION-PERMISSIONS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
