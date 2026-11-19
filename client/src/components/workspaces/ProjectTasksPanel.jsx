@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.18.2-CONSTITUTIONAL-HEADER-FIRST
+ * VERSION: v1.19.0-FOCUSED-WORK-KEYBOARD-ACTIONS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.19.0-FOCUSED-WORK-KEYBOARD-ACTIONS introduces focused
+ *          work-row J/K navigation, A edit/assign and C guarded completion
+ *          attestation, never global hotkeys or unverified EOS mutations.
  * CHANGELOG: v1.18.2-CONSTITUTIONAL-HEADER-FIRST places all authority,
  *          privacy and tenant fields ahead of historical changelogs within
  *          the certified 100-line header inspection boundary.
@@ -959,10 +962,28 @@ export default function ProjectTasksPanel({
                 setDrawerTaskId(item.task_id);
               }}
               onKeyDown={event => {
-                if (event.target !== event.currentTarget || event.key !== 'Enter') return;
-                event.preventDefault();
-                drawerReturnFocus.current = event.currentTarget;
-                setDrawerTaskId(item.task_id);
+                if (event.target !== event.currentTarget || event.altKey
+                  || event.ctrlKey || event.metaKey || event.shiftKey) return;
+                const key = event.key.toLowerCase();
+                if (key === 'j' || key === 'k') {
+                  event.preventDefault();
+                  const rows = [...event.currentTarget.parentElement.querySelectorAll('tr[data-task-id]')];
+                  const index = rows.indexOf(event.currentTarget);
+                  rows[Math.min(rows.length - 1, Math.max(0,
+                    index + (key === 'j' ? 1 : -1)))]?.focus();
+                } else if (key === 'a' && !busy
+                  && !['DONE', 'CANCELLED'].includes(item.status)) {
+                  event.preventDefault();
+                  openTaskEditor(item);
+                } else if (key === 'c' && !busy && item.status === 'IN_PROGRESS') {
+                  event.preventDefault();
+                  setCompletionCandidate(item.task_id);
+                  setCompletionAttested(false);
+                } else if (event.key === 'Enter') {
+                  event.preventDefault();
+                  drawerReturnFocus.current = event.currentTarget;
+                  setDrawerTaskId(item.task_id);
+                }
               }}
               className="cursor-pointer bg-white align-top hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
               <td className="p-3">
@@ -1110,7 +1131,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.18.2-CONSTITUTIONAL-HEADER-FIRST
+// VERSION: v1.19.0-FOCUSED-WORK-KEYBOARD-ACTIONS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
