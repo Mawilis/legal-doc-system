@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.39.0-IMMUTABLE-BASELINE-AUDITED-DEADLINES
+VERSION: v1.40.0-REVIEWED-TEMPLATE-WORK-OVERRIDES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.40.0-REVIEWED-TEMPLATE-WORK-OVERRIDES allows explicit, bounded
+  edits to a verified starter template's titles, due offsets and acceptance
+  criteria before atomic activation. Step IDs, DAG, kinds, role requirements,
+  source revision and all EOS IAM are immutable; divergent replays reject.
   v1.39.0-IMMUTABLE-BASELINE-AUDITED-DEADLINES admits a bounded
   reason for target-date revision, leaves it out of project aggregate
   patches, and delegates its atomic immutable event persistence to the
@@ -366,6 +370,17 @@ class ProjectCreateRequest(BaseModel):
         return _project_wire_iso_date(value)
 
 
+class ProjectTemplateStepOverride(BaseModel):
+    """Reviewed customization of one source-defined work step, not a new command."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$")
+    title: str | None = Field(default=None, min_length=1, max_length=180)
+    day: int | None = Field(default=None, ge=0, le=3650)
+    acceptance: str | None = Field(default=None, min_length=1, max_length=1000)
+
+
 class ProjectTemplateActivationRequest(BaseModel):
     """Explicit reviewed platform-blueprint activation, without grants."""
 
@@ -373,6 +388,7 @@ class ProjectTemplateActivationRequest(BaseModel):
 
     name: str = Field(min_length=1, max_length=180)
     template_revision: int = Field(ge=1)
+    step_overrides: list[ProjectTemplateStepOverride] = Field(default_factory=list, max_length=25)
     start_date: date
 
     @field_validator("start_date", mode="before")
@@ -1162,6 +1178,24 @@ def activate_project_template(
     template = cast(_ProjectTemplateBlueprint, source_blueprint)
     if payload.template_revision != template["revision"]:
         raise HTTPException(status_code=409, detail="PROJECT_TEMPLATE_REVISION_CHANGED")
+    permitted_ids = {step["id"] for step in template["steps"]}
+    changes: dict[str, dict[str, object]] = {}
+    for override in payload.step_overrides:
+        if override.id not in permitted_ids or override.id in changes:
+            raise HTTPException(status_code=422, detail="PROJECT_TEMPLATE_OVERRIDE_INVALID")
+        patch = override.model_dump(exclude={"id"}, exclude_none=True)
+        if not patch:
+            raise HTTPException(status_code=422, detail="PROJECT_TEMPLATE_OVERRIDE_EMPTY")
+        changes[override.id] = patch
+    steps = [
+        cast(_ProjectTemplateStep, {**step, **changes.get(step["id"], {})})
+        for step in template["steps"]
+    ]
+    prior_days: dict[str, int] = {}
+    for step in steps:
+        if any(prior_days.get(dep, 3651) > step["day"] for dep in step["depends_on"]):
+            raise HTTPException(status_code=422, detail="PROJECT_TEMPLATE_DEPENDENCY_DATE_INVALID")
+        prior_days[step["id"]] = step["day"]
     actor = context.identity.identity_id
     tenant = context.tenant_id
     prefix = hashlib.sha3_512(
@@ -1181,7 +1215,7 @@ def activate_project_template(
         status=ProjectStatus.PLANNED, owner_principal_id=None,
         department_id=None, start_date=payload.start_date,
         target_date=payload.start_date + timedelta(
-            days=max(step["day"] for step in template["steps"])),
+            days=max(step["day"] for step in steps)),
         source_type=ProjectSourceType.INTERNAL, external_source_reference=None,
         created_by_principal_id=actor, created_at=instant,
         updated_by_principal_id=actor, updated_at=instant,
@@ -1222,7 +1256,7 @@ def activate_project_template(
         tasks = _project_task_store(registry, tenant, project_id, session)
         mapped: dict[str, str] = {}
         manifest: list[dict[str, object]] = []
-        for step in template["steps"]:
+        for step in steps:
             task_key = "template-step:" + hashlib.sha3_512(
                 (prefix + ":" + step["id"]).encode()
             ).hexdigest()
@@ -3864,7 +3898,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.39.0-IMMUTABLE-BASELINE-AUDITED-DEADLINES
+# VERSION: v1.40.0-REVIEWED-TEMPLATE-WORK-OVERRIDES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
