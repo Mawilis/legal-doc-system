@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.20.0-PROJECT-ACTIVITY-NAVIGATION
+ * VERSION: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION introduces a compact,
+ *          EOS-verified seven-industry blueprint selector and explicit
+ *          version-checked activation with single-command project/task readback.
+ *          The UI never invents template or task results, nor grants staff,
+ *          IAM, spending or approvals.
  * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION names the
  *          main source-backed project activity experience consistently,
  *          keeping project-wide Notes separate from task comment activity.
@@ -40,34 +45,34 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION opens
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION opens the
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION mounts exact-tenant,
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION mounts the independently source-backed
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION mounts independently source-backed note
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.20.0-PROJECT-ACTIVITY-NAVIGATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.20.0-PROJECT-ACTIVITY-NAVIGATION exposes readable title-case
+ *            v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -601,6 +606,13 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [detail, setDetail] = useState(null);
   const [detailState, setDetailState] = useState('IDLE');
   const [mode, setMode] = useState('LIST');
+  const [templates, setTemplates] = useState([]);
+  const [templateState, setTemplateState] = useState('IDLE');
+  const [templateError, setTemplateError] = useState('');
+  const [selectedTemplateSlug, setSelectedTemplateSlug] = useState('');
+  const [templateName, setTemplateName] = useState('');
+  const [templateStart, setTemplateStart] = useState('');
+  const templateSequence = useRef(0);
   const [showAssignedProjects, setShowAssignedProjects] = useState(
     Boolean(focusAssignedProjectId && /^prj-[0-9a-f]{48}$/.test(focusAssignedProjectId)),
   );
@@ -755,6 +767,13 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setSourceState('LOADING');
     setError('');
     setMode('LIST');
+    templateSequence.current += 1;
+    setTemplates([]);
+    setTemplateState('IDLE');
+    setTemplateError('');
+    setSelectedTemplateSlug('');
+    setTemplateName('');
+    setTemplateStart('');
     setDraft(EMPTY_DRAFT);
     createReplay.current = { fingerprint: '', key: null };
     setQuery('');
@@ -858,6 +877,96 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     } finally {
       commandPending.current = false;
     }
+  };
+
+  useEffect(() => {
+    if (mode !== 'TEMPLATE') return;
+    const serial = ++templateSequence.current;
+    const current = scopeKey;
+    setTemplateState('LOADING');
+    setTemplateError('');
+    void (async () => {
+      try {
+        const { data } = await api.get('/projects/templates', { headers: tenantHeaders });
+        if (serial !== templateSequence.current || activeScope.current !== current) return;
+        if (data?.schema !== 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1'
+          || data.tenant_id !== tenantId || data.principal_id !== principalId
+          || data.ownership !== 'PLATFORM_STARTERS' || !Array.isArray(data.items)
+          || data.items.length !== 7 || new Set(data.items.map(item => item.slug)).size !== 7
+          || data.items.some(item => typeof item.slug !== 'string'
+            || !/^[a-z][a-z0-9-]{2,63}$/.test(item.slug)
+            || typeof item.industry !== 'string' || !item.industry
+            || typeof item.title !== 'string' || !item.title
+            || !Number.isSafeInteger(item.revision) || item.revision < 1
+            || !Array.isArray(item.steps) || item.steps.length < 2 || item.steps.length > 25
+            || item.steps.some(step => !['TASK','MILESTONE'].includes(step.kind)
+              || typeof step.title !== 'string' || !step.title
+              || !Number.isSafeInteger(step.day) || step.day < 0
+              || typeof step.role !== 'string' || !step.role
+              || typeof step.acceptance !== 'string' || !step.acceptance
+              || !Array.isArray(step.depends_on)))) {
+          throw new Error('PROJECT_TEMPLATE_SOURCE_INVALID');
+        }
+        setTemplates(data.items);
+        setTemplateState('READY');
+      } catch (cause) {
+        if (serial !== templateSequence.current || activeScope.current !== current) return;
+        setTemplateState(cause?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+        setTemplateError('EOS could not verify the authorized template catalogue.');
+      }
+    })();
+    return () => { templateSequence.current += 1; };
+  }, [mode, scopeKey, tenantId, principalId, tenantHeaders]);
+
+  const selectedTemplate = templates.find(item => item.slug === selectedTemplateSlug);
+
+  const activateTemplate = async (event) => {
+    event.preventDefault();
+    if (templateState !== 'READY' || !selectedTemplate || !templateName.trim()
+      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(templateStart)) {
+      setTemplateError('Select a verified template, enter a name and choose a start date.');
+      return;
+    }
+    const body = { name: templateName.trim(),
+      template_revision: selectedTemplate.revision, start_date: templateStart };
+    const successful = await runCommand(async () => {
+      const response = await api.post(
+        '/projects/templates/' + encodeURIComponent(selectedTemplate.slug) + '/activate',
+        body, { headers: {
+          ...tenantHeaders, 'Idempotency-Key': createIdempotencyKey([
+            'template', selectedTemplate.slug, body,
+          ]),
+        }},
+      );
+      const data = response?.data;
+      if (data?.schema !== 'WILSY-PROJECT-TEMPLATE-ACTIVATION/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.template_slug !== selectedTemplate.slug
+        || data.template_revision !== selectedTemplate.revision
+        || data.authority?.iam_grants !== false
+        || data.authority?.auto_assignments !== false
+        || data.authority?.financial_execution !== false
+        || !Array.isArray(data.items) || data.items.length !== selectedTemplate.steps.length
+        || !data.project?.project_id) {
+        throw new Error('PROJECT_TEMPLATE_ACTIVATION_SOURCE_INVALID');
+      }
+      const created = assertProjectResult({
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: tenantId,
+        principal_id: principalId, project: data.project,
+        events: [], authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+      }, tenantId, principalId).project;
+      const projection = await refresh({ preserveSelection: false });
+      if (!projection?.items.some(item => item.project_id === created.project_id
+        && item.tenant_id === tenantId && item.revision === created.revision)) {
+        throw new Error('PROJECT_TEMPLATE_NOT_IN_AUTHORIZED_PROJECTION');
+      }
+      if (!await openProject(created.project_id)) {
+        throw new Error('PROJECT_TEMPLATE_DETAIL_READBACK_UNAVAILABLE');
+      }
+      createReplay.current = { fingerprint: '', key: null };
+      setMode('LIST');
+    });
+    if (!successful) setMode('TEMPLATE');
   };
 
   const submitCreate = async (event) => {
@@ -1090,9 +1199,72 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           : undefined}>
         <section aria-label="Project list" className="wp-panel wp-list-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
           style={selectedId && mode !== 'CREATE' ? { display: 'none' } : undefined}>
-          {mode === 'CREATE' ? (
+          {mode === 'TEMPLATE' ? <div className="p-4 sm:p-5" aria-label="Industry project templates">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div><h2 className="text-lg font-bold text-slate-950">Start from a template</h2>
+                <p className="text-sm text-slate-600">Verified EOS blueprints · Roles are requirements, not staff assignments</p></div>
+              <button type="button" className="wp-button" onClick={() => setMode('CREATE')}
+                disabled={commandState === 'PENDING'}>Back to blank project</button>
+            </div>
+            {templateState === 'LOADING' && <p role="status" className="text-sm text-slate-600">Verifying available templates…</p>}
+            {templateState !== 'READY' && templateState !== 'LOADING' &&
+              <p role="alert" className="text-sm text-rose-700">{templateError}</p>}
+            {templateState === 'READY' && <>
+              <div className="grid gap-4 lg:grid-cols-[minmax(230px,0.9fr)_minmax(0,1.7fr)]">
+                <div role="listbox" aria-label="Verified industry templates" className="divide-y divide-slate-200 rounded-lg border border-slate-200">
+                  {templates.map(item => <button key={item.slug} role="option"
+                    aria-selected={selectedTemplateSlug === item.slug}
+                    type="button" className="block w-full px-3 py-3 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-blue-700"
+                    style={selectedTemplateSlug === item.slug ? { background: '#e8f2ff' } : undefined}
+                    onClick={() => { setSelectedTemplateSlug(item.slug);
+                      setTemplateName(item.title); setTemplateError(''); createReplay.current = { fingerprint: '', key: null }; }}>
+                    <span className="block text-sm font-semibold text-slate-950">{item.industry}</span>
+                    <span className="block text-xs text-slate-700">{item.title}</span>
+                  </button>)}
+                </div>
+                <div>
+                  {!selectedTemplate && <p className="text-sm text-slate-600">Select an industry to inspect its milestones, dependencies, roles and acceptance evidence.</p>}
+                  {selectedTemplate && <>
+                    <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>
+                    <p className="mt-1 text-xs text-slate-600">Template revision {selectedTemplate.revision} · {selectedTemplate.steps.length} source-defined work items</p>
+                    <div className="mt-3 overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="border-b border-slate-200 text-slate-700"><tr><th className="p-2">Deliverable</th><th className="p-2">Role</th><th className="p-2">Due</th><th className="p-2">Depends on</th></tr></thead>
+                        <tbody>{selectedTemplate.steps.map(step => <tr className="border-b border-slate-100" key={step.id}>
+                          <td className="p-2"><strong className="block text-slate-900">{step.title}</strong><span className="text-slate-600">{step.kind} · {step.acceptance}</span></td>
+                          <td className="p-2 text-slate-700">{step.role.replaceAll('_', ' ')}</td>
+                          <td className="p-2 text-slate-700">Day +{step.day}</td>
+                          <td className="p-2 text-slate-700">{step.depends_on.join(', ') || 'None'}</td>
+                        </tr>)}</tbody>
+                      </table>
+                    </div>
+                    <form onSubmit={activateTemplate} className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+                      <label className="block text-sm font-semibold text-slate-900">Project name
+                        <input required maxLength={180} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal"
+                          value={templateName} onChange={event => { createReplay.current = { fingerprint: '', key: null }; setTemplateName(event.target.value); }}/>
+                      </label>
+                      <ProjectDateField label="Start date" value={templateStart} disabled={commandState === 'PENDING'}
+                        onChange={value => { createReplay.current = { fingerprint: '', key: null }; setTemplateStart(value); }}/>
+                      {templateError && <p role="alert" className="text-sm text-rose-700">{templateError}</p>}
+                      {commandError && <p role="alert" className="text-sm text-rose-700">
+                        EOS has not verified template activation. Check the source before retrying.
+                      </p>}
+                      <button type="submit" disabled={commandState === 'PENDING'}
+                        className="wp-button wp-button-primary">
+                        {commandState === 'PENDING' ? 'Activating in EOS…' : 'Create project and work in EOS'}
+                      </button>
+                      <p className="text-xs text-slate-600">Creates a PLANNED project with unassigned work; no employment, IAM, project ownership or spending authority is granted.</p>
+                    </form>
+                  </>}
+                </div>
+              </div>
+            </>}
+          </div> : mode === 'CREATE' ? (
             <form onSubmit={submitCreate} className="wp-form space-y-4 p-4 sm:p-5" aria-labelledby="project-create-title">
               <div className="flex items-start justify-between gap-3"><div><h2 id="project-create-title" className="text-lg font-bold text-slate-900">Create project</h2><p className="mt-1 text-sm text-slate-600">EOS validates authority and confirms the persisted project before it appears in the list.</p></div><button type="button" aria-label="Cancel project creation" onClick={() => { setMode('LIST'); setCommandError(''); }} disabled={commandState === 'PENDING'} className="wp-close rounded-md p-2 text-slate-600 hover:bg-slate-100"><X size={18}/></button></div>
+              <button type="button" className="wp-button" onClick={() => setMode('TEMPLATE')}>
+                Browse industry templates
+              </button>
               <label className="block text-sm font-semibold text-slate-800">Project name<input required maxLength={180} value={draft.name} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, name: event.target.value }))} aria-invalid={commandError === 'PROJECT_NAME_REQUIRED' || commandError === 'PROJECT_INPUT_INVALID'} className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/>{commandError === 'PROJECT_NAME_REQUIRED' && <span className="mt-1 block text-xs font-normal text-rose-700">Enter a project name.</span>}{commandError === 'PROJECT_INPUT_INVALID' && <span className="mt-1 block text-xs font-normal text-rose-700">Check the project name and date fields. Your draft is preserved.</span>}</label>
               <p className="wp-code-hint" role="note">Project code: assigned automatically by Python EOS when the project is created. No manual code is required.</p>
               <label className="block text-sm font-semibold text-slate-800">Summary <span className="font-normal text-slate-500">(optional)</span><textarea maxLength={4000} rows={3} value={draft.summary} onChange={(event) => (createReplay.current = { fingerprint: '', key: null }, setDraft({ ...draft, summary: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"/></label>
@@ -1301,7 +1473,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.20.0-PROJECT-ACTIVITY-NAVIGATION
+// VERSION: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
