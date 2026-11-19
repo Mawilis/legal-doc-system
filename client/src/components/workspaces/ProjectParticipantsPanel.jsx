@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.2.0-HUMAN-IDENTITY-AUDIT-SEPARATION
+ * VERSION: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION removes long principal codes from the
+ *          visible member-choice surface while preserving the exact source
+ *          identity as an EOS-only command input and audit key.
  * CHANGELOG: v1.2.0-HUMAN-IDENTITY-AUDIT-SEPARATION removes raw
  *          principal IDs and record revisions from operating People cards;
  *          identifiers remain stored and used exclusively for EOS commands.
@@ -257,9 +260,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
             {choices.map(person =>
               <option key={person.principal_id} value={person.principal_id}>{optionName(person) || 'Verified member — name unavailable'}</option>)}
           </select>
-          {selectedPrincipal && <span className="mt-2 block break-all text-xs text-slate-600">
-            Source principal: {selectedPrincipal}
-          </span>}
+
         </label>
         <label className="block text-sm font-semibold text-slate-950">Project role
           <select aria-label="Project participation role" value={selectedRole}
@@ -291,7 +292,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.2.0-HUMAN-IDENTITY-AUDIT-SEPARATION
+// VERSION: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
