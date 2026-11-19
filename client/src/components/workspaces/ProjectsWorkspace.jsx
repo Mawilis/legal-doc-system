@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER
+ * VERSION: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION corrects
+ *          date-only template activation admission to exactly ten characters
+ *          and numeric YYYY-MM-DD groups; Python EOS still strictly parses
+ *          and authorizes actual due-date semantics.
  * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER removes the
  *          redundant portfolio toolbar while working within a selected
  *          project, compresses its metadata/breadcrumb presentation and
@@ -49,34 +53,34 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER opens
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER opens the
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER mounts exact-tenant,
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER mounts the independently source-backed
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER mounts independently source-backed note
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER applies status filtering at the exact-tenant
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.22.0-COMPACT-PROJECT-OPERATING-HEADER exposes readable title-case
+ *            v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -927,7 +931,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const activateTemplate = async (event) => {
     event.preventDefault();
     if (templateState !== 'READY' || !selectedTemplate || !templateName.trim()
-      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(templateStart)) {
+      || !/[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(templateStart) || templateStart.length !== 10) {
       setTemplateError('Select a verified template, enter a name and choose a start date.');
       return;
     }
@@ -1477,7 +1481,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER
+// VERSION: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
