@@ -1,14 +1,24 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.18.1-HEADER-GOVERNANCE-PLACEMENT
+ * VERSION: v1.18.2-CONSTITUTIONAL-HEADER-FIRST
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTasksPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
+ * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
+ *          extraction, fabricated task metrics or inferred notifications.
+ * TENANT BOUNDARY: Exact tenant, principal and project validated on every
+ *          response; stale session results are ignored and discarded.
+ * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
+ *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.18.2-CONSTITUTIONAL-HEADER-FIRST places all authority,
+ *          privacy and tenant fields ahead of historical changelogs within
+ *          the certified 100-line header inspection boundary.
  * CHANGELOG: v1.18.1-HEADER-GOVERNANCE-PLACEMENT keeps mandatory financial
  *          authority metadata within the repository integrity guard's first
  *          100 header lines, preserving all task and filter behaviours.
@@ -96,13 +106,6 @@
  * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
- * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
- * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
- *          extraction, fabricated task metrics or inferred notifications.
- * TENANT BOUNDARY: Exact tenant, principal and project validated on every
- *          response; stale session results are ignored and discarded.
- * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
- *          rights; EOS checks each mutation and recorded assignment.
  */
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
@@ -1107,7 +1110,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.18.1-HEADER-GOVERNANCE-PLACEMENT
+// VERSION: v1.18.2-CONSTITUTIONAL-HEADER-FIRST
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
