@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.17.0-SELECTED-WORK-CONTEXT-DRAWER
+ * VERSION: v1.17.1-READABLE-ASSIGNEE-EDITOR
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.17.1-READABLE-ASSIGNEE-EDITOR shows a verified
+ *          contributor name in the edit/assign selector instead of an
+ *          opaque principal ID; submitted identity and authority unchanged.
  * CHANGELOG: v1.17.0-SELECTED-WORK-CONTEXT-DRAWER makes
  *          every verified work row directly open a focused, responsive
  *          task detail drawer, with one source truth and governed contextual
@@ -902,7 +905,7 @@ export default function ProjectTasksPanel({
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
               <option value="">Unassigned</option>
               {participants.map(person => <option key={person.principal_id} value={person.principal_id}>
-                {person.principal_id}
+                {contributorName(person.principal_id)}
               </option>)}
               {editor.assignee_principal_id && !participants.some(person =>
                 person.principal_id === editor.assignee_principal_id) &&
@@ -1090,7 +1093,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.17.0-SELECTED-WORK-CONTEXT-DRAWER
+// VERSION: v1.17.1-READABLE-ASSIGNEE-EDITOR
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
