@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT
+ * VERSION: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT ensures
+ *          modal task editing retains EOS revision readback and an
+ *          accessible, discoverable save action.
  * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT refuses
  *          to render an empty-tenant notice over EOS-confirmed persisted
  *          template materialisation pending list reconciliation.
@@ -95,30 +98,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT proves a
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT adds in-place task
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT certifies task creation, verified
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT waits for the committed note row
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT certifies source-backed project note
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT proves navigation
+ * CHANGELOG: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -483,7 +486,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
       target: { value: 'Updated task handoff' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Save audited task revision' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes to EOS' }));
     await waitFor(() => expect(screen.getByText('Updated task handoff', {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible());
@@ -1527,7 +1530,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.27.1-NO-FALSE-EMPTY-AFTER-COMMIT-CERT
+ * VERSION: v2.27.2-CONTEXTUAL-TASK-EDIT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
