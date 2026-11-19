@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.34.0-CAPABILITY-AWARE-MENU-CERT
+ * VERSION: v2.34.1-CONTEXTUAL-MENU-REGRESSION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,8 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.34.1-CONTEXTUAL-MENU-REGRESSION-CERT adapts
+ *          existing task edit/activity journeys to desktop menu roles.
  * CHANGELOG: v2.34.0-CAPABILITY-AWARE-MENU-CERT pins desktop menu
  *          keyboard/ARIA and separate Assign/Edit, ensuring explicitly
  *          forbidden action flags hide commands without invoking EOS.
@@ -734,9 +736,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     await waitFor(() => expect(actionTrigger).toBeEnabled());
     fireEvent.click(actionTrigger);
-    fireEvent.click(within(screen.getByRole('dialog', {
-      name: 'Actions for Build milestone execution',
-    })).getByRole('button', { name: 'Edit / assign' }));
+    fireEvent.click(within(screen.getByRole('menu', {
+       name: 'Actions for Build milestone execution',
+     })).getByRole('menuitem', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
       target: { value: 'Updated task handoff' },
     });
@@ -985,9 +987,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td span' });
     fireEvent.click(within(screen.getByRole('row', { name: /Current project delivery/ }))
       .getByRole('button', { name: /More actions for Current project delivery/ }));
-    fireEvent.click(within(screen.getByRole('dialog', {
-      name: 'Actions for Current project delivery',
-    })).getByRole('button', { name: 'Activity & discussion' }));
+    fireEvent.click(within(screen.getByRole('menu', {
+       name: 'Actions for Current project delivery',
+     })).getByRole('menuitem', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
@@ -1876,7 +1878,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.34.0-CAPABILITY-AWARE-MENU-CERT
+ * VERSION: v2.34.1-CONTEXTUAL-MENU-REGRESSION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
