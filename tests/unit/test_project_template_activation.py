@@ -1,11 +1,13 @@
 """TITLE: WILSY OS Industry Project Template Activation Certificate
-VERSION: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT
+VERSION: v1.3.0-REVIEWED-TEMPLATE-OVERRIDE-DAG-CERT
 AUTHORITY: Synthetic EOS project/task transaction boundary only.
 EPITOME: Validate seventeen industry DAGs, materialisation IDs, safe unassigned
          records, stable replay and exact admission without real Mongo writes.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_template_activation.py
 COLLABORATION / OWNERSHIP: Projects router and immutable project/task registries.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.3.0-REVIEWED-TEMPLATE-OVERRIDE-DAG-CERT rejects unknown, duplicated and
+         temporally inconsistent reviewed step edits before materialisation.
 CHANGELOG: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT verifies 17 source-validated industry
          blueprints with immutable DAGs and no automatic staff authority.
 CHANGELOG: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT verifies replay
@@ -134,6 +136,34 @@ def test_atomic_template_activation_uses_exact_unassigned_records_and_replay(mon
     assert first["project"]["target_date"] == "2027-01-03"
 
 
+def test_reviewed_template_edits_reject_unknown_duplicate_and_invalid_dependencies() -> None:
+    """Only one bounded, source-defined, topologically valid work draft is admitted."""
+    context = SimpleNamespace(
+        tenant_id="tenant-cert", identity=SimpleNamespace(identity_id="actor-cert"),
+    )
+    base = {
+        "name": "Reviewed legal delivery", "template_revision": 1,
+        "start_date": "2026-11-19",
+    }
+    cases = (
+        ([{"id": "unknown", "title": "Untrusted"}], "PROJECT_TEMPLATE_OVERRIDE_INVALID"),
+        ([{"id": "scope", "title": "First"}, {"id": "scope", "title": "Second"}],
+         "PROJECT_TEMPLATE_OVERRIDE_INVALID"),
+        ([{"id": "prepare", "day": 0}], "PROJECT_TEMPLATE_DEPENDENCY_DATE_INVALID"),
+    )
+    for edits, error_code in cases:
+        payload = projects_router.ProjectTemplateActivationRequest.model_validate({
+            **base, "step_overrides": edits,
+        })
+        with pytest.raises(HTTPException) as rejected:
+            projects_router.activate_project_template(
+                payload=payload, response=Response(), slug="legal-litigation",
+                idempotency_key="review-only", context=context, update_context=context,
+            )
+        assert rejected.value.status_code == 422
+        assert rejected.value.detail == error_code
+
+
 def test_template_activation_denies_unbound_actor_and_stale_revision() -> None:
     context = SimpleNamespace(tenant_id="tenant-a",
                               identity=SimpleNamespace(identity_id="actor-a"))
@@ -159,7 +189,7 @@ def test_template_activation_denies_unbound_actor_and_stale_revision() -> None:
 
 
 # ARTIFACT: test_project_template_activation.py
-# VERSION: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT
+# VERSION: v1.3.0-REVIEWED-TEMPLATE-OVERRIDE-DAG-CERT
 # AUTHORITY BOUNDARY: synthetic tests only; authenticated IAM remains in EOS
 # TENANT POSTURE: exact tenant actor and project records
 # FAIL-CLOSED POSTURE: malformed data, stale revision and scope mismatches deny
