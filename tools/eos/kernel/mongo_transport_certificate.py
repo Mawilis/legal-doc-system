@@ -1,12 +1,13 @@
 """
 TITLE: WILSY OS MongoDB Transport Development Certificate
-VERSION: v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT
+VERSION: v1.2.0-COMPLETE-SYNTHETIC-OR-TIMING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compare local Mongo read-only command timings to Atlas execution time.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/mongo_transport_certificate.py
 COLLABORATION / OWNERSHIP: Kernel owns the sole Mongo lifecycle; this explicit
                            operator command observes it without creating authority.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.2.0-COMPLETE-SYNTHETIC-OR-TIMING executes and records the synthetic tenant-scoped $or find before reporting results, checks its empty result, and prevents incomplete samples from being labeled completed.
 CHANGELOG: v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT adds bounded synthetic tenant-scoped $or find and explain timings, alongside ping, without reading identities or changing Mongo/authorization authority.
 CHANGELOG: v1.0.0-READONLY-TRANSPORT-CERT adds bounded, data-free ping/explain transport measurements.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -25,7 +26,7 @@ from bson import ObjectId
 from pymongo.errors import PyMongoError
 from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
 
-VERSION: Final[str] = "v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT"
+VERSION: Final[str] = "v1.2.0-COMPLETE-SYNTHETIC-OR-TIMING"
 _INDEX: Final[str] = "wilsy_auth_users_tenant_identity_lookup"
 _ABSENT: Final[str] = "__WILSY_TRANSPORT_CERT_NEVER_A_REAL_ID__"
 
@@ -99,6 +100,19 @@ def run_certificate(*, samples: int) -> int:
             client.admin.command({"ping": 1, "maxTimeMS": 3000})
             pings.append((time.perf_counter_ns() - started) / 1_000_000)
             started = time.perf_counter_ns()
+            candidates = list(
+                db["users"].find(
+                    synthetic_filter,
+                    {"_id": 1},
+                    limit=3,
+                    max_time_ms=3000,
+                )
+            )
+            client_finds.append((time.perf_counter_ns() - started) / 1_000_000)
+            if candidates:
+                print("EOS_MONGO_TRANSPORT_CERT=SYNTHETIC_FILTER_NOT_ABSENT")
+                return 4
+            started = time.perf_counter_ns()
             plan = db.command(command)
             client_explains.append((time.perf_counter_ns() - started) / 1_000_000)
             stats = plan.get("executionStats", {})
@@ -113,6 +127,12 @@ def run_certificate(*, samples: int) -> int:
                 print("EOS_MONGO_TRANSPORT_CERT=EXPLAIN_NOT_CERTIFIED")
                 return 4
             server_explains.append(float(server_ms))
+        if not all(
+            len(values) == samples
+            for values in (pings, client_finds, client_explains, server_explains)
+        ):
+            print("EOS_MONGO_TRANSPORT_CERT=INCOMPLETE_SAMPLES")
+            return 4
         print(f"EOS_MONGO_TRANSPORT_CERT=READ_ONLY_COMPLETED samples={samples}")
         for name, data in (
             ("PING_CLIENT", pings),
@@ -142,7 +162,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: mongo_transport_certificate.py
-# VERSION: v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT
+# VERSION: v1.2.0-COMPLETE-SYNTHETIC-OR-TIMING
 # AUTHORITY BOUNDARY: Explicit read-only Kernel Mongo timing observation.
 # TENANT POSTURE: Synthetic absent scope and identity; no record access.
 # FAIL-CLOSED POSTURE: Unavailable index, query plan, or Mongo connection is failure.
