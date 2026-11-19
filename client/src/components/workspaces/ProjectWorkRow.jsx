@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.6.0-READABLE-DUE-WORK-SEMANTICS
+ * VERSION: v1.7.0-TRUE-COMPACT-WORK-ROW
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.7.0-TRUE-COMPACT-WORK-ROW hides secondary
+ *          disclosures in compact mode and bounds table cell padding
+ *          to preserve a useful dense Work Row.
  * CHANGELOG: v1.6.0-READABLE-DUE-WORK-SEMANTICS shows a
  *          calendar-correct due phrase from verified date-only task fields:
  *          today, tomorrow, overdue days or a concise day/month label;
@@ -148,16 +151,16 @@ export default function ProjectWorkRow({
                       ? 'text-slate-500 line-through' : '')}
                     title={item.title}>{item.title}</span>
                 </div>
-                <div className="mt-1 text-xs text-slate-600">
+                <div className={density === 'compact' ? 'hidden' : 'mt-1 text-xs text-slate-600'}>
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
                   {item.depends_on.length > 0 ? ' · ' + item.depends_on.length + ' dependencies' : ''}
                 </div>
-                {item.description && <details className="mt-1 text-xs text-slate-700">
+                {density !== 'compact' && item.description && <details className="mt-1 text-xs text-slate-700">
                   <summary className="cursor-pointer font-medium text-blue-800">Details</summary>
                   <p className="mt-2 whitespace-pre-wrap break-words">{item.description}</p>
                 </details>}
               </td>
-              <td className="p-3 text-slate-800">
+              <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-slate-800'}>
                 <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
                   + ({ TODO: 'bg-slate-100 text-slate-800', IN_PROGRESS: 'bg-blue-50 text-blue-800',
                     BLOCKED: 'bg-amber-100 text-amber-900', DONE: 'bg-emerald-50 text-emerald-800',
@@ -174,7 +177,7 @@ export default function ProjectWorkRow({
                     Updating to {statusLabel(pendingStatus)}…
                   </span>}
               </td>
-              <td className="p-3 text-xs text-slate-700">
+              <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-xs text-slate-700'}>
                 {item.assignee_principal_id
                   ? capabilities?.canAssign === true && ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
                     ? <button type="button" disabled={busy}
@@ -190,7 +193,7 @@ export default function ProjectWorkRow({
                     aria-label={'Assign: ' + item.title}
                     onClick={() => onAssign(item)}>Assign</button> : 'Not assigned'}
               </td>
-              <td className="p-3 text-xs text-slate-700">
+              <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-xs text-slate-700'}>
                 <span title={item.due_date || undefined}
                   className={item.due_date && item.due_date < todayISO
                     && !['DONE', 'CANCELLED'].includes(item.status)
@@ -198,8 +201,8 @@ export default function ProjectWorkRow({
                   {duePhrase(item.due_date, todayISO)}
                 </span>
               </td>
-              <td className="p-3">
-                <ProjectWorkRowActions item={item} busy={busy} {...(capabilities || NO_ACTION_CAPABILITIES)}
+              <td className={density === 'compact' ? 'px-2 py-1' : 'p-3'}>
+                <ProjectWorkRowActions item={item} busy={busy} dense={density === 'compact'} {...(capabilities || NO_ACTION_CAPABILITIES)}
                   onTransition={onTransition}
                   onComplete={onComplete}
                   onEdit={onEdit}
@@ -211,7 +214,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.6.0-READABLE-DUE-WORK-SEMANTICS
+// VERSION: v1.7.0-TRUE-COMPACT-WORK-ROW
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
