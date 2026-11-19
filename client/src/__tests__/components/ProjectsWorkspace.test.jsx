@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.2-ACTION-READBACK-REGRESSION
+ * VERSION: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,7 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
- * CHANGELOG: v2.28.2-ACTION-READBACK-REGRESSION awaits source-ready row actions after
+ * CHANGELOG: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT certifies Arrow/Home/End
+ *          navigation and focus return for the real responsive action
+ *          presenter without adding fake lifecycle authority.
+ * CHANGELOG: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT awaits source-ready row actions after
  *          each command, opens contextual overflow rather than removed
  *          peer buttons, and exercises on-demand checklist/assignment state.
  * CHANGELOG: v2.28.1-KEYBOARD-WORK-DRAWER-CERT verifies
@@ -266,7 +269,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByRole('button', { name: 'Mark blocked' })).not.toBeInTheDocument();
     const trigger = screen.getByRole('button', { name: 'More actions for Validate deliverable' });
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog', { name: 'Actions for Validate deliverable' })).toBeVisible();
+    const actionDialog = screen.getByRole('dialog', { name: 'Actions for Validate deliverable' });
+    expect(actionDialog).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Mark blocked' })).toHaveFocus();
+    fireEvent.keyDown(actionDialog, { key: 'ArrowDown' });
+    expect(screen.getByRole('button', { name: 'Edit / assign' })).toHaveFocus();
+    fireEvent.keyDown(actionDialog, { key: 'End' });
+    expect(screen.getByRole('button', { name: 'Close actions' })).toHaveFocus();
+    fireEvent.keyDown(actionDialog, { key: 'Home' });
+    expect(screen.getByRole('button', { name: 'Mark blocked' })).toHaveFocus();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
@@ -1597,7 +1608,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.2-ACTION-READBACK-REGRESSION
+ * VERSION: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
