@@ -7,7 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel
 COLLABORATION / OWNERSHIP: Kernel owns the sole Mongo lifecycle; this explicit
                            operator command observes it without creating authority.
 CERTIFICATION / UPDATE DATE: 2026-11-19
-CHANGELOG: v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT adds bounded synthetic tenant-scoped $or find and explain timings, alongside ping, without reading identities or changing Mongo/authorization authority.\nCHANGELOG: v1.0.0-READONLY-TRANSPORT-CERT adds bounded, data-free ping/explain transport measurements.
+CHANGELOG: v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT adds bounded synthetic tenant-scoped $or find and explain timings, alongside ping, without reading identities or changing Mongo/authorization authority.
+CHANGELOG: v1.0.0-READONLY-TRANSPORT-CERT adds bounded, data-free ping/explain transport measurements.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: No URI, host, credential, tenant, user or document output.
 TENANT BOUNDARY: Synthetic absent tenant/user filter only.
@@ -20,7 +21,8 @@ import argparse
 import statistics
 import time
 from typing import Any, Final
-from bson import ObjectId\nfrom pymongo.errors import PyMongoError
+from bson import ObjectId
+from pymongo.errors import PyMongoError
 from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
 
 VERSION: Final[str] = "v1.1.0-SYNTHETIC-OR-TRANSPORT-CERT"
@@ -70,7 +72,14 @@ def run_certificate(*, samples: int) -> int:
         if _INDEX not in db["users"].index_information():
             print("EOS_MONGO_TRANSPORT_CERT=INDEX_NOT_READY")
             return 3
-        synthetic_filter = {\n            "tenantId": _ABSENT,\n            "$or": [\n                {"user_id": _ABSENT},\n                {"_id": ObjectId("000000000000000000000000")},\n            ],\n        }\n        command = {
+        synthetic_filter = {
+            "tenantId": _ABSENT,
+            "$or": [
+                {"user_id": _ABSENT},
+                {"_id": ObjectId("000000000000000000000000")},
+            ],
+        }
+        command = {
             "explain": {
                 "find": "users",
                 "filter": synthetic_filter,
@@ -82,7 +91,8 @@ def run_certificate(*, samples: int) -> int:
             "maxTimeMS": 3000,
         }
         pings: list[float] = []
-        client_finds: list[float] = []\n        client_explains: list[float] = []
+        client_finds: list[float] = []
+        client_explains: list[float] = []
         server_explains: list[float] = []
         for _sample in range(samples):
             started = time.perf_counter_ns()
@@ -106,7 +116,8 @@ def run_certificate(*, samples: int) -> int:
         print(f"EOS_MONGO_TRANSPORT_CERT=READ_ONLY_COMPLETED samples={samples}")
         for name, data in (
             ("PING_CLIENT", pings),
-            ("SYNTHETIC_OR_FIND_CLIENT", client_finds),\n            ("EXPLAIN_CLIENT", client_explains),
+            ("SYNTHETIC_OR_FIND_CLIENT", client_finds),
+            ("EXPLAIN_CLIENT", client_explains),
             ("EXPLAIN_SERVER", server_explains),
         ):
             print(f"{name}_MS median={statistics.median(data):.3f} p95={_p95(data):.3f} max={max(data):.3f}")
