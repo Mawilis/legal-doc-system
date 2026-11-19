@@ -411,7 +411,8 @@ class ProjectTaskRegistry:
         }
         projection = {"_id": 0, "schema": 1, "tenant_id": 1,
                       "project_id": 1, "task_id": 1, "revision": 1,
-                      "event_type": 1, "actor_principal_id": 1, "occurred_at": 1}
+                      "event_type": 1, "actor_principal_id": 1, "occurred_at": 1,
+                      "result_snapshot.status": 1}
         try:
             rows = list(self._events.find(query, projection, session=session)
                         .sort([("revision", DESCENDING)]).skip(offset).limit(limit + 1))
@@ -444,7 +445,11 @@ class ProjectTaskRegistry:
                     raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID") from error
                 if parsed.tzinfo is None:
                     raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
+            snapshot = row.get("result_snapshot")
+            if not isinstance(snapshot, dict) or snapshot.get("status") not in _STATES:
+                raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
             result.append({
+                "status_after": snapshot["status"],
                 "schema": row["schema"], "tenant_id": row["tenant_id"],
                 "project_id": row["project_id"], "task_id": row["task_id"],
                 "revision": row["revision"], "event_type": row["event_type"],
