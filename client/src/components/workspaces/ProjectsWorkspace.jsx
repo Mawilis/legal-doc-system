@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.27.1-TEMPLATE-SELECTED-WORK-VISIBILITY
+ * VERSION: v2.28.0-UNCERTAIN-TEMPLATE-SAVE-RECOVERY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.28.0-UNCERTAIN-TEMPLATE-SAVE-RECOVERY sends ambiguous
+ *          activation outcomes to the authorized project list with a name
+ *          filter, without issuing a duplicate write or claiming commit truth.
  * CHANGELOG: v2.27.1-TEMPLATE-SELECTED-WORK-VISIBILITY restores immediately
  *          visible, EOS-sourced selected-template work while retaining the
  *          dismissed industry catalogue and human-readable project identity.
@@ -987,7 +990,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       start_date: templateStart,
     };
     let persisted = null;
+    let activationCause = null;
     const accepted = await runCommand(async () => {
+      try {
       const response = await api.post(
         '/projects/templates/' + encodeURIComponent(selectedTemplate.slug) + '/activate',
         body, { headers: {
@@ -1020,8 +1025,25 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false,
         },
       }, tenantId, principalId).project;
+      } catch (cause) {
+        activationCause = cause;
+        throw cause;
+      }
     });
-    if (!accepted || !persisted) return;
+    if (!accepted || !persisted) {
+      const status = activationCause?.response?.status;
+      if (activationCause && (!status || status >= 500)) {
+        // A lost/invalid reply may follow a durable commit. Search current
+        // authorized rows; never retry a mutation or claim a name match proves
+        // this command's outcome.
+        setTemplateReconciliation({ project_id: null, name: body.name,
+          code: null, state: 'UNCONFIRMED' });
+        setQuery(body.name);
+        setMode('LIST');
+        setCommandError('');
+      }
+      return;
+    }
     setTemplateReconciliation({
       project_id: persisted.project_id,
       name: persisted.name,
@@ -1262,9 +1284,14 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 px-2 py-2 text-sm text-slate-800">
         <span>{templateReconciliation.state === 'VERIFIED'
           ? 'Project and work verified in EOS: '
-          : 'EOS accepted the project and work. Independent list/detail verification is pending: '}
+          : templateReconciliation.state === 'UNCONFIRMED'
+            ? 'Save outcome not confirmed. Check this project in the list before trying again: '
+            : 'Project and work saved. Current project details are being verified: '}
           <strong>{templateReconciliation.name}</strong></span>
-        {templateReconciliation.state !== 'VERIFIED' &&
+        {templateReconciliation.state === 'UNCONFIRMED' ?
+          <button type="button" className="wp-button" onClick={() => void refresh({ preserveSelection: false })}>
+            Refresh matching projects
+          </button> : templateReconciliation.state !== 'VERIFIED' &&
           <button type="button" className="wp-button" onClick={() => void (async () => {
             const response = await refresh({ preserveSelection: false });
             const row = response?.items.find(item => item.project_id === templateReconciliation.project_id);
@@ -1582,7 +1609,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.27.1-TEMPLATE-SELECTED-WORK-VISIBILITY
+// VERSION: v2.28.0-UNCERTAIN-TEMPLATE-SAVE-RECOVERY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
