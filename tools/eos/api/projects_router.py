@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES
+VERSION: v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,11 +30,15 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES enriches already-eligible exact-tenant
+  v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE bounds People name
+  projection to one exact-tenant users query per verified option page;
+  duplicate or cross-identity collisions fail closed. Names never grant IAM
+  and missing names stay null, without per-option name query amplification.
+  v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE enriches already-eligible exact-tenant
   participant choices with source-verified display-only first/last names;
   unknown names remain null, never inferred from IDs or emails. No IAM,
   membership scope, grant/revoke, ordering or pagination change.
-  v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES also converts JSON dependency arrays to strict typed tuples
+  v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE also converts JSON dependency arrays to strict typed tuples
   only when every element remains a string; malformed values, lengths and
   dependency IDs retain strict/domain rejection. No IAM or task mutations change.
   v1.33.0-STRICT-TASK-DATE-WIRE-FIX normalizes only canonical YYYY-MM-DD task create and
@@ -2997,6 +3001,63 @@ def create_assigned_project_note(
     return _transaction(context, create, write=True)
 
 
+def _project_participant_page_names(
+    database: Any, tenant_id: str, principal_ids: list[str], session: Any,
+) -> dict[str, dict[str, str | None]]:
+    """One bounded exact-tenant display-only lookup, never membership authority."""
+    if not principal_ids:
+        return {}
+    if len(principal_ids) > 100 or len(set(principal_ids)) != len(principal_ids):
+        raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_NAMES_INVALID")
+    by_identity = set(principal_ids)
+    legacy = [
+        ObjectId(value) for value in principal_ids
+        if re.fullmatch(r"[0-9a-fA-F]{24}", value)
+    ]
+    clauses: list[dict[str, object]] = [{"user_id": {"$in": principal_ids}}]
+    if legacy:
+        clauses.append({"_id": {"$in": legacy}})
+    try:
+        cursor = database["users"].find(
+            {"tenantId": tenant_id, "$or": clauses},
+            {"_id": 1, "user_id": 1, "tenantId": 1,
+             "firstName": 1, "lastName": 1},
+            session=session,
+        ).limit(2 * len(principal_ids) + 1)
+        profiles = list(cursor)
+    except PyMongoError as error:
+        raise HTTPException(
+            status_code=503, detail="PROJECT_PARTICIPANT_NAMES_UNAVAILABLE",
+        ) from error
+    if len(profiles) > 2 * len(principal_ids):
+        raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_NAMES_COLLISION")
+    results: dict[str, dict[str, str | None]] = {}
+    for profile in profiles:
+        if not isinstance(profile, dict) or profile.get("tenantId") != tenant_id:
+            raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_NAMES_INVALID")
+        canonical = profile.get("user_id")
+        legacy_id = str(profile.get("_id")) if isinstance(profile.get("_id"), ObjectId) else None
+        matches = [value for value in (canonical, legacy_id) if value in by_identity]
+        if not matches:
+            raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_NAMES_INVALID")
+        # A matching legacy ObjectId must not silently alias a different user ID.
+        if legacy_id in matches and canonical is not None and canonical != legacy_id:
+            raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_NAMES_COLLISION")
+        for identifier in matches:
+            if identifier in results:
+                raise HTTPException(status_code=503, detail="PROJECT_PARTICIPANT_NAMES_COLLISION")
+            def optional(value: object) -> str | None:
+                return value if (
+                    isinstance(value, str) and 0 < len(value) <= 100
+                    and value == value.strip()
+                ) else None
+            results[identifier] = {
+                "first_name": optional(profile.get("firstName")),
+                "last_name": optional(profile.get("lastName")),
+            }
+    return results
+
+
 @router.get("/{project_id}/participant-options")
 def project_participant_options(
     response: Response,
@@ -3035,12 +3096,18 @@ def project_participant_options(
             if _project_participant_eligible(
                 database, context.tenant_id, principal_id, session,
             ):
-                candidates.append({
-                    "principal_id": principal_id,
-                    **_exact_tenant_project_person_name(
-                        database, context.tenant_id, principal_id, session,
-                    ),
-                })
+                candidates.append({"principal_id": principal_id})
+        names = _project_participant_page_names(
+            database, context.tenant_id,
+            [entry["principal_id"] for entry in candidates], session,
+        )
+        candidates = [
+            {"principal_id": entry["principal_id"],
+             **names.get(entry["principal_id"], {
+                 "first_name": None, "last_name": None,
+             })}
+            for entry in candidates
+        ]
         return {
             "schema": "WILSY-PROJECT-PARTICIPANT-OPTIONS/V1",
             "tenant_id": context.tenant_id,
@@ -3477,7 +3544,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES
+# VERSION: v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
