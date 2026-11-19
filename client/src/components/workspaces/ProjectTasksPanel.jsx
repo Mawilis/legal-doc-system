@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE
+ * VERSION: v1.10.0-PROJECT-DISCUSSIONS-MODE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.10.0-PROJECT-DISCUSSIONS-MODE provides a
+ *          dedicated Discussions view using the existing authorized,
+ *          paginated EOS project task feed. Users select a verified task or
+ *          milestone to read source-backed comments directly, without
+ *          mounting charts, checklists or the work editor. Existing work
+ *          commands, IAM, source validators and audit boundaries unchanged.
  * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE switches from the
  *          full queue to a focused source-backed task action workspace for
  *          discussion, approvals and attachments, with a clear return control.
@@ -39,16 +45,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE lets the
+ * CHANGELOG: v1.10.0-PROJECT-DISCUSSIONS-MODE lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE opens a selected task's
+ * CHANGELOG: v1.10.0-PROJECT-DISCUSSIONS-MODE opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE adds a
+ * CHANGELOG: v1.10.0-PROJECT-DISCUSSIONS-MODE adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE adds source-backed
+ * CHANGELOG: v1.10.0-PROJECT-DISCUSSIONS-MODE adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -187,7 +193,7 @@ function validParticipants(data, tenantId, principalId, projectId) {
 
 /** @description Display one exact-project task/participant workflow, never local truth. */
 export default function ProjectTasksPanel({
-  projectId, tenantId, principalId, tenantHeaders,
+  projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
 }) {
   const [items, setItems] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -448,6 +454,64 @@ export default function ProjectTasksPanel({
     setApprovalTaskId(null);
     setAttachmentTaskId(null);
   };
+
+  if (discussionOnly) {
+    return <section className="wp-project-tasks mt-5 border-t border-slate-200 pt-4"
+      aria-label="Project discussions workspace">
+      {discussionTaskId && selectedActionTask ? <>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-600">SELECTED EOS WORK ITEM</p>
+            <h3 className="mt-1 break-words text-base font-bold text-slate-950">{selectedActionTask.title}</h3>
+          </div>
+          <button type="button" className="wp-button" onClick={closeFocusedAction}>All discussions</button>
+        </div>
+        <ProjectTaskCommentsPanel key={[scope, discussionTaskId].join(':')}
+          tenantId={tenantId} projectId={projectId} principalId={principalId}
+          taskId={discussionTaskId} participants={participants} tenantHeaders={tenantHeaders}
+          onClose={closeFocusedAction}/>
+      </> : <>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-slate-950">Discussions</h3>
+            <p className="mt-1 text-sm text-slate-600">Select a verified task or milestone to read its discussion. Comments remain attached to their source work item.</p>
+          </div>
+          <button type="button" className="wp-button" onClick={() => void load(offset)}
+            disabled={state === 'LOADING'}>Refresh discussions</button>
+        </div>
+        {(state === 'LOADING' || state === 'REFRESHING') &&
+          <p role="status" className="mt-3 text-sm text-slate-600">Verifying project discussion sources…</p>}
+        {(state === 'UNAVAILABLE' || state === 'DENIED') &&
+          <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
+        {state === 'READY' && <>
+          <ul aria-label="Verified discussion work items"
+            className="mt-4 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {items.map(item => <li key={item.task_id}>
+              <button type="button" className="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => setDiscussionTaskId(item.task_id)}>
+                <span className="min-w-0">
+                  <span className="block break-words text-sm font-semibold text-slate-950">{item.title}</span>
+                  <span className="mt-1 block text-xs text-slate-600">{item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'} · {label(item.status)}</span>
+                </span>
+                <span className="shrink-0 text-xs font-semibold text-blue-800">Read discussion</span>
+              </button>
+            </li>)}
+            {items.length === 0 && <li className="p-4 text-sm text-slate-600">
+              EOS verified no work items on this page.
+            </li>}
+          </ul>
+          {(offset > 0 || hasMore) && <nav aria-label="Discussion work item pages"
+            className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <button type="button" className="wp-button" disabled={offset === 0}
+              onClick={() => void load(Math.max(0, offset - 50))}>Previous work items</button>
+            <span className="text-sm text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
+            <button type="button" className="wp-button" disabled={!hasMore}
+              onClick={() => void load(offset + 50)}>Next work items</button>
+          </nav>}
+        </>}
+      </>}
+    </section>;
+  }
 
   return <section className="wp-project-tasks mt-5 border-t border-slate-200 pt-4" aria-label="Project work execution">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -868,7 +932,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE
+// VERSION: v1.10.0-PROJECT-DISCUSSIONS-MODE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
