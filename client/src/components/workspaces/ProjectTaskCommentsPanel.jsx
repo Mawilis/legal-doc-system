@@ -211,6 +211,12 @@ export default function ProjectTaskCommentsPanel({
     discussionRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
   }, [state, scope]);
 
+  useEffect(() => {
+    if (showComposer && state === 'READY') {
+      composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+    }
+  }, [showComposer, state]);
+
   const submit = async event => {
     event.preventDefault();
     if (state !== 'READY' || busy) return;
@@ -308,13 +314,8 @@ export default function ProjectTaskCommentsPanel({
           </p>
         </div>
         <button type="button" className="wp-button" aria-expanded={showComposer}
-          aria-controls="task-comment-composer" onClick={() => {
-            setShowComposer(current => !current);
-            if (!showComposer) {
-              // The focused editor follows the header, not the history.
-              composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
-            }
-          }}>
+          aria-controls="task-comment-composer"
+          onClick={() => setShowComposer(current => !current)}>
           {showComposer ? 'Close editor' : 'Write update'}
         </button>
       </div>
