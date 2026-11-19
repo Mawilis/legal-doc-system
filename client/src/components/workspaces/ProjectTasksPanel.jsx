@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.21.1-REFRESH-QUEUE-CONTINUITY
+ * VERSION: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS adds source-scoped
+ *          selection, accessible work-row checkboxes, and local density.
+ *          Selection does not invent or execute bulk EOS commands.
  * CHANGELOG: v1.21.1-REFRESH-QUEUE-CONTINUITY retains the already
  *          verified task queue and pending-action cue during independent
  *          refresh; fresh EOS readback alone changes work status.
@@ -264,6 +267,8 @@ export default function ProjectTasksPanel({
   const [workType, setWorkType] = useState('TASK');
   const [workQuery, setWorkQuery] = useState('');
   const [workMineOnly, setWorkMineOnly] = useState(false);
+  const [selectedWorkIds, setSelectedWorkIds] = useState([]);
+  const [workDensity, setWorkDensity] = useState('comfortable');
   const [workStatus, setWorkStatus] = useState('ALL');
   const [workKind, setWorkKind] = useState('ALL');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
@@ -302,6 +307,7 @@ export default function ProjectTasksPanel({
       const verified = validList(tasks.data, tenantId, principalId, projectId, nextOffset);
       const eligible = validParticipants(people.data, tenantId, principalId, projectId);
       setItems(verified.items);
+      setSelectedWorkIds(previous => previous.filter(id => nextOffset === offset && verified.items.some(item => item.task_id === id)));
       setHasMore(verified.has_more);
       setOffset(nextOffset);
       setParticipants(eligible.items.filter(item => item.role === 'CONTRIBUTOR'));
@@ -314,6 +320,7 @@ export default function ProjectTasksPanel({
       setParticipants([]);
       setParticipantHasMore(false);
       setHasMore(false);
+      setSelectedWorkIds([]);
       const status = cause?.response?.status;
       setError(status === 401 ? 'Authentication required for project work.'
         : status === 403 ? 'EOS denied project work access.'
@@ -333,6 +340,8 @@ export default function ProjectTasksPanel({
     setWorkType('TASK');
     setWorkQuery('');
     setWorkMineOnly(false);
+    setSelectedWorkIds([]);
+    setWorkDensity('comfortable');
     setWorkStatus('ALL');
     setWorkKind('ALL');
     setWorkOrder('DUE_ASC');
@@ -798,6 +807,19 @@ export default function ProjectTasksPanel({
       </section>
       </details>
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
+        <label className="flex min-w-[145px] flex-col gap-1 text-xs font-semibold text-slate-800">
+          Work row density
+          <select aria-label="Work row density" value={workDensity}
+            onChange={event => setWorkDensity(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900">
+            <option value="comfortable">Comfortable</option>
+            <option value="compact">Compact</option>
+          </select>
+        </label>
+        {selectedWorkIds.length > 0 && <span role="status" className="text-xs font-semibold text-blue-800">
+          {selectedWorkIds.length} work item{selectedWorkIds.length === 1 ? '' : 's'} selected on this verified page
+          · Actions remain individual until EOS authorizes bulk commands
+        </span>}
         <button type="button" className="wp-button min-h-10" aria-pressed={workMineOnly}
           onClick={() => setWorkMineOnly(previous => !previous)}>
           {workMineOnly ? 'All work on this page' : 'My work on this page'}
@@ -974,7 +996,14 @@ export default function ProjectTasksPanel({
       <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
         <table className="w-full min-w-[580px] border-collapse text-left text-sm">
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
-            <tr><th scope="col" className="p-3">Work item</th><th scope="col" className="p-3">Status</th>
+            <tr><th scope="col" className="w-10 p-2">
+              <input type="checkbox" aria-label="Select all visible work"
+                checked={workRows.length > 0 && workRows.every(item => selectedWorkIds.includes(item.task_id))}
+                disabled={workRows.length === 0}
+                onChange={event => setSelectedWorkIds(previous => event.target.checked
+                  ? [...new Set([...previous, ...workRows.map(item => item.task_id)])]
+                  : previous.filter(id => !workRows.some(item => item.task_id === id)))}/>
+            </th><th scope="col" className="p-3">Work item</th><th scope="col" className="p-3">Status</th>
               <th scope="col" className="p-3">Assignee</th><th scope="col" className="p-3">Due</th>
               <th scope="col" className="p-3">Next action</th></tr>
           </thead>
@@ -1011,11 +1040,20 @@ export default function ProjectTasksPanel({
                   setDrawerTaskId(item.task_id);
                 }
               }}
-              className="cursor-pointer bg-white align-top hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-              <td className="p-3">
+              aria-selected={selectedWorkIds.includes(item.task_id)}
+              className={'cursor-pointer align-middle hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+                + (selectedWorkIds.includes(item.task_id) ? 'bg-blue-50 ' : 'bg-white ')
+                + (workDensity === 'compact' ? 'h-11' : 'h-14')}>
+              <td className={workDensity === 'compact' ? 'p-1.5' : 'p-2'}>
+                <input type="checkbox" aria-label={'Select ' + item.title}
+                  checked={selectedWorkIds.includes(item.task_id)}
+                  onChange={event => setSelectedWorkIds(previous => event.target.checked
+                    ? [...previous, item.task_id] : previous.filter(id => id !== item.task_id))}/>
+              </td>
+              <td className={workDensity === 'compact' ? 'p-2' : 'p-3'}>
                 <div className="flex items-center gap-2 font-semibold text-slate-900">
                   {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
-                  <span className="break-words">{item.title}</span>
+                  <span className="block min-w-0 truncate" title={item.title}>{item.title}</span>
                 </div>
                 <div className="mt-1 text-xs text-slate-600">
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
@@ -1027,7 +1065,10 @@ export default function ProjectTasksPanel({
                 </details>}
               </td>
               <td className="p-3 text-slate-800">
-                {label(item.status)}
+                <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
+                  + ({ TODO: 'bg-slate-100 text-slate-800', IN_PROGRESS: 'bg-blue-50 text-blue-800',
+                    BLOCKED: 'bg-amber-100 text-amber-900', DONE: 'bg-emerald-50 text-emerald-800',
+                    CANCELLED: 'bg-slate-100 text-slate-600' })[item.status]}>{label(item.status)}</span>
                 {pendingTransition?.taskId === item.task_id &&
                   <span role="status" className="mt-1 block text-xs font-semibold text-blue-800">
                     Updating to {label(pendingTransition.status)}…
@@ -1069,7 +1110,7 @@ export default function ProjectTasksPanel({
                   onApprovals={selected => setApprovalTaskId(selected.task_id)}
                   onActivity={selected => setDiscussionTaskId(selected.task_id)}/>
               </td></tr>)}
-            {workRows.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-sm text-slate-600">
+            {workRows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-sm text-slate-600">
               {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
                 : 'No work items on this verified page match the selected search and filters.'}
             </td></tr>}
@@ -1170,7 +1211,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.21.1-REFRESH-QUEUE-CONTINUITY
+// VERSION: v1.22.0-SELECTABLE-DENSITY-WORK-ROWS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
