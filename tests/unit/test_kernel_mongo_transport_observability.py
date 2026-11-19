@@ -1,6 +1,6 @@
 """
 TITLE: WILSY OS Kernel Mongo Transport Observability Certificate
-VERSION: v1.0.0-TRANSPORT-RECOVERY-CERT
+VERSION: v1.1.0-DEV-POOL-AWAITED-HELLO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves opt-in trace timing, private heartbeat observations and
          fail-closed primary-selection recovery without live Mongo access.
@@ -8,6 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Kernel Mongo lifecycle and authenticated timing
                            scope own the production implementation.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.1.0-DEV-POOL-AWAITED-HELLO-CERT certifies awaited
+           streaming heartbeat exclusion and development-only zero-minimum
+           connection pool alongside production minimum preservation.
 CHANGELOG: v1.0.0-TRANSPORT-RECOVERY-CERT certifies trace accounting,
            endpoint-free transport telemetry and failure-then-reconnect state.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -86,6 +89,21 @@ def test_connection_and_heartbeat_telemetry_is_bounded_and_private(monkeypatch, 
     assert any("event=HEARTBEAT outcome=FAILED duration_ms=600.000" in line for line in lines)
     assert all(secret not in line for line in lines)
 
+    caplog.clear()
+    with caplog.at_level("INFO", logger=db.__name__):
+        heartbeats.succeeded(
+            SimpleNamespace(duration=10.0, awaited=True, connection_id=secret, reply=secret)
+        )
+        heartbeats.succeeded(
+            SimpleNamespace(duration=0.35, awaited=False, connection_id=secret, reply=secret)
+        )
+    emitted = [
+        record.message for record in caplog.records
+        if "WILSY_MONGO_TRANSPORT" in record.message
+    ]
+    assert len(emitted) == 1
+    assert "event=HEARTBEAT outcome=OK duration_ms=350.000" in emitted[0]
+
 
 def test_primary_selection_failure_recovers_only_on_explicit_retry(monkeypatch):
     """Loss of primary must fail closed, never downgrade TLS, and reconnect cleanly."""
@@ -135,6 +153,7 @@ def test_primary_selection_failure_recovers_only_on_explicit_retry(monkeypatch):
     assert success is True
     assert db.is_db_ready() is True
     assert len(clients) == 2
+    assert clients[1].options["minPoolSize"] == 0
     assert clients[1].options["tls"] is True
     assert clients[1].options["tlsAllowInvalidCertificates"] is False
     assert clients[1].options["tlsAllowInvalidHostnames"] is False
@@ -144,8 +163,57 @@ def test_primary_selection_failure_recovers_only_on_explicit_retry(monkeypatch):
     assert db.is_db_ready() is False
 
 
+def test_production_connection_retains_ten_minimum_pooled_sockets(monkeypatch):
+    """Preserve original production pool settings and mandatory TLS.
+
+    @authority Synthetic connection options only; no remote or business access.
+    @tenant No tenant record queried or disclosed.
+    @failure Failure raises immediately on changed production connection policy.
+    """
+    monkeypatch.setenv("WILSY_ENV", "production")
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://example.invalid/wilsy")
+    monkeypatch.delenv("WILSY_KENNEL_DB_TLS", raising=False)
+    monkeypatch.delenv("WILSY_MY_WORK_TIMING", raising=False)
+    monkeypatch.setattr(db, "_client", None)
+    monkeypatch.setattr(db, "_db", None)
+    monkeypatch.setattr(db, "_ready", False)
+    monkeypatch.setattr(db, "_last_error", None)
+    monkeypatch.setattr(db, "_retry_thread", None)
+    monkeypatch.setattr(db, "_retry_stop", None)
+
+    calls = []
+
+    class SyntheticClient:
+        """Capture production options without opening a real connection."""
+
+        def __init__(self, _uri, **kwargs):
+            self.options = kwargs
+            self.admin = self
+            calls.append(self)
+
+        def command(self, _command):
+            return {"ok": 1}
+
+        def get_database(self):
+            return SimpleNamespace(name="wilsy")
+
+        def close(self):
+            return
+
+    monkeypatch.setattr(db, "MongoClient", SyntheticClient)
+    result, _message = db.connect_db()
+    assert result is True
+    assert len(calls) == 1
+    assert calls[0].options["minPoolSize"] == 10
+    assert calls[0].options["maxPoolSize"] == 50
+    assert calls[0].options["tls"] is True
+    assert calls[0].options["tlsAllowInvalidCertificates"] is False
+    assert calls[0].options["tlsAllowInvalidHostnames"] is False
+    db.disconnect_db()
+
+
 # ARTIFACT: tests/unit/test_kernel_mongo_transport_observability.py
-# VERSION: v1.0.0-TRANSPORT-RECOVERY-CERT
+# VERSION: v1.1.0-DEV-POOL-AWAITED-HELLO-CERT
 # AUTHORITY BOUNDARY: Read-only synthetic Kernel transport verification.
 # TENANT POSTURE: No tenant records or user identities.
 # FAIL-CLOSED POSTURE: Primary unavailable cannot produce a ready connection.
