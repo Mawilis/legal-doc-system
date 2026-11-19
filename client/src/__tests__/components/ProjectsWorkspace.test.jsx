@@ -613,7 +613,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="top-level-discussions-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Activity & discussion' }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Project workspace views' }))
+      .getByRole('button', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Project discussions workspace' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'EOS verified To-do checklist' })).not.toBeInTheDocument();
