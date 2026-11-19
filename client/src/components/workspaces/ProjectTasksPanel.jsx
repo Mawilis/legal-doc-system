@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.12.0-DENSE-DISCUSSION-CONTEXT
+ * VERSION: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND removes duplicated status cards,
+ *          collapses lifecycle analytics and checklists until explicitly
+ *          requested, and puts the actionable project queue first.
  * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT keeps selected work context
  *          to one small toolbar and moves the source-backed activity directly
  *          under it; no stacked explanatory cards or decorative section hero.
@@ -52,16 +55,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT lets the
+ * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT opens a selected task's
+ * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT adds a
+ * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.12.0-DENSE-DISCUSSION-CONTEXT adds source-backed
+ * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -584,14 +587,13 @@ export default function ProjectTasksPanel({
         taskId={focusedAction.id} tenantHeaders={tenantHeaders}
         onClose={closeFocusedAction}/>}
     </div> : <>
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Verified current task page status">
-        {counts.map(({ status, count }) =>
-          <div key={status} className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
-            <div className="text-xs text-slate-600">{label(status)}</div>
-            <strong className="mt-1 block text-lg tabular-nums text-slate-900">{count}</strong>
-          </div>)}
-      </div>
-      <section className="mt-3 rounded-xl border border-slate-200 bg-white p-4" aria-label="Verified task lifecycle chart">
+      <p className="mt-2 text-xs text-slate-600" aria-label="Verified current task page status">
+        {items.length} verified work items · {counts.find(item => item.status === 'IN_PROGRESS')?.count || 0} in progress
+        {overdueOnPage > 0 ? ' · ' + overdueOnPage + ' overdue' : ''}
+      </p>
+      <details className="mt-2 border-b border-slate-200 pb-2" aria-label="Verified task lifecycle chart">
+        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">View lifecycle breakdown · {chartTotal} work items on this page</summary>
+        <section className="rounded-lg bg-slate-50 p-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h4 className="text-sm font-bold text-slate-900">Work lifecycle · current page</h4>
@@ -629,7 +631,12 @@ export default function ProjectTasksPanel({
           {' '}Lifecycle actions update this chart only after a fresh verified EOS list read.
         </p>
       </section>
-      <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4" aria-label="EOS verified To-do checklist">
+      </details>
+      <details className="mt-2 border-b border-slate-200 pb-2" aria-label="EOS verified To-do checklist">
+        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">
+          Checklist mode · {doneTodos}/{todoRows.length} completed
+        </summary>
+        <section className="rounded-lg bg-slate-50 p-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h4 className="text-sm font-bold text-slate-900">To-do checklist · current verified page</h4>
@@ -708,6 +715,7 @@ export default function ProjectTasksPanel({
         </div>}
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
+      </details>
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
         <label className="min-w-[180px] flex-[2] text-xs font-semibold text-slate-800">Search this verified page
           <input type="search" value={workQuery} onChange={event => setWorkQuery(event.target.value)}
@@ -959,7 +967,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.12.0-DENSE-DISCUSSION-CONTEXT
+// VERSION: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
