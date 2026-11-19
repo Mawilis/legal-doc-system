@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.0-RESPONSIVE-WORK-ACTION-CERT
+ * VERSION: v2.28.1-KEYBOARD-WORK-DRAWER-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.28.1-KEYBOARD-WORK-DRAWER-CERT verifies
+ *          keyboard Enter opens the exact source work drawer and Close
+ *          returns focus without mutating persisted EOS task data.
  * CHANGELOG: v2.28.0-RESPONSIVE-WORK-ACTION-CERT asserts
  *          the status-derived primary action, Escape focus restoration,
  *          contextual blocking and explicit destructive cancel confirmation.
@@ -513,6 +516,13 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       selector: '.wp-project-tasks tbody td span',
     }).closest('tr');
     expect(row).toHaveAttribute('data-task-id', taskId);
+    row.focus();
+    fireEvent.keyDown(row, { key: 'Enter' });
+    expect(screen.getByRole('dialog', { name: 'Work details: Build milestone execution' }))
+      .toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+    expect(row).toHaveFocus();
+
     fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
     expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
     expect(screen.getByRole('button', { name: /Filter work to To do: 1 of 1 verified on page/ })).toBeVisible();
@@ -1580,7 +1590,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.0-RESPONSIVE-WORK-ACTION-CERT
+ * VERSION: v2.28.1-KEYBOARD-WORK-DRAWER-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
