@@ -1,15 +1,18 @@
 """TITLE: WILSY OS Project Execution Domain Certificate
-VERSION: v1.1.0-REVISIONED-TASK-EDIT-CERT
+VERSION: v1.2.0-TASK-EVENT-READER-CERT
 AUTHORITY: Synthetic immutable task domain certificate only.
 EPITOME: Validate task/subtask/milestone state, dependency syntax, fingerprints,
          revision CAS, terminal states and fail-closed mutation boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_task_registry.py
 COLLABORATION / OWNERSHIP: ProjectTaskRegistry and Projects router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.0-TASK-EVENT-READER-CERT certifies
+bounded immutable event reads, strict source scoping, ISO datetime projection,
+revision ordering and redaction of replay secrets.
 CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-CERT certifies bounded
 revisioned task editing, assignee changes, immutable dependency graph and
 terminal editing denial without creating any IAM grant.
-CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-CERT establishes source-domain tests.
+CHANGELOG: v1.2.0-TASK-EVENT-READER-CERT establishes source-domain tests.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic project and principal identities only.
 TENANT BOUNDARY: No fallback tenant and no unverified record ownership.
@@ -44,6 +47,58 @@ def task(**values: object) -> ProjectTask:
     }
     data.update(values)
     return ProjectTask(**data)
+
+
+def test_immutable_event_read_is_scoped_bounded_and_redacted() -> None:
+    from tools.eos.saas.projects.project_task_registry import ProjectTaskRegistry
+
+    source = task()
+    record = {
+        "schema": "wilsy.project.task.event.v1",
+        "tenant_id": "tenant-a", "project_id": PROJECT, "task_id": TASK,
+        "revision": 2, "event_type": "PROJECT_TASK_TRANSITIONED",
+        "actor_principal_id": "owner-a", "occurred_at": NOW,
+        "idempotency_key": "secret", "result_snapshot": {"private": True},
+    }
+
+    class EventCursor:
+        def __init__(self):
+            self.rows = [record]
+        def sort(self, fields):
+            assert fields == [("revision", -1)]
+            return self
+        def skip(self, count):
+            assert count == 0
+            return self
+        def limit(self, count):
+            assert count == 2
+            return self.rows[:count]
+
+    class Events:
+        def find(self, query, projection, *, session):
+            assert query == {"tenant_id": "tenant-a",
+                             "project_id": PROJECT, "task_id": TASK}
+            assert projection["_id"] == 0
+            assert "idempotency_key" not in projection
+            assert "result_snapshot" not in projection
+            assert session == "verified-session"
+            return EventCursor()
+
+    class Tasks:
+        def find_one(self, query, *, session):
+            assert query["task_id"] == TASK
+            return source.to_dict()
+
+    registry = ProjectTaskRegistry(Tasks(), Events())
+    items, more = registry.list_event_page(
+        tenant_id="tenant-a", project_id=PROJECT, task_id=TASK,
+        session="verified-session", limit=1, offset=0,
+    )
+    assert not more and len(items) == 1
+    assert items[0]["occurred_at"] == NOW.isoformat()
+    assert "idempotency_key" not in items[0]
+    assert "result_snapshot" not in items[0]
+    assert items[0]["event_type"] == "PROJECT_TASK_TRANSITIONED"
 
 
 def test_task_integrity_and_immutable_transitions() -> None:
@@ -158,7 +213,7 @@ def test_task_ids_are_stable_only_for_exact_command_origins() -> None:
 
 
 # ARTIFACT: test_project_task_registry.py
-# VERSION: v1.1.0-REVISIONED-TASK-EDIT-CERT
+# VERSION: v1.2.0-TASK-EVENT-READER-CERT
 # AUTHORITY BOUNDARY: domain-only, no membership/permission or persistence
 # TENANT POSTURE: exact synthetic project and principal identifiers
 # FAIL-CLOSED POSTURE: forged states, bad parent/dependencies and stale CAS deny
