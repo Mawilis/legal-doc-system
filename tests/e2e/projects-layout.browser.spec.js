@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT
+ * VERSION: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,48 +8,51 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT explicitly opens the
+ *          on-demand Notes editor before measuring its real form typography
+ *          and testing note colours in desktop and mobile Chromium.
  * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies that the exact synthetic
  *          eligible principal is displayed using EOS-supplied first/last
  *          name while preserving its immutable principal_id as the select
  *          value, with no inferred identity or grant.
  * CHANGELOG: v2.2.0-OWNER-PARTICIPANT-SEPARATION-BROWSER-CERT separately verifies indexed owner-list navigation and explicit participant assignments in 1440px/390px Chromium; no implicit role grants, mutations or false owner totals.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT renders
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT certifies computed readable task/note label colours against global CSS and six accessible sticky-note selections in rendered desktop/mobile Chromium.
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies full-width selected project, task-first view, scoped People and Notes navigation, and back-to-registry at desktop/mobile sizes.
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT asserts exact visible quarantine label with unavailable malware clearance and no-download behavior.
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT supplies source-owned quarantine state and null clearance fingerprint in desktop/mobile fixture; no invented download grant.
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT renders
  *          task attachments as quarantined evidence with no preview/download
  *          and a bounded contributor upload control at desktop/mobile sizes.
- * CHANGELOG:  v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT scopes
+ * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT scopes
  *          review rationale assertions to the selected task's accessible
  *          region when that source text also appears in the reviewer inbox.
- * CHANGELOG:  v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies
+ * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies
  *          the separately admitted reviewer inbox is rendered and usable
  *          without navigation through the owner-only project registry.
- * CHANGELOG:  v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT renders
+ * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT renders
  *          the task-review approval history and named reviewer decision
  *          controls at desktop and mobile widths without simulated IAM grants.
- * CHANGELOG:  v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT renders
+ * CHANGELOG:  v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT renders
  *          the separately authorized Assigned Projects task/notification
  *          journey at desktop and mobile widths without simulated grants.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies source-backed
  *          task discussion opens only for a source-confirmed task and uses
  *          exact tenant/project/task comment response checks in Chromium.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT makes the shared
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT makes the shared
  *          participant fixture honor the exact 50/100 page size requested by
  *          independently bounded participant and task selectors.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies source-backed
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies source-backed
  *          participant directory and grant entry controls at mobile/desktop.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT verifies EOS-backed project work
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT verifies EOS-backed project work
  *          geometry, verified empty state and a functional task-creation
  *          action on both 1440px desktop and 390px mobile in Chromium.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT measures exact direct-child table
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT measures exact direct-child table
  *          cells, avoiding nested inline project metadata spans being
  *          mistaken for independent columns by Playwright selectors.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT certifies the existing
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT certifies the existing
  *          intentional mobile two-column compact table instead of requiring
  *          horizontal scrolling; retained visible status and action are tested.
- * CHANGELOG: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT measures actual
+ * CHANGELOG: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT measures actual
  *          viewport overflow, table width, two-column/stacked layout,
  *          source-backed status visualization, selection and note surface.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -410,6 +413,9 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Notes', exact: true }).click();
     const notesPanel = page.getByRole('region', { name: 'Project notes' });
     await expect(notesPanel).toBeVisible();
+    await expect(notesPanel.getByRole('button', { name: 'New note' })).toBeVisible();
+    await notesPanel.getByRole('button', { name: 'New note' }).click();
+    await expect(notesPanel.getByRole('textbox', { name: 'New project note' })).toBeVisible();
     const noteFormLabelColour = await notesPanel.locator('form label').first().evaluate(
       node => getComputedStyle(node).color,
     );
@@ -475,7 +481,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.3.0-SOURCE-NAMED-PARTICIPANT-BROWSER-CERT
+// VERSION: v2.4.0-ON-DEMAND-NOTES-BROWSER-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
