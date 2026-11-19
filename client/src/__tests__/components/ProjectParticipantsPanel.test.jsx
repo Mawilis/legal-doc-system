@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Participant Command UI Certificate
- * VERSION: v1.0.0-SOURCE-VERIFIED-PARTICIPANT-LIFECYCLE-CERT
+ * VERSION: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT
  * AUTHORITY: Synthetic client contract tests; EOS alone owns IAM and grants.
  * EPITOME: Verify source choices, explicit role grant/revoke, fresh state
  *          readback and denial of invented members or session-scoped outcomes.
@@ -98,7 +98,7 @@ it('grants and revokes only verified selectable tenant participants', async () =
   fireEvent.change(select, { target: { value: target } });
   fireEvent.click(screen.getByRole('button', { name: 'Add participant' }));
   await waitFor(() => expect(screen.getByRole('button', { name: 'Revoke participation' })).toBeVisible());
-  expect(screen.getByText('Contributor · Revision 1')).toBeVisible();
+  expect(screen.getByText('Contributor')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Revoke participation' }));
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Revoke participation' })).not.toBeInTheDocument());
   expect(api.post).toHaveBeenCalledTimes(2);
@@ -126,7 +126,7 @@ it('does not expose unverified candidate options or a grant button', async () =>
 });
 
 // ARTIFACT: ProjectParticipantsPanel.test.jsx
-// VERSION: v1.0.0-SOURCE-VERIFIED-PARTICIPANT-LIFECYCLE-CERT
+// VERSION: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT
 // AUTHORITY BOUNDARY: mocked EOS client only, no real assignments
 // TENANT POSTURE: foreign tenant options discarded
 // FAIL-CLOSED POSTURE: no grant without valid source choice and exact readback
