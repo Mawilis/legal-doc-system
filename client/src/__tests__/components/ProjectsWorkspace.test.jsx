@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.27.3-VALID-TEMPLATE-READBACK-FIXTURE
+ * VERSION: v2.28.0-RESPONSIVE-WORK-ACTION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.28.0-RESPONSIVE-WORK-ACTION-CERT asserts
+ *          the status-derived primary action, Escape focus restoration,
+ *          contextual blocking and explicit destructive cancel confirmation.
  * CHANGELOG: v2.27.3-VALID-TEMPLATE-READBACK-FIXTURE uses a
  *          real two-step work/milestone blueprint in the accepted-command
  *          delayed-list regression, matching strict catalogue validation.
@@ -168,6 +171,7 @@ const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn() }));
 vi.mock('../../services/api.js', () => ({ default: api }));
 
 import ProjectsWorkspace from '../../components/workspaces/ProjectsWorkspace.jsx';
+import ProjectWorkRowActions from '../../components/workspaces/ProjectWorkRowActions.jsx';
 
 const TENANT = 'projects-cert-tenant';
 const PRINCIPAL = 'projects-cert-principal';
@@ -239,6 +243,44 @@ afterEach(() => {
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
+
+  it('renders one primary work action and a keyboard-dismissable contextual action sheet', () => {
+    const onTransition = vi.fn();
+    const onComplete = vi.fn();
+    const onEdit = vi.fn();
+    const onAttachments = vi.fn();
+    const onApprovals = vi.fn();
+    const onActivity = vi.fn();
+    const item = { task_id: 'ptk-' + 'c'.repeat(48),
+      title: 'Validate deliverable', status: 'TODO' };
+    const handlers = { item, busy: false, onTransition, onComplete,
+      onEdit, onAttachments, onApprovals, onActivity };
+    const view = render(<ProjectWorkRowActions {...handlers}/>);
+    expect(screen.getByRole('button', { name: 'Start: Validate deliverable' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Mark blocked' })).not.toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: 'More actions for Validate deliverable' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('dialog', { name: 'Actions for Validate deliverable' })).toBeVisible();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark blocked' }));
+    expect(onTransition).toHaveBeenCalledWith(item, 'BLOCKED');
+    expect(screen.queryByRole('dialog', { name: 'Actions for Validate deliverable' })).not.toBeInTheDocument();
+    view.rerender(<ProjectWorkRowActions {...handlers}
+      item={{ ...item, status: 'IN_PROGRESS' }}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Complete: Validate deliverable' }));
+    expect(onComplete).toHaveBeenCalledWith({ ...item, status: 'IN_PROGRESS' });
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel work' }));
+    expect(onTransition).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
+    expect(onTransition).toHaveBeenCalledWith({ ...item, status: 'IN_PROGRESS' }, 'CANCELLED');
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+
 
   it('filters authorized owned projects without calling participant IAM or changing records', async () => {
     const owned = project({
@@ -1538,7 +1580,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.27.3-VALID-TEMPLATE-READBACK-FIXTURE
+ * VERSION: v2.28.0-RESPONSIVE-WORK-ACTION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
