@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY
+ * VERSION: v2.27.0-TEMPLATE-OPERATING-FOCUS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.27.0-TEMPLATE-OPERATING-FOCUS makes template preview opt-in
+ *          after selection and hides opaque generated codes in operating views.
  * CHANGELOG: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY distinguishes unverified
  *          activation outcomes from confirmed rejections, offers an
  *          authorized project-list recovery path, and never invites
@@ -1319,8 +1321,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   {selectedTemplate && <>
                     {templatePickerOpen && <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>}
                     <p className="mt-1 text-xs text-slate-600">Template revision {selectedTemplate.revision} · {selectedTemplate.steps.length} source-defined work items</p>
-                    <div className="mt-3 overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                    <details key={selectedTemplate.slug} defaultOpen={templatePickerOpen} className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <summary className="cursor-pointer text-sm font-semibold text-slate-900">View {selectedTemplate.steps.length} included work items</summary>
+                      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-xs">
                         <thead className="border-b border-slate-200 text-slate-700"><tr><th className="p-2">Deliverable</th><th className="p-2">Role</th><th className="p-2">Due</th><th className="p-2">Depends on</th></tr></thead>
                         <tbody>{selectedTemplate.steps.map(step => <tr className="border-b border-slate-100" key={step.id}>
                           <td className="p-2"><strong className="block text-slate-900">{step.title}</strong><span className="text-slate-600">{step.kind} · {step.acceptance}</span></td>
@@ -1328,8 +1331,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                           <td className="p-2 text-slate-700">Day +{step.day}</td>
                           <td className="p-2 text-slate-700">{step.depends_on.join(', ') || 'None'}</td>
                         </tr>)}</tbody>
-                      </table>
-                    </div>
+                      </table></div>
+                    </details>
                     <form onSubmit={activateTemplate} className="mt-4 space-y-3 border-t border-slate-200 pt-4">
                       <label className="block text-sm font-semibold" style={{ color: '#172b4d' }}>Project name
                         <input required maxLength={180} style={{ color: '#172b4d', backgroundColor: '#fff', letterSpacing: 'normal', fontWeight: 400 }} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -1395,7 +1398,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                     className="wp-table-row focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-600"
                     aria-label={`View project ${item.name}, ${statusLabel(item.status)}`}>
                     <span><strong className="wp-row-title">{item.name}</strong></span>
-                    <span className="text-sm text-slate-700">{item.code || 'No project code'}</span>
+                    <span className="text-sm text-slate-700">{item.code && !/^PRJ-[0-9A-F]{16}$/.test(item.code) ? item.code : 'Automatically assigned'}</span>
                     <span><span className="wp-status" data-status={item.status}>{statusLabel(item.status)}</span></span>
                     <span className="text-sm text-slate-700">{item.target_date || 'No target date'}</span>
                     <span className="wp-table-action">View details</span>
@@ -1433,7 +1436,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                 <span className="wp-status" data-status={detail.project.status}>
                   {statusLabel(detail.project.status)}
                 </span>
-                <span className="font-semibold">{detail.project.code || 'Code not recorded'}</span>
+                <span className="font-semibold">{detail.project.code && !/^PRJ-[0-9A-F]{16}$/.test(detail.project.code) ? detail.project.code : 'Code assigned'}</span>
                 <span className="sr-only">Revision {detail.project.revision}</span>
                 <span>Target {detail.project.target_date || 'not scheduled'}</span>
               </div>}
@@ -1577,7 +1580,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY
+// VERSION: v2.27.0-TEMPLATE-OPERATING-FOCUS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
