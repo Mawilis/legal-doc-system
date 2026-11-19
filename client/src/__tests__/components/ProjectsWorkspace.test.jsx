@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.45.0-INLINE-DISCUSSION-AND-NOTES-ENTRY-CERT
+ * VERSION: v2.46.0-VERIFIED-WORK-GROUPING-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.46.0-VERIFIED-WORK-GROUPING-CERT certifies grouping of
+ *          exact-page tasks by lifecycle with accurate page-only counts,
+ *          preserved controls and no unapproved bulk mutation.
  * CHANGELOG: v2.45.0-INLINE-DISCUSSION-AND-NOTES-ENTRY-CERT certifies in-place activity
  *          expands from verified list rows and keeps project-notes access
  *          available without entering the full task drawer.
@@ -658,6 +661,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(work).queryByText('Other contributor delivery')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'All work on this page' }));
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Group project work' }), {
+      target: { value: 'STATUS' },
+    });
+    expect(within(work).getByText('To do · 2 on this page')).toBeVisible();
+    expect(within(work).querySelectorAll('tr[data-task-id]')).toHaveLength(2);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Group project work' }), {
+      target: { value: 'NONE' },
+    });
+    expect(within(work).queryByText('To do · 2 on this page')).not.toBeInTheDocument();
     const formerTransport = api.get.getMockImplementation();
     api.get.mockImplementation((path, ...args) =>
       typeof path === 'string' && path.endsWith('/task-action-capabilities')
@@ -2077,7 +2089,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.45.0-INLINE-DISCUSSION-AND-NOTES-ENTRY-CERT
+ * VERSION: v2.46.0-VERIFIED-WORK-GROUPING-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
