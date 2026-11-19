@@ -4,7 +4,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS canonical Kennel database lifecycle and opt-in timing boundary.
 
 TITLE: WILSY OS Sovereign Kennel Database Anchor
-VERSION: v2.6.0-OPT-IN-TRANSPORT-PHASE-TELEMETRY
+VERSION: v2.7.0-DEV-POOL-STREAMING-HEARTBEAT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns the sole EOS MongoClient lifecycle and canonical database binding;
          optionally observes request-scoped pool and command timings.
@@ -13,6 +13,12 @@ COLLABORATION / OWNERSHIP: EOS runtime owns connection startup and shutdown;
                            AuthRegistry supplies validated timing context only.
 CERTIFICATION / UPDATE DATE: 2026-11-19
 CHANGELOG:
+  v2.7.0-DEV-POOL-STREAMING-HEARTBEAT — Avoids forced minimum connection
+    replenishment only outside production, while retaining production pool
+    settings. Filters successful awaited streaming heartbeat durations from
+    slow-heartbeat telemetry because the server deliberately holds awaitable
+    hello for its long-poll window; retains non-awaited and failed events.
+    Preserves TLS, timeout, retry, tenant and authorization semantics.
   v2.6.0-OPT-IN-TRANSPORT-PHASE-TELEMETRY — Adds opt-in pre-command
     driver timing, connection establishment and heartbeat observations.
     Preserves exact-tenant authority, security settings and driver retries.
@@ -488,6 +494,10 @@ class _RequestMongoHeartbeatListener(monitoring.ServerHeartbeatListener):
 
     def succeeded(self, event: Any) -> None:
         try:
+            # Awaited streaming hello is intentionally long-polled by MongoDB,
+            # often for approximately ten seconds. It is not a network RTT.
+            if getattr(event, "awaited", False) is True:
+                return
             seconds = getattr(event, "duration", None)
             if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
                 if float(seconds) >= 0.1:
@@ -604,7 +614,7 @@ def connect_db(force_reconnect=False):
         'socketTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SOCKET_TIMEOUT_MS', 45000)),
         'serverSelectionTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SERVER_SELECTION_MS', 5000)),
         'maxPoolSize': 50,
-        'minPoolSize': 10,
+        # Hotspot development: do not continuously replenish ten sockets per\n        # server when connectivity is unstable; production retains its baseline.\n        'minPoolSize': 10 if _is_production_environment() else 0,
         'maxIdleTimeMS': 60000,
         'retryWrites': True,
         'retryReads': True,
@@ -730,7 +740,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.6.0-OPT-IN-TRANSPORT-PHASE-TELEMETRY
+# VERSION: v2.7.0-DEV-POOL-STREAMING-HEARTBEAT
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.
