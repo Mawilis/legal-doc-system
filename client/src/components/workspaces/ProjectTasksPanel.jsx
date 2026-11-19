@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.23.0-OPTIMISTIC-PENDING-STATUS
+ * VERSION: v1.24.0-REUSABLE-WORK-ROW-COMPOSITION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.24.0-REUSABLE-WORK-ROW-COMPOSITION delegates the
+ *          verified row to a reusable stateless component, retaining EOS
+ *          source authority and exact-project command handlers in this panel.
  * CHANGELOG: v1.23.0-OPTIMISTIC-PENDING-STATUS immediately projects
  *          a clearly marked provisional status chip, retains verified status
  *          separately and reverts without local business truth on EOS failure.
@@ -136,7 +139,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
-import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
+import ProjectWorkRow from './ProjectWorkRow.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
@@ -1015,116 +1018,26 @@ export default function ProjectTasksPanel({
               <th scope="col" className="p-3">Next action</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {workRows.map(item => <tr key={item.task_id} data-task-id={item.task_id}
-              aria-label={'Open work details: ' + item.title}
-              tabIndex={0}
-              onClick={event => {
-                if (event.target.closest('button, a, input, select, textarea, details, summary')) return;
-                drawerReturnFocus.current = event.currentTarget;
-                setDrawerTaskId(item.task_id);
+            {workRows.map(item => <ProjectWorkRow key={item.task_id}
+              item={item} selected={selectedWorkIds.includes(item.task_id)}
+              density={workDensity} busy={busy}
+              pendingStatus={pendingTransition?.taskId === item.task_id ? pendingTransition.status : null}
+              todayISO={todayISO} assigneeName={contributorName}
+              onToggleSelect={(id, checked) => setSelectedWorkIds(previous => checked
+                ? [...previous, id] : previous.filter(value => value !== id))}
+              onOpen={(selected, element) => {
+                drawerReturnFocus.current = element;
+                setDrawerTaskId(selected.task_id);
               }}
-              onKeyDown={event => {
-                if (event.target !== event.currentTarget || event.altKey
-                  || event.ctrlKey || event.metaKey || event.shiftKey) return;
-                const key = event.key.toLowerCase();
-                if (key === 'j' || key === 'k') {
-                  event.preventDefault();
-                  const rows = [...event.currentTarget.parentElement.querySelectorAll('tr[data-task-id]')];
-                  const index = rows.indexOf(event.currentTarget);
-                  rows[Math.min(rows.length - 1, Math.max(0,
-                    index + (key === 'j' ? 1 : -1)))]?.focus();
-                } else if (key === 'a' && !busy
-                  && !['DONE', 'CANCELLED'].includes(item.status)) {
-                  event.preventDefault();
-                  openTaskEditor(item, true);
-                } else if (key === 'c' && !busy && item.status === 'IN_PROGRESS') {
-                  event.preventDefault();
-                  setCompletionCandidate(item.task_id);
-                  setCompletionAttested(false);
-                } else if (event.key === 'Enter') {
-                  event.preventDefault();
-                  drawerReturnFocus.current = event.currentTarget;
-                  setDrawerTaskId(item.task_id);
-                }
+              onAssign={selected => openTaskEditor(selected, true)}
+              onEdit={openTaskEditor} onTransition={transition}
+              onComplete={selected => {
+                setCompletionCandidate(selected.task_id);
+                setCompletionAttested(false);
               }}
-              aria-selected={selectedWorkIds.includes(item.task_id)}
-              className={'cursor-pointer align-middle hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
-                + (selectedWorkIds.includes(item.task_id) ? 'bg-blue-50 ' : 'bg-white ')
-                + (workDensity === 'compact' ? 'h-11' : 'h-14')}>
-              <td className={workDensity === 'compact' ? 'p-1.5' : 'p-2'}>
-                <input type="checkbox" aria-label={'Select ' + item.title}
-                  checked={selectedWorkIds.includes(item.task_id)}
-                  onChange={event => setSelectedWorkIds(previous => event.target.checked
-                    ? [...previous, item.task_id] : previous.filter(id => id !== item.task_id))}/>
-              </td>
-              <td className={workDensity === 'compact' ? 'p-2' : 'p-3'}>
-                <div className="flex items-center gap-2 font-semibold text-slate-900">
-                  {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
-                  <span className="block min-w-0 truncate" title={item.title}>{item.title}</span>
-                </div>
-                <div className="mt-1 text-xs text-slate-600">
-                  {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
-                  {item.depends_on.length > 0 ? ' · ' + item.depends_on.length + ' dependencies' : ''}
-                </div>
-                {item.description && <details className="mt-1 text-xs text-slate-700">
-                  <summary className="cursor-pointer font-medium text-blue-800">Details</summary>
-                  <p className="mt-2 whitespace-pre-wrap break-words">{item.description}</p>
-                </details>}
-              </td>
-              <td className="p-3 text-slate-800">
-                <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
-                  + ({ TODO: 'bg-slate-100 text-slate-800', IN_PROGRESS: 'bg-blue-50 text-blue-800',
-                    BLOCKED: 'bg-amber-100 text-amber-900', DONE: 'bg-emerald-50 text-emerald-800',
-                    CANCELLED: 'bg-slate-100 text-slate-600' })[pendingTransition?.taskId === item.task_id
-                    ? pendingTransition.status : item.status]}>
-                  {label(pendingTransition?.taskId === item.task_id ? pendingTransition.status : item.status)}
-                  {pendingTransition?.taskId === item.task_id ? ' · pending' : ''}
-                </span>
-                {pendingTransition?.taskId === item.task_id && <span className="sr-only">
-                  Verified status: {label(item.status)}.
-                </span>}
-                {pendingTransition?.taskId === item.task_id &&
-                  <span role="status" className="mt-1 block text-xs font-semibold text-blue-800">
-                    Updating to {label(pendingTransition.status)}…
-                  </span>}
-              </td>
-              <td className="p-3 text-xs text-slate-700">
-                {item.assignee_principal_id
-                  ? ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
-                    ? <button type="button" disabled={busy}
-                      aria-label={'Reassign: ' + item.title}
-                      className="text-xs font-semibold text-blue-800 underline underline-offset-2"
-                      onClick={() => openTaskEditor(item, true)}>
-                      {contributorName(item.assignee_principal_id)}
-                    </button>
-                    : <span title="Verified exact-project contributor">{contributorName(item.assignee_principal_id)}</span>
-                  : ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
-                  <button type="button" disabled={busy}
-                    className="text-xs font-semibold text-blue-800 underline underline-offset-2"
-                    aria-label={'Assign: ' + item.title}
-                    onClick={() => openTaskEditor(item, true)}>Assign</button> : 'Not assigned'}
-              </td>
-              <td className="p-3 text-xs text-slate-700">
-                <span className={item.due_date && item.due_date < todayISO
-                  && !['DONE', 'CANCELLED'].includes(item.status) ? 'font-semibold text-rose-700' : ''}>
-                  {item.due_date || 'Not set'}
-                </span>
-                {item.due_date && item.due_date < todayISO
-                  && !['DONE', 'CANCELLED'].includes(item.status) && <span className="block text-xs text-rose-700">Overdue</span>}
-              </td>
-              <td className="p-3">
-                <ProjectWorkRowActions item={item} busy={busy}
-                  onTransition={transition}
-                  onComplete={selected => {
-                    setCompletionCandidate(selected.task_id);
-                    setCompletionAttested(false);
-                  }}
-                  onEdit={openTaskEditor}
-                  onAssign={selected => openTaskEditor(selected, true)}
-                  onAttachments={selected => setAttachmentTaskId(selected.task_id)}
-                  onApprovals={selected => setApprovalTaskId(selected.task_id)}
-                  onActivity={selected => setDiscussionTaskId(selected.task_id)}/>
-              </td></tr>)}
+              onAttachments={selected => setAttachmentTaskId(selected.task_id)}
+              onApprovals={selected => setApprovalTaskId(selected.task_id)}
+              onActivity={selected => setDiscussionTaskId(selected.task_id)}/>)}
             {workRows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-sm text-slate-600">
               {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
                 : 'No work items on this verified page match the selected search and filters.'}
@@ -1226,7 +1139,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.23.0-OPTIMISTIC-PENDING-STATUS
+// VERSION: v1.24.0-REUSABLE-WORK-ROW-COMPOSITION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
