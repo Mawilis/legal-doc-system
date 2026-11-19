@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.2.0-MOBILE-SHEET-SWIPE-DISMISS
+ * VERSION: v1.3.0-ACTION-CAPABILITY-CONTRACT
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.3.0-ACTION-CAPABILITY-CONTRACT accepts per-action
+ *          presentation capability flags, separates Assign from Edit and
+ *          uses desktop menu semantics plus mobile modal sheet semantics.
+ *          Server EOS authorization remains authoritative for every write.
  * CHANGELOG: v1.2.0-MOBILE-SHEET-SWIPE-DISMISS supports an intentional
  *          downward grabber gesture on the mobile actions sheet; dismissal
  *          never invokes an EOS command or interprets document scrolling.
@@ -36,7 +40,11 @@ const nextAction = {
 };
 
 export default function ProjectWorkRowActions({
-  item, busy, onTransition, onComplete, onEdit, onAttachments, onApprovals, onActivity,
+  item, busy, onTransition, onComplete, onEdit, onAssign = onEdit,
+  onAttachments, onApprovals, onActivity,
+  canStart = true, canComplete = true, canBlock = true, canCancel = true,
+  canAssign = true, canEdit = true, canAttachments = true,
+  canActivity = true, canApprovals = true,
 }) {
   const [open, setOpen] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -44,7 +52,8 @@ export default function ProjectWorkRowActions({
   const trigger = useRef(null);
   const panel = useRef(null);
   const dragStartY = useRef(null);
-  const primary = nextAction[item.status];
+  const suggested = nextAction[item.status];
+  const primary = suggested && (suggested[1] === 'DONE' ? canComplete : canStart) ? suggested : null;
   const canChange = ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status);
   const close = () => {
     setOpen(false);
@@ -81,16 +90,17 @@ export default function ProjectWorkRowActions({
   }, [open]);
 
   const actions = [
-    ...(canChange && item.status !== 'BLOCKED'
-      ? [{ id: 'block', name: 'Mark blocked', onClick: () => onTransition(item, 'BLOCKED') }]
-      : []),
-    ...(canChange
-      ? [{ id: 'edit', name: 'Edit / assign', onClick: () => onEdit(item) }]
-      : []),
-    { id: 'attachments', name: 'Attachments', onClick: () => onAttachments(item) },
-    { id: 'activity', name: 'Activity & discussion', onClick: () => onActivity(item) },
-    { id: 'approvals', name: 'Approvals', onClick: () => onApprovals(item) },
-    ...(canChange ? [{ id: 'cancel', name: 'Cancel work', danger: true,
+    ...(canChange && item.status !== 'BLOCKED' && canBlock
+      ? [{ id: 'block', name: 'Mark blocked', onClick: () => onTransition(item, 'BLOCKED') }] : []),
+    ...(canChange && canAssign
+      ? [{ id: 'assign', name: item.assignee_principal_id ? 'Reassign' : 'Assign',
+        onClick: () => onAssign(item, true) }] : []),
+    ...(canChange && canEdit
+      ? [{ id: 'edit', name: 'Edit', onClick: () => onEdit(item) }] : []),
+    ...(canAttachments ? [{ id: 'attachments', name: 'Attachments', onClick: () => onAttachments(item) }] : []),
+    ...(canActivity ? [{ id: 'activity', name: 'Activity & discussion', onClick: () => onActivity(item) }] : []),
+    ...(canApprovals ? [{ id: 'approvals', name: 'Approvals', onClick: () => onApprovals(item) }] : []),
+    ...(canChange && canCancel ? [{ id: 'cancel', name: 'Cancel work', danger: true,
       onClick: () => setConfirmCancel(true) }] : []),
   ];
 
@@ -102,17 +112,22 @@ export default function ProjectWorkRowActions({
         onClick={() => primary[1] === 'DONE' ? onComplete(item) : onTransition(item, primary[1])}>
         {primary[0]}
       </button>}
-      <button type="button" ref={trigger} disabled={busy}
-        aria-haspopup="dialog" aria-expanded={open}
+      <button type="button" ref={trigger} disabled={busy || actions.length === 0}
+        aria-haspopup={typeof window !== 'undefined' && window.innerWidth < 768 ? 'dialog' : 'menu'} aria-expanded={open}
         aria-label={'More actions for ' + item.title}
         className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
         onClick={event => {
           const bounds = event.currentTarget.getBoundingClientRect();
           setAnchor({
-            top: Math.min(window.innerHeight - 345, bounds.bottom + 5),
-            left: Math.min(window.innerWidth - 258, Math.max(8, bounds.right - 240)),
+            top: Math.max(8, Math.min(window.innerHeight - 345, bounds.bottom + 5)),
+            left: Math.max(8, Math.min(window.innerWidth - 258, Math.max(8, bounds.right - 240))),
           });
           setOpen(old => !old);
+        }}
+        onKeyDown={event => {
+          if (event.key !== 'ArrowDown') return;
+          event.preventDefault();
+          setOpen(true);
         }}>
         <MoreHorizontal size={18} aria-hidden="true"/>
       </button>
@@ -120,7 +135,8 @@ export default function ProjectWorkRowActions({
     {open && createPortal(
       <div className="fixed inset-0 z-[100] bg-slate-950/40 md:bg-transparent"
         onClick={event => { if (event.target === event.currentTarget) close(); }}>
-        <div role="dialog" aria-modal="true" ref={panel}
+        <div role={typeof window !== 'undefined' && window.innerWidth < 768 ? 'dialog' : 'menu'}
+          aria-modal={typeof window !== 'undefined' && window.innerWidth < 768 ? 'true' : undefined} ref={panel}
           aria-label={'Actions for ' + item.title}
           className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-2xl md:inset-x-auto md:bottom-auto md:w-60 md:rounded-xl md:border md:border-slate-200"
           style={typeof window === 'undefined' || window.innerWidth < 768
@@ -159,6 +175,7 @@ export default function ProjectWorkRowActions({
           <p className="truncate px-3 pb-2 text-sm font-semibold text-slate-950">{item.title}</p>
           {!confirmCancel ? <>
             {actions.map(action => <button key={action.id} type="button"
+              role={typeof window !== 'undefined' && window.innerWidth < 768 ? undefined : 'menuitem'}
               className={'block min-h-12 w-full rounded-md px-3 text-left text-sm font-medium hover:bg-slate-100 '
                 + (action.danger ? 'text-rose-800' : 'text-slate-900')}
               onClick={() => action.danger ? action.onClick() : act(action.onClick)}>
@@ -180,7 +197,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.2.0-MOBILE-SHEET-SWIPE-DISMISS
+// VERSION: v1.3.0-ACTION-CAPABILITY-CONTRACT
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
