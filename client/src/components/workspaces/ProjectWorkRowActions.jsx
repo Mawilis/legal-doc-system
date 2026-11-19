@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.0.1-MOBILE-DISMISS-FOCUS-CERT
+ * VERSION: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
- * CHANGELOG: v1.0.1-MOBILE-DISMISS-FOCUS-CERT focuses first action without
+ * CHANGELOG: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD adds Arrow/Home/End navigation
+ *          among permitted actions, closes desktop flyouts on surrounding
+ *          scroll and keeps mobile background scroll locked until dismissal.
+ *          Keyboard focus returns to the invoking work-row control.
+ * CHANGELOG: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD focuses first action without
  *          requiring animation-frame shims and supports touch scrim dismissal.
  * CHANGELOG: v1.0.0-RESPONSIVE-ONE-PRIMARY-ACTION separates core action from
  *          secondary actions and never claims success before EOS readback.
@@ -56,9 +60,20 @@ export default function ProjectWorkRowActions({
         close();
       }
     };
+    const mobile = window.innerWidth < 768;
+    const previousOverflow = document.body.style.overflow;
+    if (mobile) document.body.style.overflow = 'hidden';
+    const onOutsideScroll = event => {
+      if (!mobile && !panel.current?.contains(event.target)) close();
+    };
     window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('scroll', onOutsideScroll, true);
     panel.current?.querySelector('button')?.focus();
-    return () => { window.removeEventListener('keydown', onKeyDown); };
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('scroll', onOutsideScroll, true);
+      if (mobile) document.body.style.overflow = previousOverflow;
+    };
   }, [open]);
 
   const actions = [
@@ -107,8 +122,19 @@ export default function ProjectWorkRowActions({
           style={typeof window === 'undefined' || window.innerWidth < 768
             ? undefined : { top: Math.max(8, anchor.top), left: anchor.left }}
           onKeyDown={event => {
-            if (event.key !== 'Tab') return;
             const buttons = [...event.currentTarget.querySelectorAll('button:not([disabled])')];
+            if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+              event.preventDefault();
+              if (!buttons.length) return;
+              const current = buttons.indexOf(document.activeElement);
+              const next = event.key === 'Home' ? 0
+                : event.key === 'End' ? buttons.length - 1
+                  : event.key === 'ArrowDown' ? (current + 1) % buttons.length
+                    : (current <= 0 ? buttons.length - 1 : current - 1);
+              buttons[next]?.focus();
+              return;
+            }
+            if (event.key !== 'Tab') return;
             if (event.shiftKey && document.activeElement === buttons[0]) {
               event.preventDefault(); buttons[buttons.length - 1]?.focus();
             } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
@@ -140,7 +166,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.0.1-MOBILE-DISMISS-FOCUS-CERT
+// VERSION: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
