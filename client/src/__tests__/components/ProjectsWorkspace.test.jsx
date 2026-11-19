@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.47.0-IMMUTABLE-BASELINE-UI-CERT certifies immutable project baseline fields,
+ *          revised target dates, human-only participant presentation and
+ *          verified grouped page counts against source-authorized UI.
  * CHANGELOG: v2.46.0-VERIFIED-WORK-GROUPING-CERT certifies grouping of
  *          exact-page tasks by lifecycle with accurate page-only counts,
  *          preserved controls and no unapproved bulk mutation.
