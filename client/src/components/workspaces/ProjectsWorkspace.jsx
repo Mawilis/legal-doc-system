@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.28.0-UNCERTAIN-TEMPLATE-SAVE-RECOVERY
+ * VERSION: v2.29.0-HUMAN-OVERVIEW-VERIFIED-DEPARTMENT
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.29.0-HUMAN-OVERVIEW-VERIFIED-DEPARTMENT capitalizes lifecycle status,
+ *          resolves assigned department names from exact-tenant EOS source,
+ *          hides generated opaque project codes and audit-only revision from
+ *          the operating overview without inferring ownership or assignments.
  * CHANGELOG: v2.28.0-UNCERTAIN-TEMPLATE-SAVE-RECOVERY sends ambiguous
  *          activation outcomes to the authorized project list with a name
  *          filter, without issuing a duplicate write or claiming commit truth.
@@ -641,6 +645,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [projectView, setProjectView] = useState('work');
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [detail, setDetail] = useState(null);
+  const [overviewDepartment, setOverviewDepartment] = useState({ id: null, name: null, status: 'IDLE' });
   const [detailState, setDetailState] = useState('IDLE');
   const [mode, setMode] = useState('LIST');
   const [templates, setTemplates] = useState([]);
@@ -1210,13 +1215,42 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     void refresh({ preserveSelection: false });
   };
 
+  useEffect(() => {
+    const project = detail?.project;
+    if (projectView !== 'overview' || detailState !== 'READY'
+      || !project?.department_id || !tenantId || !principalId) {
+      setOverviewDepartment({ id: null, name: null, status: 'IDLE' });
+      return undefined;
+    }
+    const departmentId = project.department_id;
+    let alive = true;
+    setOverviewDepartment({ id: departmentId, name: null, status: 'VERIFYING' });
+    api.get('/projects/assignment-options', { headers: tenantHeaders }).then(({ data }) => {
+      if (!alive) return;
+      const valid = data?.schema === 'WILSY-PROJECT-ASSIGNMENT-OPTIONS/V1'
+        && data.tenant_id === tenantId && Array.isArray(data.departments)
+        && data.departments.every(item => typeof item.department_id === 'string'
+          && typeof item.name === 'string' && item.status === 'ACTIVE');
+      const match = valid && data.departments.find(item => item.department_id === departmentId);
+      setOverviewDepartment({ id: departmentId,
+        name: match?.name || null, status: match ? 'READY' : 'UNAVAILABLE' });
+    }).catch(() => {
+      if (alive) setOverviewDepartment({ id: departmentId, name: null, status: 'UNAVAILABLE' });
+    });
+    return () => { alive = false; };
+  }, [detail?.project?.department_id, detail?.project?.project_id, detail?.project?.revision,
+    detailState, projectView, tenantId, principalId, tenantHeaders]);
+
   const personLabel = (principal) => {
     if (!principal) return 'Not assigned';
     const profile = detail?.actor_profiles?.[principal];
     const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
     return name || 'Name not recorded';
   };
-  const statusLabel = (value) => String(value || 'unknown').replaceAll('_', ' ');
+  const statusLabel = (value) => {
+    const readable = String(value || 'unknown').replaceAll('_', ' ');
+    return readable.charAt(0).toUpperCase() + readable.slice(1);
+  };
   const countLabel = summary
     ? `${ownerOnly ? 'Tenant · ' : ''}${summary.active ?? '—'} active · ${summary.total} total`
     : sourceState === 'LOADING' || sourceState === 'REFRESHING' ? 'Counts loading…' : 'Counts unavailable';
@@ -1502,20 +1536,24 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {projectView === 'overview' && <div className="max-w-5xl">
             <h3 className="mb-3 text-lg font-bold text-slate-900">Project overview</h3>
             <dl className="wp-facts mb-4 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-slate-200 pb-4 text-sm"><dt className="text-slate-500">Code</dt><dd className="break-words text-slate-900">
-              {detail.project.code || 'Not recorded'}
+              {detail.project.code && !/^PRJ-[0-9A-F]{16}$/.test(detail.project.code)
+                ? detail.project.code : 'Automatically assigned'}
               {!detail.project.code && <button type="button"
                 className="wp-code-action"
                 onClick={() => void assignGeneratedCode()}
                 disabled={commandState === 'PENDING' || sourceState !== 'READY'}
               >Generate and save code</button>}
-            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">
+            </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">
               {personLabel(detail.project.owner_principal_id)}
-              {detail.project.owner_principal_id && <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800" title={detail.project.owner_principal_id}>Verified owner</small>}
+              {detail.project.owner_principal_id && <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">Verified owner</small>
             </dd><dt className="text-slate-500">Created by</dt><dd className="text-slate-900">
               {personLabel(detail.project.created_by_principal_id)}
-              <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800" title={detail.project.created_by_principal_id}>Audited creator</small>
+              <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">Audited creator</small>
             </dd><dt className="text-slate-600">Department</dt><dd className="text-slate-900">{detail.project.department_id
-              ? <span title={detail.project.department_id}>Assigned · name not yet verified</span>
+              ? overviewDepartment.id === detail.project.department_id && overviewDepartment.status === 'READY'
+                ? overviewDepartment.name
+                : overviewDepartment.status === 'VERIFYING' ? 'Verifying assigned department…'
+                  : 'Assigned department · name unavailable'
               : 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
             </div>}
             {projectView === 'settings' && <div className="max-w-5xl">
@@ -1609,7 +1647,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.28.0-UNCERTAIN-TEMPLATE-SAVE-RECOVERY
+// VERSION: v2.29.0-HUMAN-OVERVIEW-VERIFIED-DEPARTMENT
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
