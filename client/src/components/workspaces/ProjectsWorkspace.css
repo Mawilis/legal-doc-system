@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST
+ * VERSION: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,15 +8,18 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST scopes the proven dark
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST prevents global gold uppercase and
+ *          text-fill inheritance on template activation labels, date inputs
+ *          and editable project names; preserves readable native calendar UI.
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST scopes the proven dark
  *            form label/text contrast rules to governed participants as well
  *            as task and note panels; removes pale-gold labels without
  *            changing the global brand, source truth, identity or authority.
  * CHANGELOG: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS restores WCAG-conscious operating label contrast for task and note panels against inherited brand styles; no data, authority or layout changes.
- * CHANGELOG: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST enforces the intended
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST enforces the intended
  *            narrow-screen compact table column visibility under global
  *            display overrides; visible project, status and action remain.
- * CHANGELOG: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST adds subdued fluid
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST adds subdued fluid
  *            glass portfolio bar-chart styling and accessible pagination;
  *            visualized counts come only from validated EOS response data.
  *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
@@ -584,10 +587,36 @@
 }
 
 /* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.8.0-OVERVIEW-AUDIT-LABEL-CONTRAST
+ * VERSION: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST
  * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
  * TENANT POSTURE: No identity, tenant selection or source projection.
  * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+/* Template activation is operating-form content, never decorative gold labels.
+   Scope selectors to the existing template surface; do not recolour branding. */
+.wilsy-projects [aria-label="Industry project templates"] form :is(label, legend) {
+  color: #193451 !important;
+  -webkit-text-fill-color: #193451 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+.wilsy-projects [aria-label="Industry project templates"] form :is(input, select, textarea) {
+  color: #152b48 !important;
+  -webkit-text-fill-color: #152b48 !important;
+  background: #fff !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+}
+.wilsy-projects [aria-label="Industry project templates"] form :is(input, select, textarea)::placeholder {
+  color: #546a85 !important;
+  -webkit-text-fill-color: #546a85 !important;
+  opacity: 1;
+}
+
