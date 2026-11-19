@@ -438,7 +438,7 @@ export default function ProjectTaskCommentsPanel({
     }
   };
 
-  return <section ref={discussionRef} aria-label="Task discussion"
+  return <section ref={discussionRef} aria-label="Activity & discussion"
     className="mt-4 scroll-mt-28 rounded-xl border border-blue-200 bg-slate-50 p-3">
     <div className="flex items-center justify-between gap-3">
       <h4 className="flex items-center gap-2 font-semibold text-slate-900">
@@ -482,7 +482,7 @@ export default function ProjectTaskCommentsPanel({
       {showComposer && <div id="task-comment-composer" ref={composerRef}
         className="scroll-mt-28">
       <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
-        <label className="block text-sm font-semibold text-slate-800">Write a task comment
+        <label className="block text-sm font-semibold text-slate-800">Write a progress update
           <textarea aria-label="New task comment" required rows={5}
             maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
             placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
@@ -517,7 +517,7 @@ export default function ProjectTaskCommentsPanel({
           disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
       </form>
       </div>}
-      <div id="verified-task-comment-history" aria-label="Verified task comment history">
+      <div id="verified-task-comment-history" aria-label="Verified task activity history">
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <h5 className="text-sm font-semibold text-slate-900">Activity &amp; discussion · newest first</h5>
         <div className="flex flex-wrap gap-2">
