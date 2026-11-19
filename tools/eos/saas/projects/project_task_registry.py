@@ -435,8 +435,10 @@ class ProjectTaskRegistry:
                 raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
             timestamp = row["occurred_at"]
             if isinstance(timestamp, datetime):
+                # Standard PyMongo BSON datetime decoding returns UTC-naive
+                # timestamps; the source event is persisted as UTC by EOS.
                 if timestamp.tzinfo is None:
-                    raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
+                    timestamp = timestamp.replace(tzinfo=timezone.utc)
                 timestamp = timestamp.isoformat()
             else:
                 try:
