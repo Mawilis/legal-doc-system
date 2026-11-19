@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.15.0-INDEPENDENT-PROJECT-LIST-READ
+ * VERSION: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,39 +16,43 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE presents validated EOS project
+ *          audit events newest revision first, with deterministic timestamp
+ *          and event-ID tie breakers, visual event-type timeline and full
+ *          actor/revision/time evidence; does not reorder audit persistence.
  * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ publishes the independently verified
  * project page without waiting for the separate portfolio summary request;
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ opens
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ opens the
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ mounts exact-tenant,
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ mounts the independently source-backed
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ mounts independently source-backed note
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ applies status filtering at the exact-tenant
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.15.0-INDEPENDENT-PROJECT-LIST-READ exposes readable title-case
+ *            v2.16.0-REVISION-FIRST-AUDIT-TIMELINE exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -1209,8 +1213,51 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {commandError && <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{commandError === 'ACCESS_DENIED' ? 'EOS denied this command; project state has not been changed.' : commandError === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects entitlement is required.' : commandError === 'PROJECT_REVISION_OR_REPLAY_CONFLICT' ? 'The project revision changed. Refresh the source before retrying.' : commandError === 'PROJECT_INPUT_INVALID' ? 'EOS rejected the supplied fields. Check the network response detail, including validation paths.' : /^PROJECT_[A-Z0-9_]{1,90}$/.test(commandError) ? 'EOS response: ' + commandError + '. No success has been inferred.' : 'EOS did not confirm the command. The source state is retained; refresh before retrying.'}</p>}
             {commandState === 'CONFIRMED' && <p role="status" className="mt-3 text-sm font-medium text-emerald-800">EOS confirmed the project change and returned persisted state.</p>}
             </div>}
-            {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Audit events</h3>{Array.isArray(detail.events) && detail.events.length ? <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">{detail.events.map((event) => <li key={event.event_id} className="wp-event rounded-md bg-slate-50 p-2 text-xs"><strong className="text-slate-800">{event.event_type}</strong><div className="mt-1 text-slate-700">By {personLabel(event.actor_principal_id)} · revision {event.revision}</div>
-              <div className="text-xs text-slate-500" title={event.actor_principal_id}>Immutable actor ID retained in EOS audit evidence</div><time className="text-slate-500">{event.occurred_at ? new Date(event.occurred_at).toLocaleString() : 'Timestamp unavailable'}</time></li>)}</ol> : <p className="mt-2 text-sm text-slate-600">No audit event was returned by EOS.</p>}</section>}
+            {projectView === 'history' && <section className="wp-section mt-5 border-t border-slate-200 pt-4" aria-label="Project audit timeline">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Audit events</h3>
+                  <p className="mt-1 text-sm text-slate-600">EOS-verified project revisions, newest first. This view does not edit immutable audit evidence.</p>
+                </div>
+                <span className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-950">
+                  {detail.events.length} verified events · Latest revision {detail.events.length ? Math.max(...detail.events.map(event => event.revision)) : '—'}
+                </span>
+              </div>
+              {detail.events.length ? <ol className="mt-5 space-y-0" aria-label="Newest first project audit events">
+                {[...detail.events].sort((a, b) => b.revision - a.revision
+                  || Date.parse(b.occurred_at) - Date.parse(a.occurred_at)
+                  || a.event_id.localeCompare(b.event_id)).map((event, index) => {
+                  const statusChange = event.event_type === 'PROJECT_STATUS_TRANSITION';
+                  const created = event.event_type === 'PROJECT_CREATED';
+                  const archived = event.event_type === 'PROJECT_ARCHIVED';
+                  const tone = archived ? 'border-rose-500 bg-rose-50 text-rose-950'
+                    : statusChange ? 'border-blue-500 bg-blue-50 text-blue-950'
+                      : created ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
+                        : 'border-amber-500 bg-amber-50 text-amber-950';
+                  return <li key={event.event_id} className="relative flex gap-4 pb-4">
+                    <div className="relative flex w-7 shrink-0 justify-center">
+                      {index < detail.events.length - 1 && <span aria-hidden="true" className="absolute bottom-[-1rem] top-7 w-px bg-slate-300"/>}
+                      <span aria-hidden="true" className={'relative z-10 mt-4 size-3 rounded-full border-2 ' + (archived ? 'border-rose-600 bg-rose-100'
+                        : statusChange ? 'border-blue-700 bg-blue-100'
+                          : created ? 'border-emerald-700 bg-emerald-100'
+                            : 'border-amber-700 bg-amber-100')}/>
+                    </div>
+                    <div className={'wp-event min-w-0 flex-1 rounded-xl border-l-4 p-4 shadow-sm ' + tone}
+                      data-audit-revision={event.revision}>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <strong className="block break-words text-sm">{event.event_type.replaceAll('_', ' ')}</strong>
+                          <span className="mt-1 block text-xs font-semibold">Revision {event.revision}{index === 0 ? ' · Latest returned event' : ''}</span>
+                        </div>
+                        <time className="text-xs font-medium" dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time>
+                      </div>
+                      <div className="mt-3 border-t border-current/15 pt-2 text-sm">By {personLabel(event.actor_principal_id)} · revision {event.revision}</div>
+                      <div className="mt-1 text-xs opacity-80" title={event.actor_principal_id}>Immutable actor ID retained in EOS audit evidence</div>
+                    </div>
+                  </li>;
+                })}
+              </ol> : <p className="mt-4 text-sm text-slate-600">No audit event was returned by EOS.</p>}
+            </section>}
           </div>}
         </section>}
       </div>
@@ -1219,7 +1266,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.15.0-INDEPENDENT-PROJECT-LIST-READ
+// VERSION: v2.16.0-REVISION-FIRST-AUDIT-TIMELINE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
