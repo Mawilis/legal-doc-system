@@ -260,7 +260,7 @@
   letter-spacing: normal !important;
   opacity: 1 !important;
 }
-.wilsy-projects :is(.wp-project-tasks, .wp-project-notes) :is(input, textarea, select) {
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes, .wp-project-participants) :is(input, textarea, select) {
   background-color: #ffffff !important;
   color: #102845 !important;
   -webkit-text-fill-color: #102845 !important;
