@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Industry Project Template Activation Certificate
-VERSION: v1.0.0-ATOMIC-BLUEPRINT-AUTHORITY-CERT
+VERSION: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT
 AUTHORITY: Synthetic EOS project/task transaction boundary only.
 EPITOME: Validate seven industry DAGs, materialisation IDs, safe unassigned
          records, stable replay and exact admission without real Mongo writes.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_template_activation.py
 COLLABORATION / OWNERSHIP: Projects router and immutable project/task registries.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT verifies replay
+         reads the original immutable creation snapshot rather than
+         reissuing a timestamp-sensitive create or duplicating task evidence.
 CHANGELOG: v1.0.0-ATOMIC-BLUEPRINT-AUTHORITY-CERT pins seven validated
          platform blueprints and an exact-context, atomic source readback loop.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -58,8 +61,13 @@ def test_atomic_template_activation_uses_exact_unassigned_records_and_replay(mon
     seen = {}
     committed_projects = {}
     committed_tasks = {}
+    committed_events = {}
 
     class Projects:
+        def list_events(self, *, tenant_id, project_id, session):
+            assert tenant_id == "tenant-cert" and session == "tx"
+            return tuple([committed_events[project_id]] if project_id in committed_events else [])
+
         def create_or_replay(self, *, project, actor_principal_id, idempotency_key,
                              occurred_at, session):
             assert session == "tx" and actor_principal_id == "actor-cert"
@@ -68,7 +76,15 @@ def test_atomic_template_activation_uses_exact_unassigned_records_and_replay(mon
             assert project.department_id is None
             assert project.status.value == "planned"
             assert idempotency_key.startswith("template-project:")
-            return committed_projects.setdefault(project.project_id, project)
+            assert project.project_id not in committed_projects, "replay must use original evidence"
+            committed_projects[project.project_id] = project
+            committed_events[project.project_id] = {
+                "event_type": "PROJECT_CREATED",
+                "idempotency_key": idempotency_key,
+                "actor_principal_id": actor_principal_id,
+                "result_snapshot": project.to_dict(),
+            }
+            return project
 
         def get(self, *, tenant_id, project_id, session):
             assert tenant_id == "tenant-cert" and session == "tx"
@@ -141,7 +157,7 @@ def test_template_activation_denies_unbound_actor_and_stale_revision() -> None:
 
 
 # ARTIFACT: test_project_template_activation.py
-# VERSION: v1.0.0-ATOMIC-BLUEPRINT-AUTHORITY-CERT
+# VERSION: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT
 # AUTHORITY BOUNDARY: synthetic tests only; authenticated IAM remains in EOS
 # TENANT POSTURE: exact tenant actor and project records
 # FAIL-CLOSED POSTURE: malformed data, stale revision and scope mismatches deny
