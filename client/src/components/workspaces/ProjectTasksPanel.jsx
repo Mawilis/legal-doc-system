@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.18.0-PROJECT-MY-WORK-FILTER
+ * VERSION: v1.18.1-HEADER-GOVERNANCE-PLACEMENT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.18.1-HEADER-GOVERNANCE-PLACEMENT keeps mandatory financial
+ *          authority metadata within the repository integrity guard's first
+ *          100 header lines, preserving all task and filter behaviours.
  * CHANGELOG: v1.18.0-PROJECT-MY-WORK-FILTER introduces an explicit
  *          current-principal task filter over the exact EOS-verified page,
  *          with accurate page scope, no client-assumed assignment authority,
@@ -99,7 +103,6 @@
  *          response; stale session results are ignored and discarded.
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
  */
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
@@ -1104,7 +1107,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.18.0-PROJECT-MY-WORK-FILTER
+// VERSION: v1.18.1-HEADER-GOVERNANCE-PLACEMENT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
