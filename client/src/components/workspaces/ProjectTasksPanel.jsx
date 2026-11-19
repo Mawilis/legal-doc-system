@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.6.0-OPERATIONAL-WORK-QUEUE
+ * VERSION: v1.6.1-EXPLICIT-TASK-VALIDATION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION identifies safe task create/revision 422
+ *          validation fields using an allowlist, preserving drafts and retry
+ *          keys without exposing input values or bypassing EOS authority.
  * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE exposes three EOS-supported workflows
  *          (task, parent-bound subtask and milestone), validates a selectable
  *          active parent, and adds current-page search, status/type filters,
@@ -19,16 +22,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE lets the
+ * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE opens a selected task's
+ * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE adds a
+ * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.6.0-OPERATIONAL-WORK-QUEUE adds source-backed
+ * CHANGELOG: v1.6.1-EXPLICIT-TASK-VALIDATION adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -290,10 +293,24 @@ export default function ProjectTasksPanel({
     } catch (cause) {
       if (currentScope.current !== active) return;
       const status = cause?.response?.status;
+      const safeFields = new Set([
+        'kind', 'title', 'description', 'due_date', 'assignee_principal_id',
+        'parent_task_id', 'depends_on', 'expected_revision', 'status',
+      ]);
+      const problems = Array.isArray(cause?.response?.data?.detail)
+        ? cause.response.data.detail : [];
+      const invalidFields = [...new Set(problems.flatMap(problem => {
+        const loc = problem?.loc;
+        if (!Array.isArray(loc)) return [];
+        return loc.filter(field => typeof field === 'string' && safeFields.has(field));
+      }))];
       setError(status === 403 ? 'EOS denied this task command.'
         : status === 404 ? 'The work item is not visible within this project.'
           : status === 409 ? 'Project work has changed or a dependency is incomplete. Refresh before retrying.'
-            : 'EOS has not verified this task command. Reconcile source state before retrying.');
+            : status === 422 ? 'EOS rejected the work-item input'
+              + (invalidFields.length ? ': ' + invalidFields.join(', ') : '.')
+              + ' Review the indicated fields; your draft is preserved.'
+              : 'EOS has not verified this task command. Reconcile source state before retrying.');
     } finally {
       if (currentScope.current === active) setBusy(false);
     }
@@ -692,7 +709,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.6.0-OPERATIONAL-WORK-QUEUE
+// VERSION: v1.6.1-EXPLICIT-TASK-VALIDATION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
