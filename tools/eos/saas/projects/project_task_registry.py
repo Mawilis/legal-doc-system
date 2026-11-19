@@ -444,7 +444,13 @@ class ProjectTaskRegistry:
                     raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID") from error
                 if parsed.tzinfo is None:
                     raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
-            result.append({**row, "occurred_at": timestamp})
+            result.append({
+                "schema": row["schema"], "tenant_id": row["tenant_id"],
+                "project_id": row["project_id"], "task_id": row["task_id"],
+                "revision": row["revision"], "event_type": row["event_type"],
+                "actor_principal_id": row["actor_principal_id"],
+                "occurred_at": timestamp,
+            })
         return tuple(result), len(rows) > limit
 
     def list_page(
