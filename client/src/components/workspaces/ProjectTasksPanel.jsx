@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.19.0-FOCUSED-WORK-KEYBOARD-ACTIONS
+ * VERSION: v1.20.0-CONTRIBUTOR-ASSIGNMENT-SHEET
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.20.0-CONTRIBUTOR-ASSIGNMENT-SHEET lets Assign/Reassign
+ *          open a compact contributor picker instead of the entire editor,
+ *          preserving exact-project authorization and revisioned EOS readback.
  * CHANGELOG: v1.19.0-FOCUSED-WORK-KEYBOARD-ACTIONS introduces focused
  *          work-row J/K navigation, A edit/assign and C guarded completion
  *          attestation, never global hotkeys or unverified EOS mutations.
@@ -260,6 +263,7 @@ export default function ProjectTasksPanel({
   const drawerReturnFocus = useRef(null);
   const drawerRef = useRef(null);
   const [editor, setEditor] = useState(null);
+  const [assignmentOnly, setAssignmentOnly] = useState(false);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
   const [attachmentTaskId, setAttachmentTaskId] = useState(null);
@@ -324,6 +328,7 @@ export default function ProjectTasksPanel({
     setCompletionCandidate(null);
     setCompletionAttested(false);
     setEditor(null);
+    setAssignmentOnly(false);
     setDrawerTaskId(null);
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
@@ -493,8 +498,9 @@ export default function ProjectTasksPanel({
         && value.length <= 100);
     return names.length ? names.join(' ') : 'Assigned contributor · name unavailable';
   };
-  const openTaskEditor = selected => {
+  const openTaskEditor = (selected, assignOnly = false) => {
     setCreating(false);
+    setAssignmentOnly(assignOnly);
     setEditor({
       task_id: selected.task_id, revision: selected.revision,
       title: selected.title, description: selected.description,
@@ -898,15 +904,15 @@ export default function ProjectTasksPanel({
       </form>}
       {editor && <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 md:items-center md:p-5"
         onClick={event => { if (event.target === event.currentTarget && !busy) setEditor(null); }}>
-        <div role="dialog" aria-modal="true" aria-label="Edit work"
+        <div role="dialog" aria-modal="true" aria-label={assignmentOnly ? 'Assign work' : 'Edit work'}
           className="max-h-[95vh] w-full overflow-y-auto rounded-t-xl bg-white p-4 shadow-2xl md:max-w-2xl md:rounded-xl">
         <form onSubmit={revise} className="space-y-3" aria-label="Edit project task">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-sm font-bold text-slate-900">Edit source task · revision {editor.revision}</h4>
+          <h4 className="text-sm font-bold text-slate-900">{assignmentOnly ? 'Assign contributor' : 'Edit work'} · {editor.title}</h4>
           <button type="button" disabled={busy} className="wp-button"
             onClick={() => setEditor(null)}>Cancel edit</button>
         </div>
-        <label className="block text-sm font-semibold text-slate-800">Work title
+        {!assignmentOnly && <><label className="block text-sm font-semibold text-slate-800">Work title
           <input aria-label="Edit task title" required maxLength={180} value={editor.title}
             onChange={event => setEditor(value => ({ ...value, title: event.target.value }))}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
@@ -916,9 +922,10 @@ export default function ProjectTasksPanel({
             onChange={event => setEditor(value => ({ ...value, description: event.target.value }))}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
         </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
-            onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>
+        </>}
+        <div className={assignmentOnly ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
+          {!assignmentOnly && <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
+            onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>}
           <label className="block text-sm font-semibold text-slate-800">Assigned contributor
             <select aria-label="Reassign task" value={editor.assignee_principal_id}
               onChange={event => setEditor(value => ({ ...value, assignee_principal_id: event.target.value }))}
@@ -935,12 +942,12 @@ export default function ProjectTasksPanel({
             </select>
           </label>
         </div>
-        <p className="text-xs text-slate-600">Parent, predecessors and milestone type remain immutable. Reassignment requires a current exact-project Contributor.</p>
+        {!assignmentOnly && <p className="text-xs text-slate-600">Parent, predecessors and milestone type remain immutable. Reassignment requires a current exact-project Contributor.</p>}
         <button type="submit" className="wp-button wp-button-primary"
           disabled={busy || !editor.title.trim() || Boolean(
             editor.assignee_principal_id && !participants.some(person =>
               person.principal_id === editor.assignee_principal_id))}>
-          Save changes to EOS
+          {assignmentOnly ? 'Save assignment' : 'Save changes to EOS'}
         </button>
         </form>
         </div>
@@ -974,7 +981,7 @@ export default function ProjectTasksPanel({
                 } else if (key === 'a' && !busy
                   && !['DONE', 'CANCELLED'].includes(item.status)) {
                   event.preventDefault();
-                  openTaskEditor(item);
+                  openTaskEditor(item, true);
                 } else if (key === 'c' && !busy && item.status === 'IN_PROGRESS') {
                   event.preventDefault();
                   setCompletionCandidate(item.task_id);
@@ -1008,7 +1015,7 @@ export default function ProjectTasksPanel({
                   <button type="button" disabled={busy}
                     className="text-xs font-semibold text-blue-800 underline underline-offset-2"
                     aria-label={'Assign: ' + item.title}
-                    onClick={() => openTaskEditor(item)}>Assign</button> : 'Not assigned'}
+                    onClick={() => openTaskEditor(item, true)}>Assign</button> : 'Not assigned'}
               </td>
               <td className="p-3 text-xs text-slate-700">
                 <span className={item.due_date && item.due_date < todayISO
@@ -1131,7 +1138,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.19.0-FOCUSED-WORK-KEYBOARD-ACTIONS
+// VERSION: v1.20.0-CONTRIBUTOR-ASSIGNMENT-SHEET
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
