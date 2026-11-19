@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK
+VERSION: v1.38.0-EXACT-TENANT-WORK-CAPABILITIES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,9 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.38.0-EXACT-TENANT-WORK-CAPABILITIES exposes a read-only
+  per-project task action projection only after existing project:update
+  authorization and exact-tenant registry read; no privileges are issued.
   v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK reconciles retried activation against the immutable original
   project creation snapshot, avoiding divergent timestamp fingerprints;
   only identical tenant, actor, template, revision, dates and command replay.
@@ -303,7 +306,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK"
+VERSION: Final[str] = "v1.38.0-EXACT-TENANT-WORK-CAPABILITIES"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -2904,6 +2907,39 @@ def create_participant_task_comment(
     return _transaction(context, write, write=True)
 
 
+@router.get("/{project_id}/task-action-capabilities")
+def read_project_task_action_capabilities(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Project task action projection gated by existing update authority.
+
+    Every command independently reauthorizes and rechecks its revision.
+    This read does not issue a grant, entitlement, or session.
+    """
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        registry.get(
+            tenant_id=context.tenant_id, project_id=project_id, session=session,
+        )
+        return {
+            "schema": "WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "can_start": True,
+            "can_complete": True,
+            "can_block": True,
+            "can_cancel": True,
+            "can_assign": True,
+            "can_edit": True,
+        }
+
+    return _transaction(context, read)
+
+
 @router.get("/{project_id}/tasks")
 def list_project_tasks(
     response: Response,
@@ -3788,7 +3824,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.37.1-ATOMIC-TEMPLATE-REPLAY-READBACK
+# VERSION: v1.38.0-EXACT-TENANT-WORK-CAPABILITIES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
