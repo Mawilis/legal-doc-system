@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.46.0-VERIFIED-WORK-GROUPING-CERT
+ * VERSION: v2.47.0-IMMUTABLE-BASELINE-UI-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -665,7 +665,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       target: { value: 'STATUS' },
     });
     expect(within(work).getByText('To do · 2 on this page')).toBeVisible();
-    expect(within(work).querySelectorAll('tr[data-task-id]')).toHaveLength(2);
+    expect(work.querySelectorAll('tr[data-task-id]')).toHaveLength(2);
     fireEvent.change(screen.getByRole('combobox', { name: 'Group project work' }), {
       target: { value: 'NONE' },
     });
@@ -1685,7 +1685,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeVisible();
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
-    expect(screen.getByText('Not recorded')).toBeVisible();
+    expect(screen.getByText('Automatically assigned')).toBeVisible();
     expect(screen.getAllByText('Not assigned')).toHaveLength(2);
     expect(screen.getByText('Not scheduled')).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Project objective' })).toBeVisible();
@@ -1694,7 +1694,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Collapse project scope' })).toBeVisible();
     expect(screen.getAllByRole('heading', { name: 'Definition of done' }).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
-    expect(screen.getByLabelText('Project code')).toHaveValue('');
+    expect(screen.queryByLabelText('Project code')).not.toBeInTheDocument();
+    expect(screen.getByText('Project code · immutable')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Back to projects table' }));
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
   });
@@ -1718,16 +1719,13 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       await screen.findByRole('heading', { name: 'Scheduled milestone' });
       expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
       fireEvent.click(screen.getByRole('button', { name: 'Manage project' }));
-      const start = screen.getByLabelText('Start date');
       const target = screen.getByLabelText('Target date');
-      expect(start).toHaveAttribute('type', 'date');
+      expect(screen.queryByLabelText('Start date')).not.toBeInTheDocument();
+      expect(screen.getByText('Original start date · immutable')).toBeVisible();
       expect(target).toHaveAttribute('type', 'date');
-      fireEvent.click(screen.getByRole('button', { name: 'Choose start date' }));
       fireEvent.click(screen.getByRole('button', { name: 'Choose target date' }));
-      expect(pickerSpy).toHaveBeenCalledTimes(2);
-      fireEvent.change(start, { target: { value: '2026-11-18' } });
+      expect(pickerSpy).toHaveBeenCalledTimes(1);
       fireEvent.change(target, { target: { value: '2026-12-15' } });
-      expect(start).toHaveValue('2026-11-18');
       expect(target).toHaveValue('2026-12-15');
       expect(api.patch).not.toHaveBeenCalled();
     } finally {
@@ -1839,7 +1837,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await screen.findByText('1 shown · 1 verified');
     fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
-    expect(await screen.findByText('Not recorded')).toBeVisible();
+    expect(await screen.findByText('Automatically assigned')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Generate and save code' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getAllByText(generated).length).toBeGreaterThan(0));
@@ -2089,7 +2087,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.46.0-VERIFIED-WORK-GROUPING-CERT
+ * VERSION: v2.47.0-IMMUTABLE-BASELINE-UI-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
