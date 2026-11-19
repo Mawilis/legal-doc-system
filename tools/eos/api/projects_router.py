@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.38.1-TYPED-TEMPLATE-STEP-BOUNDARY
+VERSION: v1.39.0-IMMUTABLE-BASELINE-AUDITED-DEADLINES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.39.0-IMMUTABLE-BASELINE-AUDITED-DEADLINES admits a bounded
+  reason for target-date revision, leaves it out of project aggregate
+  patches, and delegates its atomic immutable event persistence to the
+  source-owned registry. Code/start baseline remains domain-immutable.
   v1.38.1-TYPED-TEMPLATE-STEP-BOUNDARY explicitly types the validated
   read-only platform blueprint at the router's activation boundary, fixing
   non-iterable object diagnostics for the target-date and task-step loops.
@@ -388,6 +392,7 @@ class ProjectUpdateRequest(BaseModel):
     summary: str | None = Field(default=None, max_length=4000)
     start_date: date | None = None
     target_date: date | None = None
+    target_change_reason: str | None = Field(default=None, min_length=12, max_length=1000)
     status: ProjectStatus | None = None
 
     @field_validator("start_date", "target_date", mode="before")
@@ -3736,11 +3741,13 @@ def update_project(
         or len(idempotency_key) > 200
     ):
         raise HTTPException(status_code=422, detail="PROJECT_IDEMPOTENCY_KEY_INVALID")
-    values = payload.model_dump(exclude={"expected_revision"}, exclude_unset=True)
+    values = payload.model_dump(exclude={"expected_revision", "target_change_reason"},
+                                exclude_unset=True)
+    reason = payload.target_change_reason
     status_value = values.pop("status", None)
     if not values and status_value is None:
         raise HTTPException(status_code=422, detail="PROJECT_UPDATE_FIELDS_REQUIRED")
-    if status_value is not None and values:
+    if status_value is not None and (values or reason is not None):
         raise HTTPException(status_code=422, detail="PROJECT_STATUS_TRANSITION_MUST_BE_ISOLATED")
     now = datetime.now(timezone.utc)
 
@@ -3782,6 +3789,7 @@ def update_project(
                 idempotency_key=idempotency_key.strip(),
                 occurred_at=now,
                 session=session,
+                target_change_reason=reason,
             )
         readback = registry.get(
             tenant_id=context.tenant_id, project_id=project_id, session=session
@@ -3856,7 +3864,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.38.1-TYPED-TEMPLATE-STEP-BOUNDARY
+# VERSION: v1.39.0-IMMUTABLE-BASELINE-AUDITED-DEADLINES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
