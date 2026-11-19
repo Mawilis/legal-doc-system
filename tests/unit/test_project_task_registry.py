@@ -58,7 +58,7 @@ def test_immutable_event_read_is_scoped_bounded_and_redacted() -> None:
         "tenant_id": "tenant-a", "project_id": PROJECT, "task_id": TASK,
         "revision": 2, "event_type": "PROJECT_TASK_TRANSITIONED",
         "actor_principal_id": "owner-a", "occurred_at": NOW,
-        "idempotency_key": "secret", "result_snapshot": {"private": True},
+        "idempotency_key": "secret", "result_snapshot": {"status": "IN_PROGRESS", "private": True},
     }
 
     class EventCursor:
@@ -99,6 +99,7 @@ def test_immutable_event_read_is_scoped_bounded_and_redacted() -> None:
     assert "idempotency_key" not in items[0]
     assert "result_snapshot" not in items[0]
     assert items[0]["event_type"] == "PROJECT_TASK_TRANSITIONED"
+    assert items[0]["status_after"] == "IN_PROGRESS"
 
 
 def test_task_integrity_and_immutable_transitions() -> None:
