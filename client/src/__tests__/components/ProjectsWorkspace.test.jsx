@@ -6,7 +6,14 @@
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
- * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CERTIFICATION / UPDATE DATE: 2026-11-19.
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic exact-scope fixtures only; no tokens,
+ *          real identities, private comments or production credentials.
+ * TENANT BOUNDARY / POSTURE: Exact tenant and project checks; no root fallback.
+ * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
+ *          task commands, decisions, evidence and immutable audit truth.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
  * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT proves
  *          independently verified comment, lifecycle, decision and file
  *          events render chronologically, and links remain in exact-task
