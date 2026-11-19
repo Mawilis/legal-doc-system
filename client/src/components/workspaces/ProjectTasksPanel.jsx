@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.21.0-PENDING-TRANSITION-PROJECTION
+ * VERSION: v1.21.1-REFRESH-QUEUE-CONTINUITY
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.21.1-REFRESH-QUEUE-CONTINUITY retains the already
+ *          verified task queue and pending-action cue during independent
+ *          refresh; fresh EOS readback alone changes work status.
  * CHANGELOG: v1.21.0-PENDING-TRANSITION-PROJECTION shows a bounded
  *          immediate pending transition cue while EOS verifies the command;
  *          only a fresh readback changes task status, and failed commands
@@ -661,7 +664,7 @@ export default function ProjectTasksPanel({
       </p>}
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    {state === 'READY' && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
+    {(state === 'READY' || state === 'REFRESHING') && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{focusedAction.type} · selected EOS work item</p>
@@ -1167,7 +1170,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.21.0-PENDING-TRANSITION-PROJECTION
+// VERSION: v1.21.1-REFRESH-QUEUE-CONTINUITY
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
