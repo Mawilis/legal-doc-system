@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION
+ * VERSION: v1.3.1-COMMENT-VALIDATION-EVIDENCE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.1-COMMENT-VALIDATION-EVIDENCE identifies
+ *          only safe allowlisted HTTP 422 comment validation field names;
+ *          preserves draft, command replay key and source reconciliation.
  * CHANGELOG: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION renders source-owned
  *          discussion Markdown safely as React text nodes (never raw HTML),
  *          and provides immediate live formatting preview while editing;
@@ -20,7 +23,7 @@
  * CHANGELOG: v1.1.0-PARTICIPANT-THREAD-ROUTE-ISOLATION uses
  *          separately authorized owner or participant task-thread routes;
  *          presentation never upgrades a participant to owner IAM.
- * CHANGELOG: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION introduces task-threaded
+ * CHANGELOG: v1.3.1-COMMENT-VALIDATION-EVIDENCE introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
@@ -221,9 +224,16 @@ export default function ProjectTaskCommentsPanel({
     } catch (cause) {
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
+      const validation = Array.isArray(cause?.response?.data?.detail)
+        ? cause.response.data.detail : [];
+      const safeFields = [...new Set(validation.flatMap(problem => Array.isArray(problem?.loc)
+        ? problem.loc.filter(field => field === 'body' || field === 'mentions') : []))];
       setError(code === 403 ? 'EOS denied your task comment.'
         : code === 409 ? 'Mention eligibility or replay changed. Refresh and reconcile.'
-          : 'EOS has not verified the comment. Check source state before retrying.');
+          : code === 422 ? 'EOS rejected the comment input'
+            + (safeFields.length ? ': ' + safeFields.join(', ') : '.')
+            + ' The draft remains intact; verify before retrying.'
+            : 'EOS has not verified the comment. Check source state before retrying.');
     } finally {
       if (currentScope.current === active) setBusy(false);
     }
@@ -313,7 +323,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.3.0-SAFE-LIVE-MARKDOWN-DISCUSSION
+// VERSION: v1.3.1-COMMENT-VALIDATION-EVIDENCE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
