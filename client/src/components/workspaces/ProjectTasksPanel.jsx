@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.20.1-INLINE-REASSIGN-CONTROL
+ * VERSION: v1.21.0-PENDING-TRANSITION-PROJECTION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.21.0-PENDING-TRANSITION-PROJECTION shows a bounded
+ *          immediate pending transition cue while EOS verifies the command;
+ *          only a fresh readback changes task status, and failed commands
+ *          remove the cue without inventing lifecycle truth.
  * CHANGELOG: v1.20.1-INLINE-REASSIGN-CONTROL makes the current
  *          contributor an action for active work and prevents no-op
  *          assignment revisions without altering source ownership semantics.
@@ -271,6 +275,7 @@ export default function ProjectTasksPanel({
   const [approvalTaskId, setApprovalTaskId] = useState(null);
   const [attachmentTaskId, setAttachmentTaskId] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [pendingTransition, setPendingTransition] = useState(null);
   const [error, setError] = useState('');
   const generation = useRef(0);
   const command = useRef({ fingerprint: '', key: '' });
@@ -337,6 +342,7 @@ export default function ProjectTasksPanel({
     setApprovalTaskId(null);
     setAttachmentTaskId(null);
     setDraft({ ...EMPTY });
+    setPendingTransition(null);
     setError('');
     command.current = { fingerprint: '', key: '' };
     void load(0);
@@ -398,7 +404,10 @@ export default function ProjectTasksPanel({
               + ' Review the indicated fields; your draft is preserved.'
               : 'EOS has not verified this task command. Reconcile source state before retrying.');
     } finally {
-      if (currentScope.current === active) setBusy(false);
+      if (currentScope.current === active) {
+        setBusy(false);
+        setPendingTransition(null);
+      }
     }
   };
 
@@ -446,6 +455,8 @@ export default function ProjectTasksPanel({
   };
 
   const transition = (item, status) => {
+    if (busy || state !== 'READY') return;
+    setPendingTransition({ taskId: item.task_id, status });
     const body = { expected_revision: item.revision, status };
     void execute(JSON.stringify(['transition', item.task_id, body]), key =>
       api.post(root + '/tasks/' + encodeURIComponent(item.task_id) + '/transition',
@@ -1012,7 +1023,13 @@ export default function ProjectTasksPanel({
                   <p className="mt-2 whitespace-pre-wrap break-words">{item.description}</p>
                 </details>}
               </td>
-              <td className="p-3 text-slate-800">{label(item.status)}</td>
+              <td className="p-3 text-slate-800">
+                {label(item.status)}
+                {pendingTransition?.taskId === item.task_id &&
+                  <span role="status" className="mt-1 block text-xs font-semibold text-blue-800">
+                    Updating to {label(pendingTransition.status)}…
+                  </span>}
+              </td>
               <td className="p-3 text-xs text-slate-700">
                 {item.assignee_principal_id
                   ? ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status)
@@ -1150,7 +1167,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.20.1-INLINE-REASSIGN-CONTROL
+// VERSION: v1.21.0-PENDING-TRANSITION-PROJECTION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
