@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT
+ * VERSION: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT proves To-do checkboxes
+ *          cannot assert Done optimistically, require conscious confirmation,
+ *          and reflect the revisioned EOS transition only after fresh source
+ *          readback; preserves existing tenant and command scope.
  * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT proves status
  *          visualization changes only after EOS readback, actionable bar
  *          filters and newest-revision-first audit presentation.
@@ -14,30 +18,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT proves a
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT adds in-place task
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT certifies task creation, verified
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT waits for the committed note row
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT certifies source-backed project note
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT proves navigation
+ * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -404,6 +408,86 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     })).toBeVisible());
     expect(api.patch).toHaveBeenCalledTimes(1);
     expect(persisted.status).toBe('planned');
+  });
+
+  it('ticks a persisted To-do checkbox only after confirmed EOS transition and fresh readback', async () => {
+    const persisted = project();
+    const taskId = 'ptk-' + 'e'.repeat(48);
+    const activeTask = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null,
+      title: 'Evidence-backed operational acceptance', description: '',
+      status: 'IN_PROGRESS', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL,
+      updated_by_principal_id: PRINCIPAL, revision: 2,
+      created_at: '2026-11-18T06:00:00+00:00',
+      updated_at: '2026-11-18T06:00:00+00:00', fingerprint: 'a'.repeat(128),
+    };
+    const completedTask = {
+      ...activeTask, status: 'DONE', revision: 3, fingerprint: 'b'.repeat(128),
+    };
+    let readCount = 0;
+    let releaseReadback;
+    const pendingReadback = new Promise(resolve => { releaseReadback = resolve; });
+    const taskList = item => ({ data: {
+      schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+      principal_id: PRINCIPAL, project_id: PROJECT_ID,
+      limit: 50, offset: 0, items: [item], has_more: false, next_offset: null,
+    } });
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) {
+        readCount += 1;
+        return readCount === 1 ? taskList(activeTask) : pendingReadback;
+      }
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        limit: 100, offset: 0, items: [], has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected project read ' + path);
+    });
+    api.post.mockImplementationOnce(async (path, body, options) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/tasks/${taskId}/transition`);
+      expect(body).toEqual({ expected_revision: 2, status: 'DONE' });
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        project_id: PROJECT_ID, task: completedTask,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="source-checklist-readback-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'Mark completed: Evidence-backed operational acceptance',
+    });
+    expect(checkbox).not.toBeChecked();
+    expect(screen.getByRole('region', { name: 'EOS verified To-do checklist' })).toBeVisible();
+    fireEvent.click(checkbox);
+    expect(screen.getByRole('group', { name: 'Confirm verified task completion' })).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('button', { name: 'Confirm Done in EOS' });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', {
+      name: /I reviewed this task's acceptance and supporting evidence/,
+    }));
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(readCount).toBe(2));
+    expect(checkbox).not.toBeChecked();
+    await act(async () => { releaseReadback(taskList(completedTask)); });
+    expect(await screen.findByRole('checkbox', {
+      name: 'Mark completed: Evidence-backed operational acceptance',
+    })).toBeChecked();
+    expect(screen.getByText('1 of 1 completed')).toBeVisible();
+    expect(screen.queryByRole('group', { name: 'Confirm verified task completion' }))
+      .not.toBeInTheDocument();
   });
 
   it('operates real task, subtask and milestone commands from the verified work queue', async () => {
@@ -946,7 +1030,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.11.0-LIFECYCLE-AUDIT-VISUAL-CERT
+ * VERSION: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
