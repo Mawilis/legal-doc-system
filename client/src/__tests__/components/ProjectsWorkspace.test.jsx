@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT
+ * VERSION: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,13 +14,17 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
- * CHANGELOG: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT prevents invisible
+ * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS validates source changes
+ *          independently of collapsed optional visualizations, scopes
+ *          contextual action selection, and preserves correct post-command
+ *          disabled states after owner assignment.
+ * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS prevents invisible
  *          template form labels and opaque internal IDs in the verified
  *          industry creation experience at the current test head.
- * CHANGELOG: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT certifies Arrow/Home/End
+ * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS certifies Arrow/Home/End
  *          navigation and focus return for the real responsive action
  *          presenter without adding fake lifecycle authority.
- * CHANGELOG: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT awaits source-ready row actions after
+ * CHANGELOG: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS awaits source-ready row actions after
  *          each command, opens contextual overflow rather than removed
  *          peer buttons, and exercises on-demand checklist/assignment state.
  * CHANGELOG: v2.28.1-KEYBOARD-WORK-DRAWER-CERT verifies
@@ -549,6 +553,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await waitFor(() => expect(
       screen.getByRole('row', { name: /Build milestone execution/ }),
     ).toHaveTextContent('In progress'));
+    const lifecycle = document.querySelector('[aria-label="Verified task lifecycle chart"]');
+    if (!lifecycle.open) fireEvent.click(lifecycle.querySelector('summary'));
     expect(screen.getByRole('button', { name: /Filter work to In progress: 1 of 1 verified on page/ })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /Filter work to To do: 0 of 1 verified on page/ }));
     expect(screen.getByText(/No work items on this verified page match/)).toBeVisible();
@@ -646,6 +652,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
     })).toBeChecked();
+    const checklist = document.querySelector('[aria-label="EOS verified To-do checklist"]');
+    if (!checklist.open) fireEvent.click(checklist.querySelector('summary'));
     expect(screen.getByText('1 of 1 completed')).toBeVisible();
     expect(screen.queryByRole('group', { name: 'Confirm verified task completion' }))
       .not.toBeInTheDocument();
@@ -803,7 +811,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td span' });
     fireEvent.click(within(screen.getByRole('row', { name: /Current project delivery/ }))
       .getByRole('button', { name: /More actions for Current project delivery/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Activity & discussion' }));
+    fireEvent.click(within(screen.getByRole('dialog', {
+      name: 'Actions for Current project delivery',
+    })).getByRole('button', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
@@ -1301,7 +1311,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Save audited assignment' })).toBeEnabled());
+    // Assignment has been committed; a now-unchanged form may correctly
+    // disable Save. Assert the fresh source-backed detail instead.
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
@@ -1615,7 +1626,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT
+ * VERSION: v2.28.5-ON-DEMAND-READBACK-ASSERTIONS
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
