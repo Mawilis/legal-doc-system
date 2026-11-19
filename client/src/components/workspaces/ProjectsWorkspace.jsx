@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.30.0-IMMUTABLE-BASELINE-AUDITED-TARGET
+ * VERSION: v2.31.0-CUSTOMIZABLE-GOVERNED-TEMPLATE-STEPS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.31.0-CUSTOMIZABLE-GOVERNED-TEMPLATE-STEPS allows review and
+ *          per-project edits to source template titles, due offsets and
+ *          acceptance criteria before one atomic EOS activation command;
+ *          step identity, DAG and assigned authority remain unchanged.
  * CHANGELOG: v2.30.0-IMMUTABLE-BASELINE-AUDITED-TARGET makes code/start read-only
  *          after creation and asks for a persisted, audited reason when
  *          changing a previously committed project target date.
@@ -657,6 +661,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [selectedTemplateSlug, setSelectedTemplateSlug] = useState('');
   const [templatePickerOpen, setTemplatePickerOpen] = useState(true);
   const [templateName, setTemplateName] = useState('');
+  const [templateEditing, setTemplateEditing] = useState(false);
+  const [templateOverrides, setTemplateOverrides] = useState({});
   const [templateStart, setTemplateStart] = useState('');
   const [templateReconciliation, setTemplateReconciliation] = useState(null);
   const templateSequence = useRef(0);
@@ -822,6 +828,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setSelectedTemplateSlug('');
     setTemplatePickerOpen(true);
     setTemplateName('');
+    setTemplateEditing(false);
+    setTemplateOverrides({});
     setTemplateStart('');
     setTemplateReconciliation(null);
     setDraft(EMPTY_DRAFT);
@@ -993,10 +1001,26 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       setTemplateError('Choose a verified template, enter a project name and select a start date.');
       return;
     }
+    const step_overrides = selectedTemplate.steps.flatMap(step => {
+      const override = templateOverrides[step.id];
+      if (!override) return [];
+      const changed = { id: step.id };
+      if (override.title !== step.title) changed.title = String(override.title).trim();
+      if (override.day !== step.day) changed.day = Number(override.day);
+      if (override.acceptance !== step.acceptance) changed.acceptance = String(override.acceptance).trim();
+      return Object.keys(changed).length > 1 ? [changed] : [];
+    });
+    if (step_overrides.some(step => ('title' in step && !step.title)
+        || ('acceptance' in step && !step.acceptance)
+        || ('day' in step && (!Number.isInteger(step.day) || step.day < 0 || step.day > 3650)))) {
+      setTemplateError('Check work titles, acceptance evidence and days before saving.');
+      return;
+    }
     const body = {
       name: templateName.trim(),
       template_revision: selectedTemplate.revision,
       start_date: templateStart,
+      ...(step_overrides.length ? { step_overrides } : {}),
     };
     let persisted = null;
     let activationCause = null;
@@ -1385,7 +1409,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                     type="button" className="block w-full px-3 py-3 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-blue-700"
                     style={selectedTemplateSlug === item.slug ? { background: '#e8f2ff' } : undefined}
                     onClick={() => { setSelectedTemplateSlug(item.slug);
-                      setTemplateName(item.title); setTemplatePickerOpen(false); setTemplateError(''); createReplay.current = { fingerprint: '', key: null }; }}>
+                      setTemplateName(item.title); setTemplatePickerOpen(false); setTemplateError('');
+                      setTemplateEditing(false); setTemplateOverrides({}); createReplay.current = { fingerprint: '', key: null }; }}>
                     <span className="block text-sm font-semibold text-slate-950">{item.industry}</span>
                     <span className="block text-xs text-slate-700">{item.title}</span>
                   </button>)}
@@ -1395,13 +1420,56 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   {selectedTemplate && <>
                     {templatePickerOpen && <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>}
                     <p className="mt-1 text-xs text-slate-600">Template revision {selectedTemplate.revision} · {selectedTemplate.steps.length} source-defined work items</p>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-slate-700">Edit your project draft; platform starter, roles and dependencies stay unchanged.</p>
+                      <button type="button" className="wp-button" aria-pressed={templateEditing}
+                        onClick={() => setTemplateEditing(value => !value)}>
+                        {templateEditing ? 'Review work plan' : 'Customize included work'}
+                      </button>
+                    </div>
                     <div className="mt-3 overflow-x-auto" aria-label="Selected template work items">
                       <table className="w-full text-left text-xs">
                         <thead className="border-b border-slate-200 text-slate-700"><tr><th className="p-2">Deliverable</th><th className="p-2">Role</th><th className="p-2">Due</th><th className="p-2">Depends on</th></tr></thead>
                         <tbody>{selectedTemplate.steps.map(step => <tr className="border-b border-slate-100" key={step.id}>
-                          <td className="p-2"><strong className="block text-slate-900">{step.title}</strong><span className="text-slate-600">{step.kind} · {step.acceptance}</span></td>
+                          <td className="p-2">
+                            {templateEditing ? <div className="grid gap-2">
+                              <label className="block text-xs font-semibold">Work title
+                                <input aria-label={'Work title for ' + step.id} maxLength={180}
+                                  value={templateOverrides[step.id]?.title ?? step.title}
+                                  onChange={event => { const title = event.target.value;
+                                    setTemplateOverrides(previous => ({
+                                      ...previous, [step.id]: { title, day: previous[step.id]?.day ?? step.day,
+                                        acceptance: previous[step.id]?.acceptance ?? step.acceptance },
+                                    })); createReplay.current = { fingerprint: '', key: null }; }}
+                                  className="mt-1 w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-950"/>
+                              </label>
+                              <label className="block text-xs font-semibold">Acceptance evidence
+                                <textarea aria-label={'Acceptance evidence for ' + step.id} rows={2} maxLength={1000}
+                                  value={templateOverrides[step.id]?.acceptance ?? step.acceptance}
+                                  onChange={event => { const acceptance = event.target.value;
+                                    setTemplateOverrides(previous => ({
+                                      ...previous, [step.id]: { acceptance, title: previous[step.id]?.title ?? step.title,
+                                        day: previous[step.id]?.day ?? step.day },
+                                    })); createReplay.current = { fingerprint: '', key: null }; }}
+                                  className="mt-1 w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-950"/>
+                              </label>
+                            </div> : <><strong className="block text-slate-900">{templateOverrides[step.id]?.title ?? step.title}</strong>
+                              <span className="text-slate-600">{step.kind} · {templateOverrides[step.id]?.acceptance ?? step.acceptance}</span></>}
+                          </td>
                           <td className="p-2 text-slate-700">{step.role.replaceAll('_', ' ')}</td>
-                          <td className="p-2 text-slate-700">Day +{step.day}</td>
+                          <td className="p-2 text-slate-700">
+                            {templateEditing ? <label className="block text-xs font-semibold">Days from start
+                              <input type="number" min={0} max={3650} step={1}
+                                aria-label={'Day offset for ' + step.id}
+                                value={templateOverrides[step.id]?.day ?? step.day}
+                                onChange={event => { const day = event.target.value === '' ? '' : Number(event.target.value);
+                                  setTemplateOverrides(previous => ({
+                                    ...previous, [step.id]: { day, title: previous[step.id]?.title ?? step.title,
+                                      acceptance: previous[step.id]?.acceptance ?? step.acceptance },
+                                  })); createReplay.current = { fingerprint: '', key: null }; }}
+                                className="mt-1 w-20 rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-950"/>
+                            </label> : 'Day +' + (templateOverrides[step.id]?.day ?? step.day)}
+                          </td>
                           <td className="p-2 text-slate-700">{step.depends_on.join(', ') || 'None'}</td>
                         </tr>)}</tbody>
                       </table>
@@ -1670,7 +1738,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.30.0-IMMUTABLE-BASELINE-AUDITED-TARGET
+// VERSION: v2.31.0-CUSTOMIZABLE-GOVERNED-TEMPLATE-STEPS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
