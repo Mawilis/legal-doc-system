@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT
+ * VERSION: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT verifies compact read-first
+ *          source notes, optional new-note composer and implicit CAS revision
+ *          without exposing opaque audit identifiers in the note board.
  * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT proves
  *          independently verified comment, lifecycle, decision and file
  *          events render chronologically, and links remain in exact-task
@@ -66,30 +69,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT proves a
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT adds in-place task
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT certifies task creation, verified
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT waits for the committed note row
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT certifies source-backed project note
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT proves navigation
+ * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -899,18 +902,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Persisted roadmap/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Notes', exact: true }));
     expect(await screen.findByRole('region', { name: 'Project notes' })).toBeVisible();
+    expect(screen.queryByRole('textbox', { name: 'New project note' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'New note' }));
     const input = screen.getByRole('textbox', { name: 'New project note' });
     fireEvent.change(input, { target: { value: 'Project operating context' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mint sticky-note colour' }));
     expect(screen.getByRole('button', { name: 'Mint sticky-note colour' }))
       .toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('button', { name: /Add note to EOS/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save note' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Edit note' })).toBeVisible();
     });
     expect(screen.getByText('Project operating context', { selector: '.wp-notes-list p' })).toBeVisible();
     expect(screen.getByRole('list', { name: 'Project sticky notes board' })).toBeVisible();
-    expect(screen.getByText('Mint note')).toBeVisible();
+    expect(screen.getByText('Your note')).toBeVisible();
+    expect(screen.queryByText('Revision 1')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'New project note' })).not.toBeInTheDocument();
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(api.patch).not.toHaveBeenCalled();
     expect(persisted.status).toBe('planned');
@@ -1362,7 +1369,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.21.0-FOUR-SOURCE-ACTIVITY-CERT
+ * VERSION: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
