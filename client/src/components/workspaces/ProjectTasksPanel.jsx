@@ -928,7 +928,7 @@ export default function ProjectTasksPanel({
                   <button type="button" disabled={busy}
                     onClick={() => setDiscussionTaskId(current => current === item.task_id ? null : item.task_id)}
                     className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
-                    Discuss
+                    Activity &amp; discussion
                   </button>
                   {TRANSITIONS[item.status].length === 0 && <span className="text-xs text-slate-500">Terminal state</span>}
                 </div>
