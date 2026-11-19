@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD
+ * VERSION: v1.2.0-MOBILE-SHEET-SWIPE-DISMISS
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.2.0-MOBILE-SHEET-SWIPE-DISMISS supports an intentional
+ *          downward grabber gesture on the mobile actions sheet; dismissal
+ *          never invokes an EOS command or interprets document scrolling.
  * CHANGELOG: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD adds Arrow/Home/End navigation
  *          among permitted actions, closes desktop flyouts on surrounding
  *          scroll and keeps mobile background scroll locked until dismissal.
@@ -40,6 +43,7 @@ export default function ProjectWorkRowActions({
   const [anchor, setAnchor] = useState({ top: 100, left: 0 });
   const trigger = useRef(null);
   const panel = useRef(null);
+  const dragStartY = useRef(null);
   const primary = nextAction[item.status];
   const canChange = ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status);
   const close = () => {
@@ -141,7 +145,17 @@ export default function ProjectWorkRowActions({
               event.preventDefault(); buttons[0]?.focus();
             }
           }}>
-          <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-300 md:hidden"/>
+          <div className="mb-2 flex h-9 w-full touch-pan-y items-center justify-center md:hidden"
+            aria-hidden="true" onTouchStart={event => {
+              dragStartY.current = event.touches[0]?.clientY ?? null;
+            }} onTouchCancel={() => { dragStartY.current = null; }}
+            onTouchEnd={event => {
+              const start = dragStartY.current;
+              dragStartY.current = null;
+              if (start !== null && event.changedTouches[0]?.clientY - start > 80) close();
+            }}>
+            <span className="h-1 w-10 rounded-full bg-slate-300"/>
+          </div>
           <p className="truncate px-3 pb-2 text-sm font-semibold text-slate-950">{item.title}</p>
           {!confirmCancel ? <>
             {actions.map(action => <button key={action.id} type="button"
@@ -166,7 +180,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.1.0-KEYBOARD-OVERFLOW-AND-MOBILE-SCROLL-GUARD
+// VERSION: v1.2.0-MOBILE-SHEET-SWIPE-DISMISS
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
