@@ -589,7 +589,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
           rationale: 'Approve delivery evidence', status: 'APPROVED',
           requested_at: '2026-11-19T08:00:00+00:00',
           decided_at: '2026-11-19T10:00:00+00:00',
-          decision_rationale: 'Reviewed and accepted',
+          decision_rationale: 'Reviewed and accepted', revision: 2,
+          fingerprint: 'c'.repeat(128),
         }], limit: 50, offset: 0, has_more: false, next_offset: null,
       } };
       if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/attachments?limit=50&offset=0`) return { data: {
@@ -599,6 +600,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
           schema: 'wilsy.project.attachment.v1', tenant_id: TENANT,
           project_id: PROJECT_ID, task_id: taskId, attachment_id: 'pat-' + 'd'.repeat(48),
           filename: 'evidence.pdf', uploader_principal_id: PRINCIPAL,
+          media_type: 'application/pdf', size_bytes: 1200,
+          content_sha3_512: 'a'.repeat(128), fingerprint: 'd'.repeat(128),
+          state: 'QUARANTINED', revision: 1,
+          scan_clearance_fingerprint: 'f'.repeat(128),
           created_at: '2026-11-19T11:00:00+00:00',
           scan_clearance_status: 'SCAN_CLEAN_VERIFIED',
         }], limit: 50, offset: 0, has_more: false, next_offset: null,
