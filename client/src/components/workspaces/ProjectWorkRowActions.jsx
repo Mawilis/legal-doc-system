@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.4.1-EXPLICIT-ASSIGN-CALLBACK
+ * VERSION: v1.5.0-ISOLATED-DESTRUCTIVE-CONFIRMATION
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.5.0-ISOLATED-DESTRUCTIVE-CONFIRMATION dismisses
+ *          action menus before opening a separate modal cancel confirmation;
+ *          Escape/backdrop/Keep never issue a command, and focus is returned
+ *          to its original work-row trigger.
  * CHANGELOG: v1.4.1-EXPLICIT-ASSIGN-CALLBACK requires a separate
  *          assignment handler instead of silently routing Assign to Edit;
  *          unauthorised or unimplemented command paths remain hidden.
@@ -57,6 +61,7 @@ export default function ProjectWorkRowActions({
   const [anchor, setAnchor] = useState({ top: 100, left: 0 });
   const trigger = useRef(null);
   const panel = useRef(null);
+  const cancelDialog = useRef(null);
   const dragStartY = useRef(null);
   const suggested = nextAction[item.status];
   const primary = suggested && (suggested[1] === 'DONE'
@@ -72,6 +77,18 @@ export default function ProjectWorkRowActions({
     close();
     callback();
   };
+  useEffect(() => {
+    if (!confirmCancel) return undefined;
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    cancelDialog.current?.querySelector('[data-keep-work]')?.focus();
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [confirmCancel]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -109,7 +126,7 @@ export default function ProjectWorkRowActions({
     ...(canActivity && typeof onActivity === 'function' ? [{ id: 'activity', name: 'Activity & discussion', onClick: () => onActivity(item) }] : []),
     ...(canApprovals && typeof onApprovals === 'function' ? [{ id: 'approvals', name: 'Approvals', onClick: () => onApprovals(item) }] : []),
     ...(canChange && canCancel && typeof onTransition === 'function' ? [{ id: 'cancel', name: 'Cancel work', danger: true,
-      onClick: () => setConfirmCancel(true) }] : []),
+      onClick: () => { setOpen(false); setConfirmCancel(true); } }] : []),
   ];
 
   return <>
@@ -181,31 +198,51 @@ export default function ProjectWorkRowActions({
             <span className="h-1 w-10 rounded-full bg-slate-300"/>
           </div>
           <p className="truncate px-3 pb-2 text-sm font-semibold text-slate-950">{item.title}</p>
-          {!confirmCancel ? <>
-            {actions.map(action => <button key={action.id} type="button"
+          {actions.map(action => <button key={action.id} type="button"
               role={typeof window !== 'undefined' && window.innerWidth < 768 ? undefined : 'menuitem'}
               className={'block min-h-12 w-full rounded-md px-3 text-left text-sm font-medium hover:bg-slate-100 '
                 + (action.danger ? 'text-rose-800' : 'text-slate-900')}
               onClick={() => action.danger ? action.onClick() : act(action.onClick)}>
               {action.name}
             </button>)}
-            <button type="button" className="mt-2 min-h-12 w-full rounded-lg bg-slate-100 text-sm font-semibold text-slate-800"
-              onClick={close}>Close actions</button>
-          </> : <>
-            <p className="p-3 text-sm text-slate-800">Cancel this item? EOS will retain its immutable transition history.</p>
+          <button type="button" className="mt-2 min-h-12 w-full rounded-lg bg-slate-100 text-sm font-semibold text-slate-800"
+            onClick={close}>Close actions</button>
+        </div>
+      </div>, document.body)}
+    {confirmCancel && createPortal(
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4"
+        onClick={event => { if (event.target === event.currentTarget) close(); }}>
+        <div ref={cancelDialog} role="dialog" aria-modal="true"
+          aria-label={'Confirm cancellation for ' + item.title}
+          onKeyDown={event => {
+            if (event.key !== 'Tab') return;
+            const buttons = [...event.currentTarget.querySelectorAll('button:not([disabled])')];
+            if (!buttons.length) return;
+            const first = buttons[0];
+            const last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault(); last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault(); first.focus();
+            }
+          }}
+          className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+          <h3 className="text-base font-bold text-slate-950">Cancel {item.title}?</h3>
+          <p className="mt-2 text-sm text-slate-700">EOS retains the immutable work history. Confirm to request cancellation.</p>
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <button type="button" data-keep-work className="wp-button"
+              onClick={close}>Keep work</button>
             <button type="button" disabled={busy}
-              className="min-h-12 w-full rounded-lg bg-rose-50 px-3 text-left text-sm font-semibold text-rose-800"
+              className="min-h-11 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white hover:bg-rose-800"
               onClick={() => act(() => onTransition(item, 'CANCELLED'))}>Confirm cancellation</button>
-            <button type="button" className="mt-2 min-h-12 w-full rounded-lg bg-slate-100 text-sm font-semibold text-slate-800"
-              onClick={() => setConfirmCancel(false)}>Keep work</button>
-          </>}
+          </div>
         </div>
       </div>, document.body)}
   </>;
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.4.1-EXPLICIT-ASSIGN-CALLBACK
+// VERSION: v1.5.0-ISOLATED-DESTRUCTIVE-CONFIRMATION
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
