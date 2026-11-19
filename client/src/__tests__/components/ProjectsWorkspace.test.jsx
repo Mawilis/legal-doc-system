@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT
+ * VERSION: v2.12.1-PARENT-BOUND-CHECKLIST-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies
+ *          Add checklist step selects the EOS-verified active parent before
+ *          submitting the existing idempotent task create command.
  * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT proves To-do checkboxes
  *          cannot assert Done optimistically, require conscious confirmation,
  *          and reflect the revisioned EOS transition only after fresh source
@@ -18,30 +21,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT proves a
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT adds in-place task
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies task creation, verified
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT waits for the committed note row
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies source-backed project note
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT proves navigation
+ * CHANGELOG: v2.12.1-PARENT-BOUND-CHECKLIST-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -549,14 +552,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByText('Main delivery', {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Work type' }), {
-      target: { value: 'SUBTASK' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add checklist step to Main delivery' }));
+    expect(screen.getByRole('combobox', { name: 'Work type' })).toHaveValue('SUBTASK');
+    expect(screen.getByRole('combobox', { name: 'Parent task' })).toHaveValue(parentId);
     expect(screen.getByRole('button', { name: 'Save work to EOS' })).toBeDisabled();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Parent task' }), {
-      target: { value: parentId },
-    });
     fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
       target: { value: 'Draft deliverable' },
     });
@@ -1030,7 +1029,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.12.0-PERSISTED-TODO-CHECKLIST-CERT
+ * VERSION: v2.12.1-PARENT-BOUND-CHECKLIST-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
