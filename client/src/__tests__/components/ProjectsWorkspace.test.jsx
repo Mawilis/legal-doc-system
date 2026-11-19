@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT
+ * VERSION: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,10 +14,13 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
- * CHANGELOG: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT certifies Arrow/Home/End
+ * CHANGELOG: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT prevents invisible
+ *          template form labels and opaque internal IDs in the verified
+ *          industry creation experience at the current test head.
+ * CHANGELOG: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT certifies Arrow/Home/End
  *          navigation and focus return for the real responsive action
  *          presenter without adding fake lifecycle authority.
- * CHANGELOG: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT awaits source-ready row actions after
+ * CHANGELOG: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT awaits source-ready row actions after
  *          each command, opens contextual overflow rather than removed
  *          peer buttons, and exercises on-demand checklist/assignment state.
  * CHANGELOG: v2.28.1-KEYBOARD-WORK-DRAWER-CERT verifies
@@ -1024,6 +1027,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(choices).getAllByRole('option')).toHaveLength(7);
     fireEvent.click(within(choices).getByRole('option', { name: /Legal/ }));
     expect(screen.getByText('Matter readiness')).toBeVisible();
+    const sheet = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
+    expect(sheet).toContain('[aria-label="Industry project templates"] form :is(label, legend)');
+    expect(sheet).toContain('-webkit-text-fill-color: #193451 !important;');
+    expect(screen.queryByText(PROJECT_ID)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Project name'), {
       target: { value: 'Legal litigation delivery' },
     });
@@ -1608,7 +1615,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.3-KEYBOARD-OVERFLOW-DISCOVERY-CERT
+ * VERSION: v2.28.4-TEMPLATE-LABEL-CONTRAST-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
