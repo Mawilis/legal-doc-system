@@ -471,7 +471,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'SUBTASK' },
     });
-    expect(screen.getByText('1 shown / 2 verified on page 1.')).toBeVisible();
+    expect(screen.getByText(/1 shown \/ 2 verified on page 1\./)).toBeVisible();
     expect(screen.queryByText('Main delivery', {
       selector: '.wp-project-tasks tbody td span',
     })).not.toBeInTheDocument();
