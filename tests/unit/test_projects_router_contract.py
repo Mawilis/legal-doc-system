@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.28.0-TASK-ACTIVITY-IAM-CONTRACT
+VERSION: v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,59 +9,61 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins the owner and current-participant
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins exact template catalogue read and atomic activation routes,
+  including both required project:create and project:update IAM gates.
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins the owner and current-participant
   immutable task-event GET routes to separate exact-source detail IAM,
   without permitting writes, inheritance, or cross-project discovery.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT verifies
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT verifies
   valid browser JSON enters the exact strict comment model over the
   FastAPI HTTP parsing boundary, while malformed mention shapes fail 422;
   no database writes or membership authority are exercised.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT admits only bounded JSON string arrays
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT admits only bounded JSON string arrays
   as strict task-comment mention tuples; rejects scalar, heterogeneous and
   oversized inputs without broadening participant authority.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT asserts one bounded exact-
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT asserts one bounded exact-
   tenant profile lookup for eligible project member names, null-name fallback
   and duplicate identity rejection without creating grant or role authority.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins exact owner/participant clean download IAM and
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins exact owner/participant clean download IAM and
   contributor-only provider scan reconciliation without a safety bypass.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT certifies
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT certifies
   owner-only attachment reads, current participant reads and contributor
   upload commands; no upload, download, scan or financial inherited grant.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT admits named reviewer
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT admits named reviewer
   inbox only through independent participant-contribute IAM; the route
   verifies each current exact-project record before revealing pending work.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT locks task approval
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT locks task approval
   request to owner update and named contributor decision to participant
   contribute; task approval read requires separately admitted context.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins exact-project
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins exact-project
   co-participant list to the current participant-only read operation.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins recipient-only
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins recipient-only
   notification list/read receipt routes under separate participant IAM and
   exact active project/entitlement checks; no global inbox bypass.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT locks principal-scoped
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT locks principal-scoped
   /my-projects discovery to explicit current participant IAM, no owner fallback.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins four task comment
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins four task comment
   read/create routes to owner or current participant IAM and record scope.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins owner-authorized task edit
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins owner-authorized task edit
   to project:update / project_update and retains participant scope denial.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins exact tenant candidate membership
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins exact tenant candidate membership
   choice reads to project owner detail IAM without granting participation.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins five new exact-tenant task operations
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT certifies independent participant IAM pairs
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT verifies explicit project owner-only participant
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT pins the four bounded notes endpoints to current
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT proves customer Projects authority is separately
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.28.0-TASK-ACTIVITY-IAM-CONTRACT asserts EOS rejects
+  v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -76,7 +78,7 @@ CHANGELOG:
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
-CHANGELOG: v1.28.0-TASK-ACTIVITY-IAM-CONTRACT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
+CHANGELOG: v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -111,7 +113,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.28.0-TASK-ACTIVITY-IAM-CONTRACT"
+VERSION = "v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -420,6 +422,8 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects", ("GET",)),
         ("/projects", ("POST",)),
         ("/projects/summary", ("GET",)),
+        ("/projects/templates", ("GET",)),
+        ("/projects/templates/{slug}/activate", ("POST",)),
         ("/projects/assignment-options", ("GET",)),
         ("/projects/departments", ("POST",)),
         ("/projects/{project_id}/assignment", ("PATCH",)),
@@ -469,6 +473,8 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
     expected = {
         ("/projects", "GET"): ("project:read", "project_list"),
         ("/projects/summary", "GET"): ("project:read", "project_list"),
+        ("/projects/templates", "GET"): ("project:read", "project_list"),
+        ("/projects/templates/{slug}/activate", "POST"): ("project:create", "project_create"),
         ("/projects/assignment-options", "GET"): ("project:read", "project_list"),
         ("/projects/departments", "POST"): ("tenant:profile:write", "profile_update"),
         ("/projects/{project_id}/assignment", "PATCH"): ("project:update", "project_update"),
@@ -1104,7 +1110,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.28.0-TASK-ACTIVITY-IAM-CONTRACT
+# VERSION: v1.29.0-TEMPLATE-ACTIVATION-DUAL-AUTH-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
