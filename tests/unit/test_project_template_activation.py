@@ -1,11 +1,13 @@
 """TITLE: WILSY OS Industry Project Template Activation Certificate
-VERSION: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT
+VERSION: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT
 AUTHORITY: Synthetic EOS project/task transaction boundary only.
-EPITOME: Validate seven industry DAGs, materialisation IDs, safe unassigned
+EPITOME: Validate seventeen industry DAGs, materialisation IDs, safe unassigned
          records, stable replay and exact admission without real Mongo writes.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_template_activation.py
 COLLABORATION / OWNERSHIP: Projects router and immutable project/task registries.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT verifies 17 source-validated industry
+         blueprints with immutable DAGs and no automatic staff authority.
 CHANGELOG: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT verifies replay
          reads the original immutable creation snapshot rather than
          reissuing a timestamp-sensitive create or duplicating task evidence.
@@ -33,9 +35,9 @@ from tools.eos.saas.projects.project_template_catalogue import (
 )
 
 
-def test_seven_reviewed_industry_blueprints_are_detached_and_topologically_valid() -> None:
+def test_seventeen_reviewed_industry_blueprints_are_detached_and_topologically_valid() -> None:
     entries = list_blueprints()
-    assert len(entries) == 7
+    assert len(entries) == 17
     assert {entry["industry"] for entry in entries} == {
         "Legal", "Construction", "Football", "Imports", "Software",
         "Healthcare", "General business",
@@ -157,7 +159,7 @@ def test_template_activation_denies_unbound_actor_and_stale_revision() -> None:
 
 
 # ARTIFACT: test_project_template_activation.py
-# VERSION: v1.1.0-IMMUTABLE-TEMPLATE-REPLAY-CERT
+# VERSION: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT
 # AUTHORITY BOUNDARY: synthetic tests only; authenticated IAM remains in EOS
 # TENANT POSTURE: exact tenant actor and project records
 # FAIL-CLOSED POSTURE: malformed data, stale revision and scope mismatches deny
