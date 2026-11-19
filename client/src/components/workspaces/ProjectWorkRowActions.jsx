@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.6.0-VIEWPORT-AWARE-MENU-PLACEMENT
+ * VERSION: v1.7.0-COMPACT-ACTION-HIT-TARGETS
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.7.0-COMPACT-ACTION-HIT-TARGETS keeps
+ *          primary/overflow controls within a compact 44px row without
+ *          reducing the comfortable-mode or mobile-sheet hit targets.
  * CHANGELOG: v1.6.0-VIEWPORT-AWARE-MENU-PLACEMENT positions the
  *          desktop menu below or above its trigger using available
  *          viewport space rather than a fixed 345px estimate, with
@@ -54,7 +57,7 @@ const nextAction = {
 };
 
 export default function ProjectWorkRowActions({
-  item, busy, onTransition, onComplete, onEdit, onAssign,
+  item, busy, dense = false, onTransition, onComplete, onEdit, onAssign,
   onAttachments, onApprovals, onActivity,
   canStart = false, canComplete = false, canBlock = false, canCancel = false,
   canAssign = false, canEdit = false, canAttachments = false,
@@ -137,14 +140,14 @@ export default function ProjectWorkRowActions({
     <div className="flex flex-wrap items-center gap-1.5">
       {primary && <button type="button" disabled={busy}
         aria-label={primary[0] + ': ' + item.title}
-        className="wp-button wp-button-primary !min-h-9 !px-3 !text-xs"
+        className={'wp-button wp-button-primary !min-h-9 !text-xs ' + (dense ? '!px-2' : '!px-3')}
         onClick={() => primary[1] === 'DONE' ? onComplete(item) : onTransition(item, primary[1])}>
         {primary[0]}
       </button>}
       <button type="button" ref={trigger} disabled={busy || actions.length === 0}
         aria-haspopup={typeof window !== 'undefined' && window.innerWidth < 768 ? 'dialog' : 'menu'} aria-expanded={open}
         aria-label={'More actions for ' + item.title}
-        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+        className={'inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ' + (dense ? 'min-h-9 min-w-9' : 'min-h-10 min-w-10')}
         onClick={event => {
           const bounds = event.currentTarget.getBoundingClientRect();
           const height = Math.min(320, Math.max(112, 96 + 48 * actions.length));
@@ -250,7 +253,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.6.0-VIEWPORT-AWARE-MENU-PLACEMENT
+// VERSION: v1.7.0-COMPACT-ACTION-HIT-TARGETS
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
