@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.16.0-WORK-EDIT-CONTEXT-SHEET
+ * VERSION: v1.16.1-MILESTONE-COMPLETION-ATTESTATION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.16.1-MILESTONE-COMPLETION-ATTESTATION routes
+ *          both task and milestone primary Complete actions through
+ *          the same explicit acceptance attestation and EOS readback.
  * CHANGELOG: v1.16.0-WORK-EDIT-CONTEXT-SHEET opens
  *          task revision/assignment in a contextual, scroll-independent
  *          responsive sheet; sourced contributor names replace opaque IDs
@@ -472,7 +475,7 @@ export default function ProjectTasksPanel({
       assignee_principal_id: selected.assignee_principal_id || '',
     });
   };
-  const completingItem = todoRows.find(item => item.task_id === completionCandidate
+  const completingItem = items.find(item => item.task_id === completionCandidate
     && item.status === 'IN_PROGRESS');
   useEffect(() => {
     // Completion confirmation closes only when a fresh EOS page reports DONE,
@@ -989,7 +992,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.16.0-WORK-EDIT-CONTEXT-SHEET
+// VERSION: v1.16.1-MILESTONE-COMPLETION-ATTESTATION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
