@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.30.0-ATOMIC-TEMPLATE-CI-CERT
+VERSION: v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT pins an
+  exact-project update-authorized read-only capability endpoint and confirms
+  zero IAM/grant mutations at this boundary.
   v1.30.0-ATOMIC-TEMPLATE-CI-CERT executes the seven-blueprint atomic
   activation/replay regression inside the pre-existing project certification
   suite, without changing the CI workflow or weakening authoritative checks.
@@ -460,6 +463,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/tasks/{task_id}/comments", ("POST",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/comments", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/comments", ("POST",)),
+        ("/projects/{project_id}/task-action-capabilities", ("GET",)),
         ("/projects/{project_id}/tasks", ("GET",)),
         ("/projects/{project_id}/tasks", ("POST",)),
         ("/projects/{project_id}/tasks/{task_id}", ("PATCH",)),
@@ -511,6 +515,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/tasks/{task_id}/comments", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/comments", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/comments", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/task-action-capabilities", "GET"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/tasks", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks/{task_id}", "PATCH"): ("project:update", "project_update"),
@@ -1089,6 +1094,45 @@ def test_owner_page_uses_current_authenticated_principal_not_participant_grant(m
     assert owner.dependant.dependencies != participant.dependant.dependencies
 
 
+def test_task_action_capabilities_require_exact_project_update_authority(monkeypatch) -> None:
+    """Existing update IAM permits read-only projection; no scope is granted."""
+    context = SimpleNamespace(
+        tenant_id="tenant-a",
+        identity=SimpleNamespace(identity_id="principal-a"),
+    )
+    project_id = "prj-" + "a" * 48
+    reads: list[tuple[str, str, str]] = []
+
+    class Registry:
+        def get(self, *, tenant_id, project_id, session):
+            reads.append((tenant_id, project_id, session))
+            return object()
+
+    monkeypatch.setattr(
+        projects_router, "_transaction",
+        lambda authorized, callback: callback(Registry(), "exact-session")
+        if authorized is context else (_ for _ in ()).throw(AssertionError("scope")),
+    )
+    response = Response()
+    outcome = projects_router.read_project_task_action_capabilities(
+        response=response, project_id=project_id, context=context,
+    )
+    assert outcome == {
+        "schema": "WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1",
+        "tenant_id": "tenant-a",
+        "principal_id": "principal-a",
+        "project_id": project_id,
+        "can_start": True,
+        "can_complete": True,
+        "can_block": True,
+        "can_cancel": True,
+        "can_assign": True,
+        "can_edit": True,
+    }
+    assert response.headers["cache-control"] == "no-store"
+    assert reads == [("tenant-a", project_id, "exact-session")]
+
+
 def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkeypatch) -> None:
     """Instrumentation cannot substitute guessed source counts or change IAM."""
     counts = {
@@ -1135,7 +1179,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.30.0-ATOMIC-TEMPLATE-CI-CERT
+# VERSION: v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
