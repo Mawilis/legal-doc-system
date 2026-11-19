@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.33.1-STRICT-TASK-JSON-BOUNDARY
+VERSION: v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,11 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.33.1-STRICT-TASK-JSON-BOUNDARY also converts JSON dependency arrays to strict typed tuples
+  v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES enriches already-eligible exact-tenant
+  participant choices with source-verified display-only first/last names;
+  unknown names remain null, never inferred from IDs or emails. No IAM,
+  membership scope, grant/revoke, ordering or pagination change.
+  v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES also converts JSON dependency arrays to strict typed tuples
   only when every element remains a string; malformed values, lengths and
   dependency IDs retain strict/domain rejection. No IAM or task mutations change.
   v1.33.0-STRICT-TASK-DATE-WIRE-FIX normalizes only canonical YYYY-MM-DD task create and
@@ -3031,7 +3035,12 @@ def project_participant_options(
             if _project_participant_eligible(
                 database, context.tenant_id, principal_id, session,
             ):
-                candidates.append({"principal_id": principal_id})
+                candidates.append({
+                    "principal_id": principal_id,
+                    **_exact_tenant_project_person_name(
+                        database, context.tenant_id, principal_id, session,
+                    ),
+                })
         return {
             "schema": "WILSY-PROJECT-PARTICIPANT-OPTIONS/V1",
             "tenant_id": context.tenant_id,
@@ -3468,7 +3477,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.33.1-STRICT-TASK-JSON-BOUNDARY
+# VERSION: v1.34.0-EXACT-TENANT-PARTICIPANT-NAMES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
