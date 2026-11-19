@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.2.0-EXPLICIT-CALLER-CAPABILITY-GATES
+ * VERSION: v1.3.0-DENY-BY-DEFAULT-REUSE
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.3.0-DENY-BY-DEFAULT-REUSE prevents new
+ *          My Work or external callers from receiving write/menu affordances
+ *          until they pass explicit source-backed capability flags.
  * CHANGELOG: v1.2.0-EXPLICIT-CALLER-CAPABILITY-GATES hides
  *          assignment and completion shortcuts unless the verified
  *          caller capability projection permits those affordances.
@@ -27,6 +30,12 @@ import React from 'react';
 import { Waypoints, ClipboardList } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
 
+const NO_ACTION_CAPABILITIES = Object.freeze({
+  canStart: false, canComplete: false, canBlock: false, canCancel: false,
+  canAssign: false, canEdit: false, canAttachments: false,
+  canActivity: false, canApprovals: false,
+});
+
 const statusLabel = status => ({
   TODO: 'To do', IN_PROGRESS: 'In progress', BLOCKED: 'Blocked',
   DONE: 'Done', CANCELLED: 'Cancelled',
@@ -41,7 +50,7 @@ export default function ProjectWorkRow({
   priority = null,
   pendingStatus = null, todayISO, assigneeName,
   onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
-  onAttachments, onApprovals, onActivity, capabilities = {},
+  onAttachments, onApprovals, onActivity, capabilities = NO_ACTION_CAPABILITIES,
 }) {
   return <tr key={item.task_id} data-task-id={item.task_id}
               aria-label={'Open work details: ' + item.title}
@@ -158,7 +167,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.2.0-EXPLICIT-CALLER-CAPABILITY-GATES
+// VERSION: v1.3.0-DENY-BY-DEFAULT-REUSE
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
