@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.38.0-EXACT-TENANT-WORK-CAPABILITIES
+VERSION: v1.38.1-TYPED-TEMPLATE-STEP-BOUNDARY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,11 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.38.1-TYPED-TEMPLATE-STEP-BOUNDARY explicitly types the validated
+  read-only platform blueprint at the router's activation boundary, fixing
+  non-iterable object diagnostics for the target-date and task-step loops.
+  It does not modify catalogue bytes, materialization, transaction, replay,
+  IAM/tenant admission, idempotency, dates, or response payloads.
   v1.38.0-EXACT-TENANT-WORK-CAPABILITIES exposes a read-only
   per-project task action projection only after existing project:update
   authorization and exact-tenant registry read; no privileges are issued.
@@ -168,7 +173,7 @@ import hashlib
 import logging
 import re
 from time import perf_counter
-from typing import Literal, Any, Callable, Final, Mapping
+from typing import Literal, Any, Callable, Final, Mapping, TypedDict, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response, status
 from starlette.datastructures import UploadFile
@@ -1074,6 +1079,29 @@ def project_summary(
     return result
 
 
+class _ProjectTemplateStep(TypedDict):
+    """Static shape certified by project_template_catalogue._validate_catalogue."""
+
+    id: str
+    kind: Literal["TASK", "MILESTONE"]
+    title: str
+    day: int
+    role: str
+    acceptance: str
+    depends_on: list[str]
+
+
+class _ProjectTemplateBlueprint(TypedDict):
+    """Validated catalogue description; no caller-supplied step authority."""
+
+    slug: str
+    industry: str
+    title: str
+    revision: int
+    description: str
+    steps: list[_ProjectTemplateStep]
+
+
 def _generated_project_code(project_id: str) -> str:
     """Derive an immutable human-readable code from EOS project identity.
 
@@ -1120,9 +1148,13 @@ def activate_project_template(
         or context.identity.identity_id != update_context.identity.identity_id):
         raise HTTPException(status_code=403, detail="PROJECT_TEMPLATE_ACTOR_SCOPE_DENIED")
     key = _note_idempotency_key(idempotency_key)
-    template = get_blueprint(slug)
-    if template is None:
+    source_blueprint = get_blueprint(slug)
+    if source_blueprint is None:
         raise HTTPException(status_code=404, detail="PROJECT_TEMPLATE_NOT_FOUND")
+    # The static cast reflects the catalogue's mandatory startup validation.
+    # Only trusted platform definitions reach this boundary; HTTP cannot
+    # supply template steps or rewrite source dependencies.
+    template = cast(_ProjectTemplateBlueprint, source_blueprint)
     if payload.template_revision != template["revision"]:
         raise HTTPException(status_code=409, detail="PROJECT_TEMPLATE_REVISION_CHANGED")
     actor = context.identity.identity_id
@@ -3824,7 +3856,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.38.0-EXACT-TENANT-WORK-CAPABILITIES
+# VERSION: v1.38.1-TYPED-TEMPLATE-STEP-BOUNDARY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
