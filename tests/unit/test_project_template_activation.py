@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Industry Project Template Activation Certificate
-VERSION: v1.3.0-REVIEWED-TEMPLATE-OVERRIDE-DAG-CERT
+VERSION: v1.4.0-SEVENTEEN-INDUSTRY-SCOPE-CERT
 AUTHORITY: Synthetic EOS project/task transaction boundary only.
 EPITOME: Validate seventeen industry DAGs, materialisation IDs, safe unassigned
          records, stable replay and exact admission without real Mongo writes.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_template_activation.py
 COLLABORATION / OWNERSHIP: Projects router and immutable project/task registries.
 CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.4.0-SEVENTEEN-INDUSTRY-SCOPE-CERT pins all seventeen audited
+         industry labels and isolated source blueprints without relaxing
+         dependency admission or milestone validity.
 CHANGELOG: v1.3.0-REVIEWED-TEMPLATE-OVERRIDE-DAG-CERT rejects unknown, duplicated and
          temporally inconsistent reviewed step edits before materialisation.
 CHANGELOG: v1.2.0-SEVENTEEN-TEMPLATE-DAG-CERT verifies 17 source-validated industry
@@ -42,7 +45,10 @@ def test_seventeen_reviewed_industry_blueprints_are_detached_and_topologically_v
     assert len(entries) == 17
     assert {entry["industry"] for entry in entries} == {
         "Legal", "Construction", "Football", "Imports", "Software",
-        "Healthcare", "General business",
+        "Healthcare", "General business", "Marketing", "Automotive parts",
+        "Vehicle dealership", "Workshop", "Agriculture", "Dental healthcare",
+        "Workforce", "Finance operations", "Customer success",
+        "International trading",
     }
     for entry in entries:
         assert entry["revision"] == 1
@@ -189,7 +195,7 @@ def test_template_activation_denies_unbound_actor_and_stale_revision() -> None:
 
 
 # ARTIFACT: test_project_template_activation.py
-# VERSION: v1.3.0-REVIEWED-TEMPLATE-OVERRIDE-DAG-CERT
+# VERSION: v1.4.0-SEVENTEEN-INDUSTRY-SCOPE-CERT
 # AUTHORITY BOUNDARY: synthetic tests only; authenticated IAM remains in EOS
 # TENANT POSTURE: exact tenant actor and project records
 # FAIL-CLOSED POSTURE: malformed data, stale revision and scope mismatches deny
