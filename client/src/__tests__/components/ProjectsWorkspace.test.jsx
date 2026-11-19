@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.32.0-PENDING-WORK-TRANSITION-CERT
+ * VERSION: v2.33.0-WORK-ROW-SELECTION-DENSITY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.33.0-WORK-ROW-SELECTION-DENSITY-CERT proves
+ *          selected rows toggle independently and page selection is visual
+ *          only; work density switches without a server mutation.
  * CHANGELOG: v2.32.0-PENDING-WORK-TRANSITION-CERT verifies immediate
  *          pending feedback without premature task completion, then requires
  *          authoritative readback to clear the pending presentation.
@@ -416,6 +419,21 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
     expect(within(work).getByText('My accountable delivery')).toBeVisible();
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select My accountable delivery' }));
+    expect(screen.getByText(/1 work item selected on this verified page/)).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Work row density' }), {
+      target: { value: 'compact' },
+    });
+    expect(work.querySelector('tr[data-task-id]')).toHaveClass('h-11');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
+    expect(screen.getByRole('checkbox', { name: 'Select Other contributor delivery' })).toBeChecked();
+    expect(screen.getByText(/2 work items selected on this verified page/)).toBeVisible();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
+    expect(screen.getByRole('checkbox', { name: 'Select My accountable delivery' })).not.toBeChecked();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Work row density' }), {
+      target: { value: 'comfortable' },
+    });
+    expect(work.querySelector('tr[data-task-id]')).toHaveClass('h-14');
     fireEvent.click(screen.getByRole('button', { name: 'My work on this page' }));
     expect(within(work).getByText('My accountable delivery')).toBeVisible();
     expect(within(work).queryByText('Other contributor delivery')).not.toBeInTheDocument();
@@ -1830,7 +1848,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.32.0-PENDING-WORK-TRANSITION-CERT
+ * VERSION: v2.33.0-WORK-ROW-SELECTION-DENSITY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
