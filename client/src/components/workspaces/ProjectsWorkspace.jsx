@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES
+ * VERSION: v2.15.0-INDEPENDENT-PROJECT-LIST-READ
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,35 +16,39 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ publishes the independently verified
+ * project page without waiting for the separate portfolio summary request;
+ * summary failures remain explicit, including fail-closed scope/authority
+ * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES opens
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES opens the
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES mounts exact-tenant,
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES mounts the independently source-backed
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES mounts independently source-backed note
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES applies status filtering at the exact-tenant
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.15.0-INDEPENDENT-PROJECT-LIST-READ consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES exposes readable title-case
+ *            v2.15.0-INDEPENDENT-PROJECT-LIST-READ exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -621,17 +625,42 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       return null;
     }
     setSourceState((current) => current === 'READY' || current === 'STALE' ? 'REFRESHING' : 'LOADING');
+    setSummary(null);
     setError('');
     try {
-      const [listResponse, summaryResponse] = await Promise.all([
-        api.get(
-          statusFilterRef.current === 'all' && pageOffsetRef.current === 0 && !ownerOnlyRef.current
-            ? '/projects'
-            : `/projects?limit=100&offset=${pageOffsetRef.current}${statusFilterRef.current === 'all' ? '' : `&project_status=${statusFilterRef.current}`}${ownerOnlyRef.current ? '&owned_by_me=true' : ''}`,
-          { headers: tenantHeaders },
-        ),
-        api.get('/projects/summary', { headers: tenantHeaders }),
-      ]);
+      // Portfolio aggregation is independent of the authorized project page.
+      // A healthy /projects response must not wait on a slower /summary.
+      // Both results retain their own exact session scope checks.
+      let summaryFailure = null;
+      let listFailed = false;
+      void api.get('/projects/summary', { headers: tenantHeaders }).then(response => {
+        if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
+        setSummary(assertProjectSummary(response?.data, tenantId, principalId));
+      }).catch(cause => {
+        summaryFailure = cause;
+        if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
+        const code = classifyFailure(cause);
+        setError(code);
+        setSummary(null);
+        if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED' || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
+          itemsRef.current = [];
+          setItems([]);
+          setDetail(null);
+          changeSelection(null);
+          setSourceState('DENIED');
+        } else if (itemsRef.current.length > 0) {
+          setSourceState('STALE');
+        } else {
+          setSourceState('UNAVAILABLE');
+        }
+      });
+      const listResponse = await api.get(
+        statusFilterRef.current === 'all' && pageOffsetRef.current === 0 && !ownerOnlyRef.current
+          ? '/projects'
+          : `/projects?limit=100&offset=${pageOffsetRef.current}${statusFilterRef.current === 'all' ? '' : `&project_status=${statusFilterRef.current}`}${ownerOnlyRef.current ? '&owned_by_me=true' : ''}`,
+        { headers: tenantHeaders },
+      );
+      if (summaryFailure) throw summaryFailure;
       if (sequence !== listSequence.current || activeScope.current !== requestScope) return null;
       const nextItems = assertProjectList(listResponse?.data, tenantId, principalId);
       if (ownerOnlyRef.current && nextItems.some(item => item.owner_principal_id !== principalId)) {
@@ -648,21 +677,20 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           : pageEvidence.next_offset != null)
       )) throw new Error('PROJECT_PAGE_EVIDENCE_INVALID');
       const verifiedNextPage = hasPageEvidence ? pageEvidence.has_more : nextItems.length === 100;
-      const nextSummary = assertProjectSummary(summaryResponse?.data, tenantId, principalId);
       itemsRef.current = nextItems;
       setItems(nextItems);
       setHasNextPage(verifiedNextPage);
-      setSummary(nextSummary);
-      setSourceState('READY');
+      if (!summaryFailure) setSourceState('READY');
       const currentSelection = selectedRef.current;
       if (!preserveSelection || (currentSelection && !nextItems.some((item) => item.project_id === currentSelection))) {
         changeSelection(null);
         setDetail(null);
         setDetailState('IDLE');
       }
-      return { items: nextItems, counts: nextSummary };
+      return { items: nextItems };
     } catch (cause) {
       if (sequence !== listSequence.current || activeScope.current !== requestScope) return null;
+      setSummary(null);
       const code = classifyFailure(cause);
       setError(code);
       if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED' || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
@@ -961,7 +989,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const statusLabel = (value) => String(value || 'unknown').replaceAll('_', ' ');
   const countLabel = summary
     ? `${ownerOnly ? 'Tenant · ' : ''}${summary.active ?? '—'} active · ${summary.total} total`
-    : 'Counts unavailable';
+    : sourceState === 'LOADING' || sourceState === 'REFRESHING' ? 'Counts loading…' : 'Counts unavailable';
 
   if (showAssignedProjects) {
     return <AssignedProjectsWorkspace
@@ -1190,7 +1218,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES
+// VERSION: v2.15.0-INDEPENDENT-PROJECT-LIST-READ
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
