@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.25.0-VERIFIED-WORK-ACTION-PERMISSIONS
+ * VERSION: v1.25.1-SEALED-SECONDARY-WORK-CONTROLS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.25.1-SEALED-SECONDARY-WORK-CONTROLS hides
+ *          checklist mutation shortcuts and disables stale editor submits
+ *          unless the independently verified exact-project update permission
+ *          remains active.
  * CHANGELOG: v1.25.0-VERIFIED-WORK-ACTION-PERMISSIONS requires
  *          exact-tenant EOS update-authority before showing task writes;
  *          denied or unavailable capabilities preserve read-only tasks.
@@ -736,6 +740,9 @@ export default function ProjectTasksPanel({
         taskId={focusedAction.id} tenantHeaders={tenantHeaders}
         onClose={closeFocusedAction}/>}
     </div> : <>
+      {!actionCapabilities?.canEdit && <p role="status" className="mt-2 text-xs font-semibold text-amber-900">
+        Project work is read-only. EOS has not confirmed current task-update authority.
+      </p>}
       <p className="mt-2 text-xs text-slate-600" aria-label="Verified current task page status">
         {items.length} verified work items · {counts.find(item => item.status === 'IN_PROGRESS')?.count || 0} in progress
         {overdueOnPage > 0 ? ' · ' + overdueOnPage + ' overdue' : ''}
@@ -811,9 +818,9 @@ export default function ProjectTasksPanel({
                 <label className="flex min-w-[200px] flex-1 items-start gap-3 text-sm text-slate-900">
                   <input type="checkbox" className="mt-1 size-4 accent-emerald-700"
                     aria-label={'Mark completed: ' + item.title}
-                    checked={complete} disabled={busy || !canComplete}
+                    checked={complete} disabled={busy || !canComplete || !actionCapabilities?.canComplete}
                     onChange={() => {
-                      if (!canComplete) return;
+                      if (!canComplete || !actionCapabilities?.canComplete) return;
                       setCompletionCandidate(item.task_id);
                       setCompletionAttested(false);
                     }}/>
@@ -822,13 +829,13 @@ export default function ProjectTasksPanel({
                     <span className="mt-0.5 block text-xs text-slate-600">{item.parent_task_id ? 'Subtask' : 'Task'} · {label(item.status)}{item.due_date ? ' · due ' + item.due_date : ''}</span>
                   </span>
                 </label>
-                {item.status === 'TODO' && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                {item.status === 'TODO' && actionCapabilities?.canStart && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
                   disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Start work</button>}
-                {item.status === 'BLOCKED' && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                {item.status === 'BLOCKED' && actionCapabilities?.canStart && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
                   disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Resume work</button>}
-                {canComplete && <span className="text-xs text-slate-600">Tick to verify completion</span>}
+                {canComplete && actionCapabilities?.canComplete && <span className="text-xs text-slate-600">Tick to verify completion</span>}
                 {complete && <span className="text-xs font-semibold text-emerald-800">EOS confirmed Done</span>}
-                {item.status !== 'DONE' && <button type="button"
+                {item.status !== 'DONE' && actionCapabilities?.canEdit && <button type="button"
                   className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
                   aria-label={'Add checklist step to ' + item.title}
                   onClick={() => {
@@ -974,7 +981,7 @@ export default function ProjectTasksPanel({
         </fieldset>
         {workType === 'SUBTASK' && availableParents.length === 0 && <p role="status" className="text-xs text-amber-800">No eligible parent task is verified on this page. Create a top-level task or navigate to a page with an eligible parent.</p>}
         {participantHasMore && <p className="text-xs text-amber-800">Only the first verified participant page is selectable. Further assignments require a complete directory read.</p>}
-        <button type="submit" disabled={busy || !draft.title.trim()
+        <button type="submit" disabled={busy || !actionCapabilities?.canEdit || !draft.title.trim()
           || (workType === 'SUBTASK' && !availableParents.some(item => item.task_id === draft.parent_task_id))}
           className="wp-button wp-button-primary">
           <Plus size={14}/> Save work to EOS
@@ -1022,7 +1029,7 @@ export default function ProjectTasksPanel({
         </div>
         {!assignmentOnly && <p className="text-xs text-slate-600">Parent, predecessors and milestone type remain immutable. Reassignment requires a current exact-project Contributor.</p>}
         <button type="submit" className="wp-button wp-button-primary"
-          disabled={busy || !editor.title.trim() || Boolean(
+          disabled={busy || !actionCapabilities?.canEdit || !editor.title.trim() || Boolean(
             editor.assignee_principal_id && !participants.some(person =>
               person.principal_id === editor.assignee_principal_id))
             || (assignmentOnly && (editor.assignee_principal_id || null)
@@ -1090,7 +1097,7 @@ export default function ProjectTasksPanel({
             <span>I reviewed this task's acceptance and supporting evidence.</span>
           </label>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="wp-button wp-button-primary" disabled={busy || !completionAttested}
+            <button type="button" className="wp-button wp-button-primary" disabled={busy || !actionCapabilities?.canComplete || !completionAttested}
               onClick={() => transition(completingItem, 'DONE')}>Confirm Done in EOS</button>
             <button type="button" className="wp-button" disabled={busy} onClick={() => {
               setCompletionCandidate(null);
@@ -1171,7 +1178,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.25.0-VERIFIED-WORK-ACTION-PERMISSIONS
+// VERSION: v1.25.1-SEALED-SECONDARY-WORK-CONTROLS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
