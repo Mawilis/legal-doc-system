@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.17.1-READABLE-ASSIGNEE-EDITOR
+ * VERSION: v1.18.0-PROJECT-MY-WORK-FILTER
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.18.0-PROJECT-MY-WORK-FILTER introduces an explicit
+ *          current-principal task filter over the exact EOS-verified page,
+ *          with accurate page scope, no client-assumed assignment authority,
+ *          and automatic reset on principal/project scope changes.
  * CHANGELOG: v1.17.1-READABLE-ASSIGNEE-EDITOR shows a verified
  *          contributor name in the edit/assign selector instead of an
  *          opaque principal ID; submitted identity and authority unchanged.
@@ -237,6 +241,7 @@ export default function ProjectTasksPanel({
   const [creating, setCreating] = useState(false);
   const [workType, setWorkType] = useState('TASK');
   const [workQuery, setWorkQuery] = useState('');
+  const [workMineOnly, setWorkMineOnly] = useState(false);
   const [workStatus, setWorkStatus] = useState('ALL');
   const [workKind, setWorkKind] = useState('ALL');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
@@ -303,6 +308,7 @@ export default function ProjectTasksPanel({
     setCreating(false);
     setWorkType('TASK');
     setWorkQuery('');
+    setWorkMineOnly(false);
     setWorkStatus('ALL');
     setWorkKind('ALL');
     setWorkOrder('DUE_ASC');
@@ -442,7 +448,8 @@ export default function ProjectTasksPanel({
     const result = items.filter(item => {
       const kind = item.kind === 'MILESTONE' ? 'MILESTONE'
         : item.parent_task_id ? 'SUBTASK' : 'TASK';
-      return (workStatus === 'ALL' || item.status === workStatus)
+      return (!workMineOnly || item.assignee_principal_id === principalId)
+        && (workStatus === 'ALL' || item.status === workStatus)
         && (workKind === 'ALL' || kind === workKind)
         && (!term || [item.title, item.description, item.task_id]
           .some(value => String(value || '').toLocaleLowerCase().includes(term)));
@@ -457,7 +464,7 @@ export default function ProjectTasksPanel({
         || a.task_id.localeCompare(b.task_id);
     });
     return result;
-  }, [items, workQuery, workStatus, workKind, workOrder]);
+  }, [items, workQuery, workMineOnly, principalId, workStatus, workKind, workOrder]);
   const currentDay = new Date();
   const todayISO = currentDay.getFullYear() + '-' + String(currentDay.getMonth() + 1).padStart(2, '0')
     + '-' + String(currentDay.getDate()).padStart(2, '0');
@@ -759,6 +766,10 @@ export default function ProjectTasksPanel({
       </section>
       </details>
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
+        <button type="button" className="wp-button min-h-10" aria-pressed={workMineOnly}
+          onClick={() => setWorkMineOnly(previous => !previous)}>
+          {workMineOnly ? 'All work on this page' : 'My work on this page'}
+        </button>
         <label className="min-w-[180px] flex-[2] text-xs font-semibold text-slate-800">Search this verified page
           <input type="search" value={workQuery} onChange={event => setWorkQuery(event.target.value)}
             placeholder="Title, details or work ID"
@@ -1093,7 +1104,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.17.1-READABLE-ASSIGNEE-EDITOR
+// VERSION: v1.18.0-PROJECT-MY-WORK-FILTER
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
