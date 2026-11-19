@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE
+VERSION: v1.35.0-STRICT-COMMENT-WIRE-MENTIONS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,15 +30,18 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE bounds People name
+  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS accepts bounded JSON arrays of string
+  mentioned principal IDs as strict typed tuples at task comment admission;
+  no domain permission, notification, idempotency or audit semantics change.
+  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS bounds People name
   projection to one exact-tenant users query per verified option page;
   duplicate or cross-identity collisions fail closed. Names never grant IAM
   and missing names stay null, without per-option name query amplification.
-  v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE enriches already-eligible exact-tenant
+  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS enriches already-eligible exact-tenant
   participant choices with source-verified display-only first/last names;
   unknown names remain null, never inferred from IDs or emails. No IAM,
   membership scope, grant/revoke, ordering or pagination change.
-  v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE also converts JSON dependency arrays to strict typed tuples
+  v1.35.0-STRICT-COMMENT-WIRE-MENTIONS also converts JSON dependency arrays to strict typed tuples
   only when every element remains a string; malformed values, lengths and
   dependency IDs retain strict/domain rejection. No IAM or task mutations change.
   v1.33.0-STRICT-TASK-DATE-WIRE-FIX normalizes only canonical YYYY-MM-DD task create and
@@ -443,6 +446,14 @@ class ProjectTaskCommentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     body: str = Field(min_length=1, max_length=5000)
     mentions: tuple[str, ...] = Field(default=(), max_length=10)
+
+    @field_validator("mentions", mode="before")
+    @classmethod
+    def parse_wire_mentions(cls, value: object) -> object:
+        """Decode JSON string arrays without weakening strict model checks."""
+        return tuple(value) if isinstance(value, list) and all(
+            isinstance(item, str) for item in value
+        ) else value
 
 
 class ProjectTaskReviseRequest(BaseModel):
@@ -3544,7 +3555,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.34.1-BOUNDED-PARTICIPANT-NAME-PAGE
+# VERSION: v1.35.0-STRICT-COMMENT-WIRE-MENTIONS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
