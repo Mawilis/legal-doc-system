@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT
+VERSION: v1.24.0-TASK-DATE-HTTP-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,46 +9,46 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins exact owner/participant clean download IAM and
+  v1.24.0-TASK-DATE-HTTP-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
+  v1.24.0-TASK-DATE-HTTP-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
+  v1.24.0-TASK-DATE-HTTP-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
+  v1.24.0-TASK-DATE-HTTP-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.24.0-TASK-DATE-HTTP-CERT pins exact owner/participant clean download IAM and
   contributor-only provider scan reconciliation without a safety bypass.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT certifies
+  v1.24.0-TASK-DATE-HTTP-CERT certifies
   owner-only attachment reads, current participant reads and contributor
   upload commands; no upload, download, scan or financial inherited grant.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT admits named reviewer
+  v1.24.0-TASK-DATE-HTTP-CERT admits named reviewer
   inbox only through independent participant-contribute IAM; the route
   verifies each current exact-project record before revealing pending work.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT locks task approval
+  v1.24.0-TASK-DATE-HTTP-CERT locks task approval
   request to owner update and named contributor decision to participant
   contribute; task approval read requires separately admitted context.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins exact-project
+  v1.24.0-TASK-DATE-HTTP-CERT pins exact-project
   co-participant list to the current participant-only read operation.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins recipient-only
+  v1.24.0-TASK-DATE-HTTP-CERT pins recipient-only
   notification list/read receipt routes under separate participant IAM and
   exact active project/entitlement checks; no global inbox bypass.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT locks principal-scoped
+  v1.24.0-TASK-DATE-HTTP-CERT locks principal-scoped
   /my-projects discovery to explicit current participant IAM, no owner fallback.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins four task comment
+  v1.24.0-TASK-DATE-HTTP-CERT pins four task comment
   read/create routes to owner or current participant IAM and record scope.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins owner-authorized task edit
+  v1.24.0-TASK-DATE-HTTP-CERT pins owner-authorized task edit
   to project:update / project_update and retains participant scope denial.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins exact tenant candidate membership
+  v1.24.0-TASK-DATE-HTTP-CERT pins exact tenant candidate membership
   choice reads to project owner detail IAM without granting participation.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins five new exact-tenant task operations
+  v1.24.0-TASK-DATE-HTTP-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT certifies independent participant IAM pairs
+  v1.24.0-TASK-DATE-HTTP-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT verifies explicit project owner-only participant
+  v1.24.0-TASK-DATE-HTTP-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT pins the four bounded notes endpoints to current
+  v1.24.0-TASK-DATE-HTTP-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT proves customer Projects authority is separately
+  v1.24.0-TASK-DATE-HTTP-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT asserts EOS rejects
+  v1.24.0-TASK-DATE-HTTP-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -63,7 +63,7 @@ CHANGELOG:
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
-CHANGELOG: v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
+CHANGELOG: v1.24.0-TASK-DATE-HTTP-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -98,7 +98,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT"
+VERSION = "v1.24.0-TASK-DATE-HTTP-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -822,6 +822,41 @@ def test_project_person_names_are_tenant_bound_and_display_only() -> None:
     assert denial.value.detail == "PROJECT_OWNER_PROFILE_COLLISION"
 
 
+def test_task_create_and_revision_accept_only_canonical_wire_dates() -> None:
+    """Calendar JSON dates reach strict EOS admission without coercing invalid input."""
+    from datetime import date
+    from pydantic import ValidationError
+
+    valid_create = {
+        "kind": "MILESTONE", "title": "M01 Headquarters delivery certified",
+        "description": "Verified acceptance", "due_date": "2026-11-26",
+        "parent_task_id": None, "assignee_principal_id": None,
+        "depends_on": [],
+    }
+    created = projects_router.ProjectTaskCreateRequest.model_validate(valid_create)
+    assert created.due_date == date(2026, 11, 26)
+    assert created.kind == "MILESTONE"
+    valid_revision = {
+        "expected_revision": 1, "title": "Updated milestone",
+        "description": "", "due_date": "2026-11-27",
+        "assignee_principal_id": None,
+    }
+    revised = projects_router.ProjectTaskReviseRequest.model_validate(valid_revision)
+    assert revised.due_date == date(2026, 11, 27)
+    for invalid in ("2026/11/26", "2026-02-30", "2026-11-26T00:00:00",
+                    "26-11-2026", "2026-1-2", 20261126, False):
+        for model, data in (
+            (projects_router.ProjectTaskCreateRequest, valid_create),
+            (projects_router.ProjectTaskReviseRequest, valid_revision),
+        ):
+            with pytest.raises(ValidationError):
+                model.model_validate({**data, "due_date": invalid})
+    with pytest.raises(ValidationError):
+        projects_router.ProjectTaskCreateRequest.model_validate({
+            **valid_create, "kind": "FINANCIAL",
+        })
+
+
 def test_canonical_projects_wire_values_keep_strict_validation() -> None:
     """FastAPI receives parsed JSON dicts; browser values must be canonical."""
     from datetime import date
@@ -950,7 +985,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.23.0-SUMMARY-PHASE-TELEMETRY-CERT
+# VERSION: v1.24.0-TASK-DATE-HTTP-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
