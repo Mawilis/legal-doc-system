@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.37.0-DENY-BY-DEFAULT-WORK-ACTIONS-CERT
+ * VERSION: v2.38.0-ISOLATED-CANCEL-DIALOG-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.38.0-ISOLATED-CANCEL-DIALOG-CERT verifies cancel confirmation is a
+ *          separately focused modal, not a stacked menu, and requires
+ *          explicit confirmation before any EOS transition callback.
  * CHANGELOG: v2.37.0-DENY-BY-DEFAULT-WORK-ACTIONS-CERT certifies omitted capability flags
  *          cannot expose task mutations, while explicit EOS-verified flags
  *          retain primary, menu and mobile action-sheet behaviour.
@@ -363,8 +366,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(onComplete).toHaveBeenCalledWith({ ...item, status: 'IN_PROGRESS' });
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel work' }));
+    expect(screen.queryByRole('menu', { name: 'Actions for Validate deliverable' }))
+      .not.toBeInTheDocument();
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Confirm cancellation for Validate deliverable',
+    });
+    expect(confirmation).toBeVisible();
+    expect(within(confirmation).getByRole('button', { name: 'Keep work' })).toHaveFocus();
     expect(onTransition).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
+    fireEvent.click(within(confirmation).getByRole('button', { name: 'Confirm cancellation' }));
     expect(onTransition).toHaveBeenCalledWith({ ...item, status: 'IN_PROGRESS' }, 'CANCELLED');
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
@@ -1929,7 +1939,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.37.0-DENY-BY-DEFAULT-WORK-ACTIONS-CERT
+ * VERSION: v2.38.0-ISOLATED-CANCEL-DIALOG-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
