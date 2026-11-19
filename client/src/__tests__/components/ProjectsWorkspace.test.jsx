@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.44.0-HUMAN-OVERVIEW-AND-IDENTITY-CERT
+ * VERSION: v2.45.0-INLINE-DISCUSSION-AND-NOTES-ENTRY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.45.0-INLINE-DISCUSSION-AND-NOTES-ENTRY-CERT certifies in-place activity
+ *          expands from verified list rows and keeps project-notes access
+ *          available without entering the full task drawer.
  * CHANGELOG: v2.44.0-HUMAN-OVERVIEW-AND-IDENTITY-CERT pins readable department names,
  *          capitalized status and suppression of opaque principal IDs in
  *          operating views; verifies source-verified assignment display.
@@ -1122,6 +1125,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const options = await screen.findByRole('list', { name: 'Verified discussion work items' });
     fireEvent.click(within(options).getByRole('button', { name: /Current project delivery/ }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
+    expect(screen.getByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Project notes' })).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: /Work details:/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write update' })).toHaveAttribute('aria-expanded', 'false');
     expect(document.querySelector('[aria-label="Verified task activity history"]')).toBeVisible();
     expect(await screen.findByText('Work created')).toBeVisible();
@@ -1140,7 +1146,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getAllByRole('button', { name: 'Open governed decision' })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Open governed attachment' })).toBeVisible();
     expect(screen.getByText(/revision 1/)).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'All discussions' }));
+    fireEvent.click(within(options).getByRole('button', { name: /Current project delivery/ }));
     expect(await screen.findByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
   });
 
@@ -2071,7 +2077,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.44.0-HUMAN-OVERVIEW-AND-IDENTITY-CERT
+ * VERSION: v2.45.0-INLINE-DISCUSSION-AND-NOTES-ENTRY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
