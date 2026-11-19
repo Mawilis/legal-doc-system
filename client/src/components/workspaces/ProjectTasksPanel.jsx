@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.8.1-PARENT-BOUND-TODO-STEPS
+ * VERSION: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE switches from the
+ *          full queue to a focused source-backed task action workspace for
+ *          discussion, approvals and attachments, with a clear return control.
+ *          One selected verified task loads at a time; no extra source reads,
+ *          client-side history aggregation or changed EOS command authority.
  * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS adds explicit
  *          parent-bound checklist-step creation using the existing EOS subtask
  *          command; no secondary checklist collection or local persistence.
@@ -34,16 +39,16 @@
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS lets the
+ * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS opens a selected task's
+ * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS adds a
+ * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.8.1-PARENT-BOUND-TODO-STEPS adds source-backed
+ * CHANGELOG: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -434,6 +439,16 @@ export default function ProjectTasksPanel({
     }
   }, [completionCandidate, items, state]);
 
+  const focusedAction = discussionTaskId ? { id: discussionTaskId, type: 'discussion' }
+    : approvalTaskId ? { id: approvalTaskId, type: 'approvals' }
+      : attachmentTaskId ? { id: attachmentTaskId, type: 'attachments' } : null;
+  const selectedActionTask = focusedAction && items.find(item => item.task_id === focusedAction.id);
+  const closeFocusedAction = () => {
+    setDiscussionTaskId(null);
+    setApprovalTaskId(null);
+    setAttachmentTaskId(null);
+  };
+
   return <section className="wp-project-tasks mt-5 border-t border-slate-200 pt-4" aria-label="Project work execution">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -456,7 +471,28 @@ export default function ProjectTasksPanel({
       </p>}
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    {state === 'READY' && <>
+    {state === 'READY' && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{focusedAction.type} · selected EOS work item</p>
+          <h4 className="mt-1 break-words text-base font-bold text-slate-900">{selectedActionTask.title}</h4>
+          <p className="mt-1 text-xs text-slate-600">{label(selectedActionTask.status)} · revision {selectedActionTask.revision}</p>
+        </div>
+        <button type="button" className="wp-button" onClick={closeFocusedAction}>Back to work queue</button>
+      </div>
+      {focusedAction.type === 'discussion' && <ProjectTaskCommentsPanel key={[scope, focusedAction.id].join(':')}
+        tenantId={tenantId} projectId={projectId} principalId={principalId}
+        taskId={focusedAction.id} participants={participants} tenantHeaders={tenantHeaders}
+        onClose={closeFocusedAction}/>}
+      {focusedAction.type === 'approvals' && <ProjectTaskApprovalsPanel key={[scope, focusedAction.id].join(':')}
+        tenantId={tenantId} projectId={projectId} principalId={principalId}
+        taskId={focusedAction.id} participants={participants} tenantHeaders={tenantHeaders}
+        onClose={closeFocusedAction}/>}
+      {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel key={[scope, focusedAction.id].join(':')}
+        tenantId={tenantId} projectId={projectId} principalId={principalId}
+        taskId={focusedAction.id} tenantHeaders={tenantHeaders}
+        onClose={closeFocusedAction}/>}
+    </div> : <>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Verified current task page status">
         {counts.map(({ status, count }) =>
           <div key={status} className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
@@ -816,23 +852,9 @@ export default function ProjectTasksPanel({
           </tbody>
         </table>
       </div>
-      {attachmentTaskId && items.some(item => item.task_id === attachmentTaskId) &&
-        <ProjectTaskAttachmentsPanel key={[scope, attachmentTaskId].join(':')}
-          tenantId={tenantId} projectId={projectId} principalId={principalId}
-          taskId={attachmentTaskId} tenantHeaders={tenantHeaders}
-          onClose={() => setAttachmentTaskId(null)}/>}
-      {approvalTaskId && items.some(item => item.task_id === approvalTaskId) &&
-        <ProjectTaskApprovalsPanel key={[scope, approvalTaskId].join(':')}
-          tenantId={tenantId} projectId={projectId} principalId={principalId}
-          taskId={approvalTaskId} participants={participants}
-          tenantHeaders={tenantHeaders}
-          onClose={() => setApprovalTaskId(null)}/>}
-      {discussionTaskId && items.some(item => item.task_id === discussionTaskId) &&
-        <ProjectTaskCommentsPanel key={[scope, discussionTaskId].join(':')}
-          tenantId={tenantId} projectId={projectId} principalId={principalId}
-          taskId={discussionTaskId} participants={participants}
-          tenantHeaders={tenantHeaders}
-          onClose={() => setDiscussionTaskId(null)}/>}
+
+
+
       {(hasMore || offset > 0) && <nav className="mt-3 flex items-center justify-between gap-2" aria-label="Task pages">
         <button type="button" className="wp-button" disabled={busy || offset === 0}
           onClick={() => void load(Math.max(0, offset - 50))}>Previous work</button>
@@ -840,13 +862,13 @@ export default function ProjectTasksPanel({
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next work</button>
       </nav>}
-    </>}
+    </>)}
     {state === 'READY' && error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
   </section>;
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.8.1-PARENT-BOUND-TODO-STEPS
+// VERSION: v1.9.0-FOCUSED-TASK-ACTION-WORKSPACE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
