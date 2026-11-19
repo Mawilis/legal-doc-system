@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.24.1-TASK-JSON-BOUNDARY-CERT
+VERSION: v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,46 +9,49 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.24.1-TASK-JSON-BOUNDARY-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins exact owner/participant clean download IAM and
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT asserts one bounded exact-
+  tenant profile lookup for eligible project member names, null-name fallback
+  and duplicate identity rejection without creating grant or role authority.
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins exact owner/participant clean download IAM and
   contributor-only provider scan reconciliation without a safety bypass.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT certifies
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT certifies
   owner-only attachment reads, current participant reads and contributor
   upload commands; no upload, download, scan or financial inherited grant.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT admits named reviewer
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT admits named reviewer
   inbox only through independent participant-contribute IAM; the route
   verifies each current exact-project record before revealing pending work.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT locks task approval
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT locks task approval
   request to owner update and named contributor decision to participant
   contribute; task approval read requires separately admitted context.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins exact-project
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins exact-project
   co-participant list to the current participant-only read operation.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins recipient-only
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins recipient-only
   notification list/read receipt routes under separate participant IAM and
   exact active project/entitlement checks; no global inbox bypass.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT locks principal-scoped
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT locks principal-scoped
   /my-projects discovery to explicit current participant IAM, no owner fallback.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins four task comment
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins four task comment
   read/create routes to owner or current participant IAM and record scope.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins owner-authorized task edit
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins owner-authorized task edit
   to project:update / project_update and retains participant scope denial.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins exact tenant candidate membership
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins exact tenant candidate membership
   choice reads to project owner detail IAM without granting participation.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins five new exact-tenant task operations
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins five new exact-tenant task operations
   to independent owner or participant IAM; no inferred assignee access.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT certifies independent participant IAM pairs
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT certifies independent participant IAM pairs
   and exact active project-record scope before detail or notes admission.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT verifies explicit project owner-only participant
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT verifies explicit project owner-only participant
   grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT pins the four bounded notes endpoints to current
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT pins the four bounded notes endpoints to current
   project read/update permission-operation pairs; no IAM or tenant grant.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT proves customer Projects authority is separately
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT proves customer Projects authority is separately
   assignable without adding inherited founder/admin/manager permissions and
   retains the WILSY-only platform-role fence.
-  v1.24.1-TASK-JSON-BOUNDARY-CERT asserts EOS rejects
+  v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -63,7 +66,7 @@ CHANGELOG:
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
-CHANGELOG: v1.24.1-TASK-JSON-BOUNDARY-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
+CHANGELOG: v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -98,7 +101,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.24.1-TASK-JSON-BOUNDARY-CERT"
+VERSION = "v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -822,6 +825,53 @@ def test_project_person_names_are_tenant_bound_and_display_only() -> None:
     assert denial.value.detail == "PROJECT_OWNER_PROFILE_COLLISION"
 
 
+def test_project_participant_page_names_are_bounded_and_tenant_scoped() -> None:
+    """Names are display-only and one batched read cannot cross tenant scope."""
+    class Cursor:
+        def __init__(self, records):
+            self.records = records
+        def limit(self, count):
+            assert count == 5
+            return self.records[:count]
+
+    class Users:
+        records = [
+            {"tenantId": "tenant-a", "user_id": "principal-one",
+             "firstName": "Verified", "lastName": "Member"},
+        ]
+        calls = 0
+        def find(self, query, projection, *, session):
+            self.calls += 1
+            assert session == "source-session"
+            assert query["tenantId"] == "tenant-a"
+            assert query["$or"][0]["user_id"]["$in"] == [
+                "principal-one", "principal-two",
+            ]
+            assert projection["firstName"] == 1
+            return Cursor(self.records)
+
+    users = Users()
+    assert projects_router._project_participant_page_names(
+        {"users": users}, "tenant-a",
+        ["principal-one", "principal-two"], "source-session",
+    ) == {
+        "principal-one": {"first_name": "Verified", "last_name": "Member"},
+    }
+    assert users.calls == 1
+    users.records = [
+        *users.records,
+        {"tenantId": "tenant-a", "user_id": "principal-one",
+         "firstName": "Collision", "lastName": "Duplicate"},
+    ]
+    with pytest.raises(HTTPException) as denied:
+        projects_router._project_participant_page_names(
+            {"users": users}, "tenant-a",
+            ["principal-one", "principal-two"], "source-session",
+        )
+    assert denied.value.status_code == 503
+    assert denied.value.detail == "PROJECT_PARTICIPANT_NAMES_COLLISION"
+
+
 def test_task_create_and_revision_accept_only_canonical_wire_dates() -> None:
     """Calendar JSON dates reach strict EOS admission without coercing invalid input."""
     from datetime import date
@@ -996,7 +1046,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.24.1-TASK-JSON-BOUNDARY-CERT
+# VERSION: v1.25.0-BOUNDED-PARTICIPANT-NAME-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
