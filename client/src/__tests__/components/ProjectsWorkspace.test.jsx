@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.39.0-STRICT-ROW-CAPABILITY-BOOLEAN-CERT
+ * VERSION: v2.40.0-ASSIGN-VERSUS-EDIT-CAPABILITY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.40.0-ASSIGN-VERSUS-EDIT-CAPABILITY-CERT verifies that a signed
+ *          exact-project canAssign response enables the dedicated assignment
+ *          picker independently of the canEdit flag.
  * CHANGELOG: v2.39.0-STRICT-ROW-CAPABILITY-BOOLEAN-CERT certifies that missing row
  *          capability flags never expose assignment or lifecycle actions,
  *          even when callbacks are supplied by a reused consumer.
@@ -466,6 +469,56 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(trigger).toHaveFocus();
     expect(document.body.style.overflow).not.toBe('hidden');
     expect(onTransition).not.toHaveBeenCalled();
+  });
+
+  it('uses exact EOS assignment capability rather than edit capability in the assignment sheet', async () => {
+    const source = project();
+    const task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT,
+      project_id: PROJECT_ID, task_id: 'ptk-' + 'a'.repeat(48),
+      kind: 'TASK', parent_task_id: null, title: 'Assign independently',
+      description: '', status: 'TODO', assignee_principal_id: null,
+      due_date: null, depends_on: [], revision: 1, fingerprint: 'a'.repeat(128),
+      created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-19T09:00:00+00:00',
+      updated_at: '2026-11-19T09:00:00+00:00' };
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([source]) };
+      if (path === '/projects/summary') return { data: summary([source]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [task],
+          limit: 50, offset: 0, has_more: false, next_offset: null },
+      };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [{ principal_id: PRINCIPAL, tenant_id: TENANT,
+            project_id: PROJECT_ID, state: 'ACTIVE', role: 'CONTRIBUTOR',
+            first_name: 'Verified', last_name: 'Contributor' }],
+          limit: 100, offset: 0, has_more: false, next_offset: null },
+      };
+      throw new Error('Unexpected assignment source ' + path);
+    });
+    const original = api.get.getMockImplementation();
+    api.get.mockImplementation((path, ...args) => path === `/projects/${PROJECT_ID}/task-action-capabilities`
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        can_start: false, can_complete: false, can_block: false,
+        can_cancel: false, can_assign: true, can_edit: false,
+      } }) : original(path, ...args));
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="assign-not-edit-scope-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Assign: Assign independently' }));
+    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Reassign task' }), {
+      target: { value: PRINCIPAL },
+    });
+    expect(screen.getByRole('button', { name: 'Save assignment' })).toBeEnabled();
+    expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
+    expect(api.patch).not.toHaveBeenCalled();
   });
 
   it('filters current-page project work to the exact current assignee without a write', async () => {
@@ -1963,7 +2016,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.39.0-STRICT-ROW-CAPABILITY-BOOLEAN-CERT
+ * VERSION: v2.40.0-ASSIGN-VERSUS-EDIT-CAPABILITY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
