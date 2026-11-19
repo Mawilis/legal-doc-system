@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.28.0-INLINE-ACTIVITY-AND-PROJECT-NOTES
+ * VERSION: v1.29.0-GROUPED-PROJECT-WORK-ROWS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.29.0-GROUPED-PROJECT-WORK-ROWS groups the current
+ *          EOS-verified work page by lifecycle, work type or named
+ *          contributor without inventing cross-page aggregates or groups.
  * CHANGELOG: v1.28.0-INLINE-ACTIVITY-AND-PROJECT-NOTES brings source-backed task discussion and
  *          project-wide governed notes into Activity list, without task
  *          navigation or inventing linked note counts and authorities.
@@ -298,6 +301,7 @@ export default function ProjectTasksPanel({
   const [workDensity, setWorkDensity] = useState('comfortable');
   const [workStatus, setWorkStatus] = useState('ALL');
   const [workKind, setWorkKind] = useState('ALL');
+  const [workGroup, setWorkGroup] = useState('NONE');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
@@ -393,6 +397,7 @@ export default function ProjectTasksPanel({
     setWorkDensity('comfortable');
     setWorkStatus('ALL');
     setWorkKind('ALL');
+    setWorkGroup('NONE');
     setWorkOrder('DUE_ASC');
     setCompletionCandidate(null);
     setCompletionAttested(false);
@@ -581,6 +586,24 @@ export default function ProjectTasksPanel({
         && value.length <= 100);
     return names.length ? names.join(' ') : 'Assigned contributor · name unavailable';
   };
+  const groupedWorkRows = useMemo(() => {
+    if (workGroup === 'NONE') return [{ key: 'all', title: null, rows: workRows }];
+    const grouped = new Map();
+    workRows.forEach(item => {
+      const key = workGroup === 'STATUS' ? item.status
+        : workGroup === 'TYPE' ? (item.kind === 'MILESTONE' ? 'MILESTONE'
+          : item.parent_task_id ? 'SUBTASK' : 'TASK')
+          : item.assignee_principal_id || 'UNASSIGNED';
+      const title = workGroup === 'STATUS' ? label(item.status)
+        : workGroup === 'TYPE' ? (key === 'MILESTONE' ? 'Milestones'
+          : key === 'SUBTASK' ? 'Subtasks' : 'Tasks')
+          : key === 'UNASSIGNED' ? 'Not assigned' : contributorName(key);
+      if (!grouped.has(key)) grouped.set(key, { key, title, rows: [] });
+      grouped.get(key).rows.push(item);
+    });
+    return [...grouped.values()].sort((a, b) => a.title.localeCompare(b.title));
+  }, [workRows, workGroup, participants]);
+
   const openTaskEditor = (selected, assignOnly = false) => {
     if (!(assignOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)) return;
     setCreating(false);
@@ -893,6 +916,17 @@ export default function ProjectTasksPanel({
       </details>
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
         <label className="flex min-w-[145px] flex-col gap-1 text-xs font-semibold text-slate-800">
+          Group work
+          <select aria-label="Group project work" value={workGroup}
+            onChange={event => setWorkGroup(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900">
+            <option value="NONE">No grouping</option>
+            <option value="STATUS">By status</option>
+            <option value="TYPE">By work type</option>
+            <option value="ASSIGNEE">By contributor</option>
+          </select>
+        </label>
+        <label className="flex min-w-[145px] flex-col gap-1 text-xs font-semibold text-slate-800">
           Work row density
           <select aria-label="Work row density" value={workDensity}
             onChange={event => setWorkDensity(event.target.value)}
@@ -1095,7 +1129,13 @@ export default function ProjectTasksPanel({
               <th scope="col" className="p-3">Next action</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {workRows.map(item => <ProjectWorkRow key={item.task_id}
+            {groupedWorkRows.map(group => <React.Fragment key={group.key}>
+              {group.title && <tr className="bg-slate-100">
+                <th colSpan={6} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold text-slate-800">
+                  {group.title} · {group.rows.length} on this page
+                </th>
+              </tr>}
+              {group.rows.map(item => <ProjectWorkRow key={item.task_id}
               item={item} selected={selectedWorkIds.includes(item.task_id)}
               density={workDensity} busy={busy}
               pendingStatus={pendingTransition?.taskId === item.task_id ? pendingTransition.status : null}
@@ -1117,6 +1157,7 @@ export default function ProjectTasksPanel({
               onActivity={selected => setDiscussionTaskId(selected.task_id)}
               capabilities={actionCapabilities || { canStart: false, canComplete: false,
                 canBlock: false, canCancel: false, canEdit: false, canAssign: false }}/>)}
+            </React.Fragment>)}
             {workRows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-sm text-slate-600">
               {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
                 : 'No work items on this verified page match the selected search and filters.'}
@@ -1223,7 +1264,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.28.0-INLINE-ACTIVITY-AND-PROJECT-NOTES
+// VERSION: v1.29.0-GROUPED-PROJECT-WORK-ROWS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
