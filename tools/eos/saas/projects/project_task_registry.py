@@ -430,9 +430,21 @@ class ProjectTaskRegistry:
                 }
                 or not isinstance(row.get("actor_principal_id"), str)
                 or not row["actor_principal_id"]
-                or not isinstance(row.get("occurred_at"), str)):
+                or not isinstance(row.get("occurred_at"), (datetime, str))):
                 raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
-            result.append(row)
+            timestamp = row["occurred_at"]
+            if isinstance(timestamp, datetime):
+                if timestamp.tzinfo is None:
+                    raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
+                timestamp = timestamp.isoformat()
+            else:
+                try:
+                    parsed = datetime.fromisoformat(timestamp)
+                except ValueError as error:
+                    raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID") from error
+                if parsed.tzinfo is None:
+                    raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
+            result.append({**row, "occurred_at": timestamp})
         return tuple(result), len(rows) > limit
 
     def list_page(
