@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.27.0-EXACT-ASSIGNMENT-CAPABILITY-GATE
+ * VERSION: v1.28.0-INLINE-ACTIVITY-AND-PROJECT-NOTES
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.28.0-INLINE-ACTIVITY-AND-PROJECT-NOTES brings source-backed task discussion and
+ *          project-wide governed notes into Activity list, without task
+ *          navigation or inventing linked note counts and authorities.
  * CHANGELOG: v1.27.0-EXACT-ASSIGNMENT-CAPABILITY-GATE validates assignment-only
  *          submissions against canAssign and general revisions against
  *          canEdit, without granting any new EOS update permission.
@@ -153,6 +156,7 @@ import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, P
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 import ProjectWorkRow from './ProjectWorkRow.jsx';
+import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
@@ -303,6 +307,8 @@ export default function ProjectTasksPanel({
   const [editor, setEditor] = useState(null);
   const [assignmentOnly, setAssignmentOnly] = useState(false);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
+  const [inlineDiscussionTaskId, setInlineDiscussionTaskId] = useState(null);
+  const [showProjectNotesInline, setShowProjectNotesInline] = useState(false);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
   const [attachmentTaskId, setAttachmentTaskId] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -394,6 +400,8 @@ export default function ProjectTasksPanel({
     setAssignmentOnly(false);
     setDrawerTaskId(null);
     setDiscussionTaskId(null);
+    setInlineDiscussionTaskId(null);
+    setShowProjectNotesInline(false);
     setApprovalTaskId(null);
     setAttachmentTaskId(null);
     setDraft({ ...EMPTY });
@@ -662,27 +670,51 @@ export default function ProjectTasksPanel({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-slate-950">Activity &amp; discussion</h3>
-            <p className="mt-1 text-sm text-slate-600">Select a verified task or milestone to review its activity and discussion. Comments remain attached to their source work item.</p>
+            <p className="mt-1 text-sm text-slate-600">Discuss source-verified work directly in this list, or write governed project-wide notes without opening a task.</p>
           </div>
-          <button type="button" className="wp-button" onClick={() => void load(offset)}
-            disabled={state === 'LOADING'}>Refresh discussions</button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="wp-button"
+              aria-expanded={showProjectNotesInline}
+              onClick={() => setShowProjectNotesInline(value => !value)}>
+              {showProjectNotesInline ? 'Hide project notes' : 'Project notes'}
+            </button>
+            <button type="button" className="wp-button" onClick={() => void load(offset)}
+              disabled={state === 'LOADING'}>Refresh discussions</button>
+          </div>
         </div>
         {(state === 'LOADING' || state === 'REFRESHING') &&
           <p role="status" className="mt-3 text-sm text-slate-600">Verifying project discussion sources…</p>}
         {(state === 'UNAVAILABLE' || state === 'DENIED') &&
           <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
         {state === 'READY' && <>
+          {showProjectNotesInline && <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3"
+            aria-label="Inline project notes board">
+            <ProjectNotesPanel key={'inline-notes:' + scope} tenantId={tenantId}
+              principalId={principalId} projectId={projectId} tenantHeaders={tenantHeaders}/>
+          </div>}
           <ul aria-label="Verified discussion work items"
             className="mt-4 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
             {items.map(item => <li key={item.task_id}>
-              <button type="button" className="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
-                onClick={() => setDiscussionTaskId(item.task_id)}>
+              <button type="button" aria-expanded={inlineDiscussionTaskId === item.task_id}
+                className="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => setInlineDiscussionTaskId(current => current === item.task_id ? null : item.task_id)}>
                 <span className="min-w-0">
                   <span className="block break-words text-sm font-semibold text-slate-950">{item.title}</span>
                   <span className="mt-1 block text-xs text-slate-600">{item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'} · {label(item.status)}</span>
                 </span>
-                <span className="shrink-0 text-xs font-semibold text-blue-800">View activity</span>
+                <span className="shrink-0 text-xs font-semibold text-blue-800">
+                  {inlineDiscussionTaskId === item.task_id ? 'Close discussion' : 'Discuss / view activity'}
+                </span>
               </button>
+              {inlineDiscussionTaskId === item.task_id && <div className="border-t border-slate-200 bg-slate-50 p-4"
+                aria-label={'Inline activity for ' + item.title}>
+                <ProjectTaskCommentsPanel key={'inline:' + scope + ':' + item.task_id}
+                  tenantId={tenantId} projectId={projectId} principalId={principalId}
+                  taskId={item.task_id} participants={participants} tenantHeaders={tenantHeaders}
+                  onClose={() => setInlineDiscussionTaskId(null)}
+                  onViewApprovals={() => { setInlineDiscussionTaskId(null); setApprovalTaskId(item.task_id); }}
+                  onViewAttachments={() => { setInlineDiscussionTaskId(null); setAttachmentTaskId(item.task_id); }}/>
+              </div>}
             </li>)}
             {items.length === 0 && <li className="p-4 text-sm text-slate-600">
               EOS verified no work items on this page.
@@ -1191,7 +1223,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.27.0-EXACT-ASSIGNMENT-CAPABILITY-GATE
+// VERSION: v1.28.0-INLINE-ACTIVITY-AND-PROJECT-NOTES
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
