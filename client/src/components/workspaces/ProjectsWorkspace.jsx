@@ -1246,7 +1246,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                       data-audit-revision={event.revision}>
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <strong className="block break-words text-sm">{event.event_type.replaceAll('_', ' ')}</strong>
+                          <strong className="block break-words text-sm">{event.event_type}</strong>
+                          <span className="mt-1 block text-xs opacity-80">{event.event_type.replaceAll('_', ' ').toLowerCase()}</span>
                           <span className="mt-1 block text-xs font-semibold">Revision {event.revision}{index === 0 ? ' · Latest returned event' : ''}</span>
                         </div>
                         <time className="text-xs font-medium" dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time>
