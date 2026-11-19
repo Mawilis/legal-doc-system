@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.7-MOBILE-ACTION-SHEET-GESTURE-CERT
+ * VERSION: v2.29.0-PROJECT-MY-WORK-FILTER-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.29.0-PROJECT-MY-WORK-FILTER-CERT verifies that current
+ *          assignee filtering uses only the source-backed current project page,
+ *          remains reversible and performs no unauthorized write.
  * CHANGELOG: v2.28.7-MOBILE-ACTION-SHEET-GESTURE-CERT pins a downward
  *          sheet dismissal without executing a mutation or leaving body
  *          scroll locked on a mobile viewport.
@@ -335,6 +338,51 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(trigger).toHaveFocus();
     expect(document.body.style.overflow).not.toBe('hidden');
     expect(onTransition).not.toHaveBeenCalled();
+  });
+
+  it('filters current-page project work to the exact current assignee without a write', async () => {
+    const source = project();
+    const base = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      kind: 'TASK', parent_task_id: null, description: '', status: 'TODO',
+      due_date: null, depends_on: [], revision: 1, fingerprint: 'a'.repeat(128),
+      created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-19T09:00:00+00:00',
+      updated_at: '2026-11-19T09:00:00+00:00',
+    };
+    const mine = { ...base, task_id: 'ptk-' + 'a'.repeat(48),
+      title: 'My accountable delivery', assignee_principal_id: PRINCIPAL };
+    const someoneElse = { ...base, task_id: 'ptk-' + 'b'.repeat(48),
+      title: 'Other contributor delivery', assignee_principal_id: 'other-principal' };
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([source]) };
+      if (path === '/projects/summary') return { data: summary([source]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [mine, someoneElse],
+          limit: 50, offset: 0, has_more: false, next_offset: null },
+      };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [],
+          limit: 100, offset: 0, has_more: false, next_offset: null },
+      };
+      throw new Error('Unexpected read in current-assignee certificate ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="project-my-work-page-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const work = await screen.findByRole('region', { name: 'Verified project tasks' });
+    expect(within(work).getByText('My accountable delivery')).toBeVisible();
+    expect(within(work).getByText('Other contributor delivery')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'My work on this page' }));
+    expect(within(work).getByText('My accountable delivery')).toBeVisible();
+    expect(within(work).queryByText('Other contributor delivery')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'All work on this page' }));
+    expect(within(work).getByText('Other contributor delivery')).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
   });
 
   it('filters authorized owned projects without calling participant IAM or changing records', async () => {
@@ -1664,7 +1712,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.28.7-MOBILE-ACTION-SHEET-GESTURE-CERT
+ * VERSION: v2.29.0-PROJECT-MY-WORK-FILTER-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
