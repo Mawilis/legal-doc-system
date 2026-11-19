@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT
+ * VERSION: v2.18.0-ONE-CLICK-DISCUSSION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT verifies
+ *          Discuss exposes EOS source-backed comments immediately with the
+ *          composer closed, and Write update opens the safe Markdown editor
+ *          only on explicit request; retains original draft/readback checks.
  * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT verifies
  *          comments remain collapsed initially, open on explicit request,
  *          and hide again without losing the independently verified source.
@@ -43,30 +47,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT proves a
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT adds in-place task
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT certifies task creation, verified
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT waits for the committed note row
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT certifies source-backed project note
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT proves navigation
+ * CHANGELOG: v2.18.0-ONE-CLICK-DISCUSSION-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -559,6 +563,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     const discussion = screen.getByRole('region', { name: 'Task discussion' });
+    expect(screen.getByRole('button', { name: 'Write update' }))
+      .toHaveAttribute('aria-expanded', 'false');
+    expect(discussion.querySelector('[aria-label="Verified task comment history"]'))
+      .toBeInTheDocument();
+    expect(discussion.querySelector('textarea[aria-label="New task comment"]'))
+      .not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+    expect(screen.getByRole('button', { name: 'Close editor' }))
+      .toHaveAttribute('aria-expanded', 'true');
     expect(discussion.querySelector('textarea[aria-label="New task comment"]')).toBeVisible();
     const draft = '**Development progress — 19 November 2026**\\n\\n- Source readback verified\\n- Pending mobile acceptance\\n\\n<script>alert(1)</script>'.replaceAll('\\n','\n');
     fireEvent.change(screen.getByRole('textbox', { name: 'New task comment' }), {
@@ -570,20 +583,13 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(preview).toHaveTextContent('<script>alert(1)</script>');
     expect(preview.querySelector('script')).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
-    const viewComments = screen.getByRole('button', { name: 'View comments' });
-    expect(viewComments).toHaveAttribute('aria-expanded', 'false');
-    expect(discussion.querySelector('[aria-label="Verified task comment history"]'))
-      .not.toBeInTheDocument();
-    fireEvent.click(viewComments);
-    expect(screen.getByRole('button', { name: 'Hide comments' })).toHaveAttribute(
-      'aria-expanded', 'true',
-    );
     expect(discussion.querySelector('textarea').compareDocumentPosition(
       discussion.querySelector('[aria-label="Verified task comment history"] ul'),
-    ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide comments' }));
+    ) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+    expect(discussion.querySelector('textarea')).not.toBeInTheDocument();
     expect(discussion.querySelector('[aria-label="Verified task comment history"]'))
-      .not.toBeInTheDocument();
+      .toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Back to work queue' }));
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
@@ -1224,7 +1230,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.17.0-ON-DEMAND-COMMENT-HISTORY-CERT
+ * VERSION: v2.18.0-ONE-CLICK-DISCUSSION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
