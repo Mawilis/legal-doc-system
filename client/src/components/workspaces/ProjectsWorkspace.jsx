@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION
+ * VERSION: v2.18.0-READABLE-PROJECT-OVERVIEW
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW improves source-backed
+ *          overview readability, suppresses raw department IDs from primary
+ *          prose when no verified name is provided, preserves identifier in
+ *          the title for inspection, and makes owner/creator evidence legible.
  * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION isolates transient
  *          project summary failures from independently verified list and
  *          detail navigation; explicit auth/entitlement denials still fail
@@ -29,34 +33,34 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION opens
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION opens the
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION mounts exact-tenant,
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION mounts the independently source-backed
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION mounts independently source-backed note
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.18.0-READABLE-PROJECT-OVERVIEW consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION exposes readable title-case
+ *            v2.18.0-READABLE-PROJECT-OVERVIEW exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -1190,11 +1194,13 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               >Generate and save code</button>}
             </dd><dt className="text-slate-500">Status</dt><dd className="capitalize text-slate-900">{statusLabel(detail.project.status)}</dd><dt className="text-slate-500">Revision</dt><dd className="text-slate-900">{detail.project.revision}</dd><dt className="text-slate-500">Owner</dt><dd className="text-slate-900">
               {personLabel(detail.project.owner_principal_id)}
-              {detail.project.owner_principal_id && <small className="ml-2 text-xs text-slate-500" title={detail.project.owner_principal_id}>Verified principal</small>}
+              {detail.project.owner_principal_id && <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800" title={detail.project.owner_principal_id}>Verified owner</small>}
             </dd><dt className="text-slate-500">Created by</dt><dd className="text-slate-900">
               {personLabel(detail.project.created_by_principal_id)}
-              <small className="ml-2 text-xs text-slate-500" title={detail.project.created_by_principal_id}>Audited creator</small>
-            </dd><dt className="text-slate-500">Department</dt><dd className="text-slate-900">{detail.project.department_id || 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
+              <small className="ml-2 inline-block rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800" title={detail.project.created_by_principal_id}>Audited creator</small>
+            </dd><dt className="text-slate-600">Department</dt><dd className="text-slate-900">{detail.project.department_id
+              ? <span title={detail.project.department_id}>Assigned · name not yet verified</span>
+              : 'Not assigned'}</dd><dt className="text-slate-500">Target date</dt><dd className="text-slate-900">{detail.project.target_date || 'Not scheduled'}</dd></dl><p className="wp-record-note">These values come from the current EOS project record. Owner and department are recorded only after EOS verifies independent assignment authority and source-backed eligibility.</p>
             </div>}
             {projectView === 'settings' && <div className="max-w-5xl">
             <h3 className="mb-3 text-lg font-bold text-slate-900">Project governance &amp; configuration</h3>
@@ -1283,7 +1289,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.17.0-INDEPENDENT-SUMMARY-FAILURE-ISOLATION
+// VERSION: v2.18.0-READABLE-PROJECT-OVERVIEW
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
