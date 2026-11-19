@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.4.0-QUARANTINED-TASK-FILE-VIEW
+ * VERSION: v1.5.0-ACCESSIBLE-WORK-CALENDAR
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,19 +8,22 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR adds accessible calendar
+ *          triggers and local quick dates to create/edit without changing
+ *          EOS task authority, schemas, idempotency or source readback.
  * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens
  *          task-bound quarantined file evidence; no preview, download,
  *          scanner release or approval authority is created.
- * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW lets the
+ * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR lets the
  *          project owner request named task review through the shared
  *          canonical approval source, separately from discussion/task status.
- * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW opens a selected task's
+ * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR opens a selected task's
  *          source-backed immutable comment/mention thread without treating
  *          mentions as deliveries, approvals or task lifecycle commands.
- * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW adds a
+ * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR adds a
  *          single in-place owner task edit and reassignment form, using EOS
  *          current assignee choices, exact revision CAS and fresh readback.
- * CHANGELOG: v1.4.0-QUARANTINED-TASK-FILE-VIEW adds source-backed
+ * CHANGELOG: v1.5.0-ACCESSIBLE-WORK-CALENDAR adds source-backed
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -32,8 +35,8 @@
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
@@ -58,6 +61,52 @@ const label = value => ({
   TODO: 'To do', IN_PROGRESS: 'In progress', BLOCKED: 'Blocked',
   DONE: 'Done', CANCELLED: 'Cancelled',
 }[value] || value);
+
+
+/**
+ * Calendar-backed EOS date-only proposal; no persisted state until readback.
+ * @authority Dates are draft-only until exact-project EOS command verification.
+ * @tenant Local input does not create tenant, identity or financial authority.
+ * @failure Keyboard-native date input remains available without showPicker.
+ */
+function ProjectWorkDateField({ label: fieldLabel, value, onChange }) {
+  const id = useId();
+  const picker = useRef(null);
+  const openCalendar = () => {
+    const input = picker.current;
+    if (!input) return;
+    if (typeof input.showPicker === 'function') {
+      try { input.showPicker(); return; } catch { /* Fall back to focus. */ }
+    }
+    input.focus();
+  };
+  const quickDate = days => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + days);
+    const pad = n => String(n).padStart(2, '0');
+    onChange(date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()));
+  };
+  const buttonStyle = 'rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700';
+  return <div className="min-w-0">
+    <label htmlFor={id} className="block text-sm font-semibold text-slate-800">{fieldLabel}</label>
+    <div className="mt-1 flex min-w-0 items-stretch gap-2">
+      <input ref={picker} id={id} type="date" aria-label={fieldLabel} value={value}
+        onChange={event => onChange(event.target.value)}
+        className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+      <button type="button" onClick={openCalendar} aria-label={'Open calendar for ' + fieldLabel.toLowerCase()}
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-blue-300 bg-white text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+        <CalendarDays size={18} aria-hidden="true"/>
+      </button>
+    </div>
+    <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={fieldLabel + ' quick dates'}>
+      <button type="button" className={buttonStyle} onClick={() => quickDate(0)}>Today</button>
+      <button type="button" className={buttonStyle} onClick={() => quickDate(1)}>Tomorrow</button>
+      <button type="button" className={buttonStyle} onClick={() => quickDate(7)}>In 7 days</button>
+      {value && <button type="button" className={buttonStyle} onClick={() => onChange('')}>Clear date</button>}
+    </div>
+  </div>;
+}
 
 function validTask(task, tenantId, projectId) {
   return Boolean(
@@ -330,6 +379,9 @@ export default function ProjectTasksPanel({
       <p className="mt-1 text-xs text-slate-500">Distribution covers this verified task page, not every project task.</p>
       {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
+        <p className="text-xs text-slate-600">{draft.kind === 'MILESTONE'
+          ? 'Milestone — define a delivery checkpoint and choose its target date.'
+          : 'Task — define accountable work, its due date and dependencies.'}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-semibold text-slate-800">Work type
             <select className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"
@@ -341,11 +393,8 @@ export default function ProjectTasksPanel({
               <option value="MILESTONE">Milestone</option>
             </select>
           </label>
-          <label className="block text-sm font-semibold text-slate-800">Due date
-            <input aria-label="Task due date" type="date" value={draft.due_date}
-              onChange={event => setDraft(value => ({ ...value, due_date: event.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
-          </label>
+          <ProjectWorkDateField label="Task due date" value={draft.due_date}
+            onChange={date => setDraft(previous => ({ ...previous, due_date: date }))}/>
         </div>
         <label className="block text-sm font-semibold text-slate-800">Task title
           <input required maxLength={180} value={draft.title} onChange={event => setDraft(value => ({
@@ -422,11 +471,8 @@ export default function ProjectTasksPanel({
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm font-semibold text-slate-800">Due date
-            <input type="date" aria-label="Edit task due date" value={editor.due_date}
-              onChange={event => setEditor(value => ({ ...value, due_date: event.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
-          </label>
+          <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
+            onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>
           <label className="block text-sm font-semibold text-slate-800">Assigned contributor
             <select aria-label="Reassign task" value={editor.assignee_principal_id}
               onChange={event => setEditor(value => ({ ...value, assignee_principal_id: event.target.value }))}
@@ -546,7 +592,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.4.0-QUARANTINED-TASK-FILE-VIEW
+// VERSION: v1.5.0-ACCESSIBLE-WORK-CALENDAR
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
