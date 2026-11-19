@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.14.0-SINGLE-ACTION-GOVERNED-WORK-ROWS
+ * VERSION: v1.15.0-DENSE-CONTEXTUAL-WORK-QUEUE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.15.0-DENSE-CONTEXTUAL-WORK-QUEUE shortens row identity,
+ *          moves long descriptions behind per-item disclosure, makes
+ *          assignment an explicit action and uses only verified participant
+ *          display names; opaque IDs remain internal and in audit evidence.
  * CHANGELOG: v1.14.0-SINGLE-ACTION-GOVERNED-WORK-ROWS renders one status-derived primary work
  *          action with responsive keyboard-accessible overflow. Terminal
  *          completion requires a separately visible evidence attestation.
@@ -446,6 +450,24 @@ export default function ProjectTasksPanel({
   const todoRows = items.filter(item => item.kind === 'TASK'
     && item.status !== 'CANCELLED');
   const doneTodos = todoRows.filter(item => item.status === 'DONE').length;
+  const contributorName = id => {
+    if (!id) return null;
+    const entry = participants.find(person => person.principal_id === id);
+    if (!entry) return 'Assigned contributor · name unavailable';
+    const names = [entry.first_name, entry.last_name].filter(
+      value => typeof value === 'string' && value.trim().length > 0
+        && value.length <= 100);
+    return names.length ? names.join(' ') : 'Assigned contributor · name unavailable';
+  };
+  const openTaskEditor = selected => {
+    setCreating(false);
+    setEditor({
+      task_id: selected.task_id, revision: selected.revision,
+      title: selected.title, description: selected.description,
+      due_date: selected.due_date || '',
+      assignee_principal_id: selected.assignee_principal_id || '',
+    });
+  };
   const completingItem = todoRows.find(item => item.task_id === completionCandidate
     && item.status === 'IN_PROGRESS');
   useEffect(() => {
@@ -867,21 +889,34 @@ export default function ProjectTasksPanel({
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
             <tr><th scope="col" className="p-3">Work item</th><th scope="col" className="p-3">Status</th>
               <th scope="col" className="p-3">Assignee</th><th scope="col" className="p-3">Due</th>
-              <th scope="col" className="p-3">Lifecycle action</th></tr>
+              <th scope="col" className="p-3">Next action</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {workRows.map(item => <tr key={item.task_id} data-task-id={item.task_id} className="bg-white align-top">
-              <td className="p-3"><div className="flex items-center gap-2 font-semibold text-slate-900">
-                {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
-                <span className="break-words">{item.title}</span></div>
-                <p className="mt-1 whitespace-pre-wrap break-words text-xs text-slate-600">{item.description}</p>
-                <div className="mt-1 text-xs text-slate-500">
+              <td className="p-3">
+                <div className="flex items-center gap-2 font-semibold text-slate-900">
+                  {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
+                  <span className="break-words">{item.title}</span>
+                </div>
+                <div className="mt-1 text-xs text-slate-600">
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
                   {item.depends_on.length > 0 ? ' · ' + item.depends_on.length + ' dependencies' : ''}
-                  {' · revision ' + item.revision}
-                </div></td>
+                </div>
+                {item.description && <details className="mt-1 text-xs text-slate-700">
+                  <summary className="cursor-pointer font-medium text-blue-800">Details</summary>
+                  <p className="mt-2 whitespace-pre-wrap break-words">{item.description}</p>
+                </details>}
+              </td>
               <td className="p-3 text-slate-800">{label(item.status)}</td>
-              <td className="break-all p-3 text-xs text-slate-700">{item.assignee_principal_id || 'Unassigned'}</td>
+              <td className="p-3 text-xs text-slate-700">
+                {item.assignee_principal_id ? <span title="Verified exact-project contributor">
+                  {contributorName(item.assignee_principal_id)}
+                </span> : ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) ?
+                  <button type="button" disabled={busy}
+                    className="text-xs font-semibold text-blue-800 underline underline-offset-2"
+                    aria-label={'Assign: ' + item.title}
+                    onClick={() => openTaskEditor(item)}>Assign</button> : 'Not assigned'}
+              </td>
               <td className="p-3 text-xs text-slate-700">
                 <span className={item.due_date && item.due_date < todayISO
                   && !['DONE', 'CANCELLED'].includes(item.status) ? 'font-semibold text-rose-700' : ''}>
@@ -897,15 +932,7 @@ export default function ProjectTasksPanel({
                     setCompletionCandidate(selected.task_id);
                     setCompletionAttested(false);
                   }}
-                  onEdit={selected => {
-                    setCreating(false);
-                    setEditor({
-                      task_id: selected.task_id, revision: selected.revision,
-                      title: selected.title, description: selected.description,
-                      due_date: selected.due_date || '',
-                      assignee_principal_id: selected.assignee_principal_id || '',
-                    });
-                  }}
+                  onEdit={openTaskEditor}
                   onAttachments={selected => setAttachmentTaskId(selected.task_id)}
                   onApprovals={selected => setApprovalTaskId(selected.task_id)}
                   onActivity={selected => setDiscussionTaskId(selected.task_id)}/>
@@ -953,7 +980,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.14.0-SINGLE-ACTION-GOVERNED-WORK-ROWS
+// VERSION: v1.15.0-DENSE-CONTEXTUAL-WORK-QUEUE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
