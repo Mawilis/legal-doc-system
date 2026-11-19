@@ -236,18 +236,31 @@ export default function ProjectTaskCommentsPanel({
           return item.schema === 'wilsy.project.approval.v1'
             && /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
             && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
-            && typeof item.requester_principal_id === 'string'
-            && typeof item.reviewer_principal_id === 'string'
+            && typeof item.requester_principal_id === 'string' && !!item.requester_principal_id
+            && typeof item.reviewer_principal_id === 'string' && !!item.reviewer_principal_id
+            && item.requester_principal_id !== item.reviewer_principal_id
+            && typeof item.rationale === 'string' && !!item.rationale
+            && item.revision === (item.status === 'PENDING' ? 1 : 2)
+            && /^[a-f0-9]{128}$/.test(item.fingerprint || '')
             && Number.isFinite(Date.parse(item.requested_at))
-            && (item.status === 'PENDING' ? item.decided_at === null
-              : Number.isFinite(Date.parse(item.decided_at)));
+            && (item.status === 'PENDING' ? item.decided_at === null && item.decision_rationale === null
+              : Number.isFinite(Date.parse(item.decided_at))
+                && typeof item.decision_rationale === 'string');
         }
         return item.schema === 'wilsy.project.attachment.v1'
           && /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
           && typeof item.filename === 'string' && item.filename.length > 0
-          && typeof item.uploader_principal_id === 'string'
+          && typeof item.uploader_principal_id === 'string' && !!item.uploader_principal_id
+          && ['application/pdf', 'image/png', 'image/jpeg'].includes(item.media_type)
+          && Number.isSafeInteger(item.size_bytes) && item.size_bytes > 0
+          && item.state === 'QUARANTINED' && item.revision === 1
+          && /^[a-f0-9]{128}$/.test(item.content_sha3_512 || '')
+          && /^[a-f0-9]{128}$/.test(item.fingerprint || '')
+          && !['storage_receipt', 'download_url', 'presigned_url'].some(key => Object.hasOwn(item, key))
           && Number.isFinite(Date.parse(item.created_at))
-          && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status);
+          && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+          && (item.scan_clearance_status === 'QUARANTINED' ? item.scan_clearance_fingerprint === null
+            : /^[a-f0-9]{128}$/.test(item.scan_clearance_fingerprint || ''));
       };
       if (data?.schema !== (approval ? 'WILSY-PROJECT-APPROVAL-LIST/V1'
         : 'WILSY-PROJECT-ATTACHMENT-LIST/V1')
