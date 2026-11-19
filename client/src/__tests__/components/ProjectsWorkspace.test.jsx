@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.30.1-COMMITTED-TEMPLATE-COPY-CERT
+ * VERSION: v2.30.2-NO-OPAQUE-PROJECT-HEADER-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.30.2-NO-OPAQUE-PROJECT-HEADER-CERT pins the removal
+ *          of automatic hexadecimal project codes from the main list and
+ *          selected-project header without changing authoritative IDs.
  * CHANGELOG: v2.30.1-COMMITTED-TEMPLATE-COPY-CERT asserts a confirmed
  *          201 activation uses the committed-pending-readback message, not
  *          the distinct ambiguous-save warning.
@@ -1088,6 +1091,27 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(persisted.status).toBe('planned');
   });
 
+  it('keeps automatic hexadecimal IDs out of the operating project list and header', async () => {
+    const generated = 'PRJ-' + 'A'.repeat(16);
+    const source = project({ name: 'Human-readable delivery', code: generated });
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list([source]) };
+      if (path === '/projects/summary') return { data: summary([source]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(source) };
+      throw new Error('Unexpected source in project identity presentation test: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="no-opaque-operating-identity-cert"/>);
+    expect(await screen.findByRole('button', {
+      name: /View project Human-readable delivery/,
+    })).toBeVisible();
+    expect(screen.getByText('Automatically assigned')).toBeVisible();
+    expect(screen.queryByText(generated)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /View project Human-readable delivery/ }));
+    expect(await screen.findByText('Code assigned')).toBeVisible();
+    expect(screen.queryByText(generated)).not.toBeInTheDocument();
+  });
+
   it('materialises one selected verified industry template only after EOS confirms the project', async () => {
     const persisted = project({ name: 'Legal litigation delivery' });
     const steps = [
@@ -1789,7 +1813,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.30.1-COMMITTED-TEMPLATE-COPY-CERT
+ * VERSION: v2.30.2-NO-OPAQUE-PROJECT-HEADER-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
