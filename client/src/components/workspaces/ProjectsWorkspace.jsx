@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS
+ * VERSION: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS corrects
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH corrects
  *          date-only template activation admission to exactly ten characters
  *          and numeric YYYY-MM-DD groups; Python EOS still strictly parses
  *          and authorizes actual due-date semantics.
@@ -53,6 +53,9 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH never shows a
+ *          misleading verified-empty notice while a committed template
+ *          project still awaits independent list/detail reconciliation.
  * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS keeps the
  *          actual project list as the default operating surface and moves
  *          portfolio distribution behind explicit user disclosure.
@@ -61,37 +64,37 @@
  *          corrects inherited pale-gold field labels and suppresses raw
  *          backend project identifiers from the everyday project list.
  * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS opens
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS opens the
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS separates successful EOS template activation from
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH separates successful EOS template activation from
  *          independent list/detail reconciliation. An accepted project is
  *          never represented as a failed save merely because readback is
  *          slow or unavailable; no second write is initiated automatically.
  * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS mounts the independently source-backed
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS mounts independently source-backed note
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS applies status filtering at the exact-tenant
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS exposes readable title-case
+ *            v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -1361,7 +1364,14 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             </form>
           ) : <>
             <div className="wp-list-controls flex flex-wrap items-center gap-2 border-b border-slate-200 p-3"><label className="wp-search relative min-w-[180px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/><span className="sr-only">Search projects</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" className="min-h-10 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"/></label><label className="sr-only" htmlFor="project-status-filter">Filter by status</label><select id="project-status-filter" value={statusFilter} onChange={(event) => changeStatusFilter(event.target.value)} className="wp-filter min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="all">All statuses</option>{PROJECT_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></div>
-            {sourceState === 'READY' && items.length === 0 ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0 ? <p className="p-6 text-center text-sm text-slate-600">{ownerOnly ? 'No EOS-verified projects are owned by your current principal on this page.' : 'No projects match the current search and status filter.'}</p> : <div className="wp-table-shell" role="region" aria-label="Projects table" tabIndex={0}>
+            {sourceState === 'READY' && items.length === 0
+              && templateReconciliation?.state !== 'READBACK_PENDING'
+              ? <div className="p-8 text-center"><Code2 className="mx-auto text-slate-400" size={28}/><h2 className="mt-3 font-semibold text-slate-900">No projects in this tenant</h2><p className="mt-1 text-sm text-slate-600">EOS returned a verified empty Projects list.</p></div> : sourceState === 'READY' && visibleItems.length === 0
+              && templateReconciliation?.state !== 'READBACK_PENDING'
+              ? <p className="p-6 text-center text-sm text-slate-600">{ownerOnly ? 'No EOS-verified projects are owned by your current principal on this page.' : 'No projects match the current search and status filter.'}</p> : templateReconciliation?.state === 'READBACK_PENDING' && visibleItems.length === 0
+              ? <p role="status" className="p-4 text-sm text-slate-700">
+                  A committed project is awaiting refreshed list visibility. No empty result is inferred.
+                </p> : <div className="wp-table-shell" role="region" aria-label="Projects table" tabIndex={0}>
               <div className="wp-table-head" aria-hidden="true">
                 <span>Project</span><span>Project code</span><span>Status</span><span>Target date</span><span>Action</span>
               </div>
@@ -1555,7 +1565,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS
+// VERSION: v2.25.1-PENDING-COMMIT-NONEMPTY-TRUTH
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
