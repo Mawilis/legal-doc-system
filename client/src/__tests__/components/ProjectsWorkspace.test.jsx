@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT
+ * VERSION: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT verifies
+ *          seven exact-scope source definitions, a selected business blueprint,
+ *          one explicit activation, and independent project list/detail readback.
  * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT verifies that source activity precedes the
  *          optional editor in DOM, with contextual accessible note actions.
  * CHANGELOG: v2.22.0-CONTEXTUAL-NOTE-READBACK-CERT verifies compact read-first
@@ -71,30 +74,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT proves a
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT adds in-place task
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT certifies task creation, verified
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT waits for the committed note row
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT certifies source-backed project note
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT proves navigation
+ * CHANGELOG: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -862,6 +865,72 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(persisted.status).toBe('planned');
   });
 
+  it('materialises one selected verified industry template only after EOS confirms the project', async () => {
+    const persisted = project({ name: 'Legal litigation delivery' });
+    const steps = [
+      { id: 'first', kind: 'TASK', title: 'Open matter', role: 'project_lead',
+        day: 5, acceptance: 'Source document accepted', depends_on: [] },
+      { id: 'gate', kind: 'MILESTONE', title: 'Matter readiness', role: 'sponsor',
+        day: 10, acceptance: 'Acceptance recorded', depends_on: ['first'] },
+    ];
+    const industries = ['Legal', 'Construction', 'Football', 'Imports',
+      'Software', 'Healthcare', 'General business'];
+    const catalogue = industries.map((industry, index) => ({
+      slug: index === 0 ? 'legal-litigation' : 'template-' + index,
+      industry, title: industry + ' delivery', revision: 1, steps,
+    }));
+    let activated = false;
+    api.get.mockImplementation(async path => {
+      if (path === '/projects') return { data: list(activated ? [persisted] : []) };
+      if (path === '/projects/summary') return { data: summary(activated ? [persisted] : []) };
+      if (path === '/projects/templates') return { data: {
+        schema: 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        ownership: 'PLATFORM_STARTERS', items: catalogue,
+      } };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      throw new Error('Unexpected template source ' + path);
+    });
+    api.post.mockImplementation(async (path, body, options) => {
+      expect(path).toBe('/projects/templates/legal-litigation/activate');
+      expect(body).toEqual({
+        name: 'Legal litigation delivery', template_revision: 1,
+        start_date: '2026-11-19',
+      });
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      activated = true;
+      return { data: {
+        schema: 'WILSY-PROJECT-TEMPLATE-ACTIVATION/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        template_slug: 'legal-litigation', template_revision: 1,
+        project: persisted,
+        items: [
+          { template_step_id: 'first', kind: 'TASK', task_id: 'ptk-' + 'a'.repeat(48) },
+          { template_step_id: 'gate', kind: 'MILESTONE', task_id: 'ptk-' + 'b'.repeat(48) },
+        ],
+        authority: {
+          iam_grants: false, auto_assignments: false, financial_execution: false,
+        },
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="industry-template-cert" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Create project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Browse industry templates' }));
+    const choices = await screen.findByRole('listbox', { name: 'Verified industry templates' });
+    expect(within(choices).getAllByRole('option')).toHaveLength(7);
+    fireEvent.click(within(choices).getByRole('option', { name: /Legal/ }));
+    expect(screen.getByText('Matter readiness')).toBeVisible();
+    fireEvent.change(document.querySelector('input[type="date"]'), {
+      target: { value: '2026-11-19' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create project and work in EOS' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole('button', { name: /Back to all projects/ })).toBeVisible();
+    expect(persisted.status).toBe('planned');
+  });
+
   it('creates source-backed notes in selected project detail without changing Planned', async () => {
     const persisted = project();
     const noteId = `pnt-${'a'.repeat(48)}`;
@@ -1371,7 +1440,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.23.0-ACTIVITY-FIRST-TEMPLATE-UI-CERT
+ * VERSION: v2.24.0-SEVEN-INDUSTRY-MATERIALIZATION-CLIENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
