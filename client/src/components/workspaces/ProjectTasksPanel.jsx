@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.26.0-ACCESSIBLE-WORK-ERROR-TOAST
+ * VERSION: v1.27.0-EXACT-ASSIGNMENT-CAPABILITY-GATE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.27.0-EXACT-ASSIGNMENT-CAPABILITY-GATE validates assignment-only
+ *          submissions against canAssign and general revisions against
+ *          canEdit, without granting any new EOS update permission.
  * CHANGELOG: v1.26.0-ACCESSIBLE-WORK-ERROR-TOAST presents
  *          a dismissible role-alert error on failed task commands, without
  *          faking rollback or exposing backend error payloads.
@@ -492,7 +495,8 @@ export default function ProjectTasksPanel({
 
   const revise = event => {
     event.preventDefault();
-    if (!editor || !editor.title.trim() || !actionCapabilities?.canEdit) return;
+    if (!editor || !editor.title.trim()
+      || !(assignmentOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)) return;
     const body = {
       expected_revision: editor.revision,
       title: editor.title.trim(),
@@ -1032,7 +1036,8 @@ export default function ProjectTasksPanel({
         </div>
         {!assignmentOnly && <p className="text-xs text-slate-600">Parent, predecessors and milestone type remain immutable. Reassignment requires a current exact-project Contributor.</p>}
         <button type="submit" className="wp-button wp-button-primary"
-          disabled={busy || !actionCapabilities?.canEdit || !editor.title.trim() || Boolean(
+          disabled={busy || !(assignmentOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)
+            || !editor.title.trim() || Boolean(
             editor.assignee_principal_id && !participants.some(person =>
               person.principal_id === editor.assignee_principal_id))
             || (assignmentOnly && (editor.assignee_principal_id || null)
@@ -1186,7 +1191,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.26.0-ACCESSIBLE-WORK-ERROR-TOAST
+// VERSION: v1.27.0-EXACT-ASSIGNMENT-CAPABILITY-GATE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
