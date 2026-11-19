@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION
+ * VERSION: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER removes the
+ *          redundant portfolio toolbar while working within a selected
+ *          project, compresses its metadata/breadcrumb presentation and
+ *          preserves full tenant navigation on the project list.
  * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION introduces a compact,
  *          EOS-verified seven-industry blueprint selector and explicit
  *          version-checked activation with single-command project/task readback.
@@ -45,34 +49,34 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION opens
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION opens the
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION mounts exact-tenant,
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION mounts the independently source-backed
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION mounts independently source-backed note
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION exposes readable title-case
+ *            v2.22.0-COMPACT-PROJECT-OPERATING-HEADER exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -1142,7 +1146,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 
   return (
     <section className="wilsy-projects mx-auto w-full max-w-[1500px] px-3 pb-6 sm:px-5" data-projects-workspace data-source-state={sourceState}>
-      <header className="wp-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      {!(selectedId && mode !== 'CREATE') && <header className="wp-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div><p className="wp-eyebrow text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Projects &amp; delivery</p><h1 className="wp-title mt-1 text-2xl font-bold text-slate-900">Projects</h1><p className="wp-subtitle mt-1 text-sm text-slate-600">EOS-authorized project delivery for the selected workspace.</p></div>
         <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => {
           const next = !ownerOnlyRef.current;
@@ -1164,7 +1168,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             className="wp-button" aria-label="Participant assignments"
             title="Requires a separate, active project participant grant">
             Participant assignments</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
-      </header>
+      </header>}
 
       {sourceState === 'READY' && summary && !ownerOnly && !selectedId && mode !== 'CREATE' && (
         <section className="wp-portfolio-chart" aria-label="Verified project status distribution">
@@ -1315,22 +1319,22 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         </section>
 
         {selectedId && mode !== 'CREATE' && <section aria-label="Project detail" aria-busy={detailState === 'LOADING'}
-          className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+          className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
           style={{ width: '100%', height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
-          <div className="wp-detail-top mb-3 flex flex-wrap items-start justify-between gap-4">
+          <div className="wp-detail-top mb-2 flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <button type="button" onClick={closeDetail}
-                className="wp-button mb-3" aria-label="Back to projects table">
+                className="wp-button mb-2" aria-label="Back to projects table">
                 <X size={15}/> Back to all projects
               </button>
-              <p className="wp-eyebrow">Projects &amp; delivery / Current project</p>
+              <p className="sr-only">Projects &amp; delivery / Current project</p>
               <h2 className="wp-detail-title">{detail?.project?.name || 'Loading project…'}</h2>
-              {detail?.project && <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-700">
+              {detail?.project && <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-700">
                 <span className="wp-status" data-status={detail.project.status}>
                   {statusLabel(detail.project.status)}
                 </span>
                 <span className="font-semibold">{detail.project.code || 'Code not recorded'}</span>
-                <span>Revision {detail.project.revision}</span>
+                <span className="sr-only">Revision {detail.project.revision}</span>
                 <span>Target {detail.project.target_date || 'not scheduled'}</span>
               </div>}
             </div>
@@ -1339,7 +1343,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               <RefreshCw size={15}/> Refresh project
             </button>
           </div>
-          <nav className="mb-5 flex flex-wrap gap-2 border-b border-slate-200 pb-3"
+          <nav className="mb-2 flex flex-wrap gap-1 border-b border-slate-200 pb-2"
             aria-label="Project workspace views">
             {[
               ['work', 'Work & milestones'],
@@ -1473,7 +1477,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.21.0-ATOMIC-INDUSTRY-TEMPLATE-CREATION
+// VERSION: v2.22.0-COMPACT-PROJECT-OPERATING-HEADER
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
