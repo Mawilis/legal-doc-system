@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Enterprise Project Task Transaction Registry
-VERSION: v1.1.0-REVISIONED-PROJECT-TASK-EDITING
+VERSION: v1.2.0-TASK-ACTIVITY-EVENT-READ
 AUTHORITY: Python EOS canonical tenant/project task and milestone source truth.
 EPITOME: Source-backed tasks, nested subtasks, milestones, dependencies, due
          dates, assignees and audited lifecycle CAS with idempotent command replay.
@@ -7,10 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router admits IAM, participant assignment,
          currentness, project existence and entitlement. EOS owns transactions.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ reads bounded immutable lifecycle events in newest revision order with exact-tenant/project/task binding, source validation and privacy-preserving projection. No command or audit mutation.
 CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING adds guarded title, description,
 due date and assignee editing for active work, durable replay, CAS and
 immutable audit without rewriting dependency or completion history.
-CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING establishes an immutable
+CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ establishes an immutable
          project-work aggregate and exact-tenant Mongo transaction registry.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain text; no HTML, inferred approval,
@@ -34,7 +35,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.1.0-REVISIONED-PROJECT-TASK-EDITING"
+VERSION: Final[str] = "v1.2.0-TASK-ACTIVITY-EVENT-READ"
 SCHEMA: Final[str] = "wilsy.project.task.v1"
 COLLECTION: Final[str] = "wilsy_project_tasks"
 EVENT_COLLECTION: Final[str] = "wilsy_project_task_events"
@@ -393,6 +394,47 @@ class ProjectTaskRegistry:
             raise ProjectTaskNotFound("PROJECT_TASK_NOT_FOUND")
         return ProjectTask.hydrate({k: v for k, v in row.items() if k != "_id"})
 
+    def list_event_page(
+        self, *, tenant_id: str, project_id: str, task_id: str,
+        session: Any, limit: int = 50, offset: int = 0,
+    ) -> tuple[tuple[dict[str, object], ...], bool]:
+        """Expose only verified task lifecycle evidence, never replay secrets."""
+        if session is None or type(limit) is not int or not 1 <= limit <= 100 or type(offset) is not int or offset < 0:
+            raise ProjectTaskError("PROJECT_TASK_EVENT_PAGE_INVALID")
+        # Do not allow event existence to disclose a missing exact-task record.
+        self.get(tenant_id=tenant_id, project_id=project_id,
+                 task_id=task_id, session=session)
+        query = {
+            "tenant_id": _id(tenant_id, "TENANT"),
+            "project_id": _id(project_id, "PROJECT"),
+            "task_id": _id(task_id, "TASK"),
+        }
+        projection = {"_id": 0, "schema": 1, "tenant_id": 1,
+                      "project_id": 1, "task_id": 1, "revision": 1,
+                      "event_type": 1, "actor_principal_id": 1, "occurred_at": 1}
+        try:
+            rows = list(self._events.find(query, projection, session=session)
+                        .sort([("revision", DESCENDING)]).skip(offset).limit(limit + 1))
+        except PyMongoError as error:
+            raise ProjectTaskError("PROJECT_TASK_EVENT_READ_UNAVAILABLE") from error
+        result: list[dict[str, object]] = []
+        for row in rows[:limit]:
+            if (row.get("schema") != "wilsy.project.task.event.v1"
+                or row.get("tenant_id") != tenant_id
+                or row.get("project_id") != project_id
+                or row.get("task_id") != task_id
+                or type(row.get("revision")) is not int or row["revision"] < 1
+                or row.get("event_type") not in {
+                    "PROJECT_TASK_CREATED", "PROJECT_TASK_REVISED",
+                    "PROJECT_TASK_TRANSITIONED",
+                }
+                or not isinstance(row.get("actor_principal_id"), str)
+                or not row["actor_principal_id"]
+                or not isinstance(row.get("occurred_at"), str)):
+                raise ProjectTaskError("PROJECT_TASK_EVENT_SOURCE_INVALID")
+            result.append(row)
+        return tuple(result), len(rows) > limit
+
     def list_page(
         self, *, tenant_id: str, project_id: str, session: Any,
         limit: int = 50, offset: int = 0,
@@ -639,7 +681,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_task_registry.py
-# VERSION: v1.1.0-REVISIONED-PROJECT-TASK-EDITING
+# VERSION: v1.2.0-TASK-ACTIVITY-EVENT-READ
 # AUTHORITY BOUNDARY: source lifecycle/CAS only; router owns independent IAM
 # TENANT POSTURE: exact tenant/project/assignee; no privileged fallback
 # FAIL-CLOSED POSTURE: invalid graph, dependency, replay or revision denies
