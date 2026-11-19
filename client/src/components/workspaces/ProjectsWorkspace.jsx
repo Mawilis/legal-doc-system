@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.27.0-TEMPLATE-OPERATING-FOCUS
+ * VERSION: v2.27.1-TEMPLATE-SELECTED-WORK-VISIBILITY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.27.1-TEMPLATE-SELECTED-WORK-VISIBILITY restores immediately
+ *          visible, EOS-sourced selected-template work while retaining the
+ *          dismissed industry catalogue and human-readable project identity.
  * CHANGELOG: v2.27.0-TEMPLATE-OPERATING-FOCUS makes template preview opt-in
  *          after selection and hides opaque generated codes in operating views.
  * CHANGELOG: v2.26.1-TEMPLATE-UNCERTAIN-COMMIT-RECOVERY distinguishes unverified
@@ -1321,9 +1324,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   {selectedTemplate && <>
                     {templatePickerOpen && <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>}
                     <p className="mt-1 text-xs text-slate-600">Template revision {selectedTemplate.revision} · {selectedTemplate.steps.length} source-defined work items</p>
-                    <details key={selectedTemplate.slug} defaultOpen={templatePickerOpen} className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <summary className="cursor-pointer text-sm font-semibold text-slate-900">View {selectedTemplate.steps.length} included work items</summary>
-                      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-xs">
+                    <div className="mt-3 overflow-x-auto" aria-label="Selected template work items">
+                      <table className="w-full text-left text-xs">
                         <thead className="border-b border-slate-200 text-slate-700"><tr><th className="p-2">Deliverable</th><th className="p-2">Role</th><th className="p-2">Due</th><th className="p-2">Depends on</th></tr></thead>
                         <tbody>{selectedTemplate.steps.map(step => <tr className="border-b border-slate-100" key={step.id}>
                           <td className="p-2"><strong className="block text-slate-900">{step.title}</strong><span className="text-slate-600">{step.kind} · {step.acceptance}</span></td>
@@ -1331,8 +1333,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                           <td className="p-2 text-slate-700">Day +{step.day}</td>
                           <td className="p-2 text-slate-700">{step.depends_on.join(', ') || 'None'}</td>
                         </tr>)}</tbody>
-                      </table></div>
-                    </details>
+                      </table>
+                    </div>
                     <form onSubmit={activateTemplate} className="mt-4 space-y-3 border-t border-slate-200 pt-4">
                       <label className="block text-sm font-semibold" style={{ color: '#172b4d' }}>Project name
                         <input required maxLength={180} style={{ color: '#172b4d', backgroundColor: '#fff', letterSpacing: 'normal', fontWeight: 400 }} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -1580,7 +1582,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.27.0-TEMPLATE-OPERATING-FOCUS
+// VERSION: v2.27.1-TEMPLATE-SELECTED-WORK-VISIBILITY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
