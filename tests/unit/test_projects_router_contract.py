@@ -540,6 +540,16 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("tenant:profile:write", "profile_update"),
         ("project:create", "project_create"),
     }
+    template_activation = routes[("/projects/templates/{slug}/activate", ("POST",))]
+    template_pairs = {
+        (dependency.call.permission_id, dependency.call.operation)
+        for dependency in template_activation.dependant.dependencies
+        if isinstance(dependency.call, RequireTenantAuthorization)
+    }
+    assert template_pairs == {
+        ("project:create", "project_create"),
+        ("project:update", "project_update"),
+    }
     founder_route = routes[("/projects/founder-projects-admission", ("POST",))]
     admission_pairs = {
         (dependency.call.permission_id, dependency.call.operation)
