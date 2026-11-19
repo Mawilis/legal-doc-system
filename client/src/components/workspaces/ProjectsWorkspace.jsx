@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE
+ * VERSION: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE corrects
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS corrects
  *          date-only template activation admission to exactly ten characters
  *          and numeric YYYY-MM-DD groups; Python EOS still strictly parses
  *          and authorizes actual due-date semantics.
@@ -53,42 +53,45 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS keeps the
+ *          actual project list as the default operating surface and moves
+ *          portfolio distribution behind explicit user disclosure.
  * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE hides the catalogue after choice, puts the
  *          actual template task preview and activation controls first,
  *          corrects inherited pale-gold field labels and suppresses raw
  *          backend project identifiers from the everyday project list.
  * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE opens
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE opens the
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE separates successful EOS template activation from
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS separates successful EOS template activation from
  *          independent list/detail reconciliation. An accepted project is
  *          never represented as a failed save merely because readback is
  *          slow or unavailable; no second write is initiated automatically.
  * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE mounts the independently source-backed
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE mounts independently source-backed note
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE applies status filtering at the exact-tenant
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE exposes readable title-case
+ *            v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -1215,8 +1218,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             Participant assignments</button><button type="button" onClick={() => void refresh()} disabled={sourceState === 'LOADING' || sourceState === 'REFRESHING'} className="wp-button inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60"><RefreshCw size={15}/> Refresh</button><button type="button" onClick={() => { setMode('CREATE'); setCommandError(''); }} disabled={sourceState === 'DENIED' || sourceState === 'UNAVAILABLE' || sourceState === 'LOADING'} className="wp-button wp-button-primary inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-950 hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Plus size={16}/> Create project</button></div>
       </header>}
 
-      {sourceState === 'READY' && summary && !ownerOnly && !selectedId && mode !== 'CREATE' && (
-        <section className="wp-portfolio-chart" aria-label="Verified project status distribution">
+      {sourceState === 'READY' && summary && !ownerOnly && !selectedId && mode === 'LIST' && (
+        <details className="mb-3 border-b border-slate-200 pb-2" aria-label="Portfolio breakdown">
+          <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">
+            Portfolio breakdown · {summary.total} projects
+          </summary>
+          <section className="wp-portfolio-chart" aria-label="Verified project status distribution">
           <div className="wp-chart-heading">
             <strong>Portfolio distribution</strong>
             <span>EOS verified · {summary.total} projects · Read-only status counts</span>
@@ -1233,7 +1240,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               </div>
             ))}
           </div>
-        </section>
+          </section>
+        </details>
       )}
       {templateReconciliation && <div role="status"
         className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 px-2 py-2 text-sm text-slate-800">
@@ -1547,7 +1555,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE
+// VERSION: v2.25.0-COLLAPSED-PORTFOLIO-ANALYTICS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
