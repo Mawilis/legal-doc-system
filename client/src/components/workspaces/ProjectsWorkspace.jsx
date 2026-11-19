@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION
+ * VERSION: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION corrects
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE corrects
  *          date-only template activation admission to exactly ten characters
  *          and numeric YYYY-MM-DD groups; Python EOS still strictly parses
  *          and authorizes actual due-date semantics.
@@ -53,38 +53,42 @@
  * summary failures remain explicit, including fail-closed scope/authority
  * denial. This preserves EOS list/readback semantics and does not cache data.
  * CHANGELOG: v2.14.0-INDEXED-OWNER-RESPONSIBILITY-PAGES uses source-filtered exact-owner pages before pagination, replacing incomplete current-page-only owner selection. Verifies every returned owner identity and preserves participant IAM separation.
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE hides the catalogue after choice, puts the
+ *          actual template task preview and activation controls first,
+ *          corrects inherited pale-gold field labels and suppresses raw
+ *          backend project identifiers from the everyday project list.
  * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION separates currently authorized owner responsibility from independently permitted participant assignments. My owned projects filters verified EOS owner identities on the current page; explicit participant access keeps its existing route and IAM with no founder fallback.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION opens
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE restores meaningful bounded server validation and conflict details for assignment, prevents recreating a canonical existing department and reloads exact source when uncertainty occurs.
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE surfaces exact-tenant EOS verified project creator, owner and audit actor names in Overview and History; immutable opaque IDs remain available as technical identifiers without replacing human labels.
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE renders verified first/last names from the canonical exact-tenant EOS owner directory, retaining principal IDs strictly as selection values; missing names show an explicit unlabelled identity instead of guessed user data.
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE replaces the clipped fixed-height list/detail split with a full-width, task-first selected project workspace. Separates Work, Overview, People, Notes, Manage and Audit without changing EOS authority or the unselected registry.
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE opens
  *            current participant project execution directly from an
  *            EOS-authorized Daily Attention project handoff; owner source
  *            reads are not used as participant admission.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION opens the
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE opens the
  *            separately authorized participant Projects destination, without
  *            claiming owner privileges or weakening owner list admission.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION separates successful EOS template activation from
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE separates successful EOS template activation from
  *          independent list/detail reconciliation. An accepted project is
  *          never represented as a failed save merely because readback is
  *          slow or unavailable; no second write is initiated automatically.
  * CHANGELOG: v2.22.1-CANONICAL-TEMPLATE-DATE-ADMISSION mounts exact-tenant,
  *            EOS-sourced candidate selection and audited participant
  *            grant/revoke alongside task execution in selected project detail.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION mounts the independently source-backed
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE mounts the independently source-backed
  *            task/subtask/milestone table and lifecycle editor inside the
  *            selected exact-tenant project detail without local work truth.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION mounts independently source-backed note
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE mounts independently source-backed note
  *            list and author-only edit/archive inside selected project detail;
  *            no project lifecycle state or IAM authority is changed.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION applies status filtering at the exact-tenant
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE applies status filtering at the exact-tenant
  *            EOS API before paging instead of filtering only the visible page;
  *            status changes reset pagination and preserve all authorization.
- * CHANGELOG: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION consumes EOS verified has_more/next_offset page
+ * CHANGELOG: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE consumes EOS verified has_more/next_offset page
  *            evidence, retaining legacy mock compatibility and denying malformed
  *            new metadata without claiming nonexistent pages.
- *            v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION exposes readable title-case
+ *            v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE exposes readable title-case
  *            status counts to assistive technology without changing EOS truth.
  *            v2.1.0-SOURCE-VERIFIED-PORTFOLIO-PAGES adds explicit
  *            server page navigation and real EOS summary-based portfolio
@@ -223,7 +227,7 @@ function ProjectDateField({ label, value, onChange, disabled = false }) {
     field.focus();
   };
   return <label className="wp-date-field">
-    <span>{label}</span>
+    <span style={{ color: '#172b4d', fontWeight: 650 }}>{label}</span>
     <span className="wp-date-wrap">
       <input ref={pickerRef} type="date" value={value || ''} disabled={disabled}
         onChange={event => onChange(event.target.value)}
@@ -622,6 +626,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [templateState, setTemplateState] = useState('IDLE');
   const [templateError, setTemplateError] = useState('');
   const [selectedTemplateSlug, setSelectedTemplateSlug] = useState('');
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(true);
   const [templateName, setTemplateName] = useState('');
   const [templateStart, setTemplateStart] = useState('');
   const [templateReconciliation, setTemplateReconciliation] = useState(null);
@@ -785,6 +790,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setTemplateState('IDLE');
     setTemplateError('');
     setSelectedTemplateSlug('');
+    setTemplatePickerOpen(true);
     setTemplateName('');
     setTemplateStart('');
     setTemplateReconciliation(null);
@@ -1262,7 +1268,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           {mode === 'TEMPLATE' ? <div className="p-4 sm:p-5" aria-label="Industry project templates">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div><h2 className="text-lg font-bold text-slate-950">Start from a template</h2>
-                <p className="text-sm text-slate-600">Verified EOS blueprints · Roles are requirements, not staff assignments</p></div>
+                <p className="text-xs text-slate-600">Choose an industry to create a real project with scheduled work</p></div>
               <button type="button" className="wp-button" onClick={() => setMode('CREATE')}
                 disabled={commandState === 'PENDING'}>Back to blank project</button>
             </div>
@@ -1270,22 +1276,30 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {templateState !== 'READY' && templateState !== 'LOADING' &&
               <p role="alert" className="text-sm text-rose-700">{templateError}</p>}
             {templateState === 'READY' && <>
-              <div className="grid gap-4 lg:grid-cols-[minmax(230px,0.9fr)_minmax(0,1.7fr)]">
-                <div role="listbox" aria-label="Verified industry templates" className="divide-y divide-slate-200 rounded-lg border border-slate-200">
+              {selectedTemplate && !templatePickerOpen &&
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {selectedTemplate.industry} · {selectedTemplate.title}
+                  </span>
+                  <button type="button" className="wp-button"
+                    onClick={() => setTemplatePickerOpen(true)}>Change template</button>
+                </div>}
+              <div className={templatePickerOpen ? 'grid gap-4 lg:grid-cols-[minmax(230px,0.9fr)_minmax(0,1.7fr)]' : 'block'}>
+                {templatePickerOpen && <div role="listbox" aria-label="Verified industry templates" className="divide-y divide-slate-200 rounded-lg border border-slate-200">
                   {templates.map(item => <button key={item.slug} role="option"
                     aria-selected={selectedTemplateSlug === item.slug}
                     type="button" className="block w-full px-3 py-3 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-blue-700"
                     style={selectedTemplateSlug === item.slug ? { background: '#e8f2ff' } : undefined}
                     onClick={() => { setSelectedTemplateSlug(item.slug);
-                      setTemplateName(item.title); setTemplateError(''); createReplay.current = { fingerprint: '', key: null }; }}>
+                      setTemplateName(item.title); setTemplatePickerOpen(false); setTemplateError(''); createReplay.current = { fingerprint: '', key: null }; }}>
                     <span className="block text-sm font-semibold text-slate-950">{item.industry}</span>
                     <span className="block text-xs text-slate-700">{item.title}</span>
                   </button>)}
-                </div>
+                </div>}
                 <div>
                   {!selectedTemplate && <p className="text-sm text-slate-600">Select an industry to inspect its milestones, dependencies, roles and acceptance evidence.</p>}
                   {selectedTemplate && <>
-                    <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>
+                    {templatePickerOpen && <h3 className="text-base font-bold text-slate-950">{selectedTemplate.title}</h3>}
                     <p className="mt-1 text-xs text-slate-600">Template revision {selectedTemplate.revision} · {selectedTemplate.steps.length} source-defined work items</p>
                     <div className="mt-3 overflow-x-auto">
                       <table className="w-full text-left text-xs">
@@ -1299,8 +1313,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                       </table>
                     </div>
                     <form onSubmit={activateTemplate} className="mt-4 space-y-3 border-t border-slate-200 pt-4">
-                      <label className="block text-sm font-semibold text-slate-900">Project name
-                        <input required maxLength={180} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal"
+                      <label className="block text-sm font-semibold" style={{ color: '#172b4d' }}>Project name
+                        <input required maxLength={180} style={{ color: '#172b4d', backgroundColor: '#fff', letterSpacing: 'normal', fontWeight: 400 }} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
                           value={templateName} onChange={event => { createReplay.current = { fingerprint: '', key: null }; setTemplateName(event.target.value); }}/>
                       </label>
                       <ProjectDateField label="Start date" value={templateStart} disabled={commandState === 'PENDING'}
@@ -1350,7 +1364,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                     onClick={() => void openProject(item.project_id)}
                     className="wp-table-row focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-600"
                     aria-label={`View project ${item.name}, ${statusLabel(item.status)}`}>
-                    <span><strong className="wp-row-title">{item.name}</strong><span className="wp-row-meta">{item.project_id}</span></span>
+                    <span><strong className="wp-row-title">{item.name}</strong></span>
                     <span className="text-sm text-slate-700">{item.code || 'No project code'}</span>
                     <span><span className="wp-status" data-status={item.status}>{statusLabel(item.status)}</span></span>
                     <span className="text-sm text-slate-700">{item.target_date || 'No target date'}</span>
@@ -1533,7 +1547,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.23.0-TEMPLATE-POSTCOMMIT-RECONCILIATION
+// VERSION: v2.24.0-TEMPLATE-FOCUS-CONTRAST-HYGIENE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
