@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT
+ * VERSION: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies read-first queue disclosures,
+ *          direct Start/Complete controls, contextual secondary task actions,
+ *          and separated accepted template activation versus readback failures.
  * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT verifies
  *          the actual source-backed status control after transition,
  *          without depending on the portfolio toolbar removed from detail.
@@ -84,30 +87,30 @@
  *          milestone commands, active parent selection, and current-page queue
  *          search/filter over exact-scope verified task readbacks.
  * CHANGELOG: v2.9.0-INDEXED-OWNER-PAGINATION-CERT verifies owner-filtered EOS endpoint and source-bound count/pagination, never client-only filtering across 500+ projects.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT proves a
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies owner-only filtering against the authoritative current registry page, with no participant IAM fallback or fake total counts; independently keeps participant navigation for explicitly admitted principals.
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies author-selected colour in note command, independently verified EOS readback and sticky-board presentation without project mutation.
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION verifies human creator, owner and audit actor display names are backed by the exact source identity, while preserving immutable command and event IDs.
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION shows tenant-bound human owner names while submitting immutable principal IDs, and denies fabricated or incomplete name projections without allowing assignment.
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies selected-project task-first view, full-width workspace, separate overview, settings, notes and audit navigation without weakening source checks.
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION proves a
  *            Daily Attention participant-focused project opens the separately
  *            authorized Assigned Projects UI without owner-list side effects.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT adds in-place task
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION adds in-place task
  *            editing and updated revision readback without changing project
  *            Planned status, task graph or tenant authorization scope.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies task creation, verified
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies task creation, verified
  *            EOS readback, revision-guarded transition and unmodified Planned
  *            project state in the existing authenticated client harness.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT waits for the committed note row
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION waits for the committed note row
  *            instead of a transient draft textarea with the same source text.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies source-backed project note
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies source-backed project note
  *            creation/readback without modifying Planned status, propagating
  *            current principal/tenant scope or granting participant authority.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT certifies server-side exact-tenant status filtering,
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION certifies server-side exact-tenant status filtering,
  *            one-page post-filter readback and no client-invented rows.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT tests server-verified page metadata, source
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION tests server-verified page metadata, source
  *            pagination beyond the first page, and denial of phantom next pages.
- * CHANGELOG: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT proves navigation
+ * CHANGELOG: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION proves navigation
  *            beyond 100 same-tenant projects and source-verified status graph
  *            counts while retaining the existing lifecycle assertions.
  *            v1.6.3-RUNNER-PORTABLE-CSS-CERT resolves the source stylesheet
@@ -452,9 +455,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       selector: '.wp-project-tasks tbody td span',
     }).closest('tr');
     expect(row).toHaveAttribute('data-task-id', taskId);
-    expect(screen.getByRole('region', { name: 'Verified task lifecycle chart' })).toBeVisible();
+    fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
+    expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
     expect(screen.getByRole('button', { name: /Filter work to To do: 1 of 1 verified on page/ })).toBeVisible();
-    fireEvent.click(row.querySelector('button'));
+    fireEvent.click(within(row).getByRole('button', { name: 'Start: Build milestone execution' }));
     await waitFor(() => expect(row).toHaveTextContent('In progress'));
     expect(screen.getByRole('button', { name: /Filter work to In progress: 1 of 1 verified on page/ })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /Filter work to To do: 0 of 1 verified on page/ }));
@@ -464,7 +468,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible();
     expect(commands).toBe(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Edit work' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'More actions for Build milestone execution' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit / assign' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
       target: { value: 'Updated task handoff' },
     });
@@ -529,13 +534,14 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="source-checklist-readback-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(screen.getByText(/Checklist mode · 0\/1 completed/));
     const checkbox = await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
     });
     expect(checkbox).not.toBeChecked();
-    expect(screen.getByRole('region', { name: 'EOS verified To-do checklist' })).toBeVisible();
+    expect(screen.getByText('To-do checklist · current verified page')).toBeVisible();
     fireEvent.click(checkbox);
-    expect(screen.getByRole('group', { name: 'Confirm verified task completion' })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'Confirm verified task completion' })).toBeVisible();
     expect(api.post).not.toHaveBeenCalled();
     const confirm = screen.getByRole('button', { name: 'Confirm Done in EOS' });
     expect(confirm).toBeDisabled();
@@ -839,6 +845,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByText('Main delivery', {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible();
+    fireEvent.click(screen.getByText(/Checklist mode ·/));
     fireEvent.click(screen.getByRole('button', { name: 'Add checklist step to Main delivery' }));
     expect(screen.getByRole('combobox', { name: 'Work type' })).toHaveValue('SUBTASK');
     expect(screen.getByRole('combobox', { name: 'Parent task' })).toHaveValue(parentId);
@@ -1458,7 +1465,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.25.2-EXACT-STATUS-SOURCE-READBACK-CERT
+ * VERSION: v2.26.0-PRIMARY-QUEUE-POSTCOMMIT-REGRESSION
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
