@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND
+ * VERSION: v1.14.0-SINGLE-ACTION-GOVERNED-WORK-ROWS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.14.0-SINGLE-ACTION-GOVERNED-WORK-ROWS renders one status-derived primary work
+ *          action with responsive keyboard-accessible overflow. Terminal
+ *          completion requires a separately visible evidence attestation.
  * CHANGELOG: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND removes duplicated status cards,
  *          collapses lifecycle analytics and checklists until explicitly
  *          requested, and puts the actionable project queue first.
@@ -80,6 +83,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
+import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
@@ -693,26 +697,6 @@ export default function ProjectTasksPanel({
               </li>;
             })}
           </ul>}
-        {completingItem && <div role="group" aria-label="Confirm verified task completion"
-          className="mt-3 rounded-lg border border-blue-300 bg-blue-50 p-4">
-          <h5 className="text-sm font-bold text-slate-900">Confirm completion · {completingItem.title}</h5>
-          <p className="mt-2 text-xs text-slate-700">This is a terminal EOS lifecycle command. Verify acceptance and supporting evidence first; a checkbox alone does not certify evidence, an approval or a milestone.</p>
-          <label className="mt-3 flex items-start gap-2 text-sm text-slate-900">
-            <input type="checkbox" className="mt-1 size-4" checked={completionAttested}
-              onChange={event => setCompletionAttested(event.target.checked)}/>
-            <span>I reviewed this task's acceptance and supporting evidence.</span>
-          </label>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="wp-button wp-button-primary" disabled={busy || !completionAttested}
-              onClick={() => transition(completingItem, 'DONE')}>Confirm Done in EOS</button>
-            <button type="button" className="wp-button" disabled={busy} onClick={() => {
-              setCompletionCandidate(null);
-              setCompletionAttested(false);
-            }}>Cancel</button>
-            <button type="button" className="wp-button" disabled={busy}
-              onClick={() => setAttachmentTaskId(completingItem.task_id)}>Review attachments</button>
-          </div>
-        </div>}
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
@@ -907,42 +891,24 @@ export default function ProjectTasksPanel({
                   && !['DONE', 'CANCELLED'].includes(item.status) && <span className="block text-xs text-rose-700">Overdue</span>}
               </td>
               <td className="p-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {TRANSITIONS[item.status].map(next =>
-                    <button type="button" key={next} disabled={busy}
-                      onClick={() => transition(item, next)}
-                      className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
-                      {next === 'DONE' ? <CheckCircle2 size={13}/> : next === 'BLOCKED' ? <CirclePause size={13}/> : null}
-                      {label(next)}
-                    </button>)}
-                  {TRANSITIONS[item.status].length > 0 &&
-                    <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
-                      disabled={busy} onClick={() => {
-                        setCreating(false);
-                        setEditor({
-                          task_id: item.task_id, revision: item.revision,
-                          title: item.title, description: item.description,
-                          due_date: item.due_date || '',
-                          assignee_principal_id: item.assignee_principal_id || '',
-                        });
-                      }}>Edit work</button>}
-                  <button type="button" disabled={busy}
-                    onClick={() => setAttachmentTaskId(current => current === item.task_id ? null : item.task_id)}
-                    className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
-                    Attachments
-                  </button>
-                  <button type="button" disabled={busy}
-                    onClick={() => setApprovalTaskId(current => current === item.task_id ? null : item.task_id)}
-                    className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
-                    Approvals
-                  </button>
-                  <button type="button" disabled={busy}
-                    onClick={() => setDiscussionTaskId(current => current === item.task_id ? null : item.task_id)}
-                    className="wp-button !min-h-8 !px-2 !py-1 !text-xs">
-                    Activity &amp; discussion
-                  </button>
-                  {TRANSITIONS[item.status].length === 0 && <span className="text-xs text-slate-500">Terminal state</span>}
-                </div>
+                <ProjectWorkRowActions item={item} busy={busy}
+                  onTransition={transition}
+                  onComplete={selected => {
+                    setCompletionCandidate(selected.task_id);
+                    setCompletionAttested(false);
+                  }}
+                  onEdit={selected => {
+                    setCreating(false);
+                    setEditor({
+                      task_id: selected.task_id, revision: selected.revision,
+                      title: selected.title, description: selected.description,
+                      due_date: selected.due_date || '',
+                      assignee_principal_id: selected.assignee_principal_id || '',
+                    });
+                  }}
+                  onAttachments={selected => setAttachmentTaskId(selected.task_id)}
+                  onApprovals={selected => setApprovalTaskId(selected.task_id)}
+                  onActivity={selected => setDiscussionTaskId(selected.task_id)}/>
               </td></tr>)}
             {workRows.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-sm text-slate-600">
               {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
@@ -954,6 +920,26 @@ export default function ProjectTasksPanel({
 
 
 
+        {completingItem && <div role="dialog" aria-modal="true" aria-label="Confirm verified task completion"
+          className="fixed inset-x-4 top-1/4 z-[110] mx-auto max-w-xl rounded-xl border border-blue-300 bg-white p-5 shadow-2xl">
+          <h5 className="text-sm font-bold text-slate-900">Confirm completion · {completingItem.title}</h5>
+          <p className="mt-2 text-xs text-slate-700">This is a terminal EOS lifecycle command. Verify acceptance and supporting evidence first; a checkbox alone does not certify evidence, an approval or a milestone.</p>
+          <label className="mt-3 flex items-start gap-2 text-sm text-slate-900">
+            <input type="checkbox" className="mt-1 size-4" checked={completionAttested}
+              onChange={event => setCompletionAttested(event.target.checked)}/>
+            <span>I reviewed this task's acceptance and supporting evidence.</span>
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="wp-button wp-button-primary" disabled={busy || !completionAttested}
+              onClick={() => transition(completingItem, 'DONE')}>Confirm Done in EOS</button>
+            <button type="button" className="wp-button" disabled={busy} onClick={() => {
+              setCompletionCandidate(null);
+              setCompletionAttested(false);
+            }}>Cancel</button>
+            <button type="button" className="wp-button" disabled={busy}
+              onClick={() => setAttachmentTaskId(completingItem.task_id)}>Review attachments</button>
+          </div>
+        </div>}
       {(hasMore || offset > 0) && <nav className="mt-3 flex items-center justify-between gap-2" aria-label="Task pages">
         <button type="button" className="wp-button" disabled={busy || offset === 0}
           onClick={() => void load(Math.max(0, offset - 50))}>Previous work</button>
@@ -967,7 +953,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.13.0-PRIMARY-QUEUE-DETAILS-ON-DEMAND
+// VERSION: v1.14.0-SINGLE-ACTION-GOVERNED-WORK-ROWS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
