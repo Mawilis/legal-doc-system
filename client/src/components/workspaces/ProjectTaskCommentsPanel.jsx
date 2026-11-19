@@ -234,7 +234,7 @@ export default function ProjectTaskCommentsPanel({
         if (item?.tenant_id !== tenantId || item.project_id !== projectId || item.task_id !== taskId) return false;
         if (approval) {
           return item.schema === 'wilsy.project.approval.v1'
-            && /^pap-[a-f0-9]{48}$/.test(item.approval_id || '')
+            && /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
             && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
             && typeof item.requester_principal_id === 'string'
             && typeof item.reviewer_principal_id === 'string'
