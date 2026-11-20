@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.37.0-TEMPLATE-FAILURE-DIAGNOSTICS-RETRY
+ * VERSION: v2.38.0-EPHEMERAL-AI-CONTEXT-LOCATORS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectsWorkspace.jsx
  * COLLABORATION / OWNERSHIP: Projects domain and registry own business truth;
  *                            EOS owns admission; Headquarters owns navigation.
- * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CERTIFICATION / UPDATE DATE: 2026-11-20.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No token or permission claims are read here;
  *                             the existing api.js owns authenticated transport.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.38.0-EPHEMERAL-AI-CONTEXT-LOCATORS publishes only bounded
+ *          current project locators to the contextual Dock. EOS independently
+ *          resolves source visibility; browser events contain no names, task
+ *          content, entitlement or permission facts and are never persisted.
  * CHANGELOG: v2.37.0-TEMPLATE-FAILURE-DIAGNOSTICS-RETRY exposes bounded, privacy-safe
  *          template catalogue HTTP or schema failures and a real retry.
  *          A mismatched backend cannot be mistaken for an empty template
@@ -658,6 +662,13 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
   </section>;
 }
 
+/**
+ * @description Renders exact-scope Projects and publishes ephemeral navigation locators.
+ * @collaboration Canonical EOS Projects routes, work panels and contextual Dock.
+ * @institutional Source readback owns truth; locator events confer no access or command authority.
+ * @param {Object} props Authenticated scope and optional project navigation hints.
+ * @returns {React.ReactElement} Governed project registry and work surface.
+ */
 export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusAssignedProjectId = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -922,6 +933,37 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       return false;
     }
   }, [scopeKey, tenantId, principalId, tenantHeaders, changeSelection]);
+
+  // These events carry locators only. They do not transfer the Projects IAM
+  // decision to the Dock or authorize any model egress or business command.
+  useEffect(() => {
+    if (!tenantId || !principalId) return undefined;
+    const publish = () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId, principalId, locator: {
+        workspace: 'PROJECTS',
+        ...(selectedId && detailState === 'READY' && detail?.project?.project_id === selectedId
+          ? { project_id: selectedId, project_revision: detail.project.revision } : {}),
+      } },
+    }));
+    const inspect = event => {
+      const reference = event.detail;
+      if (reference?.tenantId !== tenantId || reference?.principalId !== principalId
+        || reference.project_id !== selectedId || !/^prj-[0-9a-f]{48}$/.test(reference.project_id || '')) return;
+      setProjectView('overview');
+      void openProject(reference.project_id);
+    };
+    window.addEventListener('wilsy:ai-context-request', publish);
+    window.addEventListener('wilsy:ai-inspect-source', inspect);
+    publish();
+    return () => {
+      window.removeEventListener('wilsy:ai-context-request', publish);
+      window.removeEventListener('wilsy:ai-inspect-source', inspect);
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+        detail: { tenantId, principalId, locator: { workspace: 'HEADQUARTERS' } },
+      }));
+    };
+  }, [tenantId, principalId, sessionScope, selectedId, detailState,
+    detail?.project?.project_id, detail?.project?.revision, openProject]);
 
   // A Strategy-to-Projects handoff is navigation only. Require an exact
   // authorized first-page list before opening one EOS detail/audit read.
@@ -1933,7 +1975,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.37.0-TEMPLATE-FAILURE-DIAGNOSTICS-RETRY
+// VERSION: v2.38.0-EPHEMERAL-AI-CONTEXT-LOCATORS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct

@@ -1,20 +1,25 @@
 """C1B-R19 real-Mongo HTTP certificate.
 
 TITLE: WILSY AI Authenticated Reasoning HTTP Real-Mongo Certificate
-VERSION: v1.0.0-C1B-R19
+VERSION: v1.1.0-READ-ONLY-CONTEXT-REPLICA-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exercise the authenticated reasoning command against canonical Mongo
          registries with deterministic success, failure, and replay evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_wilsy_ai_reasoning_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Certifies tools/eos/api/wilsy_ai_reasoning_router.py
                             and the published C1B/P4/P5A/P6 authorities.
-CERTIFICATION / UPDATE DATE: 2026-09-16
-CHANGELOG: v1.0.0 establishes the official C1B-R19 HTTP Mongo certificate.
+CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v1.1.0-READ-ONLY-CONTEXT-REPLICA-CERT adds exact-tenant Projects
+           context HTTP reads, source entitlement denial, stale revision and
+           source-person verification on the real isolated replica set.
+           v1.0.0 establishes the official C1B-R19 HTTP Mongo certificate.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID-isolated synthetic data; no raw provider error
                              or prompt is written to Mongo.
 TENANT BOUNDARY: Every canonical registry call is tenant-scoped.
-AUTHORITY BOUNDARY: Reasoning evidence/admission only; no legal or financial truth.
+AUTHORITY BOUNDARY: Real persistence and HTTP projection evidence only; IAM
+                    is injected, not claimed as live authenticated acceptance.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 FAIL-CLOSED DECLARATION: Mongo unavailability is an environment defect, never pass.
 """
 from __future__ import annotations
@@ -144,8 +149,98 @@ def test_authenticated_reasoning_http_success_failure_and_replay(database: tuple
     assert failure_provider.calls == 1
 
 
+
+def test_read_only_project_context_real_source_and_denials(
+    database: tuple[MongoClient, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Certify source registry, entitlement, names and stale denial without AI.
+
+    IAM is explicitly injected, while Projects transaction/entitlement reads,
+    project/name/participant/task registries and reasoning quota use real Mongo.
+    No live database or real identity is touched and no model is invoked.
+    """
+    from datetime import date
+    from tools.eos.api import projects_router as projects
+    from tools.eos.saas.domain.project import Project, ProjectStatus
+    from tools.eos.saas.domain.tenant_product_entitlement import create_tenant_product_entitlement
+    from tools.eos.saas.entitlement import tenant_product_entitlement_registry as products
+
+    client, db = database
+    tenant = "tenant-context-replica"
+    project_id = "prj-" + "e" * 48
+    _seed(db, tenant)
+    monkeypatch.setattr(projects.kernel_db, "get_client", lambda: client)
+    monkeypatch.setattr(projects.kernel_db, "get_database", lambda: db)
+    monkeypatch.setattr(module, "_database", lambda: db)
+    monkeypatch.setattr(module, "_start_session", lambda: _session(client))
+    monkeypatch.setattr(module, "_collections", lambda: {
+        "entitlement": db[ENTITLEMENT_COLLECTION], "admission": db[ADMISSION_COLLECTION],
+        "invocation": db[INVOCATION_COLLECTION], "observation": db[OBSERVATION_COLLECTION],
+    })
+    products.ensure_indexes(db[products.HISTORY_COLLECTION], db[products.CURRENT_COLLECTION])
+    projects.ProjectRegistry.ensure_indexes(db[projects.PROJECT_COLLECTION], db[projects.PROJECT_EVENT_COLLECTION])
+    projects.ProjectTaskRegistry.ensure_indexes(db[projects.PROJECT_TASK_COLLECTION], db[projects.PROJECT_TASK_EVENT_COLLECTION])
+    projects.ProjectParticipantRegistry.ensure_indexes(db[projects.PROJECT_PARTICIPANT_COLLECTION], db[projects.PROJECT_PARTICIPANT_EVENT_COLLECTION])
+    registry = projects.ProjectRegistry(db[projects.PROJECT_COLLECTION], db[projects.PROJECT_EVENT_COLLECTION])
+    entitlement_id = projects.derive_tenant_product_entitlement_id(tenant, projects.TenantProductId.PROJECTS)
+    entitlement = create_tenant_product_entitlement(
+        tenant_id=tenant, entitlement_id=entitlement_id, product_id=projects.TenantProductId.PROJECTS,
+        source_evidence_reference="synthetic-context-source", source_evidence_fingerprint="c" * 128,
+    )
+    with client.start_session() as session:
+        session.start_transaction()
+        products.create_or_replay(entitlement, db[products.HISTORY_COLLECTION], db[products.CURRENT_COLLECTION], session=session)
+        products.transition(tenant_id=tenant, entitlement_id=entitlement_id,
+            target_state="ACTIVE", expected_revision=0, evidence_reference="synthetic-activation",
+            evidence_fingerprint="d" * 128, occurred_at=NOW,
+            history_collection=db[products.HISTORY_COLLECTION], current_collection=db[products.CURRENT_COLLECTION], session=session)
+        registry.create_or_replay(project=Project(
+            tenant_id=tenant, project_id=project_id, name="Replica-backed contextual project", code="CONTEXT-CERT",
+            summary=None, status=ProjectStatus.PLANNED, owner_principal_id=None, department_id=None,
+            start_date=date(2026, 11, 20), target_date=None, source_type="internal", external_source_reference=None,
+            created_by_principal_id="principal-http", created_at=NOW,
+            updated_by_principal_id="principal-http", updated_at=NOW,
+        ), actor_principal_id="principal-http", idempotency_key="context-create", occurred_at=NOW, session=session)
+        session.commit_transaction()
+    db["users"].insert_many([
+        {"tenantId": tenant, "user_id": "principal-http", "firstName": "Verified", "lastName": "Person"},
+        {"tenantId": "foreign-tenant", "user_id": "principal-http", "firstName": "Foreign", "lastName": "Secret"},
+    ])
+    ctx = TenantAuthorizationContext(identity=_context(tenant).identity, tenant_id=tenant,
+        decision=cast(Any, SimpleNamespace(authorized=True, business_role="tenant_owner",
+                                          authorization_role="PROJECTS_TENANT_OWNER")))
+    provider = Provider()
+    binding = ServerOwnedModelProviderBinding.from_injected(provider=provider)
+    application = _app(binding, tenant)
+    application.dependency_overrides[module._REASONING_AUTH] = lambda: ctx
+    application.dependency_overrides[module.get_reasoning_project_authority] = lambda: ctx
+    args = {"workspace": "PROJECTS", "project_id": project_id, "project_revision": 1}
+    with TestClient(application) as http:
+        good = http.get("/api/wilsy-ai/reasoning/context", params=args)
+        assert good.status_code == 200, good.text
+        assert good.json()["work"]["current_person_name"] == "Verified Person"
+        assert "Foreign" not in good.text
+        assert good.json()["work"]["project"]["name"] == "Replica-backed contextual project"
+        assert good.json()["allowance"]["available_request_units"] == 35
+        assert http.get("/api/wilsy-ai/reasoning/context", params={**args, "project_revision": 2}).status_code == 409
+        assert http.get("/api/wilsy-ai/reasoning/context", params={**args, "project_id": "prj-" + "f" * 48}).status_code == 404
+        with client.start_session() as session:
+            session.start_transaction()
+            products.transition(tenant_id=tenant, entitlement_id=entitlement_id,
+                target_state="SUSPENDED", expected_revision=1, evidence_reference="synthetic-suspension",
+                evidence_fingerprint="e" * 128, occurred_at=NOW,
+                history_collection=db[products.HISTORY_COLLECTION], current_collection=db[products.CURRENT_COLLECTION], session=session)
+            session.commit_transaction()
+        assert http.get("/api/wilsy-ai/reasoning/context", params=args).status_code == 403
+    assert provider.calls == 0
+    assert db[ADMISSION_COLLECTION].count_documents({"tenant_id": tenant}) == 0
+    assert db[INVOCATION_COLLECTION].count_documents({"tenant_id": tenant}) == 0
+
 # ARTIFACT: test_wilsy_ai_reasoning_http_real_mongo.py
-# VERSION: v1.0.0-C1B-R19
+# VERSION: v1.1.0-READ-ONLY-CONTEXT-REPLICA-CERT
 # AUTHORITY BOUNDARY: real-Mongo HTTP certificate only
+# TENANT POSTURE: Real-Mongo HTTP tests use isolated tenant-scoped evidence;
+# cross-tenant authority is never inferred or granted.
 # FAIL-CLOSED POSTURE: unavailable infrastructure fails certification
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

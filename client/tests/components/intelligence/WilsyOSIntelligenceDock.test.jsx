@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.6.2-SESSION-REASONING-CANCELLATION-CERT
+ * VERSION: v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT proves independently
+ * scoped context reads, source citations, rejection of browser facts and late
+ * snapshots, explicit denial states and absence of model calls during inspection.
  * CHANGELOG: v1.6.2-SESSION-REASONING-CANCELLATION-CERT proves canceled
  * transport, late success/failure rejection, capacity reentry and unmount
  * isolation without changing the existing exact-key uncertain retry contract.
@@ -178,7 +181,7 @@ const rejectedResponse = (status, detail) => Object.assign(new Error(detail), {
 describe('WilsyOSIntelligenceDock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApiGet.mockReset();
+    mockApiGet.mockReset().mockRejectedValue(rejectedResponse(503, 'synthetic source unavailable'));
     mockApiPost.mockReset();
     mockExecuteLegalServices.mockReset();
     mockGenerateLegalNextActions.mockReset();
@@ -587,6 +590,88 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByText('Obsolete capacity answer')).not.toBeInTheDocument();
   });
 
+  it('reads current context only while open and treats page events as locators', async () => {
+    const principal = 'context-person';
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const snapshot = params => ({
+      schema: 'WILSY-AI-VERIFIED-CONTEXT/V1', tenant_id: 'TEST_TENANT', principal_id: principal,
+      authority: { source: 'PYTHON_EOS', read_only: true, model_invoked: false, financial_execution: false },
+      context_fingerprint: 'f'.repeat(128), observed_at: '2026-11-20T08:00:00+00:00', locator: params,
+      allowance: { available_request_units: 12, seat_allocation: { state: 'UNAVAILABLE' } },
+      work: params.project_id ? { project: { project_id: projectId, name: 'Verified current project', revision: 3 },
+        current_person_name: 'Source Person', sources: [{ kind: 'PROJECT', project_id: projectId, label: 'Verified current project' }] } : null,
+    });
+    mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
+      ? Promise.resolve({ data: snapshot(options.params) }) : Promise.reject(rejectedResponse(503, 'unavailable')));
+    const view = render(<WilsyOSIntelligenceDock authUser={{ id: principal, tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(false);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => {
+      expect(
+        screen.getByLabelText('Inspect verified workspace context')
+      ).toHaveTextContent('12 requests available');
+    });
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: projectId, project_revision: 3 } },
+    })));
+    fireEvent.click(screen.getByLabelText('Inspect verified workspace context'));
+    expect(await screen.findByRole('button', { name: 'Inspect source: Verified current project' })).toBeVisible();
+    expect(screen.getByText(/Source Person/)).toBeVisible();
+    expect(screen.getByText(/Conversation does not receive these workspace records/)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    const reads = mockApiGet.mock.calls.filter(([path]) => path === '/wilsy-ai/reasoning/context');
+    expect(reads.at(-1)[1].params).toEqual({ workspace: 'PROJECTS', project_id: projectId, project_revision: 3 });
+    expect(reads.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': 'TEST_TENANT' });
+    const beforeInvalid = reads.length;
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
+        tenantId: 'foreign', principalId: principal, locator: { workspace: 'HEADQUARTERS' },
+      } }));
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
+        tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: projectId, role: 'ADMIN', name: 'Invented' },
+      } }));
+    });
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/wilsy-ai/reasoning/context')).toHaveLength(beforeInvalid);
+    const inspect = vi.fn();
+    window.addEventListener('wilsy:ai-inspect-source', inspect);
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect source: Verified current project' }));
+    expect(inspect.mock.calls[0][0].detail).toEqual({ tenantId: 'TEST_TENANT', principalId: principal, project_id: projectId });
+    window.removeEventListener('wilsy:ai-inspect-source', inspect);
+    const pendingSignal = reads.at(-1)[1].signal;
+    view.unmount();
+    expect(pendingSignal.aborted).toBe(true);
+  });
+
+  it.each([[403, 'Workspace context access denied by EOS.'], [409, 'Workspace context changed. Refresh the project source.'],
+    [503, 'Verified workspace context unavailable.']])('shows honest context HTTP %s without reasoning execution', async (status, copy) => {
+    mockApiGet.mockRejectedValue(rejectedResponse(status, 'safe-source-code'));
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'context-person', tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(await screen.findByText(copy)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('discards an old context snapshot when the project locator changes', async () => {
+    let finish;
+    const projectId = 'prj-' + 'b'.repeat(48);
+    mockApiGet.mockImplementation((path, config) => path === '/wilsy-ai/reasoning/context'
+      && !config.params.project_id ? new Promise(resolve => { finish = resolve; })
+      : Promise.reject(rejectedResponse(403, 'source denied')));
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'context-person', tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(typeof finish).toBe('function'));
+    const obsoleteSignal = mockApiGet.mock.calls.find(([path]) => path === '/wilsy-ai/reasoning/context')[1].signal;
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
+      tenantId: 'TEST_TENANT', principalId: 'context-person', locator: { workspace: 'PROJECTS', project_id: projectId },
+    } })));
+    expect(obsoleteSignal.aborted).toBe(true);
+    await act(async () => finish({ data: { work: { project: { name: 'Obsolete source secret' } } } }));
+    expect(screen.queryByText('Obsolete source secret')).not.toBeInTheDocument();
+    expect(await screen.findByText('Workspace context access denied by EOS.')).toBeVisible();
+  });
+
   it('sends a message when Enter is pressed', async () => {
     const mockReply = { data: { response_text: 'Test reply', usage_observation_id: 'usage-1' } };
     mockApiPost.mockResolvedValue(mockReply);
@@ -854,7 +939,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.6.2-SESSION-REASONING-CANCELLATION-CERT
+ * VERSION: v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards

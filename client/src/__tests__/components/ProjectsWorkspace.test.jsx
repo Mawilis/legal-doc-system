@@ -1,12 +1,12 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT
+ * VERSION: v2.51.0-AI-LOCATOR-PRIVACY-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
- * CERTIFICATION / UPDATE DATE: 2026-11-19.
+ * CERTIFICATION / UPDATE DATE: 2026-11-20.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic exact-scope fixtures only; no tokens,
  *          real identities, private comments or production credentials.
@@ -14,6 +14,8 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.51.0-AI-LOCATOR-PRIVACY-CERT verifies verified-detail locators,
+ *          absence of source content in browser events and cleanup on exit.
  * CHANGELOG: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT verifies missing backend routes and
  *          malformed catalogue envelopes are separately diagnosed, source
  *          fallback is prohibited, and an explicit retry recovers 17 options.
@@ -2158,11 +2160,42 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await act(async () => { resolvePriorList({ data: list([project({ name: 'Stale tenant A item' })]) }); });
     expect(screen.queryByText('Stale tenant A item')).not.toBeInTheDocument();
   });
+  it('publishes bounded AI locators after source verification and clears them on exit', async () => {
+    const events = [];
+    const capture = event => events.push(event.detail);
+    window.addEventListener('wilsy:ai-context-locator', capture);
+    const value = project();
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([value]) };
+      if (path === '/projects/summary') return { data: summary([value]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(value) };
+      throw new Error('Unused child source');
+    });
+    const mounted = render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="locator-scope"/>);
+    try {
+      fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+      await waitFor(() => expect(events.at(-1)).toEqual({ tenantId: TENANT, principalId: PRINCIPAL,
+        locator: { workspace: 'PROJECTS', project_id: PROJECT_ID, project_revision: 1 } }));
+      expect(JSON.stringify(events)).not.toContain('Source-confirmed project');
+      expect(JSON.stringify(events)).not.toContain('Verified Creator');
+      events.length = 0;
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
+      expect(events.at(-1).locator.project_id).toBe(PROJECT_ID);
+      mounted.unmount();
+      expect(events.at(-1).locator).toEqual({ workspace: 'HEADQUARTERS' });
+      const afterExit = events.length;
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
+      expect(events).toHaveLength(afterExit);
+      expect(api.post).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('wilsy:ai-context-locator', capture);
+    }
+  });
 });
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT
+ * VERSION: v2.51.0-AI-LOCATOR-PRIVACY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.

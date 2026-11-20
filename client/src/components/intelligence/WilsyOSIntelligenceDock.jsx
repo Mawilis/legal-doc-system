@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION
+ * VERSION: v4.9.0-VERIFIED-CONTEXT-INSPECTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v4.9.0-VERIFIED-CONTEXT-INSPECTION reads independently admitted
+ * workspace context only while open, validates exact scope and source locators,
+ * cancels stale reads and exposes source citations and unavailable commercial
+ * facts. Collapsible source details retain the mobile composer in view.
+ * Inspection does not send source records to a model or issue authority.
  * CHANGELOG: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION cancels obsolete
  * reasoning transport on scope exit and unmount, rejects late work by mount
  * generation, and releases submission state for the newly selected capacity.
@@ -380,6 +385,10 @@ export function WilsyOSIntelligenceDock({
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
+  const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
+  const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
+  const [contextRefresh, setContextRefresh] = useState(0);
+  const workLocatorKey = JSON.stringify(workLocator);
   const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
   const reasoningAbortRef = useRef(null);
   const conversationGenerationRef = useRef(0);
@@ -423,6 +432,8 @@ export function WilsyOSIntelligenceDock({
     setIsSubmitting(false);
     setPrompt('');
     setErrorMessage('');
+    setWorkLocator({ workspace: 'HEADQUARTERS' });
+    setVerifiedWorkspaceContext(null);
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
@@ -438,6 +449,75 @@ export function WilsyOSIntelligenceDock({
       resetWilsyAIConversationSession();
     };
   }, [dockScope]);
+
+  // Navigation events are untrusted locators. No profile, permission, seat,
+  // project title or other source fact is accepted from browser events.
+  useEffect(() => {
+    const receive = event => {
+      const detail = event.detail;
+      const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+      if (!authUser?.id || detail?.tenantId !== exactTenant || detail?.principalId !== authUser.id) return;
+      const candidate = detail.locator;
+      const allowed = ['workspace', 'project_id', 'project_revision', 'task_id', 'task_revision', 'participant_view'];
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)
+        || Object.keys(candidate).some(key => !allowed.includes(key))
+        || !['HEADQUARTERS', 'PROJECTS'].includes(candidate.workspace)
+        || (candidate.project_id && (!/^prj-[0-9a-f]{48}$/.test(candidate.project_id)
+          || candidate.workspace !== 'PROJECTS'))
+        || (candidate.project_revision !== undefined && (!candidate.project_id
+          || !Number.isSafeInteger(candidate.project_revision) || candidate.project_revision < 1))
+        || (candidate.task_id && (!candidate.project_id || !/^ptk-[0-9a-f]{48}$/.test(candidate.task_id)))
+        || (candidate.task_revision !== undefined && (!candidate.task_id
+          || !Number.isSafeInteger(candidate.task_revision) || candidate.task_revision < 1))
+        || (candidate.participant_view !== undefined && typeof candidate.participant_view !== 'boolean')) return;
+      setWorkLocator(previous => JSON.stringify(previous) === JSON.stringify(candidate) ? previous : { ...candidate });
+    };
+    window.addEventListener('wilsy:ai-context-locator', receive);
+    window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
+    return () => window.removeEventListener('wilsy:ai-context-locator', receive);
+  }, [dockScope]);
+
+  useEffect(() => {
+    const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+    if (!isOpen || !authUser?.id || !exactTenant || isLegalDockRole(authUser?.role)) {
+      setVerifiedWorkspaceContext(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    let current = true;
+    const base = { scope: dockScope, locatorKey: workLocatorKey };
+    setVerifiedWorkspaceContext({ ...base, state: 'LOADING' });
+    api.get('/wilsy-ai/reasoning/context', {
+      params: workLocator, headers: { 'X-Tenant-ID': exactTenant },
+      signal: controller.signal, timeout: 15000, forceNetworkRetry: true,
+    }).then(response => {
+      if (!current || controller.signal.aborted || dockScopeRef.current !== dockScope) return;
+      const data = response?.data;
+      if (data?.schema !== 'WILSY-AI-VERIFIED-CONTEXT/V1'
+        || data.tenant_id !== exactTenant || data.principal_id !== authUser.id
+        || data.authority?.source !== 'PYTHON_EOS' || data.authority?.read_only !== true
+        || data.authority?.model_invoked !== false || data.authority?.financial_execution !== false
+        || !/^[0-9a-f]{128}$/.test(data.context_fingerprint || '')
+        || !Number.isFinite(Date.parse(data.observed_at))
+        || data.locator?.workspace !== workLocator.workspace
+        || (data.locator?.project_id || null) !== (workLocator.project_id || null)
+        || (data.locator?.task_id || null) !== (workLocator.task_id || null)
+        || (workLocator.project_id && data.work?.project?.project_id !== workLocator.project_id)
+        || (workLocator.project_revision && data.work?.project?.revision !== workLocator.project_revision)
+        || !Number.isSafeInteger(data.allowance?.available_request_units)
+        || data.allowance.available_request_units < 0) throw new Error('WILSY_AI_CONTEXT_RESPONSE_INVALID');
+      setVerifiedWorkspaceContext({ ...base, state: 'READY', data });
+    }).catch(error => {
+      if (!current || controller.signal.aborted || dockScopeRef.current !== dockScope) return;
+      const status = error?.response?.status;
+      setVerifiedWorkspaceContext({ ...base,
+        state: status === 401 || status === 403 ? 'DENIED' : status === 409 ? 'STALE' : 'UNAVAILABLE' });
+    });
+    return () => { current = false; controller.abort(); };
+  }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
+
+  const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
+    && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
 
   /**
    * @function hydrateDockContext
@@ -1075,7 +1155,47 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
-                <div className={styles.messagesContainer}>
+                {authUser?.id && !isLegalDockRole(authUser?.role) && <section
+                  aria-label="Verified workspace context" aria-live="polite"
+                  style={{ padding: '10px 14px', background: '#111827', color: '#f1f5f9',
+                    borderBottom: '1px solid #475569', fontSize: 12, lineHeight: 1.5,
+                    flexShrink: 0, maxHeight: 220, overflowY: 'auto' }}>
+                  {visibleWorkspaceContext?.state === 'READY' ? <details>
+                    <summary aria-label="Inspect verified workspace context"
+                      style={{ cursor: 'pointer', minHeight: 44 }}>
+                      <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Current authorized workspace'}</strong>
+                      {' · '}{visibleWorkspaceContext.data.allowance.available_request_units} requests available
+                    </summary>
+                    <p style={{ margin: '4px 0' }}>
+                      {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
+                      {' · '}{visibleWorkspaceContext.data.allowance.available_request_units} requests available
+                      {' · Seats and pricing: '}{visibleWorkspaceContext.data.allowance.seat_allocation?.state === 'UNAVAILABLE'
+                        ? 'unavailable' : 'require independent admission'}
+                    </p>
+                    <p style={{ margin: '4px 0' }}>Workforce and qualifications: unavailable without independent source authority.</p>
+                    {(visibleWorkspaceContext.data.work?.sources || []).filter(source => source.kind === 'PROJECT'
+                      && source.project_id === workLocator.project_id).map(source => <button type="button"
+                      key={source.project_id} className={styles.historyActionButton}
+                      style={{ minHeight: 44, color: '#f8fafc', padding: '6px 10px' }}
+                      onClick={() => window.dispatchEvent(new CustomEvent('wilsy:ai-inspect-source', {
+                        detail: { tenantId: visibleWorkspaceContext.data.tenant_id,
+                          principalId: visibleWorkspaceContext.data.principal_id,
+                          project_id: source.project_id },
+                      }))}>Inspect source: {source.label}</button>)}
+                    <p style={{ margin: '4px 0', color: '#cbd5e1' }}>
+                      Verified for inspection. Conversation does not receive these workspace records.
+                      Contextual execution requires verified commercial and seat admission.
+                    </p>
+                  </details> : <span>{visibleWorkspaceContext?.state === 'LOADING' ? 'Verifying workspace context…'
+                    : visibleWorkspaceContext?.state === 'DENIED' ? 'Workspace context access denied by EOS.'
+                      : visibleWorkspaceContext?.state === 'STALE' ? 'Workspace context changed. Refresh the project source.'
+                        : 'Verified workspace context unavailable.'}</span>}
+                  <button type="button" className={styles.historyActionButton}
+                    disabled={visibleWorkspaceContext?.state === 'LOADING'}
+                    style={{ minHeight: 44, marginLeft: 6, color: '#f8fafc', padding: '6px 10px' }}
+                    onClick={() => setContextRefresh(value => value + 1)}>Refresh context</button>
+                </section>}
+                <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
                       <ShieldCheck size={32} className={styles.welcomeShield} />
@@ -1118,7 +1238,8 @@ export function WilsyOSIntelligenceDock({
 
                 {!isLegalDockRole(authUser?.role) && <label style={{
                   display: 'flex', gap: 9, alignItems: 'flex-start', padding: '9px 14px',
-                  color: '#e7edf9', fontSize: 12, lineHeight: 1.45,
+                  color: '#e7edf9', fontSize: 12, lineHeight: 1.45, flexShrink: 0,
+                  textTransform: 'none', letterSpacing: 'normal', fontWeight: 400,
                 }}>
                   <input type="checkbox" checked={reasoningUsageConsent}
                     onChange={event => setReasoningUsageConsent(event.target.checked)}
@@ -1129,7 +1250,7 @@ export function WilsyOSIntelligenceDock({
                     on each request, which may consume metered usage. This
                     does not authorize projects, staffing or payments.</span>
                 </label>}
-                <div className={styles.chatInputArea}>
+                <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
                   <textarea
                     className={styles.promptInput}
                     value={prompt}
@@ -1432,7 +1553,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.8.2-SESSION-OWNED-REASONING-CANCELLATION
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.9.0-VERIFIED-CONTEXT-INSPECTION
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1448,7 +1569,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION
+ * VERSION: v4.9.0-VERIFIED-CONTEXT-INSPECTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
