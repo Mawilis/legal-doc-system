@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE
+ * VERSION: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE adds task-scoped evidence uploads inline
+ *          for verified active contributors, via participant-only EOS
+ *          authorization. Uploads remain quarantined and are not implicitly
+ *          linked to an individual comment or considered approved evidence.
  * CHANGELOG: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE places the verified work timeline before source status
  *          diagnostics and optional composer, makes diagnostics disclosure-only,
  *          and reduces duplicated headers and boxed surfaces without changing
@@ -70,6 +74,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle, MessageSquare, RefreshCw, Send, X } from 'lucide-react';
 import api from '../../services/api.js';
+import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 
 const LIST = 'WILSY-PROJECT-COMMENT-LIST/V1';
 const RESULT = 'WILSY-PROJECT-COMMENT-RESULT/V1';
@@ -164,6 +169,7 @@ export default function ProjectTaskCommentsPanel({
   const [approvalHasMore, setApprovalHasMore] = useState(false);
   const [attachmentHasMore, setAttachmentHasMore] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
+  const [showTaskEvidence, setShowTaskEvidence] = useState(false);
   const [body, setBody] = useState('');
   const [mentions, setMentions] = useState([]);
   const [state, setState] = useState('LOADING');
@@ -179,6 +185,9 @@ export default function ProjectTaskCommentsPanel({
   const composerRef = useRef(null);
   const navigatedScope = useRef(null);
   const command = useRef({ fingerprint: '', key: '' });
+  const contributorEligible = Array.isArray(participants) && participants.some(person =>
+    person?.principal_id === principalId && person?.role === 'CONTRIBUTOR'
+    && person?.status !== 'REVOKED' && person?.state !== 'REVOKED');
   const route = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
     + encodeURIComponent(taskId) + '/comments';
@@ -484,11 +493,25 @@ export default function ProjectTaskCommentsPanel({
           {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
             : 'No comments on this page'} · task activity
         </p>
+        {contributorEligible && <button type="button" className="wp-button"
+          aria-expanded={showTaskEvidence}
+          onClick={() => setShowTaskEvidence(value => !value)}>
+          {showTaskEvidence ? 'Close file upload' : 'Upload task evidence'}
+        </button>}
         <button type="button" className="wp-button" aria-expanded={showComposer}
           aria-controls="task-comment-composer" onClick={() => setShowComposer(current => !current)}>
           {showComposer ? 'Close editor' : 'Write update'}
         </button>
       </div>
+      {showTaskEvidence && contributorEligible &&
+        <div aria-label="Inline task evidence upload">
+          <p className="mt-2 text-xs text-slate-700">Uploaded files belong to this task, not a single comment.
+            EOS quarantines files until independently verified scan clearance.</p>
+          <ProjectTaskAttachmentsPanel key={'discussion-evidence:' + scope}
+            tenantId={tenantId} principalId={principalId} projectId={projectId}
+            taskId={taskId} participantMode tenantHeaders={tenantHeaders}
+            onClose={() => setShowTaskEvidence(false)}/>
+        </div>}
       <div id="verified-task-comment-history" aria-label="Verified task activity history">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
@@ -610,7 +633,7 @@ export default function ProjectTaskCommentsPanel({
                   onChange={event => setMentions(list => event.target.checked
                     ? [...list, person.principal_id]
                     : list.filter(value => value !== person.principal_id))}/>
-                {person.principal_id}
+                {person.display_name || person.name || 'Verified contributor'}
               </label>)}
           </div>
           <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
@@ -625,7 +648,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE
+// VERSION: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
