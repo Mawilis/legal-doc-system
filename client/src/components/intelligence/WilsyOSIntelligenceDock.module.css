@@ -1,13 +1,16 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION
+ * VERSION: v1.3.0-MOBILE-COMPOSER-CONTAINMENT
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION adds compact movable launcher, a nonmodal
+ * CHANGELOG: v1.3.0-MOBILE-COMPOSER-CONTAINMENT keeps the conversation scroller
+ * shrinkable and its composer reachable in dynamic mobile viewports, including
+ * safe-area/virtual-keyboard resizing, without granting any new capability.
+ * v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION adds compact movable launcher, a nonmodal
  * companion panel, viewport limits, distinct AI emblem and modal layering.
  * CHANGELOG: v1.1.1-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION — Added Dock-owned WILSY OS branding styles;
  *            existing generic chat, Suggestions, History, and billing styles remain intact.
@@ -888,9 +891,33 @@
 .legalAdvisoryPrompt textarea:focus-visible, .legalAdvisoryGenerate:focus-visible, .legalAdvisoryRefresh:focus-visible, .legalAdvisoryClear:focus-visible { outline: 2px solid #8ee8d1; outline-offset: 2px; }
 @media (max-width: 560px) { .legalAdvisoryGrid { grid-template-columns: 1fr; } .legalAdvisoryActions > button { flex: 1 1 100%; } }
 
+
+/* Session-owned chat occupies the available pane; only messages scroll. */
+.dockWindow,
+.dockExpanded,
+.chatTabContent,
+.messagesContainer { min-height: 0; }
+.messagesContainer { overscroll-behavior: contain; }
+.chatInputArea {
+  min-width: 0;
+  flex-shrink: 0;
+  background: #0a1b30;
+  border-top: 1px solid rgba(203, 216, 237, 0.2);
+}
+.promptInput { min-width: 0; max-width: 100%; line-height: 1.45; overflow-y: auto; }
+@media (max-width: 600px) {
+  .dockWindow,
+  .dockExpanded { height: min(620px, calc(100dvh - 24px)); max-height: calc(100dvh - 24px); }
+  .chatInputArea {
+    padding: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .emptyChatWelcome { padding: 12px 8px; text-align: left; }
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION
+ * VERSION: v1.3.0-MOBILE-COMPOSER-CONTAINMENT
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
