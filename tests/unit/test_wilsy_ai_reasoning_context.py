@@ -1,12 +1,16 @@
 """TITLE: WILSY AI independently authorized context HTTP certificate.
-VERSION: v1.6.0-HEADQUARTERS-SERVER-GROUNDING-CERT
+VERSION: v1.7.0-HEADQUARTERS-IAM-REUSE-CERT
 AUTHORITY: Synthetic regression evidence; canonical EOS sources own authority.
 EPITOME: Verify locator validation, exact source admission, source freshness,
          bounded projections, unavailable facts and provider-free context reads.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_context.py
 COLLABORATION / OWNERSHIP: Reasoning router, Projects source and existing IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.6.0-HEADQUARTERS-SERVER-GROUNDING-CERT certifies
+CHANGELOG: v1.7.0-HEADQUARTERS-IAM-REUSE-CERT verifies
+           explicit Headquarters source request reuses the existing My Work
+           per-module IAM adapters, rejects foreign tenant/principal readback
+           and cannot manufacture work from a client locator.
+           v1.6.0-HEADQUARTERS-SERVER-GROUNDING-CERT certifies
            bounded EOS My Work facts can ground Headquarters reasoning only
            as untrusted data, rejects malformed source authority, and never
            promotes browser fields to canonical task facts.
@@ -371,6 +375,90 @@ def test_headquarters_source_requires_explicit_workspace_opt_in() -> None:
 
 
 
+
+def test_headquarters_source_reuses_independent_my_work_admission(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Actual source ownership, not the AI permission, decides work visibility."""
+    from tools.eos.api import unified_my_work_router as work
+    from tools.eos.api import tenant_authorization_http as authority
+    admitted: list[str] = []
+
+    class Admit:
+        def __init__(self, label: str) -> None:
+            self.label = label
+
+        async def __call__(self, **params: Any) -> TenantAuthorizationContext:
+            assert params["tenant_id"] == "context-tenant"
+            assert params["identity"].identity_id == "context-person"
+            admitted.append(self.label)
+            return context()
+
+    for label in ("LEGAL_READ", "OPERATIONS_READ", "INTELLIGENCE_READ",
+                  "CRM_READ", "PROJECTS_READ", "HEADCOUNT_READ",
+                  "HEADCOUNT_SUBMIT", "HEADCOUNT_DECIDE", "OFFER_READ",
+                  "OFFER_SUBMIT", "OFFER_DECIDE", "OFFER_SEND"):
+        monkeypatch.setattr(work, "_" + label, Admit(label))
+    for name in ("get_principal_authority_repository",
+                 "get_tenant_membership_repository",
+                 "get_role_assignment_repository"):
+        monkeypatch.setattr(authority, name, lambda: object())
+
+    async def read_work(**kwargs: Any) -> dict[str, Any]:
+        assert kwargs["tenant_id"] == "context-tenant"
+        assert kwargs["identity"].identity_id == "context-person"
+        assert isinstance(kwargs["projects_context"], TenantAuthorizationContext)
+        return {"tenant_id": "context-tenant", "principal_id": "context-person",
+                "items": [], "summary": {"active_count": 0, "overdue_count": 0},
+                "authority": {"commands_owned_by": "SOURCE_SERVICES",
+                              "permits_completion": False, "permits_approval": False}}
+
+    monkeypatch.setattr(work, "read_my_work", read_work)
+    result = asyncio.run(module.get_reasoning_headquarters_source(
+        request=cast(Any, object()), include_work_context=True,
+        locator=module.WilsyAIContextLocator(workspace="HEADQUARTERS"),
+        context=context(),
+    ))
+    assert result is not None and result["principal_id"] == "context-person"
+    assert len(admitted) == 12
+
+
+def test_foreign_headquarters_work_readback_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An independent source cannot return another tenant's work as current."""
+    from tools.eos.api import unified_my_work_router as work
+    from tools.eos.api import tenant_authorization_http as authority
+
+    class Deny:
+        async def __call__(self, **params: Any) -> None:
+            return None
+
+    for label in ("LEGAL_READ", "OPERATIONS_READ", "INTELLIGENCE_READ",
+                  "CRM_READ", "PROJECTS_READ", "HEADCOUNT_READ",
+                  "HEADCOUNT_SUBMIT", "HEADCOUNT_DECIDE", "OFFER_READ",
+                  "OFFER_SUBMIT", "OFFER_DECIDE", "OFFER_SEND"):
+        monkeypatch.setattr(work, "_" + label, Deny())
+    for name in ("get_principal_authority_repository",
+                 "get_tenant_membership_repository",
+                 "get_role_assignment_repository"):
+        monkeypatch.setattr(authority, name, lambda: object())
+
+    async def wrong_work(**kwargs: Any) -> dict[str, Any]:
+        return {"tenant_id": "foreign-tenant", "principal_id": "context-person",
+                "items": [], "summary": {"active_count": 0, "overdue_count": 0}}
+
+    monkeypatch.setattr(work, "read_my_work", wrong_work)
+    with pytest.raises(HTTPException) as failure:
+        asyncio.run(module.get_reasoning_headquarters_source(
+            request=cast(Any, object()), include_work_context=True,
+            locator=module.WilsyAIContextLocator(workspace="HEADQUARTERS"),
+            context=context(),
+        ))
+    assert failure.value.status_code == 503
+
+
+
 def test_project_grounding_uses_bounded_fields_not_private_source_records() -> None:
     """Model prompt contains only authorized bounded project/task evidence."""
     source = {
@@ -436,7 +524,7 @@ def test_oversized_project_context_is_not_sent_to_model() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_reasoning_context.py
-# VERSION: v1.6.0-HEADQUARTERS-SERVER-GROUNDING-CERT
+# VERSION: v1.7.0-HEADQUARTERS-IAM-REUSE-CERT
 # AUTHORITY BOUNDARY: synthetic context HTTP regression evidence only
 # TENANT POSTURE: independently admitted exact tenant, principal and capacity
 # FAIL-CLOSED POSTURE: malformed, mismatched and stale source locators reject
