@@ -1,7 +1,7 @@
 """Authenticated Founder Institutional AI commercial activation.
 
 TITLE: WILSY Founder Institutional AI Authenticated Activation
-VERSION: v1.0.0-EXACT-FOUNDER-AUTHENTICATED-INSTITUTIONAL-ACTIVATION
+VERSION: v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK
 AUTHORITY: Existing plan:manage AND subscription:manage IAM; canonical P4.
 EPITOME: Execute canonical staged commercial amendment, zero-rated subscription
          snapshot, D57B/P4 ACTIVE issuance, and durable source readback.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: SubscriptionRouter authenticates both permissions;
   PlanRegistry owns plan CAS and audit; SubscriptionRegistry owns commercial
   snapshot/audit; D57B/P4 own AI entitlement lifecycle; EOS Mongo owns transport.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-EXACT-FOUNDER-AUTHENTICATED-INSTITUTIONAL-ACTIVATION
+CHANGELOG: v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK matches
+  the canonical WilsyAITier.INSTITUTIONAL ACTIVE source readback rather than
+  an unrelated display string.
+  v1.0.0-EXACT-FOUNDER-AUTHENTICATED-INSTITUTIONAL-ACTIVATION
   adds a permission-scoped, exact Founder, staged, recoverable issuance command.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: No browser-supplied plan, tenant, tier or evidence
@@ -51,11 +54,12 @@ from tools.eos.saas.billing.subscription_term_policy import (
     SubscriptionTermKind, evaluate_subscription_term,
 )
 from tools.eos.saas.billing.wilsy_ai_entitlement_registry import WilsyAIEntitlementRegistry
+from tools.eos.saas.billing.wilsy_ai_commercial_policy import WilsyAITier
 from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.0.0-EXACT-FOUNDER-AUTHENTICATED-INSTITUTIONAL-ACTIVATION"
+VERSION: Final[str] = "v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK"
 _MANDATE_REF: Final[str] = "founder-institutional-ai-commercial-decision-20261120"
 _IDEMPOTENCY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9:_-]{16,128}$")
 
@@ -244,7 +248,7 @@ def activate_authenticated_founder_institutional_ai(
         and readback.lifecycle_state is WilsyAIEntitlementState.ACTIVE
         and readback.tenant_id == FOUNDER_TENANT_ID
         and readback.entitlement_id == result.entitlement_id
-        and readback.tier.value == "INSTITUTIONAL",
+        and readback.tier is WilsyAITier.INSTITUTIONAL,
         "FOUNDER_AI_ACTIVE_ENTITLEMENT_READBACK_FAILED",
     )
     return {
@@ -265,7 +269,7 @@ __all__ = [
 ]
 
 # ARTIFACT: founder_ai_authenticated_activation.py
-# VERSION: v1.0.0-EXACT-FOUNDER-AUTHENTICATED-INSTITUTIONAL-ACTIVATION
+# VERSION: v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK
 # AUTHORITY BOUNDARY: dual IAM required at router; canonical registries only
 # TENANT POSTURE: exact Founder tuple, never aliased
 # FAIL-CLOSED POSTURE: stage CAS, proof and ACTIVE readback are mandatory
