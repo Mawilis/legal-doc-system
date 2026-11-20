@@ -1,7 +1,7 @@
 """Real-Mongo certificate for D57B WILSY AI entitlement composition.
 
 TITLE: Subscription-Backed WILSY AI Composition Real-Mongo Certificate
-VERSION: v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT
+VERSION: v1.2.1-CANONICAL-REGISTRY-READBACK-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Physically prove subscription-backed tier derivation, durable P4
          persistence, transaction rollback, replay and tenant isolation.
@@ -9,7 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Uses actual PlanRegistry, SubscriptionRegistry and
                             P4 registry in a disposable sanctioned replica set.
 CERTIFICATION / UPDATE DATE: 2026-10-10
-CHANGELOG: v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT certifies
+CHANGELOG: v1.2.1-CANONICAL-REGISTRY-READBACK-CERT reads staged plan
+           and subscription state through canonical registry accessors.
+           v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT certifies
            the complete authenticated-orchestrator plan/upgrade/P4 state chain,
            source zero rating, ACTIVE readback, and idempotent exact replay
            against a disposable Mongo replica; Founder identifiers are
@@ -73,7 +75,7 @@ from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
 )
 
 
-VERSION = "v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT"
+VERSION = "v1.2.1-CANONICAL-REGISTRY-READBACK-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -339,13 +341,13 @@ def test_real_authenticated_founder_ai_issuance_replay_and_zero_rating(
     assert result["zero_rated_subscription"] is True
     assert result["activated_this_request"] is True
 
-    stored_plan = PlanRegistry.get_by_id(
+    stored_plan = PlanRegistry.get(
         plan_id, tenant_id=tenant, exact_tenant=True,
     )
     assert stored_plan is not None
     assert "ai.wilsy.institutional" in stored_plan.features
     with client.start_session() as session:
-        updated_subscription = SubscriptionRegistry.get_entity(
+        updated_subscription = SubscriptionRegistry.get(
             subscription_id, tenant, collection=subscriptions, session=session,
         )
         p4 = WilsyAIEntitlementRegistry(entitlements).get_by_module(
@@ -516,7 +518,7 @@ def test_real_divergent_replay_fails_and_unrelated_collections_remain_empty(
 
 
 # ARTIFACT: test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py
-# VERSION: v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT
+# VERSION: v1.2.1-CANONICAL-REGISTRY-READBACK-CERT
 # AUTHORITY BOUNDARY: real-Mongo D57B composition evidence only; no external authority
 # TENANT POSTURE: UUID-isolated exact-tenant subscription and entitlement operations
 # FAIL-CLOSED POSTURE: absent/generic/conflicting feature, foreign scope, rollback and divergent replay persist no false success
