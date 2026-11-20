@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.12.1-QUIET-REMEMBERED-CONSENT
+ * VERSION: v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.12.1-QUIET-REMEMBERED-CONSENT keeps previously accepted
+ * CHANGELOG: v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED projects independently authorized
+ * Headquarters My Work priorities as read-only task rows when AI commercial
+ * admission is unavailable; tenant/principal and source-owned flags are
+ * checked before display. These rows never enter the model from the browser.
+ * v4.12.1-QUIET-REMEMBERED-CONSENT keeps previously accepted
  * usage consent collapsed into a discreet, reversible preference instead
  * of presenting the permission prompt again; rejects email values as first
  * names. v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT greets new conversations from the authenticated
@@ -429,6 +433,7 @@ export function WilsyOSIntelligenceDock({
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
+  const [headquartersWork, setHeadquartersWork] = useState(null);
   const [contextRefresh, setContextRefresh] = useState(0);
   const workLocatorKey = JSON.stringify(workLocator);
   const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
@@ -493,6 +498,7 @@ export function WilsyOSIntelligenceDock({
     setErrorMessage('');
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
+    setHeadquartersWork(null);
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
@@ -593,6 +599,52 @@ export function WilsyOSIntelligenceDock({
         state: status === 401 || status === 403 ? 'DENIED' : status === 409 ? 'STALE' : 'UNAVAILABLE' });
     });
     return () => { current = false; controller.abort(); };
+  }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
+
+  // Read-only EOS My Work is independently authorized from AI commercial
+  // entitlement. It is a UI projection only; never forwarded to a model as
+  // client-provided fact or used to authorize workflow commands.
+  useEffect(() => {
+    const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+    if (!isOpen || !authUser?.id || !exactTenant || workLocator.workspace !== 'HEADQUARTERS') {
+      setHeadquartersWork(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    let live = true;
+    const scope = dockScope;
+    setHeadquartersWork({ scope, state: 'LOADING' });
+    api.get('/my-work', {
+      headers: { 'X-Tenant-ID': exactTenant },
+      signal: controller.signal,
+      timeout: 15000,
+    }).then(response => {
+      if (!live || controller.signal.aborted || dockScopeRef.current !== scope) return;
+      const data = response?.data;
+      if (!data || data.tenant_id !== exactTenant || data.principal_id !== authUser.id
+        || !Array.isArray(data.items)
+        || !data.summary || !Number.isSafeInteger(data.summary.active_count)
+        || !Number.isSafeInteger(data.summary.overdue_count)
+        || data.authority?.commands_owned_by !== 'SOURCE_SERVICES'
+        || data.authority?.permits_completion !== false
+        || data.authority?.permits_approval !== false) {
+        setHeadquartersWork({ scope, state: 'UNAVAILABLE' });
+        return;
+      }
+      const items = data.items.slice(0, 3).map(item => ({
+        title: typeof item.title === 'string' ? item.title.slice(0, 180) : '',
+        source: typeof item.source === 'string' ? item.source.slice(0, 32) : '',
+        overdue: item.is_overdue === true,
+      })).filter(item => item.title && item.source);
+      setHeadquartersWork({ scope, state: 'READY', items,
+        activeCount: data.summary.active_count,
+        overdueCount: data.summary.overdue_count });
+    }).catch(() => {
+      if (live && !controller.signal.aborted && dockScopeRef.current === scope) {
+        setHeadquartersWork({ scope, state: 'UNAVAILABLE' });
+      }
+    });
+    return () => { live = false; controller.abort(); };
   }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
 
   const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
@@ -1110,6 +1162,8 @@ export function WilsyOSIntelligenceDock({
   }, [deadlineMatterId, deadlineLoading]);
 
   const welcomeGreeting = operatorGreeting(authUser);
+  const visibleHeadquartersWork = headquartersWork?.scope === dockScope
+    && workLocator.workspace === 'HEADQUARTERS' ? headquartersWork : null;
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -1277,6 +1331,26 @@ export function WilsyOSIntelligenceDock({
                     style={{ minHeight: 44, marginLeft: 6, color: '#f8fafc', padding: '6px 10px' }}
                     onClick={() => setContextRefresh(value => value + 1)}>Refresh context</button>
                 </section>}
+                {visibleHeadquartersWork?.state === 'READY'
+                  && visibleHeadquartersWork.activeCount > 0
+                  && <section aria-label="Current authorized work"
+                    style={{ padding: '8px 14px', background: 'rgba(9,25,45,.74)',
+                      borderBottom: '1px solid rgba(170,194,217,.15)',
+                      color: '#d7e4f4', fontSize: 12, flexShrink: 0,
+                      maxHeight: 160, overflowY: 'auto' }}>
+                    <strong style={{ fontWeight: 550 }}>
+                      Your work · {visibleHeadquartersWork.activeCount} active
+                      {' · '}{visibleHeadquartersWork.overdueCount} overdue
+                    </strong>
+                    <ol style={{ margin: '6px 0 0', paddingLeft: 20 }}>
+                      {visibleHeadquartersWork.items.map((item, index) =>
+                        <li key={index} style={{ marginBottom: 4, overflowWrap: 'anywhere' }}>
+                          {item.title} <span style={{ color: '#abbfd4' }}>
+                            · {item.source}{item.overdue ? ' · Overdue' : ''}
+                          </span>
+                        </li>)}
+                    </ol>
+                  </section>}
                 <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
@@ -1663,7 +1737,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.12.1-QUIET-REMEMBERED-CONSENT
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1679,7 +1753,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.12.1-QUIET-REMEMBERED-CONSENT
+ * VERSION: v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
