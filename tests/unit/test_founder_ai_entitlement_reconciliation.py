@@ -1,7 +1,7 @@
 """WILSY Founder AI reconciliation's fail-closed commercial source certificate.
 
 TITLE: Founder WILSY AI Entitlement Reconciliation Unit Certificate
-VERSION: v1.0.0-EXACT-COMMERCIAL-SOURCE-CERT
+VERSION: v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT
 AUTHORITY: Synthetic regression evidence; Python EOS owns commercial truth.
 EPITOME: Verify no Founder inference, zero-rated source matching, tier feature
          gating, dry-run abstention, and existing P4-only activation.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder AI reconciliation, subscription term policy,
                            canonical D57B composer, P4 entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-EXACT-COMMERCIAL-SOURCE-CERT adds synthetic Founder
+CHANGELOG: v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT certifies one
+           source-verified ACTIVE entitlement replay without duplicate P4
+           writes, while divergent source evidence still fails closed.
+           v1.0.0-EXACT-COMMERCIAL-SOURCE-CERT adds synthetic Founder
            commercial mismatch and source-owned activation certificates.
 COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic data and no production persistence.
@@ -62,6 +65,14 @@ def _case(monkeypatch: pytest.MonkeyPatch, *, plan_features: tuple[str, ...] | N
         plan_catalogue_version=2, plan_features=sub_features,
     )
     monkeypatch.setattr(module, "_canonical_plan", lambda *_: plan)
+    class MissingRegistry:
+        def __init__(self, *_: Any) -> None:
+            pass
+
+        def get_by_module(self, **_: Any) -> Any:
+            raise module.WilsyAIEntitlementNotFoundError("M13P4_ENTITLEMENT_NOT_FOUND")
+
+    monkeypatch.setattr(module, "WilsyAIEntitlementRegistry", MissingRegistry)
     monkeypatch.setattr(module.SubscriptionRegistry, "list_entities",
                         lambda *_, **__: (subscription,))
     monkeypatch.setattr(module, "verify_subscription_integrity", lambda value: value is subscription)
@@ -100,6 +111,49 @@ def _call(session: Any, **overrides: Any) -> module.FounderAIReconciliationResul
     }
     kwargs.update(overrides)
     return module.reconcile_founder_ai_entitlement(**kwargs)
+
+
+
+def test_matching_existing_active_entitlement_is_an_exact_no_write_replay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A real, already active grant must not create a duplicate command."""
+    from tools.eos.saas.billing.wilsy_ai_commercial_policy import (
+        WilsyAITier, get_wilsy_ai_commercial_policy,
+    )
+
+    observed, session = _case(monkeypatch)
+    policy = get_wilsy_ai_commercial_policy(WilsyAITier.INSTITUTIONAL)
+
+    class ExistingRegistry:
+        def __init__(self, *_: Any) -> None:
+            pass
+
+        def get_by_module(self, **kwargs: Any) -> Any:
+            assert kwargs["tenant_id"] == module.FOUNDER_TENANT_ID
+            return SimpleNamespace(
+                tenant_id=module.FOUNDER_TENANT_ID,
+                entitlement_id=module.derive_subscription_wilsy_ai_entitlement_id(
+                    module.FOUNDER_TENANT_ID,
+                ),
+                tier=WilsyAITier.INSTITUTIONAL,
+                policy_fingerprint=policy.policy_fingerprint,
+                source_readiness_evidence_reference="source-proof",
+                source_readiness_evidence_fingerprint="a" * 128,
+                lifecycle_state=WilsyAIEntitlementState.ACTIVE,
+            )
+
+    monkeypatch.setattr(module, "WilsyAIEntitlementRegistry", ExistingRegistry)
+    monkeypatch.setattr(module, "_source_evidence",
+                        lambda *_, **__: ("source-proof", "a" * 128))
+    result = _call(session, apply=True)
+    assert result.lifecycle == "ACTIVE"
+    assert result.applied is False
+    assert result.entitlement_id == module.derive_subscription_wilsy_ai_entitlement_id(
+        module.FOUNDER_TENANT_ID,
+    )
+    assert observed == {"compose_calls": 0, "activation_calls": 0}
+
 
 
 def test_default_dry_run_does_not_provision_or_activate(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -177,7 +231,7 @@ def test_source_approved_apply_delegates_both_writes_to_canonical_services(
 
 
 # ARTIFACT: test_founder_ai_entitlement_reconciliation.py
-# VERSION: v1.0.0-EXACT-COMMERCIAL-SOURCE-CERT
+# VERSION: v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT
 # AUTHORITY BOUNDARY: synthetic exact-source and P4 activation evidence
 # TENANT POSTURE: no cross-tenant source or Founder alias may admit issuance
 # FAIL-CLOSED POSTURE: no feature, evidence or transaction means zero writes
