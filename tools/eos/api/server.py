@@ -18,7 +18,7 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION provisions a nonunique exact tenantId+user_id credential lookup index at connected startup before HTTP admission. The ObjectId-shaped identity collision query retains its legacy _id branch, bounded collision verification and exact tenant scope; no request-time DDL or user data write.
+CHANGELOG: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX provisions a nonunique exact tenantId+user_id credential lookup index at connected startup before HTTP admission. The ObjectId-shaped identity collision query retains its legacy _id branch, bounded collision verification and exact tenant scope; no request-time DDL or user data write.
 CHANGELOG: v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION resolves the server-owned model binding only at the C1C startup composition boundary. The C1B router retains the resolver for independent request admission; missing or disabled providers remain unavailable without manufacturing execution authority. No IAM, tenant, billing, payment, or settlement semantics change.
 CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP creates
 standalone exact-task scanner clearance and replay indexes at EOS startup.
