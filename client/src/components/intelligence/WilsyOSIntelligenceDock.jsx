@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS
+ * VERSION: v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS separates EOS-verified work
+ * CHANGELOG: v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW displays
+ * the safe server-owned provider readiness separately from verified work
+ * and entitlement, preventing avoidable model submissions when the Python
+ * provider binding is unavailable. v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS separates EOS-verified work
  * from absent AI commercial capacity, disables only metered model requests
  * when the exact tenant has no AI entitlement and gives bounded guidance.
  * v4.13.1-OPERATOR-READABLE-SOURCE-STATUS replaces raw
@@ -653,6 +656,10 @@ export function WilsyOSIntelligenceDock({
     return () => { live = false; controller.abort(); };
   }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
 
+  const aiProviderUnavailable = verifiedWorkspaceContext?.scope === dockScope
+    && verifiedWorkspaceContext?.locatorKey === workLocatorKey
+    && verifiedWorkspaceContext?.state === 'READY'
+    && verifiedWorkspaceContext.data?.authority?.provider_binding === 'UNAVAILABLE';
   const aiEntitlementNotProvisioned = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey
     && verifiedWorkspaceContext?.state === 'READY'
@@ -847,6 +854,10 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
         return;
       }
+      if (!isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
+        setErrorMessage('Workspace information is available, but the EOS AI provider is not configured.');
+        return;
+      }
       if (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
@@ -1037,6 +1048,7 @@ export function WilsyOSIntelligenceDock({
       isSubmitting,
       reasoningUsageConsent,
       aiEntitlementNotProvisioned,
+      aiProviderUnavailable,
       workLocatorKey,
       workLocator,
       visibleWorkspaceContext,
@@ -1319,7 +1331,8 @@ export function WilsyOSIntelligenceDock({
                           {'Viewing task: '}{visibleWorkspaceContext.data.work.selected_task.title}
                         </span> : null}
                       {' · '}{aiEntitlementNotProvisioned ? 'AI reasoning not activated'
-                        : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
+                        : aiProviderUnavailable ? 'AI provider unavailable'
+                          : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
                     </summary>
                     <p style={{ margin: '4px 0' }}>
                       {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
@@ -1475,7 +1488,8 @@ export function WilsyOSIntelligenceDock({
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
                     disabled={isSubmitting || !prompt.trim()
-                      || (!isLegalDockRole(authUser?.role) && (!reasoningUsageConsent || aiEntitlementNotProvisioned))}
+                      || (!isLegalDockRole(authUser?.role)
+                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable))}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -1759,7 +1773,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1775,7 +1789,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS
+ * VERSION: v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
