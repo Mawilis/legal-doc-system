@@ -561,6 +561,19 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const principalId = String(principal?.id || '').trim();
   const firstName = exactOptionalWorkspaceName(principal?.firstName);
   const lastName = exactOptionalWorkspaceName(principal?.lastName);
+  const designation = principal?.institutionalDesignation;
+  const founderDesignation = designation?.title === 'Founder'
+    && designation?.state === 'ACTIVE'
+    && designation?.authority === 'INSTITUTIONAL_DESIGNATION'
+    && designation?.operating_capacity === 'tenant_owner'
+    && principal?.id
+    ? 'Founder'
+    : '';
+  if (designation !== null && designation !== undefined
+    && (typeof designation !== 'object' || Array.isArray(designation)
+      || founderDesignation !== 'Founder')) {
+    throw new Error('AUTHENTICATED_INSTITUTIONAL_DESIGNATION_INVALID');
+  }
   const email = exactOptionalWorkspaceEmail(principal?.email);
   const tenantId = String(workspace?.tenantId || '').trim();
   const tenantProjectionId = String(tenantProjection?.tenantId || '').trim();
@@ -619,6 +632,7 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
       workspaceEmail: email,
       firstName,
       lastName,
+      institutionalDesignation: founderDesignation,
       tenantId,
       role: businessRole,
       workspaceId,
