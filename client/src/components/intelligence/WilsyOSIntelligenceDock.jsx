@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW
+ * VERSION: v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW displays
+ * CHANGELOG: v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS routes HQ questions
+ * through the canonical Python EOS My Work admission flag, sending only a
+ * workspace locator and never browser-rendered work facts to a model.
+ * v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW displays
  * the safe server-owned provider readiness separately from verified work
  * and entitlement, preventing avoidable model submissions when the Python
  * provider binding is unavailable. v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS separates EOS-verified work
@@ -870,6 +873,9 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
         return;
       }
+      const reasoningLocator = currentProject
+        || (workLocator.workspace === 'HEADQUARTERS'
+          ? { workspace: 'HEADQUARTERS', include_work_context: true } : null);
       const locatorKeyAtStart = workLocatorKey;
       const scopeAtStart = dockScopeRef.current;
       const generationAtStart = conversationGenerationRef.current;
@@ -964,7 +970,7 @@ export function WilsyOSIntelligenceDock({
             && pending.locatorKey === locatorKeyAtStart && pending.key && pending.prompt
             ? pending
             : { scope: scopeAtStart, text, prompt: reasoningPrompt, key: uuidv4(),
-              locatorKey: locatorKeyAtStart, params: currentProject };
+              locatorKey: locatorKeyAtStart, params: reasoningLocator };
           reasoningReplayRef.current = replay;
           const response = await api.post('/wilsy-ai/reasoning', {
             prompt: replay.prompt,
@@ -1773,7 +1779,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1789,7 +1795,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW
+ * VERSION: v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
