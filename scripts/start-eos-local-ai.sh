@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # TITLE: WILSY OS Local Institutional AI + Global Principal MFA Launcher
-# VERSION: v1.0.0-LOCAL-AI-PROVIDER-ADMISSION
+# VERSION: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS
 # AUTHORITY: Wilsy OS Core Governance; nonproduction local launch only.
 # EPITOME: Supply explicit ephemeral OpenAI provider configuration to the
 #          already-certified Python EOS/MFA launcher without changing IAM,
@@ -10,6 +10,7 @@
 #          Python EOS startup; reasoning_provider_runtime.py owns the binding;
 #          wilsy_ai_reasoning_router.py owns tenant and usage authorization.
 # CERTIFICATION / UPDATE DATE: 2026-11-20
+# CHANGELOG: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS rejects common API key/tracking-id prefixes in the model field before child process launch; no identifier values are logged.
 # CHANGELOG: v1.0.0-LOCAL-AI-PROVIDER-ADMISSION adds a nonpersistent,
 #          hidden-key local provider configuration handoff.
 # COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -56,7 +57,7 @@ if [[ -z "${WILSY_AI_REASONING_MODEL:-}" ]]; then
     exit 2
   }
 fi
-if [[ ! "${WILSY_AI_REASONING_MODEL}" =~ ^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$ ]]; then
+if [[ ! "${WILSY_AI_REASONING_MODEL}" =~ ^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$ || "${WILSY_AI_REASONING_MODEL}" == key_* || "${WILSY_AI_REASONING_MODEL}" == sk-* || "${WILSY_AI_REASONING_MODEL}" == sk_* ]]; then
   echo "EOS_LOCAL_AI_CONFIG_ERROR=MODEL_ID_INVALID" >&2
   exit 2
 fi
@@ -89,7 +90,7 @@ echo "EOS_LOCAL_AI_NEXT=PYTHON_EOS_GLOBAL_PRINCIPAL_MFA_STARTUP"
 exec bash "$ROOT_DIR/scripts/start-eos-local-mfa.sh"
 
 # ARTIFACT: scripts/start-eos-local-ai.sh
-# VERSION: v1.0.0-LOCAL-AI-PROVIDER-ADMISSION
+# VERSION: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS
 # AUTHORITY BOUNDARY: nonproduction provider configuration only; no IAM or usage grants
 # TENANT POSTURE: exact-tenant admission continues inside Python EOS
 # FAIL-CLOSED POSTURE: no provider fallback, no synthetic answer, no secret output
