@@ -1,7 +1,7 @@
 """Development-only staged Founder AI commercial activation command.
 
 TITLE: WILSY Founder AI Development Activation Runner
-VERSION: v1.2.0-STAGED-READBACK-VERIFICATION
+VERSION: v1.3.0-PRECONNECT-ATLAS-DENIAL
 AUTHORITY: WILSY OS Core Governance; source registries own all mutations.
 EPITOME: Rehearse exact Founder plan -> subscription -> AI entitlement
          transitions on a loopback development Mongo replica set only.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: PlanRegistry owns plan CAS; SubscriptionRegistry owns
                           subscription proof and audit; Founder reconciliation
                           delegates issuance/activation to D57B and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.2.0-STAGED-READBACK-VERIFICATION re-reads canonical
+CHANGELOG: v1.3.0-PRECONNECT-ATLAS-DENIAL rejects non-development,
+           non-loopback and SRV MongoDB configuration before even attempting
+           a database connection. No authentication, reads or writes occur
+           against a rejected URI. v1.2.0-STAGED-READBACK-VERIFICATION re-reads canonical
            plan and subscription evidence after each committed development
            stage, detecting partial failures without inventing rollback truth.
            v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE enforces
@@ -54,7 +57,7 @@ from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import (
 from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 
-VERSION: Final[str] = "v1.2.0-STAGED-READBACK-VERIFICATION"
+VERSION: Final[str] = "v1.3.0-PRECONNECT-ATLAS-DENIAL"
 _ALLOWED_FOUNDATION: Final[frozenset[str]] = frozenset(
     (BRANDING_FEATURE, "legal.core"),
 )
@@ -65,17 +68,22 @@ class FounderAIDevelopmentActivationError(RuntimeError):
     """Deterministic status for a refused or inconsistent dev rollout."""
 
 
-def _guard_development(uri: str, environment: str, database: Any, client: Any) -> None:
-    """No production, SRV, non-loopback or non-replica writes from this tool."""
+def _guard_uri_before_connect(uri: str, environment: str) -> None:
+    """Reject every remote and non-development URI before opening a socket."""
     if environment.strip().lower() not in {"development", "dev"}:
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_DEV_ENV_REQUIRED")
-    if not uri.startswith("mongodb://") or uri.startswith("mongodb+srv://"):
+    if not uri.startswith("mongodb://"):
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_LOOPBACK_URI_REQUIRED")
     parsed = urlsplit(uri)
     authority = parsed.netloc.rsplit("@", 1)[-1]
     hosts = authority.split(",")
     if not hosts or any(host.split(":", 1)[0] not in {"localhost", "127.0.0.1"} for host in hosts):
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_LOOPBACK_HOST_REQUIRED")
+
+
+def _guard_development(uri: str, environment: str, database: Any, client: Any) -> None:
+    """No production, SRV, non-loopback or non-replica writes from this tool."""
+    _guard_uri_before_connect(uri, environment)
     if database is None or database.name != "wilsy":
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_DEV_DATABASE_REQUIRED")
     hello = client.admin.command("hello")
@@ -232,6 +240,7 @@ def main() -> int:
         environment = os.getenv("WILSY_ENV", "")
         if not uri:
             raise FounderAIDevelopmentActivationError("FOUNDER_AI_MONGODB_URI_REQUIRED")
+        _guard_uri_before_connect(uri, environment)
         good, _ = connect_db()
         if not good:
             raise FounderAIDevelopmentActivationError("FOUNDER_AI_MONGO_CONNECTION_FAILED")
@@ -265,7 +274,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: founder_ai_development_activation.py
-# VERSION: v1.2.0-STAGED-READBACK-VERIFICATION
+# VERSION: v1.3.0-PRECONNECT-ATLAS-DENIAL
 # AUTHORITY BOUNDARY: local-only stage coordination through canonical registries
 # TENANT POSTURE: one exact Founder subscription/plan/tenant tuple only
 # FAIL-CLOSED POSTURE: required tier, loopback replica and guarded stage writes
