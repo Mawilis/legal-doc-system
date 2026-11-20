@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT
+ * VERSION: v1.7.1-CONTEXT-DISCLOSURE-TRUTH-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT proves independently
+ * CHANGELOG: v1.7.1-CONTEXT-DISCLOSURE-TRUTH-CERT verifies the exact operator-facing
+ * disclaimer: source records are inspection-only and not yet model grounding.
+ * v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT proves independently
  * scoped context reads, source citations, rejection of browser facts and late
  * snapshots, explicit denial states and absence of model calls during inspection.
  * CHANGELOG: v1.6.2-SESSION-REASONING-CANCELLATION-CERT proves canceled
@@ -618,7 +620,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByLabelText('Inspect verified workspace context'));
     expect(await screen.findByRole('button', { name: 'Inspect source: Verified current project' })).toBeVisible();
     expect(screen.getByText(/Source Person/)).toBeVisible();
-    expect(screen.getByText(/Conversation does not receive these workspace records/)).toBeVisible();
+    expect(screen.getByText(/Workspace records are verified for inspection only; AI responses are not yet grounded in them/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
     const reads = mockApiGet.mock.calls.filter(([path]) => path === '/wilsy-ai/reasoning/context');
     expect(reads.at(-1)[1].params).toEqual({ workspace: 'PROJECTS', project_id: projectId, project_revision: 3 });
@@ -939,7 +941,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT
+ * VERSION: v1.7.1-CONTEXT-DISCLOSURE-TRUTH-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
