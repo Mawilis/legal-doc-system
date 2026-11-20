@@ -1,12 +1,16 @@
 """TITLE: WILSY AI independently authorized context HTTP certificate.
-VERSION: v1.3.0-SELECTED-TASK-GROUNDING-CERT
+VERSION: v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT
 AUTHORITY: Synthetic regression evidence; canonical EOS sources own authority.
 EPITOME: Verify locator validation, exact source admission, source freshness,
          bounded projections, unavailable facts and provider-free context reads.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_context.py
 COLLABORATION / OWNERSHIP: Reasoning router, Projects source and existing IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.3.0-SELECTED-TASK-GROUNDING-CERT certifies independently selected
+CHANGELOG: v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT proves that absent
+           exact-tenant AI entitlement keeps separately admitted read-only
+           workspace context visible with zero AI capacity, while reasoning
+           POST remains denied and no model or entitlement is created.
+           v1.3.0-SELECTED-TASK-GROUNDING-CERT certifies independently selected
            task context enters reasoning without leaking private task fields,
            and malformed selected task source fails closed. v1.2.0-BOUNDED-GROUNDED-SOURCE-CERT verifies model prompt receives
            only bounded source-authorized project fields, rejects oversize
@@ -162,6 +166,40 @@ def test_headquarters_context_has_explicit_unavailable_facts_and_no_model(source
     assert payload["workforce"]["state"] == payload["qualifications"]["state"] == "UNAVAILABLE"
     assert payload["authority"]["model_invoked"] is False
     assert source["calls"] == ["entitlement"]
+
+
+
+def test_missing_ai_entitlement_keeps_independent_project_source_visible(
+    source: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Absent commercial authority is not a denial of separately admitted work."""
+    from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
+        WilsyAIEntitlementNotFoundError,
+    )
+
+    class MissingEntitlement:
+        def __init__(self, *_: Any) -> None:
+            pass
+
+        def get_by_module(self, **kwargs: Any) -> Any:
+            assert kwargs["tenant_id"] == "context-tenant"
+            raise WilsyAIEntitlementNotFoundError("M13P4_ENTITLEMENT_NOT_FOUND")
+
+    monkeypatch.setattr(module, "WilsyAIEntitlementRegistry", MissingEntitlement)
+    response = TestClient(app(context())).get(
+        "/api/wilsy-ai/reasoning/context",
+        params={"workspace": "PROJECTS", "project_id": PROJECT, "project_revision": 7},
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["work"]["project"]["name"] == "Verified delivery"
+    assert payload["allowance"]["state"] == "NOT_PROVISIONED"
+    assert payload["allowance"]["available_request_units"] == 0
+    assert payload["allowance"]["execution_admission"] == "DENIED_MISSING_ENTITLEMENT"
+    assert payload["authority"]["model_invoked"] is False
+    assert payload["authority"]["financial_execution"] is False
+    assert source["calls"] == ["project"]
+
 
 
 def test_project_source_names_projection_and_fingerprint(source: dict[str, Any]) -> None:
@@ -325,7 +363,7 @@ def test_oversized_project_context_is_not_sent_to_model() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_reasoning_context.py
-# VERSION: v1.3.0-SELECTED-TASK-GROUNDING-CERT
+# VERSION: v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT
 # AUTHORITY BOUNDARY: synthetic context HTTP regression evidence only
 # TENANT POSTURE: independently admitted exact tenant, principal and capacity
 # FAIL-CLOSED POSTURE: malformed, mismatched and stale source locators reject
