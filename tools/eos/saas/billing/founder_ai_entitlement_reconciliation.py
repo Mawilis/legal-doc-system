@@ -1,7 +1,7 @@
 """Exact Founder WILSY AI commercial entitlement reconciliation.
 
 TITLE: WILSY OS Founder AI Entitlement Reconciliation
-VERSION: v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK
+VERSION: v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION
 AUTHORITY: WILSY OS Core Governance; existing subscription and P4 registries.
 EPITOME: Enforce exact zero-rated Founder commercial source and activate only an
          explicitly subscribed tier-specific AI feature through existing P4 CAS.
@@ -10,7 +10,9 @@ COLLABORATION / OWNERSHIP: PlanEntity owns plan state; SubscriptionRegistry owns
                           active subscription proof; D57B derives AI tier and
                           source evidence; P4 owns entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK verifies exact active
+CHANGELOG: v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION delegates plan
+           transport-revision and canonical proof validation to PlanRegistry.
+           v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK verifies exact active
            entitlement lineage before accepting an activation replay, so a
            successful retry never issues or activates the module twice.
            v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION adds fail-closed exact
@@ -38,6 +40,7 @@ from datetime import datetime, timezone
 import re
 from typing import Any, Final
 
+from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import (
     _source_evidence,
@@ -64,7 +67,7 @@ from tools.eos.saas.domain.plan import PlanEntity
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK"
+VERSION: Final[str] = "v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION"
 FOUNDER_TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
 FOUNDER_SUBSCRIPTION_ID: Final[str] = "WILSYSUB-93455E4E"
 FOUNDER_PLAN_ID: Final[str] = "WILSYPLAN-37B8164F"
@@ -115,11 +118,9 @@ def _canonical_plan(plan_collection: Any, session: Any) -> PlanEntity:
     )
     _require(isinstance(document, dict), "FOUNDER_AI_PLAN_NOT_FOUND")
     assert document is not None
-    payload = {key: value for key, value in document.items()
-               if key not in {"_id", "_registry_revision"}}
     try:
-        plan = PlanEntity.from_dict(payload)
-        _require(plan.to_dict() == payload, "FOUNDER_AI_PLAN_NOT_CANONICAL")
+        # Reuse PlanRegistry's strict transport revision and canonical proof.
+        plan = PlanRegistry._hydrate(document).plan
     except (TypeError, ValueError) as error:
         raise FounderAIReconciliationError("FOUNDER_AI_PLAN_PROOF_INVALID") from error
     _require(plan.tenant_id == FOUNDER_TENANT_ID
@@ -277,7 +278,7 @@ __all__ = [
 ]
 
 # ARTIFACT: founder_ai_entitlement_reconciliation.py
-# VERSION: v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK
+# VERSION: v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION
 # AUTHORITY BOUNDARY: source-verified Founder commercial composition and P4 CAS only
 # TENANT POSTURE: exact Founder tuple, no aliases or tenant-name default grants
 # FAIL-CLOSED POSTURE: active proof and one approved AI tier required before write
