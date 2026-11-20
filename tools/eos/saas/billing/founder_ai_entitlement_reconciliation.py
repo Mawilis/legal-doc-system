@@ -1,7 +1,7 @@
 """Exact Founder WILSY AI commercial entitlement reconciliation.
 
 TITLE: WILSY OS Founder AI Entitlement Reconciliation
-VERSION: v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT
+VERSION: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT
 AUTHORITY: WILSY OS Core Governance; existing subscription and P4 registries.
 EPITOME: Enforce exact zero-rated Founder commercial source and activate only an
          explicitly subscribed tier-specific AI feature through existing P4 CAS.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: PlanEntity owns plan state; SubscriptionRegistry owns
                           active subscription proof; D57B derives AI tier and
                           source evidence; P4 owns entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT prepares an exact,
+CHANGELOG: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT also binds the
+           canonical PlanEntity state proof and integrity-envelope root in the
+           nonissuing approval fingerprint to reject stale plan evidence.
+           v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT prepares an exact,
            non-issuing SHA3-512 approval intent from canonical Founder plan
            and subscription proofs plus a specifically proposed AI tier;
            signed institutional approval remains external to this intent.
@@ -73,7 +76,7 @@ from tools.eos.saas.domain.plan import PlanEntity
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT"
+VERSION: Final[str] = "v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT"
 FOUNDER_TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
 FOUNDER_SUBSCRIPTION_ID: Final[str] = "WILSYSUB-93455E4E"
 FOUNDER_PLAN_ID: Final[str] = "WILSYPLAN-37B8164F"
@@ -194,12 +197,21 @@ def prepare_founder_ai_approval_intent(
     proof = getattr(subscription, "proof_hash", None)
     _require(isinstance(proof, str) and _SHA3.fullmatch(proof) is not None,
              "FOUNDER_AI_APPROVAL_SUBSCRIPTION_PROOF_INVALID")
+    plan_proof = getattr(plan, "proof_hash", None)
+    plan_integrity = getattr(plan, "integrity_root", None)
+    _require(isinstance(plan_proof, str)
+             and _SHA3.fullmatch(plan_proof) is not None
+             and isinstance(plan_integrity, str)
+             and _SHA3.fullmatch(plan_integrity) is not None,
+             "FOUNDER_AI_APPROVAL_PLAN_PROOF_INVALID")
     proposal = {
         "schema": "WILSY-FOUNDER-AI-FEATURE-APPROVAL-INTENT/V1",
         "tenant_id": FOUNDER_TENANT_ID,
         "subscription_id": FOUNDER_SUBSCRIPTION_ID,
         "plan_id": FOUNDER_PLAN_ID,
         "plan_catalogue_version": plan.catalogue_version,
+        "plan_state_proof_hash": plan_proof,
+        "plan_integrity_root": plan_integrity,
         "subscription_proof_hash": proof,
         "current_features": sorted(plan.features),
         "proposed_feature_id": proposed_feature_id.value,
@@ -362,7 +374,7 @@ __all__ = [
 ]
 
 # ARTIFACT: founder_ai_entitlement_reconciliation.py
-# VERSION: v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT
+# VERSION: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT
 # AUTHORITY BOUNDARY: source-verified Founder commercial composition and P4 CAS only
 # TENANT POSTURE: exact Founder tuple, no aliases or tenant-name default grants
 # FAIL-CLOSED POSTURE: active proof and one approved AI tier required before write
