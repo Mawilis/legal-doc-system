@@ -1,12 +1,28 @@
-"""Read-only assessment of one legacy tenant-bound credential for migration.
-
-The assessor never writes, merges, creates principals or memberships, or changes
-MFA/session state. Ambiguous or inconsistent legacy records are quarantined.
+"""TITLE: WILSY Global Principal Legacy Credential Migration Assessment
+VERSION: v1.1.0-OBJECTID-IDENTITY-COMPATIBILITY-READONLY
+AUTHORITY: Existing legacy AuthRegistry identity plus canonical principal and membership.
+EPITOME: Safely assess unique legacy credentials including valid BSON ObjectId
+  identity fallback; never infer a principal or mutate persisted authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/principal_credential_migration_assessment.py
+COLLABORATION / OWNERSHIP: AuthRegistry owns legacy compatibility identity;
+  PrincipalAuthorityRepository and TenantMembershipRepository own canonical truth.
+CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v1.1.0-OBJECTID-IDENTITY-COMPATIBILITY-READONLY admits only an
+  absent/null user_id with valid persisted BSON ObjectId when that exact opaque
+  identity already has ACTIVE principal and membership; no generated IDs.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC2 CC7.2.
+SECURITY / PRIVACY POSTURE: No secret disclosure, records or writes.
+TENANT BOUNDARY: Exact canonical tenant reference and ACTIVE membership required.
+AUTHORITY BOUNDARY: Assessment alone cannot issue a credential or authenticate.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusive.
+FAIL-CLOSED DECLARATION: Invalid identity, principal, tenant or MFA quarantined.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Mapping
+
+from bson import ObjectId
 
 from tools.eos.auth.principal_credential import (
     MAX_CREDENTIAL_REVISION,
@@ -28,7 +44,7 @@ from tools.eos.auth.tenant_membership_repository import (
 )
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
-VERSION = "v1.0.0-LEGACY-PRINCIPAL-CREDENTIAL-MIGRATION-ASSESSMENT"
+VERSION = "v1.1.0-OBJECTID-IDENTITY-COMPATIBILITY-READONLY"
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,7 +88,19 @@ def assess_legacy_user_credential(
     ):
         return quarantine("LEGACY_EMAIL_NOT_UNIQUE")
     principal_id = document.get("user_id")
-    if not isinstance(principal_id, str) or not principal_id or principal_id != principal_id.strip():
+    if principal_id is None:
+        # Match AuthRegistry's exact legacy identity semantics. The BSON _id
+        # is a preexisting opaque identity, never a generated or guessed grant.
+        mongo_id = document.get("_id")
+        if not isinstance(mongo_id, ObjectId):
+            return quarantine("LEGACY_PRINCIPAL_ID_INVALID")
+        principal_id = str(mongo_id)
+    if (
+        not isinstance(principal_id, str) or not principal_id
+        or principal_id != principal_id.strip()
+        or any(ord(character) < 32 or ord(character) == 127
+               for character in principal_id)
+    ):
         return quarantine("LEGACY_PRINCIPAL_ID_INVALID")
     try:
         email = normalize_principal_email(document.get("email"))
@@ -156,3 +184,11 @@ __all__ = [
     "PrincipalCredentialMigrationAssessmentUnavailable",
     "assess_legacy_user_credential",
 ]
+
+# ARTIFACT: principal_credential_migration_assessment.py
+# VERSION: v1.1.0-OBJECTID-IDENTITY-COMPATIBILITY-READONLY
+# AUTHORITY BOUNDARY: existing exact Principal + membership only; never writes
+# TENANT POSTURE: persisted canonical tenant and current membership required
+# FAIL-CLOSED POSTURE: malformed legacy identity or missing ACTIVE source quarantined
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
