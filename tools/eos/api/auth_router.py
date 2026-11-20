@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.20.0-FOUNDER-DESIGNATION-BOOTSTRAP
+VERSION: v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -15,7 +15,10 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION / UPDATE DATE: 2026-11-13.
 CHANGELOG:
-  v1.20.0-FOUNDER-DESIGNATION-BOOTSTRAP: Records only the
+  v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS: Separately reads
+  persisted Founder title with canonical ACTIVE identity/tenant/owner role
+  plus audit proof; no client-provided designation or IAM grant.
+  v1.19.1-MANIFEST-FAILURE-CLASSIFICATION: Records only the
   stable bounded module-manifest failure class and exception type on 503;
   the public error remains generic and no entitlement or IAM changes occur.
   v1.19.0-PLATFORM-OWNER-MANIFEST-CONTRACT: Uses the explicit stable module-manifest wire contract while the source enforces exact WILSY platform-owner navigation policy. Authentication, MFA, membership, entitlement reads and response fields remain unchanged.
@@ -103,7 +106,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.20.0-FOUNDER-DESIGNATION-BOOTSTRAP"
+VERSION = "v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS"
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from datetime import datetime, timezone
@@ -1945,7 +1948,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.20.0-FOUNDER-DESIGNATION-BOOTSTRAP
+# VERSION: v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
