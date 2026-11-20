@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.13.0-HEADQUARTERS-CONTEXTUAL-SEND-CERT
+ * VERSION: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.13.0-HEADQUARTERS-CONTEXTUAL-SEND-CERT certifies
+ * CHANGELOG: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT proves
+ * only the canonical Founder is offered explicit Institutional activation,
+ * exact-tenant POST and stable retry key are sent, and no visual ACTIVE claim
+ * appears before a verified EOS readback.
+ * v1.13.0-HEADQUARTERS-CONTEXTUAL-SEND-CERT certifies
  * Headquarters requests opt in to independently admitted server-owned My
  * Work grounding while transmitting no browser task facts or IAM identity.
  * v1.12.0-PROVIDER-READINESS-CLIENT-CERT certifies
@@ -711,6 +715,68 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByText('Obsolete capacity answer')).not.toBeInTheDocument();
   });
 
+  it('offers no Founder AI activation command to another tenant', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'other-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('Verified workspace context unavailable.'))
+      .toBeVisible());
+    expect(screen.queryByRole('button', {
+      name: 'Activate Founder Institutional AI',
+    })).not.toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('requires EOS source-verified zero-rated ACTIVE readback before Founder activation claim', async () => {
+    const tenant = 'WILSYTENANT-4CD2FZ4O';
+    window.__WILSY_ACTIVE_TENANT__ = { tenantId: tenant };
+    mockApiPost.mockResolvedValue({ data: { data: {
+      tenant_id: tenant, subscription_id: 'WILSYSUB-93455E4E',
+      feature_id: 'ai.wilsy.institutional',
+      entitlement_state: 'ACTIVE', source_verified: true,
+      zero_rated_subscription: true,
+    } } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'founder-operator', tenantId: tenant, role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const action = await screen.findByRole('button', {
+      name: 'Activate Founder Institutional AI',
+    });
+    fireEvent.click(action);
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const [path, body, options] = mockApiPost.mock.calls[0];
+    expect(path).toBe('/subscriptions/founder-ai-institutional/activate');
+    expect(body).toEqual({});
+    expect(options.headers['X-Tenant-ID']).toBe(tenant);
+    expect(options.headers['X-Idempotency-Key']).toMatch(/^founder-institutional-[a-f0-9-]+$/);
+    await waitFor(() => expect(screen.getByText(
+      'Institutional AI entitlement is active. Verifying provider and workspace context…',
+    )).toBeInTheDocument());
+  });
+
+  it('rejects unverified Founder activation replies without claiming an ACTIVE entitlement', async () => {
+    const tenant = 'WILSYTENANT-4CD2FZ4O';
+    window.__WILSY_ACTIVE_TENANT__ = { tenantId: tenant };
+    mockApiPost.mockResolvedValue({ data: { data: {
+      tenant_id: tenant, subscription_id: 'WILSYSUB-93455E4E',
+      feature_id: 'ai.wilsy.institutional',
+      entitlement_state: 'PENDING_SOURCE', source_verified: false,
+      zero_rated_subscription: true,
+    } } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'founder-operator', tenantId: tenant, role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(await screen.findByRole('button', {
+      name: 'Activate Founder Institutional AI',
+    }));
+    await waitFor(() => expect(screen.getByText(
+      'EOS could not verify ACTIVE Institutional AI. No activation is being claimed.',
+    )).toBeInTheDocument());
+  });
+
   it('keeps verified source visible but blocks unbound EOS provider calls', async () => {
     const person = 'provider-person';
     mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
@@ -1162,7 +1228,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.13.0-HEADQUARTERS-CONTEXTUAL-SEND-CERT
+ * VERSION: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
