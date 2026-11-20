@@ -1,12 +1,52 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
+ * VERSION: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT proves
+ * only the canonical Founder is offered explicit Institutional activation,
+ * exact-tenant POST and stable retry key are sent, and no visual ACTIVE claim
+ * appears before a verified EOS readback.
+ * v1.13.0-HEADQUARTERS-CONTEXTUAL-SEND-CERT certifies
+ * Headquarters requests opt in to independently admitted server-owned My
+ * Work grounding while transmitting no browser task facts or IAM identity.
+ * v1.12.0-PROVIDER-READINESS-CLIENT-CERT certifies
+ * model submission stays disabled when server-owned provider readiness is
+ * unavailable, while verified source work remains inspectable.
+ * v1.11.0-AI-COMMERCIAL-POSTURE-CERT certifies
+ * that missing AI commercial entitlement does not conceal independently
+ * verified workspace facts, imply available model capacity or permit
+ * metered reasoning submission. v1.10.1-FAILED-REASONING-STATUS-CERT certifies a single bounded
+ * network failure message, retains the unsent prompt and prohibits fake
+ * assistant replies on failed reasoning. v1.10.0-EXACT-HEADQUARTERS-WORK-PROJECTION-CERT verifies source-owned
+ * My Work priority display without AI inference and denies foreign tenant
+ * projection despite a successful HTTP response. v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT certifies time-appropriate
+ * first-name greeting, exact-scope same-browser consent restoration,
+ * changed-tenant revocation and single visible failure status, while keeping
+ * EOS entitlement and usage admission independent of browser preferences.
+ * v1.8.1-EXPLICIT-CONSENT-CERT verifies that expanding usage
+ * details never checks the metered-AI consent box or issues a model request.
+ * v1.8.0-AUTHORIZED-PROJECT-LOCATOR-SEND-CERT certifies that metered general
+ * reasoning forwards only a project locator after exact EOS context admission,
+ * and never sends the browser's project details as trusted model evidence.
+ * v1.7.1-CONTEXT-DISCLOSURE-TRUTH-CERT verifies the exact operator-facing
+ * disclaimer: source records are inspection-only and not yet model grounding.
+ * v1.7.0-VERIFIED-CONTEXT-INSPECTION-CERT proves independently
+ * scoped context reads, source citations, rejection of browser facts and late
+ * snapshots, explicit denial states and absence of model calls during inspection.
+ * CHANGELOG: v1.6.2-SESSION-REASONING-CANCELLATION-CERT proves canceled
+ * transport, late success/failure rejection, capacity reentry and unmount
+ * isolation without changing the existing exact-key uncertain retry contract.
+ * CHANGELOG: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT certifies that an uncertain
+ * EOS reasoning response is retried with the exact same prompt and durable
+ * idempotency key, rather than a second metered AI admission.
+ * CHANGELOG: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT certifies explicit consent and
+ * exact-tenant usage-admitted Python EOS conversation; C1C legal remains
+ * independent and no legacy generic operator BFF runs.
  * CHANGELOG: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT proves kernel health
  * is probed without waiting for unresolved optional finance evidence.
  * v1.5.0-MOVABLE-COMPANION-STATE-CERT certifies movement, minimization, retained drafts,
@@ -37,7 +77,7 @@
 
 import React from 'react';
 import { readFileSync } from 'node:fs';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import api from '../../../src/services/api.js';
 
@@ -169,7 +209,10 @@ const rejectedResponse = (status, detail) => Object.assign(new Error(detail), {
 describe('WilsyOSIntelligenceDock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApiGet.mockReset();
+    for (const key of Object.keys(window.localStorage)) {
+      if (key.startsWith('wilsy.ai.usage-consent:')) window.localStorage.removeItem(key);
+    }
+    mockApiGet.mockReset().mockRejectedValue(rejectedResponse(503, 'synthetic source unavailable'));
     mockApiPost.mockReset();
     mockExecuteLegalServices.mockReset();
     mockGenerateLegalNextActions.mockReset();
@@ -260,10 +303,11 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByRole('button', { name: /Ask WILSY OS/i })).toBeInTheDocument();
   });
 
-  it('uses WILSY OS as the assistant identity without changing generic operator transport', async () => {
-    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'Brand-safe reply' } } });
-    render(<WilsyOSIntelligenceDock />);
+  it('uses WILSY OS with paid EOS reasoning and no legacy BFF', async () => {
+    mockApiPost.mockResolvedValue({ data: { response_text: 'Brand-safe reply', usage_observation_id: 'usage-4' } });
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(screen.getByText('Brand-safe reply')).toBeInTheDocument());
@@ -459,19 +503,474 @@ describe('WilsyOSIntelligenceDock', () => {
     });
   });
 
+  it('welcomes a new conversation with the authenticated first name and local time', () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'named-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+      firstName: 'Nandi', displayName: 'Nandi Dlamini',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.getByText(/^Good (morning|afternoon|evening), Nandi\.$/))
+      .toBeVisible();
+  });
+
+  it('remembers accepted usage within the same browser and exact authorized scope', () => {
+    const user = { id: 'remembered-operator', tenantId: 'TEST_TENANT',
+      role: 'OWNER', businessRole: 'CAPACITY_A', membershipRevision: 1 };
+    const first = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    expect(screen.queryByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByText('AI usage preferences')).toBeVisible();
+    first.unmount();
+
+    const second = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.queryByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('AI usage preferences'));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke AI usage consent' }));
+    expect(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeChecked();
+    second.unmount();
+  });
+
+  it('does not transfer accepted AI usage preference to another tenant', () => {
+    const user = { id: 'tenant-operator', tenantId: 'TEST_TENANT', role: 'OWNER' };
+    const view = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    view.rerender(<WilsyOSIntelligenceDock authUser={{
+      ...user, tenantId: 'OTHER_TENANT',
+    }}/>);
+    expect(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeChecked();
+  });
+
+  it('shows only verified source-owned current work, not a fabricated AI answer', async () => {
+    const user = { id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER' };
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'work-operator',
+        items: [
+          { title: 'Resolve overdue agreement', source: 'CRM', is_overdue: true },
+          { title: 'Review delivery', source: 'PROJECTS', is_overdue: false },
+        ],
+        summary: { active_count: 2, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } }) : Promise.reject(rejectedResponse(403, 'not admitted')));
+    render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const work = await screen.findByRole('region', { name: 'Current authorized work' });
+    expect(work).toHaveTextContent('Resolve overdue agreement');
+    expect(work).toHaveTextContent('Review delivery');
+    expect(work).toHaveTextContent('2 active');
+    expect(work).toHaveTextContent('1 overdue');
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('never displays a foreign-tenant My Work response', async () => {
+    const user = { id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER' };
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        tenant_id: 'FOREIGN_TENANT', principal_id: 'work-operator',
+        items: [{ title: 'Foreign confidential task', source: 'CRM', is_overdue: true }],
+        summary: { active_count: 1, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } }) : Promise.reject(rejectedResponse(403, 'not admitted')));
+    render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
+    expect(screen.queryByText('Foreign confidential task')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Current authorized work' })).not.toBeInTheDocument();
+  });
+
+  it('blocks metered general reasoning until the operator consents', () => {
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Ask about my project' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+  });
+
+  it('does not grant AI consent when usage details are expanded', () => {
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const consent = screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' });
+    expect(consent).not.toBeChecked();
+    fireEvent.click(screen.getByText('Usage and permissions'));
+    expect(consent).not.toBeChecked();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('retries an uncertain metered AI response with the same admission key and prompt', async () => {
+    mockApiPost.mockRejectedValueOnce(rejectedResponse(503, 'provider unavailable'))
+      .mockResolvedValueOnce({ data: {
+        response_text: 'Recovered from the same reasoning admission.',
+        usage_observation_id: 'usage-replay-confirmed',
+      } });
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Review my current tasks' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByPlaceholderText('Ask Wilsy OS…'))
+      .toHaveValue('Review my current tasks'));
+    expect(mockApiPost).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(2));
+    const first = mockApiPost.mock.calls[0];
+    const retry = mockApiPost.mock.calls[1];
+    expect(first[0]).toBe('/wilsy-ai/reasoning');
+    expect(retry[0]).toBe(first[0]);
+    expect(retry[1]).toEqual(first[1]);
+    expect(retry[2].headers['Idempotency-Key']).toBe(first[2].headers['Idempotency-Key']);
+    expect(first[2].headers['X-Tenant-ID']).toBe('TEST_TENANT');
+    expect(await screen.findByText('Recovered from the same reasoning admission.')).toBeVisible();
+  });
+
+  it.each([
+    ['tenant', { tenantId: 'NEXT_TENANT' }],
+    ['principal', { id: 'next-principal' }],
+    ['capacity', { businessRole: 'NEXT_CAPACITY' }],
+    ['membership revision', { membershipRevision: 2 }],
+    ['business role revision', { businessRoleRevision: 2 }],
+  ])('cancels pending reasoning and resets consent after %s changes', async (_label, changes) => {
+    let finish;
+    mockApiPost.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const user = { id: 'principal', tenantId: 'TEST_TENANT', role: 'OWNER',
+      businessRole: 'CAPACITY', membershipRevision: 1, businessRoleRevision: 1 };
+    const view = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Old scope question' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const oldSignal = mockApiPost.mock.calls[0][2].signal;
+    expect(oldSignal.aborted).toBe(false);
+    view.rerender(<WilsyOSIntelligenceDock authUser={{ ...user, ...changes }}/>);
+    expect(oldSignal.aborted).toBe(true);
+    expect(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' })).not.toBeChecked();
+    const persistedBefore = mockPersistTurn.mock.calls.length;
+    await act(async () => finish({ data: {
+      response_text: 'Secret from the old scope', usage_observation_id: 'old-usage',
+    } }));
+    expect(mockPersistTurn).toHaveBeenCalledTimes(persistedBefore);
+    expect(screen.queryByText('Secret from the old scope')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Next scope' } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+  });
+
+  it.each(['success', 'failure'])('rejects late reasoning %s after unmount', async outcome => {
+    let finish;
+    let fail;
+    mockApiPost.mockImplementationOnce(() => new Promise((resolve, reject) => {
+      finish = resolve; fail = reject;
+    }));
+    const view = render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Pending turn' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const signal = mockApiPost.mock.calls[0][2].signal;
+    view.unmount();
+    expect(signal.aborted).toBe(true);
+    const persistedBefore = mockPersistTurn.mock.calls.length;
+    await act(async () => {
+      if (outcome === 'success') finish({ data: { response_text: 'Late secret', usage_observation_id: 'late' } });
+      else fail(rejectedResponse(503, 'late source failure'));
+    });
+    expect(mockPersistTurn).toHaveBeenCalledTimes(persistedBefore);
+  });
+
+  it('rejects an old result after leaving and returning to the identical capacity', async () => {
+    let finish;
+    mockApiPost.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const user = { tenantId: 'TEST_TENANT', role: 'OWNER', businessRole: 'CAPACITY_A' };
+    const view = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'A question' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    view.rerender(<WilsyOSIntelligenceDock authUser={{ ...user, businessRole: 'CAPACITY_B' }}/>);
+    view.rerender(<WilsyOSIntelligenceDock authUser={user}/>);
+    const persistedBefore = mockPersistTurn.mock.calls.length;
+    await act(async () => finish({ data: {
+      response_text: 'Obsolete capacity answer', usage_observation_id: 'old-capacity',
+    } }));
+    expect(mockPersistTurn).toHaveBeenCalledTimes(persistedBefore);
+    expect(screen.queryByText('Obsolete capacity answer')).not.toBeInTheDocument();
+  });
+
+  it('offers no Founder AI activation command to another tenant', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'other-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('Verified workspace context unavailable.'))
+      .toBeVisible());
+    expect(screen.queryByRole('button', {
+      name: 'Activate Founder Institutional AI',
+    })).not.toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('requires EOS source-verified zero-rated ACTIVE readback before Founder activation claim', async () => {
+    const tenant = 'WILSYTENANT-4CD2FZ4O';
+    window.__WILSY_ACTIVE_TENANT__ = { tenantId: tenant };
+    mockApiPost.mockResolvedValue({ data: { data: {
+      tenant_id: tenant, subscription_id: 'WILSYSUB-93455E4E',
+      feature_id: 'ai.wilsy.institutional',
+      entitlement_state: 'ACTIVE', source_verified: true,
+      zero_rated_subscription: true,
+    } } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'founder-operator', tenantId: tenant, role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const action = await screen.findByRole('button', {
+      name: 'Activate Founder Institutional AI',
+    });
+    fireEvent.click(action);
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const [path, body, options] = mockApiPost.mock.calls[0];
+    expect(path).toBe('/subscriptions/founder-ai-institutional/activate');
+    expect(body).toEqual({});
+    expect(options.headers['X-Tenant-ID']).toBe(tenant);
+    expect(options.headers['X-Idempotency-Key']).toMatch(/^founder-institutional-[a-f0-9-]+$/);
+    await waitFor(() => expect(screen.getByText(
+      'Institutional AI entitlement is active. Verifying provider and workspace context…',
+    )).toBeInTheDocument());
+  });
+
+  it('rejects unverified Founder activation replies without claiming an ACTIVE entitlement', async () => {
+    const tenant = 'WILSYTENANT-4CD2FZ4O';
+    window.__WILSY_ACTIVE_TENANT__ = { tenantId: tenant };
+    mockApiPost.mockResolvedValue({ data: { data: {
+      tenant_id: tenant, subscription_id: 'WILSYSUB-93455E4E',
+      feature_id: 'ai.wilsy.institutional',
+      entitlement_state: 'PENDING_SOURCE', source_verified: false,
+      zero_rated_subscription: true,
+    } } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'founder-operator', tenantId: tenant, role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(await screen.findByRole('button', {
+      name: 'Activate Founder Institutional AI',
+    }));
+    await waitFor(() => expect(screen.getByText(
+      'EOS could not verify ACTIVE Institutional AI. No activation is being claimed.',
+    )).toBeInTheDocument());
+  });
+
+  it('keeps verified source visible but blocks unbound EOS provider calls', async () => {
+    const person = 'provider-person';
+    mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: person,
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false,
+          provider_binding: 'UNAVAILABLE' },
+        context_fingerprint: 'e'.repeat(128),
+        observed_at: '2026-11-20T08:00:00+00:00', locator: options.params,
+        allowance: { state: 'ACTIVE', available_request_units: 10,
+          seat_allocation: { state: 'UNAVAILABLE' } },
+        work: null,
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: person, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByLabelText('Inspect verified workspace context'))
+      .toHaveTextContent('AI provider unavailable'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What is my current work?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('keeps independently verified workspace visible while unprovisioned AI is denied', async () => {
+    const person = 'context-person';
+    mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: person,
+        authority: { source: 'PYTHON_EOS', read_only: true, model_invoked: false,
+          financial_execution: false },
+        context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-20T08:00:00+00:00', locator: options.params,
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0,
+          seat_allocation: { state: 'UNAVAILABLE' } },
+        work: null,
+      } }) : Promise.reject(rejectedResponse(503, 'other sources unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: person, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByLabelText('Inspect verified workspace context'))
+      .toHaveTextContent('AI reasoning not activated'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Which task is overdue?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reads current context only while open and treats page events as locators', async () => {
+    const principal = 'context-person';
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const snapshot = params => ({
+      schema: 'WILSY-AI-VERIFIED-CONTEXT/V1', tenant_id: 'TEST_TENANT', principal_id: principal,
+      authority: { source: 'PYTHON_EOS', read_only: true, model_invoked: false, financial_execution: false },
+      context_fingerprint: 'f'.repeat(128), observed_at: '2026-11-20T08:00:00+00:00', locator: params,
+      allowance: { available_request_units: 12, seat_allocation: { state: 'UNAVAILABLE' } },
+      work: params.project_id ? { project: { project_id: projectId, name: 'Verified current project', revision: 3 },
+        current_person_name: 'Source Person', sources: [{ kind: 'PROJECT', project_id: projectId, label: 'Verified current project' }] } : null,
+    });
+    mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
+      ? Promise.resolve({ data: snapshot(options.params) }) : Promise.reject(rejectedResponse(503, 'unavailable')));
+    const view = render(<WilsyOSIntelligenceDock authUser={{ id: principal, tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(false);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => {
+      expect(
+        screen.getByLabelText('Inspect verified workspace context')
+      ).toHaveTextContent('12 requests available');
+    });
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: projectId, project_revision: 3 } },
+    })));
+    fireEvent.click(screen.getByLabelText('Inspect verified workspace context'));
+    expect(await screen.findByRole('button', { name: 'Inspect source: Verified current project' })).toBeVisible();
+    expect(screen.getByText(/Source Person/)).toBeVisible();
+    expect(screen.getByText(/Verified project sources can support reasoning only after independent EOS authorization/)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    mockApiPost.mockResolvedValueOnce({ data: {
+      response_text: 'Verified context answer', usage_observation_id: 'usage-project',
+    } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Summarize this project' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    expect(mockApiPost.mock.calls[0][0]).toBe('/wilsy-ai/reasoning');
+    expect(mockApiPost.mock.calls[0][2].params).toEqual({
+      workspace: 'PROJECTS', project_id: projectId, project_revision: 3,
+    });
+    expect(mockApiPost.mock.calls[0][1]).toEqual(expect.objectContaining({
+      prompt: expect.stringContaining('Summarize this project'),
+    }));
+    const reads = mockApiGet.mock.calls.filter(([path]) => path === '/wilsy-ai/reasoning/context');
+    expect(reads.at(-1)[1].params).toEqual({ workspace: 'PROJECTS', project_id: projectId, project_revision: 3 });
+    expect(reads.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': 'TEST_TENANT' });
+    const beforeInvalid = reads.length;
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
+        tenantId: 'foreign', principalId: principal, locator: { workspace: 'HEADQUARTERS' },
+      } }));
+      window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
+        tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: projectId, role: 'ADMIN', name: 'Invented' },
+      } }));
+    });
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/wilsy-ai/reasoning/context')).toHaveLength(beforeInvalid);
+    const inspect = vi.fn();
+    window.addEventListener('wilsy:ai-inspect-source', inspect);
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect source: Verified current project' }));
+    expect(inspect.mock.calls[0][0].detail).toEqual({ tenantId: 'TEST_TENANT', principalId: principal, project_id: projectId });
+    window.removeEventListener('wilsy:ai-inspect-source', inspect);
+    const pendingSignal = reads.at(-1)[1].signal;
+    view.unmount();
+    expect(pendingSignal.aborted).toBe(true);
+  });
+
+  it.each([[403, 'Workspace context access denied by EOS.'], [409, 'Workspace context changed. Refresh the project source.'],
+    [503, 'Verified workspace context unavailable.']])('shows honest context HTTP %s without reasoning execution', async (status, copy) => {
+    mockApiGet.mockRejectedValue(rejectedResponse(status, 'safe-source-code'));
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'context-person', tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(await screen.findByText(copy)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('discards an old context snapshot when the project locator changes', async () => {
+    let finish;
+    const projectId = 'prj-' + 'b'.repeat(48);
+    mockApiGet.mockImplementation((path, config) => path === '/wilsy-ai/reasoning/context'
+      && !config.params.project_id ? new Promise(resolve => { finish = resolve; })
+      : Promise.reject(rejectedResponse(403, 'source denied')));
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'context-person', tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(typeof finish).toBe('function'));
+    const obsoleteSignal = mockApiGet.mock.calls.find(([path]) => path === '/wilsy-ai/reasoning/context')[1].signal;
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
+      tenantId: 'TEST_TENANT', principalId: 'context-person', locator: { workspace: 'PROJECTS', project_id: projectId },
+    } })));
+    expect(obsoleteSignal.aborted).toBe(true);
+    await act(async () => finish({ data: { work: { project: { name: 'Obsolete source secret' } } } }));
+    expect(screen.queryByText('Obsolete source secret')).not.toBeInTheDocument();
+    expect(await screen.findByText('Workspace context access denied by EOS.')).toBeVisible();
+  });
+
+  it('requests server-owned Headquarters current work without client source bodies', async () => {
+    mockApiPost.mockResolvedValue({ data: {
+      response_text: 'Verified EOS response', usage_observation_id: 'usage-hq',
+    } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'headquarters-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Which task needs immediate attention?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const [path, payload, options] = mockApiPost.mock.calls[0];
+    expect(path).toBe('/wilsy-ai/reasoning');
+    expect(options.params).toEqual({
+      workspace: 'HEADQUARTERS', include_work_context: true,
+    });
+    expect(payload).toHaveProperty('prompt');
+    expect(payload).not.toHaveProperty('items');
+    expect(payload).not.toHaveProperty('tenant_id');
+    expect(options.headers['X-Tenant-ID']).toBe('TEST_TENANT');
+  });
+
   it('sends a message when Enter is pressed', async () => {
-    const mockReply = { data: { intelligence: { reply: 'Test reply' } } };
+    const mockReply = { data: { response_text: 'Test reply', usage_observation_id: 'usage-1' } };
     mockApiPost.mockResolvedValue(mockReply);
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Hello' } });
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Test reply')).toBeInTheDocument();
@@ -479,18 +978,19 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('sends a message when Send button is clicked', async () => {
-    const mockReply = { data: { intelligence: { reply: 'Button reply' } } };
+    const mockReply = { data: { response_text: 'Button reply', usage_observation_id: 'usage-2' } };
     mockApiPost.mockResolvedValue(mockReply);
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'World' } });
     fireEvent.click(screen.getByLabelText('Send'));
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Button reply')).toBeInTheDocument();
@@ -500,16 +1000,21 @@ describe('WilsyOSIntelligenceDock', () => {
   it('displays error when API call fails and falls back to error message', async () => {
     mockApiPost.mockRejectedValue(new Error('Network error'));
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Error test' } });
     fireEvent.click(screen.getByLabelText('Send'));
 
     await waitFor(() => {
-      expect(screen.getByText(/I could not reach the Wilsy Operator Kernel/i)).toBeInTheDocument();
+      expect(screen.getByText(/WILSY AI could not verify this answer/i)).toBeInTheDocument();
     });
+    expect(screen.getAllByText(/WILSY AI could not verify this answer/i)).toHaveLength(1);
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toHaveValue('Error test');
+    expect(mockPersistTurn.mock.calls.filter(([, payload]) =>
+      payload?.message?.role === 'assistant')).toHaveLength(0);
   });
 
   it('creates a new thread when "New thread" is clicked', async () => {
@@ -549,11 +1054,12 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('triggers a suggestion click and sends its prompt', async () => {
-    const mockReply = { data: { intelligence: { reply: 'Suggestion reply' } } };
+    const mockReply = { data: { response_text: 'Suggestion reply', usage_observation_id: 'usage-3' } };
     mockApiPost.mockResolvedValue(mockReply);
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.click(screen.getByText('Suggestions'));
 
     const suggestionButton = screen.getByText('Test Suggestion');
@@ -561,7 +1067,7 @@ describe('WilsyOSIntelligenceDock', () => {
 
     await waitFor(() => {
       expect(mockRecordSuggestionUsage).toHaveBeenCalledWith('sug1');
-      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Suggestion reply')).toBeInTheDocument();
@@ -582,8 +1088,9 @@ describe('WilsyOSIntelligenceDock', () => {
   it('disables send button while submitting', async () => {
     mockApiPost.mockReturnValue(new Promise(() => {}));
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Test' } });
@@ -643,7 +1150,7 @@ describe('WilsyOSIntelligenceDock', () => {
       expect(screen.getByText(field, { exact: false })).toBeInTheDocument();
     }
     expect(screen.getByText('CURRENT')).toBeInTheDocument();
-    expect(mockApiPost).not.toHaveBeenCalledWith('/ai/operator', expect.anything(), expect.anything());
+    expect(mockApiPost).not.toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.anything(), expect.anything());
   });
 
   it('renders stale state and only permits read-only refresh or successor viewing', async () => {
@@ -721,7 +1228,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
+ * VERSION: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards

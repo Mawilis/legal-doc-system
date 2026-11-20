@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Unified My Work Read Projection
-VERSION: v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION
+VERSION: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Deterministically compose independently admitted EOS source work while
          preserving source identity, tenant scope and visibility provenance.
@@ -7,7 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/worksp
 COLLABORATION / OWNERSHIP: unified_my_work_router admits Legal, Operations,
                            Intelligence, CRM and HR through their own authorities.
 CERTIFICATION / UPDATE DATE: 2026-11-15.
-CHANGELOG: v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION accepts only the sanitized,
+CHANGELOG: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION includes independently admitted
+         exact-participant project tasks, preserving project/due-date source
+         coordinates and blocked visibility without inventing due-at instants.
+CHANGELOG: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION accepts only the sanitized,
            independently admitted HR action envelope supplied by the existing
            headcount and hiring source owners. It never reads personnel
            collections or introduces HR command authority.
@@ -34,10 +37,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Iterable, Mapping
 
-VERSION = "v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION"
+VERSION = "v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION"
 SCHEMA = "WILSY-OS-UNIFIED-MY-WORK/V1"
 
-_SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR")
+_SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR", "PROJECTS")
 _PRIORITY = {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3}
 _TERMINAL = frozenset({"COMPLETED", "CANCELLED"})
 
@@ -81,7 +84,7 @@ def _source_items(
         return ()
     if not isinstance(payload, Mapping) or payload.get("tenant_id") != tenant_id:
         raise UnifiedMyWorkProjectionError("SOURCE_TENANT_MISMATCH")
-    if source in {"OPERATIONS", "INTELLIGENCE", "CRM", "HR"}:
+    if source in {"OPERATIONS", "INTELLIGENCE", "CRM", "HR", "PROJECTS"}:
         items = payload.get("items")
         if not isinstance(items, (list, tuple)):
             raise UnifiedMyWorkProjectionError("SOURCE_ITEMS_INVALID")
@@ -109,6 +112,7 @@ def build_unified_my_work(
     intelligence: Mapping[str, Any] | None = None,
     crm: Mapping[str, Any] | None = None,
     hr: Mapping[str, Any] | None = None,
+    projects: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compose authorized source projections without becoming an authority.
 
@@ -139,6 +143,7 @@ def build_unified_my_work(
         "INTELLIGENCE": intelligence,
         "CRM": crm,
         "HR": hr,
+        "PROJECTS": projects,
     }
     merged: dict[tuple[str, str], dict[str, Any]] = {}
     visibility: dict[tuple[str, str], set[str]] = {}
@@ -167,6 +172,20 @@ def build_unified_my_work(
                 or not isinstance(priority, str) or not priority.strip()
             ):
                 raise UnifiedMyWorkProjectionError("SOURCE_ITEM_IDENTITY_INVALID")
+            if source == "PROJECTS" and (
+                not isinstance(raw.get("project_id"), str)
+                or not raw["project_id"].startswith("prj-")
+                or not isinstance(raw.get("owner_principal_id"), str)
+                or raw["owner_principal_id"] != principal_id
+                or status not in {"OPEN", "IN_PROGRESS", "BLOCKED"}
+                or (
+                    raw.get("due_date") is not None and (
+                        not isinstance(raw["due_date"], str)
+                        or len(raw["due_date"]) != 10
+                    )
+                )
+            ):
+                raise UnifiedMyWorkProjectionError("PROJECTS_SOURCE_ITEM_INVALID")
             if status in _TERMINAL:
                 continue
             if priority not in _PRIORITY:
@@ -190,6 +209,8 @@ def build_unified_my_work(
                 "action_authority": "SOURCE_SERVICE_ONLY",
                 "completion_route": None,
                 "approval_authority": None,
+                "project_id": raw.get("project_id") if source == "PROJECTS" else None,
+                "due_date": raw.get("due_date") if source == "PROJECTS" else None,
             }
             previous = merged.get(key)
             if previous is not None:
@@ -249,7 +270,7 @@ def build_unified_my_work(
 __all__ = ["SCHEMA", "VERSION", "UnifiedMyWorkProjectionError", "build_unified_my_work"]
 
 # ARTIFACT: unified_my_work_projection.py
-# VERSION: v1.1.0-HR-SOURCE-OWNED-ACTION-PROJECTION
+# VERSION: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION
 # AUTHORITY BOUNDARY: Read projection of independently admitted source work only.
 # TENANT POSTURE: Exact envelope and explicit item tenant binding; no cross-tenant lookup.
 # FAIL-CLOSED POSTURE: Malformed, foreign and divergent source evidence rejects.

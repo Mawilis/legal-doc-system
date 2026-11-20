@@ -1,5 +1,24 @@
-"""Read-only legacy credential migration assessment tests."""
+"""TITLE: WILSY Canonical Legacy Credential Migration Assessment Tests
+VERSION: v1.1.1-OBJECTID-PARAMETER-TEST-CORRECTION
+AUTHORITY: Source-only certification of existing principal and membership.
+EPITOME: Verify valid BSON ObjectId legacy compatibility, exact principal
+  matching, and quarantine on invalid or divergent identity without writes.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_principal_credential_migration_assessment.py
+COLLABORATION / OWNERSHIP: The read-only credential migration assessor.
+CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v1.1.1-OBJECTID-PARAMETER-TEST-CORRECTION preserves the
+  original email-cardinality parameterization. v1.1.0-OBJECTID-CANONICAL-LINKAGE-CERT adds synthetic legacy
+  ObjectId principal identity and divergent authority denial certificates.
+COMPLIANCE: POPIA s19; GDPR Article32; SOC2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic hashes; no real credential material.
+TENANT BOUNDARY: Exact persisted canonical tenant and ACTIVE membership.
+AUTHORITY BOUNDARY: Tests do not issue credentials, sessions or grants.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+FAIL-CLOSED DECLARATION: Missing/invalid/unmatched identity quarantines.
+"""
 from types import SimpleNamespace
+
+from bson import ObjectId
 
 import pytest
 
@@ -74,6 +93,47 @@ def test_only_exact_active_legacy_credential_is_eligible_without_mutation():
     assert PASSWORD_HASH not in repr(result.credential)
 
 
+def test_existing_objectid_identity_is_eligible_only_with_active_matching_authority():
+    legacy_id = ObjectId("507f1f77bcf86cd799439011")
+    document = {
+        "_id": legacy_id,
+        "user_id": None,
+    }
+    result = assess(document)
+    assert result.disposition == "ELIGIBLE_FOR_GOVERNED_MIGRATION"
+    assert result.credential.principal_id == str(legacy_id)
+    assert result.reason_code == "LEGACY_CREDENTIAL_AUTHORITIES_MATCH"
+    assert result.credential.password_hash == PASSWORD_HASH
+
+
+def test_missing_bson_id_and_fake_string_bson_id_are_quarantined():
+    assert assess({"user_id": None}).reason_code == "LEGACY_PRINCIPAL_ID_INVALID"
+    assert assess({"user_id": None, "_id": "507f1f77bcf86cd799439011"}
+                  ).reason_code == "LEGACY_PRINCIPAL_ID_INVALID"
+
+
+def test_objectid_fallback_never_invents_missing_principal_or_membership():
+    legacy_id = ObjectId("507f1f77bcf86cd799439012")
+
+    class UnmatchedPrincipal:
+        def get(self, principal_id, *, session=None):
+            return SimpleNamespace(principal_id="different-principal",
+                                   status=PrincipalStatus.ACTIVE)
+
+    class UnmatchedMembership:
+        def resolve(self, principal_id, tenant_id, *, session=None):
+            return SimpleNamespace(principal_id="different-principal",
+                                   tenant_id=tenant_id,
+                                   status=TenantMembershipStatus.ACTIVE,
+                                   revision=4)
+
+    doc = {"user_id": None, "_id": legacy_id}
+    assert assess(doc, principal_repository=UnmatchedPrincipal()
+                  ).reason_code == "LEGACY_PRINCIPAL_NOT_ACTIVE"
+    assert assess(doc, membership_repository=UnmatchedMembership()
+                  ).reason_code == "LEGACY_ACTIVE_MEMBERSHIP_REQUIRED"
+
+
 @pytest.mark.parametrize(
     ("count", "reason"),
     [
@@ -105,3 +165,11 @@ def test_authority_outage_is_not_misclassified_as_quarantine():
     from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepositoryError
     with pytest.raises(PrincipalCredentialMigrationAssessmentUnavailable):
         assess(principal_repository=PrincipalRepository(failure=PrincipalAuthorityRepositoryError("unavailable")))
+
+# ARTIFACT: test_principal_credential_migration_assessment.py
+# VERSION: v1.1.1-OBJECTID-PARAMETER-TEST-CORRECTION
+# AUTHORITY BOUNDARY: read-only exact principal and membership tests
+# TENANT POSTURE: synthetic valid BSON ObjectId, no new principal ID
+# FAIL-CLOSED POSTURE: malformed, missing, divergent authority quarantined
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

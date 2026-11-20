@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Authenticated Unified My Work Source Aggregation
-VERSION: v1.6.1-SAFE-SOURCE-HTTP-CLASSIFICATION
+VERSION: v1.7.0-EXACT-PROJECT-ATTENTION-ADMISSION
 AUTHORITY: WILSY OS Python EOS; canonical source registries own business truth.
 EPITOME: Compose only independently authenticated and entitled module work in
          exact tenant scope, fan out independent source-owned reads without
@@ -16,7 +16,10 @@ COLLABORATION / OWNERSHIP: TenantAuthorizationHTTP owns current IAM;
          Legal Operations, CRM, tenant module and HR source services own reads,
          index assurance, transactions and durable state; projection owns shape.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.6.1-SAFE-SOURCE-HTTP-CLASSIFICATION logs the bounded
+CHANGELOG: v1.7.0-EXACT-PROJECT-ATTENTION-ADMISSION admits Project work only
+           through independent participant:read IAM and one EOS source-owned
+           transaction; no Founder shortcut or fabricated task completion.
+CHANGELOG: v1.7.0-EXACT-PROJECT-ATTENTION-ADMISSION logs the bounded
            canonical HTTP failure code for independently admitted source reads
            without logging principal, tenant, payload or raw exception detail.
            v1.6.0-CRM-CORE-OPTIONAL-SOURCE treats explicitly verified
@@ -86,6 +89,7 @@ from tools.eos.workspaces.service.unified_my_work_projection import (
     build_unified_my_work,
 )
 
+from tools.eos.api.project_attention_source import read_project_attention
 from tools.eos.api import legal_operations_router as legal_source
 from tools.eos.api import headcount_requisition_router as headcount_source
 from tools.eos.api import hiring_lifecycle_router as hiring_source
@@ -105,6 +109,9 @@ _INTELLIGENCE_READ = OptionalTenantAuthorization(
     "intelligence:work_item:read", "intelligence_work_item_read"
 )
 _CRM_READ = OptionalTenantAuthorization("crm:work_item:read", "crm_work_item_read")
+_PROJECTS_READ = OptionalTenantAuthorization(
+    "project:participant:read", "project_participant_detail",
+)
 _HEADCOUNT_READ = OptionalTenantAuthorization(
     "hr:headcount_requisition:read", "hr_headcount_requisition_read",
     platform_employer_permission_id="platform_employer:headcount_requisition:read",
@@ -392,6 +399,7 @@ def _build_result(
     intelligence: dict[str, Any] | None,
     crm: dict[str, Any] | None,
     hr: dict[str, Any] | None,
+    projects: dict[str, Any] | None,
 ) -> dict[str, Any]:
     """Validate and compose completed independent source snapshots."""
     started_ns = time.perf_counter_ns()
@@ -406,6 +414,7 @@ def _build_result(
             intelligence=intelligence,
             crm=crm,
             hr=hr,
+            projects=projects,
         )
     except UnifiedMyWorkProjectionError as error:
         outcome = "INVALID_SOURCE_PROJECTION"
@@ -430,6 +439,7 @@ def _build_result(
             ("INTELLIGENCE", intelligence),
             ("CRM", crm),
             ("HR", hr),
+            ("PROJECTS", projects),
         ) if payload is not None
     ]
     result["authority"]["permits_source_commands"] = False
@@ -445,6 +455,7 @@ async def read_my_work(
     operations_context: TenantAuthorizationContext | None = Depends(_OPERATIONS_READ),
     intelligence_context: TenantAuthorizationContext | None = Depends(_INTELLIGENCE_READ),
     crm_context: TenantAuthorizationContext | None = Depends(_CRM_READ),
+    projects_context: TenantAuthorizationContext | None = Depends(_PROJECTS_READ),
     headcount_read_context: TenantAuthorizationContext | None = Depends(_HEADCOUNT_READ),
     headcount_submit_context: TenantAuthorizationContext | None = Depends(_HEADCOUNT_SUBMIT),
     headcount_decide_context: TenantAuthorizationContext | None = Depends(_HEADCOUNT_DECIDE),
@@ -469,6 +480,7 @@ async def read_my_work(
         operations_context,
         intelligence_context,
         crm_context,
+        projects_context,
         headcount_read_context,
         headcount_submit_context,
         headcount_decide_context,
@@ -509,6 +521,14 @@ async def read_my_work(
         ))
     if crm_context is not None:
         source_reads.append(("CRM", lambda: _read_crm(tenant_id=tenant_id)))
+    if projects_context is not None:
+        source_reads.append((
+            "PROJECTS",
+            lambda: read_project_attention(
+                context=projects_context, tenant_id=tenant_id,
+                principal_id=principal_id,
+            ),
+        ))
     if headcount_read_context is not None or offer_read_context is not None:
         source_reads.append((
             "HR",
@@ -538,6 +558,7 @@ async def read_my_work(
         "INTELLIGENCE": None,
         "CRM": None,
         "HR": None,
+        "PROJECTS": None,
     }
     first_error: BaseException | None = None
     for (source, _reader), result in zip(source_reads, source_results):
@@ -565,6 +586,7 @@ async def read_my_work(
         intelligence=payloads["INTELLIGENCE"],
         crm=payloads["CRM"],
         hr=payloads["HR"],
+        projects=payloads["PROJECTS"],
     )
     if _diagnostics_enabled():
         logger.info(
@@ -580,7 +602,7 @@ __all__ = ["router", "read_my_work"]
 
 
 # ARTIFACT: tools/eos/api/unified_my_work_router.py
-# VERSION: v1.6.1-SAFE-SOURCE-HTTP-CLASSIFICATION
+# VERSION: v1.7.0-EXACT-PROJECT-ATTENTION-ADMISSION
 # AUTHORITY BOUNDARY: Authenticated source reads only; no commands.
 # TENANT POSTURE: Exact IAM source admission required.
 # FAIL-CLOSED POSTURE: Any admitted source failure rejects the aggregate.

@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS
+ * VERSION: v1.12.0-AI-CONTRAST-AND-CHECKBOX-VISIBILITY
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,7 +8,34 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS targets the mounted
+ * CHANGELOG: v1.12.0-AI-CONTRAST-AND-CHECKBOX-VISIBILITY restores dark ink on the
+ *          AI brief and paid-usage consent fields outside template forms,
+ *          blue-accent checkboxes and visible keyboard focus; also removes
+ *          the obsolete interior artifact seal without touching EOS truth.
+ * CHANGELOG: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY applies compact
+ *          table paddings to actual task cells and keeps visible focus,
+ *          legible statuses, and 40px targets on small screens.
+ * CHANGELOG: v1.10.0-OPERATING-FORM-CONTRAST-SEAL enforces dark ink and
+ *          WebKit text fill across project create/edit/template labels and fields;
+ *          adds the mandatory sovereign end seal without changing API authority.
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST prevents global gold uppercase and
+ *          text-fill inheritance on template activation labels, date inputs
+ *          and editable project names; preserves readable native calendar UI.
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST scopes the proven dark
+ *            form label/text contrast rules to governed participants as well
+ *            as task and note panels; removes pale-gold labels without
+ *            changing the global brand, source truth, identity or authority.
+ * CHANGELOG: v1.6.0-ACCESSIBLE-TASK-NOTE-FORM-LABELS restores WCAG-conscious operating label contrast for task and note panels against inherited brand styles; no data, authority or layout changes.
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST enforces the intended
+ *            narrow-screen compact table column visibility under global
+ *            display overrides; visible project, status and action remain.
+ * CHANGELOG: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST adds subdued fluid
+ *            glass portfolio bar-chart styling and accessible pagination;
+ *            visualized counts come only from validated EOS response data.
+ *            v1.4.0-PROJECTS-OPERATING-TABLE introduces a full-width responsive
+ *            operational project table, readable filters and calm white surfaces.
+ *            Selected detail uses balanced columns without affecting source truth.
+ *            v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS targets the mounted
  *            .wp-accountability element (previous .wp-section selector never
  *            matched), restoring navy label text and normal letter spacing.
  *            v1.3.2-READABLE-ADVANCED-CODE-GUIDANCE prevents global uppercase, tracked
@@ -236,6 +263,45 @@
 .wilsy-projects .wp-summary .wp-list-line>span:first-child {flex-shrink:0;font-weight:800;min-width:20px;color:#84531b !important;}
 .wilsy-projects .wp-summary-toggle {background:none;border:0;padding:8px 0;color:#064a9a !important;text-decoration:underline;font-weight:750;font-size:13px;}
 .wilsy-projects .wp-form {padding:16px 0;display:grid;gap:13px;}
+/* Overview metadata is source evidence, not branded decoration. Host theme
+   uppercase/gold rules must never reduce semantic label legibility. */
+.wilsy-projects .wp-detail-inner .wp-facts :is(dt, dd, small) {
+  color: #213954 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+.wilsy-projects .wp-detail-inner .wp-facts dt {
+  color: #435773 !important;
+  font-weight: 650 !important;
+}
+.wilsy-projects .wp-detail-inner .wp-facts small {
+  color: #243f62 !important;
+  background: #f1f5f9 !important;
+  border-color: #b9c8d9 !important;
+}
+
+/* The inherited global label styling previously produced pale gold on pale inputs.
+   Keep legitimate branding accents elsewhere; operating form names must be readable. */
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes, .wp-project-participants) :is(label, legend) {
+  color: #152c4c !important;
+  -webkit-text-fill-color: #152c4c !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  opacity: 1 !important;
+}
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes, .wp-project-participants) :is(input, textarea, select) {
+  background-color: #ffffff !important;
+  color: #102845 !important;
+  -webkit-text-fill-color: #102845 !important;
+  font-weight: 450 !important;
+  letter-spacing: normal !important;
+}
+.wilsy-projects :is(.wp-project-tasks, .wp-project-notes, .wp-project-participants) :is(input, textarea)::placeholder {
+  color: #516582 !important;
+  -webkit-text-fill-color: #516582 !important;
+  opacity: 1 !important;
+}
 .wilsy-projects .wp-form label {font-size:12px;font-weight:750;color:#2a4365 !important;display:block;}
 .wilsy-projects .wp-form label :is(input,textarea) {margin-top:7px;font-weight:450;}
 .wilsy-projects .wp-form-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -330,11 +396,323 @@
 @media(prefers-reduced-motion:reduce) {
   .wilsy-projects .wp-button {transition:none;}
 }
-/* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.3.3-LIVE-ACCOUNTABILITY-LABEL-SELECTORS
- * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
- * TENANT POSTURE: No identity, tenant selection or source projection.
- * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
- * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+/* Projects table: canonical list/data and behavior remain in React/EOS. */
+.wilsy-projects {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  min-height: 0;
+  background: #f3f6fb;
+  border-color: #dce4f0;
+  border-radius: 14px;
+}
+.wilsy-projects .wp-toolbar {
+  box-shadow: none;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.wilsy-projects .wp-body[data-layout="list"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100%;
+  height: auto;
+}
+.wilsy-projects .wp-body[data-layout="list"] > .wp-list-panel {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+.wilsy-projects .wp-body[data-layout="detail"] {
+  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+}
+.wilsy-projects .wp-panel { box-shadow: none; }
+.wilsy-projects .wp-list-controls { flex-wrap: wrap; width: 100%; }
+.wilsy-projects .wp-list-controls .wp-search { flex: 1 1 280px; }
+.wilsy-projects .wp-search input,
+.wilsy-projects .wp-filter {
+  background: #fff !important;
+  color: #162d50 !important;
+  -webkit-text-fill-color: #162d50 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+.wilsy-projects .wp-search input::placeholder {
+  color: #526781 !important;
+  -webkit-text-fill-color: #526781 !important;
+  opacity: 1 !important;
+}
+.wilsy-projects .wp-filter {
+  width: 190px;
+  flex: 0 0 190px;
+}
+.wilsy-projects .wp-table-shell {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-color: #a9c2df #f0f4fa;
+}
+.wilsy-projects .wp-table-head,
+.wilsy-projects .wp-table-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(130px, 1fr) minmax(120px, .8fr) minmax(135px, .85fr) minmax(110px, .55fr);
+  min-width: 740px;
+  align-items: center;
+  gap: 16px;
+}
+.wilsy-projects .wp-table-head {
+  padding: 13px 20px;
+  background: #f7f9fd;
+  border-bottom: 1px solid #d9e2ee;
+  color: #435771 !important;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.wilsy-projects .wp-table-row {
+  min-height: 74px;
+  width: 100%;
+  padding: 13px 20px;
+  border: none;
+  border-bottom: 1px solid #e0e7f0;
+  border-radius: 0;
+  text-align: left;
+  background: #fff;
+  color: #173251 !important;
+  cursor: pointer;
+}
+.wilsy-projects .wp-table-row:hover,
+.wilsy-projects .wp-table-row[data-selected="true"] {
+  background: #eff5ff;
+  box-shadow: inset 3px 0 #3269b6;
+}
+.wilsy-projects .wp-table-row:focus-visible {
+  outline: 3px solid #1467d6 !important;
+  outline-offset: -3px;
+}
+.wilsy-projects .wp-table-row > span { min-width: 0; overflow-wrap: anywhere; }
+.wilsy-projects .wp-table-row .wp-row-title { font-size: 14px; }
+.wilsy-projects .wp-table-row .wp-row-meta { margin-top: 4px; }
+.wilsy-projects .wp-table-action { color: #164b85 !important; font-size: 13px; font-weight: 750; }
+@media (max-width: 1100px) {
+  .wilsy-projects .wp-body[data-layout="detail"] {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+}
+@media (max-width: 640px) {
+  .wilsy-projects .wp-filter { width: 100%; flex: 1 1 100%; }
+  .wilsy-projects .wp-table-head { display: none; }
+  .wilsy-projects .wp-table-row {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+  }
+  .wilsy-projects .wp-table-row > span:nth-child(2),
+  .wilsy-projects .wp-table-row > span:nth-child(4) { display: none !important; }
+  .wilsy-projects .wp-table-row > span:nth-child(3) { grid-column: 2; grid-row: 1; }
+  .wilsy-projects .wp-table-row > span:nth-child(5) { grid-column: 2; }
+}
+
+
+/* Verified portfolio chart: percentages derive exclusively from EOS summary. */
+.wilsy-projects .wp-portfolio-chart {
+  margin: 0 0 18px;
+  padding: 20px 24px;
+  background: linear-gradient(125deg, rgba(255,255,255,.98), rgba(235,242,255,.91));
+  border: 1px solid #cfdaea;
+  border-radius: 14px;
+  color: #163251;
+  box-shadow: 0 7px 28px rgba(24,50,82,.06);
+  backdrop-filter: blur(14px);
+}
+.wilsy-projects .wp-chart-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #142b4d;
+  font-size: 14px;
+}
+.wilsy-projects .wp-chart-heading span {
+  font-size: 12px;
+  color: #526781 !important;
+}
+.wilsy-projects .wp-chart-bars {
+  margin-top: 18px;
+  height: 116px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(10px, 3vw, 28px);
+}
+.wilsy-projects .wp-chart-item {
+  display: grid;
+  grid-template-rows: 18px minmax(0, 1fr) 20px;
+  gap: 5px;
+  min-width: 0;
+  align-items: end;
+  text-align: center;
+}
+.wilsy-projects .wp-chart-value { font-size: 12px; font-weight: 750; color: #173251 !important; }
+.wilsy-projects .wp-chart-caption {font-size: 11px; color: #405875 !important; text-transform: capitalize;}
+.wilsy-projects .wp-chart-track {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  background: #e5ebf4;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+}
+.wilsy-projects .wp-chart-fill {
+  position: absolute;
+  inset: auto 0 0;
+  background: #6689c9;
+  border-radius: 5px 5px 0 0;
+}
+.wilsy-projects .wp-chart-item[data-status=active] .wp-chart-fill {background: #258369;}
+.wilsy-projects .wp-chart-item[data-status=on_hold] .wp-chart-fill {background: #bc7929;}
+.wilsy-projects .wp-chart-item[data-status=done] .wp-chart-fill {background: #4d8fa2;}
+.wilsy-projects .wp-chart-item[data-status=cancelled] .wp-chart-fill {background: #9c6b80;}
+.wilsy-projects .wp-pagination {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.wilsy-projects .wp-pagination .wp-button {min-height: 32px; padding: 5px 12px;}
+.wilsy-projects .wp-footer:has(.wp-pagination) {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media(max-width:640px) {
+  .wilsy-projects .wp-portfolio-chart { padding: 14px; }
+  .wilsy-projects .wp-chart-bars { gap: 5px; }
+  .wilsy-projects .wp-chart-caption {font-size: 9px; overflow-wrap: anywhere;}
+}
+
+/* Template activation is operating-form content, never decorative gold labels.
+   Scope selectors to the existing template surface; do not recolour branding. */
+.wilsy-projects [aria-label="Industry project templates"] form :is(label, legend) {
+  color: #193451 !important;
+  -webkit-text-fill-color: #193451 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+.wilsy-projects [aria-label="Industry project templates"] form :is(input, select, textarea) {
+  color: #152b48 !important;
+  -webkit-text-fill-color: #152b48 !important;
+  background: #fff !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+}
+.wilsy-projects [aria-label="Industry project templates"] form :is(input, select, textarea)::placeholder {
+  color: #546a85 !important;
+  -webkit-text-fill-color: #546a85 !important;
+  opacity: 1;
+}
+
+/* Operating forms must not inherit branded pale-gold text fill or opacity. */
+.wilsy-projects :is(.wp-form, [aria-label="Industry project templates"] form)
+  :is(label, legend) {
+  color: #193451 !important;
+  -webkit-text-fill-color: #193451 !important;
+  opacity: 1 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+.wilsy-projects :is(.wp-form, [aria-label="Industry project templates"] form)
+  :is(input:not([type="checkbox"]), textarea, select) {
+  color: #152b48 !important;
+  -webkit-text-fill-color: #152b48 !important;
+  background-color: #fff !important;
+  opacity: 1 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+.wilsy-projects :is(.wp-form, [aria-label="Industry project templates"] form)
+  :is(input, textarea)::placeholder {
+  color: #516582 !important;
+  -webkit-text-fill-color: #516582 !important;
+  opacity: 1 !important;
+}
+.wilsy-projects :is(.wp-form, [aria-label="Industry project templates"] form)
+  :is(input, textarea, select):focus-visible {
+  outline: 3px solid #1467d6 !important;
+  outline-offset: 2px;
+}
+/* Density is an operator preference, not a change to project state. */
+.wilsy-projects .wp-project-tasks table[data-density="compact"] :is(th, td) {
+  padding: 4px 6px !important;
+}
+.wilsy-projects .wp-project-tasks table[data-density="compact"] tbody tr {
+  min-height: 44px;
+}
+.wilsy-projects .wp-project-tasks table[data-density="comfortable"] tbody tr {
+  min-height: 56px;
+}
+.wilsy-projects .wp-project-tasks table[role="grid"] tbody tr[aria-selected="true"] {
+  background-color: #eff6ff !important;
+}
+.wilsy-projects .wp-project-tasks table[role="grid"] tbody tr:focus-visible {
+  outline: 3px solid #155eac !important;
+  outline-offset: -3px;
+}
+.wilsy-projects .wp-project-tasks table[role="grid"] input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #1655a4;
+}
+@media (max-width: 767px) {
+  .wilsy-projects .wp-project-tasks table[role="grid"] :is(button, input[type="checkbox"]) {
+    touch-action: manipulation;
+  }
+}
+/* WILSY AI operating copy is outside the template form. Global gold-label
+   styling must not bleed into the project brief or paid-service consent. */
+.wilsy-projects [aria-label="WILSY AI project planning"] :is(label, label span) {
+  color: #152c4c !important;
+  -webkit-text-fill-color: #152c4c !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+.wilsy-projects [aria-label="WILSY AI project planning"] textarea {
+  color: #152c4c !important;
+  -webkit-text-fill-color: #152c4c !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+}
+.wilsy-projects :is(.wp-project-tasks, [aria-label="WILSY AI project planning"])
+  input[type="checkbox"] {
+  appearance: auto;
+  color-scheme: light;
+  accent-color: #1d61a8;
+  background-color: #ffffff;
+  outline-offset: 3px;
+  cursor: pointer;
+}
+.wilsy-projects :is(.wp-project-tasks, [aria-label="WILSY AI project planning"])
+  input[type="checkbox"]:focus-visible {
+  outline: 3px solid #145db1 !important;
+}
+
+/*
+ * ARTIFACT: ProjectsWorkspace.css
+ * VERSION: v1.12.0-AI-CONTRAST-AND-CHECKBOX-VISIBILITY
+ * AUTHORITY BOUNDARY: visual presentation only; EOS owns every project command
+ * TENANT POSTURE: styling does not grant or infer access
+ * FAIL-CLOSED POSTURE: no synthetic verified state or visual success inference
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

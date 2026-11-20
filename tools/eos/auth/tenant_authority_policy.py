@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.59.0-CRM-WORK-EDIT-ELIGIBILITY
+VERSION: v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility, explicit HR headcount initiation/decision separation and WILSY platform-employer
@@ -18,8 +18,11 @@ exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY permits own-tenant project-scoped
+read/contribution eligibility for current business capacities while requiring
+separate participant IAM roles and exact project records; no founder fallback.
 CHANGELOG:
-    2026-11-17 v1.59.0-CRM-WORK-EDIT-ELIGIBILITY defines distinct
+    2026-11-17 v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY defines distinct
     crm_work_item_update own-tenant business eligibility for owner/admin/manager;
     auditor, specialist and financial execution remain denied. Separate active
     role possession, tenant membership, and CRM entitlement still apply.
@@ -246,7 +249,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.59.0-CRM-WORK-EDIT-ELIGIBILITY"
+VERSION = "v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -1406,6 +1409,8 @@ _PROJECT_OPERATIONS = {
     "project_create": "project:create",
     "project_update": "project:update",
     "project_archive": "project:archive",
+    "project_participant_detail": "project:participant:read",
+    "project_participant_contribute": "project:participant:contribute",
 }
 OPERATIONS = frozenset((*OPERATIONS, *_PROJECT_OPERATIONS))
 BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
@@ -1417,14 +1422,20 @@ _project_eligibility = {
 }
 for _role, _operations in _project_eligibility.items():
     for _operation in _PROJECT_OPERATIONS:
-        _operations[_operation] = ELIGIBLE if _role == "tenant_owner" else DENY
+        _operations[_operation] = (
+            ELIGIBLE if (
+                _role == "tenant_owner"
+                if _operation in {"project_list", "project_detail", "project_create", "project_update", "project_archive"}
+                else _role in TENANT_ROLES
+            ) else DENY
+        )
 ELIGIBILITY = MappingProxyType({
     role: MappingProxyType(operations)
     for role, operations in _project_eligibility.items()
 })
 
 # ARTIFACT: tools/eos/auth/tenant_authority_policy.py
-# VERSION: v1.59.0-CRM-WORK-EDIT-ELIGIBILITY
+# VERSION: v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts and exact operation mappings only; no authorization or mutation
 # TENANT POSTURE: platform-employer eligibility is usable only inside the canonical WILSY company tenant; active membership and assigned permission remain mandatory
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; Projects eligibility is tenant_owner only and still requires separately assigned Projects role and active product entitlement

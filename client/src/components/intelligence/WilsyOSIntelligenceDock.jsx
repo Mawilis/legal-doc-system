@@ -1,13 +1,73 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
+ * VERSION: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION adds
+ * one exact-Founder, explicitly clicked Institutional activation command.
+ * The Python EOS dual-IAM boundary owns the write; the Dock admits success
+ * only after exact-tenant ACTIVE entitlement readback and refreshes context.
+ * No automatic login activation, raw Atlas writes, or client-selected tier.
+ * v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS routes HQ questions
+ * through the canonical Python EOS My Work admission flag, sending only a
+ * workspace locator and never browser-rendered work facts to a model.
+ * v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW displays
+ * the safe server-owned provider readiness separately from verified work
+ * and entitlement, preventing avoidable model submissions when the Python
+ * provider binding is unavailable. v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS separates EOS-verified work
+ * from absent AI commercial capacity, disables only metered model requests
+ * when the exact tenant has no AI entitlement and gives bounded guidance.
+ * v4.13.1-OPERATOR-READABLE-SOURCE-STATUS replaces raw
+ * Kennel machine tokens in the AI header with bounded, truthful human
+ * availability language without altering diagnostic or authentication state.
+ * v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED projects independently authorized
+ * Headquarters My Work priorities as read-only task rows when AI commercial
+ * admission is unavailable; tenant/principal and source-owned flags are
+ * checked before display. These rows never enter the model from the browser.
+ * v4.12.1-QUIET-REMEMBERED-CONSENT keeps previously accepted
+ * usage consent collapsed into a discreet, reversible preference instead
+ * of presenting the permission prompt again; rejects email values as first
+ * names. v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT greets new conversations from the authenticated
+ * operator's first name and local time, remembers voluntary consent only
+ * for the exact browser/tenant/principal/capacity and disclosure version,
+ * and displays failed requests as errors, never fabricated AI turns.
+ * v4.11.0-VERIFIED-SELECTED-TASK-FOCUS names the independently verified
+ * selected task within the existing conversation context and empty-state
+ * explanation, without trusting page-event titles or opening new cards.
+ * v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE separates expandable usage
+ * information from checkbox label activation, preventing an informational
+ * disclosure action from inadvertently consenting to a metered request.
+ * v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR forwards only a server-verified
+ * project locator to Python EOS reasoning (never browser project facts), reuses
+ * the exact locator on replay, blocks unverified project reasoning and revokes
+ * in-flight turns when the observed workspace changes. Consent discloses that
+ * EOS may pass verified source excerpts to the authorized model provider.
+ * v4.9.1-CONVERSATION-FIRST-CONSENT removes the misleading generic readiness
+ * messages, makes the active EOS workspace the conversational starting point,
+ * and presents compact consent with an accessible optional disclosure. It
+ * preserves metered opt-in and does not claim provider-grounded answers.
+ * v4.9.0-VERIFIED-CONTEXT-INSPECTION reads independently admitted
+ * workspace context only while open, validates exact scope and source locators,
+ * cancels stale reads and exposes source citations and unavailable commercial
+ * facts. Collapsible source details retain the mobile composer in view.
+ * Inspection does not send source records to a model or issue authority.
+ * CHANGELOG: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION cancels obsolete
+ * reasoning transport on scope exit and unmount, rejects late work by mount
+ * generation, and releases submission state for the newly selected capacity.
+ * Cancellation never claims to undo a server admission or quota reservation.
+ * CHANGELOG: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION preserves the exact EOS
+ * idempotency key and canonical prompt after uncertain AI responses; retries
+ * reuse the same admission instead of consuming capacity twice. A confirmed
+ * response or changed tenant/session scope clears the replay anchor.
+ * CHANGELOG: v4.8.0-ENTITLED-EOS-CONVERSATION sends general conversational
+ * turns to the canonical Python EOS metered reasoning boundary only after
+ * explicit usage consent. Client history is conversation continuity, not
+ * verified workspace evidence. C1C legal authority remains independent.
  * CHANGELOG: v4.7.1-INDEPENDENT-KERNEL-HEALTH starts EOS kernel health independently
  * of optional finance evidence, publishes verified health immediately, and
  * enriches context only after independently verified optional evidence.
@@ -289,8 +349,32 @@ const canProbeBillingIntelligence = (role) => (
 
 /**
  * @function WilsyOSIntelligenceDock
- * @description Kennel Phase‑4 intelligence surface – sovereign api + backend operator.
+ * @description Renders session-scoped conversation over the existing EOS authorities.
+ * @collaboration Authenticated runtime, api.js and transient conversation engine.
+ * @institutional Browser scope partitions presentation; EOS independently admits every command.
+ * @returns {React.ReactElement} Accessible, movable conversation companion.
+ * No IAM, workforce, commercial or financial authority is created.
  */
+const AI_CONSENT_VERSION = 'WILSY-AI-USAGE-DISCLOSURE/V1';
+
+/** Use authenticated display identity and local presentation time only. */
+function operatorGreeting(user, hour = new Date().getHours()) {
+  const raw = [user?.firstName, user?.first_name, user?.displayName, user?.name]
+    .find(value => typeof value === 'string' && value.trim() && !value.includes('@'));
+  const first = raw?.trim().split(/\s+/u)[0]?.replace(/[^\p{L}\p{M}'-]/gu, '').slice(0, 48);
+  const period = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  return `Good ${period}${first ? `, ${first}` : ''}.`;
+}
+
+/** Browser preference only: never an entitlement or authorized usage admission. */
+function consentKeyFor(user, tenant, scope) {
+  if (typeof user?.id !== 'string' || !user.id.trim()
+    || typeof tenant !== 'string' || !tenant.trim()) return null;
+  return 'wilsy.ai.usage-consent:' + JSON.stringify([
+    AI_CONSENT_VERSION, tenant, user.id, scope,
+  ]);
+}
+
 export function WilsyOSIntelligenceDock({
   authUser = null,
   activeTenant = null,
@@ -363,6 +447,21 @@ export function WilsyOSIntelligenceDock({
     onPointerCancel={endDockMove} onKeyDown={moveDockWithKeyboard}><GripVertical size={16}/></button>;
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
+  const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
+  const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
+  const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
+  const [headquartersWork, setHeadquartersWork] = useState(null);
+  const [contextRefresh, setContextRefresh] = useState(0);
+  const [founderActivationState, setFounderActivationState] = useState('IDLE');
+  const [founderActivationMessage, setFounderActivationMessage] = useState('');
+  const founderActivationKeyRef = useRef(null);
+  const founderActivationInFlightRef = useRef(false);
+  const workLocatorKey = JSON.stringify(workLocator);
+  const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
+  const reasoningAbortRef = useRef(null);
+  const workLocatorKeyRef = useRef(workLocatorKey);
+  const conversationGenerationRef = useRef(0);
+  const sendLockRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
@@ -389,23 +488,254 @@ export function WilsyOSIntelligenceDock({
     authUser?.membershipRevision, authUser?.businessRoleRevision,
   ].map((part) => String(part ?? '')).join(':');
   const dockScopeRef = useRef(dockScope);
+  const consentKey = consentKeyFor(authUser,
+    activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId, dockScope);
+  const consentKeyRef = useRef(consentKey);
+  consentKeyRef.current = consentKey;
+  const updateUsageConsent = useCallback(accepted => {
+    const key = consentKeyRef.current;
+    if (key) {
+      try {
+        if (accepted) window.localStorage.setItem(key, 'accepted');
+        else window.localStorage.removeItem(key);
+      } catch {
+        // Browser storage is optional. EOS reauthorizes every reasoning call.
+      }
+    }
+    setReasoningUsageConsent(accepted);
+  }, []);
 
   // This module-level session history belongs to the current authenticated
   // capacity only. Changing identity, tenant or capacity revokes old turns and
   // aborts obsolete health probes before they can repaint the next workspace.
-  useEffect(() => {
+  useLayoutEffect(() => {
+    conversationGenerationRef.current += 1;
     dockScopeRef.current = dockScope;
+    reasoningAbortRef.current?.abort();
+    reasoningAbortRef.current = null;
+    sendLockRef.current = false;
+    setIsSubmitting(false);
+    setPrompt('');
+    setErrorMessage('');
+    setWorkLocator({ workspace: 'HEADQUARTERS' });
+    setVerifiedWorkspaceContext(null);
+    setHeadquartersWork(null);
+    setFounderActivationState('IDLE');
+    setFounderActivationMessage('');
+    founderActivationKeyRef.current = null;
+    founderActivationInFlightRef.current = false;
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
+    let rememberedConsent = false;
+    if (consentKey) {
+      try {
+        rememberedConsent = window.localStorage.getItem(consentKey) === 'accepted';
+      } catch {
+        rememberedConsent = false;
+      }
+    }
+    setReasoningUsageConsent(rememberedConsent);
+    reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
     setDockContext(null);
     setKennelPosture('STANDBY');
     return () => {
+      conversationGenerationRef.current += 1;
+      reasoningAbortRef.current?.abort();
       healthAbortRef.current?.abort();
       healthGenerationRef.current += 1;
       resetWilsyAIConversationSession();
     };
+  }, [dockScope, consentKey]);
+
+  useLayoutEffect(() => {
+    if (workLocatorKeyRef.current === workLocatorKey) return;
+    workLocatorKeyRef.current = workLocatorKey;
+    conversationGenerationRef.current += 1;
+    reasoningAbortRef.current?.abort();
+    reasoningAbortRef.current = null;
+    sendLockRef.current = false;
+    reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
+    setIsSubmitting(false);
+    setErrorMessage('');
+  }, [workLocatorKey]);
+
+  // Navigation events are untrusted locators. No profile, permission, seat,
+  // project title or other source fact is accepted from browser events.
+  useEffect(() => {
+    const receive = event => {
+      const detail = event.detail;
+      const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+      if (!authUser?.id || detail?.tenantId !== exactTenant || detail?.principalId !== authUser.id) return;
+      const candidate = detail.locator;
+      const allowed = ['workspace', 'project_id', 'project_revision', 'task_id', 'task_revision', 'participant_view'];
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)
+        || Object.keys(candidate).some(key => !allowed.includes(key))
+        || !['HEADQUARTERS', 'PROJECTS'].includes(candidate.workspace)
+        || (candidate.project_id && (!/^prj-[0-9a-f]{48}$/.test(candidate.project_id)
+          || candidate.workspace !== 'PROJECTS'))
+        || (candidate.project_revision !== undefined && (!candidate.project_id
+          || !Number.isSafeInteger(candidate.project_revision) || candidate.project_revision < 1))
+        || (candidate.task_id && (!candidate.project_id || !/^ptk-[0-9a-f]{48}$/.test(candidate.task_id)))
+        || (candidate.task_revision !== undefined && (!candidate.task_id
+          || !Number.isSafeInteger(candidate.task_revision) || candidate.task_revision < 1))
+        || (candidate.participant_view !== undefined && typeof candidate.participant_view !== 'boolean')) return;
+      setWorkLocator(previous => JSON.stringify(previous) === JSON.stringify(candidate) ? previous : { ...candidate });
+    };
+    window.addEventListener('wilsy:ai-context-locator', receive);
+    window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
+    return () => window.removeEventListener('wilsy:ai-context-locator', receive);
   }, [dockScope]);
+
+  useEffect(() => {
+    const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+    if (!isOpen || !authUser?.id || !exactTenant || isLegalDockRole(authUser?.role)) {
+      setVerifiedWorkspaceContext(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    let current = true;
+    const base = { scope: dockScope, locatorKey: workLocatorKey };
+    setVerifiedWorkspaceContext({ ...base, state: 'LOADING' });
+    api.get('/wilsy-ai/reasoning/context', {
+      params: workLocator, headers: { 'X-Tenant-ID': exactTenant },
+      signal: controller.signal, timeout: 15000, forceNetworkRetry: true,
+    }).then(response => {
+      if (!current || controller.signal.aborted || dockScopeRef.current !== dockScope) return;
+      const data = response?.data;
+      if (data?.schema !== 'WILSY-AI-VERIFIED-CONTEXT/V1'
+        || data.tenant_id !== exactTenant || data.principal_id !== authUser.id
+        || data.authority?.source !== 'PYTHON_EOS' || data.authority?.read_only !== true
+        || data.authority?.model_invoked !== false || data.authority?.financial_execution !== false
+        || !/^[0-9a-f]{128}$/.test(data.context_fingerprint || '')
+        || !Number.isFinite(Date.parse(data.observed_at))
+        || data.locator?.workspace !== workLocator.workspace
+        || (data.locator?.project_id || null) !== (workLocator.project_id || null)
+        || (data.locator?.task_id || null) !== (workLocator.task_id || null)
+        || (workLocator.project_id && data.work?.project?.project_id !== workLocator.project_id)
+        || (workLocator.project_revision && data.work?.project?.revision !== workLocator.project_revision)
+        || !Number.isSafeInteger(data.allowance?.available_request_units)
+        || data.allowance.available_request_units < 0) throw new Error('WILSY_AI_CONTEXT_RESPONSE_INVALID');
+      setVerifiedWorkspaceContext({ ...base, state: 'READY', data });
+    }).catch(error => {
+      if (!current || controller.signal.aborted || dockScopeRef.current !== dockScope) return;
+      const status = error?.response?.status;
+      setVerifiedWorkspaceContext({ ...base,
+        state: status === 401 || status === 403 ? 'DENIED' : status === 409 ? 'STALE' : 'UNAVAILABLE' });
+    });
+    return () => { current = false; controller.abort(); };
+  }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
+
+  // Read-only EOS My Work is independently authorized from AI commercial
+  // entitlement. It is a UI projection only; never forwarded to a model as
+  // client-provided fact or used to authorize workflow commands.
+  useEffect(() => {
+    const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+    if (!isOpen || !authUser?.id || !exactTenant || workLocator.workspace !== 'HEADQUARTERS') {
+      setHeadquartersWork(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    let live = true;
+    const scope = dockScope;
+    setHeadquartersWork({ scope, state: 'LOADING' });
+    api.get('/my-work', {
+      headers: { 'X-Tenant-ID': exactTenant },
+      signal: controller.signal,
+      timeout: 15000,
+    }).then(response => {
+      if (!live || controller.signal.aborted || dockScopeRef.current !== scope) return;
+      const data = response?.data;
+      if (!data || data.tenant_id !== exactTenant || data.principal_id !== authUser.id
+        || !Array.isArray(data.items)
+        || !data.summary || !Number.isSafeInteger(data.summary.active_count)
+        || !Number.isSafeInteger(data.summary.overdue_count)
+        || data.authority?.commands_owned_by !== 'SOURCE_SERVICES'
+        || data.authority?.permits_completion !== false
+        || data.authority?.permits_approval !== false) {
+        setHeadquartersWork({ scope, state: 'UNAVAILABLE' });
+        return;
+      }
+      const items = data.items.slice(0, 3).map(item => ({
+        title: typeof item.title === 'string' ? item.title.slice(0, 180) : '',
+        source: typeof item.source === 'string' ? item.source.slice(0, 32) : '',
+        overdue: item.is_overdue === true,
+      })).filter(item => item.title && item.source);
+      setHeadquartersWork({ scope, state: 'READY', items,
+        activeCount: data.summary.active_count,
+        overdueCount: data.summary.overdue_count });
+    }).catch(() => {
+      if (live && !controller.signal.aborted && dockScopeRef.current === scope) {
+        setHeadquartersWork({ scope, state: 'UNAVAILABLE' });
+      }
+    });
+    return () => { live = false; controller.abort(); };
+  }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
+
+  const aiProviderUnavailable = verifiedWorkspaceContext?.scope === dockScope
+    && verifiedWorkspaceContext?.locatorKey === workLocatorKey
+    && verifiedWorkspaceContext?.state === 'READY'
+    && verifiedWorkspaceContext.data?.authority?.provider_binding === 'UNAVAILABLE';
+  const aiEntitlementNotProvisioned = verifiedWorkspaceContext?.scope === dockScope
+    && verifiedWorkspaceContext?.locatorKey === workLocatorKey
+    && verifiedWorkspaceContext?.state === 'READY'
+    && verifiedWorkspaceContext.data?.allowance?.state === 'NOT_PROVISIONED';
+  const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
+    && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
+  const currentTenantForAI = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+  const founderActivationEligible = authUser?.id
+    && currentTenantForAI === 'WILSYTENANT-4CD2FZ4O'
+    && !isLegalDockRole(authUser?.role)
+    && founderActivationState !== 'ACTIVE'
+    && (aiEntitlementNotProvisioned
+      || visibleWorkspaceContext?.state === 'UNAVAILABLE');
+  const activateFounderInstitutional = useCallback(async () => {
+    const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+    if (founderActivationInFlightRef.current
+      || !authUser?.id || tenant !== 'WILSYTENANT-4CD2FZ4O'
+      || isLegalDockRole(authUser?.role)) return;
+    founderActivationInFlightRef.current = true;
+    const scope = dockScope;
+    const key = founderActivationKeyRef.current
+      || `founder-institutional-${uuidv4()}`;
+    founderActivationKeyRef.current = key;
+    setFounderActivationState('SUBMITTING');
+    setFounderActivationMessage('Verifying Institutional AI commercial authority…');
+    try {
+      const response = await api.post(
+        '/subscriptions/founder-ai-institutional/activate', {},
+        { headers: { 'X-Tenant-ID': tenant, 'X-Idempotency-Key': key },
+          timeout: 30000 },
+      );
+      if (dockScopeRef.current !== scope) return;
+      const result = response?.data?.data || response?.data;
+      if (result?.tenant_id !== tenant
+        || result?.subscription_id !== 'WILSYSUB-93455E4E'
+        || result?.feature_id !== 'ai.wilsy.institutional'
+        || result?.entitlement_state !== 'ACTIVE'
+        || result?.source_verified !== true
+        || result?.zero_rated_subscription !== true) {
+        throw new Error('FOUNDER_AI_ACTIVATION_READBACK_INVALID');
+      }
+      setFounderActivationState('ACTIVE');
+      setFounderActivationMessage(
+        'Institutional AI entitlement is active. Verifying provider and workspace context…',
+      );
+      setContextRefresh(value => value + 1);
+    } catch (error) {
+      if (dockScopeRef.current !== scope) return;
+      const status = error?.response?.status;
+      setFounderActivationState('ERROR');
+      setFounderActivationMessage(status === 401 || status === 403
+        ? 'EOS requires current Founder plan and subscription management authority.'
+        : status === 409
+          ? 'Commercial records changed. Refresh the source before retrying.'
+          : 'EOS could not verify ACTIVE Institutional AI. No activation is being claimed.');
+    } finally {
+      founderActivationInFlightRef.current = false;
+    }
+  }, [authUser?.id, authUser?.role, authUser?.tenantId,
+    activeTenant?.tenantId, activeTenant?._id, dockScope]);
 
   /**
    * @function hydrateDockContext
@@ -584,14 +914,45 @@ export function WilsyOSIntelligenceDock({
 
   /**
    * @function handleSendMessage
-   * @description Authority-aware Ask turn: legal roles use certified C1C legal-services transport; other roles use shared api.post('/ai/operator', ...).
+   * @description Legal roles keep C1C; ordinary turns use consented EOS metered reasoning, not the legacy operator BFF.
    */
   const handleSendMessage = useCallback(
     async (rawText) => {
       const text = String(rawText || prompt).trim();
-      if (!text || isSubmitting) return;
+      if (!text || isSubmitting || sendLockRef.current) return;
+      if (!isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
+        setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
+        return;
+      }
+      if (!isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
+        setErrorMessage('Workspace information is available, but the EOS AI provider is not configured.');
+        return;
+      }
+      if (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
+        setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
+        return;
+      }
+      const currentProject = workLocator.project_id
+        && visibleWorkspaceContext?.state === 'READY'
+        && visibleWorkspaceContext.data.work?.project?.project_id === workLocator.project_id
+        ? { ...workLocator } : null;
+      if (!isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
+        setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
+        return;
+      }
+      const reasoningLocator = currentProject
+        || (workLocator.workspace === 'HEADQUARTERS'
+          ? { workspace: 'HEADQUARTERS', include_work_context: true } : null);
+      const locatorKeyAtStart = workLocatorKey;
       const scopeAtStart = dockScopeRef.current;
-      const requestIsCurrent = () => dockScopeRef.current === scopeAtStart;
+      const generationAtStart = conversationGenerationRef.current;
+      const controller = new AbortController();
+      reasoningAbortRef.current = controller;
+      sendLockRef.current = true;
+      const requestIsCurrent = () => !controller.signal.aborted
+        && conversationGenerationRef.current === generationAtStart
+        && dockScopeRef.current === scopeAtStart
+        && workLocatorKeyRef.current === locatorKeyAtStart;
 
       setIsSubmitting(true);
       setErrorMessage('');
@@ -629,6 +990,8 @@ export function WilsyOSIntelligenceDock({
         if (requestIsCurrent()) {
           setErrorMessage(err?.message || 'Failed to record operator turn.');
           setIsSubmitting(false);
+          sendLockRef.current = false;
+          reasoningAbortRef.current = null;
         }
         return;
       }
@@ -649,30 +1012,55 @@ export function WilsyOSIntelligenceDock({
             tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
           };
         } else {
-          const { billingIntelligenceEvidence, ...operatorDockContext } = dockContext || {};
-          const requestBody = {
-            prompt: text,
-            context: {
-              ...operatorDockContext,
-              ...(billingIntelligenceEvidence
-                ? { canonicalBillingIntelligenceEvidence: billingIntelligenceEvidence }
-                : {}),
-              threadId,
-              history: activeThread?.messages || [],
-            },
-            forcedIntent: '',
-            kennelPosture,
-          };
-
-          const response = await api.post('/ai/operator', requestBody, {
-            headers: {
-              'X-Tenant-Id': activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
-              'X-Wilsy-Kennel-Posture': kennelPosture,
-            },
+          const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+          if (typeof exactTenant !== 'string' || !exactTenant.trim()) {
+            throw new Error('WILSY_AI_TENANT_SCOPE_REQUIRED');
+          }
+          // Session conversation only: page location and browser role labels
+          // are never promoted to verified EOS business evidence.
+          const previous = (activeThread?.messages || [])
+            .filter(item => ['user', 'assistant'].includes(item?.role)
+              && typeof item?.content === 'string')
+            .slice(-6)
+            .map(item => (item.role === 'user' ? 'Operator' : 'WILSY AI')
+              + ': ' + item.content.slice(0, 900))
+            .join('\n');
+          const reasoningPrompt = [
+            'Current user question:', text,
+            ...(previous ? ['Previous conversation (not EOS source evidence):', previous] : []),
+            'Do not claim verified access to tenant projects, employee records, '
+              + 'financial balances or legal matters without an authorized EOS '
+              + 'tool result. Inferences are not authorizations or execution.',
+          ].join('\n\n').slice(0, 12000);
+          const pending = reasoningReplayRef.current;
+          const replay = pending.scope === scopeAtStart && pending.text === text
+            && pending.locatorKey === locatorKeyAtStart && pending.key && pending.prompt
+            ? pending
+            : { scope: scopeAtStart, text, prompt: reasoningPrompt, key: uuidv4(),
+              locatorKey: locatorKeyAtStart, params: reasoningLocator };
+          reasoningReplayRef.current = replay;
+          const response = await api.post('/wilsy-ai/reasoning', {
+            prompt: replay.prompt,
+          }, {
+            headers: { 'X-Tenant-ID': exactTenant, 'Idempotency-Key': replay.key },
+            ...(replay.params ? { params: replay.params } : {}),
             timeout: 30000,
+            signal: controller.signal,
           });
-          result = response?.data?.intelligence || response?.data?.data || null;
-          if (!result) throw new Error('Backend returned empty intelligence.');
+          const data = response?.data;
+          if (typeof data?.response_text !== 'string' || !data.response_text.trim()
+            || typeof data?.usage_observation_id !== 'string') {
+            throw new Error('WILSY_AI_REASONING_RESULT_UNVERIFIED');
+          }
+          if (!requestIsCurrent()) return;
+          reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
+          result = {
+            reply: data.response_text,
+            source: 'PYTHON_EOS_WILSY_AI_REASONING',
+            phase: 'ADMITTED_REASONING',
+            domain: 'GENERAL',
+            tenantId: exactTenant,
+          };
         }
 
         if (!requestIsCurrent()) return;
@@ -710,34 +1098,35 @@ export function WilsyOSIntelligenceDock({
         ]);
       } catch (err) {
         if (!requestIsCurrent()) return;
-        setErrorMessage(err?.message || 'Backend intelligence failed. Please try again.');
-        const failTurn = {
-          role: 'assistant',
-          content:
-            'I could not reach the Wilsy Operator Kernel. Check the Kennel status or retry later. Error: ' +
-            (err?.message || 'unknown'),
-          timestamp: new Date().toISOString(),
-        };
-        try {
-          const afterFail = await persistWilsyAIConversationTurn({
-            threadId,
-            message: failTurn,
-          });
-          if (!requestIsCurrent()) return;
-          setConversationThreads((prev) => [
-            afterFail,
-            ...prev.filter((item) => item.id !== afterFail.id),
-          ]);
-        } catch {
-          /* ignore */
-        }
+        const status = err?.response?.status;
+        const safeMessage = status === 401
+          ? 'Authentication is required to use WILSY AI.'
+          : status === 403 ? 'WILSY AI permission or subscription entitlement is not verified.'
+          : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
+          : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
+          : 'WILSY AI could not verify this answer. Your question remains in the composer.';
+        setErrorMessage(safeMessage);
+        if (!isLegalDockRole(authUser?.role)) setPrompt(text);
+        // A failure is not an AI answer; retain draft and show one error only.
       } finally {
-        if (requestIsCurrent()) setIsSubmitting(false);
+        if (requestIsCurrent()) {
+          sendLockRef.current = false;
+          reasoningAbortRef.current = null;
+          setIsSubmitting(false);
+        }
       }
     },
     [
       prompt,
       isSubmitting,
+      reasoningUsageConsent,
+      aiEntitlementNotProvisioned,
+      aiProviderUnavailable,
+      workLocatorKey,
+      workLocator,
+      visibleWorkspaceContext,
+      authUser?.role,
+      dockScope,
       activeThreadId,
       activeThread?.messages,
       dockContext,
@@ -872,6 +1261,9 @@ export function WilsyOSIntelligenceDock({
     }
   }, [deadlineMatterId, deadlineLoading]);
 
+  const welcomeGreeting = operatorGreeting(authUser);
+  const visibleHeadquartersWork = headquartersWork?.scope === dockScope
+    && workLocator.workspace === 'HEADQUARTERS' ? headquartersWork : null;
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -914,7 +1306,10 @@ export function WilsyOSIntelligenceDock({
               <div>
                 <span>WILSY OS Intelligence Dock</span>
                 <small className={styles.kennelBadge} data-posture={kennelPosture}>
-                  Kennel {kennelPosture}
+                  {kennelPosture === 'OPERATIONAL' ? 'Kennel source connected'
+                    : kennelPosture === 'SOURCE_SILENT' ? 'Kennel source not responding'
+                      : kennelPosture === 'CLIENT_OFFLINE' ? 'Connection unavailable'
+                        : 'Kennel source not verified'}
                 </small>
                 {authoritativeTenantBrand && (
                   <small className={styles.workspaceBrand} data-brand-source="ACTIVE_TENANT_CONTEXT">
@@ -995,15 +1390,111 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
-                <div className={styles.messagesContainer}>
+                {authUser?.id && !isLegalDockRole(authUser?.role) && <section
+                  aria-label="Verified workspace context" aria-live="polite"
+                  style={{ padding: '10px 14px', background: '#111827', color: '#f1f5f9',
+                    borderBottom: '1px solid #475569', fontSize: 12, lineHeight: 1.5,
+                    flexShrink: 0, maxHeight: 220, overflowY: 'auto' }}>
+                  {visibleWorkspaceContext?.state === 'READY' ? <details>
+                    <summary aria-label="Inspect verified workspace context"
+                      style={{ cursor: 'pointer', minHeight: 44 }}>
+                      <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Current authorized workspace'}</strong>
+                      {visibleWorkspaceContext.data.work?.selected_task?.title
+                        ? <span style={{ display: 'block', overflowWrap: 'anywhere', fontWeight: 400 }}>
+                          {'Viewing task: '}{visibleWorkspaceContext.data.work.selected_task.title}
+                        </span> : null}
+                      {' · '}{aiEntitlementNotProvisioned ? 'AI reasoning not activated'
+                        : aiProviderUnavailable ? 'AI provider unavailable'
+                          : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
+                    </summary>
+                    <p style={{ margin: '4px 0' }}>
+                      {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
+                      {' · '}{aiEntitlementNotProvisioned ? 'AI activation required'
+                        : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
+                      {' · Seats and pricing: '}{visibleWorkspaceContext.data.allowance.seat_allocation?.state === 'UNAVAILABLE'
+                        ? 'unavailable' : 'require independent admission'}
+                    </p>
+                    <p style={{ margin: '4px 0' }}>Workforce and qualifications: unavailable without independent source authority.</p>
+                    {(visibleWorkspaceContext.data.work?.sources || []).filter(source => source.kind === 'PROJECT'
+                      && source.project_id === workLocator.project_id).map(source => <button type="button"
+                      key={source.project_id} className={styles.historyActionButton}
+                      style={{ minHeight: 44, color: '#f8fafc', padding: '6px 10px' }}
+                      onClick={() => window.dispatchEvent(new CustomEvent('wilsy:ai-inspect-source', {
+                        detail: { tenantId: visibleWorkspaceContext.data.tenant_id,
+                          principalId: visibleWorkspaceContext.data.principal_id,
+                          project_id: source.project_id },
+                      }))}>Inspect source: {source.label}</button>)}
+                    <p style={{ margin: '4px 0', color: '#cbd5e1' }}>
+                      {aiEntitlementNotProvisioned
+                        ? 'Your work is independently verified. Model requests remain disabled until the subscription-backed AI entitlement is activated.'
+                        : 'Verified project sources can support reasoning only after independent EOS authorization and usage admission.'}
+                    </p>
+                  </details> : <span>{visibleWorkspaceContext?.state === 'LOADING' ? 'Verifying workspace context…'
+                    : visibleWorkspaceContext?.state === 'DENIED' ? 'Workspace context access denied by EOS.'
+                      : visibleWorkspaceContext?.state === 'STALE' ? 'Workspace context changed. Refresh the project source.'
+                        : 'Verified workspace context unavailable.'}</span>}
+                  {founderActivationEligible && <div style={{
+                    padding: '8px 0', display: 'flex', flexWrap: 'wrap',
+                    alignItems: 'center', gap: 8,
+                  }}>
+                    <button type="button" className={styles.historyActionButton}
+                      aria-label="Activate Founder Institutional AI"
+                      disabled={founderActivationState === 'SUBMITTING'}
+                      style={{ minHeight: 44, color: '#f8fafc',
+                        border: '1px solid #64748b', padding: '6px 10px' }}
+                      onClick={activateFounderInstitutional}>
+                      {founderActivationState === 'SUBMITTING'
+                        ? 'Verifying Institutional AI…' : 'Activate Institutional AI'}
+                    </button>
+                    <span style={{ color: '#cbd5e1', fontWeight: 400 }}>
+                      Exact Founder subscription · EOS authorizes and audits the change
+                    </span>
+                  </div>}
+                  {founderActivationMessage && <p aria-live="polite"
+                    style={{ margin: '5px 0', color: '#e2e8f0' }}>
+                    {founderActivationMessage}
+                  </p>}
+                  <button type="button" className={styles.historyActionButton}
+                    disabled={visibleWorkspaceContext?.state === 'LOADING'}
+                    style={{ minHeight: 44, marginLeft: 6, color: '#f8fafc', padding: '6px 10px' }}
+                    onClick={() => setContextRefresh(value => value + 1)}>Refresh context</button>
+                </section>}
+                {visibleHeadquartersWork?.state === 'READY'
+                  && visibleHeadquartersWork.activeCount > 0
+                  && <section aria-label="Current authorized work"
+                    style={{ padding: '8px 14px', background: 'rgba(9,25,45,.74)',
+                      borderBottom: '1px solid rgba(170,194,217,.15)',
+                      color: '#d7e4f4', fontSize: 12, flexShrink: 0,
+                      maxHeight: 160, overflowY: 'auto' }}>
+                    <strong style={{ fontWeight: 550 }}>
+                      Your work · {visibleHeadquartersWork.activeCount} active
+                      {' · '}{visibleHeadquartersWork.overdueCount} overdue
+                    </strong>
+                    <ol style={{ margin: '6px 0 0', paddingLeft: 20 }}>
+                      {visibleHeadquartersWork.items.map((item, index) =>
+                        <li key={index} style={{ marginBottom: 4, overflowWrap: 'anywhere' }}>
+                          {item.title} <span style={{ color: '#abbfd4' }}>
+                            · {item.source}{item.overdue ? ' · Overdue' : ''}
+                          </span>
+                        </li>)}
+                    </ol>
+                  </section>}
+                <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
-                      <ShieldCheck size={32} className={styles.welcomeShield} />
-                      <h4>Sovereign Intelligence Ready</h4>
-                      <p>
-                        {dockContext?.result ||
-                          'Ask about CRM, billing ledger, legal drafts, or tenant posture. Turns run through the Kennel-aware operator engine.'}
-                      </p>
+                      <h4>{welcomeGreeting}</h4>
+                      {visibleWorkspaceContext?.state === 'READY'
+                        && visibleWorkspaceContext.data.work?.project?.name
+                        ? <strong>{visibleWorkspaceContext.data.work.project.name}</strong> : null}
+                      <p>{visibleWorkspaceContext?.state === 'READY'
+                        ? (visibleWorkspaceContext.data.work?.selected_task?.title
+                          ? `You're viewing the verified task “${visibleWorkspaceContext.data.work.selected_task.title}”. Ask about this task, its status or its project. EOS rechecks its facts before AI reasoning.`
+                          : 'EOS has verified this workspace. With your consent, AI can use independently rechecked project facts for this request.')
+                        : visibleWorkspaceContext?.state === 'LOADING'
+                          ? 'Checking which workspace information EOS permits you to access.'
+                          : visibleWorkspaceContext?.state === 'DENIED'
+                            ? 'EOS did not authorize workspace context. I will not invent project or task facts.'
+                            : 'Ask a general question, or open an authorized project for verified work context.'}</p>
                     </div>
                   )}
                   {(activeThread?.messages || []).map((msg, idx) => (
@@ -1036,7 +1527,42 @@ export function WilsyOSIntelligenceDock({
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className={styles.chatInputArea}>
+                {!isLegalDockRole(authUser?.role) && <div style={{
+                  padding: '8px 14px', color: '#e7edf9', fontSize: 12,
+                  lineHeight: 1.45, flexShrink: 0,
+                }}>
+                  {!reasoningUsageConsent ? <label style={{ display: 'flex', gap: 9,
+                    alignItems: 'center', textTransform: 'none', letterSpacing: 0,
+                    fontWeight: 400, color: '#e7edf9' }}>
+                    <input type="checkbox" checked={false}
+                      onChange={event => updateUsageConsent(event.target.checked)}
+                      aria-label="Confirm WILSY AI usage admission"
+                      style={{ width: 18, height: 18, flexShrink: 0, accentColor: '#72b8ff' }}/>
+                    <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400,
+                      color: '#e7edf9' }}>Allow AI usage for this conversation</span>
+                  </label> : null}
+                  <details style={{ marginTop: 3, paddingLeft: reasoningUsageConsent ? 0 : 27,
+                    color: '#cbd5e1', fontWeight: 400, textTransform: 'none',
+                    letterSpacing: 0 }}>
+                    <summary style={{ cursor: 'pointer', minHeight: 28, fontSize: 12,
+                      textTransform: 'none', letterSpacing: 0, color: '#cbd5e1' }}>
+                      {reasoningUsageConsent ? 'AI usage preferences' : 'Usage and permissions'}
+                    </summary>
+                    <p style={{ margin: '4px 0' }}>Each request may consume metered AI usage.
+                      EOS checks your permissions, subscription entitlement and capacity.
+                      For a verified project, EOS may send bounded project and task
+                      excerpts to its configured AI provider to answer. Consent does not
+                      authorize project changes, staffing decisions or payments.</p>
+                    {reasoningUsageConsent && <button type="button"
+                      onClick={() => updateUsageConsent(false)}
+                      aria-label="Revoke AI usage consent"
+                      style={{ minHeight: 36, color: '#e7edf9', textDecoration: 'underline',
+                        textTransform: 'none', fontSize: 12 }}>
+                      Revoke AI usage consent
+                    </button>}
+                  </details>
+                </div>}
+                <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
                   <textarea
                     className={styles.promptInput}
                     value={prompt}
@@ -1055,7 +1581,9 @@ export function WilsyOSIntelligenceDock({
                     type="button"
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
-                    disabled={isSubmitting || !prompt.trim()}
+                    disabled={isSubmitting || !prompt.trim()
+                      || (!isLegalDockRole(authUser?.role)
+                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable))}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -1339,9 +1867,10 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
  * ═══════════════════════════════════════════════════════════════════════════════
- * Generic Ask uses the canonical shared api.js POST /ai/operator transport; legal roles use certified C1C legal-services transport.
+ * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
+ * legal roles retain separately certified C1C legal-services transport.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
  * Phase 4.1.1 complete: CSS classes for action buttons formally integrated.
  * M14-P7 complete: optional billing-intelligence evidence remains a separate
@@ -1354,7 +1883,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
+ * VERSION: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate

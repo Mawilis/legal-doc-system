@@ -1,11 +1,18 @@
 """
+CHANGELOG: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES establishes two separately assignable,
+non-inherited participant IAM roles; project record participation and live
+member/entitlement/project scope remain independent mandatory conjuncts.
+CHANGELOG: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES defines a separately assignable
+Projects tenant-owner authorization role for paying tenants across business
+models. The existing WILSY-only platform role stays fenced; neither founder,
+admin, employee nor manager inherits the new role or permission.
 CHANGELOG: v1.57.0-CRM-OWNER-WORK-EDIT-ROLE adds a narrow own-tenant
 CRM source-work editing permission to TENANT_OWNER and ENTERPRISE_ADMIN;
 AUDITOR remains read-only. Static grants require independent current
 membership, eligible capacity and active role assignment.
 CHANGELOG: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE — Consolidated sovereign documentation without executable changes.
 TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.57.0-CRM-OWNER-WORK-EDIT-ROLE
+VERSION: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -256,7 +263,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.57.0-CRM-OWNER-WORK-EDIT-ROLE"
+VERSION = "v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -787,8 +794,26 @@ ROLE_PERMISSIONS_MAP["PROJECTS_PLATFORM_OWNER"] = [
     "project:read", "project:create", "project:update", "project:archive",
 ]
 
+# Customer tenant Projects authority is explicit, never inherited from
+# TENANT_OWNER, ENTERPRISE_ADMIN, employee roles or the WILSY platform founder.
+# Current tenant_owner business capacity, ACTIVE membership, assigned role,
+# current product entitlement and router authorization remain mandatory.
+ROLE_PERMISSIONS_MAP["PROJECTS_TENANT_OWNER"] = [
+    "project:read", "project:create", "project:update", "project:archive",
+]
+
+# Reading or contributing to one assigned project requires independent current
+# IAM possession and a matching ACTIVE project participation record; none of
+# these static definitions grants global Projects owner/list/update access.
+ROLE_PERMISSIONS_MAP["PROJECTS_PARTICIPANT_VIEWER"] = [
+    "project:participant:read",
+]
+ROLE_PERMISSIONS_MAP["PROJECTS_PARTICIPANT_CONTRIBUTOR"] = [
+    "project:participant:read", "project:participant:contribute",
+]
+
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.57.0-CRM-OWNER-WORK-EDIT-ROLE
+# VERSION: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES
 # AUTHORITY BOUNDARY: static read permission only; current assignment and operation authorization remain separate
 # TENANT POSTURE: company-document reading is hard-fenced to the canonical WILSY company tenant after separately governed active assignments
 # FAIL-CLOSED POSTURE: unknown, inactive, foreign, unpublished-review, author and publisher paths deny; this definition creates no assignment, route, admission, IAM, payroll, or entitlement authority

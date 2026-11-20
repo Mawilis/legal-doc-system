@@ -1,12 +1,14 @@
 /**
  * TITLE: WILSY OS Daily Attention create-mode regression certificate
- * VERSION: v1.2.0-COMPACT-LIST-AND-SORT-CERT
+ * VERSION: v1.3.0-EXACT-CRM-INITIAL-STATUS-CERT
  * AUTHORITY: Client interaction evidence only; EOS source services own work state.
  * EPITOME: Certifies the focused Create mode, keyboard/focus return, failed-form
  *          retention, exact source-command arguments, and projection-only display.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/DailyAttentionCreateMode.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest and Testing Library; EOS command clients and source registries remain authoritative.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.3.0-EXACT-CRM-INITIAL-STATUS-CERT pins the existing canonical
+ *            CRM OPEN initial status and exact supported command field set.
  * CHANGELOG: v1.2.0-COMPACT-LIST-AND-SORT-CERT proves the compact single-row
  *            filter controls and deterministic supported sort modes while
  *            retaining the exclusive Create workflow.
@@ -174,7 +176,8 @@ describe('Daily Attention LIST and CREATE modes', () => {
       priority: 'HIGH',
     });
     expect(command.due_at).toEqual(expect.any(String));
-    expect(Object.keys(command).sort()).toEqual(['description', 'due_at', 'priority', 'title']);
+    expect(command.initial_status).toBe('OPEN');
+    expect(Object.keys(command).sort()).toEqual(['description', 'due_at', 'initial_status', 'priority', 'title']);
     expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/i);
     expect(document.querySelector('[data-attention-mode="LIST"]')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Inspect Call supplier about updated delivery date' })).not.toBeInTheDocument();
@@ -266,7 +269,7 @@ describe('Daily Attention LIST and CREATE modes', () => {
 
 /*
  * ARTIFACT: WILSY OS Daily Attention create-mode regression certificate
- * VERSION: v1.2.0-COMPACT-LIST-AND-SORT-CERT
+ * VERSION: v1.3.0-EXACT-CRM-INITIAL-STATUS-CERT
  * AUTHORITY BOUNDARY: Client interaction evidence only; EOS owns persisted work.
  * TENANT POSTURE: Synthetic tenant only; no cross-tenant data is used.
  * FAIL-CLOSED POSTURE: Invalid and failed commands never add client-created records.

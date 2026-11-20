@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Project Registry
-VERSION: v1.0.3-BSON-UTC-EVENT-READBACK
+VERSION: v1.9.0-AUDITED-SCHEDULE-CHANGE-REASON
 AUTHORITY: Python EOS durable persistence for canonical tenant Projects.
 EPITOME: Persists tenant-scoped Project aggregates and immutable command events
          inside caller-owned Mongo transactions; it contains no authorization
@@ -9,6 +9,25 @@ COLLABORATION / OWNERSHIP: Consumes saas.domain.project; projects_router owns
                            authorization, session and HTTP composition.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.9.0-AUDITED-SCHEDULE-CHANGE-REASON requires a nonempty bounded
+  rationale when changing an established target date, binds that reason
+  into the command replay fingerprint and the immutable event document,
+  and projects it in audit reads. Legacy changes without target-date
+  changes retain their original replay fingerprints.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH requests bounded 256-record Mongo cursor batches on indexed exact-tenant summary scans, reducing getMore round trips beyond 500 records while preserving full persisted-record integrity checks.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH pins full validated summary reads to the startup-certified exact tenant+archived compound index; missing index aborts rather than broadening source scope or returning unverified count.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH profiles cursor first row, remaining iteration and strict full-record hydration without changing complete tenant summary, archive filtering, index ownership or query count.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH lists owner-responsibility records using exact tenant/principal indexed predicates before pagination; no role or participant IAM claims are inferred from ownership.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH fingerprints typed date-only project command fields as exact ISO dates, ensuring strict HTTP validation, immutable command replay and project-domain date types agree without a relaxed serializer.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH — Adds bounded look-ahead paging with verified has-more
+  metadata while preserving the existing page-only registry API.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH — Adds a compound tenant/archive/status/sort index for
+  bounded project-list status filtering at enterprise project volumes.
+  This is index DDL only: no tenant, role, grant or record is changed.
+  v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH — Streams validated exact-tenant
+  project summaries without the former 500-record ceiling, returns bounded
+  list pages without rejecting a valid next page, and adds a tenant-oriented
+  active-recent listing index. No IAM or project data changes.
   v1.0.3-BSON-UTC-EVENT-READBACK — Normalizes BSON UTC datetimes on
   event readback when PyMongo returns naive values by default, without
   weakening strict input or malformed-event validation.
@@ -39,9 +58,10 @@ for those events.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import hashlib
 import json
+from time import perf_counter
 from typing import Any, Final, cast
 
 from pymongo import ASCENDING, DESCENDING
@@ -50,7 +70,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.saas.domain.project import Project, ProjectError, ProjectStatus
 
 
-VERSION: Final[str] = "v1.0.3-BSON-UTC-EVENT-READBACK"
+VERSION: Final[str] = "v1.8.0-BOUNDED-SUMMARY-CURSOR-BATCH"
 COLLECTION: Final[str] = "wilsy_projects"
 EVENT_COLLECTION: Final[str] = "wilsy_project_events"
 IDENTITY_INDEX: Final[str] = "wilsy_project_tenant_identity_unique"
@@ -109,10 +129,18 @@ def _occurred_at(value: object) -> datetime:
     return value
 
 
+def _date_only_command_value(value: object) -> str:
+    """Serialize only an exact date type, not timestamps or arbitrary objects."""
+    if type(value) is not date:
+        raise TypeError("Unsupported project command value")
+    return value.isoformat()
+
+
 def _canonical_fingerprint(payload: Mapping[str, object]) -> str:
-    """Fingerprint deterministic command semantics with SHA3-512."""
+    """Fingerprint deterministic command semantics, including ISO dates, with SHA3-512."""
     try:
-        raw = json.dumps(dict(payload), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        raw = json.dumps(dict(payload), sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=False, default=_date_only_command_value).encode("utf-8")
     except (TypeError, ValueError) as error:
         raise ProjectRegistryError("PROJECT_COMMAND_FINGERPRINT_INVALID") from error
     return hashlib.sha3_512(raw).hexdigest()
@@ -161,6 +189,17 @@ class ProjectRegistry:
             projects.create_index([("tenant_id", ASCENDING), ("code", ASCENDING)],
                                   unique=True, name=CODE_INDEX,
                                   partialFilterExpression={"code": {"$type": "string"}})
+            projects.create_index([("tenant_id", ASCENDING), ("archived_at", ASCENDING),
+                                   ("updated_at", DESCENDING), ("project_id", ASCENDING)],
+                                  name="wilsy_project_tenant_active_recent")
+            projects.create_index([("tenant_id", ASCENDING), ("archived_at", ASCENDING),
+                                   ("status", ASCENDING), ("updated_at", DESCENDING),
+                                   ("project_id", ASCENDING)],
+                                  name="wilsy_project_tenant_status_recent")
+            projects.create_index([("tenant_id", ASCENDING), ("owner_principal_id", ASCENDING),
+                                   ("archived_at", ASCENDING), ("updated_at", DESCENDING),
+                                   ("project_id", ASCENDING)],
+                                  name="wilsy_project_tenant_owner_recent")
             events.create_index([("tenant_id", ASCENDING), ("event_id", ASCENDING)],
                                 unique=True, name=EVENT_ID_INDEX)
             events.create_index([("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
@@ -189,11 +228,24 @@ class ProjectRegistry:
     def list_for_tenant(self, *, tenant_id: str, session: Any, limit: int = 200,
                         offset: int = 0, status: ProjectStatus | str | None = None,
                         include_archived: bool = False) -> tuple[Project, ...]:
-        """List a bounded deterministic page for one tenant, excluding archives by default."""
+        """Return a backwards-compatible bounded tenant page of project records."""
+        page, _has_more = self.list_page_for_tenant(
+            tenant_id=tenant_id, session=session, limit=limit, offset=offset,
+            status=status, include_archived=include_archived,
+        )
+        return page
+
+    def list_page_for_tenant(self, *, tenant_id: str, session: Any, limit: int = 200,
+                             offset: int = 0, status: ProjectStatus | str | None = None,
+                             include_archived: bool = False,
+                             owner_principal_id: str | None = None) -> tuple[tuple[Project, ...], bool]:
+        """Return exact-tenant page and verified next-page existence in one snapshot."""
         tenant = _exact("tenant_id", tenant_id)
         if type(limit) is not int or not 1 <= limit <= 500 or type(offset) is not int or offset < 0:
             raise ProjectRegistryError("PROJECT_PAGE_INVALID")
         query: dict[str, object] = {"tenant_id": tenant}
+        if owner_principal_id is not None:
+            query["owner_principal_id"] = _exact("owner_principal_id", owner_principal_id)
         if include_archived is not True:
             query["archived_at"] = None
         if status is not None:
@@ -208,18 +260,76 @@ class ProjectRegistry:
                         .skip(offset).limit(limit + 1))
         except PyMongoError as error:
             raise ProjectRegistryError("PROJECT_LIST_UNAVAILABLE") from error
-        if len(rows) > limit:
-            raise ProjectRegistryError("PROJECT_PAGE_BOUND_EXCEEDED")
-        return tuple(_hydrate(row) for row in rows)
+        validated = tuple(_hydrate(row) for row in rows)
+        return validated[:limit], len(validated) > limit
 
-    def summary_for_tenant(self, *, tenant_id: str, session: Any) -> dict[str, int]:
-        """Derive status counts from fully validated, exact-tenant active records."""
-        values = self.list_for_tenant(tenant_id=tenant_id, session=session, limit=500)
+    def summary_for_tenant(self, *, tenant_id: str, session: Any,
+                           phase_timings: dict[str, float] | None = None) -> dict[str, int]:
+        """Derive status counts from fully validated, exact-tenant active records.
+
+        Timing captures only the existing cursor path; no extra database query,
+        unverified count or cross-tenant record is introduced.
+        """
+        tenant = _exact("tenant_id", tenant_id)
         counts = {item.value: 0 for item in ProjectStatus}
-        for value in values:
-            counts[cast(ProjectStatus, value.status).value] += 1
+        total = 0
+        try:
+            if phase_timings is None:
+                cursor = self._projects.find(
+                    {"tenant_id": tenant, "archived_at": None},
+                    session=_session(session),
+                )
+                cursor = cursor.hint("wilsy_project_tenant_active_recent").batch_size(256)
+                for row in cursor:
+                    value = _hydrate(row)
+                    counts[cast(ProjectStatus, value.status).value] += 1
+                    total += 1
+                return {
+                    "total": total, "active": counts[ProjectStatus.ACTIVE.value],
+                    "planned": counts[ProjectStatus.PLANNED.value],
+                    "on_hold": counts[ProjectStatus.ON_HOLD.value],
+                    "done": counts[ProjectStatus.DONE.value],
+                    "cancelled": counts[ProjectStatus.CANCELLED.value],
+                }
+            cursor_started = perf_counter()
+            cursor = self._projects.find(
+                {"tenant_id": tenant, "archived_at": None},
+                session=_session(session),
+            )
+            cursor = cursor.hint("wilsy_project_tenant_active_recent").batch_size(256)
+            first_row = True
+            iterator = iter(cursor)
+            while True:
+                read_started = perf_counter()
+                try:
+                    row = next(iterator)
+                except StopIteration:
+                    if phase_timings is not None:
+                        key = "cursor_first_ms" if first_row else "cursor_remaining_ms"
+                        phase_timings[key] = phase_timings.get(key, 0.0) + round(
+                            (perf_counter() - read_started) * 1000, 2
+                        )
+                    break
+                if phase_timings is not None:
+                    key = "cursor_first_ms" if first_row else "cursor_remaining_ms"
+                    phase_timings[key] = phase_timings.get(key, 0.0) + round(
+                        (perf_counter() - (cursor_started if first_row else read_started)) * 1000, 2
+                    )
+                first_row = False
+                hydration_started = perf_counter()
+                try:
+                    value = _hydrate(row)
+                finally:
+                    if phase_timings is not None:
+                        phase_timings["hydrate_ms"] = phase_timings.get("hydrate_ms", 0.0) + round(
+                            (perf_counter() - hydration_started) * 1000, 2
+                        )
+                counts[cast(ProjectStatus, value.status).value] += 1
+                total += 1
+        except PyMongoError as error:
+            raise ProjectRegistryError("PROJECT_SUMMARY_UNAVAILABLE") from error
         return {
-            "total": len(values), "active": counts[ProjectStatus.ACTIVE.value],
+            "total": total, "active": counts[ProjectStatus.ACTIVE.value],
             "planned": counts[ProjectStatus.PLANNED.value],
             "on_hold": counts[ProjectStatus.ON_HOLD.value],
             "done": counts[ProjectStatus.DONE.value],
@@ -263,12 +373,14 @@ class ProjectRegistry:
 
     def update(self, *, tenant_id: str, project_id: str, actor_principal_id: str,
                expected_revision: int, changes: Mapping[str, object],
-               idempotency_key: str, occurred_at: datetime, session: Any) -> Project:
+               idempotency_key: str, occurred_at: datetime, session: Any,
+               target_change_reason: str | None = None) -> Project:
         """Update bounded project facts with tenant, revision and replay guards."""
         return self._updated_value(
             tenant_id=tenant_id, project_id=project_id, actor_principal_id=actor_principal_id,
             expected_revision=expected_revision, changes=changes, occurred_at=occurred_at,
-            action="UPDATED", idempotency_key=idempotency_key, session=session)
+            action="UPDATED", idempotency_key=idempotency_key, session=session,
+            target_change_reason=target_change_reason)
 
     def transition(self, *, tenant_id: str, project_id: str, actor_principal_id: str,
                    expected_revision: int, resulting_status: ProjectStatus | str,
@@ -329,7 +441,8 @@ class ProjectRegistry:
     def _updated_value(self, *, tenant_id: str, project_id: str,
                        actor_principal_id: str, expected_revision: int,
                        changes: Mapping[str, object], occurred_at: datetime,
-                       action: str, idempotency_key: str, session: Any) -> Project:
+                       action: str, idempotency_key: str, session: Any,
+                       target_change_reason: str | None = None) -> Project:
         tenant = _exact("tenant_id", tenant_id)
         identity = _exact("project_id", project_id)
         actor = _exact("actor_principal_id", actor_principal_id)
@@ -337,14 +450,28 @@ class ProjectRegistry:
         tx = _session(session)
         occurred = _occurred_at(occurred_at)
         command_fields = dict(changes)
-        fingerprint = _canonical_fingerprint({
+        reason = target_change_reason
+        if reason is not None and (not isinstance(reason, str)
+                or not 12 <= len(reason) <= 1000 or reason != reason.strip()):
+            raise ProjectRegistryConflict("PROJECT_TARGET_CHANGE_REASON_INVALID")
+        if reason is not None and "target_date" not in command_fields:
+            raise ProjectRegistryConflict("PROJECT_TARGET_CHANGE_REASON_UNEXPECTED")
+        fingerprint_fields: dict[str, object] = {
             "action": action, "tenant_id": tenant, "project_id": identity,
             "actor_principal_id": actor, "expected_revision": expected_revision,
-            "idempotency_key": key, "changes": command_fields})
+            "idempotency_key": key, "changes": command_fields}
+        if reason is not None:
+            fingerprint_fields["target_change_reason"] = reason
+        fingerprint = _canonical_fingerprint(fingerprint_fields)
         replay = self._find_replay(tenant, key, fingerprint, tx)
         if replay is not None:
             return replay
         current = self.get(tenant_id=tenant, project_id=identity, session=tx)
+        if (action == "UPDATED" and "target_date" in command_fields
+                and current.target_date is not None
+                and command_fields["target_date"] != current.target_date
+                and reason is None):
+            raise ProjectRegistryConflict("PROJECT_TARGET_CHANGE_REASON_REQUIRED")
         try:
             if "status" in command_fields:
                 updated = current.transition(
@@ -357,7 +484,8 @@ class ProjectRegistry:
                     expected_revision=expected_revision, changes=command_fields)
         except ProjectError as error:
             raise ProjectRegistryConflict(error.code) from error
-        return self._persist_revision(current, updated, actor, action, key, fingerprint, occurred, tx)
+        return self._persist_revision(current, updated, actor, action, key, fingerprint, occurred, tx,
+                                      target_change_reason=reason)
 
     def _find_replay(self, tenant: str, key: str, fingerprint: str,
                      session: object) -> Project | None:
@@ -376,7 +504,8 @@ class ProjectRegistry:
 
     def _persist_revision(self, prior: Project, updated: Project, actor: str,
                           action: str, key: str, request_fingerprint: str,
-                          occurred: datetime, session: object) -> Project:
+                          occurred: datetime, session: object,
+                          target_change_reason: str | None = None) -> Project:
         try:
             result = self._projects.update_one(
                 {"tenant_id": prior.tenant_id, "project_id": prior.project_id,
@@ -386,7 +515,8 @@ class ProjectRegistry:
                 raise ProjectRegistryConflict("PROJECT_REVISION_CONFLICT")
             self._insert_event(project=updated, actor=actor, action=action, key=key,
                                request_fingerprint=request_fingerprint, prior=prior,
-                               occurred_at=occurred, session=session)
+                               occurred_at=occurred, session=session,
+                               target_change_reason=target_change_reason)
             return updated
         except ProjectRegistryConflict:
             raise
@@ -397,7 +527,8 @@ class ProjectRegistry:
 
     def _insert_event(self, *, project: Project, actor: str, action: str,
                       key: str, request_fingerprint: str, prior: Project | None,
-                      occurred_at: datetime, session: object) -> None:
+                      occurred_at: datetime, session: object,
+                      target_change_reason: str | None = None) -> None:
         event = {
             "tenant_id": project.tenant_id, "event_id": f"project:{request_fingerprint}",
             "project_id": project.project_id, "event_type": f"PROJECT_{action}",
@@ -407,6 +538,8 @@ class ProjectRegistry:
             "request_fingerprint": request_fingerprint, "idempotency_key": key,
             "occurred_at": occurred_at, "result_snapshot": project.to_dict(),
             "schema": "wilsy.project.event.v1"}
+        if target_change_reason is not None:
+            event["target_change_reason"] = target_change_reason
         try:
             self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
@@ -435,6 +568,12 @@ class ProjectRegistry:
             raise ProjectRegistryError("PROJECT_EVENT_TIMESTAMP_INVALID")
         event = {key: row[key] for key in _EVENT_FIELDS}
         event["occurred_at"] = occurred.astimezone(timezone.utc)
+        reason = row.get("target_change_reason")
+        if reason is not None:
+            if (not isinstance(reason, str) or not 12 <= len(reason) <= 1000
+                    or reason != reason.strip()):
+                raise ProjectRegistryError("PROJECT_AUDIT_REASON_INVALID")
+            event["target_change_reason"] = reason
         return event
 
 
@@ -442,7 +581,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION", "ProjectRegistry",
            "ProjectRegistryError", "ProjectRegistryConflict", "ProjectNotFound"]
 
 # ARTIFACT: project_registry.py
-# VERSION: v1.0.3-BSON-UTC-EVENT-READBACK
+# VERSION: v1.9.0-AUDITED-SCHEDULE-CHANGE-REASON
 # AUTHORITY BOUNDARY: tenant-scoped persistence only; EOS authorization is a caller obligation
 # TENANT POSTURE: every query and event is scoped by the explicit canonical tenant
 # FAIL-CLOSED POSTURE: missing sessions, malformed records, divergent replay, and revision races reject

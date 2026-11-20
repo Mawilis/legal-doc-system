@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project registry tests
-VERSION: v1.0.2-BSON-UTC-EVENT-REGRESSION
+VERSION: v1.7.0-AUDITED-TARGET-REPLAY-CERT
 AUTHORITY: Verification of tenant-scoped Projects persistence composition.
 EPITOME: Exercises tenant predicates, idempotent commands, revisions,
          append-only events, archive filtering and Mongo index contracts.
@@ -7,6 +7,22 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Python EOS ProjectRegistry and focused test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.7.0-AUDITED-TARGET-REPLAY-CERT certifies committed baseline
+  immutability, evidenced target-date amendments, replay stability and
+  divergence detection without downgrading source transaction semantics.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH verifies profiled summary still validates every active exact-tenant aggregate, excludes archived/foreign rows and fails closed on corrupted records with no extra reads.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH proves full 511-record exact-tenant owner filters are applied before pagination, preserve verified next offsets, exclude foreign principals and use a dedicated compound index.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH verifies typed canonical project date updates survive registry SHA3 command fingerprinting, exact replay and divergent-key denial without changing tenant or status authority.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH certifies first/final page has_more truth for 511
+  exact-tenant projects, zero overlap, and foreign-tenant exclusion.
+  v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH certifies tenant/status/recent project index order and
+  keeps uniqueness requirements for canonical project and event identities.
+v1.6.0-EXACT-TENANT-SUMMARY-PHASE-TRUTH — Verifies exact compound
+  active-list index keys, preserves project/event uniqueness guards and
+  confirms the listing index is intentionally nonunique.
+v1.1.0-LARGE-TENANT-SUMMARY-REGRESSION — Certifies 511 exact-tenant projects,
+  fully counted portfolio truth and consecutive bounded list pages with
+  foreign-tenant exclusion.
 v1.0.2-BSON-UTC-EVENT-REGRESSION — Proves default PyMongo BSON UTC
   event readback and strict rejection of malformed event timestamps.
 v1.0.1-TENANT-PROJECT-REGISTRY-TESTS — Governance metadata synchronized with unchanged executable behavior.
@@ -45,6 +61,14 @@ class FakeCursor:
             fields = [(fields, direction or 1)]
         for field, order in reversed(fields):
             self.rows.sort(key=lambda row: str(row.get(field, "")), reverse=order < 0)
+        return self
+
+    def hint(self, name: str) -> FakeCursor:
+        assert name == "wilsy_project_tenant_active_recent"
+        return self
+
+    def batch_size(self, size: int) -> FakeCursor:
+        assert size == 256
         return self
 
     def skip(self, amount: int) -> FakeCursor:
@@ -176,6 +200,53 @@ def test_update_and_transition_advance_revision_and_audit(registry) -> None:
     assert [event["actor_principal_id"] for event in events.rows] == ["principal-a"] * 3
 
 
+def test_date_only_command_fingerprint_and_exact_replay(registry) -> None:
+    """Target date amendment is evidence-bound; baseline remains immutable."""
+    store, _, events, session = registry
+    _create(store, _project(), session, "create-1")
+    reason = "Replanned delivery after evidence-backed milestone assessment."
+    with pytest.raises(ProjectRegistryConflict, match="PROJECT_TARGET_CHANGE_REASON_REQUIRED"):
+        store.update(
+            tenant_id="tenant-a", project_id="project-001",
+            actor_principal_id="principal-a", expected_revision=1,
+            changes={"target_date": date(2026, 12, 10)},
+            idempotency_key="calendar-without-reason",
+            occurred_at=NOW + timedelta(seconds=1), session=session,
+        )
+    changed = store.update(
+        tenant_id="tenant-a", project_id="project-001",
+        actor_principal_id="principal-a", expected_revision=1,
+        changes={"target_date": date(2026, 12, 10)},
+        target_change_reason=reason,
+        idempotency_key="calendar-1",
+        occurred_at=NOW + timedelta(seconds=1), session=session,
+    )
+    assert changed.start_date == date(2026, 11, 1)
+    assert changed.target_date == date(2026, 12, 10)
+    assert changed.revision == 2
+    assert events.rows[-1]["target_change_reason"] == reason
+    assert store.list_events(tenant_id="tenant-a", project_id="project-001", session=session)[-1]["target_change_reason"] == reason
+    replayed = store.update(
+        tenant_id="tenant-a", project_id="project-001",
+        actor_principal_id="principal-a", expected_revision=1,
+        changes={"target_date": date(2026, 12, 10)},
+        target_change_reason=reason,
+        idempotency_key="calendar-1",
+        occurred_at=NOW + timedelta(seconds=2), session=session,
+    )
+    assert replayed == changed
+    assert len(events.rows) == 2
+    with pytest.raises(ProjectRegistryConflict, match="PROJECT_DIVERGENT_REPLAY"):
+        store.update(
+            tenant_id="tenant-a", project_id="project-001",
+            actor_principal_id="principal-a", expected_revision=1,
+            changes={"target_date": date(2026, 12, 11)},
+            target_change_reason=reason,
+            idempotency_key="calendar-1",
+            occurred_at=NOW + timedelta(seconds=3), session=session,
+        )
+
+
 def test_stale_revision_fails_closed(registry) -> None:
     store, _, _, session = registry
     _create(store, _project(), session, "create-1")
@@ -219,6 +290,110 @@ def test_summary_and_status_filter_use_authoritative_tenant_records(registry) ->
     assert len(store.list_for_tenant(tenant_id="tenant-a", session=session, status="active")) == 1
 
 
+
+def test_summary_phase_metrics_keep_full_integrity_and_exact_scope(registry) -> None:
+    """Profiling must never replace source validation with unverified counts."""
+    store, projects, _, session = registry
+    _create(store, _project("tenant-a", "p1"), session, "create-1")
+    projects.rows.append({"_id": "foreign", **_project(
+        "tenant-b", "p2", code="FOREIGN",
+    ).to_dict()})
+    phases: dict[str, float] = {}
+    counts = store.summary_for_tenant(
+        tenant_id="tenant-a", session=session, phase_timings=phases,
+    )
+    assert counts["total"] == 1 and counts["planned"] == 1
+    assert projects.last_query == {"tenant_id": "tenant-a", "archived_at": None}
+    assert projects.last_session is session
+    assert set(phases) == {"cursor_first_ms", "cursor_remaining_ms", "hydrate_ms"}
+    assert all(0 <= value < 5000 for value in phases.values())
+
+    projects.rows[0]["fingerprint"] = "invalid"
+    with pytest.raises(ProjectRegistryError):
+        store.summary_for_tenant(
+            tenant_id="tenant-a", session=session, phase_timings={},
+        )
+
+
+def test_large_tenant_summary_and_bounded_pages_over_500(registry) -> None:
+    """No cap may turn an ordinary >500-project tenant into an unavailable portfolio."""
+    store, projects, _, session = registry
+    projects.rows.extend([
+        {"_id": f"tenant-a:project-{i:04}", **_project(
+            "tenant-a", f"project-{i:04}", code=f"CODE-{i:04}",
+        ).to_dict()}
+        for i in range(511)
+    ])
+    projects.rows.append({"_id": "tenant-b:foreign", **_project(
+        "tenant-b", "foreign", code="FOREIGN",
+    ).to_dict()})
+
+    counts = store.summary_for_tenant(tenant_id="tenant-a", session=session)
+    assert counts == {
+        "total": 511, "active": 0, "planned": 511,
+        "on_hold": 0, "done": 0, "cancelled": 0,
+    }
+    assert projects.last_query == {"tenant_id": "tenant-a", "archived_at": None}
+    first = store.list_for_tenant(tenant_id="tenant-a", session=session, limit=500)
+    last = store.list_for_tenant(tenant_id="tenant-a", session=session, limit=500, offset=500)
+    assert len(first) == 500 and len(last) == 11
+    first_page, first_more = store.list_page_for_tenant(
+        tenant_id="tenant-a", session=session, limit=500,
+    )
+    last_page, last_more = store.list_page_for_tenant(
+        tenant_id="tenant-a", session=session, limit=500, offset=500,
+    )
+    assert first_more is True and last_more is False
+    assert [value.project_id for value in first_page] == [value.project_id for value in first]
+    assert [value.project_id for value in last_page] == [value.project_id for value in last]
+
+    assert {p.project_id for p in first}.isdisjoint({p.project_id for p in last})
+    assert all(p.tenant_id == "tenant-a" for p in (*first, *last))
+
+
+
+def test_owned_project_pages_apply_owner_before_limit_over_500(registry) -> None:
+    """No current-page owner filtering or inherited contributor visibility."""
+    store, projects, _, session = registry
+    projects.rows.extend([
+        {"_id": f"tenant-a:owned-{i:04}", **_project(
+            "tenant-a", f"project-{i:04}", code=f"OWN-{i:04}",
+            owner_principal_id="principal-a" if i % 2 == 0 else "principal-b",
+        ).to_dict()}
+        for i in range(511)
+    ])
+    projects.rows.append({"_id": "foreign", **_project(
+        "tenant-b", "foreign", code="FOREIGN",
+        owner_principal_id="principal-a",
+    ).to_dict()})
+    first, more = store.list_page_for_tenant(
+        tenant_id="tenant-a", owner_principal_id="principal-a",
+        session=session, limit=100,
+    )
+    assert len(first) == 100 and more
+    assert projects.last_query == {
+        "tenant_id": "tenant-a", "archived_at": None,
+        "owner_principal_id": "principal-a",
+    }
+    offset = 100
+    seen = {item.project_id for item in first}
+    while more:
+        batch, more = store.list_page_for_tenant(
+            tenant_id="tenant-a", owner_principal_id="principal-a",
+            session=session, limit=100, offset=offset,
+        )
+        assert not seen.intersection(item.project_id for item in batch)
+        seen.update(item.project_id for item in batch)
+        offset += len(batch)
+    assert len(seen) == 256
+    assert all(int(project_id[-4:]) % 2 == 0 for project_id in seen)
+    assert "foreign" not in seen
+    assert store.list_page_for_tenant(
+        tenant_id="tenant-a", owner_principal_id="not-an-owner",
+        session=session, limit=100,
+    ) == ((), False)
+
+
 def test_event_read_is_tenant_scoped_and_returns_documented_fields(registry) -> None:
     store, _, events, session = registry
     _create(store, _project(), session, "create-1")
@@ -260,19 +435,37 @@ def test_missing_transaction_session_is_rejected(registry) -> None:
 def test_indexes_are_tenant_scoped_and_unique(registry) -> None:
     _, projects, events, _ = registry
     ProjectRegistry.ensure_indexes(projects, events)
+    assert any(options.get("name") == "wilsy_project_tenant_owner_recent"
+               and keys[:2] == (("tenant_id", 1), ("owner_principal_id", 1))
+               for keys, options in projects.indexes)
     assert [opts["name"] for _, opts in projects.indexes] == [
         "wilsy_project_tenant_identity_unique", "wilsy_project_tenant_code_unique",
+        "wilsy_project_tenant_active_recent",
+        "wilsy_project_tenant_status_recent",
+        "wilsy_project_tenant_owner_recent",
     ]
+    active_keys, active_opts = projects.indexes[2]
+    assert active_keys == (
+        ("tenant_id", 1), ("archived_at", 1), ("updated_at", -1), ("project_id", 1),
+    )
+    assert "unique" not in active_opts
+    status_keys, status_opts = projects.indexes[3]
+    assert status_keys == (
+        ("tenant_id", 1), ("archived_at", 1), ("status", 1),
+        ("updated_at", -1), ("project_id", 1),
+    )
+    assert "unique" not in status_opts
+    assert "unique" not in projects.indexes[4][1]
     assert [opts["name"] for _, opts in events.indexes] == [
         "wilsy_project_event_tenant_identity_unique",
         "wilsy_project_event_tenant_idempotency_unique",
         "wilsy_project_event_tenant_project_revision_unique",
     ]
-    assert all(opts["unique"] for _, opts in projects.indexes + events.indexes)
+    assert all(opts["unique"] for _, opts in projects.indexes[:2] + events.indexes)
 
 
 # ARTIFACT: test_project_registry.py
-# VERSION: v1.0.2-BSON-UTC-EVENT-REGRESSION
+# VERSION: v1.7.0-AUDITED-TARGET-REPLAY-CERT
 # AUTHORITY BOUNDARY: registry unit tests; no IAM or external database authority
 # TENANT POSTURE: synthetic in-memory exact-tenant fixtures
 # FAIL-CLOSED POSTURE: all tenant, replay, revision, event and index assertions are required

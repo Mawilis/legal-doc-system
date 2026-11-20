@@ -1,11 +1,15 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.64.0-CRM-WORK-EDIT-PERMISSION
+VERSION: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS
 AUTHORITY: Canonical permission vocabulary and scope metadata only.
 EPITOME: Defines exact, non-self-authorizing permission metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.64.0-CRM-WORK-EDIT-PERMISSION defines a separate own-tenant
+CHANGELOG: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS adds separate own-tenant,
+project-record-gated reader and contributor permission metadata. Neither
+implies project-owner scope, participant possession, employee admission,
+financial authority or access without current authenticated IAM.
+CHANGELOG: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS defines a separate own-tenant
            CRM task-edit permission; metadata alone grants no assignment,
            entitlement, command, transaction or cross-tenant access.
 CHANGELOG: v1.63.0-PROJECT-PERMISSION-VOCABULARY — Preserves exact permission namespace semantics.
@@ -277,7 +281,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.64.0-CRM-WORK-EDIT-PERMISSION"
+VERSION = "v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS"
 
 
 class PermissionDisposition(StrEnum):
@@ -702,6 +706,8 @@ _PERMISSIONS: Final = MappingProxyType(
             tenant=True,
         ),
         "project:read": _meta("project:read", "TENANT", "TENANT", "read own-tenant project lists and details", tenant=True),
+        "project:participant:read": _meta("project:participant:read", "TENANT", "TENANT", "read only explicitly assigned own-tenant project records", tenant=True),
+        "project:participant:contribute": _meta("project:participant:contribute", "TENANT", "TENANT", "contribute only to an explicitly assigned own-tenant project", tenant=True),
         "project:create": _meta("project:create", "TENANT", "TENANT", "create own-tenant projects", tenant=True),
         "project:update": _meta("project:update", "TENANT", "TENANT", "update own-tenant projects", tenant=True),
         "project:archive": _meta("project:archive", "TENANT", "TENANT", "archive own-tenant projects without deletion", tenant=True),
@@ -1453,7 +1459,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.64.0-CRM-WORK-EDIT-PERMISSION
+# VERSION: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

@@ -1,7 +1,7 @@
 """WILSY OS startup certification for global credential and challenge indexes.
 
 TITLE: Global Principal Authentication Startup Index Certificate
-VERSION: v1.0.2-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-QR-MOUNT-CERT
+VERSION: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT
 AUTHORITY: Verifies canonical EOS startup owns global credential and challenge index DDL.
 EPITOME: Proves unique credential and one-time challenge indexes are installed
          before readiness is asserted and are never created by request handlers.
@@ -9,8 +9,24 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_auth_challenge_startup.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT verifies the trusted scan-clearance index bootstrap version without rolling back source indexes.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins
+  task quarantined attachment manifest and command replay indexes to
+  canonical EOS startup without provisioning provider objects or users.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins exact reviewer
+business decision and idempotent event indexes at EOS startup.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins recipient inbox and receipt
+indexes at canonical EOS startup; no messages or recipients are created.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins exact-task comment
+indexes in canonical EOS readiness, without creating message records.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins additive task/dependency indexes
+at canonical EOS startup; no synthetic tasks or IAM are created.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
+ 2026-11-18 v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT aligns canonical
+server-version certification with additive Project Notes startup indexes;
+no existing Global Principal or System Services authority is changed.
 CHANGELOG:
-    v1.0.2-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-QR-MOUNT-CERT binds the
+    v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT binds the
     composition version assertion to the mounted authenticated legacy QR route.
     v1.0.1-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS adds the durable global
     authentication rate-limit index to the required startup readiness set.
@@ -87,11 +103,11 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
 
 
 def test_server_version_is_the_governed_global_auth_route_bootstrap():
-    assert server.VERSION == "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
+    assert server.VERSION == "v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
-# VERSION: v1.0.2-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-QR-MOUNT-CERT
+# VERSION: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT
 # AUTHORITY BOUNDARY: startup index ownership and readiness certification only
 # TENANT POSTURE: global credential indexes remain tenant-neutral; challenge index stores no raw token
 # FAIL-CLOSED POSTURE: readiness remains false unless connected startup completes both index declarations

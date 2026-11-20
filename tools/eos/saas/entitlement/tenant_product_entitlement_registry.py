@@ -1,7 +1,7 @@
 """WILSY OS durable tenant product entitlement lifecycle registry.
 
 TITLE: Tenant Product Entitlement Registry
-VERSION: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY
+VERSION: v1.1.0-OPTIONAL-ENTITLEMENT-READ-PHASES
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Persist immutable D22B1 product-entitlement revisions and maintain one explicit
          tenant/entitlement current pointer with strict hydration, domain-owned
@@ -16,6 +16,7 @@ COLLABORATION / OWNERSHIP: D22A owns product catalogue identity; D22B1 owns
                             separate. Callers own all
                             Mongo session/transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-10-09
+CHANGELOG: v1.1.0-OPTIONAL-ENTITLEMENT-READ-PHASES measures current-pointer and history-revision reads on opt-in caller diagnostics; no new Mongo IO, persistence change or authorization. Persisted VERSION remains unchanged.
 CHANGELOG: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY establishes immutable revision history, explicit
            tenant/entitlement current pointers, revision-zero creation/replay,
            domain-derived legal transitions, exact-current idempotent transition
@@ -51,6 +52,7 @@ from enum import StrEnum
 import hashlib
 import json
 import re
+from time import perf_counter
 from typing import Any, Final, NoReturn, cast
 
 from pymongo import ASCENDING
@@ -741,28 +743,40 @@ def get_current(
     current_collection: Any,
     *,
     session: Any,
+    phase_timings: dict[str, float] | None = None,
 ) -> TenantProductEntitlement:
-    """Hydrate exact explicit current entitlement inside caller transaction.
+    """Read exact entitlement with mandatory pointer/history correlation.
 
-    Currentness is pointer-driven, never inferred by history sort order. The
-    hydrated immutable history row must reproduce the pointer exactly.
+    Optional diagnostics time the two source reads without querying twice
+    or exposing tenant, entitlement or principal identifiers.
     """
     tx = _active_transaction(session)
-    pointer = _get_current_pointer(
-        tenant_id,
-        entitlement_id,
-        current_collection,
-        session=tx,
-    )
+    pointer_started = perf_counter() if phase_timings is not None else 0.0
+    try:
+        pointer = _get_current_pointer(
+            tenant_id, entitlement_id, current_collection, session=tx,
+        )
+    finally:
+        if phase_timings is not None:
+            phase_timings["entitlement_pointer_ms"] = phase_timings.get(
+                "entitlement_pointer_ms", 0.0
+            ) + round((perf_counter() - pointer_started) * 1000, 2)
     if pointer is None:
         _raise(TenantProductEntitlementRegistryNotFoundError)
-    entitlement = _get_history_revision(
-        pointer.tenant_id,
-        pointer.entitlement_id,
-        pointer.lifecycle_revision,
-        history_collection,
-        session=tx,
-    )
+    history_started = perf_counter() if phase_timings is not None else 0.0
+    try:
+        entitlement = _get_history_revision(
+            pointer.tenant_id,
+            pointer.entitlement_id,
+            pointer.lifecycle_revision,
+            history_collection,
+            session=tx,
+        )
+    finally:
+        if phase_timings is not None:
+            phase_timings["entitlement_history_ms"] = phase_timings.get(
+                "entitlement_history_ms", 0.0
+            ) + round((perf_counter() - history_started) * 1000, 2)
     if entitlement is None:
         _raise(
             TenantProductEntitlementRegistryPersistedRecordInvalidError,
@@ -1059,7 +1073,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_registry.py
-# VERSION: v1.0.0-D22B2-TENANT-PRODUCT-ENTITLEMENT-REGISTRY
+# VERSION: v1.1.0-OPTIONAL-ENTITLEMENT-READ-PHASES
 # AUTHORITY BOUNDARY: immutable D22B1 revision persistence and explicit exact-entitlement currentness only; no commercial, IAM, route, VAS or financial authority
 # TENANT POSTURE: every history/current read, write, replay and CAS is exact-tenant and exact-entitlement scoped
 # FAIL-CLOSED POSTURE: active caller transaction required; schema drift, corruption, stale revision, divergent replay, races and outages reject

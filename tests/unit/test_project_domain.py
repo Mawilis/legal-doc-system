@@ -1,5 +1,5 @@
 """TITLE: WILSY OS tenant project domain tests
-VERSION: v1.0.0-TENANT-PROJECT-DOMAIN-TESTS
+VERSION: v1.1.0-IMMUTABLE-PROJECT-BASELINE-CERT
 AUTHORITY: Verification of the pure Python EOS Projects aggregate.
 EPITOME: Certifies project schema, tenant-bound fingerprints, timestamp rules,
          update revisions, status transitions, and soft-archive invariants.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Project domain artifact and Python EOS test suite.
 CERTIFICATION / UPDATE DATE: 2026-11-16.
 CHANGELOG:
+v1.1.0-IMMUTABLE-PROJECT-BASELINE-CERT proves that saved code and
+start dates cannot be changed or cleared, while legacy unset facts can be
+initialized exactly once and then become immutable.
 v1.0.0-TENANT-PROJECT-DOMAIN-TESTS — Governance metadata synchronized with unchanged executable behavior. v1.0.0 establishes focused tests for the initial Projects domain.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic unit values only; no credentials or live tenant records.
@@ -116,6 +119,40 @@ def test_update_rejects_authority_and_identity_fields() -> None:
         )
 
 
+def test_committed_project_code_and_start_date_are_immutable() -> None:
+    value = project()
+    for changes, rejection in (
+        ({"code": "DEL-002"}, "PROJECT_CODE_IMMUTABLE"),
+        ({"code": None}, "PROJECT_CODE_IMMUTABLE"),
+        ({"start_date": date(2026, 11, 2)}, "PROJECT_START_DATE_IMMUTABLE"),
+        ({"start_date": None}, "PROJECT_START_DATE_IMMUTABLE"),
+    ):
+        with pytest.raises(ProjectError, match=rejection):
+            value.update(
+                actor_principal_id="principal-test-a",
+                updated_at=NOW + timedelta(seconds=1),
+                expected_revision=1, changes=changes,
+            )
+
+
+def test_legacy_unset_project_baseline_can_be_initialized_only_once() -> None:
+    legacy = project(code=None, start_date=None)
+    initial = legacy.update(
+        actor_principal_id="principal-test-a",
+        updated_at=NOW + timedelta(seconds=1),
+        expected_revision=1,
+        changes={"code": "MIGRATED-001", "start_date": date(2026, 11, 1)},
+    )
+    assert initial.code == "MIGRATED-001"
+    assert initial.start_date == date(2026, 11, 1)
+    with pytest.raises(ProjectError, match="PROJECT_CODE_IMMUTABLE"):
+        initial.update(
+            actor_principal_id="principal-test-a",
+            updated_at=NOW + timedelta(seconds=2),
+            expected_revision=2, changes={"code": "REWRITTEN"},
+        )
+
+
 def test_status_transition_graph_and_terminal_states_are_enforced() -> None:
     active = project().transition(
         actor_principal_id="principal-test-a",
@@ -168,7 +205,7 @@ def test_stale_revision_fails_closed() -> None:
 
 
 # ARTIFACT: test_project_domain.py
-# VERSION: v1.0.0-TENANT-PROJECT-DOMAIN-TESTS
+# VERSION: v1.1.0-IMMUTABLE-PROJECT-BASELINE-CERT
 # AUTHORITY BOUNDARY: pure domain invariant tests only
 # TENANT POSTURE: synthetic exact-tenant fixtures; no live tenant reads
 # FAIL-CLOSED POSTURE: domain validation and lifecycle regression assertions are mandatory

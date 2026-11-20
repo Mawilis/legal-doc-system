@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE
+ * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,8 +24,9 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays EOS-issued Founder title independently from tenant_owner capacity; it never changes workspace authorization.
  * CHANGELOG: v20.10.2-GLOBAL-SEARCH-FOCUS-RETURN returns keyboard focus to the element that opened global search after Escape, dismissal, or navigation. Search routing, auth, and authority are unchanged.
- * CHANGELOG: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
+ * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
  * CHANGELOG: v20.11.0-AUTHENTICATED-ACCOUNT-IDENTITY binds account identity to the exact active AuthProvider principal and tenant, removes unsupported personal links and diagnostics, and restores keyboard focus on menu dismissal. Search, session authority, and logout ownership are unchanged.
  * CHANGELOG: v20.10.3-GLOBAL-SEARCH-POINTER-DISMISS-FOCUS defers opener focus restoration until the browser completes pointer dismissal, preventing backdrop default behavior from stealing focus.
  * CHANGELOG: v20.10.1-FOUNDER-SQUARE-CORPORATE-IDENTITY preserves the Founder-supplied square WILSY OS identity
@@ -262,6 +263,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? exactChromeText(sessionUser.businessRole || sessionUser.role)
     : '';
   const selectedCapacityLabel = capacityLabel(currentCapacity);
+  const institutionalTitle = sessionUser?.institutionalDesignation === 'Founder'
+    && sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
+    && currentCapacity === 'tenant_owner'
+    ? 'Founder'
+    : '';
   const identityLabel = displayName || accountEmail || '';
   const initials = accountInitials(displayName);
   const accountScope = sessionUser
@@ -457,6 +463,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200" aria-hidden="true">{initials || <UserRound size={17}/>}</span>
               <span className="hidden max-w-[150px] text-left leading-tight xl:block">
                 <span className="block truncate text-xs font-semibold text-white">{identityLabel || 'Account identity unavailable'}</span>
+                {institutionalTitle && <span className="block truncate text-[10px] font-semibold text-emerald-200">{institutionalTitle} · WILSY OS</span>}
                 {selectedCapacityLabel && <span className="block truncate text-[10px] text-slate-400">{selectedCapacityLabel} capacity</span>}
               </span>
               <ChevronDown size={14} className="hidden text-slate-400 xl:block"/>
@@ -481,6 +488,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   <p className="font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
                   {accountEmail && <p className="mt-1 break-all text-xs text-slate-400">{accountEmail}</p>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
+                  {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-300">Selected capacity: {selectedCapacityLabel}</p>}
                 </div>
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
@@ -1050,7 +1058,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE
+ * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

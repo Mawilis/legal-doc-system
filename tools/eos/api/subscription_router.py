@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription HTTP Authority Router.
-VERSION: v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION
+VERSION: v1.4.0-DUAL-IAM-FOUNDER-INSTITUTIONAL-ISSUANCE
 AUTHORITY: FastAPI composition of current Python identity, tenant membership,
 permission and SubscriptionRegistry authorities.
 EPITOME: Retires direct X-Tenant-ID-to-registry forwarding. Every subscription
@@ -10,6 +10,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/su
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
+    v1.4.0-DUAL-IAM-FOUNDER-INSTITUTIONAL-ISSUANCE adds exact-Founder Institutional AI issuance
+    through existing plan and subscription registries after BOTH current
+    plan:manage and subscription:manage IAM admissions. P4 ACTIVE readback
+    is mandatory; neither tenant, tier nor business records come from browser.
+
     v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION routes subscription
     upgrades through the sealed P42 shared commercial/Legal entitlement
     transaction while retaining SUBSCRIPTION_MANAGE_AUTHORITY and the existing
@@ -66,6 +71,7 @@ from fastapi import (
     Body,
     Depends,
     HTTPException,
+    Header,
     Path,
     Query,
     Request,
@@ -74,6 +80,11 @@ from fastapi import (
 
 from tools.eos.auth.authorization import RequirePermission
 from tools.eos.auth.identity import SovereignIdentity
+from tools.eos.saas.billing.founder_ai_authenticated_activation import (
+    FounderAIAuthenticatedActivationError,
+    activate_authenticated_founder_institutional_ai,
+)
+from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import FOUNDER_TENANT_ID
 from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
     SubscriptionRegistryError,
@@ -91,9 +102,10 @@ from tools.eos.saas.billing.subscription_active_entitlement_composition_service 
 from tools.eos.saas.domain.subscription import SubscriptionStatus
 
 from .responses import format_response
+from .plan_router import PLAN_MANAGE_AUTHORITY
 
 
-VERSION = "v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION"
+VERSION = "v1.4.0-DUAL-IAM-FOUNDER-INSTITUTIONAL-ISSUANCE"
 
 SUBSCRIPTION_READ_PERMISSION = "subscription:read"
 SUBSCRIPTION_MANAGE_PERMISSION = "subscription:manage"
@@ -434,6 +446,66 @@ async def get_subscription(
         },
         message="Subscription retrieved successfully.",
         execution_id="SUB-GET",
+    )
+
+
+@subscription_router.post(
+    "/founder-ai-institutional/activate",
+    status_code=status.HTTP_200_OK,
+)
+def activate_founder_institutional_ai(
+    request: Request,
+    idempotency_key: str = Header(
+        ..., alias="X-Idempotency-Key", min_length=16, max_length=128,
+    ),
+    subscription_identity: SovereignIdentity = Depends(SUBSCRIPTION_MANAGE_AUTHORITY),
+    plan_identity: SovereignIdentity = Depends(PLAN_MANAGE_AUTHORITY),
+) -> Any:
+    """Explicit exact-tenant commercial command after both current IAM grants."""
+    tenant_id = _authorized_tenant_id(subscription_identity)
+    plan_tenant = _authorized_tenant_id(plan_identity)
+    if (
+        tenant_id != FOUNDER_TENANT_ID
+        or plan_tenant != tenant_id
+        or not subscription_identity.identity_id
+        or subscription_identity.identity_id != plan_identity.identity_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "FOUNDER_AI_DUAL_AUTHORITY_DENIED"},
+        )
+    try:
+        result = activate_authenticated_founder_institutional_ai(
+            tenant_id=tenant_id,
+            principal_id=subscription_identity.identity_id,
+            idempotency_key=idempotency_key,
+        )
+    except FounderAIAuthenticatedActivationError as error:
+        raw = str(error)
+        if raw in {"FOUNDER_AI_TENANT_NOT_AUTHORIZED",
+                   "FOUNDER_AI_AUTHENTICATED_PRINCIPAL_REQUIRED"}:
+            code = status.HTTP_403_FORBIDDEN
+        elif raw == "FOUNDER_AI_IDEMPOTENCY_KEY_INVALID":
+            code = status.HTTP_422_UNPROCESSABLE_CONTENT
+        elif raw in {"FOUNDER_AI_PLAN_SOURCE_DIVERGENT",
+                     "FOUNDER_AI_SUBSCRIPTION_SOURCE_DIVERGENT",
+                     "FOUNDER_AI_COMPETING_TIER_REJECTED"}:
+            code = status.HTTP_409_CONFLICT
+        else:
+            code = status.HTTP_503_SERVICE_UNAVAILABLE
+        logger.warning("FOUNDER_AI_ACTIVATION_DENIED code=%s", raw)
+        raise HTTPException(status_code=code, detail={"error": raw}) from error
+    except Exception as error:
+        logger.error("FOUNDER_AI_ACTIVATION_UNAVAILABLE failure_class=%s",
+                     type(error).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"error": "FOUNDER_AI_ACTIVATION_UNAVAILABLE"},
+        ) from error
+    return _response(
+        request, data=result,
+        message="Founder Institutional AI active entitlement source verified.",
+        execution_id="FOUNDER-AI-INSTITUTIONAL-ACTIVATE",
     )
 
 
@@ -952,7 +1024,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/api/subscription_router.py
-# VERSION: v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION
+# VERSION: v1.4.0-DUAL-IAM-FOUNDER-INSTITUTIONAL-ISSUANCE
 # AUTHORITY BOUNDARY: HTTP composition only; identity, membership, role assignment, permission policy and persistence retain canonical ownership
 # TENANT POSTURE: only membership-admitted SovereignIdentity reaches the composition service or remaining registry paths; raw X-Tenant-ID is never persistence authority
 # FAIL-CLOSED POSTURE: missing or invalid identity, membership, role, permission or persistence authority never becomes subscription access

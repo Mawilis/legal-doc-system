@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.54.0-CRM-WORK-EDIT-BINDING
+VERSION: v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -16,8 +16,11 @@ binding, exact WILSY platform-employer tenant restriction, and governed platform
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING maps bounded participant read and contribution
+operations to their separate non-inherited IAM permissions. Project record
+participation and current membership/entitlement are independently required.
 CHANGELOG:
-    2026-11-17 v1.54.0-CRM-WORK-EDIT-BINDING adds exact CRM update
+    2026-11-17 v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING adds exact CRM update
     operation-to-permission mapping. Active principal, exact tenant membership,
     capacity eligibility and assigned static role still govern; no grant,
     transaction, delegated identity or financial execution is introduced.
@@ -246,7 +249,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.54.0-CRM-WORK-EDIT-BINDING"
+VERSION = "v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; NO_ELIGIBLE_TENANT_BUSINESS_ROLE="NO_ELIGIBLE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -387,6 +390,8 @@ _BINDINGS = MappingProxyType({
     "project_create": "project:create",
     "project_update": "project:update",
     "project_archive": "project:archive",
+    "project_participant_detail": "project:participant:read",
+    "project_participant_contribute": "project:participant:contribute",
 })
 
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None, selected_business_role: object = None) -> TenantAuthorizationDecision:
@@ -633,7 +638,7 @@ _BINDINGS = MappingProxyType({
 })
 
 # ARTIFACT: tools/eos/auth/tenant_authorization.py
-# VERSION: v1.54.0-CRM-WORK-EDIT-BINDING
+# VERSION: v1.67.0-PROJECT-PARTICIPANT-PAIR-BINDING
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: platform_employer and the internal Projects Platform Owner grant are restricted to the canonical WILSY company tenant; all operations still require exact active membership, eligible business role, exact permission-operation pair, and active granting role
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, out-of-scope, mismatched, or financial requests deny; admission has no route or command and offer acceptance remains unbound

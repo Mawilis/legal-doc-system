@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
+VERSION: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -17,10 +17,34 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-11-13
+CERTIFICATION / UPDATE DATE: 2026-11-19
+CHANGELOG: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX provisions a nonunique exact tenantId+user_id credential lookup index at connected startup before HTTP admission. The ObjectId-shaped identity collision query retains its legacy _id branch, bounded collision verification and exact tenant scope; no request-time DDL or user data write.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP creates
+standalone exact-task scanner clearance and replay indexes at EOS startup.
+Scan authority and provider status remain external and fail closed.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP creates
+exact tenant/task quarantined attachment and command-event indexes during
+startup without creating any object, file, project or permission record.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP installs
+exact task reviewer approval/decision replay indexes at EOS startup.
+No approvals or decisions are created during application bootstrap.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP establishes source-owned
+recipient-scoped project mention inbox and receipt indexes without creating,
+sending or marking notifications at application startup.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP creates indexed, immutable
+exact-task comment replay and timeline collections before Projects readiness.
+No comments, mentions, tasks, notifications or users are generated at boot.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP installs source-task identity,
+project listing, child/dependency, assignee queue and durable replay indexes
+before Projects readiness without creating task or employee records.
+CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP establishes mandatory participant identity,
+active-project list and immutable event indexes before Projects readiness.
+No grants, principals or project records are generated at startup.
+CHANGELOG: 2026-11-18 v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP adds exact-tenant project
+note indexes before Projects readiness; no note data or IAM is created.
 CHANGELOG: 2026-11-16 v1.45.0-PROJECTS-ROUTER-AND-INDEX-BOOTSTRAP mounts the authenticated Projects router once under /api and provisions only the project registry unique indexes before route readiness; no business records, permissions, assignments or entitlements are created.
 2026-11-13 v1.44.0-COMPANY-OPERATING-DOCUMENT-ROUTER mounts the exact-company Mission/Strategy router once under /api, without automatic indexes, content publication, IAM assignments or employment changes.
-2026-11-10 v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
+2026-11-10 v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP mounts the authenticated historical QR verifier at /api/qr/verify/{payload};
 QR issue/verify IAM remains router-owned and no invoice or key mutation occurs.
 2026-11-10 v1.42.0-ATTENTION-FEED-ROUTER-MOUNT mounts the independently source-authorised
 Daily Attention feed, counts, calendar and source-coverage read surfaces
@@ -176,6 +200,46 @@ from .hr_document_router import router as hr_document_router
 from .hr_workforce_directory_router import router as hr_workforce_directory_router
 from .company_operating_document_router import router as company_operating_document_router
 from .projects_router import router as projects_router
+from tools.eos.saas.projects.project_attachment_clearance_registry import (
+    COLLECTION as PROJECT_ATTACHMENT_CLEARANCE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_ATTACHMENT_CLEARANCE_EVENT_COLLECTION,
+    ProjectAttachmentClearanceRegistry,
+)
+from tools.eos.saas.projects.project_attachment_registry import (
+    COLLECTION as PROJECT_ATTACHMENT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_ATTACHMENT_EVENT_COLLECTION,
+    ProjectAttachmentRegistry,
+)
+from tools.eos.saas.projects.project_approval_registry import (
+    COLLECTION as PROJECT_APPROVAL_COLLECTION,
+    EVENT_COLLECTION as PROJECT_APPROVAL_EVENT_COLLECTION,
+    ProjectApprovalRegistry,
+)
+from tools.eos.saas.projects.project_notification_registry import (
+    COLLECTION as PROJECT_NOTIFICATION_COLLECTION,
+    EVENT_COLLECTION as PROJECT_NOTIFICATION_EVENT_COLLECTION,
+    ProjectNotificationRegistry,
+)
+from tools.eos.saas.projects.project_comment_registry import (
+    COLLECTION as PROJECT_COMMENT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_COMMENT_EVENT_COLLECTION,
+    ProjectCommentRegistry,
+)
+from tools.eos.saas.projects.project_task_registry import (
+    COLLECTION as PROJECT_TASK_COLLECTION,
+    EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
+    ProjectTaskRegistry,
+)
+from tools.eos.saas.projects.project_participant_registry import (
+    COLLECTION as PROJECT_PARTICIPANT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_PARTICIPANT_EVENT_COLLECTION,
+    ProjectParticipantRegistry,
+)
+from tools.eos.saas.projects.project_note_registry import (
+    COLLECTION as PROJECT_NOTE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_NOTE_EVENT_COLLECTION,
+    ProjectNoteRegistry,
+)
 from tools.eos.saas.projects.project_registry import (
     COLLECTION as PROJECT_COLLECTION,
     EVENT_COLLECTION as PROJECT_EVENT_COLLECTION,
@@ -304,7 +368,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT"
+VERSION = "v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -600,6 +664,20 @@ class WilsyAPIServer:
             database, client = get_database(), get_client()
             if database is None:
                 return
+            # The ObjectId-shaped credential-currentness query checks both
+            # user_id and _id within the exact tenant. Mongo indexes _id, but
+            # the canonical tenant/user_id leg also requires an index.
+            # Nonunique DDL preserves historical identity collisions so that
+            # the credential resolver, not the index, rejects them fail closed.
+            credential_lookup_index = "wilsy_auth_users_tenant_identity_lookup"
+            installed_index = database["users"].create_index(
+                [("tenantId", 1), ("user_id", 1)],
+                name=credential_lookup_index,
+            )
+            if installed_index != credential_lookup_index:
+                raise RuntimeError("AUTH_CREDENTIAL_LOOKUP_INDEX_UNAVAILABLE")
+            logger.info("[AUTH_CREDENTIAL] Exact tenant identity lookup index ready")
+
             # Project identity, code and immutable-event uniqueness must be
             # established before any Projects HTTP operation is admitted.
             # This is metadata-only DDL; startup creates no project or event data.
@@ -607,6 +685,38 @@ class WilsyAPIServer:
                 ProjectRegistry.ensure_indexes(
                     database[PROJECT_COLLECTION],
                     database[PROJECT_EVENT_COLLECTION],
+                )
+                ProjectNoteRegistry.ensure_indexes(
+                    database[PROJECT_NOTE_COLLECTION],
+                    database[PROJECT_NOTE_EVENT_COLLECTION],
+                )
+                ProjectParticipantRegistry.ensure_indexes(
+                    database[PROJECT_PARTICIPANT_COLLECTION],
+                    database[PROJECT_PARTICIPANT_EVENT_COLLECTION],
+                )
+                ProjectTaskRegistry.ensure_indexes(
+                    database[PROJECT_TASK_COLLECTION],
+                    database[PROJECT_TASK_EVENT_COLLECTION],
+                )
+                ProjectCommentRegistry.ensure_indexes(
+                    database[PROJECT_COMMENT_COLLECTION],
+                    database[PROJECT_COMMENT_EVENT_COLLECTION],
+                )
+                ProjectNotificationRegistry.ensure_indexes(
+                    database[PROJECT_NOTIFICATION_COLLECTION],
+                    database[PROJECT_NOTIFICATION_EVENT_COLLECTION],
+                )
+                ProjectApprovalRegistry.ensure_indexes(
+                    database[PROJECT_APPROVAL_COLLECTION],
+                    database[PROJECT_APPROVAL_EVENT_COLLECTION],
+                )
+                ProjectAttachmentRegistry.ensure_indexes(
+                    database[PROJECT_ATTACHMENT_COLLECTION],
+                    database[PROJECT_ATTACHMENT_EVENT_COLLECTION],
+                )
+                ProjectAttachmentClearanceRegistry.ensure_indexes(
+                    database[PROJECT_ATTACHMENT_CLEARANCE_COLLECTION],
+                    database[PROJECT_ATTACHMENT_CLEARANCE_EVENT_COLLECTION],
                 )
                 app.state.projects_indexes_ready = True
             except Exception as error:
@@ -1196,7 +1306,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.43.0-AUTHENTICATED-LEGACY-QR-ROUTER-MOUNT
+# VERSION: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

@@ -1,12 +1,16 @@
 """TITLE: WILSY OS Unified My Work replica-set integration certification.
-VERSION: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT
+VERSION: v1.3.0-INDEPENDENT-PROJECTS-OPTIONAL-SOURCE-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Proves authenticated My Work source aggregation against an isolated,
          writable MongoDB replica set without canonical tenant mutation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_unified_my_work_real_mongo.py
 COLLABORATION / OWNERSHIP: unified_my_work_router and owner-bound registries.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
-CHANGELOG: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT gives the synthetic
+CHANGELOG: v1.3.0-INDEPENDENT-PROJECTS-OPTIONAL-SOURCE-CERT explicitly
+           disables independently gated Projects IAM in the Operations-only
+           synthetic HTTP fixture, preserving real Projects source admission
+           for authenticated participants in the separate route certificate.
+CHANGELOG: v1.3.0-INDEPENDENT-PROJECTS-OPTIONAL-SOURCE-CERT gives the synthetic
            source-integration subscription both legal.core and crm.core
            because the fixture creates real CRM tasks. It does not alter
            canonical customer or Founder records or weaken IAM.
@@ -239,6 +243,7 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     app.dependency_overrides[my_work._OPERATIONS_READ] = _context
     app.dependency_overrides[my_work._INTELLIGENCE_READ] = _context
     app.dependency_overrides[my_work._CRM_READ] = lambda: None
+    app.dependency_overrides[my_work._PROJECTS_READ] = lambda: None
     app.dependency_overrides[my_work._HEADCOUNT_READ] = lambda: None
     app.dependency_overrides[my_work._HEADCOUNT_SUBMIT] = lambda: None
     app.dependency_overrides[my_work._HEADCOUNT_DECIDE] = lambda: None
@@ -739,7 +744,7 @@ def test_legal_partner_my_work_reads_live_assigned_legal_work_from_replica_set(
 
 
 # ARTIFACT: test_unified_my_work_real_mongo.py
-# VERSION: v1.2.0-INDEPENDENT-CRM-ENTITLEMENT-CERT
+# VERSION: v1.3.0-INDEPENDENT-PROJECTS-OPTIONAL-SOURCE-CERT
 # AUTHORITY BOUNDARY: Isolated authenticated source-read certification only.
 # TENANT POSTURE: Disposable exact-tenant fixtures; no canonical mutation.
 # FAIL-CLOSED POSTURE: Dependency errors cannot become verified empty queues.

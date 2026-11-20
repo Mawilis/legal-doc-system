@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT
+ * VERSION: v1.3.0-APPROVED-SOURCE-PENDING-PUBLICATION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.3.0-APPROVED-SOURCE-PENDING-PUBLICATION-CERT certifies the
+ *            existing approved-source preparation workflow while retaining
+ *            publication, permission, scope, replay and independent readback gates.
  * CHANGELOG: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT verifies
  *            EOS-authorized draft entry, multi-section reorder/remove,
  *            unpublished private preview and denied-command exclusion.
@@ -53,8 +56,17 @@ const receipt = document => ({ data: { schema: 'WILSY-COMPANY-OPERATING-DOCUMENT
   tenant_id: scope.tenantId, principal_id: scope.principalId, classification: document.classification, document } });
 const wrap = (props = {}, identity = auth) => <StrictMode><AuthContext.Provider value={identity}><CompanyOperatingDocumentViewer classification="MISSION" onClose={() => {}} onOpenWork={() => {}} {...props}/></AuthContext.Provider></StrictMode>;
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
+const reduceDraftToOneSection = () => {
+  const titles = screen.getAllByLabelText('Section title');
+  expect(titles.length).toBeGreaterThan(1);
+  expect(screen.getByLabelText('Document version')).toHaveValue('1.1.0');
+  for (let remaining = titles.length; remaining > 1; remaining -= 1) {
+    fireEvent.click(screen.getByRole('button', { name: 'Remove section ' + remaining }));
+  }
+};
 const fillDraft = async () => {
-  fireEvent.click(await screen.findByRole('button', { name: 'Prepare draft' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Prepare approved v1.1.0' }));
+  reduceDraftToOneSection();
   fireEvent.change(screen.getByLabelText('Document title'), { target: { value: 'Synthetic proposal' } });
   fireEvent.change(screen.getByLabelText('Document version'), { target: { value: '1.0.0' } });
   fireEvent.change(screen.getByLabelText('Section title'), { target: { value: 'Synthetic purpose' } });
@@ -65,9 +77,11 @@ beforeEach(() => { vi.clearAllMocks(); api.get.mockResolvedValue({ data: view() 
 describe('governed company document experience', () => {
   it('survives Strict Mode and shows honest unpublished state without policy', async () => {
     render(wrap());
-    expect(await screen.findByRole('heading', { name: 'Not yet published' })).toBeVisible();
+    expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Prepare draft' })).not.toBeInTheDocument();
+    expect(document.querySelector('[data-document-state="FOUNDER_APPROVED_EOS_PENDING"]')).toBeVisible();
+    expect(screen.getByText(/not an EOS-published revision/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Prepare approved v1.1.0' })).not.toBeInTheDocument();
     expect(api.get.mock.calls.at(-1)[0]).toBe('/company-operating-documents/MISSION');
     expect(api.get.mock.calls.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer synthetic-only' });
   });
@@ -83,7 +97,7 @@ describe('governed company document experience', () => {
     api.get.mockRejectedValue({ response: { status: 403 } }); render(wrap());
     expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeVisible();
     api.get.mockResolvedValue({ data: view() }); fireEvent.click(screen.getByRole('button', { name: 'Retry source read' }));
-    expect(await screen.findByRole('heading', { name: 'Not yet published' })).toBeVisible();
+    expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
   });
   it.each([
     [401, { detail: { error: 'COMPANY_DOCUMENT_AUTHENTICATED_SCOPE_REQUIRED' } }, 'Sign-in verification required', 'AUTHENTICATION_REQUIRED'],
@@ -98,15 +112,15 @@ describe('governed company document experience', () => {
     expect(await screen.findByRole('heading', { name: title })).toBeVisible();
     expect(screen.getByRole('alert')).toHaveAttribute('data-document-state', kind);
     expect(screen.getByRole('heading', { name: 'Next step' })).toBeVisible();
-    expect(screen.queryByRole('heading', { name: 'Not yet published' })).not.toBeInTheDocument();
+    expect(screen.queryByText('NOT YET PUBLISHED', { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByText('Current company session required')).not.toBeInTheDocument();
     expect(screen.queryByText('CONFIDENTIAL-DO-NOT-RENDER')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Prepare draft' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Prepare approved v1.1.0' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Approve and publish' })).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
     api.get.mockResolvedValue({ data: view() });
     fireEvent.click(screen.getByRole('button', { name: 'Retry source read' }));
-    expect(await screen.findByRole('heading', { name: 'Not yet published' })).toBeVisible();
+    expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
     expect(api.get.mock.calls.at(-1)[1].params).toEqual({ review: false });
   });
   it('classifies a malformed source response without treating the session as missing', async () => {
@@ -128,7 +142,7 @@ describe('governed company document experience', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Revision history' }));
     expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeVisible();
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Prepare draft' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Prepare approved v1.1.0' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Synthetic purpose' })).not.toBeInTheDocument();
     expect(screen.getByText('Document access denied by EOS')).toBeVisible();
   });
@@ -141,7 +155,7 @@ describe('governed company document experience', () => {
     if (field === 'generation') next.sessionGeneration += 1;
     api.get.mockResolvedValue({ data: { ...view(), tenant_id: next.user.tenantId } });
     mounted.rerender(wrap({}, next));
-    expect(await screen.findByRole('heading', { name: 'Not yet published' })).toBeVisible();
+    expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
     await act(async () => late.resolve({ data: view(record()) }));
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
     expect(api.get.mock.calls.at(-1)[1].headers['X-Tenant-ID']).toBe(next.user.tenantId);
@@ -152,7 +166,7 @@ describe('governed company document experience', () => {
     const mounted = render(wrap());
     const changed = { ...auth, token: 'synthetic-next', sessionGeneration: 2, user: { ...auth.user, id: 'next-principal' } };
     api.get.mockResolvedValue({ data: { ...view(), principal_id: 'next-principal' } }); mounted.rerender(wrap({}, changed));
-    expect(await screen.findByRole('heading', { name: 'Not yet published' })).toBeVisible();
+    expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
     await act(async () => late.resolve({ data: view(record()) }));
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
     expect(api.get.mock.calls.at(-1)[1].headers.Authorization).toBe('Bearer synthetic-next');
@@ -163,7 +177,7 @@ describe('governed company document experience', () => {
     api.get.mockResolvedValue({ data: { ...view(), classification: 'STRATEGY' } }); mounted.rerender(wrap({ classification: 'STRATEGY' }));
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Our Strategy' })).toBeVisible();
-    await screen.findByRole('heading', { name: 'Not yet published' });
+    await screen.findByText('NOT YET PUBLISHED', { exact: true });
   });
   it('reads source history then re-reads the selected permitted revision', async () => {
     const published = record(); const { sections, ...metadata } = published;
@@ -192,11 +206,12 @@ describe('governed company document experience', () => {
   it('brings source-admitted company document actions forward and edits an unpublished multi-section proposal', async () => {
     api.get.mockResolvedValue({ data: view(null, ['READ_HISTORY', 'CREATE_DRAFT', 'REVIEW_DRAFTS']) });
     render(wrap());
-    await screen.findByRole('heading', { name: 'Not yet published' });
+    await screen.findByText('NOT YET PUBLISHED', { exact: true });
     const deck = screen.getByRole('navigation', { name: 'Company document actions' });
     expect(deck).toBeVisible();
-    expect(deck).toHaveTextContent('No official publication');
-    fireEvent.click(screen.getByRole('button', { name: 'Prepare draft' }));
+    expect(deck).toHaveTextContent('Founder-approved source · EOS publication pending');
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare approved v1.1.0' }));
+    reduceDraftToOneSection();
     const editor = screen.getByRole('form', { name: 'Company private draft editor' });
     expect(editor).toBeVisible();
     fireEvent.change(screen.getByLabelText('Document title'), { target: { value: 'Proposed mission' } });
@@ -222,9 +237,9 @@ describe('governed company document experience', () => {
   });
   it('keeps author and publisher commands absent when EOS admits only reading', async () => {
     render(wrap());
-    await screen.findByRole('heading', { name: 'Not yet published' });
-    expect(screen.getByText(/Current EOS permissions allow reading this source/)).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Prepare draft' })).not.toBeInTheDocument();
+    await screen.findByText('NOT YET PUBLISHED', { exact: true });
+    expect(screen.getByText(/Your current EOS permission allows reading this Founder-approved source/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Prepare approved v1.1.0' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save private draft to EOS' })).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
   });
@@ -252,7 +267,7 @@ describe('governed company document experience', () => {
   });
   it('closes with Escape and restores the invoking control focus', async () => {
     const onClose = vi.fn(); const trigger = document.createElement('button'); document.body.append(trigger); trigger.focus();
-    const mounted = render(wrap({ onClose })); await screen.findByRole('heading', { name: 'Not yet published' });
+    const mounted = render(wrap({ onClose })); await screen.findByText('NOT YET PUBLISHED', { exact: true });
     expect(screen.getByRole('button', { name: 'Close company document' })).toHaveFocus();
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' }); expect(onClose).toHaveBeenCalledTimes(1);
     mounted.unmount(); expect(trigger).toHaveFocus(); trigger.remove();
@@ -280,7 +295,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.2.0-INTERACTIVE-DOCUMENT-STUDIO-CERT
+// VERSION: v1.3.0-APPROVED-SOURCE-PENDING-PUBLICATION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.

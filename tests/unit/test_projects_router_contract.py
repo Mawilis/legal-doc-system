@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
+VERSION: v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,7 +9,69 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-  v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT asserts EOS rejects
+  v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT certifies all seventeen
+  platform blueprint DAGs through the existing atomic project test suite.
+  v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT pins an
+  exact-project update-authorized read-only capability endpoint and confirms
+  zero IAM/grant mutations at this boundary.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT executes the seven-blueprint atomic
+  activation/replay regression inside the pre-existing project certification
+  suite, without changing the CI workflow or weakening authoritative checks.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins exact template catalogue read and atomic activation routes,
+  including both required project:create and project:update IAM gates.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins the owner and current-participant
+  immutable task-event GET routes to separate exact-source detail IAM,
+  without permitting writes, inheritance, or cross-project discovery.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies
+  valid browser JSON enters the exact strict comment model over the
+  FastAPI HTTP parsing boundary, while malformed mention shapes fail 422;
+  no database writes or membership authority are exercised.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT admits only bounded JSON string arrays
+  as strict task-comment mention tuples; rejects scalar, heterogeneous and
+  oversized inputs without broadening participant authority.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT asserts one bounded exact-
+  tenant profile lookup for eligible project member names, null-name fallback
+  and duplicate identity rejection without creating grant or role authority.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies success and denied summary paths retain unchanged source response and fail-closed HTTP authority while the new phase instrumentation receives exactly one registry read.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT proves owner-filtered registry queries bind tenant and authenticated principal with the preexisting project-read IAM, while participant discovery retains separate explicit-participation IAM.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT certifies exact ISO JSON date and project status values at strict Python-mode FastAPI request admission, preserving unknown/foreign/extra-field denial and isolated status-transition semantics.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT proves approval evidence rechecks exact provider scan/policy and immutable source fingerprints, and refuses policy drift and provider failure without external I/O in Mongo transactions.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins exact owner/participant clean download IAM and
+  contributor-only provider scan reconciliation without a safety bypass.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT certifies
+  owner-only attachment reads, current participant reads and contributor
+  upload commands; no upload, download, scan or financial inherited grant.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT admits named reviewer
+  inbox only through independent participant-contribute IAM; the route
+  verifies each current exact-project record before revealing pending work.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT locks task approval
+  request to owner update and named contributor decision to participant
+  contribute; task approval read requires separately admitted context.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins exact-project
+  co-participant list to the current participant-only read operation.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins recipient-only
+  notification list/read receipt routes under separate participant IAM and
+  exact active project/entitlement checks; no global inbox bypass.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT locks principal-scoped
+  /my-projects discovery to explicit current participant IAM, no owner fallback.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins four task comment
+  read/create routes to owner or current participant IAM and record scope.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins owner-authorized task edit
+  to project:update / project_update and retains participant scope denial.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins exact tenant candidate membership
+  choice reads to project owner detail IAM without granting participation.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins five new exact-tenant task operations
+  to independent owner or participant IAM; no inferred assignee access.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT certifies independent participant IAM pairs
+  and exact active project-record scope before detail or notes admission.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies explicit project owner-only participant
+  grant/list/revoke routes, active-grantee eligibility and non-inherited IAM.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT pins the four bounded notes endpoints to current
+  project read/update permission-operation pairs; no IAM or tenant grant.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT proves customer Projects authority is separately
+  assignable without adding inherited founder/admin/manager permissions and
+  retains the WILSY-only platform-role fence.
+  v1.30.0-ATOMIC-TEMPLATE-CI-CERT asserts EOS rejects
   activation before owner/department readback; the UI is not an authority.
   v1.3.2-DEPARTMENT-IDEMPOTENT-AUDIT-CERT verifies exact-scope
   department source writes, immutable command event, identical replay
@@ -24,6 +86,7 @@ CHANGELOG:
   v1.1.0-FOUNDER-PROJECTS-ADMISSION-CONTRACT adds the explicit Founder\n  admission route IAM pair and fail-closed identity, company and capacity checks.\n  v1.0.1-PROJECTS-HTTP-PAIR-ASSERTIONS — Corrects method-key normalization in
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
+CHANGELOG: v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -46,6 +109,7 @@ from pydantic import ValidationError
 
 from tools.eos.api import projects_router, server
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
+from tools.eos.auth.roles import get_permissions_for_roles, get_roles_granting_permission
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
@@ -57,7 +121,29 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT"
+VERSION = "v1.30.0-ATOMIC-TEMPLATE-CI-CERT"
+
+
+def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
+    """Grant definitions are non-possessory and never inherited by unrelated roles."""
+    grants = ("project:read", "project:create", "project:update", "project:archive")
+    assert set(get_permissions_for_roles(["PROJECTS_TENANT_OWNER"])) == set(grants)
+    assert set(get_permissions_for_roles(["PROJECTS_PLATFORM_OWNER"])) == set(grants)
+    for role in ("TENANT_OWNER", "ENTERPRISE_ADMIN", "AUDITOR", "HR_MANAGER", "POS_OPERATOR"):
+        assert not set(get_permissions_for_roles([role])).intersection(grants)
+    assert "PROJECTS_TENANT_OWNER" in get_roles_granting_permission("project:read")
+    foreign = SimpleNamespace(
+        tenant_id="customer-a",
+        decision=SimpleNamespace(authorization_role="PROJECTS_PLATFORM_OWNER"),
+    )
+    with pytest.raises(HTTPException) as denied:
+        projects_router._require_project_role_tenant(foreign)
+    assert denied.value.status_code == 403
+    customer = SimpleNamespace(
+        tenant_id="customer-a",
+        decision=SimpleNamespace(authorization_role="PROJECTS_TENANT_OWNER"),
+    )
+    projects_router._require_project_role_tenant(customer)
 
 
 def test_project_owner_eligibility_requires_current_principal_membership_and_tenant_owner(monkeypatch):
@@ -81,6 +167,106 @@ def test_project_owner_eligibility_requires_current_principal_membership_and_ten
     membership.status = TenantMembershipStatus.ACTIVE
     roles = (SimpleNamespace(status=TenantBusinessRoleStatus.ACTIVE, business_role="tenant_manager"),)
     assert not projects_router._project_owner_eligible(db, "tenant-a", "principal-a", object())
+
+
+def test_grantee_currentness_requires_active_principal_membership_and_capacity(monkeypatch):
+    """A participant grant never substitutes for current tenant identity."""
+    principal = SimpleNamespace(status=PrincipalStatus.ACTIVE)
+    membership = SimpleNamespace(status=TenantMembershipStatus.ACTIVE)
+    roles = (SimpleNamespace(status=TenantBusinessRoleStatus.ACTIVE, business_role="tenant_manager"),)
+    monkeypatch.setattr(projects_router.PrincipalAuthorityRepository, "get", lambda *_a, **_k: principal)
+    monkeypatch.setattr(projects_router.TenantMembershipRepository, "resolve", lambda *_a, **_k: membership)
+    monkeypatch.setattr(projects_router.TenantBusinessRoleRepository, "resolve_all", lambda *_a, **_k: roles)
+    database = {
+        "principal_authorities": object(), "tenant_memberships": object(),
+        "tenant_business_roles": object(),
+    }
+    eligible = lambda: projects_router._project_participant_eligible(
+        database, "tenant-a", "participant-a", object(),
+    )
+    assert eligible() is True
+    principal.status = PrincipalStatus.SUSPENDED
+    assert eligible() is False
+    principal.status = PrincipalStatus.ACTIVE
+    membership.status = TenantMembershipStatus.REVOKED
+    assert eligible() is False
+    membership.status = TenantMembershipStatus.ACTIVE
+    roles[0].status = TenantBusinessRoleStatus.REVOKED
+    assert eligible() is False
+    assert projects_router._project_participant_eligible(
+        database, "tenant-a", "", object(),
+    ) is False
+
+
+def test_project_participant_record_requires_current_scoped_iam(monkeypatch):
+    """A record alone or an IAM role alone never authorizes project details."""
+    participant = SimpleNamespace(role="VIEWER")
+    project = SimpleNamespace(project_id="prj-" + "c" * 48)
+    read_counts = []
+    registry = SimpleNamespace(get=lambda **kwargs: read_counts.append(kwargs) or project)
+    class Participants:
+        def get(self, **kwargs):
+            read_counts.append(kwargs)
+            if kwargs["project_id"] != project.project_id:
+                raise projects_router.ProjectParticipantNotFound("PROJECT_PARTICIPANT_NOT_FOUND")
+            return participant
+    monkeypatch.setattr(projects_router, "_project_participants", lambda *_args: Participants())
+    context = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="principal-a"),
+        decision=SimpleNamespace(authorization_role="PROJECTS_PARTICIPANT_VIEWER"),
+    )
+    result, _participants = projects_router._require_current_project_participation(
+        context, registry, project.project_id, object(),
+    )
+    assert result is project
+    assert all(row["tenant_id"] == "tenant-a" and row["project_id"] == project.project_id for row in read_counts)
+    with pytest.raises(HTTPException) as denied:
+        projects_router._require_current_project_participation(
+            context, registry, project.project_id, object(), contribute=True,
+        )
+    assert denied.value.status_code == 403
+    context.decision.authorization_role = "PROJECTS_TENANT_OWNER"
+    with pytest.raises(HTTPException) as denied:
+        projects_router._require_current_project_participation(
+            context, registry, project.project_id, object(),
+        )
+    assert denied.value.status_code == 403
+    context.decision.authorization_role = "PROJECTS_PARTICIPANT_CONTRIBUTOR"
+    participant.role = "CONTRIBUTOR"
+    projects_router._require_current_project_participation(
+        context, registry, project.project_id, object(), contribute=True,
+    )
+    with pytest.raises(projects_router.ProjectParticipantNotFound):
+        projects_router._require_current_project_participation(
+            context, registry, "prj-" + "d" * 48, object(),
+        )
+
+
+def test_personal_project_task_transition_cannot_operate_on_another_assignee(monkeypatch):
+    """Project contributor role is necessary but task-assignee equality is separate."""
+    task_id = "ptk-" + "a" * 48
+    project_id = "prj-" + "b" * 48
+    context = SimpleNamespace(
+        tenant_id="tenant-a", identity=SimpleNamespace(identity_id="participant-a"),
+        decision=SimpleNamespace(authorization_role="PROJECTS_PARTICIPANT_CONTRIBUTOR"),
+    )
+    registry = SimpleNamespace(get=lambda **_kwargs: SimpleNamespace(project_id=project_id))
+    task = SimpleNamespace(assignee_principal_id="participant-b")
+    class Tasks:
+        def get(self, **_kwargs):
+            return task
+        def transition_or_replay(self, **_kwargs):
+            pytest.fail("Another person's work must not transition")
+    monkeypatch.setattr(projects_router, "_require_current_project_participation", lambda *_a, **_k: (None, None))
+    monkeypatch.setattr(projects_router, "_project_task_store", lambda *_a: Tasks())
+    monkeypatch.setattr(projects_router, "_transaction", lambda _ctx, callback, **_kwargs: callback(registry, object()))
+    with pytest.raises(HTTPException) as denied:
+        projects_router.transition_assigned_project_task(
+            projects_router.ProjectTaskTransitionRequest(
+                expected_revision=1, status="IN_PROGRESS",
+            ), Response(), project_id, task_id, "task-key", context,
+        )
+    assert denied.value.status_code == 403
 
 
 def test_department_read_requires_exact_tenant_active_record():
@@ -233,6 +419,18 @@ def test_assignment_command_uses_cas_audit_and_fresh_readback(monkeypatch):
     assert result["events"][0]["event_type"] == "PROJECT_UPDATED"
 
 
+def test_industry_template_activation_certificate_in_projects_ci(monkeypatch) -> None:
+    """Include the new atomic blueprint certificate in the canonical CI suite."""
+    from pathlib import Path
+    from runpy import run_path
+
+    spec = Path(__file__).with_name("test_project_template_activation.py")
+    checks = run_path(str(spec))
+    checks["test_seventeen_reviewed_industry_blueprints_are_detached_and_topologically_valid"]()
+    checks["test_atomic_template_activation_uses_exact_unassigned_records_and_replay"](monkeypatch)
+    checks["test_template_activation_denies_unbound_actor_and_stale_revision"]()
+
+
 def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
     """List, summary, detail, create, update and archive paths are exact."""
     routes = {
@@ -244,10 +442,51 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects", ("GET",)),
         ("/projects", ("POST",)),
         ("/projects/summary", ("GET",)),
+        ("/projects/templates", ("GET",)),
+        ("/projects/templates/{slug}/activate", ("POST",)),
         ("/projects/assignment-options", ("GET",)),
         ("/projects/departments", ("POST",)),
         ("/projects/{project_id}/assignment", ("PATCH",)),
         ("/projects/founder-projects-admission", ("POST",)),
+        ("/projects/my-approvals", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/attachments", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/attachments/{attachment_id}/download", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments/{attachment_id}/download", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments/{attachment_id}/verify-scan", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/approvals", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/approvals", ("POST",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/approvals", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/events", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/events", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/comments", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/comments", ("POST",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/comments", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/comments", ("POST",)),
+        ("/projects/{project_id}/task-action-capabilities", ("GET",)),
+        ("/projects/{project_id}/tasks", ("GET",)),
+        ("/projects/{project_id}/tasks", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}", ("PATCH",)),
+        ("/projects/{project_id}/tasks/{task_id}/transition", ("POST",)),
+        ("/projects/{project_id}/my-project/tasks", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition", ("POST",)),
+        ("/projects/{project_id}/my-project/participants", ("GET",)),
+        ("/projects/{project_id}/my-project/notifications", ("GET",)),
+        ("/projects/{project_id}/my-project/notifications/{notification_id}/read", ("POST",)),
+        ("/projects/my-projects", ("GET",)),
+        ("/projects/{project_id}/my-project", ("GET",)),
+        ("/projects/{project_id}/my-project/notes", ("GET",)),
+        ("/projects/{project_id}/my-project/notes", ("POST",)),
+        ("/projects/{project_id}/participant-options", ("GET",)),
+        ("/projects/{project_id}/participants", ("GET",)),
+        ("/projects/{project_id}/participants", ("POST",)),
+        ("/projects/{project_id}/participants/{participant_principal_id}/revoke", ("POST",)),
+        ("/projects/{project_id}/notes", ("GET",)),
+        ("/projects/{project_id}/notes", ("POST",)),
+        ("/projects/{project_id}/notes/{note_id}", ("PATCH",)),
+        ("/projects/{project_id}/notes/{note_id}/archive", ("POST",)),
         ("/projects/{project_id}", ("GET",)),
         ("/projects/{project_id}", ("PATCH",)),
         ("/projects/{project_id}/archive", ("POST",)),
@@ -255,10 +494,51 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
     expected = {
         ("/projects", "GET"): ("project:read", "project_list"),
         ("/projects/summary", "GET"): ("project:read", "project_list"),
+        ("/projects/templates", "GET"): ("project:read", "project_list"),
+        ("/projects/templates/{slug}/activate", "POST"): ("project:create", "project_create"),
         ("/projects/assignment-options", "GET"): ("project:read", "project_list"),
         ("/projects/departments", "POST"): ("tenant:profile:write", "profile_update"),
         ("/projects/{project_id}/assignment", "PATCH"): ("project:update", "project_update"),
         ("/projects/founder-projects-admission", "POST"): ("tenant:membership:write", "membership_invite"),
+        ("/projects/my-approvals", "GET"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/tasks/{task_id}/attachments", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/tasks/{task_id}/attachments/{attachment_id}/download", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments/{attachment_id}/download", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/attachments/{attachment_id}/verify-scan", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/tasks/{task_id}/approvals", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/approvals", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/approvals", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/tasks/{task_id}/events", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/events", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/comments", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/comments", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/comments", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/comments", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/task-action-capabilities", "GET"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}", "PATCH"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}/transition", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/my-project/tasks", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/my-project/participants", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/notifications", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/notifications/{notification_id}/read", "POST"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/my-projects", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/notes", "GET"): ("project:participant:read", "project_participant_detail"),
+        ("/projects/{project_id}/my-project/notes", "POST"): ("project:participant:contribute", "project_participant_contribute"),
+        ("/projects/{project_id}/participant-options", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/participants", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/participants", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/participants/{participant_principal_id}/revoke", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/notes", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/notes", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/notes/{note_id}", "PATCH"): ("project:update", "project_update"),
+        ("/projects/{project_id}/notes/{note_id}/archive", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}", "GET"): ("project:read", "project_detail"),
         ("/projects", "POST"): ("project:create", "project_create"),
         ("/projects/{project_id}", "PATCH"): ("project:update", "project_update"),
@@ -281,6 +561,16 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
     assert department_pairs == {
         ("tenant:profile:write", "profile_update"),
         ("project:create", "project_create"),
+    }
+    template_activation = routes[("/projects/templates/{slug}/activate", ("POST",))]
+    template_pairs = {
+        (dependency.call.permission_id, dependency.call.operation)
+        for dependency in template_activation.dependant.dependencies
+        if isinstance(dependency.call, RequireTenantAuthorization)
+    }
+    assert template_pairs == {
+        ("project:create", "project_create"),
+        ("project:update", "project_update"),
     }
     founder_route = routes[("/projects/founder-projects-admission", ("POST",))]
     admission_pairs = {
@@ -430,8 +720,468 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
     assert Path("tools/eos/saas/projects/project_registry.py").is_file()
 
 
+
+def test_project_approval_evidence_requires_current_provider_and_exact_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A saved scan event cannot replace a current original-version provider check."""
+    tenant = "synthetic-tenant"
+    project = "prj-" + "a" * 48
+    task = "ptk-" + "b" * 48
+    attachment = "pat-" + "c" * 48
+    manifest = SimpleNamespace(attachment_id=attachment, fingerprint="d" * 128)
+    clearance = SimpleNamespace(
+        fingerprint="e" * 128,
+        policy_sha3_512="a" * 128,
+        scan_evidence_sha3_512="b" * 128,
+    )
+    context = SimpleNamespace(tenant_id=tenant)
+    checks = []
+
+    def transaction(authorized, operation):
+        assert authorized is context
+        return operation(object(), object())
+
+    def source(registry, tenant_id, project_id, task_id, attachment_id, session):
+        assert (tenant_id, project_id, task_id, attachment_id) == (
+            tenant, project, task, attachment,
+        )
+        checks.append("source")
+        return manifest, clearance
+
+    def provider(original):
+        assert original is manifest
+        checks.append("provider")
+        return "a" * 128, "b" * 128
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    monkeypatch.setattr(projects_router, "_require_cleared_project_attachment", source)
+    monkeypatch.setattr(projects_router, "verify_guardduty_clean_attachment", provider)
+    result = projects_router._fresh_project_approval_evidence(
+        context, project, task, (attachment,), participant=False,
+    )
+    assert result == {attachment: ("d" * 128, "e" * 128)}
+    assert checks == ["source", "provider"]
+
+
+def test_project_approval_provider_drift_fails_before_decision_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A changed scan observation or provider outage cannot authorize a review."""
+    context = SimpleNamespace(tenant_id="synthetic-tenant")
+    project, task, attachment = (
+        "prj-" + "a" * 48, "ptk-" + "b" * 48, "pat-" + "c" * 48,
+    )
+    manifest = SimpleNamespace(attachment_id=attachment, fingerprint="d" * 128)
+    clearance = SimpleNamespace(
+        fingerprint="e" * 128, policy_sha3_512="a" * 128,
+        scan_evidence_sha3_512="b" * 128,
+    )
+    monkeypatch.setattr(
+        projects_router, "_transaction",
+        lambda authorized, operation: operation(object(), object()),
+    )
+    monkeypatch.setattr(
+        projects_router, "_require_cleared_project_attachment",
+        lambda *args: (manifest, clearance),
+    )
+    monkeypatch.setattr(
+        projects_router, "verify_guardduty_clean_attachment",
+        lambda record: ("f" * 128, "b" * 128),
+    )
+    with pytest.raises(HTTPException) as drift:
+        projects_router._fresh_project_approval_evidence(
+            context, project, task, (attachment,), participant=False,
+        )
+    assert drift.value.status_code == 409
+    assert drift.value.detail == "PROJECT_APPROVAL_EVIDENCE_PROVIDER_CHANGED"
+
+    def unavailable(record):
+        raise projects_router.ProjectAttachmentStorageError(
+            "PROJECT_ATTACHMENT_SCAN_POLICY_UNAVAILABLE",
+        )
+
+    monkeypatch.setattr(
+        projects_router, "verify_guardduty_clean_attachment", unavailable,
+    )
+    with pytest.raises(HTTPException) as denied:
+        projects_router._fresh_project_approval_evidence(
+            context, project, task, (attachment,), participant=False,
+        )
+    assert denied.value.status_code == 503
+
+
+def test_project_approval_evidence_refuses_duplicate_or_foreign_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Malformed or duplicate file references never reach provider inspection."""
+    context = SimpleNamespace(tenant_id="synthetic-tenant")
+    project, task = "prj-" + "a" * 48, "ptk-" + "b" * 48
+    attachment = "pat-" + "c" * 48
+    for references in ((attachment, attachment), ("pat-foreign",)):
+        with pytest.raises(HTTPException) as denied:
+            projects_router._fresh_project_approval_evidence(
+                context, project, task, references, participant=False,
+            )
+        assert denied.value.status_code == 422
+
+
+
+def test_project_person_names_are_tenant_bound_and_display_only() -> None:
+    """The selector's human text never becomes IAM or foreign-tenant identity."""
+    class Cursor:
+        def __init__(self, records):
+            self.records = records
+
+        def limit(self, count):
+            assert count == 2
+            return self.records[:count]
+
+    class Users:
+        def __init__(self, records):
+            self.records = records
+
+        def find(self, query, projection, *, session):
+            assert session == "source-session"
+            assert query["tenantId"] == "tenant-a"
+            assert projection["firstName"] == 1
+            assert projection["lastName"] == 1
+            allowed = {part["user_id"] for part in query["$or"] if "user_id" in part}
+            return Cursor([
+                record for record in self.records
+                if record["tenantId"] == query["tenantId"]
+                and record["user_id"] in allowed
+            ])
+
+    db = {"users": Users([
+        {"tenantId": "tenant-a", "user_id": "owner-a",
+         "firstName": "Verified", "lastName": "Owner"},
+        {"tenantId": "tenant-b", "user_id": "owner-a",
+         "firstName": "Foreign", "lastName": "Private"},
+    ])}
+    assert projects_router._exact_tenant_project_person_name(
+        db, "tenant-a", "owner-a", "source-session",
+    ) == {"first_name": "Verified", "last_name": "Owner"}
+    assert projects_router._exact_tenant_project_person_name(
+        db, "tenant-a", "owner-missing", "source-session",
+    ) == {"first_name": None, "last_name": None}
+    db["users"].records.append({
+        "tenantId": "tenant-a", "user_id": "owner-a",
+        "firstName": "Duplicate", "lastName": "Identity",
+    })
+    with pytest.raises(HTTPException) as denial:
+        projects_router._exact_tenant_project_person_name(
+            db, "tenant-a", "owner-a", "source-session",
+        )
+    assert denial.value.status_code == 503
+    assert denial.value.detail == "PROJECT_OWNER_PROFILE_COLLISION"
+
+
+def test_project_participant_page_names_are_bounded_and_tenant_scoped() -> None:
+    """Names are display-only and one batched read cannot cross tenant scope."""
+    class Cursor:
+        def __init__(self, records):
+            self.records = records
+        def limit(self, count):
+            assert count == 5
+            return self.records[:count]
+
+    class Users:
+        records = [
+            {"tenantId": "tenant-a", "user_id": "principal-one",
+             "firstName": "Verified", "lastName": "Member"},
+        ]
+        calls = 0
+        def find(self, query, projection, *, session):
+            self.calls += 1
+            assert session == "source-session"
+            assert query["tenantId"] == "tenant-a"
+            assert query["$or"][0]["user_id"]["$in"] == [
+                "principal-one", "principal-two",
+            ]
+            assert projection["firstName"] == 1
+            return Cursor(self.records)
+
+    users = Users()
+    assert projects_router._project_participant_page_names(
+        {"users": users}, "tenant-a",
+        ["principal-one", "principal-two"], "source-session",
+    ) == {
+        "principal-one": {"first_name": "Verified", "last_name": "Member"},
+    }
+    assert users.calls == 1
+    users.records = [
+        *users.records,
+        {"tenantId": "tenant-a", "user_id": "principal-one",
+         "firstName": "Collision", "lastName": "Duplicate"},
+    ]
+    with pytest.raises(HTTPException) as denied:
+        projects_router._project_participant_page_names(
+            {"users": users}, "tenant-a",
+            ["principal-one", "principal-two"], "source-session",
+        )
+    assert denied.value.status_code == 503
+    assert denied.value.detail == "PROJECT_PARTICIPANT_NAMES_COLLISION"
+
+
+def test_task_comment_json_is_admitted_through_fastapi_http_boundary() -> None:
+    """An empty browser mentions array must not cause HTTP 422 admission."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    application = FastAPI()
+
+    @application.post("/api/projects/comment-admission", status_code=201)
+    def admit(payload: projects_router.ProjectTaskCommentRequest) -> dict[str, object]:
+        return {"accepted": True, "body": payload.body, "mentions": list(payload.mentions)}
+
+    with TestClient(application) as client:
+        accepted = client.post("/api/projects/comment-admission", json={
+            "body": "**Development progress — 19 November 2026**\\n\\n- Verified source",
+            "mentions": [],
+        })
+        assert accepted.status_code == 201, accepted.text
+        assert accepted.json()["mentions"] == []
+        assert accepted.json()["body"].startswith("**Development progress")
+        invalid = client.post("/api/projects/comment-admission", json={
+            "body": "Notes", "mentions": ["member", 123],
+        })
+        assert invalid.status_code == 422
+        extra = client.post("/api/projects/comment-admission", json={
+            "body": "Notes", "mentions": [], "timestamp": "forbidden",
+        })
+        assert extra.status_code == 422
+
+
+def test_comment_json_mentions_admit_only_bounded_string_arrays() -> None:
+    """Browser comment arrays are normalized without weakening strict admission."""
+    from pydantic import ValidationError
+
+    cls = projects_router.ProjectTaskCommentRequest
+    assert cls.model_validate({"body": "Development progress", "mentions": []}).mentions == ()
+    members = ["principal-" + str(i) for i in range(10)]
+    assert cls.model_validate({"body": "Update", "mentions": members}).mentions == tuple(members)
+    for invalid in ([1], [None], ["ok", 1], ["p"] * 11, "principal", {"id": "p"}):
+        with pytest.raises(ValidationError):
+            cls.model_validate({"body": "Update", "mentions": invalid})
+    with pytest.raises(ValidationError):
+        cls.model_validate({"body": "", "mentions": []})
+
+
+def test_task_create_and_revision_accept_only_canonical_wire_dates() -> None:
+    """Calendar JSON dates reach strict EOS admission without coercing invalid input."""
+    from datetime import date
+    from pydantic import ValidationError
+
+    valid_create = {
+        "kind": "MILESTONE", "title": "M01 Headquarters delivery certified",
+        "description": "Verified acceptance", "due_date": "2026-11-26",
+        "parent_task_id": None, "assignee_principal_id": None,
+        "depends_on": [],
+    }
+    created = projects_router.ProjectTaskCreateRequest.model_validate(valid_create)
+    assert created.due_date == date(2026, 11, 26)
+    assert created.kind == "MILESTONE"
+    assert created.depends_on == ()
+    predecessor = "ptk-" + "a" * 48
+    with_dependency = projects_router.ProjectTaskCreateRequest.model_validate({
+        **valid_create, "depends_on": [predecessor],
+    })
+    assert with_dependency.depends_on == (predecessor,)
+    for malformed in ([123], ["x"] * 26, {"not": "a list"}, "bad"):
+        with pytest.raises(ValidationError):
+            projects_router.ProjectTaskCreateRequest.model_validate({
+                **valid_create, "depends_on": malformed,
+            })
+    valid_revision = {
+        "expected_revision": 1, "title": "Updated milestone",
+        "description": "", "due_date": "2026-11-27",
+        "assignee_principal_id": None,
+    }
+    revised = projects_router.ProjectTaskReviseRequest.model_validate(valid_revision)
+    assert revised.due_date == date(2026, 11, 27)
+    for invalid in ("2026/11/26", "2026-02-30", "2026-11-26T00:00:00",
+                    "26-11-2026", "2026-1-2", 20261126, False):
+        for model, data in (
+            (projects_router.ProjectTaskCreateRequest, valid_create),
+            (projects_router.ProjectTaskReviseRequest, valid_revision),
+        ):
+            with pytest.raises(ValidationError):
+                model.model_validate({**data, "due_date": invalid})
+    with pytest.raises(ValidationError):
+        projects_router.ProjectTaskCreateRequest.model_validate({
+            **valid_create, "kind": "FINANCIAL",
+        })
+
+
+def test_canonical_projects_wire_values_keep_strict_validation() -> None:
+    """FastAPI receives parsed JSON dicts; browser values must be canonical."""
+    from datetime import date
+    from tools.eos.saas.domain.project import ProjectStatus
+
+    created = projects_router.ProjectCreateRequest.model_validate({
+        "name": "Approved project", "start_date": "2026-11-18",
+        "target_date": "2026-11-20",
+    })
+    assert created.start_date == date(2026, 11, 18)
+    assert created.target_date == date(2026, 11, 20)
+
+    revision = projects_router.ProjectUpdateRequest.model_validate({
+        "expected_revision": 2, "start_date": "2026-11-18",
+        "target_date": "2026-11-20",
+    })
+    assert revision.start_date == date(2026, 11, 18)
+    activated = projects_router.ProjectUpdateRequest.model_validate({
+        "expected_revision": 2, "status": "active",
+    })
+    assert activated.status is ProjectStatus.ACTIVE
+    assert activated.model_dump(exclude={"expected_revision"}, exclude_unset=True) == {
+        "status": ProjectStatus.ACTIVE,
+    }
+
+    for invalid in [
+        {"expected_revision": 2, "start_date": "18/11/2026"},
+        {"expected_revision": 2, "start_date": "2026-02-30"},
+        {"expected_revision": 2, "status": "ACTIVATED"},
+        {"expected_revision": "2", "status": "active"},
+        {"expected_revision": 2, "status": "active", "timestamp": "untrusted"},
+    ]:
+        with pytest.raises(ValidationError):
+            projects_router.ProjectUpdateRequest.model_validate(invalid)
+    with pytest.raises(ValidationError):
+        projects_router.ProjectAssignmentRequest.model_validate({
+            "expected_revision": 2,
+            "owner_principal_id": "eligible-current-owner",
+            "department_id": "dept-" + "a" * 32,
+            "timestamp": "forbidden-client-injection",
+        })
+
+
+def test_owner_page_uses_current_authenticated_principal_not_participant_grant(monkeypatch) -> None:
+    """Owner responsibility is a project-read filter, never an IAM promotion."""
+    identity = SimpleNamespace(identity_id="verified-owner")
+    context = SimpleNamespace(tenant_id="tenant-a", identity=identity)
+    captured = []
+    class Source:
+        def list_page_for_tenant(self, **kwargs):
+            captured.append(kwargs)
+            return (), False
+    monkeypatch.setattr(
+        projects_router, "_transaction",
+        lambda current, callback, **kwargs: callback(Source(), "tx"),
+    )
+    response = projects_router.list_projects(
+        response=Response(), limit=100, offset=0, project_status=None,
+        include_archived=False, owned_by_me=True, context=context,
+    )
+    assert response["items"] == []
+    assert response["has_more"] is False
+    assert captured == [{
+        "tenant_id": "tenant-a", "session": "tx",
+        "limit": 100, "offset": 0, "status": None,
+        "include_archived": False, "owner_principal_id": "verified-owner",
+    }]
+    assert projects_router.list_my_assigned_projects.__name__ == "list_my_assigned_projects"
+    from fastapi.routing import APIRoute
+    routes = [
+        route for route in projects_router.router.routes
+        if isinstance(route, APIRoute)
+    ]
+    owner = next(route for route in routes if route.path == "/projects"
+                 and "GET" in route.methods)
+    participant = next(route for route in routes if route.path == "/projects/my-projects")
+    def operation(route):
+        dependency = route.dependant.dependencies[0].call
+        return getattr(dependency, "permission", None), getattr(dependency, "operation", None)
+    assert owner.dependant.dependencies != participant.dependant.dependencies
+
+
+def test_task_action_capabilities_require_exact_project_update_authority(monkeypatch) -> None:
+    """Existing update IAM permits read-only projection; no scope is granted."""
+    context = SimpleNamespace(
+        tenant_id="tenant-a",
+        identity=SimpleNamespace(identity_id="principal-a"),
+    )
+    project_id = "prj-" + "a" * 48
+    reads: list[tuple[str, str, str]] = []
+
+    class Registry:
+        def get(self, *, tenant_id, project_id, session):
+            reads.append((tenant_id, project_id, session))
+            return object()
+
+    monkeypatch.setattr(
+        projects_router, "_transaction",
+        lambda authorized, callback: callback(Registry(), "exact-session")
+        if authorized is context else (_ for _ in ()).throw(AssertionError("scope")),
+    )
+    response = Response()
+    outcome = projects_router.read_project_task_action_capabilities(
+        response=response, project_id=project_id, context=context,
+    )
+    assert outcome == {
+        "schema": "WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1",
+        "tenant_id": "tenant-a",
+        "principal_id": "principal-a",
+        "project_id": project_id,
+        "can_start": True,
+        "can_complete": True,
+        "can_block": True,
+        "can_cancel": True,
+        "can_assign": True,
+        "can_edit": True,
+    }
+    assert response.headers["cache-control"] == "no-store"
+    assert reads == [("tenant-a", project_id, "exact-session")]
+
+
+def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkeypatch) -> None:
+    """Instrumentation cannot substitute guessed source counts or change IAM."""
+    counts = {
+        "total": 1, "active": 1, "planned": 0,
+        "on_hold": 0, "done": 0, "cancelled": 0,
+    }
+    identity = SimpleNamespace(identity_id="principal-a")
+    context = SimpleNamespace(tenant_id="tenant-a", identity=identity)
+    reads = []
+    class Source:
+        def summary_for_tenant(self, *, tenant_id, session, phase_timings):
+            assert tenant_id == "tenant-a" and session == "transaction-session"
+            phase_timings["cursor_first_ms"] = 0.2
+            phase_timings["hydrate_ms"] = 0.1
+            reads.append(tenant_id)
+            return counts
+
+    def transaction(authorized, callback, *, phase_timings):
+        assert authorized is context and isinstance(phase_timings, dict)
+        return callback(Source(), "transaction-session")
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    response = Response()
+    result = projects_router.project_summary(response=response, context=context)
+    assert result == {
+        "schema": "WILSY-PROJECT-SUMMARY/V1",
+        "tenant_id": "tenant-a", "principal_id": "principal-a",
+        "counts": counts,
+    }
+    assert response.headers["cache-control"] == "no-store"
+    assert reads == ["tenant-a"]
+
+    def deny(authorized, callback, *, phase_timings):
+        assert authorized is context
+        raise HTTPException(status_code=403, detail="PROJECTS_ENTITLEMENT_REQUIRED")
+
+    monkeypatch.setattr(projects_router, "_transaction", deny)
+    with pytest.raises(HTTPException) as denial:
+        projects_router.project_summary(response=Response(), context=context)
+    assert denial.value.status_code == 403
+    assert denial.value.detail == "PROJECTS_ENTITLEMENT_REQUIRED"
+
+
+
+
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.3.3-PROJECT-ACTIVATION-ACCOUNTABILITY-CERT
+# VERSION: v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny

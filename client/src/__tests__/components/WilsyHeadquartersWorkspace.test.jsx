@@ -5,23 +5,24 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT
+ * VERSION: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT verifies the
+ * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT prohibits speculative Overview HR 403 probes and confirms the user-entered People workspace still performs exact tenant-scoped directory readback.
+ * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT verifies the
  *            Founder-approved Mission and Strategy text remains readable
  *            without claiming independent EOS publication.
  * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT asserts a
  *            real owner-scoped EOS Draft count independently of the active
  *            queue, and rejects false zero when source admission fails.
- * CHANGELOG: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT proves
+ * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT proves
  *            visible verified overdue, Open and In Progress filter
  *            counts, an owner-draft destination and filtered work rows.
- * CHANGELOG: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT accepts a single
+ * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT accepts a single
  *            trustworthy verified active count when reads are shared across
  *            the Headquarters and Daily Attention coordinator, while still
  *            requiring the real source row and independent KPI evidence.
@@ -314,12 +315,12 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(request[1].signal).toBeInstanceOf(AbortSignal);
   });
 
-  it('renders source-backed My Work, Projects and Team KPIs without inventing Approvals', async () => {
+  it('renders My Work and Projects without probing HR until People is opened', async () => {
     renderHeadquarters();
     expect((await screen.findAllByText('3')).length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByRole('button', { name: 'Projects: 0 verified' })).toBeTruthy();
     expect(screen.getByText('Commercial source not connected')).toBeTruthy();
-    expect(screen.getByText('Verified active directory result')).toBeTruthy();
+    expect(api.get.mock.calls.some(([path]) => path === '/hr/workforce')).toBe(false);
     expect(screen.queryByText('247')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Overdue (1)' })).toBeTruthy();
@@ -329,6 +330,9 @@ describe('WILSY Headquarters authenticated shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Overdue (1)' }));
     expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open authorized record: Ship work release' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
+    expect(await screen.findByText('Test Directory Person')).toBeTruthy();
+    expect(api.get.mock.calls.some(([path]) => path === '/hr/workforce')).toBe(true);
   });
 
 
@@ -492,12 +496,13 @@ describe('WILSY Headquarters authenticated shell', () => {
     });
     try {
       renderHeadquarters();
-      await waitFor(() => expect(pendingReads.length).toBeGreaterThan(0));
+      expect(pendingReads).toHaveLength(0);
       fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
+      await waitFor(() => expect(pendingReads.length).toBeGreaterThan(0));
       expect(screen.getByText('Verifying the current tenant workforce directory…')).toBeTruthy();
       expect(screen.queryByText(/No employees recorded/)).toBeNull();
       expect(screen.queryByText(/^0 active employees$/)).toBeNull();
-      await waitFor(() => expect(pendingReads.length).toBeGreaterThanOrEqual(2));
+      await waitFor(() => expect(pendingReads.length).toBeGreaterThanOrEqual(1));
       await act(async () => { pendingReads.forEach((resolve) => resolve()); });
       expect(await screen.findByText('Cold Mount Person')).toBeTruthy();
     } finally {
@@ -597,6 +602,7 @@ describe('WILSY Headquarters authenticated shell', () => {
     });
     try {
       const view = renderHeadquarters();
+      fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
       await waitFor(() => expect(resolvePrevious).toBeTypeOf('function'));
       view.rerender(
         <AuthContext.Provider value={nextAuth}>
@@ -605,7 +611,6 @@ describe('WILSY Headquarters authenticated shell', () => {
           </MemoryRouter>
         </AuthContext.Provider>,
       );
-      fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
       expect(await screen.findByText('New Tenant Directory Person')).toBeTruthy();
       expect(api.get.mock.calls.some(([path, config]) => (
         path === '/hr/workforce' && config.headers?.['X-Tenant-ID'] === nextTenant
@@ -935,7 +940,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.23.1-APPROVED-CORPUS-PRESENTATION-CERT
+ * VERSION: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.

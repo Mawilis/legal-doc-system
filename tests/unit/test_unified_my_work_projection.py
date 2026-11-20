@@ -1,3 +1,20 @@
+"""TITLE: WILSY OS Unified My Work Source Projection Certificate
+VERSION: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT
+AUTHORITY: Synthetic read-only EOS source composition and denial tests.
+EPITOME: Verify independently admitted Legal, Operations, Intelligence, CRM,
+         HR and Projects work shapes, cross-tenant rejection and blocked work.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_unified_my_work_projection.py
+COLLABORATION / OWNERSHIP: unified_my_work_projection composes only sources
+         already admitted by the canonical authenticated My Work router.
+CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT adds Projects
+         delegated/blocked task tests and seals the complete existing artifact.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers only, no real users.
+TENANT BOUNDARY: All source envelopes and rows require an exact tenant.
+AUTHORITY BOUNDARY: Source-specific commands, IAM and approval stay separate.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -144,6 +161,54 @@ def test_rejects_naive_or_malformed_due_dates():
             )
 
 
+def test_project_tasks_join_daily_attention_without_inherited_authority():
+    """Only independently admitted delegated and blocked project source rows count."""
+    project_id = "prj-" + "a" * 48
+    result = build_unified_my_work(
+        tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+        projects={"tenant_id": TENANT, "items": [
+            {**item("ptk-" + "b" * 48, title="Deliver current module", status="OPEN"),
+             "tenant_id": TENANT, "project_id": project_id,
+             "due_date": "2026-11-20", "owner_principal_id": PRINCIPAL},
+            {**item("ptk-" + "c" * 48, title="Blocked dependency", status="BLOCKED"),
+             "tenant_id": TENANT, "project_id": project_id,
+             "due_date": None, "owner_principal_id": PRINCIPAL},
+        ]},
+    )
+    assert result["summary"]["active_count"] == 2
+    assert result["summary"]["source_counts"] == {"PROJECTS": 2}
+    rows = result["items"]
+    assert {row["source_key"] for row in rows} == {
+        "PROJECTS:ptk-" + "b" * 48, "PROJECTS:ptk-" + "c" * 48,
+    }
+    assert any(row["status"] == "BLOCKED" for row in rows)
+    assert all(row["completion_route"] is None for row in rows)
+    assert all(row["action_authority"] == "SOURCE_SERVICE_ONLY" for row in rows)
+    assert rows[0]["project_id"] == project_id
+    assert result["authority"]["permits_completion"] is False
+
+
+@pytest.mark.parametrize("changes", [
+    {"owner_principal_id": "other-principal"},
+    {"project_id": "wrong"},
+    {"status": "DONE"}, {"status": "CANCELLED"},
+    {"due_date": 42},
+])
+def test_project_attention_rejects_forged_work_source(changes):
+    """Cannot populate user queue from foreign/terminal or malformed project work."""
+    source = {
+        **item("ptk-" + "d" * 48, status="BLOCKED"),
+        "tenant_id": TENANT, "project_id": "prj-" + "e" * 48,
+        "owner_principal_id": PRINCIPAL, "due_date": None,
+        **changes,
+    }
+    with pytest.raises(UnifiedMyWorkProjectionError, match="PROJECTS_SOURCE_ITEM_INVALID"):
+        build_unified_my_work(
+            tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+            projects={"tenant_id": TENANT, "items": [source]},
+        )
+
+
 def test_rejects_malformed_source_item_instead_of_silently_dropping_it():
     with pytest.raises(UnifiedMyWorkProjectionError, match="SOURCE_ITEM_IDENTITY_INVALID"):
         build_unified_my_work(
@@ -152,3 +217,11 @@ def test_rejects_malformed_source_item_instead_of_silently_dropping_it():
             now=NOW,
             operations={"tenant_id": TENANT, "items": [{"title": "No source id", "status": "OPEN"}]},
         )
+
+# ARTIFACT: test_unified_my_work_projection.py
+# VERSION: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT
+# AUTHORITY BOUNDARY: pure projection checks; no IAM or source mutation
+# TENANT POSTURE: exact source envelope and row validation
+# FAIL-CLOSED POSTURE: malformed, forged or foreign project work denies
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
