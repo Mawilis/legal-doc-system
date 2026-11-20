@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT
+ * VERSION: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT certifies that an uncertain
+ * EOS reasoning response is retried with the exact same prompt and durable
+ * idempotency key, rather than a second metered AI admission.
  * CHANGELOG: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT certifies explicit consent and
  * exact-tenant usage-admitted Python EOS conversation; C1C legal remains
  * independent and no legacy generic operator BFF runs.
@@ -475,6 +478,34 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText('Send')).toBeEnabled();
   });
 
+  it('retries an uncertain metered AI response with the same admission key and prompt', async () => {
+    mockApiPost.mockRejectedValueOnce(rejectedResponse(503, 'provider unavailable'))
+      .mockResolvedValueOnce({ data: {
+        response_text: 'Recovered from the same reasoning admission.',
+        usage_observation_id: 'usage-replay-confirmed',
+      } });
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Review my current tasks' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByPlaceholderText('Ask Wilsy OS…'))
+      .toHaveValue('Review my current tasks'));
+    expect(mockApiPost).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(2));
+    const first = mockApiPost.mock.calls[0];
+    const retry = mockApiPost.mock.calls[1];
+    expect(first[0]).toBe('/wilsy-ai/reasoning');
+    expect(retry[0]).toBe(first[0]);
+    expect(retry[1]).toEqual(first[1]);
+    expect(retry[2].headers['Idempotency-Key']).toBe(first[2].headers['Idempotency-Key']);
+    expect(first[2].headers['X-Tenant-ID']).toBe('TEST_TENANT');
+    expect(await screen.findByText('Recovered from the same reasoning admission.')).toBeVisible();
+  });
+
   it('sends a message when Enter is pressed', async () => {
     const mockReply = { data: { response_text: 'Test reply', usage_observation_id: 'usage-1' } };
     mockApiPost.mockResolvedValue(mockReply);
@@ -742,7 +773,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT
+ * VERSION: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
