@@ -1,7 +1,7 @@
 """WILSY local-only Founder AI activation stage certification.
 
 TITLE: Founder AI Development Activation Stage Unit Certificate
-VERSION: v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT
+VERSION: v1.4.0-INSTITUTIONAL-ROLLOUT-ONLY-CERT
 AUTHORITY: Synthetic tests; PlanRegistry and EOS own business truth.
 EPITOME: Verify no Atlas/production writes, explicit tier choice, staged
          commercial mutation, and independent source gating.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder development activation, source registry APIs,
                            Mongo kernel's caller-owned transaction boundary.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT certifies that
+CHANGELOG: v1.4.0-INSTITUTIONAL-ROLLOUT-ONLY-CERT certifies
+           Starter and Growth cannot amend even a local Founder plan after
+           the exact Institutional Founder business mandate.
+           v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT certifies that
            unrelated source-verified Founder modules are preserved rather than
            rejected by a duplicate AI-specific allowlist.
            v1.2.0-PRECONNECT-DENIAL-CERT certifies
@@ -156,6 +159,24 @@ def test_plan_stage_preserves_other_source_authorized_business_features(
     ])
 
 
+@pytest.mark.parametrize("other_tier", [
+    WilsyAIVASFeatureId.STARTER, WilsyAIVASFeatureId.GROWTH,
+])
+def test_other_ai_tier_cannot_modify_founder_plan(
+    dev_env: None, monkeypatch: pytest.MonkeyPatch,
+    other_tier: WilsyAIVASFeatureId,
+) -> None:
+    """Mandated Institutional is the only eligible Founder tier."""
+    monkeypatch.setattr(module, "_exact_preflight",
+                        lambda *_: pytest.fail("must reject before source lookup"))
+    with pytest.raises(module.FounderAIDevelopmentActivationError,
+                       match="FOUNDER_AI_INSTITUTIONAL_TIER_REQUIRED"):
+        module.execute_development_stage(
+            stage="plan", feature=other_tier, database=DevelopmentDatabase(),
+            client=DevelopmentClient(), apply=True,
+        )
+
+
 def test_already_current_plan_is_idempotent_no_write(
     dev_env: None, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -216,7 +237,7 @@ def test_entitlement_step_denies_until_plan_and_subscription_match(
 
 
 # ARTIFACT: test_founder_ai_development_activation.py
-# VERSION: v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT
+# VERSION: v1.4.0-INSTITUTIONAL-ROLLOUT-ONLY-CERT
 # AUTHORITY BOUNDARY: synthetic development-only stage and registry checks
 # TENANT POSTURE: exact Founder identity, no generic free-plan entitlement
 # FAIL-CLOSED POSTURE: prod or remote transport rejects before write
