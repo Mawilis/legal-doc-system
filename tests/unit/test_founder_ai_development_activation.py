@@ -1,7 +1,7 @@
 """WILSY local-only Founder AI activation stage certification.
 
 TITLE: Founder AI Development Activation Stage Unit Certificate
-VERSION: v1.2.0-PRECONNECT-DENIAL-CERT
+VERSION: v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT
 AUTHORITY: Synthetic tests; PlanRegistry and EOS own business truth.
 EPITOME: Verify no Atlas/production writes, explicit tier choice, staged
          commercial mutation, and independent source gating.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder development activation, source registry APIs,
                            Mongo kernel's caller-owned transaction boundary.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.2.0-PRECONNECT-DENIAL-CERT certifies
+CHANGELOG: v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT certifies that
+           unrelated source-verified Founder modules are preserved rather than
+           rejected by a duplicate AI-specific allowlist.
+           v1.2.0-PRECONNECT-DENIAL-CERT certifies
            Atlas URI and production runtime are denied before the Mongo
            connect function executes, not only before the first write.
            v1.1.0-CANONICAL-STAGE-READBACK-CERT verifies canonical plan
@@ -126,6 +129,33 @@ def test_dry_run_reports_required_plan_change_without_writes(
     assert result == {"stage": "plan", "state": "PLAN_FEATURE_UPDATE_REQUIRED", "writes": False}
 
 
+def test_plan_stage_preserves_other_source_authorized_business_features(
+    dev_env: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AI activation cannot erase unrelated canonical Founder modules."""
+    other_feature = "wilsy.vas.legal.operations.enterprise.v1"
+    plan = SimpleNamespace(
+        features=(module.BRANDING_FEATURE, other_feature), price=0,
+        plan_type=SimpleNamespace(value="FOUNDER_ENTERPRISE"),
+    )
+    observed: list[dict[str, Any]] = []
+    monkeypatch.setattr(module, "_exact_preflight",
+                        lambda *_: (plan, SimpleNamespace()))
+    def update(plan_id: str, values: dict[str, Any], **options: Any) -> dict[str, Any]:
+        observed.append(values)
+        plan.features = tuple(values["features"])
+        return {"success": True}
+    monkeypatch.setattr(module.PlanRegistry, "update", update)
+    result = module.execute_development_stage(
+        stage="plan", feature=FEATURE,
+        database=DevelopmentDatabase(), client=DevelopmentClient(), apply=True,
+    )
+    assert result["writes"] is True
+    assert observed[0]["features"] == sorted([
+        module.BRANDING_FEATURE, other_feature, FEATURE.value,
+    ])
+
+
 def test_already_current_plan_is_idempotent_no_write(
     dev_env: None, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -186,7 +216,7 @@ def test_entitlement_step_denies_until_plan_and_subscription_match(
 
 
 # ARTIFACT: test_founder_ai_development_activation.py
-# VERSION: v1.2.0-PRECONNECT-DENIAL-CERT
+# VERSION: v1.3.0-PRESERVED-FOUNDER-BUSINESS-FEATURES-CERT
 # AUTHORITY BOUNDARY: synthetic development-only stage and registry checks
 # TENANT POSTURE: exact Founder identity, no generic free-plan entitlement
 # FAIL-CLOSED POSTURE: prod or remote transport rejects before write
