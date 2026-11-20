@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS contextual Dock rendered browser certificate
- * VERSION: v1.0.0-CONTEXT-INSPECTION-BROWSER-CERT
+ * VERSION: v1.1.0-CONTEXTUAL-GREETING-BROWSER-CERT
  * AUTHORITY: Synthetic Chromium presentation evidence; EOS owns admission.
  * EPITOME: Verify bounded page locators, visible source evidence, readable
  * mobile/desktop context and cancellation without a provider or real session.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/intelligence-context.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and real Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.0.0-CONTEXT-INSPECTION-BROWSER-CERT establishes 1440px and
+ * CHANGELOG: v1.1.0-CONTEXTUAL-GREETING-BROWSER-CERT certifies the
+ * authenticated first-name greeting and truthful server-grounded source
+ * disclosure at desktop/mobile sizes. v1.0.0-CONTEXT-INSPECTION-BROWSER-CERT establishes 1440px and
  * 390px source-inspection journeys and forbids model calls during inspection.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Synthetic names, no bearer or real database.
@@ -70,12 +72,13 @@ for (const width of [1440, 390]) {
       transport.setActiveTenantTransportId(tenant);
       dom.default.createRoot(document.getElementById('dock-context-browser-root')).render(
         react.default.createElement(dock.default, {
-          authUser: { id: principal, tenantId: tenant, role: 'OWNER' },
+          authUser: { id: principal, tenantId: tenant, role: 'OWNER', firstName: 'Nandi' },
           activeTenant: { tenantId: tenant },
         }),
       );
     }, { tenant: TENANT, principal: PRINCIPAL });
     await page.getByTitle('Open Wilsy OS Intelligence Dock').click();
+    await expect(page.getByText(/^Good (morning|afternoon|evening), Nandi\.$/)).toBeVisible();
     const context = page.getByRole('region', { name: 'Verified workspace context' });
     await expect(context).toContainText('18 requests available');
     await page.evaluate(({ tenant, principal, project }) => {
@@ -90,7 +93,7 @@ for (const width of [1440, 390]) {
     await expect(source).toBeVisible();
     await expect(context).toContainText('Verified Colleague');
     await expect(context).toContainText('Seats and pricing: unavailable');
-    await expect(context).toContainText('Conversation does not receive these workspace records');
+    await expect(context).toContainText('Verified project sources can support reasoning only after independent EOS authorization');
     expect(contextReads.at(-1)).toMatchObject({ workspace: 'PROJECTS', project_id: PROJECT, project_revision: '1' });
     const geometry = await context.evaluate(element => {
       const bounds = element.getBoundingClientRect();
@@ -120,7 +123,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: intelligence-context.browser.spec.js
-// VERSION: v1.0.0-CONTEXT-INSPECTION-BROWSER-CERT
+// VERSION: v1.1.0-CONTEXTUAL-GREETING-BROWSER-CERT
 // AUTHORITY BOUNDARY: synthetic browser inspection only; no authenticated IAM claim
 // TENANT POSTURE: exact synthetic tenant and principal transport projection
 // FAIL-CLOSED POSTURE: fixture cannot create a seat, grant or model execution
