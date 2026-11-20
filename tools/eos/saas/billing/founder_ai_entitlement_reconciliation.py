@@ -1,0 +1,240 @@
+"""Exact Founder WILSY AI commercial entitlement reconciliation.
+
+TITLE: WILSY OS Founder AI Entitlement Reconciliation
+VERSION: v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION
+AUTHORITY: WILSY OS Core Governance; existing subscription and P4 registries.
+EPITOME: Enforce exact zero-rated Founder commercial source and activate only an
+         explicitly subscribed tier-specific AI feature through existing P4 CAS.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/founder_ai_entitlement_reconciliation.py
+COLLABORATION / OWNERSHIP: PlanEntity owns plan state; SubscriptionRegistry owns
+                          active subscription proof; D57B derives AI tier and
+                          source evidence; P4 owns entitlement lifecycle.
+CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION adds fail-closed exact
+           Founder preflight, dry-run, subscription-derived issuance and
+           explicit evidence-backed activation within caller-owned transaction.
+COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
+SECURITY / PRIVACY POSTURE: No raw source records, secrets, payment information,
+                            principal identity or provider payload is exposed.
+TENANT BOUNDARY: Exact deployment-controlled Founder binding; unrelated tenants
+                 never enter this reconciliation path.
+AUTHORITY BOUNDARY: Commercial source check and existing P4 entitlement only;
+                    no new principal, permission, plan or subscription grant.
+TRANSACTION BOUNDARY: Active caller-owned Mongo session required; this service
+                      starts no transaction and never commits, aborts or retries.
+FINANCIAL AUTHORITY BOUNDARY: Zero-rated Founder source is verified, not created;
+                              Kennel EOS exclusively owns financial execution.
+FAIL-CLOSED DECLARATION: Absent or divergent features, stale plan snapshot,
+                         invalid proof, missing approval evidence and existing
+                         incompatible entitlement all reject without fallback.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import re
+from typing import Any, Final
+
+from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
+from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import (
+    compose_subscription_wilsy_ai_entitlement,
+)
+from tools.eos.saas.billing.subscription_term_policy import (
+    SubscriptionTermKind,
+    evaluate_subscription_term,
+)
+from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import (
+    activate_wilsy_ai_reasoning_entitlement,
+)
+from tools.eos.saas.billing.wilsy_ai_entitlement_registry import WilsyAIEntitlementRegistry
+from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
+from tools.eos.saas.domain.plan import PlanEntity
+from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
+from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
+
+VERSION: Final[str] = "v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION"
+FOUNDER_TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
+FOUNDER_SUBSCRIPTION_ID: Final[str] = "WILSYSUB-93455E4E"
+FOUNDER_PLAN_ID: Final[str] = "WILSYPLAN-37B8164F"
+BRANDING_FEATURE: Final[str] = "wilsy.vas.tenant_branding.enterprise.v1"
+_SHA3: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
+
+
+class FounderAIReconciliationError(RuntimeError):
+    """Stable non-sensitive failure at an exact Founder commercial boundary."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+@dataclass(frozen=True, slots=True)
+class FounderAIReconciliationResult:
+    """Commercially eligible state; caller still owns durable commit."""
+
+    subscription_id: str
+    feature_id: WilsyAIVASFeatureId
+    entitlement_id: str | None
+    lifecycle: str
+    applied: bool
+
+
+def _require(condition: bool, code: str) -> None:
+    """Reject an invalid commercial source without recovery by inference."""
+    if not condition:
+        raise FounderAIReconciliationError(code)
+
+
+def _session_required(session: Any) -> None:
+    """Require an active caller-owned transaction with no hidden begin/commit."""
+    marker = getattr(session, "in_transaction", False)
+    try:
+        active = marker() if callable(marker) else marker
+    except (AttributeError, TypeError):
+        active = False
+    _require(active is True, "FOUNDER_AI_ACTIVE_TRANSACTION_REQUIRED")
+
+
+def _canonical_plan(plan_collection: Any, session: Any) -> PlanEntity:
+    """Strictly hydrate the exact Founder plan in the caller's transaction."""
+    document = plan_collection.find_one(
+        {"tenant_id": FOUNDER_TENANT_ID, "plan_id": FOUNDER_PLAN_ID},
+        session=session,
+    )
+    _require(isinstance(document, dict), "FOUNDER_AI_PLAN_NOT_FOUND")
+    assert document is not None
+    payload = {key: value for key, value in document.items()
+               if key not in {"_id", "_registry_revision"}}
+    try:
+        plan = PlanEntity.from_dict(payload)
+        _require(plan.to_dict() == payload, "FOUNDER_AI_PLAN_NOT_CANONICAL")
+    except (TypeError, ValueError) as error:
+        raise FounderAIReconciliationError("FOUNDER_AI_PLAN_PROOF_INVALID") from error
+    _require(plan.tenant_id == FOUNDER_TENANT_ID
+             and plan.plan_id == FOUNDER_PLAN_ID
+             and plan.plan_type.value == "FOUNDER_ENTERPRISE"
+             and plan.active is True
+             and plan.price == 0, "FOUNDER_AI_PLAN_NOT_ELIGIBLE")
+    return plan
+
+
+def reconcile_founder_ai_entitlement(
+    *,
+    subscription_collection: Any,
+    plan_collection: Any,
+    entitlement_collection: Any,
+    session: Any,
+    idempotency_key: str,
+    feature_id: WilsyAIVASFeatureId,
+    apply: bool = False,
+    activation_evidence_reference: str | None = None,
+    activation_evidence_fingerprint: str | None = None,
+    occurred_at: datetime | None = None,
+) -> FounderAIReconciliationResult:
+    """Inspect or issue/activate from independently verified Founder sources.
+
+    The caller must authenticate and authorize the institutional operator
+    before invoking this service; this is not an HTTP or self-serve endpoint.
+    Applying requires explicit activation evidence and a source subscription
+    already containing the exact AI feature. No plan or subscription is edited.
+    All writes use D57B and P4, within the caller's active Mongo transaction.
+    Caller owns commit, abort and whole-transaction retry if appropriate.
+    """
+    _session_required(session)
+    _require(type(feature_id) is WilsyAIVASFeatureId,
+             "FOUNDER_AI_APPROVED_FEATURE_REQUIRED")
+    _require(isinstance(idempotency_key, str) and bool(idempotency_key.strip())
+             and len(idempotency_key) <= 128,
+             "FOUNDER_AI_IDEMPOTENCY_KEY_INVALID")
+    _require(all(collection is not None for collection in
+                 (subscription_collection, plan_collection, entitlement_collection)),
+             "FOUNDER_AI_COLLECTION_REQUIRED")
+
+    plan = _canonical_plan(plan_collection, session)
+    subscriptions = SubscriptionRegistry.list_entities(
+        FOUNDER_TENANT_ID, collection=subscription_collection, session=session,
+    )
+    active = [item for item in subscriptions if item.status is SubscriptionStatus.ACTIVE]
+    _require(len(active) == 1, "FOUNDER_AI_ACTIVE_SUBSCRIPTION_CARDINALITY_INVALID")
+    subscription = active[0]
+    _require(subscription.subscription_id == FOUNDER_SUBSCRIPTION_ID
+             and subscription.tenant_id == FOUNDER_TENANT_ID
+             and subscription.plan_id == FOUNDER_PLAN_ID
+             and subscription.tier is not None
+             and subscription.tier.value == "FOUNDER_ENTERPRISE"
+             and subscription.billing_mode == "PLATFORM"
+             and subscription.amount == 0
+             and verify_subscription_integrity(subscription),
+             "FOUNDER_AI_SUBSCRIPTION_NOT_ELIGIBLE")
+    _require(evaluate_subscription_term(
+        subscription, evaluated_at=datetime.now(timezone.utc),
+    ).kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER,
+             "FOUNDER_AI_PERPETUAL_SOURCE_INVALID")
+    _require(plan.catalogue_version == subscription.plan_catalogue_version
+             and tuple(plan.features) == tuple(subscription.plan_features),
+             "FOUNDER_AI_PLAN_SUBSCRIPTION_SNAPSHOT_DIVERGENT")
+    features = tuple(plan.features)
+    _require(BRANDING_FEATURE in features, "FOUNDER_AI_FOUNDATION_FEATURE_MISSING")
+    matches = [item for item in WilsyAIVASFeatureId if item.value in features]
+    _require(len(matches) == 1 and matches[0] is feature_id,
+             "FOUNDER_AI_EXPLICIT_TIER_FEATURE_REQUIRED")
+
+    if not apply:
+        return FounderAIReconciliationResult(
+            FOUNDER_SUBSCRIPTION_ID, feature_id, None, "ELIGIBLE_NOT_ACTIVATED", False,
+        )
+
+    _require(isinstance(activation_evidence_reference, str)
+             and bool(activation_evidence_reference.strip())
+             and len(activation_evidence_reference) <= 256,
+             "FOUNDER_AI_ACTIVATION_REFERENCE_REQUIRED")
+    _require(isinstance(activation_evidence_fingerprint, str)
+             and _SHA3.fullmatch(activation_evidence_fingerprint) is not None,
+             "FOUNDER_AI_ACTIVATION_EVIDENCE_INVALID")
+    _require(isinstance(occurred_at, datetime)
+             and occurred_at.tzinfo is not None
+             and occurred_at.utcoffset() is not None,
+             "FOUNDER_AI_ACTIVATION_TIME_INVALID")
+
+    composition = compose_subscription_wilsy_ai_entitlement(
+        tenant_id=FOUNDER_TENANT_ID,
+        idempotency_key=idempotency_key,
+        subscription_collection=subscription_collection,
+        entitlement_collection=entitlement_collection,
+        session=session,
+    )
+    _require(composition.subscription_id == FOUNDER_SUBSCRIPTION_ID
+             and composition.feature_id is feature_id,
+             "FOUNDER_AI_COMPOSITION_SOURCE_MISMATCH")
+    entitlement = composition.entitlement
+    _require(entitlement.lifecycle_state is WilsyAIEntitlementState.PENDING_SOURCE,
+             "FOUNDER_AI_ACTIVATION_PRECONDITION_INVALID")
+    activated = activate_wilsy_ai_reasoning_entitlement(
+        registry=WilsyAIEntitlementRegistry(entitlement_collection),
+        entitlement=entitlement,
+        activation_evidence_reference=activation_evidence_reference,
+        activation_evidence_fingerprint=activation_evidence_fingerprint,
+        occurred_at=occurred_at,
+        session=session,
+    )
+    _require(activated.lifecycle_state is WilsyAIEntitlementState.ACTIVE,
+             "FOUNDER_AI_ACTIVATION_RESULT_INVALID")
+    return FounderAIReconciliationResult(
+        FOUNDER_SUBSCRIPTION_ID, feature_id, activated.entitlement_id,
+        activated.lifecycle_state.value, True,
+    )
+
+
+__all__ = [
+    "VERSION", "FOUNDER_TENANT_ID", "FOUNDER_SUBSCRIPTION_ID", "FOUNDER_PLAN_ID",
+    "BRANDING_FEATURE", "FounderAIReconciliationError",
+    "FounderAIReconciliationResult", "reconcile_founder_ai_entitlement",
+]
+
+# ARTIFACT: founder_ai_entitlement_reconciliation.py
+# VERSION: v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION
+# AUTHORITY BOUNDARY: source-verified Founder commercial composition and P4 CAS only
+# TENANT POSTURE: exact Founder tuple, no aliases or tenant-name default grants
+# FAIL-CLOSED POSTURE: active proof and one approved AI tier required before write
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
