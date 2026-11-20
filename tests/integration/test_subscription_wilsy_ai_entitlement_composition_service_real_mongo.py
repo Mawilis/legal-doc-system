@@ -1,7 +1,7 @@
 """Real-Mongo certificate for D57B WILSY AI entitlement composition.
 
 TITLE: Subscription-Backed WILSY AI Composition Real-Mongo Certificate
-VERSION: v1.0.0-D57B-SUBSCRIPTION-WILSY-AI-COMPOSITION-REAL-MONGO-CERT
+VERSION: v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Physically prove subscription-backed tier derivation, durable P4
          persistence, transaction rollback, replay and tenant isolation.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Uses actual PlanRegistry, SubscriptionRegistry and
                             P4 registry in a disposable sanctioned replica set.
 CERTIFICATION / UPDATE DATE: 2026-10-10
-CHANGELOG: v1.0.0-D57B-SUBSCRIPTION-WILSY-AI-COMPOSITION-REAL-MONGO-CERT
+CHANGELOG: v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT proves a zero-priced
+           canonical plan's amended AI feature propagates via audited
+           same-plan subscription snapshot upgrade and D57B/P4 activation.
+           v1.0.0-D57B-SUBSCRIPTION-WILSY-AI-COMPOSITION-REAL-MONGO-CERT
            establishes physical commit/hydration, all tiers, zero-write denial,
            tenant isolation, abort, exact replay and divergent replay evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -47,6 +50,10 @@ from tools.eos.saas.billing.wilsy_ai_commercial_policy import (
     get_wilsy_ai_commercial_policy,
 )
 from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import MODULE_ID
+from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import (
+    activate_wilsy_ai_reasoning_entitlement,
+)
+from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
     COLLECTION as ENTITLEMENT_COLLECTION,
     WilsyAIEntitlementNotFoundError,
@@ -55,7 +62,7 @@ from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
 )
 
 
-VERSION = "v1.0.0-D57B-SUBSCRIPTION-WILSY-AI-COMPOSITION-REAL-MONGO-CERT"
+VERSION = "v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -173,6 +180,87 @@ def _compose(
                 entitlement_collection=entitlements,
                 session=session,
             )
+
+
+
+def test_real_zero_rated_source_plan_upgrade_and_p4_ai_activation(
+    mongo_context: tuple[MongoClient[Any], Any, Any, Any, Any],
+) -> None:
+    """Certify each commercial stage without touching the live Founder DB.
+
+    This UUID-isolated zero-rated tenant uses the canonical registry lifecycle.
+    Provider execution and actual Founder subscription state are not claimed.
+    """
+    client, _plans, subscriptions, entitlements, _db = mongo_context
+    tenant = f"tenant-zero-rated-{uuid.uuid4().hex}"
+    unique = uuid.uuid4().hex
+    branding = "wilsy.vas.tenant_branding.enterprise.v1"
+    feature = "ai.wilsy.institutional"
+    created = PlanRegistry.create({
+        "name": f"Zero-rated staged AI {unique}",
+        "price": 0,
+        "currency": "ZAR",
+        "billingFrequency": "annual",
+        "planType": "FOUNDER_ENTERPRISE",
+        "idempotencyKey": f"zero-rated-plan-{unique}",
+        "active": True,
+        "features": [branding],
+        "user": "D57B-REAL-MONGO-CERT",
+    }, tenant_id=tenant)
+    assert created["success"] is True, created
+    plan_id = created["plan"].plan_id
+    registered = SubscriptionRegistry.create({
+        "tenantId": tenant,
+        "planId": plan_id,
+        "startDate": "2026-11-20T08:00:00+00:00",
+        "idempotencyKey": f"zero-rated-sub-{unique}",
+        "billingMode": "PLATFORM",
+    }, tenant_id_header=tenant)
+    assert registered["success"] is True, registered
+    original = registered["subscription"]
+    assert original.amount == 0
+    assert feature not in original.plan_features
+
+    evolved = PlanRegistry.update(
+        plan_id, {"features": [branding, feature], "user": "D57B-REAL-MONGO-CERT"},
+        tenant_id=tenant, exact_tenant=True,
+    )
+    assert evolved["success"] is True, evolved
+    changed = SubscriptionRegistry.upgrade(
+        original.subscription_id, tenant,
+        {"newPlanId": plan_id}, collection=subscriptions,
+    )
+    assert changed["success"] is True, changed
+    subscription = changed["subscription"]
+    assert subscription.amount == 0
+    assert tuple(subscription.plan_features) == tuple(evolved["plan"].features)
+    assert subscription.plan_catalogue_version == evolved["plan"].catalogue_version
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            issued = service.compose_subscription_wilsy_ai_entitlement(
+                tenant_id=tenant, idempotency_key=f"zero-rated-issue-{unique}",
+                subscription_collection=subscriptions,
+                entitlement_collection=entitlements, session=session,
+            )
+            assert issued.tier is WilsyAITier.INSTITUTIONAL
+            assert issued.entitlement.lifecycle_state is WilsyAIEntitlementState.PENDING_SOURCE
+            activated = activate_wilsy_ai_reasoning_entitlement(
+                registry=WilsyAIEntitlementRegistry(entitlements),
+                entitlement=issued.entitlement,
+                activation_evidence_reference=f"synthetic-cert-{unique}",
+                activation_evidence_fingerprint="f" * 128,
+                occurred_at=datetime.now(timezone.utc), session=session,
+            )
+            assert activated.lifecycle_state is WilsyAIEntitlementState.ACTIVE
+    with client.start_session() as session:
+        hydrated = WilsyAIEntitlementRegistry(entitlements).get_by_module(
+            tenant_id=tenant, module_id=MODULE_ID, session=session,
+        )
+        assert hydrated.lifecycle_state is WilsyAIEntitlementState.ACTIVE
+    assert subscriptions.find_one({
+        "tenant_id": tenant, "subscription_id": original.subscription_id,
+    })["amount"] == 0
 
 
 @pytest.mark.parametrize(
@@ -323,7 +411,7 @@ def test_real_divergent_replay_fails_and_unrelated_collections_remain_empty(
 
 
 # ARTIFACT: test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py
-# VERSION: v1.0.0-D57B-SUBSCRIPTION-WILSY-AI-COMPOSITION-REAL-MONGO-CERT
+# VERSION: v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: real-Mongo D57B composition evidence only; no external authority
 # TENANT POSTURE: UUID-isolated exact-tenant subscription and entitlement operations
 # FAIL-CLOSED POSTURE: absent/generic/conflicting feature, foreign scope, rollback and divergent replay persist no false success
