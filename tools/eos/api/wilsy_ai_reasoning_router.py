@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING
+VERSION: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,6 +10,7 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS logs bounded stage names and model outcome classifications on failed reasoning attempts without recording prompts, identity, API secrets, exception messages, or vendor response data. The public error vocabulary, replay, IAM, admission and accounting semantics remain unchanged.
 CHANGELOG: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING reuses the canonical
            My Work source IAM and aggregation inside an opt-in Headquarters
            reasoning dependency, adding bounded source-owned work priorities
@@ -105,7 +106,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING"
+VERSION: Final[str] = "v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -824,6 +825,7 @@ def execute_reasoning(
             binding=provider_binding,
         ))
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=composition failure_class=%s", type(error).__name__)
         raise _error_response(error)
 
     def pre_provider(session: Any) -> Any:
@@ -869,6 +871,7 @@ def execute_reasoning(
     try:
         permit = _transaction(pre_provider)
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=admission_claim failure_class=%s", type(error).__name__)
         raise _error_response(error)
 
     try:
@@ -877,7 +880,10 @@ def execute_reasoning(
         # than claim when requests execute within the same wall-clock second.
         provider_attempt = orchestrator.execute(permit, completed_at=now)
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=provider_execution failure_class=%s", type(error).__name__)
         raise _error_response(error)
+    if provider_attempt.result.outcome.value != "SUCCESS":
+        _logger.warning("WILSY_AI_REASONING_PROVIDER_OUTCOME outcome=%s", provider_attempt.result.outcome.value)
 
     def finalize(session: Any) -> Any:
         return orchestrator.finalize(provider_attempt, session=session, occurred_at=_utc_now())
@@ -885,8 +891,10 @@ def execute_reasoning(
     try:
         final = _transaction(finalize)
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=finalization failure_class=%s", type(error).__name__)
         raise _error_response(error)
     if final.admission.state.value != "COMPLETED" or final.usage_observation is None:
+        _logger.warning("WILSY_AI_REASONING_FAILURE stage=reconciliation_required outcome=%s", provider_attempt.result.outcome.value)
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="C1B_REASONING_RECONCILIATION_REQUIRED")
     return {
         "invocation_id": final.invocation_evidence.invocation_id,
@@ -914,7 +922,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING
+# VERSION: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
