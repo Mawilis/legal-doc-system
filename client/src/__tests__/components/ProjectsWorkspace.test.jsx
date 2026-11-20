@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.49.0-SEVENTEEN-TEMPLATE-AND-AI-SURFACE-CERT
+ * VERSION: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT verifies missing backend routes and
+ *          malformed catalogue envelopes are separately diagnosed, source
+ *          fallback is prohibited, and an explicit retry recovers 17 options.
  * CHANGELOG: v2.49.0-SEVENTEEN-TEMPLATE-AND-AI-SURFACE-CERT certifies all seventeen industry
  *          options and the opt-in WILSY AI draft-planning surface.
  * CHANGELOG: v2.48.0-HUMAN-OVERVIEW-SOURCE-CERT verifies human-readable project facts without
@@ -1399,6 +1402,65 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByText(generated)).not.toBeInTheDocument();
   });
 
+  it('reports a missing EOS template route and retries the actual authorized source', async () => {
+    let verified = false;
+    const steps = [
+      { id: 'scope', kind: 'TASK', title: 'Authorised scope',
+        day: 4, role: 'lead', acceptance: 'Source scope verified', depends_on: [] },
+      { id: 'signoff', kind: 'MILESTONE', title: 'Acceptance',
+        day: 10, role: 'sponsor', acceptance: 'Source result signed',
+        depends_on: ['scope'] },
+    ];
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([]) };
+      if (path === '/projects/summary') return { data: summary([]) };
+      if (path === '/projects/templates') {
+        if (!verified) throw { response: { status: 404 } };
+        return { data: {
+          schema: 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL,
+          ownership: 'PLATFORM_STARTERS',
+          items: Array.from({ length: 17 }, (_, i) => ({
+            slug: 'template-' + i, industry: 'Industry ' + i,
+            title: 'Verified plan ' + i, revision: 1, steps,
+          })),
+        } };
+      }
+      throw new Error('Unexpected source ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="template-route-retry-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Create project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Browse industry templates' }));
+    expect(await screen.findByText('Diagnostic: HTTP_404_PROJECTS_TEMPLATES_ROUTE_MISSING')).toBeVisible();
+    expect(screen.queryByRole('listbox', { name: 'Verified industry templates' }))
+      .not.toBeInTheDocument();
+    verified = true;
+    fireEvent.click(screen.getByRole('button', { name: 'Retry templates' }));
+    expect(await screen.findByRole('listbox', { name: 'Verified industry templates' })).toBeVisible();
+    expect(screen.getAllByRole('option')).toHaveLength(17);
+  });
+
+  it('refuses a mismatched EOS template envelope with actionable diagnostics', async () => {
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([]) };
+      if (path === '/projects/summary') return { data: summary([]) };
+      if (path === '/projects/templates') return { data: {
+        schema: 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1',
+        tenant_id: 'foreign-tenant', principal_id: PRINCIPAL,
+        ownership: 'PLATFORM_STARTERS', items: [],
+      } };
+      throw new Error('Unexpected source ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="template-envelope-rejection-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Create project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Browse industry templates' }));
+    expect(await screen.findByText('Diagnostic: TEMPLATE_CATALOGUE_ENVELOPE_INVALID')).toBeVisible();
+    expect(screen.queryByRole('listbox', { name: 'Verified industry templates' }))
+      .not.toBeInTheDocument();
+  });
+
   it('materialises one selected verified industry template only after EOS confirms the project', async () => {
     const persisted = project({ name: 'Legal litigation delivery' });
     const steps = [
@@ -2100,7 +2162,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.49.0-SEVENTEEN-TEMPLATE-AND-AI-SURFACE-CERT
+ * VERSION: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
