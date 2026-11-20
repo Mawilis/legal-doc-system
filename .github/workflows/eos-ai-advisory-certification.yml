@@ -1,3 +1,17 @@
+# TITLE: WILSY OS AI Gateway and Founder Commercial Certification
+# VERSION: v1.1.0-FOUNDER-AI-COMMERCIAL-UNIT-GATE
+# AUTHORITY: WILSY OS Core Governance; workflow may certify, never grant.
+# EPITOME: Run locked focused AI and exact-Founder commercial denial tests.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ai-advisory-certification.yml
+# COLLABORATION / OWNERSHIP: Existing AI advisory, entitlement and context gates.
+# CERTIFICATION / UPDATE DATE: 2026-11-20
+# CHANGELOG: v1.1.0 adds focused Founder issuance, local URI safety,
+#   and Python contextual-reasoning checks without changing deploy authority.
+# COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Synthetic tests only; no production credentials.
+# TENANT BOUNDARY: Synthetic exact-scope testing; no cross-tenant grants.
+# AUTHORITY BOUNDARY: CI is evidence only, not commercial or IAM admission.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 name: EOS AI Legal Gateway and Advisory Persistence Certification
 
 on:
@@ -9,6 +23,9 @@ on:
       - "tools/eos/api/wilsy_ai_reasoning_router.py"
       - "tools/eos/intelligence/**"
       - "tools/eos/saas/billing/wilsy_ai_*.py"
+      - "tools/eos/saas/billing/founder_ai_*.py"
+      - "tests/unit/test_founder_ai_*.py"
+      - "tests/unit/test_wilsy_ai_reasoning_context.py"
       - "tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py"
       - "tools/eos/legal_operations/registry/process_service_*registry.py"
       - "tests/unit/test_wilsy_ai_advisory_service.py"
@@ -75,10 +92,21 @@ jobs:
           PY
       - name: Compile AI gateway and advisory sources
         run: |
-          python -m compileall -q tools/eos/api/wilsy_ai_legal_gateway_router.py tools/eos/api/wilsy_ai_legal_services_router.py tools/eos/api/wilsy_ai_advisory_router.py tools/eos/api/wilsy_ai_reasoning_router.py tools/eos/intelligence tools/eos/saas/billing/wilsy_ai_entitlement_registry.py tools/eos/saas/billing/wilsy_ai_usage_admission_registry.py tools/eos/saas/billing/wilsy_ai_usage_observation_registry.py
+          python -m compileall -q tools/eos/api/wilsy_ai_legal_gateway_router.py tools/eos/api/wilsy_ai_legal_services_router.py tools/eos/api/wilsy_ai_advisory_router.py tools/eos/api/wilsy_ai_reasoning_router.py tools/eos/intelligence tools/eos/saas/billing/wilsy_ai_entitlement_registry.py tools/eos/saas/billing/wilsy_ai_usage_admission_registry.py tools/eos/saas/billing/wilsy_ai_usage_observation_registry.py tools/eos/saas/billing/founder_ai_entitlement_reconciliation.py tools/eos/saas/billing/founder_ai_development_activation.py
       - name: Run focused AI unit certification
         run: |
           python -m pytest -q tests/unit/test_wilsy_ai_advisory_service.py tests/unit/test_next_best_action_advisory.py tests/unit/test_wilsy_ai_legal_gateway.py
+      - name: Certify Founder entitlement governance and contextual AI
+        run: |
+          python -m pytest -q tests/unit/test_founder_ai_entitlement_reconciliation.py tests/unit/test_founder_ai_development_activation.py tests/unit/test_wilsy_ai_reasoning_context.py
       - name: Run disposable replica-set certification
         run: |
           python -m pytest -q tests/integration/test_wilsy_ai_advisory_real_mongo.py tests/integration/test_wilsy_ai_advisory_concurrent_real_mongo.py tests/integration/test_next_best_action_advisory_real_mongo.py tests/integration/test_wilsy_ai_legal_gateway_real_mongo.py
+
+# ARTIFACT: eos-ai-advisory-certification.yml
+# VERSION: v1.1.0-FOUNDER-AI-COMMERCIAL-UNIT-GATE
+# AUTHORITY BOUNDARY: synthetic CI certification only; no IAM/commerce grants
+# TENANT POSTURE: isolated test resources, exact scope, never live Atlas writes
+# FAIL-CLOSED POSTURE: failed commercial and reasoning tests reject the PR
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
