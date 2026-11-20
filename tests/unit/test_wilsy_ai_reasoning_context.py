@@ -1,12 +1,14 @@
 """TITLE: WILSY AI independently authorized context HTTP certificate.
-VERSION: v1.0.0-READ-ONLY-CONTEXT-CERT
+VERSION: v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT
 AUTHORITY: Synthetic regression evidence; canonical EOS sources own authority.
 EPITOME: Verify locator validation, exact source admission, source freshness,
          bounded projections, unavailable facts and provider-free context reads.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_context.py
 COLLABORATION / OWNERSHIP: Reasoning router, Projects source and existing IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-READ-ONLY-CONTEXT-CERT adds denial, stale revision, injection,
+CHANGELOG: v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT proves that an absent exact-tenant AI
+           entitlement produces a bounded HTTP 403 without fallback or
+           remote provider execution. v1.0.0-READ-ONLY-CONTEXT-CERT adds denial, stale revision, injection,
            fingerprint and reservation-aware allowance certificates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic identities only; no provider or live data.
@@ -238,8 +240,23 @@ def test_read_only_tool_membership_is_immutable() -> None:
         module._CONTEXT_TOOLS.register("grant-admin")
 
 
+
+def test_missing_exact_tenant_ai_entitlement_is_denied_not_unavailable() -> None:
+    """A missing commercial grant denies with 403, not a 503 dependency outage."""
+    from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
+        WilsyAIEntitlementNotFoundError,
+    )
+
+    response = module._error_response(
+        WilsyAIEntitlementNotFoundError("M13P4_ENTITLEMENT_NOT_FOUND")
+    )
+    assert response.status_code == 403
+    assert response.detail == "C1B_REASONING_NOT_AUTHORIZED"
+
+
+
 # ARTIFACT: test_wilsy_ai_reasoning_context.py
-# VERSION: v1.0.0-READ-ONLY-CONTEXT-CERT
+# VERSION: v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT
 # AUTHORITY BOUNDARY: synthetic context HTTP regression evidence only
 # TENANT POSTURE: independently admitted exact tenant, principal and capacity
 # FAIL-CLOSED POSTURE: malformed, mismatched and stale source locators reject
