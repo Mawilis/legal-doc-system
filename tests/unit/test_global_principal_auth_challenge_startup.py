@@ -8,21 +8,21 @@ EPITOME: Proves unique credential and one-time challenge indexes are installed
 ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_auth_challenge_startup.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-11-03.
+CERTIFICATION / UPDATE DATE: 2026-11-20.
 CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins the canonical provider composition version while preserving all index ownership, readiness, tenant and IAM denial assertions.
 CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT verifies the trusted scan-clearance index bootstrap version without rolling back source indexes.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins
   task quarantined attachment manifest and command replay indexes to
   canonical EOS startup without provisioning provider objects or users.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins exact reviewer
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins exact reviewer
 business decision and idempotent event indexes at EOS startup.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins recipient inbox and receipt
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins recipient inbox and receipt
 indexes at canonical EOS startup; no messages or recipients are created.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins exact-task comment
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins exact-task comment
 indexes in canonical EOS readiness, without creating message records.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins additive task/dependency indexes
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins additive task/dependency indexes
 at canonical EOS startup; no synthetic tasks or IAM are created.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
+CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
  2026-11-18 v1.0.11-AI-PROVIDER-COMPOSITION-CERT aligns canonical
 server-version certification with additive Project Notes startup indexes;
 no existing Global Principal or System Services authority is changed.
