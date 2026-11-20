@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.29.0-GROUPED-PROJECT-WORK-ROWS
+ * VERSION: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY makes upload available to the
+ *          EOS-verified current contributor in task attachment actions,
+ *          while owner-only users remain read-only. Uploads still use
+ *          contributor IAM, independent scan quarantine and EOS readback.
  * CHANGELOG: v1.29.0-GROUPED-PROJECT-WORK-ROWS groups the current
  *          EOS-verified work page by lifecycle, work type or named
  *          contributor without inventing cross-page aggregates or groups.
@@ -572,6 +576,9 @@ export default function ProjectTasksPanel({
     + '-' + String(currentDay.getDate()).padStart(2, '0');
   const overdueOnPage = items.filter(item => item.due_date && item.due_date < todayISO
     && !['DONE', 'CANCELLED'].includes(item.status)).length;
+  const selfIsContributor = participants.some(person =>
+    person.principal_id === principalId && person.role === 'CONTRIBUTOR'
+    && person.status !== 'REVOKED' && person.state !== 'REVOKED');
   const availableParents = items.filter(item => item.kind === 'TASK'
     && !['DONE', 'CANCELLED'].includes(item.status));
   const todoRows = items.filter(item => item.kind === 'TASK'
@@ -682,7 +689,7 @@ export default function ProjectTasksPanel({
         {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel
           key={[scope, focusedAction.id].join(':')}
           tenantId={tenantId} projectId={projectId} principalId={principalId}
-          taskId={focusedAction.id} tenantHeaders={tenantHeaders}
+          taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
           onClose={() => { setAttachmentTaskId(null); setDiscussionTaskId(focusedAction.id); }}/>}
         {focusedAction.type !== 'discussion' &&
           <button type="button" className="wp-button mt-2" onClick={() => {
@@ -799,7 +806,7 @@ export default function ProjectTasksPanel({
         onClose={closeFocusedAction}/>}
       {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
-        taskId={focusedAction.id} tenantHeaders={tenantHeaders}
+        taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
         onClose={closeFocusedAction}/>}
     </div> : <>
       {!actionCapabilities?.canEdit && <p role="status" className="mt-2 text-xs font-semibold text-amber-900">
@@ -1053,6 +1060,9 @@ export default function ProjectTasksPanel({
           </div>
         </fieldset>
         {workType === 'SUBTASK' && availableParents.length === 0 && <p role="status" className="text-xs text-amber-800">No eligible parent task is verified on this page. Create a top-level task or navigate to a page with an eligible parent.</p>}
+        <p className="text-xs text-slate-700">After EOS verifies the new task, use its
+          Attachments action to upload PDF or image evidence. Uploaded files
+          remain quarantined until independently cleared.</p>
         {participantHasMore && <p className="text-xs text-amber-800">Only the first verified participant page is selectable. Further assignments require a complete directory read.</p>}
         <button type="submit" disabled={busy || !actionCapabilities?.canEdit || !draft.title.trim()
           || (workType === 'SUBTASK' && !availableParents.some(item => item.task_id === draft.parent_task_id))}
@@ -1264,7 +1274,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.29.0-GROUPED-PROJECT-WORK-ROWS
+// VERSION: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
