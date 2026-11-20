@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.13.1-OPERATOR-READABLE-SOURCE-STATUS
+ * VERSION: v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.13.1-OPERATOR-READABLE-SOURCE-STATUS replaces raw
+ * CHANGELOG: v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS separates EOS-verified work
+ * from absent AI commercial capacity, disables only metered model requests
+ * when the exact tenant has no AI entitlement and gives bounded guidance.
+ * v4.13.1-OPERATOR-READABLE-SOURCE-STATUS replaces raw
  * Kennel machine tokens in the AI header with bounded, truthful human
  * availability language without altering diagnostic or authentication state.
  * v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED projects independently authorized
@@ -650,6 +653,10 @@ export function WilsyOSIntelligenceDock({
     return () => { live = false; controller.abort(); };
   }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
 
+  const aiEntitlementNotProvisioned = verifiedWorkspaceContext?.scope === dockScope
+    && verifiedWorkspaceContext?.locatorKey === workLocatorKey
+    && verifiedWorkspaceContext?.state === 'READY'
+    && verifiedWorkspaceContext.data?.allowance?.state === 'NOT_PROVISIONED';
   const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
 
@@ -836,6 +843,10 @@ export function WilsyOSIntelligenceDock({
     async (rawText) => {
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting || sendLockRef.current) return;
+      if (!isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
+        setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
+        return;
+      }
       if (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
@@ -1025,6 +1036,7 @@ export function WilsyOSIntelligenceDock({
       prompt,
       isSubmitting,
       reasoningUsageConsent,
+      aiEntitlementNotProvisioned,
       workLocatorKey,
       workLocator,
       visibleWorkspaceContext,
@@ -1306,11 +1318,13 @@ export function WilsyOSIntelligenceDock({
                         ? <span style={{ display: 'block', overflowWrap: 'anywhere', fontWeight: 400 }}>
                           {'Viewing task: '}{visibleWorkspaceContext.data.work.selected_task.title}
                         </span> : null}
-                      {' · '}{visibleWorkspaceContext.data.allowance.available_request_units} requests available
+                      {' · '}{aiEntitlementNotProvisioned ? 'AI reasoning not activated'
+                        : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
                     </summary>
                     <p style={{ margin: '4px 0' }}>
                       {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
-                      {' · '}{visibleWorkspaceContext.data.allowance.available_request_units} requests available
+                      {' · '}{aiEntitlementNotProvisioned ? 'AI activation required'
+                        : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
                       {' · Seats and pricing: '}{visibleWorkspaceContext.data.allowance.seat_allocation?.state === 'UNAVAILABLE'
                         ? 'unavailable' : 'require independent admission'}
                     </p>
@@ -1325,8 +1339,9 @@ export function WilsyOSIntelligenceDock({
                           project_id: source.project_id },
                       }))}>Inspect source: {source.label}</button>)}
                     <p style={{ margin: '4px 0', color: '#cbd5e1' }}>
-                      Verified project sources may be included in AI reasoning only after independent EOS authorization and usage admission.
-                      Contextual execution requires verified commercial and seat admission.
+                      {aiEntitlementNotProvisioned
+                        ? 'Your work is independently verified. Model requests remain disabled until the subscription-backed AI entitlement is activated.'
+                        : 'Verified project sources can support reasoning only after independent EOS authorization and usage admission.'}
                     </p>
                   </details> : <span>{visibleWorkspaceContext?.state === 'LOADING' ? 'Verifying workspace context…'
                     : visibleWorkspaceContext?.state === 'DENIED' ? 'Workspace context access denied by EOS.'
@@ -1459,7 +1474,8 @@ export function WilsyOSIntelligenceDock({
                     type="button"
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
-                    disabled={isSubmitting || !prompt.trim() || (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent)}
+                    disabled={isSubmitting || !prompt.trim()
+                      || (!isLegalDockRole(authUser?.role) && (!reasoningUsageConsent || aiEntitlementNotProvisioned))}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -1743,7 +1759,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.13.1-OPERATOR-READABLE-SOURCE-STATUS
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1759,7 +1775,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.13.1-OPERATOR-READABLE-SOURCE-STATUS
+ * VERSION: v4.14.0-EXPLICIT-AI-COMMERCIAL-READINESS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
