@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.3.0-AUTHORIZED-READ-ONLY-WORKSPACE-CONTEXT
+VERSION: v1.3.1-EXPLICIT-MISSING-ENTITLEMENT-DENIAL
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.3.0-AUTHORIZED-READ-ONLY-WORKSPACE-CONTEXT adds a nonbillable
+CHANGELOG: v1.3.1-EXPLICIT-MISSING-ENTITLEMENT-DENIAL maps an absent exact-tenant AI entitlement
+           to authorization denial (403) rather than a spurious transport
+           outage (503); does not issue, activate or infer entitlement.
+           v1.3.0-AUTHORIZED-READ-ONLY-WORKSPACE-CONTEXT adds a nonbillable
            context projection with independent current Projects admission,
            bounded source reads, immutable tool membership and SHA3-512 source
            fingerprints. Missing workforce, seat and pricing facts stay unavailable.
@@ -63,6 +66,7 @@ from tools.eos.intelligence.wilsy_ai_reasoning_service import WilsyAIReasoningSe
 from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
     COLLECTION as ENTITLEMENT_COLLECTION,
     WilsyAIEntitlementRegistry,
+    WilsyAIEntitlementNotFoundError,
 )
 from tools.eos.saas.billing.wilsy_ai_usage_admission_authority import (
     MODULE_ID,
@@ -81,7 +85,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.3.0-AUTHORIZED-READ-ONLY-WORKSPACE-CONTEXT"
+VERSION: Final[str] = "v1.3.1-EXPLICIT-MISSING-ENTITLEMENT-DENIAL"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -438,6 +442,8 @@ def _error_response(error: BaseException) -> HTTPException:
     """Translate governed failures without exposing exception material."""
     if isinstance(error, _ReasoningHTTPError):
         return HTTPException(status_code=error.http_status, detail=error.code)
+    if isinstance(error, WilsyAIEntitlementNotFoundError):
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="C1B_REASONING_NOT_AUTHORIZED")
     code = str(getattr(error, "code", ""))
     if "DIVERGENT" in code or "REEXECUTION" in code or "REPLAY" in code:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="C1B_REASONING_REPLAY_CONFLICT")
@@ -672,7 +678,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.3.0-AUTHORIZED-READ-ONLY-WORKSPACE-CONTEXT
+# VERSION: v1.3.1-EXPLICIT-MISSING-ENTITLEMENT-DENIAL
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
