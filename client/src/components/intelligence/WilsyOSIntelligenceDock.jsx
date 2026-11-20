@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR
+ * VERSION: v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR forwards only a server-verified
+ * CHANGELOG: v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE separates expandable usage
+ * information from checkbox label activation, preventing an informational
+ * disclosure action from inadvertently consenting to a metered request.
+ * v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR forwards only a server-verified
  * project locator to Python EOS reasoning (never browser project facts), reuses
  * the exact locator on replay, blocks unverified project reasoning and revokes
  * in-flight turns when the observed workspace changes. Consent discloses that
@@ -1275,26 +1278,27 @@ export function WilsyOSIntelligenceDock({
                   <div ref={messagesEndRef} />
                 </div>
 
-                {!isLegalDockRole(authUser?.role) && <label style={{
-                  display: 'flex', gap: 9, alignItems: 'flex-start', padding: '9px 14px',
-                  color: '#e7edf9', fontSize: 12, lineHeight: 1.45, flexShrink: 0,
-                  textTransform: 'none', letterSpacing: 'normal', fontWeight: 400,
+                {!isLegalDockRole(authUser?.role) && <div style={{
+                  padding: '8px 14px', color: '#e7edf9', fontSize: 12,
+                  lineHeight: 1.45, flexShrink: 0,
                 }}>
-                  <input type="checkbox" checked={reasoningUsageConsent}
-                    onChange={event => setReasoningUsageConsent(event.target.checked)}
-                    aria-label="Confirm WILSY AI usage admission"
-                    style={{ width: 17, height: 17, flexShrink: 0, accentColor: '#72b8ff' }}/>
-                  <span>Allow this conversation to use my organization's AI allowance.
-                    <details style={{ marginTop: 4, color: '#cbd5e1' }}>
-                      <summary style={{ cursor: 'pointer', minHeight: 28 }}>Usage and permissions</summary>
-                      <span>Each request may consume metered AI usage. EOS checks permissions,
-                        subscription entitlement and available capacity before processing.
-                        When you view a verified project, EOS may send a bounded excerpt of
-                        project and task records to the configured AI provider to answer.
-                        Consent never authorizes changes to projects, staffing or payments.</span>
-                    </details>
-                  </span>
-                </label>}
+                  <label style={{ display: 'flex', gap: 9, alignItems: 'center',
+                    textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
+                    <input type="checkbox" checked={reasoningUsageConsent}
+                      onChange={event => setReasoningUsageConsent(event.target.checked)}
+                      aria-label="Confirm WILSY AI usage admission"
+                      style={{ width: 18, height: 18, flexShrink: 0, accentColor: '#72b8ff' }}/>
+                    <span>Allow AI usage for this conversation</span>
+                  </label>
+                  <details style={{ marginTop: 3, paddingLeft: 27, color: '#cbd5e1' }}>
+                    <summary style={{ cursor: 'pointer', minHeight: 28 }}>Usage and permissions</summary>
+                    <p style={{ margin: '4px 0' }}>Each request may consume metered AI usage.
+                      EOS checks your permissions, subscription entitlement and capacity.
+                      For a verified project, EOS may send bounded project and task
+                      excerpts to its configured AI provider to answer. Consent does not
+                      authorize project changes, staffing decisions or payments.</p>
+                  </details>
+                </div>}
                 <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
                   <textarea
                     className={styles.promptInput}
@@ -1598,7 +1602,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1614,7 +1618,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR
+ * VERSION: v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
