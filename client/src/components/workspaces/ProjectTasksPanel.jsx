@@ -16,7 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
- * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF offers a direct governed task
+ * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF emits a bounded, EOS-hydrated task id/revision
+ *          to the parent while a detail, editor or task discussion is in view;
+ *          selection clears on dismissal, remount or source unavailability.
+ *          Source content and permission claims never leave this component.
+ * CHANGELOG: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF offers a direct governed task
  *          evidence handoff after confirmed create and fresh EOS list
  *          readback, never before a durable task identifier exists.
  * CHANGELOG: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY makes upload available to the
