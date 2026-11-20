@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE
+ * VERSION: v4.11.0-VERIFIED-SELECTED-TASK-FOCUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE separates expandable usage
+ * CHANGELOG: v4.11.0-VERIFIED-SELECTED-TASK-FOCUS names the independently verified
+ * selected task within the existing conversation context and empty-state
+ * explanation, without trusting page-event titles or opening new cards.
+ * v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE separates expandable usage
  * information from checkbox label activation, preventing an informational
  * disclosure action from inadvertently consenting to a metered request.
  * v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR forwards only a server-verified
@@ -1204,6 +1207,10 @@ export function WilsyOSIntelligenceDock({
                     <summary aria-label="Inspect verified workspace context"
                       style={{ cursor: 'pointer', minHeight: 44 }}>
                       <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Current authorized workspace'}</strong>
+                      {visibleWorkspaceContext.data.work?.selected_task?.title
+                        ? <span style={{ display: 'block', overflowWrap: 'anywhere', fontWeight: 400 }}>
+                          {'Viewing task: '}{visibleWorkspaceContext.data.work.selected_task.title}
+                        </span> : null}
                       {' · '}{visibleWorkspaceContext.data.allowance.available_request_units} requests available
                     </summary>
                     <p style={{ margin: '4px 0' }}>
@@ -1242,7 +1249,9 @@ export function WilsyOSIntelligenceDock({
                         ? (visibleWorkspaceContext.data.work?.project?.name || 'Your authorized workspace')
                         : 'Ask WILSY AI about your work'}</h4>
                       <p>{visibleWorkspaceContext?.state === 'READY'
-                        ? 'EOS has verified this workspace. With your consent, AI can use independently rechecked project facts for this request.'
+                        ? (visibleWorkspaceContext.data.work?.selected_task?.title
+                          ? `You're viewing the verified task “${visibleWorkspaceContext.data.work.selected_task.title}”. Ask about this task, its status or its project. EOS rechecks its facts before AI reasoning.`
+                          : 'EOS has verified this workspace. With your consent, AI can use independently rechecked project facts for this request.')
                         : visibleWorkspaceContext?.state === 'LOADING'
                           ? 'Checking which workspace information EOS permits you to access.'
                           : 'Ask a question, or refresh workspace context to verify the work you are viewing.'}</p>
@@ -1602,7 +1611,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.11.0-VERIFIED-SELECTED-TASK-FOCUS
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1618,7 +1627,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE
+ * VERSION: v4.11.0-VERIFIED-SELECTED-TASK-FOCUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
