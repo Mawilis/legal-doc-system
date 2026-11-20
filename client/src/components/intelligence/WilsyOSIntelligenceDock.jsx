@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.9.0-VERIFIED-CONTEXT-INSPECTION
+ * VERSION: v4.9.1-CONVERSATION-FIRST-CONSENT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.9.0-VERIFIED-CONTEXT-INSPECTION reads independently admitted
+ * CHANGELOG: v4.9.1-CONVERSATION-FIRST-CONSENT removes the misleading generic readiness
+ * messages, makes the active EOS workspace the conversational starting point,
+ * and presents compact consent with an accessible optional disclosure. It
+ * preserves metered opt-in and does not claim provider-grounded answers.
+ * v4.9.0-VERIFIED-CONTEXT-INSPECTION reads independently admitted
  * workspace context only while open, validates exact scope and source locators,
  * cancels stale reads and exposes source citations and unavailable commercial
  * facts. Collapsible source details retain the mobile composer in view.
@@ -1183,7 +1187,7 @@ export function WilsyOSIntelligenceDock({
                           project_id: source.project_id },
                       }))}>Inspect source: {source.label}</button>)}
                     <p style={{ margin: '4px 0', color: '#cbd5e1' }}>
-                      Verified for inspection. Conversation does not receive these workspace records.
+                      Workspace records are verified for inspection only; AI responses are not yet grounded in them.
                       Contextual execution requires verified commercial and seat admission.
                     </p>
                   </details> : <span>{visibleWorkspaceContext?.state === 'LOADING' ? 'Verifying workspace context…'
@@ -1198,12 +1202,14 @@ export function WilsyOSIntelligenceDock({
                 <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
-                      <ShieldCheck size={32} className={styles.welcomeShield} />
-                      <h4>Sovereign Intelligence Ready</h4>
-                      <p>
-                        {dockContext?.result ||
-                          'Ask WILSY AI. Python EOS authorizes and meters general reasoning. Workspace records are not included without separately verified tool access.'}
-                      </p>
+                      <h4>{visibleWorkspaceContext?.state === 'READY'
+                        ? (visibleWorkspaceContext.data.work?.project?.name || 'Your authorized workspace')
+                        : 'Ask WILSY AI about your work'}</h4>
+                      <p>{visibleWorkspaceContext?.state === 'READY'
+                        ? 'EOS has verified this workspace for inspection. AI answers are not yet grounded in its source records.'
+                        : visibleWorkspaceContext?.state === 'LOADING'
+                          ? 'Checking which workspace information EOS permits you to access.'
+                          : 'Ask a question, or refresh workspace context to verify the work you are viewing.'}</p>
                     </div>
                   )}
                   {(activeThread?.messages || []).map((msg, idx) => (
@@ -1245,10 +1251,14 @@ export function WilsyOSIntelligenceDock({
                     onChange={event => setReasoningUsageConsent(event.target.checked)}
                     aria-label="Confirm WILSY AI usage admission"
                     style={{ width: 17, height: 17, flexShrink: 0, accentColor: '#72b8ff' }}/>
-                  <span>Use my tenant's authorized WILSY AI allowance. EOS
-                    verifies my permission, subscription entitlement and capacity
-                    on each request, which may consume metered usage. This
-                    does not authorize projects, staffing or payments.</span>
+                  <span>Allow this conversation to use my organization's AI allowance.
+                    <details style={{ marginTop: 4, color: '#cbd5e1' }}>
+                      <summary style={{ cursor: 'pointer', minHeight: 28 }}>Usage and permissions</summary>
+                      <span>Each request may consume metered AI usage. EOS checks permissions,
+                        subscription entitlement and available capacity before processing.
+                        Consent does not authorize changes to projects, staffing or payments.</span>
+                    </details>
+                  </span>
                 </label>}
                 <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
                   <textarea
@@ -1553,7 +1563,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.9.0-VERIFIED-CONTEXT-INSPECTION
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.9.1-CONVERSATION-FIRST-CONSENT
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1569,7 +1579,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.9.0-VERIFIED-CONTEXT-INSPECTION
+ * VERSION: v4.9.1-CONVERSATION-FIRST-CONSENT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
