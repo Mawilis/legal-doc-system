@@ -1,7 +1,7 @@
 """Real-Mongo certificate for D57B WILSY AI entitlement composition.
 
 TITLE: Subscription-Backed WILSY AI Composition Real-Mongo Certificate
-VERSION: v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT
+VERSION: v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Physically prove subscription-backed tier derivation, durable P4
          persistence, transaction rollback, replay and tenant isolation.
@@ -9,7 +9,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Uses actual PlanRegistry, SubscriptionRegistry and
                             P4 registry in a disposable sanctioned replica set.
 CERTIFICATION / UPDATE DATE: 2026-10-10
-CHANGELOG: v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT proves a zero-priced
+CHANGELOG: v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT certifies
+           the complete authenticated-orchestrator plan/upgrade/P4 state chain,
+           source zero rating, ACTIVE readback, and idempotent exact replay
+           against a disposable Mongo replica; Founder identifiers are
+           rebound to synthetic objects inside the isolated test only.
+           v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT proves a zero-priced
            canonical plan's amended AI feature propagates via audited
            same-plan subscription snapshot upgrade and D57B/P4 activation.
            v1.0.0-D57B-SUBSCRIPTION-WILSY-AI-COMPOSITION-REAL-MONGO-CERT
@@ -28,6 +33,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+from types import SimpleNamespace
 import os
 from typing import Any, Iterator
 import uuid
@@ -41,6 +47,11 @@ from pymongo.write_concern import WriteConcern
 import tools.eos.saas.billing.plan_registry as plan_registry_module
 import tools.eos.saas.billing.subscription_registry as subscription_registry_module
 from tools.eos.saas.billing.plan_registry import PlanRegistry
+from tools.eos.saas.billing import (
+    founder_ai_authenticated_activation as founder_activation,
+    founder_ai_entitlement_reconciliation as founder_reconciliation,
+)
+from tools.eos.saas.billing.subscription_term_policy import SubscriptionTermKind
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.billing import (
     subscription_wilsy_ai_entitlement_composition_service as service,
@@ -62,7 +73,7 @@ from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
 )
 
 
-VERSION = "v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT"
+VERSION = "v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -263,6 +274,100 @@ def test_real_zero_rated_source_plan_upgrade_and_p4_ai_activation(
     })["amount"] == 0
 
 
+
+def test_real_authenticated_founder_ai_issuance_replay_and_zero_rating(
+    mongo_context: tuple[MongoClient[Any], Any, Any, Any, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Actually persist plan, subscription and P4 via one staged orchestrator.
+
+    Rebind immutable Founder ID constants only in a UUID-isolated disposable
+    database. No real Founder, Atlas, production or authenticated real-user
+    session is used; HTTP dual permission admission has its own unit certificate.
+    """
+    client, plans, subscriptions, entitlements, database = mongo_context
+    tenant = f"founder-cert-{uuid.uuid4().hex}"
+    uid = uuid.uuid4().hex
+    branding = "wilsy.vas.tenant_branding.enterprise.v1"
+    plan_created = PlanRegistry.create(
+        {
+            "name": f"Founder Institutional stage cert {uid}",
+            "price": 0,
+            "currency": "ZAR",
+            "billingFrequency": "annual",
+            "planType": "FOUNDER_ENTERPRISE",
+            "idempotencyKey": f"plan-{uid}",
+            "active": True,
+            "features": [branding],
+            "user": "founder-cert-principal",
+        }, tenant_id=tenant,
+    )
+    assert plan_created["success"] is True
+    plan_id = plan_created["plan"].plan_id
+    subscribed = SubscriptionRegistry.create(
+        {
+            "tenantId": tenant, "planId": plan_id,
+            "startDate": "2026-11-20T08:00:00+00:00",
+            "idempotencyKey": f"sub-{uid}",
+            "billingMode": "PLATFORM",
+        }, tenant_id_header=tenant,
+    )
+    assert subscribed["success"] is True
+    subscription_id = subscribed["subscription"].subscription_id
+    assert subscribed["subscription"].amount == 0
+
+    for module in (founder_activation, founder_reconciliation):
+        monkeypatch.setattr(module, "FOUNDER_TENANT_ID", tenant)
+        monkeypatch.setattr(module, "FOUNDER_PLAN_ID", plan_id)
+        monkeypatch.setattr(module, "FOUNDER_SUBSCRIPTION_ID", subscription_id)
+    # The platform perpetual-term policy is deliberately bound to the real
+    # Founder tuple, not the synthetic UUID test tuple.
+    term = lambda *_args, **_kwargs: SimpleNamespace(
+        kind=SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER,
+    )
+    monkeypatch.setattr(founder_activation, "evaluate_subscription_term", term)
+    monkeypatch.setattr(founder_reconciliation, "evaluate_subscription_term", term)
+    monkeypatch.setattr(founder_activation, "get_client", lambda: client)
+    monkeypatch.setattr(founder_activation, "get_database", lambda: database)
+
+    result = founder_activation.activate_authenticated_founder_institutional_ai(
+        tenant_id=tenant, principal_id="founder-cert-principal",
+        idempotency_key=f"cert-issue-{uid}",
+    )
+    assert result["entitlement_state"] == "ACTIVE"
+    assert result["feature_id"] == "ai.wilsy.institutional"
+    assert result["zero_rated_subscription"] is True
+    assert result["activated_this_request"] is True
+
+    stored_plan = PlanRegistry.get_by_id(
+        plan_id, tenant_id=tenant, exact_tenant=True,
+    )
+    assert stored_plan is not None
+    assert "ai.wilsy.institutional" in stored_plan.features
+    with client.start_session() as session:
+        updated_subscription = SubscriptionRegistry.get_entity(
+            subscription_id, tenant, collection=subscriptions, session=session,
+        )
+        p4 = WilsyAIEntitlementRegistry(entitlements).get_by_module(
+            tenant_id=tenant, module_id=MODULE_ID, session=session,
+        )
+    assert updated_subscription.amount == 0
+    assert "ai.wilsy.institutional" in updated_subscription.plan_features
+    assert p4.lifecycle_state is WilsyAIEntitlementState.ACTIVE
+    assert p4.tier is WilsyAITier.INSTITUTIONAL
+    first_id = p4.entitlement_id
+
+    replay = founder_activation.activate_authenticated_founder_institutional_ai(
+        tenant_id=tenant, principal_id="founder-cert-principal",
+        idempotency_key=f"cert-issue-{uid}",
+    )
+    assert replay["entitlement_state"] == "ACTIVE"
+    assert replay["activated_this_request"] is False
+    assert replay["entitlement_id"] == first_id
+    assert entitlements.count_documents({"tenant_id": tenant}) == 1
+
+
+
 @pytest.mark.parametrize(
     ("feature", "tier"),
     [
@@ -411,7 +516,7 @@ def test_real_divergent_replay_fails_and_unrelated_collections_remain_empty(
 
 
 # ARTIFACT: test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py
-# VERSION: v1.1.0-STAGED-AI-COMMERCIAL-REAL-MONGO-CERT
+# VERSION: v1.2.0-AUTHENTICATED-STAGED-FOUNDER-ISSUANCE-CERT
 # AUTHORITY BOUNDARY: real-Mongo D57B composition evidence only; no external authority
 # TENANT POSTURE: UUID-isolated exact-tenant subscription and entitlement operations
 # FAIL-CLOSED POSTURE: absent/generic/conflicting feature, foreign scope, rollback and divergent replay persist no false success
