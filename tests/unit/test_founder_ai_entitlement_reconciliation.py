@@ -1,7 +1,7 @@
 """WILSY Founder AI reconciliation's fail-closed commercial source certificate.
 
 TITLE: Founder WILSY AI Entitlement Reconciliation Unit Certificate
-VERSION: v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT
+VERSION: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-CERT
 AUTHORITY: Synthetic regression evidence; Python EOS owns commercial truth.
 EPITOME: Verify no Founder inference, zero-rated source matching, tier feature
          gating, dry-run abstention, and existing P4-only activation.
@@ -9,7 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder AI reconciliation, subscription term policy,
                            canonical D57B composer, P4 entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT certifies
+CHANGELOG: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-CERT also certifies
+           the canonical plan proof and integrity root bind the approval
+           intent to one non-stale source state. v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT certifies
            nonissuing tier approval intent is source-bound, deterministic,
            changes with the requested tier, and denies invalid source proofs.
            v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT certifies one
@@ -58,6 +60,7 @@ def _case(monkeypatch: pytest.MonkeyPatch, *, plan_features: tuple[str, ...] | N
         plan_id=module.FOUNDER_PLAN_ID,
         plan_type=SimpleNamespace(value="FOUNDER_ENTERPRISE"),
         active=True, price=0, catalogue_version=2, features=features,
+        proof_hash="b" * 128, integrity_root="c" * 128,
     )
     subscription = SimpleNamespace(
         subscription_id=subscription_id,
@@ -189,6 +192,30 @@ def test_founder_ai_approval_intent_is_nonissuing_and_tier_specific(
     assert observed == {"compose_calls": 0, "activation_calls": 0}
 
 
+def test_approval_intent_rejects_unverified_plan_state_proof(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A stale or absent plan state lineage never becomes approval evidence."""
+    observed, session = _case(
+        monkeypatch, plan_features=(module.BRANDING_FEATURE,),
+        subscription_features=(module.BRANDING_FEATURE,),
+    )
+    original = module._canonical_plan
+    def invalid_plan(*args: Any) -> Any:
+        plan = original(*args)
+        plan.proof_hash = ""
+        return plan
+    monkeypatch.setattr(module, "_canonical_plan", invalid_plan)
+    with pytest.raises(module.FounderAIReconciliationError,
+                       match="FOUNDER_AI_APPROVAL_PLAN_PROOF_INVALID"):
+        module.prepare_founder_ai_approval_intent(
+            subscription_collection=object(), plan_collection=object(),
+            session=session, proposed_feature_id=FEATURE,
+        )
+    assert observed == {"compose_calls": 0, "activation_calls": 0}
+
+
+
 def test_approval_intent_rejects_invalid_source_and_existing_tier(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -279,7 +306,7 @@ def test_source_approved_apply_delegates_both_writes_to_canonical_services(
 
 
 # ARTIFACT: test_founder_ai_entitlement_reconciliation.py
-# VERSION: v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT
+# VERSION: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-CERT
 # AUTHORITY BOUNDARY: synthetic exact-source and P4 activation evidence
 # TENANT POSTURE: no cross-tenant source or Founder alias may admit issuance
 # FAIL-CLOSED POSTURE: no feature, evidence or transaction means zero writes
