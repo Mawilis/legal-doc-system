@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.4.1-SELECTED-TASK-GROUNDING
+VERSION: v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.4.1-SELECTED-TASK-GROUNDING includes a separately authorized
+CHANGELOG: v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE keeps separately admitted
+           read-only workspace context available when an exact-tenant WILSY AI
+           entitlement has not yet been provisioned, reports zero available
+           AI requests with explicit NOT_PROVISIONED posture and never grants
+           model invocation, IAM or commercial capacity. v1.4.1-SELECTED-TASK-GROUNDING includes a separately authorized
            selected task in project-grounded reasoning, keeping that task
            distinct from the first-page task sample and treating source text
            only as untrusted evidence, never as model instructions.
@@ -93,7 +97,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.4.1-SELECTED-TASK-GROUNDING"
+VERSION: Final[str] = "v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -554,9 +558,24 @@ def read_reasoning_context(
         now = _utc_now()
 
         def read_allowance(session: Any) -> dict[str, Any]:
-            entitlement = WilsyAIEntitlementRegistry(collections["entitlement"]).get_by_module(
-                tenant_id=context.tenant_id, module_id=MODULE_ID, session=session,
-            )
+            try:
+                entitlement = WilsyAIEntitlementRegistry(collections["entitlement"]).get_by_module(
+                    tenant_id=context.tenant_id, module_id=MODULE_ID, session=session,
+                )
+            except WilsyAIEntitlementNotFoundError:
+                # A missing commercial grant cannot suppress independently
+                # authorized read-only business context. No capacity is
+                # inferred and POST reasoning still requires full admission.
+                return {
+                    "state": "NOT_PROVISIONED",
+                    "available_request_units": 0,
+                    "daily_request_limit": 0,
+                    "daily_consumed_request_units": 0,
+                    "held_request_units": 0,
+                    "seat_allocation": {"state": "UNAVAILABLE", "reason": "ALLOCATION_SOURCE_NOT_ESTABLISHED"},
+                    "commercial_pricing": {"state": "UNAVAILABLE", "reason": "SUBSCRIPTION_POLICY_NOT_RESOLVED"},
+                    "execution_admission": "DENIED_MISSING_ENTITLEMENT",
+                }
             capacity = WilsyAIUsageCapacityOrchestrator.from_collections(
                 entitlement_collection=collections["entitlement"],
                 observation_collection=collections["observation"],
@@ -756,7 +775,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.4.1-SELECTED-TASK-GROUNDING
+# VERSION: v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
