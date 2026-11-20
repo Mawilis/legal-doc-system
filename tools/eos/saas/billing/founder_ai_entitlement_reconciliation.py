@@ -1,7 +1,7 @@
 """Exact Founder WILSY AI commercial entitlement reconciliation.
 
 TITLE: WILSY OS Founder AI Entitlement Reconciliation
-VERSION: v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION
+VERSION: v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK
 AUTHORITY: WILSY OS Core Governance; existing subscription and P4 registries.
 EPITOME: Enforce exact zero-rated Founder commercial source and activate only an
          explicitly subscribed tier-specific AI feature through existing P4 CAS.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: PlanEntity owns plan state; SubscriptionRegistry owns
                           active subscription proof; D57B derives AI tier and
                           source evidence; P4 owns entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION adds fail-closed exact
+CHANGELOG: v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK verifies exact active
+           entitlement lineage before accepting an activation replay, so a
+           successful retry never issues or activates the module twice.
+           v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION adds fail-closed exact
            Founder preflight, dry-run, subscription-derived issuance and
            explicit evidence-backed activation within caller-owned transaction.
 COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
@@ -37,7 +40,9 @@ from typing import Any, Final
 
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import (
+    _source_evidence,
     compose_subscription_wilsy_ai_entitlement,
+    derive_subscription_wilsy_ai_entitlement_id,
 )
 from tools.eos.saas.billing.subscription_term_policy import (
     SubscriptionTermKind,
@@ -46,13 +51,20 @@ from tools.eos.saas.billing.subscription_term_policy import (
 from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import (
     activate_wilsy_ai_reasoning_entitlement,
 )
-from tools.eos.saas.billing.wilsy_ai_entitlement_registry import WilsyAIEntitlementRegistry
-from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
+from tools.eos.saas.billing.wilsy_ai_entitlement_registry import (
+    WilsyAIEntitlementNotFoundError,
+    WilsyAIEntitlementRegistry,
+)
+from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import (
+    WilsyAIVASFeatureId,
+    resolve_wilsy_ai_tier_for_feature,
+)
+from tools.eos.saas.billing.wilsy_ai_commercial_policy import get_wilsy_ai_commercial_policy
 from tools.eos.saas.domain.plan import PlanEntity
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION"
+VERSION: Final[str] = "v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK"
 FOUNDER_TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
 FOUNDER_SUBSCRIPTION_ID: Final[str] = "WILSYSUB-93455E4E"
 FOUNDER_PLAN_ID: Final[str] = "WILSYPLAN-37B8164F"
@@ -179,9 +191,42 @@ def reconcile_founder_ai_entitlement(
     _require(len(matches) == 1 and matches[0] is feature_id,
              "FOUNDER_AI_EXPLICIT_TIER_FEATURE_REQUIRED")
 
+    registry = WilsyAIEntitlementRegistry(entitlement_collection)
+    try:
+        existing = registry.get_by_module(
+            tenant_id=FOUNDER_TENANT_ID, module_id="WILSY_AI_REASONING", session=session,
+        )
+    except WilsyAIEntitlementNotFoundError:
+        existing = None
+    if existing is not None:
+        tier = resolve_wilsy_ai_tier_for_feature(feature_id)
+        policy = get_wilsy_ai_commercial_policy(tier)
+        reference, fingerprint = _source_evidence(
+            FOUNDER_TENANT_ID, subscription, feature_id,
+            tier, policy.policy_fingerprint,
+        )
+        _require(existing.tenant_id == FOUNDER_TENANT_ID
+                 and existing.entitlement_id == derive_subscription_wilsy_ai_entitlement_id(
+                     FOUNDER_TENANT_ID,
+                 )
+                 and existing.tier is tier
+                 and existing.policy_fingerprint == policy.policy_fingerprint
+                 and existing.source_readiness_evidence_reference == reference
+                 and existing.source_readiness_evidence_fingerprint == fingerprint,
+                 "FOUNDER_AI_EXISTING_ENTITLEMENT_SOURCE_DIVERGENT")
+        if existing.lifecycle_state is WilsyAIEntitlementState.ACTIVE:
+            return FounderAIReconciliationResult(
+                FOUNDER_SUBSCRIPTION_ID, feature_id,
+                existing.entitlement_id, "ACTIVE", False,
+            )
+        _require(existing.lifecycle_state is WilsyAIEntitlementState.PENDING_SOURCE,
+                 "FOUNDER_AI_EXISTING_ENTITLEMENT_NOT_ACTIVATABLE")
     if not apply:
         return FounderAIReconciliationResult(
-            FOUNDER_SUBSCRIPTION_ID, feature_id, None, "ELIGIBLE_NOT_ACTIVATED", False,
+            FOUNDER_SUBSCRIPTION_ID, feature_id,
+            existing.entitlement_id if existing is not None else None,
+            "PENDING_SOURCE" if existing is not None else "ELIGIBLE_NOT_ACTIVATED",
+            False,
         )
 
     _require(isinstance(activation_evidence_reference, str)
@@ -210,7 +255,7 @@ def reconcile_founder_ai_entitlement(
     _require(entitlement.lifecycle_state is WilsyAIEntitlementState.PENDING_SOURCE,
              "FOUNDER_AI_ACTIVATION_PRECONDITION_INVALID")
     activated = activate_wilsy_ai_reasoning_entitlement(
-        registry=WilsyAIEntitlementRegistry(entitlement_collection),
+        registry=registry,
         entitlement=entitlement,
         activation_evidence_reference=activation_evidence_reference,
         activation_evidence_fingerprint=activation_evidence_fingerprint,
@@ -232,7 +277,7 @@ __all__ = [
 ]
 
 # ARTIFACT: founder_ai_entitlement_reconciliation.py
-# VERSION: v1.0.0-GOVERNED-FOUNDER-AI-RECONCILIATION
+# VERSION: v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK
 # AUTHORITY BOUNDARY: source-verified Founder commercial composition and P4 CAS only
 # TENANT POSTURE: exact Founder tuple, no aliases or tenant-name default grants
 # FAIL-CLOSED POSTURE: active proof and one approved AI tier required before write
