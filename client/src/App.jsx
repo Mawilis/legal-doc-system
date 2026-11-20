@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE
+ * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,8 +24,9 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays EOS-issued Founder title independently from tenant_owner capacity; it never changes workspace authorization.
  * CHANGELOG: v20.10.2-GLOBAL-SEARCH-FOCUS-RETURN returns keyboard focus to the element that opened global search after Escape, dismissal, or navigation. Search routing, auth, and authority are unchanged.
- * CHANGELOG: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
+ * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
  * CHANGELOG: v20.11.0-AUTHENTICATED-ACCOUNT-IDENTITY binds account identity to the exact active AuthProvider principal and tenant, removes unsupported personal links and diagnostics, and restores keyboard focus on menu dismissal. Search, session authority, and logout ownership are unchanged.
  * CHANGELOG: v20.10.3-GLOBAL-SEARCH-POINTER-DISMISS-FOCUS defers opener focus restoration until the browser completes pointer dismissal, preventing backdrop default behavior from stealing focus.
  * CHANGELOG: v20.10.1-FOUNDER-SQUARE-CORPORATE-IDENTITY preserves the Founder-supplied square WILSY OS identity
@@ -1057,7 +1058,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.12.0-ACCOUNT-EMAIL-SOURCE-PROVENANCE
+ * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
