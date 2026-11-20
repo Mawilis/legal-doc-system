@@ -1,12 +1,13 @@
 """TITLE: WILSY Canonical Legacy Credential Migration Assessment Tests
-VERSION: v1.1.0-OBJECTID-CANONICAL-LINKAGE-CERT
+VERSION: v1.1.1-OBJECTID-PARAMETER-TEST-CORRECTION
 AUTHORITY: Source-only certification of existing principal and membership.
 EPITOME: Verify valid BSON ObjectId legacy compatibility, exact principal
   matching, and quarantine on invalid or divergent identity without writes.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_principal_credential_migration_assessment.py
 COLLABORATION / OWNERSHIP: The read-only credential migration assessor.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.0-OBJECTID-CANONICAL-LINKAGE-CERT adds synthetic legacy
+CHANGELOG: v1.1.1-OBJECTID-PARAMETER-TEST-CORRECTION preserves the
+  original email-cardinality parameterization. v1.1.0-OBJECTID-CANONICAL-LINKAGE-CERT adds synthetic legacy
   ObjectId principal identity and divergent authority denial certificates.
 COMPLIANCE: POPIA s19; GDPR Article32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic hashes; no real credential material.
@@ -92,13 +93,6 @@ def test_only_exact_active_legacy_credential_is_eligible_without_mutation():
     assert PASSWORD_HASH not in repr(result.credential)
 
 
-@pytest.mark.parametrize(
-    ("count", "reason"),
-    [
-        (0, "LEGACY_EMAIL_NOT_UNIQUE"),
-        (2, "LEGACY_EMAIL_NOT_UNIQUE"),
-    ],
-)
 def test_existing_objectid_identity_is_eligible_only_with_active_matching_authority():
     legacy_id = ObjectId("507f1f77bcf86cd799439011")
     document = {
@@ -140,6 +134,13 @@ def test_objectid_fallback_never_invents_missing_principal_or_membership():
                   ).reason_code == "LEGACY_ACTIVE_MEMBERSHIP_REQUIRED"
 
 
+@pytest.mark.parametrize(
+    ("count", "reason"),
+    [
+        (0, "LEGACY_EMAIL_NOT_UNIQUE"),
+        (2, "LEGACY_EMAIL_NOT_UNIQUE"),
+    ],
+)
 def test_duplicate_or_missing_email_rows_are_quarantined(count, reason):
     result = assess(matching_email_record_count=count)
     assert result.disposition == "QUARANTINE"
@@ -166,7 +167,7 @@ def test_authority_outage_is_not_misclassified_as_quarantine():
         assess(principal_repository=PrincipalRepository(failure=PrincipalAuthorityRepositoryError("unavailable")))
 
 # ARTIFACT: test_principal_credential_migration_assessment.py
-# VERSION: v1.1.0-OBJECTID-CANONICAL-LINKAGE-CERT
+# VERSION: v1.1.1-OBJECTID-PARAMETER-TEST-CORRECTION
 # AUTHORITY BOUNDARY: read-only exact principal and membership tests
 # TENANT POSTURE: synthetic valid BSON ObjectId, no new principal ID
 # FAIL-CLOSED POSTURE: malformed, missing, divergent authority quarantined
