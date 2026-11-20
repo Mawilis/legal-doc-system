@@ -40,7 +40,7 @@ case "${ENV:-}" in
     exit 2 ;;
 esac
 
-if [[ -n "${WILSY_AI_REASONING_PROVIDER:-}" && "${WILSY_AI_REASONING_PROVIDER,,}" != "openai" ]]; then
+if [[ -n "${WILSY_AI_REASONING_PROVIDER:-}" && "${WILSY_AI_REASONING_PROVIDER}" != "openai" ]]; then
   echo "EOS_LOCAL_AI_CONFIG_ERROR=UNSUPPORTED_PROVIDER" >&2
   exit 2
 fi
