@@ -1,7 +1,7 @@
 """WILSY Founder AI reconciliation's fail-closed commercial source certificate.
 
 TITLE: Founder WILSY AI Entitlement Reconciliation Unit Certificate
-VERSION: v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT
+VERSION: v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT
 AUTHORITY: Synthetic regression evidence; Python EOS owns commercial truth.
 EPITOME: Verify no Founder inference, zero-rated source matching, tier feature
          gating, dry-run abstention, and existing P4-only activation.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder AI reconciliation, subscription term policy,
                            canonical D57B composer, P4 entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT certifies one
+CHANGELOG: v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT certifies
+           nonissuing tier approval intent is source-bound, deterministic,
+           changes with the requested tier, and denies invalid source proofs.
+           v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT certifies one
            source-verified ACTIVE entitlement replay without duplicate P4
            writes, while divergent source evidence still fails closed.
            v1.0.0-EXACT-COMMERCIAL-SOURCE-CERT adds synthetic Founder
@@ -63,6 +66,7 @@ def _case(monkeypatch: pytest.MonkeyPatch, *, plan_features: tuple[str, ...] | N
         tier=SimpleNamespace(value="FOUNDER_ENTERPRISE"),
         billing_mode="PLATFORM", amount=0, status=SubscriptionStatus.ACTIVE,
         plan_catalogue_version=2, plan_features=sub_features,
+        proof_hash="a" * 128,
     )
     monkeypatch.setattr(module, "_canonical_plan", lambda *_: plan)
     class MissingRegistry:
@@ -156,6 +160,50 @@ def test_matching_existing_active_entitlement_is_an_exact_no_write_replay(
 
 
 
+
+def test_founder_ai_approval_intent_is_nonissuing_and_tier_specific(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An independently signable source request does not create any grant."""
+    observed, session = _case(
+        monkeypatch, plan_features=(module.BRANDING_FEATURE,),
+        subscription_features=(module.BRANDING_FEATURE,),
+    )
+    starter = module.prepare_founder_ai_approval_intent(
+        subscription_collection=object(), plan_collection=object(), session=session,
+        proposed_feature_id=WilsyAIVASFeatureId.STARTER,
+    )
+    institutional = module.prepare_founder_ai_approval_intent(
+        subscription_collection=object(), plan_collection=object(), session=session,
+        proposed_feature_id=WilsyAIVASFeatureId.INSTITUTIONAL,
+    )
+    replay = module.prepare_founder_ai_approval_intent(
+        subscription_collection=object(), plan_collection=object(), session=session,
+        proposed_feature_id=WilsyAIVASFeatureId.INSTITUTIONAL,
+    )
+    assert starter.approval_state == "NOT_ISSUED"
+    assert institutional.approval_state == "NOT_ISSUED"
+    assert len(institutional.source_fingerprint) == 128
+    assert institutional.source_fingerprint != starter.source_fingerprint
+    assert institutional.source_fingerprint == replay.source_fingerprint
+    assert observed == {"compose_calls": 0, "activation_calls": 0}
+
+
+def test_approval_intent_rejects_invalid_source_and_existing_tier(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Existing tier and stale/invalid proof cannot be papered over as consent."""
+    observed, session = _case(monkeypatch)
+    with pytest.raises(module.FounderAIReconciliationError,
+                       match="FOUNDER_AI_APPROVAL_TIER_ALREADY_PRESENT"):
+        module.prepare_founder_ai_approval_intent(
+            subscription_collection=object(), plan_collection=object(),
+            session=session, proposed_feature_id=FEATURE,
+        )
+    assert observed == {"compose_calls": 0, "activation_calls": 0}
+
+
+
 def test_default_dry_run_does_not_provision_or_activate(monkeypatch: pytest.MonkeyPatch) -> None:
     observed, session = _case(monkeypatch)
     result = _call(session)
@@ -231,7 +279,7 @@ def test_source_approved_apply_delegates_both_writes_to_canonical_services(
 
 
 # ARTIFACT: test_founder_ai_entitlement_reconciliation.py
-# VERSION: v1.1.0-ACTIVE-ENTITLEMENT-REPLAY-CERT
+# VERSION: v1.2.0-SOURCE-BOUND-UNISSUED-APPROVAL-CERT
 # AUTHORITY BOUNDARY: synthetic exact-source and P4 activation evidence
 # TENANT POSTURE: no cross-tenant source or Founder alias may admit issuance
 # FAIL-CLOSED POSTURE: no feature, evidence or transaction means zero writes
