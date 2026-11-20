@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE
+VERSION: v1.6.0-PROVIDER-READINESS-CONTEXT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE keeps separately admitted
+CHANGELOG: v1.6.0-PROVIDER-READINESS-CONTEXT projects only the
+           server-owned model-provider binding readiness into nonbillable
+           context. It exposes no provider secret, model identity, capacity,
+           or false invocation guarantee. v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE keeps separately admitted
            read-only workspace context available when an exact-tenant WILSY AI
            entitlement has not yet been provisioned, reports zero available
            AI requests with explicit NOT_PROVISIONED posture and never grants
@@ -97,7 +100,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE"
+VERSION: Final[str] = "v1.6.0-PROVIDER-READINESS-CONTEXT"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -527,6 +530,7 @@ router = APIRouter(prefix="/wilsy-ai", tags=["WILSY AI Reasoning"])
 @router.get("/reasoning/context")
 def read_reasoning_context(
     response: Response,
+    request: Request,
     locator: WilsyAIContextLocator = Depends(get_reasoning_context_locator),
     context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
     project_context: TenantAuthorizationContext | None = Depends(get_reasoning_project_authority),
@@ -612,7 +616,13 @@ def read_reasoning_context(
             "workforce": {"state": "UNAVAILABLE", "reason": "INDEPENDENT_EMPLOYEE_BINDING_REQUIRED"},
             "qualifications": {"state": "UNAVAILABLE", "reason": "INDEPENDENT_QUALIFICATION_AUTHORITY_REQUIRED"},
             "authority": {"source": "PYTHON_EOS", "read_only": True,
-                          "financial_execution": False, "model_invoked": False},
+                          "financial_execution": False, "model_invoked": False,
+                          "provider_binding": (
+                              "CONFIGURED" if isinstance(
+                                  getattr(request.app.state, "wilsy_ai_reasoning_provider_binding", None),
+                                  ServerOwnedModelProviderBinding,
+                              ) else "UNAVAILABLE"
+                          )},
         }
         # Time and allowance change independently of project facts. Keep these
         # outside the source-content fingerprint; no authenticity/MAC is claimed.
@@ -775,7 +785,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.5.0-INDEPENDENT-CONTEXT-COMMERCIAL-POSTURE
+# VERSION: v1.6.0-PROVIDER-READINESS-CONTEXT
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
