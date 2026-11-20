@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.40.0-REVIEWED-TEMPLATE-WORK-OVERRIDES
+VERSION: v1.41.0-VERIFIED-PARTICIPANT-NAMES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.41.0-VERIFIED-PARTICIPANT-NAMES resolves exact-tenant first/last
+  names alongside source-verified active project participants for display
+  only. Registry identity, permission, audit and assignment commands stay
+  unchanged. Missing names yield null rather than an opaque identifier.
   v1.40.0-REVIEWED-TEMPLATE-WORK-OVERRIDES allows explicit, bounded
   edits to a verified starter template's titles, due offsets and acceptance
   criteria before atomic activation. Step IDs, DAG, kinds, role requirements,
@@ -319,7 +323,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.38.0-EXACT-TENANT-WORK-CAPABILITIES"
+VERSION: Final[str] = "v1.41.0-VERIFIED-PARTICIPANT-NAMES"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -3489,12 +3493,28 @@ def list_project_participants(
             tenant_id=context.tenant_id, project_id=project_id,
             session=session, limit=limit, offset=offset,
         )
+        source_rows = [item.to_dict() for item in items]
+        database = kernel_db.get_database()
+        if database is None:
+            raise HTTPException(
+                status_code=503, detail="PROJECT_PARTICIPANT_NAMES_UNAVAILABLE",
+            )
+        names = _project_participant_page_names(
+            database, context.tenant_id,
+            [row["principal_id"] for row in source_rows], session,
+        )
+        displayed_rows = [
+            {**row, **names.get(row["principal_id"], {
+                "first_name": None, "last_name": None,
+            })}
+            for row in source_rows
+        ]
         return {
             "schema": "WILSY-PROJECT-PARTICIPANT-LIST/V1",
             "tenant_id": context.tenant_id,
             "principal_id": context.identity.identity_id,
             "project_id": project_id,
-            "items": [item.to_dict() for item in items],
+            "items": displayed_rows,
             "limit": limit, "offset": offset, "has_more": has_more,
             "next_offset": offset + len(items) if has_more else None,
         }
@@ -3898,7 +3918,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.40.0-REVIEWED-TEMPLATE-WORK-OVERRIDES
+# VERSION: v1.41.0-VERIFIED-PARTICIPANT-NAMES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
