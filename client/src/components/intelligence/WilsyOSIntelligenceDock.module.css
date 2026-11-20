@@ -1,13 +1,17 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.3.0-MOBILE-COMPOSER-CONTAINMENT
+ * VERSION: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v1.3.0-MOBILE-COMPOSER-CONTAINMENT keeps the conversation scroller
+ * CHANGELOG: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE replaces boxed top tabs with
+ * compact text-first navigation, uses a restrained neural gradient in the
+ * conversation canvas, and highlights the human greeting without changing
+ * accessibility, message scrolling, or the anchored mobile composer.
+ * v1.3.0-MOBILE-COMPOSER-CONTAINMENT keeps the conversation scroller
  * shrinkable and its composer reachable in dynamic mobile viewports, including
  * safe-area/virtual-keyboard resizing, without granting any new capability.
  * v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION adds compact movable launcher, a nonmodal
@@ -915,9 +919,95 @@
   .emptyChatWelcome { padding: 12px 8px; text-align: left; }
 }
 
+
+/* Conversation is the primary workspace. Tabs are navigation, not cards. */
+.intelligenceDockContainer .dockNavBar {
+  gap: 2px;
+  padding: 5px 10px 0;
+  background: rgba(5, 17, 32, 0.78);
+  border-bottom: 1px solid rgba(170, 194, 217, 0.14);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.intelligenceDockContainer .navTabButton {
+  min-width: 0;
+  flex: 1 0 auto;
+  min-height: 40px;
+  padding: 8px 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #c5d2e2;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+}
+.intelligenceDockContainer .navTabButton:hover {
+  color: #f7faff;
+  background: rgba(155, 193, 232, 0.08);
+}
+.intelligenceDockContainer .navTabButton:focus-visible {
+  outline: 2px solid #9ac7ff;
+  outline-offset: -3px;
+}
+.intelligenceDockContainer .activeTab {
+  color: #f8e3a6;
+  border-bottom-color: #d7ba70;
+  background: transparent;
+}
+.intelligenceDockContainer .messagesContainer {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(36, 90, 137, 0.18), transparent 48%),
+    linear-gradient(180deg, #0a1b30 0%, #09192d 100%);
+  gap: 14px;
+}
+.intelligenceDockContainer .emptyChatWelcome {
+  padding: clamp(18px, 3vw, 28px) 16px;
+  text-align: left;
+  color: #c5d3e4;
+}
+.intelligenceDockContainer .emptyChatWelcome h4 {
+  margin: 0 0 12px;
+  color: #f3f6fd;
+  font-size: clamp(21px, 3vw, 26px);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.intelligenceDockContainer .emptyChatWelcome p {
+  margin: 8px 0 0;
+  color: #b6c8d9;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.intelligenceDockContainer .emptyChatWelcome strong {
+  color: #f1db9a;
+  font-size: 14px;
+  font-weight: 550;
+}
+.intelligenceDockContainer .bubbleBody {
+  color: #f0f5fc;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.intelligenceDockContainer .kennelBadge {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+@media (max-width: 600px) {
+  .intelligenceDockContainer .navTabButton { min-height: 44px; padding: 7px 8px; font-size: 11px; }
+  .intelligenceDockContainer .emptyChatWelcome { padding: 16px 8px; }
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.3.0-MOBILE-COMPOSER-CONTAINMENT
+ * VERSION: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
