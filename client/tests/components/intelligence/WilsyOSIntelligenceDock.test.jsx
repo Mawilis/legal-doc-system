@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.8.1-EXPLICIT-CONSENT-CERT
+ * VERSION: v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.8.1-EXPLICIT-CONSENT-CERT verifies that expanding usage
+ * CHANGELOG: v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT certifies time-appropriate
+ * first-name greeting, exact-scope same-browser consent restoration,
+ * changed-tenant revocation and single visible failure status, while keeping
+ * EOS entitlement and usage admission independent of browser preferences.
+ * v1.8.1-EXPLICIT-CONSENT-CERT verifies that expanding usage
  * details never checks the metered-AI consent box or issues a model request.
  * v1.8.0-AUTHORIZED-PROJECT-LOCATOR-SEND-CERT certifies that metered general
  * reasoning forwards only a project locator after exact EOS context admission,
@@ -188,6 +192,9 @@ const rejectedResponse = (status, detail) => Object.assign(new Error(detail), {
 describe('WilsyOSIntelligenceDock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    for (const key of Object.keys(window.localStorage)) {
+      if (key.startsWith('wilsy.ai.usage-consent:')) window.localStorage.removeItem(key);
+    }
     mockApiGet.mockReset().mockRejectedValue(rejectedResponse(503, 'synthetic source unavailable'));
     mockApiPost.mockReset();
     mockExecuteLegalServices.mockReset();
@@ -477,6 +484,50 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => {
       expect(screen.getByText('Conversation Threads')).toBeInTheDocument();
     });
+  });
+
+  it('welcomes a new conversation with the authenticated first name and local time', () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'named-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+      firstName: 'Nandi', displayName: 'Nandi Dlamini',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.getByText(/^Good (morning|afternoon|evening), Nandi\.$/))
+      .toBeVisible();
+  });
+
+  it('remembers accepted usage within the same browser and exact authorized scope', () => {
+    const user = { id: 'remembered-operator', tenantId: 'TEST_TENANT',
+      role: 'OWNER', businessRole: 'CAPACITY_A', membershipRevision: 1 };
+    const first = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    expect(screen.queryByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByText('AI usage preferences')).toBeVisible();
+    first.unmount();
+
+    const second = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.queryByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('AI usage preferences'));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke AI usage consent' }));
+    expect(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeChecked();
+    second.unmount();
+  });
+
+  it('does not transfer accepted AI usage preference to another tenant', () => {
+    const user = { id: 'tenant-operator', tenantId: 'TEST_TENANT', role: 'OWNER' };
+    const view = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    view.rerender(<WilsyOSIntelligenceDock authUser={{
+      ...user, tenantId: 'OTHER_TENANT',
+    }}/>);
+    expect(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }))
+      .not.toBeChecked();
   });
 
   it('blocks metered general reasoning until the operator consents', () => {
@@ -972,7 +1023,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.8.1-EXPLICIT-CONSENT-CERT
+ * VERSION: v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
