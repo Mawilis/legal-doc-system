@@ -1,7 +1,7 @@
 """Development-only staged Founder AI commercial activation command.
 
 TITLE: WILSY Founder AI Development Activation Runner
-VERSION: v1.0.0-LOCAL-FOUNDER-AI-COMMERCIAL-ROLLOUT
+VERSION: v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE
 AUTHORITY: WILSY OS Core Governance; source registries own all mutations.
 EPITOME: Rehearse exact Founder plan -> subscription -> AI entitlement
          transitions on a loopback development Mongo replica set only.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: PlanRegistry owns plan CAS; SubscriptionRegistry owns
                           subscription proof and audit; Founder reconciliation
                           delegates issuance/activation to D57B and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-LOCAL-FOUNDER-AI-COMMERCIAL-ROLLOUT creates
+CHANGELOG: v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE enforces
+           loopback development-replica admission inside the exported stage
+           entrypoint, so imported callers cannot bypass CLI-only guards.
+           v1.0.0-LOCAL-FOUNDER-AI-COMMERCIAL-ROLLOUT creates
            dry-run-first exact-scope stage admission with explicit AI feature,
            independent registry mutations and no Atlas/production write path.
 COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
@@ -48,7 +51,7 @@ from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import (
 from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 
-VERSION: Final[str] = "v1.0.0-LOCAL-FOUNDER-AI-COMMERCIAL-ROLLOUT"
+VERSION: Final[str] = "v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE"
 _ALLOWED_FOUNDATION: Final[frozenset[str]] = frozenset(
     (BRANDING_FEATURE, "legal.core"),
 )
@@ -121,6 +124,10 @@ def execute_development_stage(
     with the present PlanRegistry. An operator must complete and verify each
     stage before the next. This command never retries failed writes silently.
     """
+    _guard_development(
+        os.getenv("MONGODB_URI", ""), os.getenv("WILSY_ENV", ""),
+        database, client,
+    )
     if stage not in {"plan", "subscription", "entitlement"}:
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_STAGE_INVALID")
     if type(feature) is not WilsyAIVASFeatureId:
@@ -245,7 +252,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: founder_ai_development_activation.py
-# VERSION: v1.0.0-LOCAL-FOUNDER-AI-COMMERCIAL-ROLLOUT
+# VERSION: v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE
 # AUTHORITY BOUNDARY: local-only stage coordination through canonical registries
 # TENANT POSTURE: one exact Founder subscription/plan/tenant tuple only
 # FAIL-CLOSED POSTURE: required tier, loopback replica and guarded stage writes
