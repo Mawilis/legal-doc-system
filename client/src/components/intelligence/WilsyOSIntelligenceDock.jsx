@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED
+ * VERSION: v4.13.1-OPERATOR-READABLE-SOURCE-STATUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED projects independently authorized
+ * CHANGELOG: v4.13.1-OPERATOR-READABLE-SOURCE-STATUS replaces raw
+ * Kennel machine tokens in the AI header with bounded, truthful human
+ * availability language without altering diagnostic or authentication state.
+ * v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED projects independently authorized
  * Headquarters My Work priorities as read-only task rows when AI commercial
  * admission is unavailable; tenant/principal and source-owned flags are
  * checked before display. These rows never enter the model from the browser.
@@ -1206,7 +1209,10 @@ export function WilsyOSIntelligenceDock({
               <div>
                 <span>WILSY OS Intelligence Dock</span>
                 <small className={styles.kennelBadge} data-posture={kennelPosture}>
-                  Kennel {kennelPosture}
+                  {kennelPosture === 'OPERATIONAL' ? 'Kennel source connected'
+                    : kennelPosture === 'SOURCE_SILENT' ? 'Kennel source not responding'
+                      : kennelPosture === 'CLIENT_OFFLINE' ? 'Connection unavailable'
+                        : 'Kennel source not verified'}
                 </small>
                 {authoritativeTenantBrand && (
                   <small className={styles.workspaceBrand} data-brand-source="ACTIVE_TENANT_CONTEXT">
@@ -1737,7 +1743,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.13.1-OPERATOR-READABLE-SOURCE-STATUS
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1753,7 +1759,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.13.0-AUTHORIZED-HEADQUARTERS-WORK-FEED
+ * VERSION: v4.13.1-OPERATOR-READABLE-SOURCE-STATUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
