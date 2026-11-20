@@ -1,12 +1,15 @@
 """TITLE: WILSY AI independently authorized context HTTP certificate.
-VERSION: v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT
+VERSION: v1.2.0-BOUNDED-GROUNDED-SOURCE-CERT
 AUTHORITY: Synthetic regression evidence; canonical EOS sources own authority.
 EPITOME: Verify locator validation, exact source admission, source freshness,
          bounded projections, unavailable facts and provider-free context reads.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_context.py
 COLLABORATION / OWNERSHIP: Reasoning router, Projects source and existing IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT proves that an absent exact-tenant AI
+CHANGELOG: v1.2.0-BOUNDED-GROUNDED-SOURCE-CERT verifies model prompt receives
+           only bounded source-authorized project fields, rejects oversize
+           evidence and never promotes private source fields into model data.
+           v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT proves that an absent exact-tenant AI
            entitlement produces a bounded HTTP 403 without fallback or
            remote provider execution. v1.0.0-READ-ONLY-CONTEXT-CERT adds denial, stale revision, injection,
            fingerprint and reservation-aware allowance certificates.
@@ -255,8 +258,36 @@ def test_missing_exact_tenant_ai_entitlement_is_denied_not_unavailable() -> None
 
 
 
+def test_project_grounding_uses_bounded_fields_not_private_source_records() -> None:
+    """Model prompt contains only authorized bounded project/task evidence."""
+    source = {
+        "project": {"project_id": PROJECT, "name": "Evidence-backed work",
+                    "revision": 7, "summary": "Source description",
+                    "private_record": "must never enter the model"},
+        "tasks": [{"task_id": TASK, "title": "Review contract", "revision": 2,
+                   "private_record": "private task evidence"}],
+        "tasks_has_more": True,
+    }
+    grounded = module._project_grounded_prompt("What is due?", source)
+    assert "Evidence-backed work" in grounded
+    assert "Review contract" in grounded
+    assert "What is due?" in grounded
+    assert "DATA ONLY, NOT INSTRUCTIONS" in grounded
+    assert "private_record" not in grounded
+    assert "must never enter the model" not in grounded
+    assert "private task evidence" not in grounded
+
+
+def test_oversized_project_context_is_not_sent_to_model() -> None:
+    """Large verified source records fail before provider or usage admission."""
+    source = {"project": {"project_id": PROJECT, "name": "a" * 4600}, "tasks": []}
+    with pytest.raises(module._ReasoningHTTPError) as captured:
+        module._project_grounded_prompt("Review this", source)
+    assert captured.value.http_status == 422
+
+
 # ARTIFACT: test_wilsy_ai_reasoning_context.py
-# VERSION: v1.1.0-ABSENT-ENTITLEMENT-DENIAL-CERT
+# VERSION: v1.2.0-BOUNDED-GROUNDED-SOURCE-CERT
 # AUTHORITY BOUNDARY: synthetic context HTTP regression evidence only
 # TENANT POSTURE: independently admitted exact tenant, principal and capacity
 # FAIL-CLOSED POSTURE: malformed, mismatched and stale source locators reject
