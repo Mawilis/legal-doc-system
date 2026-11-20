@@ -1,5 +1,5 @@
 """TITLE: WILSY Founder Institutional Designation Registry
-VERSION: v1.0.0-EXPLICIT-FOUNDER-DESIGNATION
+VERSION: v1.0.1-ISOLATED-FOUNDER-READBACK
 AUTHORITY: Existing exact WILSY company principal, active membership,
   tenant_owner capacity and ENTERPRISE_ADMIN assignment; verified Owner factor.
 EPITOME: Persist and read one explicit non-IAM Founder title with immutable
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: AuthRegistry owns legacy password and OTP;
   repositories own their independent current authorities; workspace bootstrap
   projects non-authorizing title only.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-EXPLICIT-FOUNDER-DESIGNATION registers user-ratified Founder
+CHANGELOG: v1.0.1-ISOLATED-FOUNDER-READBACK verifies existing title
+  before canonical Founder-specific source checks, so unrelated users receive
+  no title and do not inherit unrelated Founder source failures.
+  v1.0.0-EXPLICIT-FOUNDER-DESIGNATION registers user-ratified Founder
   designation against exact already-active principal, never adds IAM grants.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: No password, OTP, email or hashes in audit or output.
@@ -38,7 +41,7 @@ from tools.eos.auth.tenant_membership_repository import TenantMembershipReposito
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
 
-VERSION: Final[str] = "v1.0.0-EXPLICIT-FOUNDER-DESIGNATION"
+VERSION: Final[str] = "v1.0.1-ISOLATED-FOUNDER-READBACK"
 TENANT: Final[str] = "WILSYTENANT-4CD2FZ4O"
 EMAIL: Final[str] = "wilsonkhanyezi@gmail.com"
 BUSINESS_ROLE: Final[str] = "tenant_owner"
@@ -130,15 +133,14 @@ def read_founder_designation(
         return None
     db = database if database is not None else kernel_db.get_database()
     _require(db is not None, "FOUNDER_DESIGNATION_DATABASE_UNAVAILABLE")
-    source = _principal_from_source(db, session=session)
-    if source != principal_id:
-        return None
     rows = list(db[COLLECTION].find(
         {"tenant_id": TENANT, "principal_id": principal_id},
         {"_id": 0}, session=session,
     ).limit(2))
     if not rows:
         return None
+    source = _principal_from_source(db, session=session)
+    _require(source == principal_id, "FOUNDER_DESIGNATION_PRINCIPAL_MISMATCH")
     _require(len(rows) == 1, "FOUNDER_DESIGNATION_AMBIGUOUS")
     record = rows[0]
     seal = record.pop("proof_sha3_512", None)
@@ -288,7 +290,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: founder_institutional_designation.py
-# VERSION: v1.0.0-EXPLICIT-FOUNDER-DESIGNATION
+# VERSION: v1.0.1-ISOLATED-FOUNDER-READBACK
 # AUTHORITY BOUNDARY: non-IAM Founder identity title; no grant
 # TENANT POSTURE: exact principal and WILSY tenant with live role checks
 # FAIL-CLOSED POSTURE: absent proof, missing factor or authority denies
