@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Projects Workspace Accessible Execution Surface
- * VERSION: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY
+ * VERSION: v1.12.0-AI-CONTRAST-AND-CHECKBOX-VISIBILITY
  * AUTHORITY: Presentation only; Python EOS owns all project business state.
  * EPITOME: Scoped, responsive list/detail composition with readable contrast,
  *          controlled scroll, clear source state and accessible action focus.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace.jsx supplies verified state;
  *                            Headquarters owns navigation, EOS owns commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.12.0-AI-CONTRAST-AND-CHECKBOX-VISIBILITY restores dark ink on the
+ *          AI brief and paid-usage consent fields outside template forms,
+ *          blue-accent checkboxes and visible keyboard focus; also removes
+ *          the obsolete interior artifact seal without touching EOS truth.
  * CHANGELOG: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY applies compact
  *          table paddings to actual task cells and keeps visible focus,
  *          legible statuses, and 40px targets on small screens.
@@ -592,15 +596,6 @@
   .wilsy-projects .wp-chart-caption {font-size: 9px; overflow-wrap: anywhere;}
 }
 
-/* ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.9.0-INDUSTRY-TEMPLATE-INPUT-CONTRAST
- * AUTHORITY BOUNDARY: Styling only, no IAM or persistence.
- * TENANT POSTURE: No identity, tenant selection or source projection.
- * FAIL-CLOSED POSTURE: Unavailable/denied source state is not restyled as success.
- * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
- * END OF WILSY OS SOVEREIGN ARTIFACT
- */
-
 /* Template activation is operating-form content, never decorative gold labels.
    Scope selectors to the existing template surface; do not recolour branding. */
 .wilsy-projects [aria-label="Industry project templates"] form :is(label, legend) {
@@ -682,9 +677,39 @@
     touch-action: manipulation;
   }
 }
+/* WILSY AI operating copy is outside the template form. Global gold-label
+   styling must not bleed into the project brief or paid-service consent. */
+.wilsy-projects [aria-label="WILSY AI project planning"] :is(label, label span) {
+  color: #152c4c !important;
+  -webkit-text-fill-color: #152c4c !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+.wilsy-projects [aria-label="WILSY AI project planning"] textarea {
+  color: #152c4c !important;
+  -webkit-text-fill-color: #152c4c !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+}
+.wilsy-projects :is(.wp-project-tasks, [aria-label="WILSY AI project planning"])
+  input[type="checkbox"] {
+  appearance: auto;
+  color-scheme: light;
+  accent-color: #1d61a8;
+  background-color: #ffffff;
+  outline-offset: 3px;
+  cursor: pointer;
+}
+.wilsy-projects :is(.wp-project-tasks, [aria-label="WILSY AI project planning"])
+  input[type="checkbox"]:focus-visible {
+  outline: 3px solid #145db1 !important;
+}
+
 /*
  * ARTIFACT: ProjectsWorkspace.css
- * VERSION: v1.11.0-RESPONSIVE-WORK-ROW-DENSITY
+ * VERSION: v1.12.0-AI-CONTRAST-AND-CHECKBOX-VISIBILITY
  * AUTHORITY BOUNDARY: visual presentation only; EOS owns every project command
  * TENANT POSTURE: styling does not grant or infer access
  * FAIL-CLOSED POSTURE: no synthetic verified state or visual success inference
