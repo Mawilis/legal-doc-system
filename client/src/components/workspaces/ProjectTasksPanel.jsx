@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF
+ * VERSION: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
- * CHANGELOG: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF offers a direct governed task
+ * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF offers a direct governed task
  *          evidence handoff after confirmed create and fresh EOS list
  *          readback, never before a durable task identifier exists.
  * CHANGELOG: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY makes upload available to the
@@ -291,6 +291,7 @@ function validParticipants(data, tenantId, principalId, projectId) {
 /** @description Display one exact-project task/participant workflow, never local truth. */
 export default function ProjectTasksPanel({
   projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
+  onFocusedTaskChange = null,
 }) {
   const [items, setItems] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -667,6 +668,22 @@ export default function ProjectTasksPanel({
     : approvalTaskId ? { id: approvalTaskId, type: 'approvals' }
       : attachmentTaskId ? { id: attachmentTaskId, type: 'attachments' } : null;
   const selectedActionTask = focusedAction && items.find(item => item.task_id === focusedAction.id);
+  const contextTask = (state === 'READY' || state === 'REFRESHING')
+    ? drawerTask || selectedActionTask || (editor
+      ? items.find(item => item.task_id === editor.task_id) : null)
+    : null;
+  const contextTaskId = contextTask?.task_id || null;
+  const contextTaskRevision = contextTask?.revision || null;
+  useEffect(() => {
+    // Only EOS-hydrated selected task coordinates leave this component.
+    // They are untrusted navigation hints: Python EOS independently
+    // authorizes and rereads project/task revisions for every AI request.
+    if (typeof onFocusedTaskChange !== 'function') return undefined;
+    onFocusedTaskChange(contextTaskId && Number.isSafeInteger(contextTaskRevision)
+      ? { task_id: contextTaskId, task_revision: contextTaskRevision }
+      : null);
+    return () => onFocusedTaskChange(null);
+  }, [onFocusedTaskChange, contextTaskId, contextTaskRevision]);
   const closeFocusedAction = () => {
     setDiscussionTaskId(null);
     setApprovalTaskId(null);
@@ -1291,7 +1308,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF
+// VERSION: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
