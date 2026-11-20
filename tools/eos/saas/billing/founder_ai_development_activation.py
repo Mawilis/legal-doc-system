@@ -1,7 +1,7 @@
 """Development-only staged Founder AI commercial activation command.
 
 TITLE: WILSY Founder AI Development Activation Runner
-VERSION: v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES
+VERSION: v1.5.0-INSTITUTIONAL-ONLY-FOUNDER-ROLLOUT
 AUTHORITY: WILSY OS Core Governance; source registries own all mutations.
 EPITOME: Rehearse exact Founder plan -> subscription -> AI entitlement
          transitions on a loopback development Mongo replica set only.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: PlanRegistry owns plan CAS; SubscriptionRegistry owns
                           subscription proof and audit; Founder reconciliation
                           delegates issuance/activation to D57B and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES accepts independently
+CHANGELOG: v1.5.0-INSTITUTIONAL-ONLY-FOUNDER-ROLLOUT rejects alternate
+           Starter or Growth feature selection before any plan mutation,
+           binding all development rollout stages to the expressed Founder
+           Institutional business decision while preserving other modules.
+           v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES accepts independently
            proof-verified non-AI business features in the canonical Founder
            plan without maintaining a brittle local feature allowlist;
            competing AI tiers still fail closed and the plan is never rebuilt.
@@ -54,14 +58,14 @@ import tools.eos.saas.billing.subscription_registry as subscription_registry_mod
 from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import (
-    BRANDING_FEATURE, FOUNDER_PLAN_ID, FOUNDER_SUBSCRIPTION_ID,
+    BRANDING_FEATURE, FOUNDER_MANDATED_AI_FEATURE, FOUNDER_PLAN_ID, FOUNDER_SUBSCRIPTION_ID,
     FOUNDER_TENANT_ID, FounderAIReconciliationError,
     _canonical_plan, reconcile_founder_ai_entitlement,
 )
 from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 
-VERSION: Final[str] = "v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES"
+VERSION: Final[str] = "v1.5.0-INSTITUTIONAL-ONLY-FOUNDER-ROLLOUT"
 _FINGERPRINT: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
 
 
@@ -139,8 +143,8 @@ def execute_development_stage(
     )
     if stage not in {"plan", "subscription", "entitlement"}:
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_STAGE_INVALID")
-    if type(feature) is not WilsyAIVASFeatureId:
-        raise FounderAIDevelopmentActivationError("FOUNDER_AI_FEATURE_INVALID")
+    if type(feature) is not WilsyAIVASFeatureId or feature is not FOUNDER_MANDATED_AI_FEATURE:
+        raise FounderAIDevelopmentActivationError("FOUNDER_AI_INSTITUTIONAL_TIER_REQUIRED")
     plan, subscription = _exact_preflight(database, client, feature)
     if stage == "plan":
         if feature.value in plan.features:
@@ -272,7 +276,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: founder_ai_development_activation.py
-# VERSION: v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES
+# VERSION: v1.5.0-INSTITUTIONAL-ONLY-FOUNDER-ROLLOUT
 # AUTHORITY BOUNDARY: local-only stage coordination through canonical registries
 # TENANT POSTURE: one exact Founder subscription/plan/tenant tuple only
 # FAIL-CLOSED POSTURE: required tier, loopback replica and guarded stage writes
