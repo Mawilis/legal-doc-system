@@ -1,7 +1,7 @@
 """Exact Founder WILSY AI commercial entitlement reconciliation.
 
 TITLE: WILSY OS Founder AI Entitlement Reconciliation
-VERSION: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT
+VERSION: v1.3.0-FOUNDER-INSTITUTIONAL-COMMERCIAL-MANDATE
 AUTHORITY: WILSY OS Core Governance; existing subscription and P4 registries.
 EPITOME: Enforce exact zero-rated Founder commercial source and activate only an
          explicitly subscribed tier-specific AI feature through existing P4 CAS.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: PlanEntity owns plan state; SubscriptionRegistry owns
                           active subscription proof; D57B derives AI tier and
                           source evidence; P4 owns entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT also binds the
+CHANGELOG: v1.3.0-FOUNDER-INSTITUTIONAL-COMMERCIAL-MANDATE locks the
+           exact Founder entitlement tier selection to Institutional on the
+           expressed 2026-11-20 Founder mandate. The mandate establishes the
+           business selection only, never verified signing or runtime IAM.
+           v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT also binds the
            canonical PlanEntity state proof and integrity-envelope root in the
            nonissuing approval fingerprint to reject stale plan evidence.
            v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT prepares an exact,
@@ -76,11 +80,12 @@ from tools.eos.saas.domain.plan import PlanEntity
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT"
+VERSION: Final[str] = "v1.3.0-FOUNDER-INSTITUTIONAL-COMMERCIAL-MANDATE"
 FOUNDER_TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
 FOUNDER_SUBSCRIPTION_ID: Final[str] = "WILSYSUB-93455E4E"
 FOUNDER_PLAN_ID: Final[str] = "WILSYPLAN-37B8164F"
 BRANDING_FEATURE: Final[str] = "wilsy.vas.tenant_branding.enterprise.v1"
+FOUNDER_MANDATED_AI_FEATURE: Final[WilsyAIVASFeatureId] = WilsyAIVASFeatureId.INSTITUTIONAL
 _SHA3: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
 
 
@@ -165,8 +170,9 @@ def prepare_founder_ai_approval_intent(
     over this exact source fingerprint and then use the canonical registries.
     """
     _session_required(session)
-    _require(type(proposed_feature_id) is WilsyAIVASFeatureId,
-             "FOUNDER_AI_EXPLICIT_PROPOSED_TIER_REQUIRED")
+    _require(type(proposed_feature_id) is WilsyAIVASFeatureId
+             and proposed_feature_id is FOUNDER_MANDATED_AI_FEATURE,
+             "FOUNDER_AI_INSTITUTIONAL_TIER_REQUIRED")
     _require(subscription_collection is not None and plan_collection is not None,
              "FOUNDER_AI_SOURCE_COLLECTION_REQUIRED")
     plan = _canonical_plan(plan_collection, session)
@@ -249,8 +255,9 @@ def reconcile_founder_ai_entitlement(
     Caller owns commit, abort and whole-transaction retry if appropriate.
     """
     _session_required(session)
-    _require(type(feature_id) is WilsyAIVASFeatureId,
-             "FOUNDER_AI_APPROVED_FEATURE_REQUIRED")
+    _require(type(feature_id) is WilsyAIVASFeatureId
+             and feature_id is FOUNDER_MANDATED_AI_FEATURE,
+             "FOUNDER_AI_INSTITUTIONAL_TIER_REQUIRED")
     _require(isinstance(idempotency_key, str) and bool(idempotency_key.strip())
              and len(idempotency_key) <= 128,
              "FOUNDER_AI_IDEMPOTENCY_KEY_INVALID")
@@ -368,13 +375,14 @@ def reconcile_founder_ai_entitlement(
 
 __all__ = [
     "VERSION", "FOUNDER_TENANT_ID", "FOUNDER_SUBSCRIPTION_ID", "FOUNDER_PLAN_ID",
-    "BRANDING_FEATURE", "FounderAIApprovalIntent",
+    "BRANDING_FEATURE", "FOUNDER_MANDATED_AI_FEATURE",
+    "FounderAIApprovalIntent",
     "prepare_founder_ai_approval_intent", "FounderAIReconciliationError",
     "FounderAIReconciliationResult", "reconcile_founder_ai_entitlement",
 ]
 
 # ARTIFACT: founder_ai_entitlement_reconciliation.py
-# VERSION: v1.2.1-PLAN-PROOF-BOUND-APPROVAL-INTENT
+# VERSION: v1.3.0-FOUNDER-INSTITUTIONAL-COMMERCIAL-MANDATE
 # AUTHORITY BOUNDARY: source-verified Founder commercial composition and P4 CAS only
 # TENANT POSTURE: exact Founder tuple, no aliases or tenant-name default grants
 # FAIL-CLOSED POSTURE: active proof and one approved AI tier required before write
