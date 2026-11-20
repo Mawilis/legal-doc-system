@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.9.1-CONVERSATION-FIRST-CONSENT
+ * VERSION: v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.9.1-CONVERSATION-FIRST-CONSENT removes the misleading generic readiness
+ * CHANGELOG: v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR forwards only a server-verified
+ * project locator to Python EOS reasoning (never browser project facts), reuses
+ * the exact locator on replay, blocks unverified project reasoning and revokes
+ * in-flight turns when the observed workspace changes. Consent discloses that
+ * EOS may pass verified source excerpts to the authorized model provider.
+ * v4.9.1-CONVERSATION-FIRST-CONSENT removes the misleading generic readiness
  * messages, makes the active EOS workspace the conversational starting point,
  * and presents compact consent with an accessible optional disclosure. It
  * preserves metered opt-in and does not claim provider-grounded answers.
@@ -395,6 +400,7 @@ export function WilsyOSIntelligenceDock({
   const workLocatorKey = JSON.stringify(workLocator);
   const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
   const reasoningAbortRef = useRef(null);
+  const workLocatorKeyRef = useRef(workLocatorKey);
   const conversationGenerationRef = useRef(0);
   const sendLockRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -453,6 +459,18 @@ export function WilsyOSIntelligenceDock({
       resetWilsyAIConversationSession();
     };
   }, [dockScope]);
+
+  useLayoutEffect(() => {
+    if (workLocatorKeyRef.current === workLocatorKey) return;
+    workLocatorKeyRef.current = workLocatorKey;
+    conversationGenerationRef.current += 1;
+    reasoningAbortRef.current?.abort();
+    reasoningAbortRef.current = null;
+    sendLockRef.current = false;
+    reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
+    setIsSubmitting(false);
+    setErrorMessage('');
+  }, [workLocatorKey]);
 
   // Navigation events are untrusted locators. No profile, permission, seat,
   // project title or other source fact is accepted from browser events.
@@ -710,6 +728,15 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
       }
+      const currentProject = workLocator.project_id
+        && visibleWorkspaceContext?.state === 'READY'
+        && visibleWorkspaceContext.data.work?.project?.project_id === workLocator.project_id
+        ? { ...workLocator } : null;
+      if (!isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
+        setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
+        return;
+      }
+      const locatorKeyAtStart = workLocatorKey;
       const scopeAtStart = dockScopeRef.current;
       const generationAtStart = conversationGenerationRef.current;
       const controller = new AbortController();
@@ -717,7 +744,8 @@ export function WilsyOSIntelligenceDock({
       sendLockRef.current = true;
       const requestIsCurrent = () => !controller.signal.aborted
         && conversationGenerationRef.current === generationAtStart
-        && dockScopeRef.current === scopeAtStart;
+        && dockScopeRef.current === scopeAtStart
+        && workLocatorKeyRef.current === locatorKeyAtStart;
 
       setIsSubmitting(true);
       setErrorMessage('');
@@ -799,14 +827,16 @@ export function WilsyOSIntelligenceDock({
           ].join('\n\n').slice(0, 12000);
           const pending = reasoningReplayRef.current;
           const replay = pending.scope === scopeAtStart && pending.text === text
-            && pending.key && pending.prompt
+            && pending.locatorKey === locatorKeyAtStart && pending.key && pending.prompt
             ? pending
-            : { scope: scopeAtStart, text, prompt: reasoningPrompt, key: uuidv4() };
+            : { scope: scopeAtStart, text, prompt: reasoningPrompt, key: uuidv4(),
+              locatorKey: locatorKeyAtStart, params: currentProject };
           reasoningReplayRef.current = replay;
           const response = await api.post('/wilsy-ai/reasoning', {
             prompt: replay.prompt,
           }, {
             headers: { 'X-Tenant-ID': exactTenant, 'Idempotency-Key': replay.key },
+            ...(replay.params ? { params: replay.params } : {}),
             timeout: 30000,
             signal: controller.signal,
           });
@@ -900,6 +930,9 @@ export function WilsyOSIntelligenceDock({
       prompt,
       isSubmitting,
       reasoningUsageConsent,
+      workLocatorKey,
+      workLocator,
+      visibleWorkspaceContext,
       authUser?.role,
       dockScope,
       activeThreadId,
@@ -1187,7 +1220,7 @@ export function WilsyOSIntelligenceDock({
                           project_id: source.project_id },
                       }))}>Inspect source: {source.label}</button>)}
                     <p style={{ margin: '4px 0', color: '#cbd5e1' }}>
-                      Workspace records are verified for inspection only; AI responses are not yet grounded in them.
+                      Verified project sources may be included in AI reasoning only after independent EOS authorization and usage admission.
                       Contextual execution requires verified commercial and seat admission.
                     </p>
                   </details> : <span>{visibleWorkspaceContext?.state === 'LOADING' ? 'Verifying workspace context…'
@@ -1206,7 +1239,7 @@ export function WilsyOSIntelligenceDock({
                         ? (visibleWorkspaceContext.data.work?.project?.name || 'Your authorized workspace')
                         : 'Ask WILSY AI about your work'}</h4>
                       <p>{visibleWorkspaceContext?.state === 'READY'
-                        ? 'EOS has verified this workspace for inspection. AI answers are not yet grounded in its source records.'
+                        ? 'EOS has verified this workspace. With your consent, AI can use independently rechecked project facts for this request.'
                         : visibleWorkspaceContext?.state === 'LOADING'
                           ? 'Checking which workspace information EOS permits you to access.'
                           : 'Ask a question, or refresh workspace context to verify the work you are viewing.'}</p>
@@ -1256,7 +1289,9 @@ export function WilsyOSIntelligenceDock({
                       <summary style={{ cursor: 'pointer', minHeight: 28 }}>Usage and permissions</summary>
                       <span>Each request may consume metered AI usage. EOS checks permissions,
                         subscription entitlement and available capacity before processing.
-                        Consent does not authorize changes to projects, staffing or payments.</span>
+                        When you view a verified project, EOS may send a bounded excerpt of
+                        project and task records to the configured AI provider to answer.
+                        Consent never authorizes changes to projects, staffing or payments.</span>
                     </details>
                   </span>
                 </label>}
@@ -1563,7 +1598,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.9.1-CONVERSATION-FIRST-CONSENT
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1579,7 +1614,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.9.1-CONVERSATION-FIRST-CONSENT
+ * VERSION: v4.10.0-VERIFIED-PROJECT-REASONING-LOCATOR
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
