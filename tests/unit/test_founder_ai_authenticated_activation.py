@@ -1,7 +1,7 @@
 """Authenticated Founder Institutional AI staged issuance unit certificate.
 
 TITLE: WILSY Authenticated Founder Institutional AI Activation Unit Certificate
-VERSION: v1.0.0-DUAL-IAM-EXACT-FOUNDER-ACTIVATION-CERT
+VERSION: v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT
 AUTHORITY: Synthetic exact-source and HTTP IAM-boundary regression evidence.
 EPITOME: Certify an authenticated, zero-rated, recoverable PlanRegistry to
   SubscriptionRegistry to D57B/P4 activation with an exact ACTIVE readback.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder source activation, current dual-authority
   subscription HTTP command, PlanRegistry, SubscriptionRegistry and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-DUAL-IAM-EXACT-FOUNDER-ACTIVATION-CERT adds
+CHANGELOG: v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT aligns complete sovereign
+  metadata with the repository guard. v1.0.0-DUAL-IAM-EXACT-FOUNDER-ACTIVATION-CERT adds
   exact-tenant denial, success, source-verified retry, recoverable partial
   stage failure, fixed tier and dual HTTP authority composition tests.
 COMPLIANCE: POPIA s19; GDPR Article32; SOC2 CC7.2.
@@ -17,7 +18,7 @@ SECURITY / PRIVACY POSTURE: UUID-free synthetic records; no live secrets.
 TENANT BOUNDARY: Explicit Founder tuple; no tenant-name or role bypass.
 AUTHORITY BOUNDARY: HTTP requires current plan:manage and subscription:manage;
   unit source stubs cannot grant commercial or runtime authority.
-FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; zero-rated source only.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively; zero-rated source only.
 FAIL-CLOSED DECLARATION: No source/no dual IAM/no P4 ACTIVE readback means no success.
 """
 from __future__ import annotations
@@ -260,7 +261,7 @@ def test_http_declares_both_independent_permissions() -> None:
 
 
 # ARTIFACT: test_founder_ai_authenticated_activation.py
-# VERSION: v1.0.0-DUAL-IAM-EXACT-FOUNDER-ACTIVATION-CERT
+# VERSION: v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT
 # AUTHORITY BOUNDARY: source-scoped dual-IAM HTTP contract and staged registry mocks
 # TENANT POSTURE: foreign tenant and different principal never reach P4
 # FAIL-CLOSED POSTURE: partial stage, source divergence or no ACTIVE readback fails
