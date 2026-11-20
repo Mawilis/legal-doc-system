@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.36.0-SEVENTEEN-TEMPLATE-CATALOGUE-COMPAT
+ * VERSION: v2.37.0-TEMPLATE-FAILURE-DIAGNOSTICS-RETRY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.37.0-TEMPLATE-FAILURE-DIAGNOSTICS-RETRY exposes bounded, privacy-safe
+ *          template catalogue HTTP or schema failures and a real retry.
+ *          A mismatched backend cannot be mistaken for an empty template
+ *          library. No unchecked or locally invented template is rendered.
  * CHANGELOG: v2.36.0-SEVENTEEN-TEMPLATE-CATALOGUE-COMPAT repairs the seven-template client
  *          validation ceiling, accepts the verified new 17-industry
  *          catalogue and labels the legacy seven-template EOS source as
@@ -677,6 +681,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [templates, setTemplates] = useState([]);
   const [templateState, setTemplateState] = useState('IDLE');
   const [templateError, setTemplateError] = useState('');
+  const [templateFailureCode, setTemplateFailureCode] = useState('');
+  const [templateRetry, setTemplateRetry] = useState(0);
   const [selectedTemplateSlug, setSelectedTemplateSlug] = useState('');
   const [templatePickerOpen, setTemplatePickerOpen] = useState(true);
   const [templateName, setTemplateName] = useState('');
@@ -972,15 +978,22 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     const current = scopeKey;
     setTemplateState('LOADING');
     setTemplateError('');
+    setTemplateFailureCode('');
     void (async () => {
       try {
         const { data } = await api.get('/projects/templates', { headers: tenantHeaders });
         if (serial !== templateSequence.current || activeScope.current !== current) return;
-        if (data?.schema !== 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1'
+        if (!data || typeof data !== 'object'
+          || data.schema !== 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1'
           || data.tenant_id !== tenantId || data.principal_id !== principalId
-          || data.ownership !== 'PLATFORM_STARTERS' || !Array.isArray(data.items)
-          || ![7, 17].includes(data.items.length)
-          || new Set(data.items.map(item => item.slug)).size !== data.items.length
+          || data.ownership !== 'PLATFORM_STARTERS' || !Array.isArray(data.items)) {
+          throw new Error('TEMPLATE_CATALOGUE_ENVELOPE_INVALID');
+        }
+        if (![7, 17].includes(data.items.length)) {
+          throw new Error('TEMPLATE_CATALOGUE_COUNT_' + String(data.items.length).slice(0, 5));
+        }
+        if (
+          new Set(data.items.map(item => item.slug)).size !== data.items.length
           || data.items.some(item => typeof item.slug !== 'string'
             || !/^[a-z][a-z0-9-]{2,63}$/.test(item.slug)
             || typeof item.industry !== 'string' || !item.industry
@@ -996,15 +1009,36 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           throw new Error('PROJECT_TEMPLATE_SOURCE_INVALID');
         }
         setTemplates(data.items);
+        setTemplateFailureCode('');
         setTemplateState('READY');
       } catch (cause) {
         if (serial !== templateSequence.current || activeScope.current !== current) return;
-        setTemplateState(cause?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
-        setTemplateError('EOS could not verify the authorized template catalogue.');
+        const status = cause?.response?.status;
+        const code = status === 401 ? 'HTTP_401_SESSION_REQUIRED'
+          : status === 403 ? 'HTTP_403_CATALOGUE_ACCESS_DENIED'
+            : status === 404 ? 'HTTP_404_PROJECTS_TEMPLATES_ROUTE_MISSING'
+              : status === 408 || cause?.code === 'ECONNABORTED'
+                ? 'TEMPLATE_REQUEST_TIMED_OUT'
+                : status === 503 ? 'HTTP_503_EOS_DEPENDENCY_UNAVAILABLE'
+                  : Number.isInteger(status) ? 'HTTP_' + status
+                    : typeof cause?.message === 'string'
+                      && /^TEMPLATE_CATALOGUE_[A-Z0-9_]{1,80}$/.test(cause.message)
+                      ? cause.message : 'TEMPLATE_TRANSPORT_UNAVAILABLE';
+        setTemplateFailureCode(code);
+        setTemplateState(status === 403 || status === 401 ? 'DENIED' : 'UNAVAILABLE');
+        setTemplateError(code === 'HTTP_401_SESSION_REQUIRED'
+          ? 'Your authenticated EOS session needs renewal before templates can be verified.'
+          : code === 'HTTP_403_CATALOGUE_ACCESS_DENIED'
+            ? 'EOS denied template catalogue access for this selected tenant and principal.'
+            : code === 'HTTP_404_PROJECTS_TEMPLATES_ROUTE_MISSING'
+              ? 'The running Python EOS does not expose the Projects template route. Check the backend checkout.'
+              : code.startsWith('TEMPLATE_CATALOGUE_')
+                ? 'The running EOS returned a template catalogue that failed WILSY source verification.'
+                : 'The authorized template catalogue could not be loaded from Python EOS.');
       }
     })();
     return () => { templateSequence.current += 1; };
-  }, [mode, scopeKey, tenantId, principalId, tenantHeaders]);
+  }, [mode, scopeKey, tenantId, principalId, tenantHeaders, templateRetry]);
 
   const selectedTemplate = templates.find(item => item.slug === selectedTemplateSlug);
 
@@ -1499,7 +1533,15 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             </div>
             {templateState === 'LOADING' && <p role="status" className="text-sm text-slate-600">Verifying available templates…</p>}
             {templateState !== 'READY' && templateState !== 'LOADING' &&
-              <p role="alert" className="text-sm text-rose-700">{templateError}</p>}
+              <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-950">
+                <div>
+                  <p className="font-semibold">{templateError}</p>
+                  <p className="mt-1 font-mono text-xs">Diagnostic: {templateFailureCode || 'TEMPLATE_SOURCE_UNAVAILABLE'}</p>
+                  <p className="mt-1 text-xs">Source: GET /api/projects/templates. No template is selectable until EOS verifies this source.</p>
+                </div>
+                <button type="button" className="wp-button" disabled={!tenantId || !principalId}
+                  onClick={() => setTemplateRetry(count => count + 1)}>Retry templates</button>
+              </div>}
             {templateState === 'READY' && <>
               {templates.length < 17 && <p role="alert" className="mb-3 rounded-lg border border-amber-400 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
                 This EOS runtime returned {templates.length} legacy starter templates;
@@ -1891,7 +1933,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.36.0-SEVENTEEN-TEMPLATE-CATALOGUE-COMPAT
+// VERSION: v2.37.0-TEMPLATE-FAILURE-DIAGNOSTICS-RETRY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
