@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.10.1-FAILED-REASONING-STATUS-CERT
+ * VERSION: v1.11.0-AI-COMMERCIAL-POSTURE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.10.1-FAILED-REASONING-STATUS-CERT certifies a single bounded
+ * CHANGELOG: v1.11.0-AI-COMMERCIAL-POSTURE-CERT certifies
+ * that missing AI commercial entitlement does not conceal independently
+ * verified workspace facts, imply available model capacity or permit
+ * metered reasoning submission. v1.10.1-FAILED-REASONING-STATUS-CERT certifies a single bounded
  * network failure message, retains the unsent prompt and prohibits fake
  * assistant replies on failed reasoning. v1.10.0-EXACT-HEADQUARTERS-WORK-PROJECTION-CERT verifies source-owned
  * My Work priority display without AI inference and denies foreign tenant
@@ -702,6 +705,34 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByText('Obsolete capacity answer')).not.toBeInTheDocument();
   });
 
+  it('keeps independently verified workspace visible while unprovisioned AI is denied', async () => {
+    const person = 'context-person';
+    mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: person,
+        authority: { source: 'PYTHON_EOS', read_only: true, model_invoked: false,
+          financial_execution: false },
+        context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-20T08:00:00+00:00', locator: options.params,
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0,
+          seat_allocation: { state: 'UNAVAILABLE' } },
+        work: null,
+      } }) : Promise.reject(rejectedResponse(503, 'other sources unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: person, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByLabelText('Inspect verified workspace context'))
+      .toHaveTextContent('AI reasoning not activated'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Which task is overdue?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('reads current context only while open and treats page events as locators', async () => {
     const principal = 'context-person';
     const projectId = 'prj-' + 'a'.repeat(48);
@@ -730,7 +761,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByLabelText('Inspect verified workspace context'));
     expect(await screen.findByRole('button', { name: 'Inspect source: Verified current project' })).toBeVisible();
     expect(screen.getByText(/Source Person/)).toBeVisible();
-    expect(screen.getByText(/Verified project sources may be included in AI reasoning only after independent EOS authorization/)).toBeVisible();
+    expect(screen.getByText(/Verified project sources can support reasoning only after independent EOS authorization/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
     mockApiPost.mockResolvedValueOnce({ data: {
       response_text: 'Verified context answer', usage_observation_id: 'usage-project',
@@ -1071,7 +1102,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.10.1-FAILED-REASONING-STATUS-CERT
+ * VERSION: v1.11.0-AI-COMMERCIAL-POSTURE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
