@@ -1,5 +1,5 @@
 """TITLE: WILSY Founder Designation Real Mongo Certification
-VERSION: v1.0.0-FOUNDER-DESIGNATION-REPLAY-ISOLATION-CERT
+VERSION: v1.0.1-FOUNDER-PRINCIPAL-CREATE-FIXTURE
 AUTHORITY: Exact synthetic active principal, membership, capacity and IAM.
 EPITOME: Certify non-IAM Founder title issuance, readback, replay, owner MFA
   denial, wrong-principal isolation and no IAM/commercial mutation.
@@ -7,7 +7,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Founder institutional designation source and
   canonical identity/role repositories; disposable Global Principal Mongo.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-FOUNDER-DESIGNATION-REPLAY-ISOLATION-CERT initial durable
+CHANGELOG: v1.0.1-FOUNDER-PRINCIPAL-CREATE-FIXTURE uses the canonical principal create API in disposable fixtures. v1.0.0 initial durable
   test of current authorization, title/audit, replay and negative proof.
 COMPLIANCE: POPIA s19; GDPR Article32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic credentials, UUID database, no live keys.
@@ -79,7 +79,7 @@ def live_replica(monkeypatch: pytest.MonkeyPatch):
     database["users"].insert_one({
         "_id": oid, "tenantId": tenant, "email": email,
     })
-    PrincipalAuthorityRepository.insert(
+    PrincipalAuthorityRepository.create(
         PrincipalAuthority(principal, PrincipalStatus.ACTIVE, 0),
         database["principal_authorities"],
     )
@@ -178,7 +178,7 @@ def test_other_principal_and_tenant_never_inherit_founder_title(live_replica):
 
 
 # ARTIFACT: test_founder_institutional_designation_real_mongo.py
-# VERSION: v1.0.0-FOUNDER-DESIGNATION-REPLAY-ISOLATION-CERT
+# VERSION: v1.0.1-FOUNDER-PRINCIPAL-CREATE-FIXTURE
 # AUTHORITY BOUNDARY: test confirms non-IAM title never assigns grants
 # TENANT POSTURE: UUID synthetic membership and Owner identity
 # FAIL-CLOSED POSTURE: invalid proof and cross-principal do not claim Founder
