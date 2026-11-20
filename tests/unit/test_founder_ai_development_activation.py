@@ -1,7 +1,7 @@
 """WILSY local-only Founder AI activation stage certification.
 
 TITLE: Founder AI Development Activation Stage Unit Certificate
-VERSION: v1.0.0-LOCAL-ROLLOUT-GATE-CERT
+VERSION: v1.1.0-CANONICAL-STAGE-READBACK-CERT
 AUTHORITY: Synthetic tests; PlanRegistry and EOS own business truth.
 EPITOME: Verify no Atlas/production writes, explicit tier choice, staged
          commercial mutation, and independent source gating.
@@ -9,7 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder development activation, source registry APIs,
                            Mongo kernel's caller-owned transaction boundary.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.0-LOCAL-ROLLOUT-GATE-CERT adds production denial,
+CHANGELOG: v1.1.0-CANONICAL-STAGE-READBACK-CERT verifies canonical plan
+           readback after a staged audited update, preventing successful
+           replies for unobserved or stale plan state. v1.0.0-LOCAL-ROLLOUT-GATE-CERT adds production denial,
            local replica admission, explicit feature and dry-run proof.
 COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: No live tenant records or credentials.
@@ -125,11 +127,15 @@ def test_explicit_plan_stage_calls_only_canonical_registry(
     dev_env: None, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Source evolution is delegated to PlanRegistry with exact tenant scope."""
-    plan = SimpleNamespace(features=(module.BRANDING_FEATURE,))
+    plan = SimpleNamespace(
+        features=(module.BRANDING_FEATURE,), price=0,
+        plan_type=SimpleNamespace(value="FOUNDER_ENTERPRISE"),
+    )
     observed: list[tuple[Any, ...]] = []
     monkeypatch.setattr(module, "_exact_preflight", lambda *_: (plan, SimpleNamespace()))
     def update(plan_id: str, values: dict[str, Any], **options: Any) -> dict[str, Any]:
         observed.append((plan_id, values, options))
+        plan.features = tuple(values["features"])
         return {"success": True}
     monkeypatch.setattr(module.PlanRegistry, "update", update)
     result = module.execute_development_stage(
@@ -161,7 +167,7 @@ def test_entitlement_step_denies_until_plan_and_subscription_match(
 
 
 # ARTIFACT: test_founder_ai_development_activation.py
-# VERSION: v1.0.0-LOCAL-ROLLOUT-GATE-CERT
+# VERSION: v1.1.0-CANONICAL-STAGE-READBACK-CERT
 # AUTHORITY BOUNDARY: synthetic development-only stage and registry checks
 # TENANT POSTURE: exact Founder identity, no generic free-plan entitlement
 # FAIL-CLOSED POSTURE: prod or remote transport rejects before write
