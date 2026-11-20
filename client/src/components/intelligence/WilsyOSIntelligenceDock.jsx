@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.11.0-VERIFIED-SELECTED-TASK-FOCUS
+ * VERSION: v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.11.0-VERIFIED-SELECTED-TASK-FOCUS names the independently verified
+ * CHANGELOG: v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT greets new conversations from the authenticated
+ * operator's first name and local time, remembers voluntary consent only
+ * for the exact browser/tenant/principal/capacity and disclosure version,
+ * and displays failed requests as errors, never fabricated AI turns.
+ * v4.11.0-VERIFIED-SELECTED-TASK-FOCUS names the independently verified
  * selected task within the existing conversation context and empty-state
  * explanation, without trusting page-event titles or opening new cards.
  * v4.10.1-INDEPENDENT-AI-CONSENT-DISCLOSURE separates expandable usage
@@ -327,6 +331,26 @@ const canProbeBillingIntelligence = (role) => (
  * @returns {React.ReactElement} Accessible, movable conversation companion.
  * No IAM, workforce, commercial or financial authority is created.
  */
+const AI_CONSENT_VERSION = 'WILSY-AI-USAGE-DISCLOSURE/V1';
+
+/** Use authenticated display identity and local presentation time only. */
+function operatorGreeting(user, hour = new Date().getHours()) {
+  const raw = [user?.firstName, user?.first_name, user?.displayName, user?.name]
+    .find(value => typeof value === 'string' && value.trim());
+  const first = raw?.trim().split(/\s+/u)[0]?.replace(/[^\p{L}\p{M}'-]/gu, '').slice(0, 48);
+  const period = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  return `Good ${period}${first ? `, ${first}` : ''}.`;
+}
+
+/** Browser preference only: never an entitlement or authorized usage admission. */
+function consentKeyFor(user, tenant, scope) {
+  if (typeof user?.id !== 'string' || !user.id.trim()
+    || typeof tenant !== 'string' || !tenant.trim()) return null;
+  return 'wilsy.ai.usage-consent:' + JSON.stringify([
+    AI_CONSENT_VERSION, tenant, user.id, scope,
+  ]);
+}
+
 export function WilsyOSIntelligenceDock({
   authUser = null,
   activeTenant = null,
@@ -435,6 +459,22 @@ export function WilsyOSIntelligenceDock({
     authUser?.membershipRevision, authUser?.businessRoleRevision,
   ].map((part) => String(part ?? '')).join(':');
   const dockScopeRef = useRef(dockScope);
+  const consentKey = consentKeyFor(authUser,
+    activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId, dockScope);
+  const consentKeyRef = useRef(consentKey);
+  consentKeyRef.current = consentKey;
+  const updateUsageConsent = useCallback(accepted => {
+    const key = consentKeyRef.current;
+    if (key) {
+      try {
+        if (accepted) window.localStorage.setItem(key, 'accepted');
+        else window.localStorage.removeItem(key);
+      } catch {
+        // Browser storage is optional. EOS reauthorizes every reasoning call.
+      }
+    }
+    setReasoningUsageConsent(accepted);
+  }, []);
 
   // This module-level session history belongs to the current authenticated
   // capacity only. Changing identity, tenant or capacity revokes old turns and
@@ -453,7 +493,15 @@ export function WilsyOSIntelligenceDock({
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
-    setReasoningUsageConsent(false);
+    let rememberedConsent = false;
+    if (consentKey) {
+      try {
+        rememberedConsent = window.localStorage.getItem(consentKey) === 'accepted';
+      } catch {
+        rememberedConsent = false;
+      }
+    }
+    setReasoningUsageConsent(rememberedConsent);
     reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
     setDockContext(null);
     setKennelPosture('STANDBY');
@@ -464,7 +512,7 @@ export function WilsyOSIntelligenceDock({
       healthGenerationRef.current += 1;
       resetWilsyAIConversationSession();
     };
-  }, [dockScope]);
+  }, [dockScope, consentKey]);
 
   useLayoutEffect(() => {
     if (workLocatorKeyRef.current === workLocatorKey) return;
@@ -903,27 +951,10 @@ export function WilsyOSIntelligenceDock({
           : status === 403 ? 'WILSY AI permission or subscription entitlement is not verified.'
           : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
           : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
-          : 'WILSY AI reasoning was not verified; no response has been accepted.';
+          : 'WILSY AI could not verify this answer. Your question remains in the composer.';
         setErrorMessage(safeMessage);
         if (!isLegalDockRole(authUser?.role)) setPrompt(text);
-        const failTurn = {
-          role: 'assistant',
-          content: safeMessage,
-          timestamp: new Date().toISOString(),
-        };
-        try {
-          const afterFail = await persistWilsyAIConversationTurn({
-            threadId,
-            message: failTurn,
-          });
-          if (!requestIsCurrent()) return;
-          setConversationThreads((prev) => [
-            afterFail,
-            ...prev.filter((item) => item.id !== afterFail.id),
-          ]);
-        } catch {
-          /* ignore */
-        }
+        // A failure is not an AI answer; retain draft and show one error only.
       } finally {
         if (requestIsCurrent()) {
           sendLockRef.current = false;
@@ -1075,6 +1106,7 @@ export function WilsyOSIntelligenceDock({
     }
   }, [deadlineMatterId, deadlineLoading]);
 
+  const welcomeGreeting = operatorGreeting(authUser);
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -1245,16 +1277,19 @@ export function WilsyOSIntelligenceDock({
                 <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
-                      <h4>{visibleWorkspaceContext?.state === 'READY'
-                        ? (visibleWorkspaceContext.data.work?.project?.name || 'Your authorized workspace')
-                        : 'Ask WILSY AI about your work'}</h4>
+                      <h4>{welcomeGreeting}</h4>
+                      {visibleWorkspaceContext?.state === 'READY'
+                        && visibleWorkspaceContext.data.work?.project?.name
+                        ? <strong>{visibleWorkspaceContext.data.work.project.name}</strong> : null}
                       <p>{visibleWorkspaceContext?.state === 'READY'
                         ? (visibleWorkspaceContext.data.work?.selected_task?.title
                           ? `You're viewing the verified task “${visibleWorkspaceContext.data.work.selected_task.title}”. Ask about this task, its status or its project. EOS rechecks its facts before AI reasoning.`
                           : 'EOS has verified this workspace. With your consent, AI can use independently rechecked project facts for this request.')
                         : visibleWorkspaceContext?.state === 'LOADING'
                           ? 'Checking which workspace information EOS permits you to access.'
-                          : 'Ask a question, or refresh workspace context to verify the work you are viewing.'}</p>
+                          : visibleWorkspaceContext?.state === 'DENIED'
+                            ? 'EOS did not authorize workspace context. I will not invent project or task facts.'
+                            : 'Ask a general question, or open an authorized project for verified work context.'}</p>
                     </div>
                   )}
                   {(activeThread?.messages || []).map((msg, idx) => (
@@ -1294,10 +1329,12 @@ export function WilsyOSIntelligenceDock({
                   <label style={{ display: 'flex', gap: 9, alignItems: 'center',
                     textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
                     <input type="checkbox" checked={reasoningUsageConsent}
-                      onChange={event => setReasoningUsageConsent(event.target.checked)}
+                      onChange={event => updateUsageConsent(event.target.checked)}
                       aria-label="Confirm WILSY AI usage admission"
                       style={{ width: 18, height: 18, flexShrink: 0, accentColor: '#72b8ff' }}/>
-                    <span>Allow AI usage for this conversation</span>
+                    <span>{reasoningUsageConsent
+                      ? 'AI usage consent accepted for this workspace'
+                      : 'Allow AI usage for this conversation'}</span>
                   </label>
                   <details style={{ marginTop: 3, paddingLeft: 27, color: '#cbd5e1' }}>
                     <summary style={{ cursor: 'pointer', minHeight: 28 }}>Usage and permissions</summary>
@@ -1611,7 +1648,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.11.0-VERIFIED-SELECTED-TASK-FOCUS
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1627,7 +1664,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.11.0-VERIFIED-SELECTED-TASK-FOCUS
+ * VERSION: v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
