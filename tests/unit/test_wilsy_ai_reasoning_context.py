@@ -1,12 +1,15 @@
 """TITLE: WILSY AI independently authorized context HTTP certificate.
-VERSION: v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT
+VERSION: v1.5.0-PROVIDER-READINESS-PROJECTION-CERT
 AUTHORITY: Synthetic regression evidence; canonical EOS sources own authority.
 EPITOME: Verify locator validation, exact source admission, source freshness,
          bounded projections, unavailable facts and provider-free context reads.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_context.py
 COLLABORATION / OWNERSHIP: Reasoning router, Projects source and existing IAM.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT proves that absent
+CHANGELOG: v1.5.0-PROVIDER-READINESS-PROJECTION-CERT verifies that
+           provider binding readiness is server-owned, and absent model
+           capability is explicit without altering source IAM or consumption.
+           v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT proves that absent
            exact-tenant AI entitlement keeps separately admitted read-only
            workspace context visible with zero AI capacity, while reasoning
            POST remains denied and no model or entitlement is created.
@@ -165,6 +168,7 @@ def test_headquarters_context_has_explicit_unavailable_facts_and_no_model(source
     assert payload["allowance"]["commercial_pricing"]["state"] == "UNAVAILABLE"
     assert payload["workforce"]["state"] == payload["qualifications"]["state"] == "UNAVAILABLE"
     assert payload["authority"]["model_invoked"] is False
+    assert payload["authority"]["provider_binding"] == "UNAVAILABLE"
     assert source["calls"] == ["entitlement"]
 
 
@@ -363,7 +367,7 @@ def test_oversized_project_context_is_not_sent_to_model() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_reasoning_context.py
-# VERSION: v1.4.0-INDEPENDENT-CONTEXT-WITHOUT-AI-GRANT-CERT
+# VERSION: v1.5.0-PROVIDER-READINESS-PROJECTION-CERT
 # AUTHORITY BOUNDARY: synthetic context HTTP regression evidence only
 # TENANT POSTURE: independently admitted exact tenant, principal and capacity
 # FAIL-CLOSED POSTURE: malformed, mismatched and stale source locators reject
