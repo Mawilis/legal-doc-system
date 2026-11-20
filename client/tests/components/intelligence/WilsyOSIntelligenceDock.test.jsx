@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT
+ * VERSION: v1.10.0-EXACT-HEADQUARTERS-WORK-PROJECTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT certifies time-appropriate
+ * CHANGELOG: v1.10.0-EXACT-HEADQUARTERS-WORK-PROJECTION-CERT verifies source-owned
+ * My Work priority display without AI inference and denies foreign tenant
+ * projection despite a successful HTTP response. v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT certifies time-appropriate
  * first-name greeting, exact-scope same-browser consent restoration,
  * changed-tenant revocation and single visible failure status, while keeping
  * EOS entitlement and usage admission independent of browser preferences.
@@ -530,6 +532,46 @@ describe('WilsyOSIntelligenceDock', () => {
       .not.toBeChecked();
   });
 
+  it('shows only verified source-owned current work, not a fabricated AI answer', async () => {
+    const user = { id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER' };
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'work-operator',
+        items: [
+          { title: 'Resolve overdue agreement', source: 'CRM', is_overdue: true },
+          { title: 'Review delivery', source: 'PROJECTS', is_overdue: false },
+        ],
+        summary: { active_count: 2, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } }) : Promise.reject(rejectedResponse(403, 'not admitted')));
+    render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const work = await screen.findByRole('region', { name: 'Current authorized work' });
+    expect(work).toHaveTextContent('Resolve overdue agreement');
+    expect(work).toHaveTextContent('Review delivery');
+    expect(work).toHaveTextContent('2 active');
+    expect(work).toHaveTextContent('1 overdue');
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('never displays a foreign-tenant My Work response', async () => {
+    const user = { id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER' };
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        tenant_id: 'FOREIGN_TENANT', principal_id: 'work-operator',
+        items: [{ title: 'Foreign confidential task', source: 'CRM', is_overdue: true }],
+        summary: { active_count: 1, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } }) : Promise.reject(rejectedResponse(403, 'not admitted')));
+    render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
+    expect(screen.queryByText('Foreign confidential task')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Current authorized work' })).not.toBeInTheDocument();
+  });
+
   it('blocks metered general reasoning until the operator consents', () => {
     render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
@@ -1023,7 +1065,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.9.0-PERSONAL-GREETING-REMEMBERED-CONSENT-CERT
+ * VERSION: v1.10.0-EXACT-HEADQUARTERS-WORK-PROJECTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
