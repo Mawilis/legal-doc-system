@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.51.0-AI-LOCATOR-PRIVACY-CERT
+ * VERSION: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT verifies an open
+ *          EOS-verified task drawer publishes only task id/revision, closing
+ *          it clears task focus, and no task title enters browser locators.
  * CHANGELOG: v2.51.0-AI-LOCATOR-PRIVACY-CERT verifies verified-detail locators,
  *          absence of source content in browser events and cleanup on exit.
  * CHANGELOG: v2.50.0-TEMPLATE-FAILURE-RETRY-SOURCE-CERT verifies missing backend routes and
@@ -929,11 +932,29 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     }).closest('tr');
     expect(row).toHaveAttribute('data-task-id', taskId);
     row.focus();
-    fireEvent.keyDown(row, { key: 'Enter' });
-    expect(screen.getByRole('dialog', { name: 'Work details: Build milestone execution' }))
-      .toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
-    expect(row).toHaveFocus();
+    const published = vi.spyOn(window, 'dispatchEvent');
+    try {
+      fireEvent.keyDown(row, { key: 'Enter' });
+      expect(screen.getByRole('dialog', { name: 'Work details: Build milestone execution' }))
+        .toBeVisible();
+      await waitFor(() => expect(published.mock.calls.some(([event]) =>
+        event.type === 'wilsy:ai-context-locator'
+        && event.detail?.locator?.task_id === taskId
+        && event.detail?.locator?.task_revision === 1
+        && event.detail?.locator?.project_id === PROJECT_ID)).toBe(true));
+      expect(published.mock.calls.filter(([event]) =>
+        event.type === 'wilsy:ai-context-locator'
+        && event.detail?.locator?.task_id === taskId)
+        .every(([event]) => !JSON.stringify(event.detail).includes('Build milestone execution'))).toBe(true);
+      fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+      await waitFor(() => expect(published.mock.calls.some(([event]) =>
+        event.type === 'wilsy:ai-context-locator'
+        && event.detail?.locator?.project_id === PROJECT_ID
+        && !event.detail.locator.task_id)).toBe(true));
+      expect(row).toHaveFocus();
+    } finally {
+      published.mockRestore();
+    }
 
     fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
     expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
@@ -2195,7 +2216,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.51.0-AI-LOCATOR-PRIVACY-CERT
+ * VERSION: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
