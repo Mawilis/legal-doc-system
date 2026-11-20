@@ -1,7 +1,7 @@
 """Development-only staged Founder AI commercial activation command.
 
 TITLE: WILSY Founder AI Development Activation Runner
-VERSION: v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE
+VERSION: v1.2.0-STAGED-READBACK-VERIFICATION
 AUTHORITY: WILSY OS Core Governance; source registries own all mutations.
 EPITOME: Rehearse exact Founder plan -> subscription -> AI entitlement
          transitions on a loopback development Mongo replica set only.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: PlanRegistry owns plan CAS; SubscriptionRegistry owns
                           subscription proof and audit; Founder reconciliation
                           delegates issuance/activation to D57B and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE enforces
+CHANGELOG: v1.2.0-STAGED-READBACK-VERIFICATION re-reads canonical
+           plan and subscription evidence after each committed development
+           stage, detecting partial failures without inventing rollback truth.
+           v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE enforces
            loopback development-replica admission inside the exported stage
            entrypoint, so imported callers cannot bypass CLI-only guards.
            v1.0.0-LOCAL-FOUNDER-AI-COMMERCIAL-ROLLOUT creates
@@ -51,7 +54,7 @@ from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import (
 from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 
-VERSION: Final[str] = "v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE"
+VERSION: Final[str] = "v1.2.0-STAGED-READBACK-VERIFICATION"
 _ALLOWED_FOUNDATION: Final[frozenset[str]] = frozenset(
     (BRANDING_FEATURE, "legal.core"),
 )
@@ -145,6 +148,11 @@ def execute_development_stage(
         )
         if result.get("success") is not True:
             raise FounderAIDevelopmentActivationError("FOUNDER_AI_PLAN_CAS_FAILED")
+        committed_plan, _ = _exact_preflight(database, client, feature)
+        if (feature.value not in committed_plan.features
+            or committed_plan.price != 0
+            or committed_plan.plan_type.value != "FOUNDER_ENTERPRISE"):
+            raise FounderAIDevelopmentActivationError("FOUNDER_AI_PLAN_READBACK_FAILED")
         return {"stage": stage, "state": "PLAN_UPDATED_VERIFY_SUBSCRIPTION_NEXT", "writes": True}
     if feature.value not in plan.features:
         raise FounderAIDevelopmentActivationError("FOUNDER_AI_PLAN_FEATURE_NOT_CURRENT")
@@ -168,6 +176,11 @@ def execute_development_stage(
                     or tuple(updated.plan_features) != tuple(plan.features)
                     or updated.plan_catalogue_version != plan.catalogue_version):
                     raise FounderAIDevelopmentActivationError("FOUNDER_AI_SUBSCRIPTION_RESULT_INVALID")
+        committed_plan, committed_subscription = _exact_preflight(database, client, feature)
+        if (tuple(committed_subscription.plan_features) != tuple(committed_plan.features)
+            or committed_subscription.plan_catalogue_version != committed_plan.catalogue_version
+            or committed_subscription.amount != 0):
+            raise FounderAIDevelopmentActivationError("FOUNDER_AI_SUBSCRIPTION_READBACK_FAILED")
         return {"stage": stage, "state": "SUBSCRIPTION_UPDATED_VERIFY_ENTITLEMENT_NEXT", "writes": True}
     if (tuple(subscription.plan_features) != tuple(plan.features)
         or subscription.plan_catalogue_version != plan.catalogue_version):
@@ -252,7 +265,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: founder_ai_development_activation.py
-# VERSION: v1.1.0-MODULE-LEVEL-DEVELOPMENT-WRITE-GATE
+# VERSION: v1.2.0-STAGED-READBACK-VERIFICATION
 # AUTHORITY BOUNDARY: local-only stage coordination through canonical registries
 # TENANT POSTURE: one exact Founder subscription/plan/tenant tuple only
 # FAIL-CLOSED POSTURE: required tier, loopback replica and guarded stage writes
