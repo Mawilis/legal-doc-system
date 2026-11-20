@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION
+ * VERSION: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION cancels obsolete
+ * reasoning transport on scope exit and unmount, rejects late work by mount
+ * generation, and releases submission state for the newly selected capacity.
+ * Cancellation never claims to undo a server admission or quota reservation.
  * CHANGELOG: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION preserves the exact EOS
  * idempotency key and canonical prompt after uncertain AI responses; retries
  * reuse the same admission instead of consuming capacity twice. A confirmed
@@ -297,7 +301,11 @@ const canProbeBillingIntelligence = (role) => (
 
 /**
  * @function WilsyOSIntelligenceDock
- * @description Kennel Phase‑4 intelligence surface – sovereign api + backend operator.
+ * @description Renders session-scoped conversation over the existing EOS authorities.
+ * @collaboration Authenticated runtime, api.js and transient conversation engine.
+ * @institutional Browser scope partitions presentation; EOS independently admits every command.
+ * @returns {React.ReactElement} Accessible, movable conversation companion.
+ * No IAM, workforce, commercial or financial authority is created.
  */
 export function WilsyOSIntelligenceDock({
   authUser = null,
@@ -373,6 +381,9 @@ export function WilsyOSIntelligenceDock({
   const [prompt, setPrompt] = useState('');
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
+  const reasoningAbortRef = useRef(null);
+  const conversationGenerationRef = useRef(0);
+  const sendLockRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
@@ -403,8 +414,15 @@ export function WilsyOSIntelligenceDock({
   // This module-level session history belongs to the current authenticated
   // capacity only. Changing identity, tenant or capacity revokes old turns and
   // aborts obsolete health probes before they can repaint the next workspace.
-  useEffect(() => {
+  useLayoutEffect(() => {
+    conversationGenerationRef.current += 1;
     dockScopeRef.current = dockScope;
+    reasoningAbortRef.current?.abort();
+    reasoningAbortRef.current = null;
+    sendLockRef.current = false;
+    setIsSubmitting(false);
+    setPrompt('');
+    setErrorMessage('');
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
@@ -413,6 +431,8 @@ export function WilsyOSIntelligenceDock({
     setDockContext(null);
     setKennelPosture('STANDBY');
     return () => {
+      conversationGenerationRef.current += 1;
+      reasoningAbortRef.current?.abort();
       healthAbortRef.current?.abort();
       healthGenerationRef.current += 1;
       resetWilsyAIConversationSession();
@@ -601,13 +621,19 @@ export function WilsyOSIntelligenceDock({
   const handleSendMessage = useCallback(
     async (rawText) => {
       const text = String(rawText || prompt).trim();
-      if (!text || isSubmitting) return;
+      if (!text || isSubmitting || sendLockRef.current) return;
       if (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
       }
       const scopeAtStart = dockScopeRef.current;
-      const requestIsCurrent = () => dockScopeRef.current === scopeAtStart;
+      const generationAtStart = conversationGenerationRef.current;
+      const controller = new AbortController();
+      reasoningAbortRef.current = controller;
+      sendLockRef.current = true;
+      const requestIsCurrent = () => !controller.signal.aborted
+        && conversationGenerationRef.current === generationAtStart
+        && dockScopeRef.current === scopeAtStart;
 
       setIsSubmitting(true);
       setErrorMessage('');
@@ -645,6 +671,8 @@ export function WilsyOSIntelligenceDock({
         if (requestIsCurrent()) {
           setErrorMessage(err?.message || 'Failed to record operator turn.');
           setIsSubmitting(false);
+          sendLockRef.current = false;
+          reasoningAbortRef.current = null;
         }
         return;
       }
@@ -696,12 +724,14 @@ export function WilsyOSIntelligenceDock({
           }, {
             headers: { 'X-Tenant-ID': exactTenant, 'Idempotency-Key': replay.key },
             timeout: 30000,
+            signal: controller.signal,
           });
           const data = response?.data;
           if (typeof data?.response_text !== 'string' || !data.response_text.trim()
             || typeof data?.usage_observation_id !== 'string') {
             throw new Error('WILSY_AI_REASONING_RESULT_UNVERIFIED');
           }
+          if (!requestIsCurrent()) return;
           reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
           result = {
             reply: data.response_text,
@@ -775,13 +805,19 @@ export function WilsyOSIntelligenceDock({
           /* ignore */
         }
       } finally {
-        if (requestIsCurrent()) setIsSubmitting(false);
+        if (requestIsCurrent()) {
+          sendLockRef.current = false;
+          reasoningAbortRef.current = null;
+          setIsSubmitting(false);
+        }
       }
     },
     [
       prompt,
       isSubmitting,
       reasoningUsageConsent,
+      authUser?.role,
+      dockScope,
       activeThreadId,
       activeThread?.messages,
       dockContext,
@@ -1396,7 +1432,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.8.2-SESSION-OWNED-REASONING-CANCELLATION
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1412,7 +1448,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION
+ * VERSION: v4.8.2-SESSION-OWNED-REASONING-CANCELLATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate

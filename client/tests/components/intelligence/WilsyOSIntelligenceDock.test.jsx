@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT
+ * VERSION: v1.6.2-SESSION-REASONING-CANCELLATION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.6.2-SESSION-REASONING-CANCELLATION-CERT proves canceled
+ * transport, late success/failure rejection, capacity reentry and unmount
+ * isolation without changing the existing exact-key uncertain retry contract.
  * CHANGELOG: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT certifies that an uncertain
  * EOS reasoning response is retried with the exact same prompt and durable
  * idempotency key, rather than a second metered AI admission.
@@ -43,7 +46,7 @@
 
 import React from 'react';
 import { readFileSync } from 'node:fs';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import api from '../../../src/services/api.js';
 
@@ -506,6 +509,84 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(await screen.findByText('Recovered from the same reasoning admission.')).toBeVisible();
   });
 
+  it.each([
+    ['tenant', { tenantId: 'NEXT_TENANT' }],
+    ['principal', { id: 'next-principal' }],
+    ['capacity', { businessRole: 'NEXT_CAPACITY' }],
+    ['membership revision', { membershipRevision: 2 }],
+    ['business role revision', { businessRoleRevision: 2 }],
+  ])('cancels pending reasoning and resets consent after %s changes', async (_label, changes) => {
+    let finish;
+    mockApiPost.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const user = { id: 'principal', tenantId: 'TEST_TENANT', role: 'OWNER',
+      businessRole: 'CAPACITY', membershipRevision: 1, businessRoleRevision: 1 };
+    const view = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Old scope question' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const oldSignal = mockApiPost.mock.calls[0][2].signal;
+    expect(oldSignal.aborted).toBe(false);
+    view.rerender(<WilsyOSIntelligenceDock authUser={{ ...user, ...changes }}/>);
+    expect(oldSignal.aborted).toBe(true);
+    expect(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' })).not.toBeChecked();
+    const persistedBefore = mockPersistTurn.mock.calls.length;
+    await act(async () => finish({ data: {
+      response_text: 'Secret from the old scope', usage_observation_id: 'old-usage',
+    } }));
+    expect(mockPersistTurn).toHaveBeenCalledTimes(persistedBefore);
+    expect(screen.queryByText('Secret from the old scope')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Next scope' } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+  });
+
+  it.each(['success', 'failure'])('rejects late reasoning %s after unmount', async outcome => {
+    let finish;
+    let fail;
+    mockApiPost.mockImplementationOnce(() => new Promise((resolve, reject) => {
+      finish = resolve; fail = reject;
+    }));
+    const view = render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Pending turn' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    const signal = mockApiPost.mock.calls[0][2].signal;
+    view.unmount();
+    expect(signal.aborted).toBe(true);
+    const persistedBefore = mockPersistTurn.mock.calls.length;
+    await act(async () => {
+      if (outcome === 'success') finish({ data: { response_text: 'Late secret', usage_observation_id: 'late' } });
+      else fail(rejectedResponse(503, 'late source failure'));
+    });
+    expect(mockPersistTurn).toHaveBeenCalledTimes(persistedBefore);
+  });
+
+  it('rejects an old result after leaving and returning to the identical capacity', async () => {
+    let finish;
+    mockApiPost.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const user = { tenantId: 'TEST_TENANT', role: 'OWNER', businessRole: 'CAPACITY_A' };
+    const view = render(<WilsyOSIntelligenceDock authUser={user}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'A question' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    view.rerender(<WilsyOSIntelligenceDock authUser={{ ...user, businessRole: 'CAPACITY_B' }}/>);
+    view.rerender(<WilsyOSIntelligenceDock authUser={user}/>);
+    const persistedBefore = mockPersistTurn.mock.calls.length;
+    await act(async () => finish({ data: {
+      response_text: 'Obsolete capacity answer', usage_observation_id: 'old-capacity',
+    } }));
+    expect(mockPersistTurn).toHaveBeenCalledTimes(persistedBefore);
+    expect(screen.queryByText('Obsolete capacity answer')).not.toBeInTheDocument();
+  });
+
   it('sends a message when Enter is pressed', async () => {
     const mockReply = { data: { response_text: 'Test reply', usage_observation_id: 'usage-1' } };
     mockApiPost.mockResolvedValue(mockReply);
@@ -773,7 +854,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.6.1-EXACT-REPLAY-AI-ADMISSION-CERT
+ * VERSION: v1.6.2-SESSION-REASONING-CANCELLATION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
