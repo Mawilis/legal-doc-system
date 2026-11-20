@@ -1,7 +1,7 @@
 """Authenticated Founder Institutional AI commercial activation.
 
 TITLE: WILSY Founder Institutional AI Authenticated Activation
-VERSION: v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK
+VERSION: v1.1.0-POST-P4-COMMERCIAL-CURRENTNESS
 AUTHORITY: Existing plan:manage AND subscription:manage IAM; canonical P4.
 EPITOME: Execute canonical staged commercial amendment, zero-rated subscription
          snapshot, D57B/P4 ACTIVE issuance, and durable source readback.
@@ -10,7 +10,10 @@ COLLABORATION / OWNERSHIP: SubscriptionRouter authenticates both permissions;
   PlanRegistry owns plan CAS and audit; SubscriptionRegistry owns commercial
   snapshot/audit; D57B/P4 own AI entitlement lifecycle; EOS Mongo owns transport.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK matches
+CHANGELOG: v1.1.0-POST-P4-COMMERCIAL-CURRENTNESS rechecks the
+  exact zero-rated plan and subscription proofs after P4 activation and
+  rejects concurrent commercial drift before reporting ACTIVE success.
+  v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK matches
   the canonical WilsyAITier.INSTITUTIONAL ACTIVE source readback rather than
   an unrelated display string.
   v1.0.0-EXACT-FOUNDER-AUTHENTICATED-INSTITUTIONAL-ACTIVATION
@@ -59,7 +62,7 @@ from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeat
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK"
+VERSION: Final[str] = "v1.1.0-POST-P4-COMMERCIAL-CURRENTNESS"
 _MANDATE_REF: Final[str] = "founder-institutional-ai-commercial-decision-20261120"
 _IDEMPOTENCY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9:_-]{16,128}$")
 
@@ -243,6 +246,19 @@ def activate_authenticated_founder_institutional_ai(
             tenant_id=FOUNDER_TENANT_ID,
             module_id="WILSY_AI_REASONING", session=session,
         )
+    final_plan, final_subscription = _sources(
+        database, client, datetime.now(timezone.utc),
+    )
+    _require(
+        final_plan.proof_hash == plan.proof_hash
+        and final_subscription.proof_hash == subscription.proof_hash
+        and final_plan.price == 0
+        and final_subscription.amount == 0
+        and FOUNDER_MANDATED_AI_FEATURE.value in final_plan.features
+        and tuple(final_plan.features) == tuple(final_subscription.plan_features)
+        and final_plan.catalogue_version == final_subscription.plan_catalogue_version,
+        "FOUNDER_AI_POST_ACTIVATION_SOURCE_CHANGED",
+    )
     _require(
         result.lifecycle == "ACTIVE"
         and readback.lifecycle_state is WilsyAIEntitlementState.ACTIVE
@@ -269,7 +285,7 @@ __all__ = [
 ]
 
 # ARTIFACT: founder_ai_authenticated_activation.py
-# VERSION: v1.0.1-CANONICAL-INSTITUTIONAL-TIER-READBACK
+# VERSION: v1.1.0-POST-P4-COMMERCIAL-CURRENTNESS
 # AUTHORITY BOUNDARY: dual IAM required at router; canonical registries only
 # TENANT POSTURE: exact Founder tuple, never aliased
 # FAIL-CLOSED POSTURE: stage CAS, proof and ACTIVE readback are mandatory
