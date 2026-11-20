@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE
+ * VERSION: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,8 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES derives mention display only from
+ *          EOS-verified first and last names, never principal IDs.
  * CHANGELOG: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE adds task-scoped evidence uploads inline
  *          for verified active contributors, via participant-only EOS
  *          authorization. Uploads remain quarantined and are not implicitly
@@ -633,7 +635,7 @@ export default function ProjectTaskCommentsPanel({
                   onChange={event => setMentions(list => event.target.checked
                     ? [...list, person.principal_id]
                     : list.filter(value => value !== person.principal_id))}/>
-                {person.display_name || person.name || 'Verified contributor'}
+                {[person.first_name, person.last_name].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Contributor name unavailable'}
               </label>)}
           </div>
           <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
@@ -648,7 +650,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE
+// VERSION: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
