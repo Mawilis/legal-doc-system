@@ -1,7 +1,7 @@
 """Development-only staged Founder AI commercial activation command.
 
 TITLE: WILSY Founder AI Development Activation Runner
-VERSION: v1.3.0-PRECONNECT-ATLAS-DENIAL
+VERSION: v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES
 AUTHORITY: WILSY OS Core Governance; source registries own all mutations.
 EPITOME: Rehearse exact Founder plan -> subscription -> AI entitlement
          transitions on a loopback development Mongo replica set only.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: PlanRegistry owns plan CAS; SubscriptionRegistry owns
                           subscription proof and audit; Founder reconciliation
                           delegates issuance/activation to D57B and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.3.0-PRECONNECT-ATLAS-DENIAL rejects non-development,
+CHANGELOG: v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES accepts independently
+           proof-verified non-AI business features in the canonical Founder
+           plan without maintaining a brittle local feature allowlist;
+           competing AI tiers still fail closed and the plan is never rebuilt.
+           v1.3.0-PRECONNECT-ATLAS-DENIAL rejects non-development,
            non-loopback and SRV MongoDB configuration before even attempting
            a database connection. No authentication, reads or writes occur
            against a rejected URI. v1.2.0-STAGED-READBACK-VERIFICATION re-reads canonical
@@ -57,10 +61,7 @@ from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import (
 from tools.eos.saas.billing.wilsy_ai_vas_feature_catalogue import WilsyAIVASFeatureId
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 
-VERSION: Final[str] = "v1.3.0-PRECONNECT-ATLAS-DENIAL"
-_ALLOWED_FOUNDATION: Final[frozenset[str]] = frozenset(
-    (BRANDING_FEATURE, "legal.core"),
-)
+VERSION: Final[str] = "v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES"
 _FINGERPRINT: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
 
 
@@ -115,9 +116,6 @@ def _exact_preflight(database: Any, client: Any, feature: WilsyAIVASFeatureId) -
             current = set(plan.features)
             if BRANDING_FEATURE not in current:
                 raise FounderAIDevelopmentActivationError("FOUNDER_AI_BRANDING_FEATURE_REQUIRED")
-            foreign = current - _ALLOWED_FOUNDATION - {feature.value}
-            if foreign:
-                raise FounderAIDevelopmentActivationError("FOUNDER_AI_UNEXPECTED_PLAN_FEATURE")
             if any(other.value in current for other in WilsyAIVASFeatureId if other is not feature):
                 raise FounderAIDevelopmentActivationError("FOUNDER_AI_CONFLICTING_AI_FEATURE")
             return plan, subscription
@@ -274,7 +272,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: founder_ai_development_activation.py
-# VERSION: v1.3.0-PRECONNECT-ATLAS-DENIAL
+# VERSION: v1.4.0-PRESERVE-CANONICAL-FOUNDER-FEATURES
 # AUTHORITY BOUNDARY: local-only stage coordination through canonical registries
 # TENANT POSTURE: one exact Founder subscription/plan/tenant tuple only
 # FAIL-CLOSED POSTURE: required tier, loopback replica and guarded stage writes
