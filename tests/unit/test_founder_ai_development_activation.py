@@ -1,7 +1,7 @@
 """WILSY local-only Founder AI activation stage certification.
 
 TITLE: Founder AI Development Activation Stage Unit Certificate
-VERSION: v1.1.0-CANONICAL-STAGE-READBACK-CERT
+VERSION: v1.2.0-PRECONNECT-DENIAL-CERT
 AUTHORITY: Synthetic tests; PlanRegistry and EOS own business truth.
 EPITOME: Verify no Atlas/production writes, explicit tier choice, staged
          commercial mutation, and independent source gating.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder development activation, source registry APIs,
                            Mongo kernel's caller-owned transaction boundary.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.0-CANONICAL-STAGE-READBACK-CERT verifies canonical plan
+CHANGELOG: v1.2.0-PRECONNECT-DENIAL-CERT certifies
+           Atlas URI and production runtime are denied before the Mongo
+           connect function executes, not only before the first write.
+           v1.1.0-CANONICAL-STAGE-READBACK-CERT verifies canonical plan
            readback after a staged audited update, preventing successful
            replies for unobserved or stale plan state. v1.0.0-LOCAL-ROLLOUT-GATE-CERT adds production denial,
            local replica admission, explicit feature and dry-run proof.
@@ -56,6 +59,22 @@ def dev_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Set exact local test transport; never use a live database."""
     monkeypatch.setenv("WILSY_ENV", "development")
     monkeypatch.setenv("MONGODB_URI", "mongodb://127.0.0.1:27017/wilsy?replicaSet=rs0")
+
+
+def test_main_refuses_atlas_before_connect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The CLI must never open a socket to a production/Atlas URI."""
+    import sys
+    monkeypatch.setenv("WILSY_ENV", "development")
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://untrusted.invalid/wilsy")
+    monkeypatch.setattr(sys, "argv", [
+        "founder_ai_development_activation",
+        "--stage", "plan", "--feature", FEATURE.value,
+    ])
+    monkeypatch.setattr(module, "connect_db",
+                        lambda: pytest.fail("Must reject URI before connecting"))
+    assert module.main() == 2
 
 
 def test_production_environment_never_reaches_commercial_source(
@@ -167,7 +186,7 @@ def test_entitlement_step_denies_until_plan_and_subscription_match(
 
 
 # ARTIFACT: test_founder_ai_development_activation.py
-# VERSION: v1.1.0-CANONICAL-STAGE-READBACK-CERT
+# VERSION: v1.2.0-PRECONNECT-DENIAL-CERT
 # AUTHORITY BOUNDARY: synthetic development-only stage and registry checks
 # TENANT POSTURE: exact Founder identity, no generic free-plan entitlement
 # FAIL-CLOSED POSTURE: prod or remote transport rejects before write
