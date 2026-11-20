@@ -1,7 +1,7 @@
 """Authenticated Founder Institutional AI staged issuance unit certificate.
 
 TITLE: WILSY Authenticated Founder Institutional AI Activation Unit Certificate
-VERSION: v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT
+VERSION: v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT
 AUTHORITY: Synthetic exact-source and HTTP IAM-boundary regression evidence.
 EPITOME: Certify an authenticated, zero-rated, recoverable PlanRegistry to
   SubscriptionRegistry to D57B/P4 activation with an exact ACTIVE readback.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder source activation, current dual-authority
   subscription HTTP command, PlanRegistry, SubscriptionRegistry and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT aligns complete sovereign
+CHANGELOG: v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT uses
+  canonical WilsyAITier.INSTITUTIONAL for ACTIVE readback, matching real-Mongo
+  policy and preventing display-string false denials.
+  v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT aligns complete sovereign
   metadata with the repository guard. v1.0.0-DUAL-IAM-EXACT-FOUNDER-ACTIVATION-CERT adds
   exact-tenant denial, success, source-verified retry, recoverable partial
   stage failure, fixed tier and dual HTTP authority composition tests.
@@ -35,6 +38,7 @@ from tools.eos.saas.billing.founder_ai_entitlement_reconciliation import (
     FOUNDER_MANDATED_AI_FEATURE,
 )
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
+from tools.eos.saas.billing.wilsy_ai_commercial_policy import WilsyAITier
 
 KEY = "founder-institutional-mandate-20261120"
 
@@ -129,7 +133,7 @@ def _mock_sources(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
             return SimpleNamespace(
                 tenant_id=FOUNDER_TENANT_ID, entitlement_id="exact-founder-ai",
                 lifecycle_state=state["readback_state"],
-                tier=SimpleNamespace(value="INSTITUTIONAL"),
+                tier=WilsyAITier.INSTITUTIONAL,
             )
 
     monkeypatch.setattr(activation.PlanRegistry, "update", plan_update)
@@ -261,7 +265,7 @@ def test_http_declares_both_independent_permissions() -> None:
 
 
 # ARTIFACT: test_founder_ai_authenticated_activation.py
-# VERSION: v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT
+# VERSION: v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT
 # AUTHORITY BOUNDARY: source-scoped dual-IAM HTTP contract and staged registry mocks
 # TENANT POSTURE: foreign tenant and different principal never reach P4
 # FAIL-CLOSED POSTURE: partial stage, source divergence or no ACTIVE readback fails
