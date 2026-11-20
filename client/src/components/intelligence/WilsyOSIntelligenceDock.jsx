@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.8.0-ENTITLED-EOS-CONVERSATION
+ * VERSION: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION preserves the exact EOS
+ * idempotency key and canonical prompt after uncertain AI responses; retries
+ * reuse the same admission instead of consuming capacity twice. A confirmed
+ * response or changed tenant/session scope clears the replay anchor.
  * CHANGELOG: v4.8.0-ENTITLED-EOS-CONVERSATION sends general conversational
  * turns to the canonical Python EOS metered reasoning boundary only after
  * explicit usage consent. Client history is conversation continuity, not
@@ -368,6 +372,7 @@ export function WilsyOSIntelligenceDock({
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
+  const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
@@ -404,6 +409,7 @@ export function WilsyOSIntelligenceDock({
     setConversationThreads([]);
     setActiveThreadId(null);
     setReasoningUsageConsent(false);
+    reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
     setDockContext(null);
     setKennelPosture('STANDBY');
     return () => {
@@ -679,10 +685,16 @@ export function WilsyOSIntelligenceDock({
               + 'financial balances or legal matters without an authorized EOS '
               + 'tool result. Inferences are not authorizations or execution.',
           ].join('\n\n').slice(0, 12000);
+          const pending = reasoningReplayRef.current;
+          const replay = pending.scope === scopeAtStart && pending.text === text
+            && pending.key && pending.prompt
+            ? pending
+            : { scope: scopeAtStart, text, prompt: reasoningPrompt, key: uuidv4() };
+          reasoningReplayRef.current = replay;
           const response = await api.post('/wilsy-ai/reasoning', {
-            prompt: reasoningPrompt,
+            prompt: replay.prompt,
           }, {
-            headers: { 'X-Tenant-ID': exactTenant, 'Idempotency-Key': uuidv4() },
+            headers: { 'X-Tenant-ID': exactTenant, 'Idempotency-Key': replay.key },
             timeout: 30000,
           });
           const data = response?.data;
@@ -690,6 +702,7 @@ export function WilsyOSIntelligenceDock({
             || typeof data?.usage_observation_id !== 'string') {
             throw new Error('WILSY_AI_REASONING_RESULT_UNVERIFIED');
           }
+          reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
           result = {
             reply: data.response_text,
             source: 'PYTHON_EOS_WILSY_AI_REASONING',
@@ -742,6 +755,7 @@ export function WilsyOSIntelligenceDock({
           : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
           : 'WILSY AI reasoning was not verified; no response has been accepted.';
         setErrorMessage(safeMessage);
+        if (!isLegalDockRole(authUser?.role)) setPrompt(text);
         const failTurn = {
           role: 'assistant',
           content: safeMessage,
@@ -1398,7 +1412,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.8.0-ENTITLED-EOS-CONVERSATION
+ * VERSION: v4.8.1-EXACT-REPLAY-AI-CONSUMPTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
