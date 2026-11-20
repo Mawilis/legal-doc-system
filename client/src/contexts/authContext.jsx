@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.4.0-ACCOUNT-EMAIL-PROVENANCE
+ * VERSION: v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -13,7 +13,8 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
- * CHANGELOG: 2026-11-15 v58.4.0-ACCOUNT-EMAIL-PROVENANCE adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
+ * CHANGELOG: 2026-11-20 v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION accepts only an EOS-source-verified exact Founder institutional title, never an IAM grant or login payload.
+ * CHANGELOG: 2026-11-15 v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
  * CHANGELOG: 2026-11-14 v58.2.0-CURRENT-EOS-SESSION-REFRESH adds one in-flight
  *            provider-owned EOS refresh and same-workspace revalidation;
  *            superseded refreshes cannot publish or clear another session.
@@ -1453,7 +1454,7 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.4.0-ACCOUNT-EMAIL-PROVENANCE
+ * VERSION: v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
