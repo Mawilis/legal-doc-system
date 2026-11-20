@@ -262,6 +262,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? exactChromeText(sessionUser.businessRole || sessionUser.role)
     : '';
   const selectedCapacityLabel = capacityLabel(currentCapacity);
+  const institutionalTitle = sessionUser?.institutionalDesignation === 'Founder'
+    && sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
+    && currentCapacity === 'tenant_owner'
+    ? 'Founder'
+    : '';
   const identityLabel = displayName || accountEmail || '';
   const initials = accountInitials(displayName);
   const accountScope = sessionUser
@@ -457,6 +462,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200" aria-hidden="true">{initials || <UserRound size={17}/>}</span>
               <span className="hidden max-w-[150px] text-left leading-tight xl:block">
                 <span className="block truncate text-xs font-semibold text-white">{identityLabel || 'Account identity unavailable'}</span>
+                {institutionalTitle && <span className="block truncate text-[10px] font-semibold text-emerald-200">{institutionalTitle} · WILSY OS</span>}
                 {selectedCapacityLabel && <span className="block truncate text-[10px] text-slate-400">{selectedCapacityLabel} capacity</span>}
               </span>
               <ChevronDown size={14} className="hidden text-slate-400 xl:block"/>
@@ -481,6 +487,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   <p className="font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
                   {accountEmail && <p className="mt-1 break-all text-xs text-slate-400">{accountEmail}</p>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
+                  {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-300">Selected capacity: {selectedCapacityLabel}</p>}
                 </div>
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
