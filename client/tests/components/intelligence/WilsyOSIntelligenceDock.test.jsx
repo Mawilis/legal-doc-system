@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
+ * VERSION: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT certifies explicit consent and
+ * exact-tenant usage-admitted Python EOS conversation; C1C legal remains
+ * independent and no legacy generic operator BFF runs.
  * CHANGELOG: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT proves kernel health
  * is probed without waiting for unresolved optional finance evidence.
  * v1.5.0-MOVABLE-COMPANION-STATE-CERT certifies movement, minimization, retained drafts,
@@ -260,10 +263,11 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByRole('button', { name: /Ask WILSY OS/i })).toBeInTheDocument();
   });
 
-  it('uses WILSY OS as the assistant identity without changing generic operator transport', async () => {
-    mockApiPost.mockResolvedValue({ data: { intelligence: { reply: 'Brand-safe reply' } } });
-    render(<WilsyOSIntelligenceDock />);
+  it('uses WILSY OS with paid EOS reasoning and no legacy BFF', async () => {
+    mockApiPost.mockResolvedValue({ data: { response_text: 'Brand-safe reply', usage_observation_id: 'usage-4' } });
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(screen.getByText('Brand-safe reply')).toBeInTheDocument());
@@ -459,19 +463,32 @@ describe('WilsyOSIntelligenceDock', () => {
     });
   });
 
+  it('blocks metered general reasoning until the operator consents', () => {
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Ask about my project' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+  });
+
   it('sends a message when Enter is pressed', async () => {
-    const mockReply = { data: { intelligence: { reply: 'Test reply' } } };
+    const mockReply = { data: { response_text: 'Test reply', usage_observation_id: 'usage-1' } };
     mockApiPost.mockResolvedValue(mockReply);
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Hello' } });
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Test reply')).toBeInTheDocument();
@@ -479,18 +496,19 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('sends a message when Send button is clicked', async () => {
-    const mockReply = { data: { intelligence: { reply: 'Button reply' } } };
+    const mockReply = { data: { response_text: 'Button reply', usage_observation_id: 'usage-2' } };
     mockApiPost.mockResolvedValue(mockReply);
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'World' } });
     fireEvent.click(screen.getByLabelText('Send'));
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Button reply')).toBeInTheDocument();
@@ -500,15 +518,16 @@ describe('WilsyOSIntelligenceDock', () => {
   it('displays error when API call fails and falls back to error message', async () => {
     mockApiPost.mockRejectedValue(new Error('Network error'));
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Error test' } });
     fireEvent.click(screen.getByLabelText('Send'));
 
     await waitFor(() => {
-      expect(screen.getByText(/I could not reach the Wilsy Operator Kernel/i)).toBeInTheDocument();
+      expect(screen.getByText(/WILSY AI reasoning was not verified/i)).toBeInTheDocument();
     });
   });
 
@@ -549,11 +568,12 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('triggers a suggestion click and sends its prompt', async () => {
-    const mockReply = { data: { intelligence: { reply: 'Suggestion reply' } } };
+    const mockReply = { data: { response_text: 'Suggestion reply', usage_observation_id: 'usage-3' } };
     mockApiPost.mockResolvedValue(mockReply);
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.click(screen.getByText('Suggestions'));
 
     const suggestionButton = screen.getByText('Test Suggestion');
@@ -561,7 +581,7 @@ describe('WilsyOSIntelligenceDock', () => {
 
     await waitFor(() => {
       expect(mockRecordSuggestionUsage).toHaveBeenCalledWith('sug1');
-      expect(mockApiPost).toHaveBeenCalledWith('/ai/operator', expect.objectContaining({}), expect.anything());
+      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
     });
     await waitFor(() => {
       expect(screen.getByText('Suggestion reply')).toBeInTheDocument();
@@ -582,8 +602,9 @@ describe('WilsyOSIntelligenceDock', () => {
   it('disables send button while submitting', async () => {
     mockApiPost.mockReturnValue(new Promise(() => {}));
 
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Test' } });
@@ -643,7 +664,7 @@ describe('WilsyOSIntelligenceDock', () => {
       expect(screen.getByText(field, { exact: false })).toBeInTheDocument();
     }
     expect(screen.getByText('CURRENT')).toBeInTheDocument();
-    expect(mockApiPost).not.toHaveBeenCalledWith('/ai/operator', expect.anything(), expect.anything());
+    expect(mockApiPost).not.toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.anything(), expect.anything());
   });
 
   it('renders stale state and only permits read-only refresh or successor viewing', async () => {
@@ -721,7 +742,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
+ * VERSION: v1.6.0-EOS-AI-USAGE-ADMISSION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
