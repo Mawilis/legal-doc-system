@@ -1,7 +1,7 @@
 """Authenticated Founder Institutional AI staged issuance unit certificate.
 
 TITLE: WILSY Authenticated Founder Institutional AI Activation Unit Certificate
-VERSION: v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT
+VERSION: v1.1.0-POST-ISSUANCE-COMMERCIAL-DRIFT-CERT
 AUTHORITY: Synthetic exact-source and HTTP IAM-boundary regression evidence.
 EPITOME: Certify an authenticated, zero-rated, recoverable PlanRegistry to
   SubscriptionRegistry to D57B/P4 activation with an exact ACTIVE readback.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Founder source activation, current dual-authority
   subscription HTTP command, PlanRegistry, SubscriptionRegistry and P4.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT uses
+CHANGELOG: v1.1.0-POST-ISSUANCE-COMMERCIAL-DRIFT-CERT denies
+  a successful P4 issuance response if a concurrent subscription-source
+  revision occurs before the final result is released.
+  v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT uses
   canonical WilsyAITier.INSTITUTIONAL for ACTIVE readback, matching real-Mongo
   policy and preventing display-string false denials.
   v1.0.1-CANONICAL-SOVEREIGN-HEADER-CERT aligns complete sovereign
@@ -227,6 +230,31 @@ def test_p4_readback_is_mandatory_even_when_issuer_claims_success(
         _activate()
 
 
+def test_concurrent_commercial_change_after_p4_denies_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A post-issuance source change must never yield an accepted ACTIVE reply."""
+    state = _mock_sources(monkeypatch)
+    original = activation.reconcile_founder_ai_entitlement
+
+    def changed_after_issue(**kwargs: Any) -> SimpleNamespace:
+        issued = original(**kwargs)
+        current = state["subscription"]
+        state["subscription"] = SimpleNamespace(
+            **{**vars(current), "proof_hash": "c" * 128},
+        )
+        return issued
+
+    monkeypatch.setattr(
+        activation, "reconcile_founder_ai_entitlement", changed_after_issue,
+    )
+    with pytest.raises(
+        activation.FounderAIAuthenticatedActivationError,
+        match="FOUNDER_AI_POST_ACTIVATION_SOURCE_CHANGED",
+    ):
+        _activate()
+
+
 def test_http_dual_identity_and_founder_fence_before_activation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -265,7 +293,7 @@ def test_http_declares_both_independent_permissions() -> None:
 
 
 # ARTIFACT: test_founder_ai_authenticated_activation.py
-# VERSION: v1.0.2-CANONICAL-INSTITUTIONAL-ENUM-CERT
+# VERSION: v1.1.0-POST-ISSUANCE-COMMERCIAL-DRIFT-CERT
 # AUTHORITY BOUNDARY: source-scoped dual-IAM HTTP contract and staged registry mocks
 # TENANT POSTURE: foreign tenant and different principal never reach P4
 # FAIL-CLOSED POSTURE: partial stage, source divergence or no ACTIVE readback fails
