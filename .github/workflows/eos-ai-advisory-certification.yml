@@ -1,10 +1,13 @@
 # TITLE: WILSY OS AI Gateway and Founder Commercial Certification
-# VERSION: v1.3.0-ZERO-RATED-COMMERCIAL-LIFECYCLE-CERT
+# VERSION: v1.4.0-FULL-COMMERCIAL-REPLICA-SUITE
 # AUTHORITY: WILSY OS Core Governance; workflow may certify, never grant.
 # EPITOME: Run locked focused AI and exact-Founder commercial denial tests.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ai-advisory-certification.yml
 # COLLABORATION / OWNERSHIP: Existing AI advisory, entitlement and context gates.
 # CERTIFICATION / UPDATE DATE: 2026-11-20
+# CHANGELOG: v1.4.0-FULL-COMMERCIAL-REPLICA-SUITE expands the
+#   disposable Mongo commercial gate from one case to the complete D57B
+#   replay, rollback, isolation and staged zero-rated entitlement suite.
 # CHANGELOG: v1.3.0-ZERO-RATED-COMMERCIAL-LIFECYCLE-CERT certifies
 #   the real zero-rated plan amendment, subscription snapshot and P4 active
 #   entitlement chain on a disposable Mongo replica; no Founder live writes.
@@ -116,10 +119,10 @@ jobs:
           python -m pytest -q tests/integration/test_wilsy_ai_reasoning_http_real_mongo.py
       - name: Certify zero-rated AI plan-to-entitlement staged lifecycle
         run: |
-          python -m pytest -q tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py -k real_zero_rated_source_plan_upgrade_and_p4_ai_activation
+          python -m pytest -q tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py
 
 # ARTIFACT: eos-ai-advisory-certification.yml
-# VERSION: v1.3.0-ZERO-RATED-COMMERCIAL-LIFECYCLE-CERT
+# VERSION: v1.4.0-FULL-COMMERCIAL-REPLICA-SUITE
 # AUTHORITY BOUNDARY: synthetic CI certification only; no IAM/commerce grants
 # TENANT POSTURE: isolated test resources, exact scope, never live Atlas writes
 # FAIL-CLOSED POSTURE: failed commercial and reasoning tests reject the PR
