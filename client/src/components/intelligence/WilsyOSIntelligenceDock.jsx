@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
+ * VERSION: v4.8.0-ENTITLED-EOS-CONVERSATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v4.8.0-ENTITLED-EOS-CONVERSATION sends general conversational
+ * turns to the canonical Python EOS metered reasoning boundary only after
+ * explicit usage consent. Client history is conversation continuity, not
+ * verified workspace evidence. C1C legal authority remains independent.
  * CHANGELOG: v4.7.1-INDEPENDENT-KERNEL-HEALTH starts EOS kernel health independently
  * of optional finance evidence, publishes verified health immediately, and
  * enriches context only after independently verified optional evidence.
@@ -363,6 +367,7 @@ export function WilsyOSIntelligenceDock({
     onPointerCancel={endDockMove} onKeyDown={moveDockWithKeyboard}><GripVertical size={16}/></button>;
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
+  const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
@@ -398,6 +403,7 @@ export function WilsyOSIntelligenceDock({
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
+    setReasoningUsageConsent(false);
     setDockContext(null);
     setKennelPosture('STANDBY');
     return () => {
@@ -584,12 +590,16 @@ export function WilsyOSIntelligenceDock({
 
   /**
    * @function handleSendMessage
-   * @description Authority-aware Ask turn: legal roles use certified C1C legal-services transport; other roles use shared api.post('/ai/operator', ...).
+   * @description Legal roles keep C1C; ordinary turns use consented EOS metered reasoning, not the legacy operator BFF.
    */
   const handleSendMessage = useCallback(
     async (rawText) => {
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting) return;
+      if (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
+        setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
+        return;
+      }
       const scopeAtStart = dockScopeRef.current;
       const requestIsCurrent = () => dockScopeRef.current === scopeAtStart;
 
@@ -649,30 +659,44 @@ export function WilsyOSIntelligenceDock({
             tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
           };
         } else {
-          const { billingIntelligenceEvidence, ...operatorDockContext } = dockContext || {};
-          const requestBody = {
-            prompt: text,
-            context: {
-              ...operatorDockContext,
-              ...(billingIntelligenceEvidence
-                ? { canonicalBillingIntelligenceEvidence: billingIntelligenceEvidence }
-                : {}),
-              threadId,
-              history: activeThread?.messages || [],
-            },
-            forcedIntent: '',
-            kennelPosture,
-          };
-
-          const response = await api.post('/ai/operator', requestBody, {
-            headers: {
-              'X-Tenant-Id': activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
-              'X-Wilsy-Kennel-Posture': kennelPosture,
-            },
+          const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+          if (typeof exactTenant !== 'string' || !exactTenant.trim()) {
+            throw new Error('WILSY_AI_TENANT_SCOPE_REQUIRED');
+          }
+          // Session conversation only: page location and browser role labels
+          // are never promoted to verified EOS business evidence.
+          const previous = (activeThread?.messages || [])
+            .filter(item => ['user', 'assistant'].includes(item?.role)
+              && typeof item?.content === 'string')
+            .slice(-6)
+            .map(item => (item.role === 'user' ? 'Operator' : 'WILSY AI')
+              + ': ' + item.content.slice(0, 900))
+            .join('\n');
+          const reasoningPrompt = [
+            'Current user question:', text,
+            ...(previous ? ['Previous conversation (not EOS source evidence):', previous] : []),
+            'Do not claim verified access to tenant projects, employee records, '
+              + 'financial balances or legal matters without an authorized EOS '
+              + 'tool result. Inferences are not authorizations or execution.',
+          ].join('\n\n').slice(0, 12000);
+          const response = await api.post('/wilsy-ai/reasoning', {
+            prompt: reasoningPrompt,
+          }, {
+            headers: { 'X-Tenant-ID': exactTenant, 'Idempotency-Key': uuidv4() },
             timeout: 30000,
           });
-          result = response?.data?.intelligence || response?.data?.data || null;
-          if (!result) throw new Error('Backend returned empty intelligence.');
+          const data = response?.data;
+          if (typeof data?.response_text !== 'string' || !data.response_text.trim()
+            || typeof data?.usage_observation_id !== 'string') {
+            throw new Error('WILSY_AI_REASONING_RESULT_UNVERIFIED');
+          }
+          result = {
+            reply: data.response_text,
+            source: 'PYTHON_EOS_WILSY_AI_REASONING',
+            phase: 'ADMITTED_REASONING',
+            domain: 'GENERAL',
+            tenantId: exactTenant,
+          };
         }
 
         if (!requestIsCurrent()) return;
@@ -710,12 +734,17 @@ export function WilsyOSIntelligenceDock({
         ]);
       } catch (err) {
         if (!requestIsCurrent()) return;
-        setErrorMessage(err?.message || 'Backend intelligence failed. Please try again.');
+        const status = err?.response?.status;
+        const safeMessage = status === 401
+          ? 'Authentication is required to use WILSY AI.'
+          : status === 403 ? 'WILSY AI permission or subscription entitlement is not verified.'
+          : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
+          : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
+          : 'WILSY AI reasoning was not verified; no response has been accepted.';
+        setErrorMessage(safeMessage);
         const failTurn = {
           role: 'assistant',
-          content:
-            'I could not reach the Wilsy Operator Kernel. Check the Kennel status or retry later. Error: ' +
-            (err?.message || 'unknown'),
+          content: safeMessage,
           timestamp: new Date().toISOString(),
         };
         try {
@@ -738,6 +767,7 @@ export function WilsyOSIntelligenceDock({
     [
       prompt,
       isSubmitting,
+      reasoningUsageConsent,
       activeThreadId,
       activeThread?.messages,
       dockContext,
@@ -1002,7 +1032,7 @@ export function WilsyOSIntelligenceDock({
                       <h4>Sovereign Intelligence Ready</h4>
                       <p>
                         {dockContext?.result ||
-                          'Ask about CRM, billing ledger, legal drafts, or tenant posture. Turns run through the Kennel-aware operator engine.'}
+                          'Ask WILSY AI. Python EOS authorizes and meters general reasoning. Workspace records are not included without separately verified tool access.'}
                       </p>
                     </div>
                   )}
@@ -1036,6 +1066,19 @@ export function WilsyOSIntelligenceDock({
                   <div ref={messagesEndRef} />
                 </div>
 
+                {!isLegalDockRole(authUser?.role) && <label style={{
+                  display: 'flex', gap: 9, alignItems: 'flex-start', padding: '9px 14px',
+                  color: '#e7edf9', fontSize: 12, lineHeight: 1.45,
+                }}>
+                  <input type="checkbox" checked={reasoningUsageConsent}
+                    onChange={event => setReasoningUsageConsent(event.target.checked)}
+                    aria-label="Confirm WILSY AI usage admission"
+                    style={{ width: 17, height: 17, flexShrink: 0, accentColor: '#72b8ff' }}/>
+                  <span>Use my tenant's authorized WILSY AI allowance. EOS
+                    verifies my permission, subscription entitlement and capacity
+                    on each request, which may consume metered usage. This
+                    does not authorize projects, staffing or payments.</span>
+                </label>}
                 <div className={styles.chatInputArea}>
                   <textarea
                     className={styles.promptInput}
@@ -1055,7 +1098,7 @@ export function WilsyOSIntelligenceDock({
                     type="button"
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
-                    disabled={isSubmitting || !prompt.trim()}
+                    disabled={isSubmitting || !prompt.trim() || (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent)}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -1341,7 +1384,8 @@ export default WilsyOSIntelligenceDock;
  * ═══════════════════════════════════════════════════════════════════════════════
  * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
  * ═══════════════════════════════════════════════════════════════════════════════
- * Generic Ask uses the canonical shared api.js POST /ai/operator transport; legal roles use certified C1C legal-services transport.
+ * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
+ * legal roles retain separately certified C1C legal-services transport.
  * Phase 4.1 complete: "New Thread" & manual "Refresh/Sync" UX added.
  * Phase 4.1.1 complete: CSS classes for action buttons formally integrated.
  * M14-P7 complete: optional billing-intelligence evidence remains a separate
@@ -1354,7 +1398,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
+ * VERSION: v4.8.0-ENTITLED-EOS-CONVERSATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
