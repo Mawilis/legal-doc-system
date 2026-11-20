@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.35.0-BILLABLE-AI-EXPLICIT-ADMISSION-CONSENT
+ * VERSION: v2.36.0-SEVENTEEN-TEMPLATE-CATALOGUE-COMPAT
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.36.0-SEVENTEEN-TEMPLATE-CATALOGUE-COMPAT repairs the seven-template client
+ *          validation ceiling, accepts the verified new 17-industry
+ *          catalogue and labels the legacy seven-template EOS source as
+ *          incomplete rather than inventing the missing templates.
  * CHANGELOG: v2.35.0-BILLABLE-AI-EXPLICIT-ADMISSION-CONSENT requires explicit
  *          user acknowledgement before invoking a potentially billable
  *          WILSY AI reasoning operation; the existing server-owned
@@ -975,7 +979,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         if (data?.schema !== 'WILSY-PROJECT-TEMPLATE-CATALOGUE/V1'
           || data.tenant_id !== tenantId || data.principal_id !== principalId
           || data.ownership !== 'PLATFORM_STARTERS' || !Array.isArray(data.items)
-          || data.items.length !== 7 || new Set(data.items.map(item => item.slug)).size !== 7
+          || ![7, 17].includes(data.items.length)
+          || new Set(data.items.map(item => item.slug)).size !== data.items.length
           || data.items.some(item => typeof item.slug !== 'string'
             || !/^[a-z][a-z0-9-]{2,63}$/.test(item.slug)
             || typeof item.industry !== 'string' || !item.industry
@@ -1496,6 +1501,11 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {templateState !== 'READY' && templateState !== 'LOADING' &&
               <p role="alert" className="text-sm text-rose-700">{templateError}</p>}
             {templateState === 'READY' && <>
+              {templates.length < 17 && <p role="alert" className="mb-3 rounded-lg border border-amber-400 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
+                This EOS runtime returned {templates.length} legacy starter templates;
+                the certified catalogue contains 17. Restart Python EOS from the
+                same certified source as this frontend before validating templates.
+              </p>}
               {selectedTemplate && !templatePickerOpen &&
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                   <span className="text-sm font-semibold text-slate-900">
@@ -1881,7 +1891,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.35.0-BILLABLE-AI-EXPLICIT-ADMISSION-CONSENT
+// VERSION: v2.36.0-SEVENTEEN-TEMPLATE-CATALOGUE-COMPAT
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
