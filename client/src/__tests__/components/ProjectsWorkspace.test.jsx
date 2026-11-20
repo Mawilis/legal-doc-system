@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.48.0-HUMAN-OVERVIEW-SOURCE-CERT
+ * VERSION: v2.49.0-SEVENTEEN-TEMPLATE-AND-AI-SURFACE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,8 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.49.0-SEVENTEEN-TEMPLATE-AND-AI-SURFACE-CERT certifies all seventeen industry
+ *          options and the opt-in WILSY AI draft-planning surface.
  * CHANGELOG: v2.48.0-HUMAN-OVERVIEW-SOURCE-CERT verifies human-readable project facts without
  *          requiring generated codes or audit revisions in the overview.
  * CHANGELOG: v2.47.0-IMMUTABLE-BASELINE-UI-CERT certifies immutable project baseline fields,
@@ -1406,7 +1408,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
         day: 10, acceptance: 'Acceptance recorded', depends_on: ['first'] },
     ];
     const industries = ['Legal', 'Construction', 'Football', 'Imports',
-      'Software', 'Healthcare', 'General business'];
+      'Software', 'Healthcare', 'General business', 'Marketing',
+      'Automotive parts', 'Vehicle dealership', 'Workshop', 'Agriculture',
+      'Dental healthcare', 'Workforce', 'Finance operations',
+      'Customer success', 'International trading'];
     const catalogue = industries.map((industry, index) => ({
       slug: index === 0 ? 'legal-litigation' : 'template-' + index,
       industry, title: industry + ' delivery', revision: 1, steps,
@@ -1451,9 +1456,13 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Create project' }));
     fireEvent.click(screen.getByRole('button', { name: 'Browse industry templates' }));
     const choices = await screen.findByRole('listbox', { name: 'Verified industry templates' });
-    expect(within(choices).getAllByRole('option')).toHaveLength(7);
+    expect(within(choices).getAllByRole('option')).toHaveLength(17);
     fireEvent.click(within(choices).getByRole('option', { name: /Legal/ }));
     expect(screen.getByText('Matter readiness')).toBeVisible();
+    expect(screen.getByRole('region', { name: 'WILSY AI project planning' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Customize included work' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Generate a reviewable AI plan' })).toBeDisabled();
+    expect(screen.queryByText(/legacy starter templates/)).not.toBeInTheDocument();
     const sheet = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
     expect(sheet).toContain('[aria-label="Industry project templates"] form :is(label, legend)');
     expect(sheet).toContain('-webkit-text-fill-color: #193451 !important;');
@@ -2091,7 +2100,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.48.0-HUMAN-OVERVIEW-SOURCE-CERT
+ * VERSION: v2.49.0-SEVENTEEN-TEMPLATE-AND-AI-SURFACE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
