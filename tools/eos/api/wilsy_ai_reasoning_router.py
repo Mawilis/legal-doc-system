@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.4.0-SERVER-VERIFIED-PROJECT-REASONING
+VERSION: v1.4.1-SELECTED-TASK-GROUNDING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.4.0-SERVER-VERIFIED-PROJECT-REASONING reauthorizes and re-reads a
+CHANGELOG: v1.4.1-SELECTED-TASK-GROUNDING includes a separately authorized
+           selected task in project-grounded reasoning, keeping that task
+           distinct from the first-page task sample and treating source text
+           only as untrusted evidence, never as model instructions.
+           v1.4.0-SERVER-VERIFIED-PROJECT-REASONING reauthorizes and re-reads a
            bounded current project source on request before invoking the model,
            with source text isolated as untrusted data. Default ungrounded
            reasoning and commercial/usage admission remain unchanged.
@@ -89,7 +93,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.4.0-SERVER-VERIFIED-PROJECT-REASONING"
+VERSION: Final[str] = "v1.4.1-SELECTED-TASK-GROUNDING"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -323,8 +327,19 @@ def _project_grounded_prompt(prompt: str, source: dict[str, Any]) -> str:
                 if k in project}
     tasks = [{k: row[k] for k in ("task_id", "title", "status", "due_at", "revision")
               if k in row} for row in rows[:8] if isinstance(row, dict)]
+    selected_task = source.get("selected_task")
+    if selected_task is not None and not isinstance(selected_task, dict):
+        raise _ReasoningHTTPError("WILSY_AI_SELECTED_TASK_EVIDENCE_INVALID", 503)
+    selected_task_evidence = (
+        {k: selected_task[k] for k in (
+            "task_id", "title", "description", "status", "due_at",
+            "revision", "acceptance_criteria",
+        ) if k in selected_task}
+        if selected_task is not None else None
+    )
     evidence = json.dumps(
         {"workspace": "PROJECTS", "project": selected,
+         "selected_task": selected_task_evidence,
          "tasks_first_page": tasks, "tasks_has_more": bool(source.get("tasks_has_more"))},
         sort_keys=True, separators=(",", ":"), default=str, ensure_ascii=False,
     )
@@ -741,7 +756,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.4.0-SERVER-VERIFIED-PROJECT-REASONING
+# VERSION: v1.4.1-SELECTED-TASK-GROUNDING
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
