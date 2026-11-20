@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY
+ * VERSION: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF offers a direct governed task
+ *          evidence handoff after confirmed create and fresh EOS list
+ *          readback, never before a durable task identifier exists.
  * CHANGELOG: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY makes upload available to the
  *          EOS-verified current contributor in task attachment actions,
  *          while owner-only users remain read-only. Uploads still use
@@ -319,6 +322,7 @@ export default function ProjectTasksPanel({
   const [showProjectNotesInline, setShowProjectNotesInline] = useState(false);
   const [approvalTaskId, setApprovalTaskId] = useState(null);
   const [attachmentTaskId, setAttachmentTaskId] = useState(null);
+  const [openEvidenceAfterCreate, setOpenEvidenceAfterCreate] = useState(true);
   const [busy, setBusy] = useState(false);
   const [pendingTransition, setPendingTransition] = useState(null);
   const [error, setError] = useState('');
@@ -413,6 +417,7 @@ export default function ProjectTasksPanel({
     setShowProjectNotesInline(false);
     setApprovalTaskId(null);
     setAttachmentTaskId(null);
+    setOpenEvidenceAfterCreate(true);
     setDraft({ ...EMPTY });
     setPendingTransition(null);
     setError('');
@@ -431,7 +436,7 @@ export default function ProjectTasksPanel({
     return command.current.key;
   };
 
-  const execute = async (fingerprint, action, expectedTaskId = null) => {
+  const execute = async (fingerprint, action, expectedTaskId = null, showEvidenceAfterCreate = false) => {
     if (busy || state !== 'READY' || !actionCapabilities) return;
     const active = scope;
     setBusy(true);
@@ -454,6 +459,11 @@ export default function ProjectTasksPanel({
       setDraft({ ...EMPTY });
       setCreating(false);
       setEditor(null);
+      if (showEvidenceAfterCreate && selfIsContributor) {
+        setDiscussionTaskId(null);
+        setApprovalTaskId(null);
+        setAttachmentTaskId(data.task.task_id);
+      }
     } catch (cause) {
       if (currentScope.current !== active) return;
       const status = cause?.response?.status;
@@ -506,7 +516,7 @@ export default function ProjectTasksPanel({
     void execute(JSON.stringify(['create', body]), key =>
       api.post(root + '/tasks', body, {
         headers: { ...headers, 'Idempotency-Key': key },
-      }),
+      }), null, openEvidenceAfterCreate,
     );
   };
 
@@ -1060,9 +1070,16 @@ export default function ProjectTasksPanel({
           </div>
         </fieldset>
         {workType === 'SUBTASK' && availableParents.length === 0 && <p role="status" className="text-xs text-amber-800">No eligible parent task is verified on this page. Create a top-level task or navigate to a page with an eligible parent.</p>}
-        <p className="text-xs text-slate-700">After EOS verifies the new task, use its
-          Attachments action to upload PDF or image evidence. Uploaded files
-          remain quarantined until independently cleared.</p>
+        {selfIsContributor ? <label className="flex items-start gap-2 text-xs text-slate-800">
+          <input type="checkbox" className="mt-0.5 size-4"
+            checked={openEvidenceAfterCreate}
+            onChange={event => setOpenEvidenceAfterCreate(event.target.checked)}/>
+          Open the task evidence uploader after EOS verifies the new task.
+        </label> : <p className="text-xs text-slate-700">
+          Only a currently authorized project contributor may upload task evidence.
+        </p>}
+        <p className="text-xs text-slate-700">PDF or image evidence is uploaded only after task creation.
+          EOS quarantines files pending independent scan clearance.</p>
         {participantHasMore && <p className="text-xs text-amber-800">Only the first verified participant page is selectable. Further assignments require a complete directory read.</p>}
         <button type="submit" disabled={busy || !actionCapabilities?.canEdit || !draft.title.trim()
           || (workType === 'SUBTASK' && !availableParents.some(item => item.task_id === draft.parent_task_id))}
@@ -1274,7 +1291,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.30.0-CONTRIBUTOR-GOVERNED-ATTACHMENT-ENTRY
+// VERSION: v1.31.0-POST-CREATE-EVIDENCE-HANDOFF
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
