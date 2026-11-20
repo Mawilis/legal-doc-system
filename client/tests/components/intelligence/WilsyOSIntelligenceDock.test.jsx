@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.8.0-AUTHORIZED-PROJECT-LOCATOR-SEND-CERT
+ * VERSION: v1.8.1-EXPLICIT-CONSENT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v1.8.0-AUTHORIZED-PROJECT-LOCATOR-SEND-CERT certifies that metered general
+ * CHANGELOG: v1.8.1-EXPLICIT-CONSENT-CERT verifies that expanding usage
+ * details never checks the metered-AI consent box or issues a model request.
+ * v1.8.0-AUTHORIZED-PROJECT-LOCATOR-SEND-CERT certifies that metered general
  * reasoning forwards only a project locator after exact EOS context admission,
  * and never sends the browser's project details as trusted model evidence.
  * v1.7.1-CONTEXT-DISCLOSURE-TRUTH-CERT verifies the exact operator-facing
@@ -489,6 +491,16 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText('Send')).toBeEnabled();
   });
 
+  it('does not grant AI consent when usage details are expanded', () => {
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const consent = screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' });
+    expect(consent).not.toBeChecked();
+    fireEvent.click(screen.getByText('Usage and permissions'));
+    expect(consent).not.toBeChecked();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('retries an uncertain metered AI response with the same admission key and prompt', async () => {
     mockApiPost.mockRejectedValueOnce(rejectedResponse(503, 'provider unavailable'))
       .mockResolvedValueOnce({ data: {
@@ -960,7 +972,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.8.0-AUTHORIZED-PROJECT-LOCATOR-SEND-CERT
+ * VERSION: v1.8.1-EXPLICIT-CONSENT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
