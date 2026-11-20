@@ -5,7 +5,8 @@
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ai-advisory-certification.yml
 # COLLABORATION / OWNERSHIP: Existing AI advisory, entitlement and context gates.
 # CERTIFICATION / UPDATE DATE: 2026-11-20
-# CHANGELOG: v1.1.0 adds focused Founder issuance, local URI safety,
+# CHANGELOG: v1.1.0-FOUNDER-AI-COMMERCIAL-UNIT-GATE adds focused
+#   Founder issuance, local URI safety,
 #   and Python contextual-reasoning checks without changing deploy authority.
 # COMPLIANCE: POPIA s19; GDPR Art32; SOC2 CC7.2.
 # SECURITY / PRIVACY POSTURE: Synthetic tests only; no production credentials.
