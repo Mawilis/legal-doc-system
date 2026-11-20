@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT
+ * VERSION: v4.12.1-QUIET-REMEMBERED-CONSENT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT greets new conversations from the authenticated
+ * CHANGELOG: v4.12.1-QUIET-REMEMBERED-CONSENT keeps previously accepted
+ * usage consent collapsed into a discreet, reversible preference instead
+ * of presenting the permission prompt again; rejects email values as first
+ * names. v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT greets new conversations from the authenticated
  * operator's first name and local time, remembers voluntary consent only
  * for the exact browser/tenant/principal/capacity and disclosure version,
  * and displays failed requests as errors, never fabricated AI turns.
@@ -336,7 +339,7 @@ const AI_CONSENT_VERSION = 'WILSY-AI-USAGE-DISCLOSURE/V1';
 /** Use authenticated display identity and local presentation time only. */
 function operatorGreeting(user, hour = new Date().getHours()) {
   const raw = [user?.firstName, user?.first_name, user?.displayName, user?.name]
-    .find(value => typeof value === 'string' && value.trim());
+    .find(value => typeof value === 'string' && value.trim() && !value.includes('@'));
   const first = raw?.trim().split(/\s+/u)[0]?.replace(/[^\p{L}\p{M}'-]/gu, '').slice(0, 48);
   const period = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   return `Good ${period}${first ? `, ${first}` : ''}.`;
@@ -1326,23 +1329,35 @@ export function WilsyOSIntelligenceDock({
                   padding: '8px 14px', color: '#e7edf9', fontSize: 12,
                   lineHeight: 1.45, flexShrink: 0,
                 }}>
-                  <label style={{ display: 'flex', gap: 9, alignItems: 'center',
-                    textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
-                    <input type="checkbox" checked={reasoningUsageConsent}
+                  {!reasoningUsageConsent ? <label style={{ display: 'flex', gap: 9,
+                    alignItems: 'center', textTransform: 'none', letterSpacing: 0,
+                    fontWeight: 400, color: '#e7edf9' }}>
+                    <input type="checkbox" checked={false}
                       onChange={event => updateUsageConsent(event.target.checked)}
                       aria-label="Confirm WILSY AI usage admission"
                       style={{ width: 18, height: 18, flexShrink: 0, accentColor: '#72b8ff' }}/>
-                    <span>{reasoningUsageConsent
-                      ? 'AI usage consent accepted for this workspace'
-                      : 'Allow AI usage for this conversation'}</span>
-                  </label>
-                  <details style={{ marginTop: 3, paddingLeft: 27, color: '#cbd5e1' }}>
-                    <summary style={{ cursor: 'pointer', minHeight: 28 }}>Usage and permissions</summary>
+                    <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400,
+                      color: '#e7edf9' }}>Allow AI usage for this conversation</span>
+                  </label> : null}
+                  <details style={{ marginTop: 3, paddingLeft: reasoningUsageConsent ? 0 : 27,
+                    color: '#cbd5e1', fontWeight: 400, textTransform: 'none',
+                    letterSpacing: 0 }}>
+                    <summary style={{ cursor: 'pointer', minHeight: 28, fontSize: 12,
+                      textTransform: 'none', letterSpacing: 0, color: '#cbd5e1' }}>
+                      {reasoningUsageConsent ? 'AI usage preferences' : 'Usage and permissions'}
+                    </summary>
                     <p style={{ margin: '4px 0' }}>Each request may consume metered AI usage.
                       EOS checks your permissions, subscription entitlement and capacity.
                       For a verified project, EOS may send bounded project and task
                       excerpts to its configured AI provider to answer. Consent does not
                       authorize project changes, staffing decisions or payments.</p>
+                    {reasoningUsageConsent && <button type="button"
+                      onClick={() => updateUsageConsent(false)}
+                      aria-label="Revoke AI usage consent"
+                      style={{ minHeight: 36, color: '#e7edf9', textDecoration: 'underline',
+                        textTransform: 'none', fontSize: 12 }}>
+                      Revoke AI usage consent
+                    </button>}
                   </details>
                 </div>}
                 <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
@@ -1648,7 +1663,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.12.1-QUIET-REMEMBERED-CONSENT
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1664,7 +1679,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.12.0-PERSONAL-CONVERSATION-AND-SCOPED-CONSENT
+ * VERSION: v4.12.1-QUIET-REMEMBERED-CONSENT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
