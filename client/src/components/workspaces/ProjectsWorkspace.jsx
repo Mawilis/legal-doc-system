@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.38.0-EPHEMERAL-AI-CONTEXT-LOCATORS
+ * VERSION: v2.39.0-EXACT-SELECTED-TASK-INTELLIGENCE-LOCATORS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.39.0-EXACT-SELECTED-TASK-INTELLIGENCE-LOCATORS publishes the
+ *          EOS-hydrated task id/revision only while that task is actively
+ *          viewed inside the current project. Leaving the task removes it.
+ *          Python EOS reauthorizes and re-reads task source on each request.
  * CHANGELOG: v2.38.0-EPHEMERAL-AI-CONTEXT-LOCATORS publishes only bounded
  *          current project locators to the contextual Dock. EOS independently
  *          resolves source visibility; browser events contain no names, task
@@ -683,6 +687,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   const [hasNextPage, setHasNextPage] = useState(false);
   const pageOffsetRef = useRef(0);
   const [selectedId, setSelectedId] = useState(null);
+  const [focusedTask, setFocusedTask] = useState(null);
   const [projectView, setProjectView] = useState('work');
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -732,9 +737,19 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
   );
 
   const changeSelection = useCallback((projectId) => {
-    if (projectId !== selectedRef.current) setProjectView('work');
+    if (projectId !== selectedRef.current) {
+      setProjectView('work');
+      setFocusedTask(null);
+    }
     selectedRef.current = projectId;
     setSelectedId(projectId);
+  }, []);
+  const handleFocusedTaskChange = useCallback(next => {
+    const current = next && /^ptk-[0-9a-f]{48}$/.test(next.task_id || '')
+      && Number.isSafeInteger(next.task_revision) && next.task_revision >= 1
+      ? { task_id: next.task_id, task_revision: next.task_revision } : null;
+    setFocusedTask(previous => previous?.task_id === current?.task_id
+      && previous?.task_revision === current?.task_revision ? previous : current);
   }, []);
 
   const refresh = useCallback(async ({ preserveSelection = true } = {}) => {
@@ -942,7 +957,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       detail: { tenantId, principalId, locator: {
         workspace: 'PROJECTS',
         ...(selectedId && detailState === 'READY' && detail?.project?.project_id === selectedId
-          ? { project_id: selectedId, project_revision: detail.project.revision } : {}),
+          ? { project_id: selectedId, project_revision: detail.project.revision,
+            ...(projectView === 'work' || projectView === 'discussions'
+              ? focusedTask || {} : {}) } : {}),
       } },
     }));
     const inspect = event => {
@@ -962,7 +979,8 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         detail: { tenantId, principalId, locator: { workspace: 'HEADQUARTERS' } },
       }));
     };
-  }, [tenantId, principalId, sessionScope, selectedId, detailState,
+  }, [tenantId, principalId, sessionScope, selectedId, detailState, projectView,
+    focusedTask?.task_id, focusedTask?.task_revision,
     detail?.project?.project_id, detail?.project?.revision, openProject]);
 
   // A Strategy-to-Projects handoff is navigation only. Require an exact
@@ -1878,11 +1896,13 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               principalId={principalId} tenantHeaders={tenantHeaders}/>}
             {projectView === 'work' && <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
-              principalId={principalId} tenantHeaders={tenantHeaders}/>}
+              principalId={principalId} tenantHeaders={tenantHeaders}
+              onFocusedTaskChange={handleFocusedTaskChange}/>}
             {projectView === 'discussions' && <ProjectTasksPanel
               key={'discussions:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
-              principalId={principalId} tenantHeaders={tenantHeaders} discussionOnly/>}
+              principalId={principalId} tenantHeaders={tenantHeaders} discussionOnly
+              onFocusedTaskChange={handleFocusedTaskChange}/>}
             {projectView === 'notes' && <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
               tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>}
             {projectView === 'settings' && <div className="max-w-5xl">
@@ -1975,7 +1995,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.38.0-EPHEMERAL-AI-CONTEXT-LOCATORS
+// VERSION: v2.39.0-EXACT-SELECTED-TASK-INTELLIGENCE-LOCATORS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
