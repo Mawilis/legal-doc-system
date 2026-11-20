@@ -1,7 +1,7 @@
 """Exact Founder WILSY AI commercial entitlement reconciliation.
 
 TITLE: WILSY OS Founder AI Entitlement Reconciliation
-VERSION: v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION
+VERSION: v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT
 AUTHORITY: WILSY OS Core Governance; existing subscription and P4 registries.
 EPITOME: Enforce exact zero-rated Founder commercial source and activate only an
          explicitly subscribed tier-specific AI feature through existing P4 CAS.
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: PlanEntity owns plan state; SubscriptionRegistry owns
                           active subscription proof; D57B derives AI tier and
                           source evidence; P4 owns entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION delegates plan
+CHANGELOG: v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT prepares an exact,
+           non-issuing SHA3-512 approval intent from canonical Founder plan
+           and subscription proofs plus a specifically proposed AI tier;
+           signed institutional approval remains external to this intent.
+           v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION delegates plan
            transport-revision and canonical proof validation to PlanRegistry.
            v1.1.0-EXACT-ACTIVE-ENTITLEMENT-READBACK verifies exact active
            entitlement lineage before accepting an activation replay, so a
@@ -37,6 +41,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
+import json
 import re
 from typing import Any, Final
 
@@ -67,7 +73,7 @@ from tools.eos.saas.domain.plan import PlanEntity
 from tools.eos.saas.domain.subscription import SubscriptionStatus, verify_subscription_integrity
 from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION"
+VERSION: Final[str] = "v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT"
 FOUNDER_TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
 FOUNDER_SUBSCRIPTION_ID: Final[str] = "WILSYSUB-93455E4E"
 FOUNDER_PLAN_ID: Final[str] = "WILSYPLAN-37B8164F"
@@ -129,6 +135,83 @@ def _canonical_plan(plan_collection: Any, session: Any) -> PlanEntity:
              and plan.active is True
              and plan.price == 0, "FOUNDER_AI_PLAN_NOT_ELIGIBLE")
     return plan
+
+
+
+@dataclass(frozen=True, slots=True)
+class FounderAIApprovalIntent:
+    """A source-bound request for independent approval, never an entitlement."""
+
+    feature_id: WilsyAIVASFeatureId
+    source_fingerprint: str
+    approval_state: str = "NOT_ISSUED"
+
+
+def prepare_founder_ai_approval_intent(
+    *,
+    subscription_collection: Any,
+    plan_collection: Any,
+    session: Any,
+    proposed_feature_id: WilsyAIVASFeatureId,
+) -> FounderAIApprovalIntent:
+    """Produce non-mutating evidence for an independently signed tier decision.
+
+    A request to prepare a Founder commercial amendment is not approval,
+    subscription mutation, entitlement issuance or any IAM authority. The
+    independently authorized commercial issuer must verify a signed decision
+    over this exact source fingerprint and then use the canonical registries.
+    """
+    _session_required(session)
+    _require(type(proposed_feature_id) is WilsyAIVASFeatureId,
+             "FOUNDER_AI_EXPLICIT_PROPOSED_TIER_REQUIRED")
+    _require(subscription_collection is not None and plan_collection is not None,
+             "FOUNDER_AI_SOURCE_COLLECTION_REQUIRED")
+    plan = _canonical_plan(plan_collection, session)
+    subscriptions = SubscriptionRegistry.list_entities(
+        FOUNDER_TENANT_ID, collection=subscription_collection, session=session,
+    )
+    active = [row for row in subscriptions if row.status is SubscriptionStatus.ACTIVE]
+    _require(len(active) == 1, "FOUNDER_AI_ACTIVE_SUBSCRIPTION_CARDINALITY_INVALID")
+    subscription = active[0]
+    _require(subscription.tenant_id == FOUNDER_TENANT_ID
+             and subscription.subscription_id == FOUNDER_SUBSCRIPTION_ID
+             and subscription.plan_id == FOUNDER_PLAN_ID
+             and subscription.billing_mode == "PLATFORM"
+             and subscription.amount == 0
+             and verify_subscription_integrity(subscription),
+             "FOUNDER_AI_APPROVAL_SOURCE_NOT_ELIGIBLE")
+    _require(evaluate_subscription_term(
+        subscription, evaluated_at=datetime.now(timezone.utc),
+    ).kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER,
+             "FOUNDER_AI_APPROVAL_TERM_INVALID")
+    _require(plan.catalogue_version == subscription.plan_catalogue_version
+             and tuple(plan.features) == tuple(subscription.plan_features)
+             and BRANDING_FEATURE in plan.features,
+             "FOUNDER_AI_APPROVAL_SOURCE_DIVERGENT")
+    existing_tiers = [tier for tier in WilsyAIVASFeatureId
+                      if tier.value in plan.features]
+    _require(not existing_tiers, "FOUNDER_AI_APPROVAL_TIER_ALREADY_PRESENT")
+    proof = getattr(subscription, "proof_hash", None)
+    _require(isinstance(proof, str) and _SHA3.fullmatch(proof) is not None,
+             "FOUNDER_AI_APPROVAL_SUBSCRIPTION_PROOF_INVALID")
+    proposal = {
+        "schema": "WILSY-FOUNDER-AI-FEATURE-APPROVAL-INTENT/V1",
+        "tenant_id": FOUNDER_TENANT_ID,
+        "subscription_id": FOUNDER_SUBSCRIPTION_ID,
+        "plan_id": FOUNDER_PLAN_ID,
+        "plan_catalogue_version": plan.catalogue_version,
+        "subscription_proof_hash": proof,
+        "current_features": sorted(plan.features),
+        "proposed_feature_id": proposed_feature_id.value,
+        "subscription_amount_minor": 0,
+        "authorization": "REQUEST_ONLY_NO_ISSUANCE",
+    }
+    fingerprint = hashlib.sha3_512(
+        json.dumps(proposal, sort_keys=True, ensure_ascii=False,
+                   separators=(",", ":"), allow_nan=False).encode("utf-8")
+    ).hexdigest()
+    return FounderAIApprovalIntent(proposed_feature_id, fingerprint)
+
 
 
 def reconcile_founder_ai_entitlement(
@@ -273,12 +356,13 @@ def reconcile_founder_ai_entitlement(
 
 __all__ = [
     "VERSION", "FOUNDER_TENANT_ID", "FOUNDER_SUBSCRIPTION_ID", "FOUNDER_PLAN_ID",
-    "BRANDING_FEATURE", "FounderAIReconciliationError",
+    "BRANDING_FEATURE", "FounderAIApprovalIntent",
+    "prepare_founder_ai_approval_intent", "FounderAIReconciliationError",
     "FounderAIReconciliationResult", "reconcile_founder_ai_entitlement",
 ]
 
 # ARTIFACT: founder_ai_entitlement_reconciliation.py
-# VERSION: v1.1.1-CANONICAL-PLAN-REGISTRY-HYDRATION
+# VERSION: v1.2.0-NONISSUING-SOURCE-BOUND-APPROVAL-INTENT
 # AUTHORITY BOUNDARY: source-verified Founder commercial composition and P4 CAS only
 # TENANT POSTURE: exact Founder tuple, no aliases or tenant-name default grants
 # FAIL-CLOSED POSTURE: active proof and one approved AI tier required before write
