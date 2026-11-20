@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS
+ * VERSION: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
- * CHANGELOG: v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS routes HQ questions
+ * CHANGELOG: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION adds
+ * one exact-Founder, explicitly clicked Institutional activation command.
+ * The Python EOS dual-IAM boundary owns the write; the Dock admits success
+ * only after exact-tenant ACTIVE entitlement readback and refreshes context.
+ * No automatic login activation, raw Atlas writes, or client-selected tier.
+ * v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS routes HQ questions
  * through the canonical Python EOS My Work admission flag, sending only a
  * workspace locator and never browser-rendered work facts to a model.
  * v4.15.0-SERVER-PROVIDER-READINESS-PREVIEW displays
@@ -447,6 +452,10 @@ export function WilsyOSIntelligenceDock({
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
   const [contextRefresh, setContextRefresh] = useState(0);
+  const [founderActivationState, setFounderActivationState] = useState('IDLE');
+  const [founderActivationMessage, setFounderActivationMessage] = useState('');
+  const founderActivationKeyRef = useRef(null);
+  const founderActivationInFlightRef = useRef(false);
   const workLocatorKey = JSON.stringify(workLocator);
   const reasoningReplayRef = useRef({ scope: '', text: '', prompt: '', key: '' });
   const reasoningAbortRef = useRef(null);
@@ -511,6 +520,10 @@ export function WilsyOSIntelligenceDock({
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
+    setFounderActivationState('IDLE');
+    setFounderActivationMessage('');
+    founderActivationKeyRef.current = null;
+    founderActivationInFlightRef.current = false;
     resetWilsyAIConversationSession();
     setConversationThreads([]);
     setActiveThreadId(null);
@@ -669,6 +682,60 @@ export function WilsyOSIntelligenceDock({
     && verifiedWorkspaceContext.data?.allowance?.state === 'NOT_PROVISIONED';
   const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
+  const currentTenantForAI = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+  const founderActivationEligible = authUser?.id
+    && currentTenantForAI === 'WILSYTENANT-4CD2FZ4O'
+    && !isLegalDockRole(authUser?.role)
+    && founderActivationState !== 'ACTIVE'
+    && (aiEntitlementNotProvisioned
+      || visibleWorkspaceContext?.state === 'UNAVAILABLE');
+  const activateFounderInstitutional = useCallback(async () => {
+    const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+    if (founderActivationInFlightRef.current
+      || !authUser?.id || tenant !== 'WILSYTENANT-4CD2FZ4O'
+      || isLegalDockRole(authUser?.role)) return;
+    founderActivationInFlightRef.current = true;
+    const scope = dockScope;
+    const key = founderActivationKeyRef.current
+      || `founder-institutional-${uuidv4()}`;
+    founderActivationKeyRef.current = key;
+    setFounderActivationState('SUBMITTING');
+    setFounderActivationMessage('Verifying Institutional AI commercial authority…');
+    try {
+      const response = await api.post(
+        '/subscriptions/founder-ai-institutional/activate', {},
+        { headers: { 'X-Tenant-ID': tenant, 'X-Idempotency-Key': key },
+          timeout: 30000 },
+      );
+      if (dockScopeRef.current !== scope) return;
+      const result = response?.data?.data || response?.data;
+      if (result?.tenant_id !== tenant
+        || result?.subscription_id !== 'WILSYSUB-93455E4E'
+        || result?.feature_id !== 'ai.wilsy.institutional'
+        || result?.entitlement_state !== 'ACTIVE'
+        || result?.source_verified !== true
+        || result?.zero_rated_subscription !== true) {
+        throw new Error('FOUNDER_AI_ACTIVATION_READBACK_INVALID');
+      }
+      setFounderActivationState('ACTIVE');
+      setFounderActivationMessage(
+        'Institutional AI entitlement is active. Verifying provider and workspace context…',
+      );
+      setContextRefresh(value => value + 1);
+    } catch (error) {
+      if (dockScopeRef.current !== scope) return;
+      const status = error?.response?.status;
+      setFounderActivationState('ERROR');
+      setFounderActivationMessage(status === 401 || status === 403
+        ? 'EOS requires current Founder plan and subscription management authority.'
+        : status === 409
+          ? 'Commercial records changed. Refresh the source before retrying.'
+          : 'EOS could not verify ACTIVE Institutional AI. No activation is being claimed.');
+    } finally {
+      founderActivationInFlightRef.current = false;
+    }
+  }, [authUser?.id, authUser?.role, authUser?.tenantId,
+    activeTenant?.tenantId, activeTenant?._id, dockScope]);
 
   /**
    * @function hydrateDockContext
@@ -1366,6 +1433,27 @@ export function WilsyOSIntelligenceDock({
                     : visibleWorkspaceContext?.state === 'DENIED' ? 'Workspace context access denied by EOS.'
                       : visibleWorkspaceContext?.state === 'STALE' ? 'Workspace context changed. Refresh the project source.'
                         : 'Verified workspace context unavailable.'}</span>}
+                  {founderActivationEligible && <div style={{
+                    padding: '8px 0', display: 'flex', flexWrap: 'wrap',
+                    alignItems: 'center', gap: 8,
+                  }}>
+                    <button type="button" className={styles.historyActionButton}
+                      aria-label="Activate Founder Institutional AI"
+                      disabled={founderActivationState === 'SUBMITTING'}
+                      style={{ minHeight: 44, color: '#f8fafc',
+                        border: '1px solid #64748b', padding: '6px 10px' }}
+                      onClick={activateFounderInstitutional}>
+                      {founderActivationState === 'SUBMITTING'
+                        ? 'Verifying Institutional AI…' : 'Activate Institutional AI'}
+                    </button>
+                    <span style={{ color: '#cbd5e1', fontWeight: 400 }}>
+                      Exact Founder subscription · EOS authorizes and audits the change
+                    </span>
+                  </div>}
+                  {founderActivationMessage && <p aria-live="polite"
+                    style={{ margin: '5px 0', color: '#e2e8f0' }}>
+                    {founderActivationMessage}
+                  </p>}
                   <button type="button" className={styles.historyActionButton}
                     disabled={visibleWorkspaceContext?.state === 'LOADING'}
                     style={{ minHeight: 44, marginLeft: 6, color: '#f8fafc', padding: '6px 10px' }}
@@ -1779,7 +1867,7 @@ export default WilsyOSIntelligenceDock;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS
+ * INSTITUTIONAL ARTIFACT SEAL — Intelligence Dock v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
  * ═══════════════════════════════════════════════════════════════════════════════
  * General Ask uses Python EOS /wilsy-ai/reasoning with explicit consent and admission;
  * legal roles retain separately certified C1C legal-services transport.
@@ -1795,7 +1883,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.16.0-SERVER-GROUNDED-HEADQUARTERS-CONVERSATIONS
+ * VERSION: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
