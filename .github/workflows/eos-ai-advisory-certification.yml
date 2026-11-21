@@ -1,10 +1,13 @@
 # TITLE: WILSY OS AI Gateway and Founder Commercial Certification
-# VERSION: v1.5.0-FOUNDER-DUAL-IAM-ACTIVATION-CERT
+# VERSION: v1.6.0-P0-OPENAI-RECONCILIATION-CERT
 # AUTHORITY: WILSY OS Core Governance; workflow may certify, never grant.
 # EPITOME: Run locked focused AI and exact-Founder commercial denial tests.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ai-advisory-certification.yml
 # COLLABORATION / OWNERSHIP: Existing AI advisory, entitlement and context gates.
-# CERTIFICATION / UPDATE DATE: 2026-11-20
+# CERTIFICATION / UPDATE DATE: 2026-11-21
+# CHANGELOG: v1.6.0-P0-OPENAI-RECONCILIATION-CERT extends the existing disposable-Mongo workflow with
+#   P0 AI admission, reconciliation, non-generative provider readiness,
+#   safe failure classification and concrete OpenAI adapter HTTP certification.
 # CHANGELOG: v1.5.0-FOUNDER-DUAL-IAM-ACTIVATION-CERT certifies
 #   exact Founder dual permission HTTP composition, staged canonical registry
 #   mutation, partial failure recovery and post-commit ACTIVE P4 readback.
@@ -40,6 +43,9 @@ on:
       - "tools/eos/api/subscription_router.py"
       - "tests/unit/test_founder_ai_*.py"
       - "tests/unit/test_wilsy_ai_reasoning_context.py"
+      - "tests/unit/test_wilsy_ai_usage_*.py"
+      - "tests/unit/test_wilsy_ai_reasoning_orchestrator.py"
+      - "tests/unit/test_openai_*.py"
       - "tests/integration/test_wilsy_ai_reasoning_http_real_mongo.py"
       - "tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py"
       - "tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py"
@@ -115,18 +121,21 @@ jobs:
       - name: Certify Founder entitlement governance and contextual AI
         run: |
           python -m pytest -q tests/unit/test_founder_ai_entitlement_reconciliation.py tests/unit/test_founder_ai_development_activation.py tests/unit/test_founder_ai_authenticated_activation.py tests/unit/test_wilsy_ai_reasoning_context.py
+      - name: Certify P0 provider, admission, replay and reconciliation without vendor calls
+        run: |
+          python -m pytest -q tests/unit/test_openai_responses_provider.py tests/unit/test_openai_readiness_certificate.py tests/unit/test_wilsy_ai_usage_admission_authority.py tests/unit/test_wilsy_ai_usage_reconciliation.py tests/unit/test_wilsy_ai_usage_admission.py tests/unit/test_wilsy_ai_reasoning_orchestrator.py tests/unit/test_wilsy_ai_reasoning_endpoint_unreachable.py
       - name: Run disposable replica-set certification
         run: |
           python -m pytest -q tests/integration/test_wilsy_ai_advisory_real_mongo.py tests/integration/test_wilsy_ai_advisory_concurrent_real_mongo.py tests/integration/test_next_best_action_advisory_real_mongo.py tests/integration/test_wilsy_ai_legal_gateway_real_mongo.py
       - name: Certify reasoning HTTP admission and provider reply on real Mongo
         run: |
-          python -m pytest -q tests/integration/test_wilsy_ai_reasoning_http_real_mongo.py
+          python -m pytest -q tests/integration/test_wilsy_ai_reasoning_http_real_mongo.py tests/integration/test_wilsy_ai_reasoning_openai_adapter_real_mongo.py
       - name: Certify zero-rated AI plan-to-entitlement staged lifecycle
         run: |
           python -m pytest -q tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py
 
 # ARTIFACT: eos-ai-advisory-certification.yml
-# VERSION: v1.5.0-FOUNDER-DUAL-IAM-ACTIVATION-CERT
+# VERSION: v1.6.0-P0-OPENAI-RECONCILIATION-CERT
 # AUTHORITY BOUNDARY: synthetic CI certification only; no IAM/commerce grants
 # TENANT POSTURE: isolated test resources, exact scope, never live Atlas writes
 # FAIL-CLOSED POSTURE: failed commercial and reasoning tests reject the PR
