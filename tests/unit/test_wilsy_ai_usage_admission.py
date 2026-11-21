@@ -8,6 +8,7 @@ CHANGELOG: v1.0.1-C1B-R3B certifies persistence-boundary normalization of
            BSON-naive UTC datetimes without weakening domain invariants.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
+from dataclasses import replace
 from datetime import datetime, timezone, timedelta
 import pytest
 
@@ -51,17 +52,14 @@ def test_registry_hydrates_bson_naive_utc_datetimes_without_weakening_domain() -
 def test_subscription_entitlement_identity_remains_canonical_and_bounded() -> None:
     canonical = "wai-" + "a" * 128
     item = admission()
-    payload = item.to_dict()
-    payload["entitlement_id"] = canonical
-    payload["fingerprint"] = ""
-    exact = WilsyAIUsageAdmission.from_dict(payload)
+    exact = replace(item, entitlement_id=canonical, fingerprint="")
     assert exact.entitlement_id == canonical
     assert WilsyAIUsageAdmission.from_dict(exact.to_dict()) == exact
     for invalid in ("wai-" + "a" * 127, "wai-" + "A" * 128, "wai-" + "z" * 128, "x" * 132):
         with pytest.raises(WilsyAIUsageAdmissionError):
-            WilsyAIUsageAdmission.from_dict({**payload, "entitlement_id": invalid})
+            replace(item, entitlement_id=invalid, fingerprint="")
     with pytest.raises(WilsyAIUsageAdmissionError):
-        WilsyAIUsageAdmission.from_dict({**payload, "tenant_id": canonical})
+        replace(item, tenant_id=canonical, fingerprint="")
 
 
 def test_states_hold_capacity_and_reconciliation_is_not_usage() -> None:
