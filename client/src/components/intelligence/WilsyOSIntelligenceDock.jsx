@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY
+ * VERSION: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY distinguishes confirmed completed usage from held reservations and available quota using EOS source fields, and preserves a reconciliation-required prompt with an explicit do-not-resubmit warning. No reservation state or financial facts are changed in the browser.
  * CHANGELOG: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY handles a server-confirmed replay conflict without automatically reissuing an AI request: the original prompt stays editable, and only a separate operator Send generates a new idempotency key. No replay conflict is treated as provider outage.
  * CHANGELOG: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION adds
  * one exact-Founder, explicitly clicked Institutional activation command.
@@ -1112,6 +1113,8 @@ export function WilsyOSIntelligenceDock({
           : status === 403 ? 'WILSY AI permission or subscription entitlement is not verified.'
           : status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT'
             ? 'This AI request conflicts with a previously recorded attempt. No answer was generated. Review the question and press Send to create a separate request.'
+          : status === 503 && detail === 'C1B_REASONING_RECONCILIATION_REQUIRED'
+            ? 'AI execution or usage evidence requires reconciliation. Available requests may be held, not completed usage. Do not submit this question again until EOS verifies the attempt.'
           : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
           : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
           : 'WILSY AI could not verify this answer. Your question remains in the composer.';
@@ -1415,7 +1418,7 @@ export function WilsyOSIntelligenceDock({
                         </span> : null}
                       {' · '}{aiEntitlementNotProvisioned ? 'AI reasoning not activated'
                         : aiProviderUnavailable ? 'AI provider unavailable'
-                          : `${visibleWorkspaceContext.data.allowance.available_request_units} requests available`}
+                          : `${visibleWorkspaceContext.data.allowance.available_request_units} available · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.daily_consumed_request_units) ? visibleWorkspaceContext.data.allowance.daily_consumed_request_units : 'unverified'} completed · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.held_request_units) ? visibleWorkspaceContext.data.allowance.held_request_units : 'unverified'} held`}
                     </summary>
                     <p style={{ margin: '4px 0' }}>
                       {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
@@ -1425,6 +1428,7 @@ export function WilsyOSIntelligenceDock({
                         ? 'unavailable' : 'require independent admission'}
                     </p>
                     <p style={{ margin: '4px 0' }}>Workforce and qualifications: unavailable without independent source authority.</p>
+                    <p style={{ margin: '4px 0', color: '#cbd5e1' }}>EOS usage evidence: {Number.isSafeInteger(visibleWorkspaceContext.data.allowance.daily_consumed_request_units) ? visibleWorkspaceContext.data.allowance.daily_consumed_request_units : 'unverified'} completed requests; {Number.isSafeInteger(visibleWorkspaceContext.data.allowance.held_request_units) ? visibleWorkspaceContext.data.allowance.held_request_units : 'unverified'} units held, including any unresolved reconciliation. Held capacity is not proof of a completed or billable model response.</p>
                     {(visibleWorkspaceContext.data.work?.sources || []).filter(source => source.kind === 'PROJECT'
                       && source.project_id === workLocator.project_id).map(source => <button type="button"
                       key={source.project_id} className={styles.historyActionButton}
@@ -1893,7 +1897,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY
+ * VERSION: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
