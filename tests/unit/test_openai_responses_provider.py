@@ -1,14 +1,15 @@
 """R23 focused certificate for the OpenAI Responses adapter.
 
 TITLE: WILSY AI OpenAI Responses Provider Unit Certificate
-VERSION: v1.0.0-C1B-R23
+VERSION: v1.1.0-PROVIDER-DIAGNOSTIC-UNIT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove one server-bound, non-streaming, tool-free OpenAI request maps
          exactly to the provider-neutral C1A result without retries or secrets.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_openai_responses_provider.py
 COLLABORATION / OWNERSHIP: Certifies tools/eos/intelligence/providers/
                             openai_responses_provider.py against C1A.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-PROVIDER-DIAGNOSTIC-UNIT-CERT certifies sanitized error-class/status/outcome diagnostics without persisting or logging SDK error messages and without retries.
 CHANGELOG: v1.0.0-C1B-R23 establishes deterministic SDK, failure, identity,
            output, usage, and no-retry certificates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -141,6 +142,30 @@ def test_expected_provider_failures_are_bounded_and_single_call(error: Exception
     assert "secret" not in repr(result)
 
 
+@pytest.mark.parametrize(("error", "expected_http", "expected_outcome"), [
+    (StatusError(400), "400", "PROVIDER_REJECTED_REQUEST"),
+    (StatusError(429), "429", "PROVIDER_UNAVAILABLE"),
+    (ConnectionError("secret transport"), "UNKNOWN", "PROVIDER_UNAVAILABLE"),
+])
+def test_provider_failure_telemetry_exposes_only_bounded_fields(
+    error: Exception, expected_http: str, expected_outcome: str, caplog: Any,
+) -> None:
+    """Retain only safe failure classification, never vendor body or identities."""
+    caplog.set_level("WARNING", logger="WilsyOS.AI.OpenAIResponsesProvider")
+    responses = FakeResponses(error=error)
+    provider = OpenAIResponsesProvider(model_id="gpt-5-mini", client=FakeClient(responses))
+    result = provider.execute(request())
+    assert result.outcome.value == expected_outcome
+    assert len(responses.calls) == 1
+    assert f"http_status={expected_http}" in caplog.text
+    assert f"outcome={expected_outcome}" in caplog.text
+    assert "WILSY_AI_PROVIDER_FAILURE" in caplog.text
+    assert "secret" not in caplog.text.lower()
+    assert "tenant-r23" not in caplog.text
+    assert "bounded prompt" not in caplog.text
+
+
+
 def test_unexpected_adapter_failure_is_not_provider_unavailable() -> None:
     responses = FakeResponses(error=RuntimeError("secret internal detail"))
     provider = OpenAIResponsesProvider(model_id="gpt-5-mini", client=FakeClient(responses))
@@ -187,7 +212,7 @@ def test_one_execute_never_retries() -> None:
 
 
 # ARTIFACT: test_openai_responses_provider.py
-# VERSION: v1.0.0-C1B-R23
+# VERSION: v1.1.0-PROVIDER-DIAGNOSTIC-UNIT-CERT
 # AUTHORITY BOUNDARY: OpenAI adapter certificate only
 # TENANT POSTURE: no tenant metadata is sent to provider
 # FAIL-CLOSED POSTURE: malformed/failed provider results are bounded
