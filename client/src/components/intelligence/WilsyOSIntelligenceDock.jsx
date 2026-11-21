@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
+ * VERSION: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY handles a server-confirmed replay conflict without automatically reissuing an AI request: the original prompt stays editable, and only a separate operator Send generates a new idempotency key. No replay conflict is treated as provider outage.
  * CHANGELOG: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION adds
  * one exact-Founder, explicitly clicked Institutional activation command.
  * The Python EOS dual-IAM boundary owns the write; the Dock admits success
@@ -1099,9 +1100,18 @@ export function WilsyOSIntelligenceDock({
       } catch (err) {
         if (!requestIsCurrent()) return;
         const status = err?.response?.status;
+        const detail = err?.response?.data?.detail;
+        if (!isLegalDockRole(authUser?.role)
+          && status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT') {
+          // A definitive server conflict cannot be reused. Never resubmit
+          // automatically: a new key is generated only on the next manual Send.
+          reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
+        }
         const safeMessage = status === 401
           ? 'Authentication is required to use WILSY AI.'
           : status === 403 ? 'WILSY AI permission or subscription entitlement is not verified.'
+          : status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT'
+            ? 'This AI request conflicts with a previously recorded attempt. No answer was generated. Review the question and press Send to create a separate request.'
           : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
           : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
           : 'WILSY AI could not verify this answer. Your question remains in the composer.';
@@ -1883,7 +1893,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION
+ * VERSION: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
