@@ -876,8 +876,16 @@ def execute_reasoning(
         # Only stable, bounded uppercase codes and class names may enter logs;
         # never log exception text, tenant identity, prompts, or credentials.
         cause = error.__cause__
-        cause_code_raw = str(getattr(cause, "code", "") or "") if cause is not None else ""
-        cause_code = cause_code_raw if re.fullmatch(r"[A-Z][A-Z0-9_]{2,100}", cause_code_raw) else "UNCLASSIFIED"
+        cause_args = getattr(cause, "args", ()) if cause is not None else ()
+        cause_candidate = getattr(cause, "code", None)
+        if cause_candidate is None and isinstance(cause_args, tuple) and len(cause_args) == 1:
+            cause_candidate = cause_args[0]
+        cause_code = (
+            cause_candidate
+            if isinstance(cause_candidate, str)
+            and re.fullmatch(r"(?:C1B|M13P6C|M13P6B|M13P6A|P6A|P6B)_[A-Z0-9_]{2,90}", cause_candidate)
+            else "UNCLASSIFIED"
+        )
         _logger.error(
             "WILSY_AI_REASONING_FAILURE stage=admission_claim failure_class=%s cause_class=%s cause_code=%s",
             type(error).__name__, type(cause).__name__ if cause is not None else "NONE", cause_code,
