@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING
+VERSION: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,6 +10,9 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP maps an allowlisted nested C1B admission replay conflict to HTTP 409 while preserving the fail-closed reservation, provider suppression and all tenant/usage evidence boundaries. No opaque exception text is exposed.
+CHANGELOG: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS adds bounded admission cause-type and canonical error-code diagnostics only; no identities, prompts, stack traces, vendor material or sensitive exception text are retained. No admission arithmetic, retry, IAM, billing, or provider behaviour is changed.
+CHANGELOG: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS logs bounded stage names and model outcome classifications on failed reasoning attempts without recording prompts, identity, API secrets, exception messages, or vendor response data. The public error vocabulary, replay, IAM, admission and accounting semantics remain unchanged.
 CHANGELOG: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING reuses the canonical
            My Work source IAM and aggregation inside an opt-in Headquarters
            reasoning dependency, adding bounded source-owned work priorities
@@ -105,7 +108,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING"
+VERSION: Final[str] = "v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -631,6 +634,15 @@ def _error_response(error: BaseException) -> HTTPException:
         return HTTPException(status_code=error.http_status, detail=error.code)
     if isinstance(error, WilsyAIEntitlementNotFoundError):
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="C1B_REASONING_NOT_AUTHORIZED")
+    # Admission authority wraps canonical registry errors. A demonstrated
+    # replay conflict is a 409, never an unclassified provider outage.
+    nested = getattr(error, "__cause__", None)
+    nested_args = getattr(nested, "args", ()) if nested is not None else ()
+    nested_code = getattr(nested, "code", None)
+    if nested_code is None and isinstance(nested_args, tuple) and len(nested_args) == 1:
+        nested_code = nested_args[0]
+    if nested_code in ("C1B_ADMISSION_DIVERGENT_REPLAY", "C1B_ADMISSION_DUPLICATE_RACE"):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="C1B_REASONING_REPLAY_CONFLICT")
     code = str(getattr(error, "code", ""))
     if "DIVERGENT" in code or "REEXECUTION" in code or "REPLAY" in code:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="C1B_REASONING_REPLAY_CONFLICT")
@@ -824,6 +836,7 @@ def execute_reasoning(
             binding=provider_binding,
         ))
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=composition failure_class=%s", type(error).__name__)
         raise _error_response(error)
 
     def pre_provider(session: Any) -> Any:
@@ -869,6 +882,24 @@ def execute_reasoning(
     try:
         permit = _transaction(pre_provider)
     except Exception as error:
+        # The admission authority wraps canonical capacity/registry failures.
+        # Only stable, bounded uppercase codes and class names may enter logs;
+        # never log exception text, tenant identity, prompts, or credentials.
+        cause = error.__cause__
+        cause_args = getattr(cause, "args", ()) if cause is not None else ()
+        cause_candidate = getattr(cause, "code", None)
+        if cause_candidate is None and isinstance(cause_args, tuple) and len(cause_args) == 1:
+            cause_candidate = cause_args[0]
+        cause_code = (
+            cause_candidate
+            if isinstance(cause_candidate, str)
+            and re.fullmatch(r"(?:C1B|M13P6C|M13P6B|M13P6A|P6A|P6B)_[A-Z0-9_]{2,90}", cause_candidate)
+            else "UNCLASSIFIED"
+        )
+        _logger.error(
+            "WILSY_AI_REASONING_FAILURE stage=admission_claim failure_class=%s cause_class=%s cause_code=%s",
+            type(error).__name__, type(cause).__name__ if cause is not None else "NONE", cause_code,
+        )
         raise _error_response(error)
 
     try:
@@ -877,7 +908,10 @@ def execute_reasoning(
         # than claim when requests execute within the same wall-clock second.
         provider_attempt = orchestrator.execute(permit, completed_at=now)
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=provider_execution failure_class=%s", type(error).__name__)
         raise _error_response(error)
+    if provider_attempt.result.outcome.value != "SUCCESS":
+        _logger.warning("WILSY_AI_REASONING_PROVIDER_OUTCOME outcome=%s", provider_attempt.result.outcome.value)
 
     def finalize(session: Any) -> Any:
         return orchestrator.finalize(provider_attempt, session=session, occurred_at=_utc_now())
@@ -885,8 +919,10 @@ def execute_reasoning(
     try:
         final = _transaction(finalize)
     except Exception as error:
+        _logger.error("WILSY_AI_REASONING_FAILURE stage=finalization failure_class=%s", type(error).__name__)
         raise _error_response(error)
     if final.admission.state.value != "COMPLETED" or final.usage_observation is None:
+        _logger.warning("WILSY_AI_REASONING_FAILURE stage=reconciliation_required outcome=%s", provider_attempt.result.outcome.value)
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="C1B_REASONING_RECONCILIATION_REQUIRED")
     return {
         "invocation_id": final.invocation_evidence.invocation_id,
@@ -914,7 +950,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING
+# VERSION: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions

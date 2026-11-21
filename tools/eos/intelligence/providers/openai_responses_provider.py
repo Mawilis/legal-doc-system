@@ -1,7 +1,7 @@
 """OpenAI Responses API adapter for the provider-neutral model contract.
 
 TITLE: WILSY AI OpenAI Responses Provider Adapter
-VERSION: v1.0.0-C1B-R23
+VERSION: v1.2.0-SAFE-QUOTA-AND-TRANSPORT-CLASSIFICATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Translate one server-bound ModelExecutionInput into one bounded,
          non-streaming OpenAI Responses request and a sanitized ModelProviderResult.
@@ -9,7 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intell
 COLLABORATION / OWNERSHIP: Server-owned runtime constructs this adapter;
                             C1B consumes the provider-neutral result;
                             OpenAI owns transport capability only.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.2.0-SAFE-QUOTA-AND-TRANSPORT-CLASSIFICATION classifies only allowlisted vendor HTTP codes and SDK error classes into stable quota/rate/credential/model/transport classes, without exporting any message or raw vendor body. Provider outcome, quota, single-call and reconciliation semantics remain unchanged.
+CHANGELOG: v1.1.0-BOUNDED-PROVIDER-FAILURE-OBSERVABILITY reports only the bounded SDK error class, optional numeric HTTP status and canonical outcome, without message, prompt, response, headers, API key or tenant identity. One-call execution and accounting semantics are unchanged.
 CHANGELOG: v1.0.0-C1B-R23 adds a single-call OpenAI Responses adapter with
            explicit no-retry, canonical endpoint, bounded output, and sanitized
            failure translation.
@@ -28,6 +30,7 @@ FAIL-CLOSED DECLARATION: Identity drift, malformed responses, and vendor
 from __future__ import annotations
 
 from collections.abc import Mapping
+import logging
 import re
 from typing import Any, Final, cast
 
@@ -40,7 +43,8 @@ from tools.eos.intelligence.domain.ai_model_execution import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-C1B-R23"
+VERSION: Final[str] = "v1.2.0-SAFE-QUOTA-AND-TRANSPORT-CLASSIFICATION"
+_logger = logging.getLogger("WilsyOS.AI.OpenAIResponsesProvider")
 PROVIDER_ID: Final[str] = "openai"
 OPENAI_BASE_URL: Final[str] = "https://api.openai.com/v1"
 DEFAULT_TIMEOUT_SECONDS: Final[float] = 60.0
@@ -105,6 +109,40 @@ def _provider_error_outcome(error: Exception) -> ModelExecutionOutcome:
     if "apierror" in name or "statuserror" in name:
         return ModelExecutionOutcome.PROVIDER_UNAVAILABLE
     return ModelExecutionOutcome.INTERNAL_CONTRACT_VIOLATION
+
+
+
+def _safe_failure_reason(error: Exception) -> str:
+    """Return a fixed, non-sensitive diagnosis; never emit vendor error text.
+
+    HTTP 429 may be an ordinary rate limit or an exhausted API budget. Only
+    explicit, allowlisted machine-readable vendor codes justify differentiating
+    those cases; an arbitrary message or body is never parsed or logged.
+    """
+    status_code = getattr(error, "status_code", None)
+    code = getattr(error, "code", None)
+    if status_code == 429:
+        if code in ("insufficient_quota", "billing_hard_limit_reached"):
+            return "QUOTA_EXHAUSTED"
+        return "RATE_LIMITED_OR_QUOTA_UNVERIFIED"
+    if status_code in (401, 403):
+        return "CREDENTIAL_OR_ACCESS_REJECTED"
+    if status_code == 404:
+        return "MODEL_OR_ENDPOINT_NOT_FOUND"
+    if status_code == 400:
+        return "INVALID_REQUEST"
+    if status_code in (408, 409):
+        return "RETRYABLE_VENDOR_STATUS_NO_AUTOMATIC_RETRY"
+    if type(status_code) is int and status_code >= 500:
+        return "VENDOR_SERVICE_UNAVAILABLE"
+    name = type(error).__name__.lower()
+    if isinstance(error, TimeoutError) or "timeout" in name:
+        return "TIMEOUT"
+    if isinstance(error, (OSError, ConnectionError)) or "connection" in name or "network" in name:
+        return "TRANSPORT"
+    if "ratelimit" in name or "rate_limit" in name:
+        return "RATE_LIMITED_OR_QUOTA_UNVERIFIED"
+    return "UNCLASSIFIED"
 
 
 def _failure(provider_id: str, model_id: str, outcome: ModelExecutionOutcome) -> ModelProviderResult:
@@ -175,7 +213,17 @@ class OpenAIResponsesProvider:
                 tools=[],
             )
         except Exception as error:
-            return _failure(PROVIDER_ID, self._model_id, _provider_error_outcome(error))
+            outcome = _provider_error_outcome(error)
+            status_value = getattr(error, "status_code", None)
+            safe_status = status_value if type(status_value) is int and 100 <= status_value <= 599 else "UNKNOWN"
+            safe_class = type(error).__name__
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", safe_class) is None:
+                safe_class = "UNCLASSIFIED"
+            _logger.warning(
+                "WILSY_AI_PROVIDER_FAILURE failure_class=%s http_status=%s outcome=%s reason=%s",
+                safe_class, safe_status, outcome.value, _safe_failure_reason(error),
+            )
+            return _failure(PROVIDER_ID, self._model_id, outcome)
         try:
             output_text = _field(response, "output_text")
             if not isinstance(output_text, str) or not output_text.strip():
@@ -211,7 +259,7 @@ class OpenAIResponsesProvider:
 __all__ = ["VERSION", "PROVIDER_ID", "OPENAI_BASE_URL", "OpenAIResponsesProvider"]
 
 # ARTIFACT: openai_responses_provider.py
-# VERSION: v1.0.0-C1B-R23
+# VERSION: v1.2.0-SAFE-QUOTA-AND-TRANSPORT-CLASSIFICATION
 # AUTHORITY BOUNDARY: replaceable OpenAI transport adapter only
 # TENANT POSTURE: no provider metadata or caller-selected identity
 # FAIL-CLOSED POSTURE: one call, no retry, bounded sanitized outcomes

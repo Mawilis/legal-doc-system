@@ -1,12 +1,21 @@
 """TITLE: C1B usage admission direct certificate.
-VERSION: v1.0.1-C1B-R3B
+VERSION: v1.0.2-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certify immutable reservation states, replay, divergence, and held capacity.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_usage_admission.py
+COLLABORATION / OWNERSHIP: C1B usage-admission domain and registry certificate; no authority creation or live provider integration.
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.0.2-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID-CERT certifies the exact 132-character subscription-derived entitlement identity and rejects malformed long or mis-scoped identities, while retaining historical admission hash verification.
 CHANGELOG: v1.0.1-C1B-R3B certifies persistence-boundary normalization of
            BSON-naive UTC datetimes without weakening domain invariants.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic identities and timestamps only; no credentials, prompts, or tenant data.
+TENANT BOUNDARY: Verifies exact tenant identity validation and cross-scope denial.
+AUTHORITY BOUNDARY: Immutable admission domain and hydration verification only; no IAM or entitlement grant.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution or payment authority; Kennel EOS remains exclusive.
+FAIL-CLOSED DECLARATION: Invalid long identities, corrupted evidence and invalid lifecycle transitions are rejected.
 """
+from dataclasses import replace
 from datetime import datetime, timezone, timedelta
 import pytest
 
@@ -47,6 +56,19 @@ def test_registry_hydrates_bson_naive_utc_datetimes_without_weakening_domain() -
         WilsyAIUsageAdmission.from_dict({**item.to_dict(), "window_start": item.window_start.replace(tzinfo=None)})
 
 
+def test_subscription_entitlement_identity_remains_canonical_and_bounded() -> None:
+    canonical = "wai-" + "a" * 128
+    item = admission()
+    exact = replace(item, entitlement_id=canonical, fingerprint="")
+    assert exact.entitlement_id == canonical
+    assert WilsyAIUsageAdmission.from_dict(exact.to_dict()) == exact
+    for invalid in ("wai-" + "a" * 127, "wai-" + "A" * 128, "wai-" + "z" * 128, "x" * 132):
+        with pytest.raises(WilsyAIUsageAdmissionError):
+            replace(item, entitlement_id=invalid, fingerprint="")
+    with pytest.raises(WilsyAIUsageAdmissionError):
+        replace(item, tenant_id=canonical, fingerprint="")
+
+
 def test_states_hold_capacity_and_reconciliation_is_not_usage() -> None:
     item = admission()
     assert item.updated_at is not None
@@ -71,5 +93,9 @@ def test_tenant_and_chronology_fail_closed() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_usage_admission.py
-# VERSION: v1.0.1-C1B-R3B
+# VERSION: v1.0.2-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID-CERT
+# AUTHORITY BOUNDARY: immutable tenant-scoped admission evidence certificate only
+# TENANT POSTURE: exact tenant and malformed-identity denials
+# FAIL-CLOSED POSTURE: invalid state, replay, or fingerprint must reject
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no billing writes
 # END OF WILSY OS SOVEREIGN ARTIFACT

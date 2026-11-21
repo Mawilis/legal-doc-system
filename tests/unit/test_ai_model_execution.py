@@ -1,13 +1,14 @@
 """Direct C1A certificate for the provider-neutral model contract.
 
 TITLE: WILSY AI Model Execution Unit Certificate
-VERSION: v1.0.0-WILSY-AI-MODEL-EXECUTION-UNIT
+VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves the pure model request/result vocabulary and bounded immutable
          invocation evidence without invoking a provider or persistence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_ai_model_execution.py
 COLLABORATION / OWNERSHIP: Certifies tools/eos/intelligence/domain/ai_model_execution.py.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT verifies the canonical SHA3-512 subscription entitlement ID in transient model execution and durable invocation evidence, with strict rejection of malformed long identities and preserved evidence hashing.
 CHANGELOG: v1.0.0 establishes direct validation of provider neutrality,
            server-bound identity, deterministic fingerprints, usage metadata,
            sanitized failures, and durable evidence exclusions.
@@ -105,6 +106,23 @@ def make_evidence(**changes: object) -> ModelInvocationEvidence:
     }
     values.update(changes)
     return ModelInvocationEvidence(**cast(Any, values))
+
+
+def test_subscription_entitlement_identity_in_execution_and_evidence() -> None:
+    canonical = "wai-" + "a" * 128
+    request = make_request(entitlement_id=canonical)
+    assert request.entitlement_id == canonical
+    result = make_result()
+    evidence = ModelInvocationEvidence.from_execution(
+        request, result, created_at=BASE_TIME, completed_at=BASE_TIME + timedelta(milliseconds=4),
+    )
+    assert evidence.entitlement_id == canonical
+    assert ModelInvocationEvidence.from_dict(evidence.to_dict()) == evidence
+    for invalid in ("wai-" + "a" * 127, "wai-" + "A" * 128, "wai-" + "z" * 128, "x" * 132):
+        with pytest.raises(ModelExecutionError, match="C1A_ENTITLEMENT_ID_INVALID"):
+            make_request(entitlement_id=invalid)
+    with pytest.raises(ModelExecutionError, match="C1A_TENANT_ID_INVALID"):
+        make_request(tenant_id=canonical)
 
 
 def test_provider_neutral_contract_has_no_provider_sdk_imports() -> None:
@@ -289,7 +307,7 @@ def test_tool_references_are_references_only() -> None:
 
 
 # ARTIFACT: test_ai_model_execution.py
-# VERSION: v1.0.0-WILSY-AI-MODEL-EXECUTION-UNIT
+# VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: direct pure-contract certification only
 # TENANT POSTURE: server-bound identity assertions
 # FAIL-CLOSED POSTURE: invalid payloads and drift are rejected

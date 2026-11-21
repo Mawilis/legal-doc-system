@@ -1,12 +1,13 @@
 """TITLE: WILSY AI Usage Admission Domain.
-VERSION: v1.0.0-C1B-R2
+VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Immutable tenant-scoped reservations that gate future reasoning
          execution without becoming usage, provider, billing, or settlement truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/domain/wilsy_ai_usage_admission.py
 COLLABORATION / OWNERSHIP: C1B admission authority; P4/P6 capacity remain
                             canonical; callers own Mongo transactions.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID admits only the canonical `wai-` plus 128 lowercase SHA3-512 digest subscription-entitlement identity in the entitlement_id field. Other identities keep strict 128-character bounds. Historical admission_version remains readable and hash-verified for durable replay.
 CHANGELOG: v1.0.0-C1B-R2 establishes deterministic admission identity,
            held-capacity states, reconciliation uncertainty, and strict replay.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -29,10 +30,12 @@ import json
 import re
 from typing import Any, Final, cast
 
-VERSION: Final[str] = "v1.0.0-C1B-R2"
+VERSION: Final[str] = "v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID"
 SCHEMA: Final[str] = "WILSY-AI-USAGE-ADMISSION/V1"
 _HEX = frozenset("0123456789abcdef")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_SUBSCRIPTION_ENTITLEMENT_ID = re.compile(r"^wai-[0-9a-f]{128}$")
+_LEGACY_VERSION: Final[str] = "v1.0.0-C1B-R2"
 _FORBIDDEN = frozenset({"default", "global", "root", "*", "global_root"})
 
 
@@ -75,7 +78,10 @@ def sha3_512_fingerprint(value: object) -> str:
 
 
 def _identity(name: str, value: object) -> str:
-    if not isinstance(value, str) or _IDENTITY.fullmatch(value) is None:
+    if not isinstance(value, str) or not (
+        _IDENTITY.fullmatch(value) is not None
+        or (name == "entitlement_id" and _SUBSCRIPTION_ENTITLEMENT_ID.fullmatch(value) is not None)
+    ):
         raise WilsyAIUsageAdmissionError(f"C1B_ADMISSION_{name.upper()}_INVALID")
     return value
 
@@ -125,7 +131,7 @@ class WilsyAIUsageAdmission:
             raise WilsyAIUsageAdmissionError("C1B_ADMISSION_TENANT_REQUIRED")
         for name in ("admission_id", "idempotency_key", "entitlement_id", "module_id"):
             _identity(name, getattr(self, name))
-        if self.schema != SCHEMA or self.admission_version != VERSION:
+        if self.schema != SCHEMA or self.admission_version not in (VERSION, _LEGACY_VERSION):
             raise WilsyAIUsageAdmissionError("C1B_ADMISSION_IDENTITY_INVALID")
         if isinstance(self.entitlement_revision, bool) or not isinstance(self.entitlement_revision, int) or self.entitlement_revision < 0:
             raise WilsyAIUsageAdmissionError("C1B_ADMISSION_REVISION_INVALID")
@@ -197,7 +203,7 @@ class WilsyAIUsageAdmission:
 __all__ = ["VERSION", "SCHEMA", "WilsyAIUsageAdmission", "WilsyAIUsageAdmissionError", "WilsyAIUsageAdmissionState", "canonical_json", "sha3_512_fingerprint"]
 
 # ARTIFACT: wilsy_ai_usage_admission.py
-# VERSION: v1.0.0-C1B-R2
+# VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID
 # AUTHORITY BOUNDARY: immutable capacity reservation evidence only
 # TENANT POSTURE: explicit tenant identity on every admission
 # FAIL-CLOSED POSTURE: strict state, chronology, replay and digest validation
