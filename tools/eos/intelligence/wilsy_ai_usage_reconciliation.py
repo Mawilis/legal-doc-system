@@ -261,7 +261,8 @@ def release_expired_never_claimed(
     )
     registry = WilsyAIUsageAdmissionRegistry(database[ADMISSION_COLLECTION])
     admission = registry.get(tenant_id=tenant, admission_id=identity, session=session)
-    if (admission.entitlement_id != entitlement.entitlement_id
+    if (admission.tenant_id != tenant
+            or admission.entitlement_id != entitlement.entitlement_id
             or admission.fingerprint != expected_fingerprint
             or admission.state is not WilsyAIUsageAdmissionState.RESERVED
             or admission.evidence_reference is not None
