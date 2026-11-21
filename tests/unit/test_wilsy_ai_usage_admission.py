@@ -3,10 +3,17 @@ VERSION: v1.0.2-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certify immutable reservation states, replay, divergence, and held capacity.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_usage_admission.py
+COLLABORATION / OWNERSHIP: C1B usage-admission domain and registry certificate; no authority creation or live provider integration.
+CERTIFICATION / UPDATE DATE: 2026-11-21
 CHANGELOG: v1.0.2-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID-CERT certifies the exact 132-character subscription-derived entitlement identity and rejects malformed long or mis-scoped identities, while retaining historical admission hash verification.
 CHANGELOG: v1.0.1-C1B-R3B certifies persistence-boundary normalization of
            BSON-naive UTC datetimes without weakening domain invariants.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic identities and timestamps only; no credentials, prompts, or tenant data.
+TENANT BOUNDARY: Verifies exact tenant identity validation and cross-scope denial.
+AUTHORITY BOUNDARY: Immutable admission domain and hydration verification only; no IAM or entitlement grant.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution or payment authority; Kennel EOS remains exclusive.
+FAIL-CLOSED DECLARATION: Invalid long identities, corrupted evidence and invalid lifecycle transitions are rejected.
 """
 from dataclasses import replace
 from datetime import datetime, timezone, timedelta
