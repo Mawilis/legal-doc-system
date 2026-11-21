@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS
+VERSION: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,6 +10,7 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP maps an allowlisted nested C1B admission replay conflict to HTTP 409 while preserving the fail-closed reservation, provider suppression and all tenant/usage evidence boundaries. No opaque exception text is exposed.
 CHANGELOG: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS adds bounded admission cause-type and canonical error-code diagnostics only; no identities, prompts, stack traces, vendor material or sensitive exception text are retained. No admission arithmetic, retry, IAM, billing, or provider behaviour is changed.
 CHANGELOG: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS logs bounded stage names and model outcome classifications on failed reasoning attempts without recording prompts, identity, API secrets, exception messages, or vendor response data. The public error vocabulary, replay, IAM, admission and accounting semantics remain unchanged.
 CHANGELOG: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING reuses the canonical
@@ -107,7 +108,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS"
+VERSION: Final[str] = "v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -633,6 +634,15 @@ def _error_response(error: BaseException) -> HTTPException:
         return HTTPException(status_code=error.http_status, detail=error.code)
     if isinstance(error, WilsyAIEntitlementNotFoundError):
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="C1B_REASONING_NOT_AUTHORIZED")
+    # Admission authority wraps canonical registry errors. A demonstrated
+    # replay conflict is a 409, never an unclassified provider outage.
+    nested = getattr(error, "__cause__", None)
+    nested_args = getattr(nested, "args", ()) if nested is not None else ()
+    nested_code = getattr(nested, "code", None)
+    if nested_code is None and isinstance(nested_args, tuple) and len(nested_args) == 1:
+        nested_code = nested_args[0]
+    if nested_code in ("C1B_ADMISSION_DIVERGENT_REPLAY", "C1B_ADMISSION_DUPLICATE_RACE"):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="C1B_REASONING_REPLAY_CONFLICT")
     code = str(getattr(error, "code", ""))
     if "DIVERGENT" in code or "REEXECUTION" in code or "REPLAY" in code:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="C1B_REASONING_REPLAY_CONFLICT")
@@ -940,7 +950,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS
+# VERSION: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
