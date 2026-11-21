@@ -330,5 +330,7 @@ def test_active_transaction_is_required_but_never_owned() -> None:
 # ARTIFACT: test_wilsy_ai_reasoning_orchestrator.py
 # VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: unit certificate for provider-neutral reasoning composition
+# TENANT POSTURE: fake registries assert exact tenant predicates on every operation
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no financial writes
 # FAIL-CLOSED POSTURE: exact replay, bounded failure, and no synthetic usage
 # END OF WILSY OS SOVEREIGN ARTIFACT
