@@ -1,7 +1,7 @@
 """OpenAI Responses API adapter for the provider-neutral model contract.
 
 TITLE: WILSY AI OpenAI Responses Provider Adapter
-VERSION: v1.0.0-C1B-R23
+VERSION: v1.1.0-BOUNDED-PROVIDER-FAILURE-OBSERVABILITY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Translate one server-bound ModelExecutionInput into one bounded,
          non-streaming OpenAI Responses request and a sanitized ModelProviderResult.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intell
 COLLABORATION / OWNERSHIP: Server-owned runtime constructs this adapter;
                             C1B consumes the provider-neutral result;
                             OpenAI owns transport capability only.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-BOUNDED-PROVIDER-FAILURE-OBSERVABILITY reports only the bounded SDK error class, optional numeric HTTP status and canonical outcome, without message, prompt, response, headers, API key or tenant identity. One-call execution and accounting semantics are unchanged.
 CHANGELOG: v1.0.0-C1B-R23 adds a single-call OpenAI Responses adapter with
            explicit no-retry, canonical endpoint, bounded output, and sanitized
            failure translation.
@@ -28,6 +29,7 @@ FAIL-CLOSED DECLARATION: Identity drift, malformed responses, and vendor
 from __future__ import annotations
 
 from collections.abc import Mapping
+import logging
 import re
 from typing import Any, Final, cast
 
@@ -40,7 +42,8 @@ from tools.eos.intelligence.domain.ai_model_execution import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-C1B-R23"
+VERSION: Final[str] = "v1.1.0-BOUNDED-PROVIDER-FAILURE-OBSERVABILITY"
+_logger = logging.getLogger("WilsyOS.AI.OpenAIResponsesProvider")
 PROVIDER_ID: Final[str] = "openai"
 OPENAI_BASE_URL: Final[str] = "https://api.openai.com/v1"
 DEFAULT_TIMEOUT_SECONDS: Final[float] = 60.0
@@ -175,7 +178,17 @@ class OpenAIResponsesProvider:
                 tools=[],
             )
         except Exception as error:
-            return _failure(PROVIDER_ID, self._model_id, _provider_error_outcome(error))
+            outcome = _provider_error_outcome(error)
+            status_value = getattr(error, "status_code", None)
+            safe_status = status_value if type(status_value) is int and 100 <= status_value <= 599 else "UNKNOWN"
+            safe_class = type(error).__name__
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", safe_class) is None:
+                safe_class = "UNCLASSIFIED"
+            _logger.warning(
+                "WILSY_AI_PROVIDER_FAILURE failure_class=%s http_status=%s outcome=%s",
+                safe_class, safe_status, outcome.value,
+            )
+            return _failure(PROVIDER_ID, self._model_id, outcome)
         try:
             output_text = _field(response, "output_text")
             if not isinstance(output_text, str) or not output_text.strip():
@@ -211,7 +224,7 @@ class OpenAIResponsesProvider:
 __all__ = ["VERSION", "PROVIDER_ID", "OPENAI_BASE_URL", "OpenAIResponsesProvider"]
 
 # ARTIFACT: openai_responses_provider.py
-# VERSION: v1.0.0-C1B-R23
+# VERSION: v1.1.0-BOUNDED-PROVIDER-FAILURE-OBSERVABILITY
 # AUTHORITY BOUNDARY: replaceable OpenAI transport adapter only
 # TENANT POSTURE: no provider metadata or caller-selected identity
 # FAIL-CLOSED POSTURE: one call, no retry, bounded sanitized outcomes
