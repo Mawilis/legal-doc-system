@@ -1,7 +1,7 @@
 """WILSY OS provider-neutral model execution contract.
 
 TITLE: WILSY AI Model Execution and Invocation Evidence
-VERSION: v1.0.0-WILSY-AI-MODEL-EXECUTION
+VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Defines a provider-independent transient execution request/result and
          immutable, tenant-scoped model-invocation evidence for later runtime
@@ -10,7 +10,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intell
 COLLABORATION / OWNERSHIP: Future orchestrators provide server-bound identity;
                             injected providers compute transient results; the
                             dedicated C1A registry persists bounded evidence.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID accepts the source-derived 132-character wai-SHA3 entitlement identity solely in entitlement_id of transient execution input and immutable invocation evidence. Other identity bounds remain unchanged; previously persisted model evidence versions are still verified with their original digest.
 CHANGELOG: v1.0.0 establishes the provider-neutral execution vocabulary,
            deterministic SHA3-512 request/response/evidence fingerprints, and
            a durable payload that excludes prompts, reasoning, secrets, and
@@ -41,12 +42,14 @@ import re
 from typing import Any, Final, NoReturn, Protocol, cast
 
 
-VERSION: Final[str] = "v1.0.0-WILSY-AI-MODEL-EXECUTION"
+VERSION: Final[str] = "v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID"
 SCHEMA: Final[str] = "WILSY-AI-MODEL-EXECUTION/V1"
 MODEL_EXECUTION_MODULE_ID: Final[str] = "WILSY_AI_REASONING"
 MODEL_EXECUTION_CAPABILITY: Final[str] = "wilsy_ai.reasoning.execute.v1"
 _ENTITY_TYPE: Final[str] = "ModelInvocationEvidence"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_SUBSCRIPTION_ENTITLEMENT_ID = re.compile(r"^wai-[0-9a-f]{128}$")
+_LEGACY_VERSION: Final[str] = "v1.0.0-WILSY-AI-MODEL-EXECUTION"
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN_TENANTS = frozenset({"default", "global", "global_root", "root", "master", "*"})
 _ERROR_CLASSES = frozenset(
@@ -87,7 +90,10 @@ def _fail(code: str) -> NoReturn:
 
 def _identity(name: str, value: object) -> str:
     """Require one non-empty canonical opaque identity."""
-    if not isinstance(value, str) or _IDENTITY.fullmatch(value) is None:
+    if not isinstance(value, str) or not (
+        _IDENTITY.fullmatch(value) is not None
+        or (name == "entitlement_id" and _SUBSCRIPTION_ENTITLEMENT_ID.fullmatch(value) is not None)
+    ):
         _fail(f"C1A_{name.upper()}_INVALID")
     return cast(str, value)
 
@@ -387,7 +393,7 @@ class ModelInvocationEvidence:
             _fail("C1A_TOOL_REFERENCES_INVALID")
         for reference in self.tool_invocation_evidence_references:
             _identity("tool_invocation_evidence_reference", reference)
-        if self.schema != SCHEMA or self.version != VERSION or self.entity_type != _ENTITY_TYPE:
+        if self.schema != SCHEMA or self.version not in (VERSION, _LEGACY_VERSION) or self.entity_type != _ENTITY_TYPE:
             _fail("C1A_EVIDENCE_IDENTITY_INVALID")
         created = _when("created_at", self.created_at)
         completed = _when("completed_at", self.completed_at)
@@ -511,7 +517,7 @@ __all__ = [
 ]
 
 # ARTIFACT: ai_model_execution.py
-# VERSION: v1.0.0-WILSY-AI-MODEL-EXECUTION
+# VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID
 # AUTHORITY BOUNDARY: provider-neutral model-compute evidence only
 # TENANT POSTURE: server-bound tenant identity; no provider override
 # FAIL-CLOSED POSTURE: strict fields, fingerprints, chronology, and outcomes
