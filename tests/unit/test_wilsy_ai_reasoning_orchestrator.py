@@ -1,13 +1,14 @@
 """C1B-R11 direct certificate for authenticated reasoning orchestration.
 
 TITLE: WILSY AI Reasoning Orchestrator Unit Certificate
-VERSION: v1.0.0-C1B-R11
+VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove one-use claim permits, provider-neutral execution, bounded
          failure accounting, exact replay, and caller transaction ownership.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_reasoning_orchestrator.py
 COLLABORATION / OWNERSHIP: Certifies tools/eos/intelligence/wilsy_ai_reasoning_orchestrator.py.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT verifies exact canonical subscription entitlement claim, invocation execution and evidence finalization without expanding other identity fields.
 CHANGELOG: v1.0.0 establishes C1B claim/execute/finalize certificates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Assertions prove raw provider failures and payloads
@@ -20,6 +21,7 @@ FAIL-CLOSED DECLARATION: Identity, state, metric, replay, and lifecycle drift
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
@@ -201,6 +203,27 @@ def test_success_claim_execute_finalize_binds_identity_and_usage() -> None:
     assert session.starts == session.commits == session.aborts == 0
 
 
+def test_canonical_subscription_entitlement_claim_reaches_provider_and_evidence() -> None:
+    canonical = "wai-" + "a" * 128
+    provider = Provider(success_result())
+    orchestrator, admissions, invocations, observations, session = make_orchestrator(provider)
+    admissions.item = replace(admissions.item, entitlement_id=canonical, fingerprint="")
+    permit = orchestrator.claim(
+        tenant_id="tenant-c1b", principal_id="principal-1", admission_id="admission-1",
+        invocation_id="invocation-1", correlation_id="attempt-1", entitlement_id=canonical,
+        prompt="bounded prompt", system_policy="bounded policy",
+        session=session, occurred_at=NOW + timedelta(seconds=1),
+    )
+    assert permit.request.entitlement_id == canonical
+    attempt = orchestrator.execute(permit)
+    assert provider.calls == 1
+    final = orchestrator.finalize(attempt, session=session, occurred_at=NOW + timedelta(seconds=3))
+    assert final.admission.state is WilsyAIUsageAdmissionState.COMPLETED
+    assert final.invocation_evidence.entitlement_id == canonical
+    assert final.usage_observation is not None
+    assert final.usage_observation.entitlement_id == canonical
+
+
 def test_provider_exception_is_sanitized_and_holds_capacity() -> None:
     provider = Provider(error=TimeoutError("secret provider detail"))
     orchestrator, admissions, invocations, observations, session = make_orchestrator(provider)
@@ -305,7 +328,7 @@ def test_active_transaction_is_required_but_never_owned() -> None:
 
 
 # ARTIFACT: test_wilsy_ai_reasoning_orchestrator.py
-# VERSION: v1.0.0-C1B-R11
+# VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: unit certificate for provider-neutral reasoning composition
 # FAIL-CLOSED POSTURE: exact replay, bounded failure, and no synthetic usage
 # END OF WILSY OS SOVEREIGN ARTIFACT
