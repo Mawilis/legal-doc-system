@@ -1,7 +1,7 @@
 """WILSY AI C1B provider-neutral reasoning orchestrator.
 
 TITLE: WILSY AI Authenticated Reasoning Runtime Orchestrator
-VERSION: v1.0.0-C1B-R11
+VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compose one durable usage admission with one server-owned model
          execution, then persist bounded invocation and usage evidence without
@@ -10,7 +10,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intell
 COLLABORATION / OWNERSHIP: C1B owns claim/execute/finalize composition;
                             admission, C1A invocation, and P5A observation
                             registries remain canonical persistence authorities.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID accepts the canonical 132-character subscription AI entitlement identifier exclusively in claim entitlement_id, preventing valid admission identities from being rejected as C1B_ENTITLEMENT_ID_INVALID while preserving tenant, role, provider and replay invariants.
 CHANGELOG: v1.0.0-C1B-R11 establishes caller-transaction claim/finalization,
            one-use execution permits, bounded provider failure accounting,
            exact replay, and tenant/entitlement/provider binding.
@@ -60,8 +61,9 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-C1B-R11"
+VERSION: Final[str] = "v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_SUBSCRIPTION_ENTITLEMENT_ID = re.compile(r"^wai-[0-9a-f]{128}$")
 _FORBIDDEN_TENANTS = frozenset({"default", "global", "global_root", "root", "master", "*"})
 
 
@@ -91,7 +93,10 @@ def _fail(code: str, cause: BaseException | None = None) -> NoReturn:
 
 def _identity(name: str, value: object) -> str:
     """Require one opaque bounded identity."""
-    if not isinstance(value, str) or _IDENTITY.fullmatch(value) is None:
+    if not isinstance(value, str) or not (
+        _IDENTITY.fullmatch(value) is not None
+        or (name == "entitlement_id" and _SUBSCRIPTION_ENTITLEMENT_ID.fullmatch(value) is not None)
+    ):
         _fail(f"C1B_{name.upper()}_INVALID")
     return value
 
@@ -415,7 +420,7 @@ class WilsyAIReasoningOrchestrator:
 __all__ = ["VERSION", "WilsyAIReasoningOrchestratorError", "WilsyAIReasoningInputError", "WilsyAIReasoningReplayError", "WilsyAIReasoningExecutionPermit", "WilsyAIReasoningProviderAttempt", "WilsyAIReasoningFinalization", "WilsyAIReasoningOrchestrator"]
 
 # ARTIFACT: wilsy_ai_reasoning_orchestrator.py
-# VERSION: v1.0.0-C1B-R11
+# VERSION: v1.1.0-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID
 # AUTHORITY BOUNDARY: provider-neutral reasoning evidence and usage admission
 # TENANT POSTURE: every durable lookup/write is explicitly tenant-scoped
 # FAIL-CLOSED POSTURE: one-use permits, strict bindings, exact replay, no synthetic usage
