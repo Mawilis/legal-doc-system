@@ -94,4 +94,8 @@ def test_tenant_and_chronology_fail_closed() -> None:
 
 # ARTIFACT: test_wilsy_ai_usage_admission.py
 # VERSION: v1.0.2-CANONICAL-SUBSCRIPTION-ENTITLEMENT-ID-CERT
+# AUTHORITY BOUNDARY: immutable tenant-scoped admission evidence certificate only
+# TENANT POSTURE: exact tenant and malformed-identity denials
+# FAIL-CLOSED POSTURE: invalid state, replay, or fingerprint must reject
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no billing writes
 # END OF WILSY OS SOVEREIGN ARTIFACT
