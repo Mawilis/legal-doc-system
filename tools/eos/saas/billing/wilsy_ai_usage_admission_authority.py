@@ -1,12 +1,13 @@
 """TITLE: WILSY AI Usage Admission Authority.
-VERSION: v1.0.0-C1B-R2
+VERSION: v1.1.0-SINGLE-HELD-CAPACITY-ACCOUNTING
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Compose P4 entitlement, P6B complete usage, P6A observed capacity,
          and durable held reservations into one atomic admission decision.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/wilsy_ai_usage_admission_authority.py
 COLLABORATION / OWNERSHIP: C1B authority; provider execution is a future
                             caller phase after this reservation commits.
-CERTIFICATION / UPDATE DATE: 2026-09-16
+CERTIFICATION / UPDATE DATE: 2026-11-21
+CHANGELOG: v1.1.0-SINGLE-HELD-CAPACITY-ACCOUNTING passes unheld P6 daily remaining capacity to the registry, which atomically counts held reservations exactly once. Previously both authority and registry subtracted the same holds. No entitlement, IAM, persistent record, or provider mutation.
 CHANGELOG: v1.0.0-C1B-R2 establishes fail-closed reservation composition and
            reconciliation-required uncertainty semantics.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -24,7 +25,7 @@ from uuid import uuid4
 
 from tools.eos.saas.domain.wilsy_ai_usage_admission import WilsyAIUsageAdmission, WilsyAIUsageAdmissionState
 
-VERSION: Final[str] = "v1.0.0-C1B-R2"
+VERSION: Final[str] = "v1.1.0-SINGLE-HELD-CAPACITY-ACCOUNTING"
 MODULE_ID: Final[str] = "WILSY_AI_REASONING"
 
 
@@ -51,8 +52,10 @@ class WilsyAIUsageAdmissionAuthority:
         try:
             capacity = self._capacity.derive_capacity(tenant_id=tenant_id, entitlement_id=entitlement_id, as_of=as_of, session=session)
             window_start = capacity.daily_window_start
-            held = self._registry.held_request_units(tenant_id=tenant_id, entitlement_id=entitlement_id, window_start=window_start, session=session)
-            available = max(0, capacity.daily_remaining_request_units - held)
+            # Registry.reserve reads and counts the same-window held capacity
+            # atomically under its deterministic transaction lock. Passing a
+            # previously held-adjusted amount would double-subtract holds.
+            available = capacity.daily_remaining_request_units
             now = as_of.astimezone(timezone.utc)
             admission = WilsyAIUsageAdmission(tenant_id=tenant_id, admission_id=admission_id or f"adm-{uuid4().hex}", idempotency_key=idempotency_key, entitlement_id=entitlement_id, module_id=capacity.module_id, entitlement_revision=capacity.entitlement_revision, entitlement_fingerprint=capacity.entitlement_fingerprint, window_start=window_start, window_end=capacity.daily_window_end, reserved_request_units=reserved_request_units, state=WilsyAIUsageAdmissionState.RESERVED, created_at=now, updated_at=now)
             return self._registry.reserve(admission, available_request_units=available, session=session)
@@ -67,7 +70,7 @@ class WilsyAIUsageAdmissionAuthority:
 __all__ = ["VERSION", "MODULE_ID", "WilsyAIUsageAdmissionAuthority", "WilsyAIUsageAdmissionAuthorityError"]
 
 # ARTIFACT: wilsy_ai_usage_admission_authority.py
-# VERSION: v1.0.0-C1B-R2
+# VERSION: v1.1.0-SINGLE-HELD-CAPACITY-ACCOUNTING
 # AUTHORITY BOUNDARY: atomic tenant-scoped admission reservation only
 # TENANT POSTURE: canonical P4/P6 identity and explicit tenant predicates
 # FAIL-CLOSED POSTURE: active held reservations consume capacity; uncertainty holds
