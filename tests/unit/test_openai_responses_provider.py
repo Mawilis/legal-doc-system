@@ -16,6 +16,7 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic credentials and bounded fakes only.
 TENANT BOUNDARY: Request tenant data is never projected into provider metadata.
 AUTHORITY BOUNDARY: Provider transport evidence only; no legal or financial truth.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively; no payment or settlement execution.
 FAIL-CLOSED DECLARATION: Identity, response, usage, and SDK failures map safely.
 """
 from __future__ import annotations
