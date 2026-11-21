@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS
+VERSION: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,6 +10,7 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS adds bounded admission cause-type and canonical error-code diagnostics only; no identities, prompts, stack traces, vendor material or sensitive exception text are retained. No admission arithmetic, retry, IAM, billing, or provider behaviour is changed.
 CHANGELOG: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS logs bounded stage names and model outcome classifications on failed reasoning attempts without recording prompts, identity, API secrets, exception messages, or vendor response data. The public error vocabulary, replay, IAM, admission and accounting semantics remain unchanged.
 CHANGELOG: v1.7.0-SOURCE-VERIFIED-HEADQUARTERS-REASONING reuses the canonical
            My Work source IAM and aggregation inside an opt-in Headquarters
@@ -106,7 +107,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS"
+VERSION: Final[str] = "v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -871,7 +872,16 @@ def execute_reasoning(
     try:
         permit = _transaction(pre_provider)
     except Exception as error:
-        _logger.error("WILSY_AI_REASONING_FAILURE stage=admission_claim failure_class=%s", type(error).__name__)
+        # The admission authority wraps canonical capacity/registry failures.
+        # Only stable, bounded uppercase codes and class names may enter logs;
+        # never log exception text, tenant identity, prompts, or credentials.
+        cause = error.__cause__
+        cause_code_raw = str(getattr(cause, "code", "") or "") if cause is not None else ""
+        cause_code = cause_code_raw if re.fullmatch(r"[A-Z][A-Z0-9_]{2,100}", cause_code_raw) else "UNCLASSIFIED"
+        _logger.error(
+            "WILSY_AI_REASONING_FAILURE stage=admission_claim failure_class=%s cause_class=%s cause_code=%s",
+            type(error).__name__, type(cause).__name__ if cause is not None else "NONE", cause_code,
+        )
         raise _error_response(error)
 
     try:
@@ -922,7 +932,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS
+# VERSION: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
