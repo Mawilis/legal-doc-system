@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS
+ * VERSION: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS adds accessible, low-chrome inline contextual actions, a flexible follow-up row, clearly focused work links and restrained responsive focus treatment instead of bulky black/gold rectangular status buttons.
  * CHANGELOG: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS makes the two-entry conversation/history navigation a compact toolbar and renders authenticated session threads as text rows, not dark static cards; reuses existing focus and keyboard contrast.
  * CHANGELOG: v1.5.0-FLUID-CONVERSATION-READING-SURFACE gives verified EOS source projections and assistant replies one fluid reading column, removes assistant card treatments, preserves restrained user turns and the independently scrollable conversation with anchored composer, and tightens mobile typography. Pure presentation, no authority changes.
  * CHANGELOG: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE replaces boxed top tabs with
@@ -1105,9 +1106,105 @@
   outline-offset: -2px;
 }
 
+/* Contextual source actions read as part of the answer, not a dashboard.
+   Buttons preserve semantic focus, keyboard and touch targets. */
+.intelligenceDockContainer .conversationSectionHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0 12px;
+  max-width: 72ch;
+}
+.intelligenceDockContainer .conversationInlineAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 7px 4px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  color: #c5d7ed;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.intelligenceDockContainer .conversationInlineAction:hover {
+  color: #f4e3b5;
+  border-bottom-color: rgba(230, 197, 126, .6);
+}
+.intelligenceDockContainer .conversationInlineAction:focus-visible,
+.intelligenceDockContainer .conversationWorkLink:focus-visible {
+  outline: 2px solid #aacdff;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.intelligenceDockContainer .conversationInlineAction:disabled {
+  color: #8296ad;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+.intelligenceDockContainer .conversationFollowUps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 22px;
+  row-gap: 3px;
+  padding: 12px 0;
+  margin-top: 8px;
+  max-width: 72ch;
+  border-top: 1px solid rgba(148,163,184,.18);
+}
+.intelligenceDockContainer .conversationWorkLink {
+  min-height: 36px;
+  padding: 5px 1px;
+  border: 0;
+  background: transparent;
+  color: #e6effa;
+  font: inherit;
+  font-weight: 530;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(174, 201, 233, .30);
+  overflow-wrap: anywhere;
+}
+.intelligenceDockContainer .conversationWorkLink:hover,
+.intelligenceDockContainer .conversationWorkLink[aria-pressed="true"] {
+  color: #f4dfa9;
+  border-bottom-color: #e3c477;
+}
+@media (max-width: 600px) {
+  .intelligenceDockContainer .conversationSectionHeading {
+    align-items: flex-start;
+    gap: 4px 14px;
+  }
+  .intelligenceDockContainer .conversationFollowUps {
+    column-gap: 16px;
+  }
+  .intelligenceDockContainer .conversationInlineAction {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intelligenceDockContainer .conversationInlineAction {
+    transition: none;
+  }
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS
+ * VERSION: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
