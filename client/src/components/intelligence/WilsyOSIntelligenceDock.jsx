@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY
+ * VERSION: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -15,6 +15,7 @@
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS answers strictly bounded current-time requests from the local device clock and reveals newly persisted assistant text progressively with accessible reduced-motion fallbacks. No provider call, EOS admission, IAM expansion, quota bypass, or historical replay.
  * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY responds naturally to greetings and tightly scoped day-status acknowledgements after a verified built-in turn (including the previous certified wording) in the same session. No model invocation, quota admission, inferred work, or bypass for substantive prompts.
  * CHANGELOG: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS converts oversized work-navigation, recovery and contextual follow-ups into accessible inline transcript actions with coherent hierarchy and focus states. The five EOS-authorised CRM tasks remain source-owned; no task mutations, AI charges, changes to admissibility or fabricated records.
  * CHANGELOG: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION defers the costly cross-source My Work aggregate until a real work-related conversational intent is selected; entering work/overdue initiates a fresh independently admitted read, leaving other Dock surfaces unaffected and avoiding eager concurrent startup load. Scope changes and leaving the view abort/clear local projections; no partial-source/fabricated results.
@@ -256,6 +257,73 @@ function resolveWilsyLocalCourtesy(value, previousTurns = []) {
     return 'You’re welcome. What would you like to do next?';
   }
   return null;
+}
+
+/**
+ * @function resolveWilsyLocalClock
+ * @description Answer only current-device-time questions from the browser
+ * clock, without inventing EOS source truth or requesting model inference.
+ * Other time, schedule, deadline and business questions still require EOS.
+ */
+function resolveWilsyLocalClock(value, now = new Date()) {
+  const text = String(value || '').trim();
+  if (!/^(?:what(?:'s| is) the time|what time is it|tell me the (?:current )?time|current time|time now)[?.!\s]*$/i.test(text)) {
+    return null;
+  }
+  if (!(now instanceof Date) || !Number.isFinite(now.getTime())) return null;
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  }).format(now);
+  return 'According to your device clock, it’s ' + time + '.';
+}
+
+/**
+ * @function WilsyProgressiveAssistantText
+ * @description Animate only the newest committed response, not provider
+ * execution, accounting or previous conversation history. The full text is
+ * immediately available to screen readers; reduced motion is instantaneous.
+ * Intervals are cancelled on remount, thread switch, and Dock close.
+ */
+function WilsyProgressiveAssistantText({ content, animate, onComplete }) {
+  const fullText = String(content || '');
+  const [visibleCount, setVisibleCount] = useState(animate ? 0 : fullText.length);
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
+  useEffect(() => {
+    const reducedMotion = typeof window === 'undefined'
+      || typeof window.matchMedia !== 'function'
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!animate || reducedMotion || !fullText.length) {
+      setVisibleCount(fullText.length);
+      if (animate) onCompleteRef.current?.();
+      return undefined;
+    }
+    let shown = 0;
+    setVisibleCount(0);
+    const step = Math.max(1, Math.ceil(fullText.length / 64));
+    const timer = window.setInterval(() => {
+      shown = Math.min(fullText.length, shown + step);
+      setVisibleCount(shown);
+      if (shown === fullText.length) {
+        window.clearInterval(timer);
+        onCompleteRef.current?.();
+      }
+    }, 22);
+    return () => window.clearInterval(timer);
+  }, [animate, fullText]);
+
+  return (
+    <>
+      <span aria-hidden={animate ? 'true' : undefined}>
+        {fullText.slice(0, visibleCount)}
+        {animate && visibleCount < fullText.length && (
+          <span aria-hidden="true" style={{ opacity: 0.75 }}>▍</span>
+        )}
+      </span>
+      {animate && <span className={styles.srOnly}>{fullText}</span>}
+    </>
+  );
 }
 
 /**
@@ -586,6 +654,7 @@ export function WilsyOSIntelligenceDock({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
+  const [animatedAssistantKey, setAnimatedAssistantKey] = useState(null);
   const [dockContext, setDockContext] = useState(null);
   const [kennelPosture, setKennelPosture] = useState('STANDBY');
   const [errorMessage, setErrorMessage] = useState('');
@@ -1071,6 +1140,9 @@ export function WilsyOSIntelligenceDock({
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
         ? null : resolveWilsyLocalCourtesy(text, activeThread?.messages);
+      const localClockReply = isLegalDockRole(authUser?.role)
+        ? null : resolveWilsyLocalClock(text);
+      const localNonmeteredReply = localCourtesyReply || localClockReply;
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1084,7 +1156,7 @@ export function WilsyOSIntelligenceDock({
       // A server-confirmed reconciliation hold is not an uncertain network
       // retry. Preserve the draft but refuse further sends of this exact
       // attempt, including the Enter key and dynamic suggestion route.
-      if (!localCourtesyReply
+      if (!localNonmeteredReply
         && reasoningReplayRef.current.blocked === true
         && reasoningReplayRef.current.scope === dockScopeRef.current
         && reasoningReplayRef.current.text === text
@@ -1092,15 +1164,15 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('This request is awaiting EOS execution and usage reconciliation. No verified answer exists. Resubmitting the same request is blocked.');
         return;
       }
-      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
+      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
         setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
         return;
       }
-      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
+      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
         setErrorMessage('Workspace information is available, but the EOS AI provider is not configured.');
         return;
       }
-      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
+      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
       }
@@ -1108,7 +1180,7 @@ export function WilsyOSIntelligenceDock({
         && visibleWorkspaceContext?.state === 'READY'
         && visibleWorkspaceContext.data.work?.project?.project_id === workLocator.project_id
         ? { ...workLocator } : null;
-      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
+      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
         setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
         return;
       }
@@ -1170,11 +1242,11 @@ export function WilsyOSIntelligenceDock({
 
       try {
         let result;
-        if (localCourtesyReply) {
-          // Clearly distinguished from a provider inference; no usage admission.
+        if (localNonmeteredReply) {
+          // Clearly separate device time and courtesy from paid inference.
           result = {
-            reply: localCourtesyReply,
-            source: 'WILSY_LOCAL_COURTESY',
+            reply: localNonmeteredReply,
+            source: localClockReply ? 'WILSY_LOCAL_DEVICE_TIME' : 'WILSY_LOCAL_COURTESY',
             phase: 'NON_GENERATIVE_BUILT_IN',
             domain: 'GENERAL',
             tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
@@ -1277,6 +1349,7 @@ export function WilsyOSIntelligenceDock({
           afterAssistant,
           ...prev.filter((item) => item.id !== afterAssistant.id),
         ]);
+        setAnimatedAssistantKey(threadId + ':' + assistantTurn.timestamp);
       } catch (err) {
         if (!requestIsCurrent()) return;
         const status = err?.response?.status;
@@ -1470,7 +1543,8 @@ export function WilsyOSIntelligenceDock({
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
-  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages));
+  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages)
+    || resolveWilsyLocalClock(prompt));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
       .filter(value => typeof value === 'string' && value.trim()).join(' '),
@@ -1821,7 +1895,9 @@ export function WilsyOSIntelligenceDock({
                       <div className={styles.bubbleHeader}>
                         <span>{msg.role === 'user' ? operatorLabel
                           : msg.meta?.source === 'WILSY_LOCAL_COURTESY'
-                            ? 'WILSY OS · Built-in reply' : 'WILSY OS'}</span>
+                            ? 'WILSY OS · Built-in reply'
+                            : msg.meta?.source === 'WILSY_LOCAL_DEVICE_TIME'
+                              ? 'WILSY OS · Device time' : 'WILSY OS'}</span>
                         <span>
                           {msg.timestamp
                             ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -1831,7 +1907,18 @@ export function WilsyOSIntelligenceDock({
                             : ''}
                         </span>
                       </div>
-                      <div className={styles.bubbleBody}>{msg.content}</div>
+                      <div className={styles.bubbleBody}>
+                        {msg.role === 'assistant' ? (
+                          <WilsyProgressiveAssistantText
+                            content={msg.content}
+                            animate={Boolean(activeTab === 'chat' && isOpen && activeThread?.id
+                              && animatedAssistantKey === activeThread.id + ':' + msg.timestamp)}
+                            onComplete={() => setAnimatedAssistantKey((previousKey) => (
+                              previousKey === activeThread?.id + ':' + msg.timestamp ? null : previousKey
+                            ))}
+                          />
+                        ) : msg.content}
+                      </div>
                     </div>
                   ))}
                   {isSubmitting && (
@@ -2196,7 +2283,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY
+ * VERSION: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
