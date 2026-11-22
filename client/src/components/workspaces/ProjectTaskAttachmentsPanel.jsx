@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION
+ * VERSION: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS separates rejected multipart commands, unconfigured S3/KMS transport and uncertain provider execution from accepted EOS upload receipts followed by readback mismatch. Maintains the same durable idempotency key and prevents silent replay or claimed completion without exact manifest confirmation.
  * CHANGELOG: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION makes the already-contributing canonical WILSY Founder able to explicitly request narrow contributor attachment IAM activation using an independently governed EOS command, then verifies the role admission response and rechecks original contributor GET. No automatic grant, client permission inference, replay of uploads, or fallback for paying tenants.
  * CHANGELOG: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION recognizes source-verified existing project contributor participation and never routes that member into a duplicate People onboarding path when independent attachment IAM denies. Shows the specific contributor HTTP denial and requires independent IAM/capacity remediation rather than project re-enrollment or silent grants.
  * CHANGELOG: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT preflights the exact project participant list and eligible tenant-member options before leaving the attachment task for People. A denied/unavailable/synthetic source shows its bounded failure in situ and does not navigate; no IAM inference or upload grant.
@@ -366,6 +367,29 @@ export default function ProjectTaskAttachmentsPanel({
     }
   };
 
+  const formatUploadFailure = (failure, stage) => {
+    const status = failure?.response?.status;
+    const detail = failure?.response?.data?.detail;
+    const code = typeof detail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(detail) ? detail : null;
+    if (stage === 'READBACK') {
+      return 'EOS accepted the attachment command, but its exact persisted file manifest could not be verified. The original upload key is retained. Refresh to reconcile before taking another action; do not submit this file as a new command.';
+    }
+    if (stage === 'RECEIPT') {
+      return 'EOS returned an attachment response that failed exact tenant, task, uploader or content verification. No file is confirmed. The original command key is retained for reconciliation.';
+    }
+    if (status === 403) return 'EOS denied the attachment upload command (HTTP 403). Contributor read access does not prove contributor write authority or selected operating capacity.';
+    if (status === 401) return 'Authentication is required for this attachment upload (HTTP 401). The file has not been confirmed as submitted.';
+    if (status === 413) return 'EOS rejected the attachment size (HTTP 413). Select a PDF, PNG or JPEG no larger than 20 MiB.';
+    if (status === 422) return 'EOS rejected the multipart file or content (HTTP 422)' + (code ? ' · ' + code : '') + '. No accepted upload is confirmed.';
+    if (status === 409) return 'EOS found an attachment command replay or conflict (HTTP 409)' + (code ? ' · ' + code : '') + '. Do not generate a new upload key; reconcile the existing command.';
+    if (status === 503 && code === 'PROJECT_ATTACHMENT_STORAGE_NOT_CONFIGURED') return 'EOS quarantine storage is not configured (HTTP 503 · PROJECT_ATTACHMENT_STORAGE_NOT_CONFIGURED). The backend requires a versioned private S3 bucket, approved region and KMS key before real file uploads can be accepted.';
+    if (status === 503 && code === 'PROJECT_ATTACHMENT_VERSIONING_REQUIRED') return 'EOS rejected storage because S3 bucket versioning is not enabled (HTTP 503 · PROJECT_ATTACHMENT_VERSIONING_REQUIRED). No verified quarantine receipt was issued.';
+    if (status === 503) return 'EOS could not verify the quarantined storage operation (HTTP 503)' + (code ? ' · ' + code : '') + '. Provider execution may be uncertain; the original upload command key is retained. Reconcile the manifest before another attempt.';
+    if (Number.isInteger(status)) return 'EOS rejected or could not verify the attachment operation (HTTP ' + status + ')' + (code ? ' · ' + code : '') + '. The original command key is retained.';
+    if (failure?.code === 'ECONNABORTED') return 'The upload timed out without a verified EOS receipt. Storage may have accepted bytes; keep the original command key and reconcile before retrying.';
+    return 'The attachment upload transport or EOS receipt could not be verified. The original command key is retained; reconcile the task manifest before retrying.';
+  };
+
   const upload = async event => {
     event.preventDefault();
     if (!uploadReadVerified || busy || state !== 'READY' || !file) return;
@@ -388,6 +412,7 @@ export default function ProjectTaskAttachmentsPanel({
     const active = scope;
     setBusy(true);
     setError('');
+    let stage = 'UPLOAD';
     try {
       const form = new FormData();
       form.append('file', file, file.name);
@@ -400,6 +425,7 @@ export default function ProjectTaskAttachmentsPanel({
         timeout: 120000,
       });
       if (current.current !== active) return;
+      stage = 'RECEIPT';
       if (
         data?.schema !== 'WILSY-PROJECT-ATTACHMENT-RESULT/V1'
         || data.tenant_id !== tenantId || data.principal_id !== principalId
@@ -407,8 +433,12 @@ export default function ProjectTaskAttachmentsPanel({
         || !valid(data.attachment, tenantId, projectId, taskId)
         || data.attachment.uploader_principal_id !== principalId
       ) throw new Error('PROJECT_ATTACHMENT_RESULT_INVALID');
+      stage = 'READBACK';
       const listed = await load(0);
-      if (!listed || current.current !== active) return;
+      if (!listed || current.current !== active) {
+        if (current.current === active) throw new Error('PROJECT_ATTACHMENT_READBACK_UNVERIFIED');
+        return;
+      }
       // Reconcile independently from a fresh EOS read; never infer completion
       // from a successful storage/command acknowledgement.
       const { data: verification } = await api.get(
@@ -429,11 +459,7 @@ export default function ProjectTaskAttachmentsPanel({
       uploadOrigin.current = { fingerprint: '', key: '' };
     } catch (failure) {
       if (current.current !== active) return;
-      setError(failure?.response?.status === 409
-        ? 'EOS detected a changed or replayed attachment. Reconcile before retrying.'
-        : failure?.response?.status === 403
-          ? 'EOS denied upload under your current project participation.'
-          : 'Upload or independent EOS readback was not verified. Refresh before retrying.');
+      setError(formatUploadFailure(failure, stage));
     } finally {
       if (current.current === active) setBusy(false);
     }
@@ -549,7 +575,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION
+// VERSION: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
