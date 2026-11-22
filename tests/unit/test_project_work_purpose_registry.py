@@ -1,11 +1,15 @@
 """TITLE: WILSY OS Source-Owned Project Work Purpose Certificate
-VERSION: v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT-CERT
+VERSION: v1.0.1-STALE-PURPOSE-RECOVERY-AUDIT-CERT
 AUTHORITY: Test-only proof of canonical Projects work purpose commands.
 EPITOME: No-network immutable audit, current source, CAS, replay and denial.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_work_purpose_registry.py
 COLLABORATION / OWNERSHIP: ProjectWorkPurposeRegistry; Projects router
 remains responsible for live exact-tenant and project:update admission.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.0.1-STALE-PURPOSE-RECOVERY-AUDIT-CERT
+verifies stale task revisions preserve exact audited metadata CAS while
+returning UNCLASSIFIED, supports explicit reclassification after task edits,
+and checks identical replay without opaque fingerprint inference.
 CHANGELOG: v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT-CERT certifies
 one atomic synthetic classification, source-only proof, independent metadata
 revision, replay, divergent mutation rejection, task drift and audit tampering.
@@ -119,7 +123,8 @@ def test_purpose_commit_readback_and_identical_replay(source):
     assert claim["critical_gate"] is False
     assert claim["source_verified"] is True
     replay = command(source)
-    assert replay["fingerprint"] if "fingerprint" in replay else replay["revision"] == 1
+    assert replay["revision"] == initial["revision"] == 1
+    assert replay["evidence_ref"] == initial["evidence_ref"]
     assert len(current.rows) == len(events.rows) == 1
 
 
@@ -131,8 +136,17 @@ def test_new_revision_and_stale_task_go_unclassified(source):
                      expected_purpose_revision=1, idempotency_key="synthetic-command-2")
     assert second["revision"] == 2
     assert source[0].current_for_task(task=task(), session="caller-session")["audience"] == "OPERATING"
-    assert source[0].current_for_task(task=task(4), session="caller-session") is None
+    stale = source[0].current_for_task(task=task(4), session="caller-session")
+    assert stale["audience"] == "UNCLASSIFIED"
+    assert stale["purpose_revision"] == 2
+    assert stale["evidence_ref"] is None
     assert len(source[2].rows) == 2
+    recovered = command(source, task=task(4), expected_task_revision=4,
+                        expected_purpose_revision=2,
+                        idempotency_key="synthetic-command-3",
+                        reason="Reclassified after exact task revision changed.")
+    assert recovered["revision"] == 3
+    assert source[0].current_for_task(task=task(4), session="caller-session")["audience"] == "PLATFORM_BUILD"
 
 
 @pytest.mark.parametrize("overrides,expected", [
@@ -168,7 +182,7 @@ def test_tampered_source_fingerprint_is_rejected(source):
 
 
 # ARTIFACT: test_project_work_purpose_registry.py
-# VERSION: v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT-CERT
+# VERSION: v1.0.1-STALE-PURPOSE-RECOVERY-AUDIT-CERT
 # AUTHORITY BOUNDARY: Synthetic source registry proof, no IAM.
 # TENANT POSTURE: Strict coordinates and CAS, no cross-tenant read.
 # FAIL-CLOSED POSTURE: Divergent replay/tampered evidence deny.
