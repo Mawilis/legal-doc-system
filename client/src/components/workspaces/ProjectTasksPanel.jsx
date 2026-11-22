@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS
+ * VERSION: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR moves governed member selection from above the create form to an immediately visible, viewport-bound dialog with dedicated scrolling and Escape dismissal; preserves active draft and verifies participant grant before assignee refresh. No automatic member or IAM grant.
  * CHANGELOG: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS keeps exact-page selection status visible while optional work-filter controls are collapsed, without changing selection authority or mutations.
  * CHANGELOG: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS exposes a contextual inline governed contributor-management workflow when no assignees are admitted, refreshes only after source-confirmed participant changes while keeping unsaved task drafts, and collapses the page-only work filters by default. No IAM shortcuts or task mutation semantics altered.
  * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF emits a bounded, EOS-hydrated task id/revision
@@ -1022,16 +1023,6 @@ export default function ProjectTasksPanel({
         <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
         </div>
       </details>
-      {showContributorManagement && <div role="region" className="mt-4 rounded-xl border border-blue-200 bg-blue-50/30 p-3" aria-label="Manage contributors for task assignment">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-slate-900">Authorize a project contributor</p>
-          <button type="button" className="wp-button" onClick={() => setShowContributorManagement(false)}>Close contributor management</button>
-        </div>
-        <p className="mt-1 text-xs text-slate-700">Choose an existing eligible tenant member and grant explicit project contributor participation. EOS independently verifies membership, role and project authority. Your unsaved task draft remains in this editor.</p>
-        <ProjectParticipantsPanel projectId={projectId} tenantId={tenantId}
-          principalId={principalId} tenantHeaders={tenantHeaders}
-          onParticipantsChanged={() => { void load(offset); }}/>
-      </div>}
       {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
         {workType === 'SUBTASK' && draft.parent_task_id && <p role="status" className="text-xs font-semibold text-blue-900">
@@ -1081,7 +1072,7 @@ export default function ProjectTasksPanel({
               </option>)}
             </select>
             {participants.length === 0 && !participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
-              No verified project contributors are eligible for task assignment yet. Create this task unassigned, or add a contributor below using EOS-authorized project participation.
+              No verified project contributors are eligible for task assignment yet. Create this task unassigned, or select an eligible tenant member using the nearby contributor-management action.
             </span>}
             {participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
               More than 100 participants exist. Assignment remains restricted to the verified current participant page.
@@ -1139,6 +1130,34 @@ export default function ProjectTasksPanel({
           <Plus size={14}/> Save work to EOS
         </button>
       </form>}
+      {showContributorManagement && <div
+        className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/55 p-3 sm:p-6"
+        onMouseDown={event => {
+          if (event.target === event.currentTarget) setShowContributorManagement(false);
+        }}>
+        <div role="dialog" aria-modal="true" aria-label="Manage contributors for task assignment"
+          onKeyDown={event => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              setShowContributorManagement(false);
+            }
+          }}
+          className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <div>
+              <h4 className="text-base font-bold text-slate-950">Select an eligible tenant member</h4>
+              <p className="mt-1 text-xs text-slate-700">Project participation must be verified before a person can be assigned a task. Your unsaved task remains intact.</p>
+            </div>
+            <button type="button" autoFocus className="wp-button shrink-0"
+              onClick={() => setShowContributorManagement(false)}>Close</button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ProjectParticipantsPanel projectId={projectId} tenantId={tenantId}
+              principalId={principalId} tenantHeaders={tenantHeaders}
+              onParticipantsChanged={() => { void load(offset); }}/>
+          </div>
+        </div>
+      </div>}
       {editor && <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 md:items-center md:p-5"
         onClick={event => { if (event.target === event.currentTarget && !busy) setEditor(null); }}>
         <div role="dialog" aria-modal="true" aria-label={assignmentOnly ? 'Assign work' : 'Edit work'}
@@ -1343,7 +1362,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS
+// VERSION: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
