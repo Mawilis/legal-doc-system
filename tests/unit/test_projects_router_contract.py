@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT
+VERSION: v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT verifies
+  bounded purpose source/audit unique indexes are included in the canonical
+  Projects startup gate before authenticated source endpoints are admitted.
   v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT uses the
   canonical RequireTenantAuthorization.permission_id/operation contract
   for source classification route assertions.
@@ -851,6 +854,9 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
     assert source.count('app.include_router(projects_router, prefix="/api")') == 1
     assert "from .projects_router import router as projects_router" in source
     assert "ProjectRegistry.ensure_indexes(" in source
+    assert "ProjectWorkPurposeRegistry.ensure_indexes(" in source
+    assert "PROJECT_WORK_PURPOSE_COLLECTION" in source
+    assert "PROJECT_WORK_PURPOSE_EVENT_COLLECTION" in source
     assert "PROJECT_COLLECTION" in source
     assert "PROJECT_EVENT_COLLECTION" in source
     assert "app.state.projects_indexes_ready = True" in source
@@ -1452,7 +1458,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT
+# VERSION: v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
