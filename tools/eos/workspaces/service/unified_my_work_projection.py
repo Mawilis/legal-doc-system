@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Unified My Work Read Projection
-VERSION: v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION
+VERSION: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Deterministically compose independently admitted EOS source work while
          preserving source identity, tenant scope and visibility provenance.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/worksp
 COLLABORATION / OWNERSHIP: unified_my_work_router admits Legal, Operations,
                            Intelligence, CRM and HR through their own authorities.
 CERTIFICATION / UPDATE DATE: 2026-11-15.
+CHANGELOG: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY
+         leaves preexisting source revision formats untouched when no audited
+         audience evidence is provided. A claimed audience always requires
+         current exact integer source revision and source-owned evidence.
 CHANGELOG: v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION
          exposes only independently source-attested current audience metadata,
          returns UNCLASSIFIED without evidence, and rejects foreign, stale or
@@ -14,7 +18,7 @@ CHANGELOG: v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION
 CHANGELOG: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION includes independently admitted
          exact-participant project tasks, preserving project/due-date source
          coordinates and blocked visibility without inventing due-at instants.
-CHANGELOG: v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION accepts only the sanitized,
+CHANGELOG: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY accepts only the sanitized,
            independently admitted HR action envelope supplied by the existing
            headcount and hiring source owners. It never reads personnel
            collections or introduces HR command authority.
@@ -43,7 +47,7 @@ from typing import Any, Iterable, Mapping
 
 from tools.eos.workspaces.service.work_audience_policy import evaluate_work_audience
 
-VERSION = "v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION"
+VERSION = "v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY"
 SCHEMA = "WILSY-OS-UNIFIED-MY-WORK/V1"
 
 _SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR", "PROJECTS")
@@ -199,7 +203,8 @@ def build_unified_my_work(
             due_at = _instant(raw.get("due_at"), "SOURCE_DUE_AT_INVALID")
             classification = evaluate_work_audience(
                 tenant_id=tenant_id, source=source, record_id=item_id,
-                source_revision=raw.get("revision"),
+                source_revision=(raw.get("revision")
+                                 if raw.get("audience_evidence") is not None else None),
                 evidence=raw.get("audience_evidence"),
             )
             key = (source, item_id)
@@ -287,7 +292,7 @@ def build_unified_my_work(
 __all__ = ["SCHEMA", "VERSION", "UnifiedMyWorkProjectionError", "build_unified_my_work"]
 
 # ARTIFACT: unified_my_work_projection.py
-# VERSION: v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION
+# VERSION: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY
 # AUTHORITY BOUNDARY: Read projection of independently admitted source work only.
 # TENANT POSTURE: Exact envelope and explicit item tenant binding; no cross-tenant lookup.
 # FAIL-CLOSED POSTURE: Malformed, foreign and divergent source evidence rejects.
