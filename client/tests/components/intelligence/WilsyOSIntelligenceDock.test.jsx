@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT
+ * VERSION: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT certifies a three-turn total -> active count -> project detail conversation, independent source reads, exact current project identity/revision, zero model POST, and refusal on denied/mismatched records.
  * CHANGELOG: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT proves a two-turn Projects count then status follow-up (including 'How may are active?') uses fresh canonical EOS summary without paid POST, and refuses subject carryover after unrelated conversation or ambiguous multiple-status questions.
  * CHANGELOG: v1.31.0-VERIFIED-PROJECT-COUNT-READ-CERT tests exact-tenant and current-principal Projects summary count read, no POST, missing consent independence, and fail-closed denied/mismatched source. Existing metered query/replay tests retained.
  * CHANGELOG: v1.30.0-DEVICE-TIME-PROGRESSIVE-RENDER-CERT certifies current device clock without a provider POST, excludes arbitrary schedules from the local catalog, and checks progressive presentation teardown and accessibility.
@@ -442,6 +443,94 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(screen.getByText(expected)).toBeVisible());
     expect(projectGet).toHaveBeenCalledTimes(2);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reads the only active project details from independently authorised EOS data', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const counts = { total: 4, active: 1, planned: 2, on_hold: 1, done: 0, cancelled: 0 };
+    const summary = {
+      schema: 'WILSY-PROJECT-SUMMARY/V1', tenant_id: 'TEST_TENANT',
+      principal_id: 'project-count-operator', counts,
+    };
+    const active = {
+      project_id: projectId, tenant_id: 'TEST_TENANT', name: 'Launch quality',
+      summary: 'Prepare verified institutional acceptance.',
+      status: 'active', archived_at: null, revision: 2,
+      start_date: '2026-11-20', target_date: '2026-12-04',
+    };
+    mockApiGet.mockImplementation(path => {
+      if (path === '/projects/summary') return Promise.resolve({ data: summary });
+      if (path === '/projects?project_status=active&limit=100&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: 'project-count-operator', items: [active],
+          offset: 0, limit: 100, has_more: false, next_offset: null,
+        } });
+      }
+      if (path === '/projects/' + projectId) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+        project: active, events: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    const ask = async (text, expected) => {
+      fireEvent.change(composer, { target: { value: text } });
+      expect(screen.getByLabelText('Send')).toBeEnabled();
+      fireEvent.click(screen.getByLabelText('Send'));
+      await waitFor(() => expect(screen.getByText(expected)).toBeVisible());
+    };
+    await ask('How many projects do I have?', /You have 4 projects/);
+    await ask('How may are active?', /1 of your 4 projects are active/);
+    await ask('What are the details of the active project?', /Name: Launch quality/);
+    expect(screen.getByText(/Prepare verified institutional acceptance/)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith('/projects/' + projectId, expect.objectContaining({
+      headers: { 'X-Tenant-ID': 'TEST_TENANT' },
+    }));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('refuses active-project detail if a separately read record is foreign or stale', async () => {
+    const projectId = 'prj-' + 'b'.repeat(48);
+    const active = { project_id: projectId, tenant_id: 'TEST_TENANT',
+      name: 'Verified current project', status: 'active', archived_at: null, revision: 2 };
+    const summary = { schema: 'WILSY-PROJECT-SUMMARY/V1',
+      tenant_id: 'TEST_TENANT', principal_id: 'project-count-operator',
+      counts: { total: 1, active: 1, planned: 0, on_hold: 0, done: 0, cancelled: 0 } };
+    mockApiGet.mockImplementation(path => {
+      if (path === '/projects/summary') return Promise.resolve({ data: summary });
+      if (path.includes('project_status=active')) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-LIST/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator', items: [active], limit: 100,
+        offset: 0, has_more: false, next_offset: null,
+      } });
+      if (path === '/projects/' + projectId) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+        project: { ...active, tenant_id: 'OTHER_TENANT' }, events: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What are the details of the active project?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByRole('status', {
+      name: 'WILSY OS request status',
+    })).toHaveTextContent(/could not verify current active-project details/));
+    expect(screen.queryByText(/Verified current project/)).not.toBeInTheDocument();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1826,7 +1915,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT
+ * VERSION: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
