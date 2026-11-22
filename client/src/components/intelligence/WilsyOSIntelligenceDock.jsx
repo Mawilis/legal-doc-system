@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY
+ * VERSION: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE bypasses only local synthetic 503 GET backoff for exact read-only My Work and independent kernel health probes, so an explicit Refresh/Recheck reaches EOS rather than repeating a cached synthetic 503; backend IAM/timeout unchanged.
  * CHANGELOG: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY makes read-only Headquarters My Work unavailable/denied states visible and explicitly retriable, without fabricating zero tasks or elevating credentials. Currentness and source permission remain EOS-owned.
  * CHANGELOG: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS distinguishes a failed optional kernel health probe from independently verified exact-tenant workspace context, offers a real read-only inspect-source action, and replaces generic ready copy with accurate provider/source capability. No model calls, IAM changes or client-origin facts.
  * CHANGELOG: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD blocks the exact unresolved reconciliation attempt from manual resubmission while retaining its draft, preserving ordinary uncertain-transport exact-key retry and forbidding fabricated answers or browser quota mutations.
@@ -649,6 +650,7 @@ export function WilsyOSIntelligenceDock({
       headers: { 'X-Tenant-ID': exactTenant },
       signal: controller.signal,
       timeout: 15000,
+      forceNetworkRetry: true,
     }).then(response => {
       if (!live || controller.signal.aborted || dockScopeRef.current !== scope) return;
       const data = response?.data;
@@ -780,6 +782,7 @@ export function WilsyOSIntelligenceDock({
       const kernelRes = await api.get('/kernel', {
         timeout: 8000,
         signal: controller.signal,
+        forceNetworkRetry: true,
       });
       if (!isCurrent()) return;
       const kernel = kernelRes?.data || {};
@@ -1965,7 +1968,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY
+ * VERSION: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
