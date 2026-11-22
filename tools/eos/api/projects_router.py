@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION
+VERSION: v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,12 +30,16 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
+  transaction only if a read-only list's source cursor failed with the exact
+  PROJECT_LIST_UNAVAILABLE code. It never retries IAM, entitlement, other
+  source or transport errors and never retries write commands.
   v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION adds an explicit POST admission for an already-active Founder project contributor with a separately verified current ENTERPRISE_ADMIN grant authority. Delegates the narrow WILSY-only contributor IAM role through existing digest-only invitation/acceptance and durable readback, never by direct role write, automatic project participation or root fallback.
     v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP validates participant
   principal identifiers as nonempty strings before bounded display-name
   enrichment. Malformed identifiers fail closed; tenant IAM, project
   participation, persistence and financial authority remain unchanged.
-  v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION resolves exact-tenant first/last
+  v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY resolves exact-tenant first/last
   names alongside source-verified active project participants for display
   only. Registry identity, permission, audit and assignment commands stay
   unchanged. Missing names yield null rather than an opaque identifier.
@@ -328,7 +332,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION"
+VERSION: Final[str] = "v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -1143,7 +1147,19 @@ def list_projects(
             "next_offset": offset + len(items) if has_more else None,
         }
 
-    return _transaction(context, load)
+    # A registry-wrapped Mongo cursor failure is no longer visible to
+    # PyMongo's with_transaction transient retry classifier. Re-admit the
+    # exact already-authorized GET in one wholly new snapshot transaction,
+    # including fresh current entitlement verification; never retry writes,
+    # denials, missing indexes, source corruption or unrelated 503s.
+    for attempt in range(2):
+        try:
+            return _transaction(context, load)
+        except HTTPException as error:
+            if (attempt != 0 or error.status_code != 503
+                    or error.detail != "PROJECT_LIST_UNAVAILABLE"):
+                raise
+    raise HTTPException(status_code=503, detail="PROJECT_LIST_UNAVAILABLE")
 
 
 @router.get("/summary")
@@ -4044,7 +4060,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION
+# VERSION: v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
