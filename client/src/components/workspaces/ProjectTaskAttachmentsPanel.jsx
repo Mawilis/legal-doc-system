@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE
+ * VERSION: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION uses separately authorized owner metadata GET in the owner workspace rather than choosing participant-only GET from a contributor roster. Upload and scan remain on participant-only EOS routes and require independent participant source admission. Both reads validate exact tenant/principal/project/task; no IAM fallback or implicit Founder grant.
  * CHANGELOG: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE supplies a real keyboard-accessible route to project People contributor administration from owner-view attachments, and keeps upload unavailable without independent contributor IAM. Existing authorized upload remains in the contributor mode only.
  * CHANGELOG: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY distinguishes the exact attachment GET failure (HTTP status, bounded project source code or source-schema mismatch) from missing contributor upload authority. Makes the upload entry point and its permission prerequisites visible without attempting unauthorized provider writes or inventing completed scan evidence.
  * CHANGELOG: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD shows
@@ -59,7 +60,7 @@ function valid(record, tenantId, projectId, taskId) {
 /** @description Render quarantined source evidence and an exact-scope upload. */
 export default function ProjectTaskAttachmentsPanel({
   tenantId, principalId, projectId, taskId, tenantHeaders,
-  participantMode = false, onClose, onManageContributors = null,
+  participantMode = false, ownerReadMode = false, onClose, onManageContributors = null,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
@@ -68,23 +69,28 @@ export default function ProjectTaskAttachmentsPanel({
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const scope = [tenantId, principalId, projectId, taskId, participantMode].join('\0');
+  const [uploadReadState, setUploadReadState] = useState('UNVERIFIED');
+  const scope = [tenantId, principalId, projectId, taskId, participantMode, ownerReadMode].join('\0');
   const current = useRef(scope);
   current.current = scope;
   const generation = useRef(0);
   const uploadOrigin = useRef({ fingerprint: '', key: '' });
-  const root = '/projects/' + encodeURIComponent(projectId)
-    + (participantMode ? '/my-project/tasks/' : '/tasks/')
-    + encodeURIComponent(taskId);
+  const projectRoot = '/projects/' + encodeURIComponent(projectId);
+  const ownerRoot = projectRoot + '/tasks/' + encodeURIComponent(taskId);
+  const contributorRoot = projectRoot + '/my-project/tasks/' + encodeURIComponent(taskId);
+  const readRoot = ownerReadMode ? ownerRoot
+    : (participantMode ? contributorRoot : ownerRoot);
+  const uploadReadVerified = participantMode && uploadReadState === 'VERIFIED';
   const headers = tenantHeaders || {};
 
   const load = useCallback(async (nextOffset = 0) => {
     const request = ++generation.current;
     const active = scope;
     setState('LOADING');
+    setUploadReadState('UNVERIFIED');
     setError('');
     try {
-      const { data } = await api.get(root + '/attachments?limit=50&offset=' + nextOffset, { headers });
+      const { data } = await api.get(readRoot + '/attachments?limit=50&offset= + nextOffset, { headers });
       if (request !== generation.current || current.current !== active) return false;
       if (
         data?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
@@ -106,6 +112,35 @@ export default function ProjectTaskAttachmentsPanel({
       setOffset(nextOffset);
       setHasMore(data.has_more);
       setState('READY');
+      // A current contributor roster is not an HTTP project:participant:read
+      // permission. Verify the participant-only list independently before
+      // exposing contributor commands; owner metadata stays independently valid.
+      if (participantMode && ownerReadMode) {
+        try {
+          const { data: contributorData } = await api.get(
+            contributorRoot + '/attachments?limit=50&offset=' + nextOffset, { headers },
+          );
+          if (request !== generation.current || current.current !== active) return true;
+          const authorized = contributorData?.schema === 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
+            && contributorData.tenant_id === tenantId
+            && contributorData.principal_id === principalId
+            && contributorData.project_id === projectId && contributorData.task_id === taskId
+            && contributorData.limit === 50 && contributorData.offset === nextOffset
+            && typeof contributorData.has_more === 'boolean'
+            && Array.isArray(contributorData.items) && contributorData.items.length <= 50
+            && (!contributorData.has_more || contributorData.items.length > 0)
+            && contributorData.next_offset === (contributorData.has_more
+              ? nextOffset + contributorData.items.length : null)
+            && contributorData.items.every(item => valid(item, tenantId, projectId, taskId))
+            && new Set(contributorData.items.map(item => item.attachment_id)).size === contributorData.items.length;
+          setUploadReadState(authorized ? 'VERIFIED' : 'INVALID');
+        } catch (failure) {
+          if (request !== generation.current || current.current !== active) return true;
+          setUploadReadState(failure?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+        }
+      } else {
+        setUploadReadState(participantMode ? 'VERIFIED' : 'UNVERIFIED');
+      }
       return true;
     } catch (failure) {
       if (request !== generation.current || current.current !== active) return false;
@@ -127,7 +162,7 @@ export default function ProjectTaskAttachmentsPanel({
                     : 'EOS could not reach or verify the task attachment manifest. No upload or download is confirmed.');
       return false;
     }
-  }, [scope, root, tenantId, principalId, projectId, taskId, tenantHeaders]);
+  }, [scope, readRoot, contributorRoot, ownerReadMode, participantMode, tenantId, principalId, projectId, taskId, tenantHeaders]);
 
   useEffect(() => {
     generation.current += 1;
@@ -140,7 +175,7 @@ export default function ProjectTaskAttachmentsPanel({
   }, [scope, load]);
 
   const verifyScan = async item => {
-    if (!participantMode || busy || state !== 'READY'
+    if (!uploadReadVerified || busy || state !== 'READY'
       || item.scan_clearance_status !== 'QUARANTINED'
       || !valid(item, tenantId, projectId, taskId)) return;
     const active = scope;
@@ -152,7 +187,7 @@ export default function ProjectTaskAttachmentsPanel({
     setBusy(true);
     setError('');
     try {
-      const { data } = await api.post(root + '/attachments/'
+      const { data } = await api.post(contributorRoot + '/attachments/'
         + encodeURIComponent(item.attachment_id) + '/verify-scan',
       null, { headers: { ...headers, 'Idempotency-Key': key } });
       if (current.current !== active) return;
@@ -167,7 +202,7 @@ export default function ProjectTaskAttachmentsPanel({
       const confirmed = await load(0);
       if (!confirmed || current.current !== active) return;
       const { data: verify } = await api.get(
-        root + '/attachments?limit=50&offset=0', { headers },
+        readRoot + '/attachments?limit=50&offset=0', { headers },
       );
       if (
         current.current !== active
@@ -199,7 +234,7 @@ export default function ProjectTaskAttachmentsPanel({
     setError('');
     try {
       const { data, headers: resultHeaders } = await api.get(
-        root + '/attachments/' + encodeURIComponent(item.attachment_id) + '/download',
+        readRoot + '/attachments/' + encodeURIComponent(item.attachment_id) + '/download',
         { headers, responseType: 'blob', timeout: 120000 },
       );
       if (current.current !== active) return;
@@ -229,7 +264,7 @@ export default function ProjectTaskAttachmentsPanel({
 
   const upload = async event => {
     event.preventDefault();
-    if (!participantMode || busy || state !== 'READY' || !file) return;
+    if (!uploadReadVerified || busy || state !== 'READY' || !file) return;
     if (!SAFE.has(file.type) || file.size <= 0 || file.size > LIMIT) {
       setError('Choose a PDF, PNG or JPEG up to 20 MiB.');
       return;
@@ -252,7 +287,7 @@ export default function ProjectTaskAttachmentsPanel({
     try {
       const form = new FormData();
       form.append('file', file, file.name);
-      const { data } = await api.post(root + '/attachments', form, {
+      const { data } = await api.post(contributorRoot + '/attachments', form, {
         headers: {
           ...headers,
           'Content-Type': 'multipart/form-data',
@@ -321,11 +356,15 @@ export default function ProjectTaskAttachmentsPanel({
     <div aria-label="Attachment upload authority" className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
       <p className="text-sm font-semibold text-slate-900">Add an attachment</p>
       <p className="mt-1 text-xs text-slate-700">
-        {participantMode
-          ? state === 'READY'
-            ? 'Select a file below to submit it to EOS quarantine.'
-            : 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
-          : 'This account is viewing owner-authorized task metadata, not a verified project-contributor upload session. Only a currently admitted contributor with project:participant:contribute may submit evidence. Use the project People workflow to establish that authority; owner status alone does not grant upload permission.'}
+        {uploadReadVerified
+          ? 'Contributor attachment read is verified. Select a PDF, PNG or JPEG below; EOS still independently authorizes the contributor upload command.'
+          : state !== 'READY'
+            ? 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
+            : participantMode && uploadReadState === 'DENIED'
+              ? 'Owner-authorized attachment records are available, but EOS denied the separate contributor attachment read (HTTP 403). Upload needs project:participant:read and project:participant:contribute plus active project participation.'
+              : participantMode
+                ? 'Owner-authorized attachment records are available, but contributor attachment authority is not verified. Upload remains disabled.'
+                : 'Owner access can read attachment manifests but cannot upload. Current project contributor admission and project:participant:contribute are required.'}
       </p>
       {!participantMode && typeof onManageContributors === 'function' &&
         <button type="button" className="wp-button mt-3"
@@ -347,7 +386,7 @@ export default function ProjectTaskAttachmentsPanel({
             {' · '}{item.media_type} · {item.size_bytes.toLocaleString()} bytes
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {participantMode && item.scan_clearance_status === 'QUARANTINED' &&
+            {uploadReadVerified && item.scan_clearance_status === 'QUARANTINED' &&
               <button type="button" disabled={busy} className="wp-button"
                 onClick={() => void verifyScan(item)}>Check malware scan result</button>}
             {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED' &&
@@ -368,7 +407,7 @@ export default function ProjectTaskAttachmentsPanel({
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next</button>
       </nav>}
-      {participantMode && <form className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-white p-3"
+      {uploadReadVerified && <form className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-white p-3"
         onSubmit={upload}>
         <label className="block text-sm font-semibold text-slate-800">Submit a file to quarantine
           <input type="file" aria-label="Project attachment file"
@@ -388,7 +427,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE
+// VERSION: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
