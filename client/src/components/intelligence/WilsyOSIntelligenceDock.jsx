@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION
+ * VERSION: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS converts oversized work-navigation, recovery and contextual follow-ups into accessible inline transcript actions with coherent hierarchy and focus states. The five EOS-authorised CRM tasks remain source-owned; no task mutations, AI charges, changes to admissibility or fabricated records.
  * CHANGELOG: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION defers the costly cross-source My Work aggregate until a real work-related conversational intent is selected; entering work/overdue initiates a fresh independently admitted read, leaving other Dock surfaces unaffected and avoiding eager concurrent startup load. Scope changes and leaving the view abort/clear local projections; no partial-source/fabricated results.
  * CHANGELOG: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION distinguishes exact-tenant My Work IAM refusal, bounded transport timeout, EOS 503 source failure and other transport errors in the chat, without inventing tasks, exposing vendor/request data, extending the client deadline or relaxing backend authority. Kernel health timeout remains an independent optional probe.
  * CHANGELOG: v4.30.1-NATURAL-OVERDUE-WORK-QUERY includes tightly scoped 'Which of my tasks are overdue?' questions in the same read-only EOS work catalog without granting scope or metered access.
@@ -155,6 +156,10 @@ import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, us
 import { v4 as uuidv4 } from 'uuid';
 import {
   ArrowUpRight,
+  ArrowLeft,
+  FileSearch,
+  ListFilter,
+  RefreshCw,
   FileCheck2,
   History,
   MessageSquareText,
@@ -1550,16 +1555,15 @@ export function WilsyOSIntelligenceDock({
                     </div>
                   )}
                   {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12,
-                      flexWrap: 'wrap', padding: '3px 0 12px' }}>
+                    <div className={styles.conversationSectionHeading}>
                       <strong style={{ color: '#eaf3ff', fontSize: 15 }}>
                         {conversationView === 'SOURCE' ? 'EOS workspace evidence' :
                           conversationView === 'OVERDUE' ? 'EOS overdue work' : 'EOS authorised work'}
                       </strong>
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 40, padding: '6px 10px', color: '#d3e3f8' }}
+                      <button type="button" className={styles.conversationInlineAction}
                         onClick={() => { setConversationView('WELCOME'); setLocalSourceQuery(''); setFocusedWorkIndex(null); }}>
-                        Back to conversation
+                        <ArrowLeft size={15} aria-hidden="true" />
+                        <span>Back to conversation</span>
                       </button>
                     </div>
                   )}
@@ -1629,10 +1633,12 @@ export function WilsyOSIntelligenceDock({
                     style={{ margin: '5px 0', color: '#e2e8f0' }}>
                     {founderActivationMessage}
                   </p>}
-                  <button type="button" className={styles.historyActionButton}
+                  <button type="button" className={styles.conversationInlineAction}
                     disabled={visibleWorkspaceContext?.state === 'LOADING'}
-                    style={{ minHeight: 44, marginLeft: 6, color: '#f8fafc', padding: '6px 10px' }}
-                    onClick={() => setContextRefresh(value => value + 1)}>Refresh context</button>
+                    onClick={() => setContextRefresh(value => value + 1)}>
+                    <RefreshCw size={15} aria-hidden="true" />
+                    <span>Refresh context</span>
+                  </button>
                 </section>}
                 {(conversationView === 'WORK' || conversationView === 'OVERDUE')
                   && visibleHeadquartersWork?.state === 'READY'
@@ -1652,9 +1658,7 @@ export function WilsyOSIntelligenceDock({
                           <button type="button"
                             aria-label={`Review verified work: ${item.title}`}
                             aria-pressed={focusedWorkIndex === index}
-                            style={{ padding: '5px 2px', color: '#e9f1fb',
-                              textAlign: 'left', textDecoration: 'underline',
-                              textUnderlineOffset: 3 }}
+                            className={styles.conversationWorkLink}
                             onClick={() => setFocusedWorkIndex(index)}>
                             {item.title}
                           </button>
@@ -1696,11 +1700,10 @@ export function WilsyOSIntelligenceDock({
                             ? 'EOS My Work timed out before its response was verified. No tasks were inferred.'
                             : 'Current work could not be verified from EOS. This is not a confirmed empty work queue.'}
                     </span>
-                    <button type="button" className={styles.historyActionButton}
-                      style={{ minHeight: 44, padding: '7px 12px',
-                        border: '1px solid #77879c', color: '#f1f5f9' }}
+                    <button type="button" className={styles.conversationInlineAction}
                       onClick={() => setContextRefresh(value => value + 1)}>
-                      Recheck work source
+                      <RefreshCw size={15} aria-hidden="true" />
+                      <span>Recheck work source</span>
                     </button>
                   </section>}
                     {(conversationView === 'WORK' || conversationView === 'OVERDUE') && focusedWork && (
@@ -1718,45 +1721,43 @@ export function WilsyOSIntelligenceDock({
                           : 'EOS has not marked this item overdue.'}
                         {' '}This is a read-only work summary; no task mutation is authorised from the Dock.
                       </p>
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 44, color: '#f1f5f9', padding: '8px 12px' }}
+                      <button type="button" className={styles.conversationInlineAction}
                         onClick={() => {
                           setPrompt(`What should I review next for "${focusedWork.title}" in ${focusedWork.source}?`);
                           setErrorMessage('');
                         }}>
                         Prepare a question about this work
                       </button>
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 44, marginLeft: 8, padding: '8px 12px', color: '#cbd5e1' }}
+                      <button type="button" className={styles.conversationInlineAction}
                         onClick={() => setFocusedWorkIndex(null)}>Clear focus</button>
                     </section>
                   )}
                 {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
-                  <div role="group" aria-label="Source follow-up actions"
-                    style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '14px 0' }}>
+                  <nav aria-label="Source follow-up actions"
+                    className={styles.conversationFollowUps}>
                     {conversationView !== 'WORK' && workLocator.workspace === 'HEADQUARTERS' && (
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 44, padding: '8px 12px' }}
+                      <button type="button" className={styles.conversationInlineAction}
                         onClick={() => { setConversationView('WORK'); setLocalSourceQuery('Review my work'); setFocusedWorkIndex(null); }}>
-                        Show my work
+                        <ListFilter size={15} aria-hidden="true" />
+                        <span>Show my work</span>
                       </button>
                     )}
                     {conversationView !== 'OVERDUE' && visibleHeadquartersWork?.state === 'READY'
                       && visibleHeadquartersWork.overdueCount > 0 && (
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 44, padding: '8px 12px' }}
+                      <button type="button" className={styles.conversationInlineAction}
                         onClick={() => { setConversationView('OVERDUE'); setLocalSourceQuery('Show overdue tasks'); setFocusedWorkIndex(null); }}>
-                        Only overdue
+                        <ListFilter size={15} aria-hidden="true" />
+                        <span>Only overdue</span>
                       </button>
                     )}
                     {conversationView !== 'SOURCE' && visibleWorkspaceContext?.state === 'READY' && (
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 44, padding: '8px 12px' }}
+                      <button type="button" className={styles.conversationInlineAction}
                         onClick={() => { setConversationView('SOURCE'); setLocalSourceQuery('Inspect this workspace'); setFocusedWorkIndex(null); }}>
-                        Source evidence
+                        <FileSearch size={15} aria-hidden="true" />
+                        <span>Source evidence</span>
                       </button>
                     )}
-                  </div>
+                  </nav>
                 )}
                 {(activeThread?.messages || []).map((msg, idx) => (
                     <div
@@ -2141,7 +2142,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION
+ * VERSION: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
