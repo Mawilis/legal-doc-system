@@ -5,6 +5,7 @@ VERSION: v1.1.0-READ-ONLY-LOCATION-SUMMARY
 AUTHORITY: Wilsy OS Core Governance; POS source and exact location assignment.
 EPITOME: Authenticated tenant/location commercial evidence, never settlement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/pos_workspace_service.py
+COLLABORATION / OWNERSHIP: POS domain, location registry, product entitlement and caller transaction remain sovereign.
 CERTIFICATION / UPDATE DATE: 2026-11-22
 CHANGELOG: v1.1.0-READ-ONLY-LOCATION-SUMMARY adds a bounded exact-tenant
            independently admitted location sale-status count snapshot.
