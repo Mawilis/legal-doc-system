@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR
+ * VERSION: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES lists exact-tenant currently eligible named member candidates in the assignee selector while keeping only active project contributors directly assignable. Candidate selection opens explicit separate contributor grant; fresh EOS readback must verify new project participation before setting draft assignee. No hidden grants, role inheritance, or synthetic people.
  * CHANGELOG: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR moves governed member selection from above the create form to an immediately visible, viewport-bound dialog with dedicated scrolling and Escape dismissal; preserves active draft and verifies participant grant before assignee refresh. No automatic member or IAM grant.
  * CHANGELOG: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS keeps exact-page selection status visible while optional work-filter controls are collapsed, without changing selection authority or mutations.
  * CHANGELOG: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS exposes a contextual inline governed contributor-management workflow when no assignees are admitted, refreshes only after source-confirmed participant changes while keeping unsaved task drafts, and collapses the page-only work filters by default. No IAM shortcuts or task mutation semantics altered.
@@ -176,7 +177,7 @@ import ProjectWorkRow from './ProjectWorkRow.jsx';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
-import ProjectParticipantsPanel from './ProjectParticipantsPanel.jsx';
+import ProjectParticipantsPanel, { validOptions, optionName } from './ProjectParticipantsPanel.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -304,6 +305,9 @@ export default function ProjectTasksPanel({
   const [items, setItems] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [participantHasMore, setParticipantHasMore] = useState(false);
+  const [tenantMemberCandidates, setTenantMemberCandidates] = useState([]);
+  const [memberDirectoryStatus, setMemberDirectoryStatus] = useState('VERIFYING');
+  const [pendingMemberChoice, setPendingMemberChoice] = useState('');
   const [actionCapabilities, setActionCapabilities] = useState(null);
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
@@ -344,21 +348,39 @@ export default function ProjectTasksPanel({
   const root = '/projects/' + encodeURIComponent(projectId);
   const headers = tenantHeaders || {};
 
-  const load = useCallback(async (nextOffset = 0) => {
+  const load = useCallback(async (nextOffset = 0, newlyAdmittedId = null) => {
     const request = ++generation.current;
     const active = scope;
     setState(previous => previous === 'READY' ? 'REFRESHING' : 'LOADING');
     setError('');
     try {
-      const [tasks, people, actionResult] = await Promise.all([
+      const [tasks, people, actionResult, optionResult] = await Promise.all([
         api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers }),
         api.get(root + '/participants?limit=100&offset=0', { headers }),
         api.get(root + '/task-action-capabilities', { headers })
+          .then(result => result?.data).catch(() => null),
+        Promise.resolve()
+          .then(() => api.get(root + '/participant-options?limit=50&offset=0', { headers }))
           .then(result => result?.data).catch(() => null),
       ]);
       if (request !== generation.current || currentScope.current !== active) return false;
       const verified = validList(tasks.data, tenantId, principalId, projectId, nextOffset);
       const eligible = validParticipants(people.data, tenantId, principalId, projectId);
+      let members = null;
+      try {
+        if (optionResult) members = validOptions(
+          optionResult, { tenantId, principalId, projectId }, 0,
+        );
+      } catch {
+        members = null;
+      }
+      setTenantMemberCandidates(members?.items || []);
+      setMemberDirectoryStatus(members ? 'VERIFIED' : 'UNAVAILABLE');
+      const currentContributors = eligible.items.filter(item => item.role === 'CONTRIBUTOR');
+      if (newlyAdmittedId && currentContributors.some(item => item.principal_id === newlyAdmittedId)) {
+        setDraft(previous => previous.assignee_principal_id
+          ? previous : { ...previous, assignee_principal_id: newlyAdmittedId });
+      }
       const capabilityNames = ['can_start', 'can_complete', 'can_block',
         'can_cancel', 'can_assign', 'can_edit'];
       const admitted = actionResult?.schema === 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1'
@@ -379,7 +401,7 @@ export default function ProjectTasksPanel({
       setSelectedWorkIds(previous => previous.filter(id => nextOffset === offset && verified.items.some(item => item.task_id === id)));
       setHasMore(verified.has_more);
       setOffset(nextOffset);
-      setParticipants(eligible.items.filter(item => item.role === 'CONTRIBUTOR'));
+      setParticipants(currentContributors);
       setParticipantHasMore(eligible.has_more);
       setState('READY');
       return true;
@@ -387,6 +409,8 @@ export default function ProjectTasksPanel({
       if (request !== generation.current || currentScope.current !== active) return false;
       setItems([]);
       setParticipants([]);
+      setTenantMemberCandidates([]);
+      setMemberDirectoryStatus('UNAVAILABLE');
       setParticipantHasMore(false);
       setActionCapabilities(null);
       setHasMore(false);
@@ -404,6 +428,9 @@ export default function ProjectTasksPanel({
     generation.current += 1;
     setItems([]);
     setParticipants([]);
+    setTenantMemberCandidates([]);
+    setMemberDirectoryStatus('VERIFYING');
+    setPendingMemberChoice('');
     setActionCapabilities(null);
     setOffset(0);
     setHasMore(false);
@@ -1064,13 +1091,35 @@ export default function ProjectTasksPanel({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-semibold text-slate-800">Assign to
             <select aria-label="Task assignee" value={draft.assignee_principal_id}
-              onChange={event => setDraft(value => ({ ...value, assignee_principal_id: event.target.value }))}
+              onChange={event => {
+                const selected = event.target.value;
+                if (selected.startsWith('member:')) {
+                  const candidateId = selected.slice(7);
+                  if (!tenantMemberCandidates.some(member => member.principal_id === candidateId)) return;
+                  setPendingMemberChoice(candidateId);
+                  setShowContributorManagement(true);
+                  return;
+                }
+                setDraft(value => ({ ...value, assignee_principal_id: selected }));
+              }}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
               <option value="">Unassigned</option>
               {participants.map(person => <option key={person.principal_id} value={person.principal_id}>
                 {contributorName(person.principal_id)}
               </option>)}
+              {tenantMemberCandidates.some(member => !participants.some(
+                person => person.principal_id === member.principal_id,
+              )) && <optgroup label="Eligible tenant members — authorize contributor first">
+                {tenantMemberCandidates.filter(member => !participants.some(
+                  person => person.principal_id === member.principal_id,
+                )).map(member => <option key={member.principal_id} value={'member:' + member.principal_id}>
+                  {optionName(member) || 'Verified member — name unavailable'} · Authorize contributor
+                </option>)}
+              </optgroup>}
             </select>
+            {memberDirectoryStatus === 'UNAVAILABLE' && <span role="status" className="mt-2 block text-xs font-normal text-amber-900">
+              The tenant member directory is not currently verified. Existing active project contributors remain selectable; refresh when EOS restores the directory.
+            </span>}
             {participants.length === 0 && !participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
               No verified project contributors are eligible for task assignment yet. Create this task unassigned, or select an eligible tenant member using the nearby contributor-management action.
             </span>}
@@ -1079,7 +1128,7 @@ export default function ProjectTasksPanel({
             </span>}
             <button type="button" className="wp-button mt-2 !min-h-9 !text-xs"
               aria-expanded={showContributorManagement}
-              onClick={() => setShowContributorManagement(value => !value)}>
+              onClick={() => { setPendingMemberChoice(''); setShowContributorManagement(value => !value); }}>
               {showContributorManagement ? 'Close contributor management' : 'Manage eligible contributors'}
             </button>
           </label>
@@ -1154,7 +1203,15 @@ export default function ProjectTasksPanel({
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
             <ProjectParticipantsPanel projectId={projectId} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders}
-              onParticipantsChanged={() => { void load(offset); }}/>
+              initialSelectedPrincipal={pendingMemberChoice}
+              onParticipantsChanged={admittedId => {
+                void load(offset, admittedId).then(verified => {
+                  if (verified) {
+                    setShowContributorManagement(false);
+                    setPendingMemberChoice('');
+                  }
+                });
+              }}/>
           </div>
         </div>
       </div>}
@@ -1362,7 +1419,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR
+// VERSION: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
