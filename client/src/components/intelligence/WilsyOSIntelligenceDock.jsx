@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS
+ * VERSION: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS removes default source/status essays from chat and presents one conversational first turn with user-invoked read-only TaskList or SourceInspection. Deterministic exact-intent routing fills only from current EOS-verified sources; no model-generated UI, arbitrary HTML, task mutations or metered POST. Source failures appear within the requested action, not as static opening cards.
  * CHANGELOG: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS returns to the single conversation on identity/capacity change and new-thread selection, and awaits session-only history clearing and new thread issuance before displaying success; no phantom threads or cross-scope UI state.
  * CHANGELOG: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW removes generic Suggestions navigation and model-submitting decorative cards, gates Legal Advisory to legal capacity, and adds live exact-tenant My Work focus with read-only details and draft-only contextual question actions. History omits empty placeholder threads. No model calls or inferred task authority.
  * CHANGELOG: v4.24.0-CONVERSATION-FIRST-SOURCE-STREAM moves independently authorised EOS source and My Work projections from fixed stacking panels into the scrollable conversational transcript with progressive disclosure and a fixed composer. Projections remain read-only, not model responses; no new entitlement or IAM truth.
@@ -459,6 +460,7 @@ export function WilsyOSIntelligenceDock({
   const workspaceDetailsRef = useRef(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
   const [focusedWorkIndex, setFocusedWorkIndex] = useState(null);
+  const [conversationView, setConversationView] = useState('WELCOME');
   const [contextRefresh, setContextRefresh] = useState(0);
   const [founderActivationState, setFounderActivationState] = useState('IDLE');
   const [founderActivationMessage, setFounderActivationMessage] = useState('');
@@ -530,6 +532,7 @@ export function WilsyOSIntelligenceDock({
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
     setFocusedWorkIndex(null);
+    setConversationView('WELCOME');
     setFounderActivationState('IDLE');
     setFounderActivationMessage('');
     founderActivationKeyRef.current = null;
@@ -939,6 +942,22 @@ export function WilsyOSIntelligenceDock({
     async (rawText) => {
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting || sendLockRef.current) return;
+      // Controlled local intent catalog: these are read-only EOS source views,
+      // NOT model answers. No POST, admission, consent or billing for inspection.
+      if (!isLegalDockRole(authUser?.role)
+        && /^(?:show|list|review|open|view)\s+(?:(?:my|the)\s+)?(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?[?.!]?$/i.test(text)) {
+        setConversationView(/overdue/i.test(text) ? 'OVERDUE' : 'WORK');
+        setPrompt('');
+        setErrorMessage('');
+        return;
+      }
+      if (!isLegalDockRole(authUser?.role)
+        && /^(?:show|inspect|review|open)\s+(?:(?:my|the|current)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
+        setConversationView('SOURCE');
+        setPrompt('');
+        setErrorMessage('');
+        return;
+      }
       // A server-confirmed reconciliation hold is not an uncertain network
       // retry. Preserve the draft but refuse further sends of this exact
       // attempt, including the Enter key and dynamic suggestion route.
@@ -1317,6 +1336,7 @@ export function WilsyOSIntelligenceDock({
   const sourceWorkspaceLabel = visibleWorkspaceContext?.state === 'READY'
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
+  const readOnlySourceIntent = /^(?:show|list|review|open|view|inspect)\s+(?:(?:my|the|current)\s+)?(?:(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?|(?:workspace|project|context|source)(?:\s+(?:details?|context))?)[?.!]?$/i.test(prompt.trim());
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -1432,54 +1452,58 @@ export function WilsyOSIntelligenceDock({
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
                       <h4>{welcomeGreeting}</h4>
-                      {sourceWorkspaceLabel && (
-                        <p style={{ margin: '0 0 8px', color: '#b9d5e6', fontSize: 13 }}>
-                          Looking at your verified {sourceWorkspaceLabel.toLowerCase()}.
-                        </p>
+                      <p style={{ color: '#d1dfef', maxWidth: '68ch', lineHeight: 1.7 }}>
+                        {visibleWorkspaceContext?.state === 'READY'
+                          ? (visibleWorkspaceContext.data.work?.selected_task?.title
+                            ? `You're viewing “${visibleWorkspaceContext.data.work.selected_task.title}”. What would you like to do with this verified task context?`
+                            : visibleWorkspaceContext.data.work?.project?.name
+                              ? `You're viewing “${visibleWorkspaceContext.data.work.project.name}”. What would you like to inspect?`
+                              : 'What would you like to work on? I can inspect the sources your EOS session authorises.')
+                          : 'What would you like to work on? I can check authorised EOS sources without spending AI credits.'}
+                      </p>
+                    </div>
+                  )}
+                  {conversationView === 'WELCOME' && !isLegalDockRole(authUser?.role) && (
+                    <div role="group" aria-label="Available source actions"
+                      style={{ display: 'flex', gap: 10, flexWrap: 'wrap',
+                        maxWidth: '70ch', padding: '2px 0 18px' }}>
+                      {workLocator.workspace === 'HEADQUARTERS' && (
+                        <button type="button" className={styles.historyActionButton}
+                          style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
+                          onClick={() => setConversationView('WORK')}>
+                          Review my work
+                        </button>
                       )}
-                      {visibleHeadquartersWork?.state === 'READY' && (
-                        <p style={{ margin: '0 0 8px', color: '#e0e9f6' }}>
-                          EOS shows {visibleHeadquartersWork.activeCount} active work items,
-                          including {visibleHeadquartersWork.overdueCount} overdue.
-                          Select a work item below to inspect its source-backed status.
-                        </p>
-                      )}
-                      {visibleWorkspaceContext?.state === 'READY'
-                        && visibleWorkspaceContext.data.work?.project?.name
-                        ? <strong>{visibleWorkspaceContext.data.work.project.name}</strong> : null}
-                      <p>{visibleWorkspaceContext?.state === 'READY'
-                        ? (visibleWorkspaceContext.data.work?.selected_task?.title
-                          ? `You're viewing the verified task “${visibleWorkspaceContext.data.work.selected_task.title}”. Ask about this task, its status or its project. EOS rechecks its facts before AI reasoning.`
-                          : aiProviderUnavailable
-                            ? 'Your workspace source is verified. Model reasoning is unavailable in this EOS session; inspecting your permitted source information does not require AI credits.'
-                            : kennelPosture === 'SOURCE_SILENT'
-                              ? 'EOS verified this workspace independently. The separate kernel health probe is unavailable; refresh the source to recheck before relying on its currentness.'
-                              : 'EOS verified this workspace. Inspect the source-backed work below; model reasoning requires separate consent and usage admission.')
-                        : visibleWorkspaceContext?.state === 'LOADING'
-                          ? 'Checking which workspace information EOS permits you to access.'
-                          : visibleWorkspaceContext?.state === 'DENIED'
-                            ? 'EOS did not authorize workspace context. I will not invent project or task facts.'
-                            : 'Workspace evidence is not available yet. Refresh the source to verify what can be shown; no model response or work facts have been inferred.'}</p>
-                      {visibleWorkspaceContext?.state === 'READY' && !isLegalDockRole(authUser?.role) && (
-                        <button
-                          type="button"
-                          className={styles.historyActionButton}
-                          style={{ display: 'inline-flex', marginTop: 14, minHeight: 44,
-                            padding: '10px 14px', color: '#f5e3b4', fontSize: 13,
-                            border: '1px solid #846c42', borderRadius: 10 }}
-                          onClick={() => {
-                            if (!workspaceDetailsRef.current) return;
-                            workspaceDetailsRef.current.open = true;
-                            workspaceDetailsRef.current.scrollIntoView?.({ block: 'nearest' });
-                          }}
-                        >
-                          Inspect verified source details
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
+                        onClick={() => setConversationView('SOURCE')}>
+                        Inspect this workspace
+                      </button>
+                      {visibleHeadquartersWork?.state === 'READY' && visibleHeadquartersWork.overdueCount > 0 && (
+                        <button type="button" className={styles.historyActionButton}
+                          style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
+                          onClick={() => setConversationView('OVERDUE')}>
+                          Review overdue work
                         </button>
                       )}
                     </div>
                   )}
+                  {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+                      flexWrap: 'wrap', padding: '3px 0 12px' }}>
+                      <strong style={{ color: '#eaf3ff', fontSize: 15 }}>
+                        {conversationView === 'SOURCE' ? 'Workspace source' :
+                          conversationView === 'OVERDUE' ? 'Overdue work' : 'My work'}
+                      </strong>
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 40, padding: '6px 10px', color: '#d3e3f8' }}
+                        onClick={() => { setConversationView('WELCOME'); setFocusedWorkIndex(null); }}>
+                        Back to conversation
+                      </button>
+                    </div>
+                  )}
                   {/* EOS observations are read-only, scoped, and not assistant messages. */}
-                {authUser?.id && !isLegalDockRole(authUser?.role) && <section
+                {conversationView === 'SOURCE' && authUser?.id && !isLegalDockRole(authUser?.role) && <section
                   aria-label="Verified workspace context" aria-live="polite"
                   style={{ padding: '10px 0', background: 'transparent', color: '#e5edf6',
                     borderTop: '1px solid rgba(148,163,184,.25)',
@@ -1549,7 +1573,8 @@ export function WilsyOSIntelligenceDock({
                     style={{ minHeight: 44, marginLeft: 6, color: '#f8fafc', padding: '6px 10px' }}
                     onClick={() => setContextRefresh(value => value + 1)}>Refresh context</button>
                 </section>}
-                {visibleHeadquartersWork?.state === 'READY'
+                {(conversationView === 'WORK' || conversationView === 'OVERDUE')
+                  && visibleHeadquartersWork?.state === 'READY'
                   && visibleHeadquartersWork.activeCount > 0
                   && <section aria-label="Current authorized work"
                     style={{ padding: '12px 0', background: 'transparent',
@@ -1561,6 +1586,7 @@ export function WilsyOSIntelligenceDock({
                     </strong>
                     <ol style={{ margin: '6px 0 0', paddingLeft: 20 }}>
                       {visibleHeadquartersWork.items.map((item, index) =>
+                        conversationView === 'OVERDUE' && !item.overdue ? null :
                         <li key={index} style={{ marginBottom: 4, overflowWrap: 'anywhere' }}>
                           <button type="button"
                             aria-label={`Review verified work: ${item.title}`}
@@ -1577,7 +1603,20 @@ export function WilsyOSIntelligenceDock({
                         </li>)}
                     </ol>
                   </section>}
-                {workLocator.workspace === 'HEADQUARTERS'
+                {(conversationView === 'WORK' || conversationView === 'OVERDUE')
+                  && visibleHeadquartersWork?.state === 'READY'
+                  && (visibleHeadquartersWork.activeCount === 0
+                    || (conversationView === 'OVERDUE' && visibleHeadquartersWork.overdueCount === 0))
+                  && <p role="status" style={{ color: '#d1deed', lineHeight: 1.65 }}>
+                    {conversationView === 'OVERDUE'
+                      ? 'EOS reports no overdue work in this authorised snapshot.'
+                      : 'EOS reports no active work in this authorised snapshot.'}
+                  </p>}
+                {(conversationView === 'WORK' || conversationView === 'OVERDUE')
+                  && visibleHeadquartersWork?.state === 'LOADING'
+                  && <p role="status">Checking your authorised work source…</p>}
+                {(conversationView === 'WORK' || conversationView === 'OVERDUE')
+                  && workLocator.workspace === 'HEADQUARTERS'
                   && (visibleHeadquartersWork?.state === 'DENIED'
                     || visibleHeadquartersWork?.state === 'UNAVAILABLE')
                   && <section aria-label="Headquarters work source status" role="status"
@@ -1597,7 +1636,7 @@ export function WilsyOSIntelligenceDock({
                       Recheck work source
                     </button>
                   </section>}
-                    {focusedWork && (
+                    {(conversationView === 'WORK' || conversationView === 'OVERDUE') && focusedWork && (
                     <section aria-label="Selected verified work" role="region"
                       style={{ padding: '12px 0', maxWidth: '70ch',
                         borderTop: '1px solid rgba(148,163,184,.25)',
@@ -1711,7 +1750,7 @@ export function WilsyOSIntelligenceDock({
                     onClick={() => handleSendMessage()}
                     disabled={isSubmitting || !prompt.trim()
                       || (!isLegalDockRole(authUser?.role)
-                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
+                        && (!readOnlySourceIntent && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable)
                           || (reasoningReplayRef.current.blocked === true
                             && reasoningReplayRef.current.scope === dockScopeRef.current
                             && reasoningReplayRef.current.text === prompt.trim()
@@ -1999,7 +2038,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS
+ * VERSION: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
