@@ -1,6 +1,6 @@
 # WILSY OS — Role-projected My Work and Governed Automation Programme
 
-VERSION: v1.0.0-SOURCE-OWNED-OPERATING-GRAPH-ROADMAP
+VERSION: v1.1.0-STRATEGY-PROJECT-EXECUTION-REGISTER
 AUTHORITY: WILSY OS Core Governance / AGENTS.md
 ARTIFACT: docs/architecture/my-work-role-graph-operating-programme.md
 UPDATE DATE: 2026-11-22
@@ -107,6 +107,61 @@ Apply a **soft** per-module cap only within the first display window (e.g. 4 of 
 - The Projects Approvals picker must paginate active eligible independent contributors, explain verified zero and distinguish unavailable read; reviewer admission remains source-owned, self-review denied.
 - Evidence-bound review requires the exact original version, scanned, independently cleared attachment and source audit; AWS production quarantine remains funding-gated separately.
 
+## Existing My Strategy project — authoritative execution update register
+
+**Destination project already visible in the authenticated Founder Projects workspace:** `WILSY OS — Unified Operating Platform Foundation`. Preserve its existing project identity, assigned code, current Active status, November 30 2026 project target, four existing work items, original revisions and audit events. **Do not create a new project or overwrite its approved scope.** The My Strategy-to-Projects focus handoff in `client/src/components/workspaces/ProjectsWorkspace.jsx` (around line 986) is navigation only; it does not persist objectives, project tasks or strategy performance readback.
+
+**Execution record format:** every row below is a proposed source-owned `TASK` or `MILESTONE` through the existing `POST /api/projects/{project_id}/tasks` command with a fresh durable Idempotency-Key. Before each create, read all task pages from the exact existing project, match the scoped plan identity to existing records and **revise rather than duplicate** equivalent prior tasks. Only authorize assignees that EOS verifies as ACTIVE exact-project CONTRIBUTORS. Leave unassigned if assignment authority is unavailable. Use date picker dates only after reviewing realistic sequencing and the project target; never fabricate a passed milestone, approval, release or AWS activation.
+
+**Project objective (for governed My Strategy update):** Turn My Work into an authorization-first, source-owned personal operating graph spanning Founder/HQ/tenant execution, reviews and decisions, with deterministic role-aware ranking, EOS-owned workflow automation and Intelligence Dock parity. Existing customer/tenant record visibility and Kennel EOS financial execution remain separately governed.
+
+### Recommended project milestones
+
+| Key | Kind | Proposed title | Source-backed acceptance / evidence |
+|---|---|---|---|
+| MW-M01 | MILESTONE | My Work operating taxonomy and strategy alignment | Audited Operating / Platform Build / Unclassified classifications established; current seven tasks retained and correct Founder default verified |
+| MW-M02 | MILESTONE | Governed work graph and multi-source accountability | Exactly scoped WorkNodes / WorkEdges from authorized Projects, CRM and project review sources; read-only permission-first source projection and real Mongo tests pass |
+| MW-M03 | MILESTONE | Role-aware work execution and approval decisions | Founder, HQ and tenant profiles produce independent, restricted queues; delegated task actions and reviewer decisions source-confirmed |
+| MW-M04 | MILESTONE | Ranked Founder operating workspace | Explainable score, stable pagination, diverse sources, operating/build split and accessible desktop/mobile UI all certified |
+| MW-M05 | MILESTONE | Audited workflow automation and Intelligence Dock parity | Idempotent rule actions with source reauthorization and same work identity/reasons in Dock; no payment or external side effects inferred |
+| MW-M06 | MILESTONE | Production readiness and strategy outcome certification | Full role/IAM, Python, real Mongo, load, E2E desktop/mobile, observability and rollout/rollback gates green, followed by approved strategy objective readback |
+
+### Tasks to enter under the existing project (not an external CRM backlog)
+
+| Key | Work type | Proposed EOS task title | Suggested milestone | Completion evidence |
+|---|---|---|---|---|
+| MW-T01 | Discovery | Inventory canonical My Work sources, role capacity and current IAM boundaries | M01 | Source/consumer/command matrix approved; no duplicate task store |
+| MW-T02 | Design | Establish operating versus platform classification and reviewed legacy-task mapping | M01 | Audited classification contract, no title heuristics or hidden unclassified items |
+| MW-T03 | Backend | Implement source-owned audience classification and reversible migration | M01 | CAS/idempotency, exact tenant, 7-item preservation, source-level tests |
+| MW-T04 | Backend | Derive source-authorized work identity and responsibility edges | M02 | Edges require current IAM and source record revisions; no graph-owned grants |
+| MW-T05 | Backend | Surface independent project approval decisions in My Work | M02 | Pending reviewer edge, segregation of duties, decision readback and revocation |
+| MW-T06 | UX | Deliver Founder Operating, Platform Build and Waiting filters | M03 | Accurate reason, outcome-first actions, verified-zero and unclassified states |
+| MW-T07 | IAM | Certify role/capacity packs and permission-first work admission | M03 | Founder/HQ/customer roles + denied cross-tenant and revoked-capacity cases |
+| MW-T08 | Ranking | Implement stable explainable prioritization and source diversity | M04 | Shared Python score and cursor, absence of fabricated urgency, 500+ test |
+| MW-T09 | Delivery | Wire source-owned create, edit, assign, complete, approve and reject actions | M04 | No optimistic success; CAS, idempotent evidence and refreshed work count |
+| MW-T10 | Automation | Implement guarded event-driven rules and accountable escalation | M05 | Event replay, rule conflict, authorization, source revocation and audit green |
+| MW-T11 | Intelligence | Align Intelligence Dock suggestions with authorized work graph | M05 | Same source key, rank explanation and independent command confirmation |
+| MW-T12 | Certification | Run integrated production-readiness and deployment rollback certification | M06 | Exact-head Git, Python/JS, replica-set, real browser, role matrix and SLO evidence |
+
+**Dependency sequence:** T01 → T02 → T03 → T04 → T05 and T07 → T06/T08/T09 → T10/T11 → T12. The current EOS task registry supports `depends_on` with source task IDs, not these planning keys; resolve actual persisted IDs before attaching dependencies. Milestones are separate task kinds, and the present registry permits subtask parent pointers only to TASK, not MILESTONE. Do not claim a milestone-parent relationship unless the schema supports it. First milestone approval does not imply task completion or a strategy score.
+
+### One existing funded-infrastructure task to preserve
+
+`Activate WILSY OS production attachments` is already independently visible in My Work as a Projects task. **Keep it as the single funding-gated AWS activation task**, link it to the implementation register via source-authorized description or dependencies only if semantically justified; do not duplicate it here. Use existing GitHub issue #417 and PR #416 as supporting deployment runbook, not authority for spending. Its completion remains blocked by funding, GuardDuty eligibility, real malware clearance and operational certification.
+
+### My Strategy update / evidence-bound operating loop
+
+1. **Preflight:** open the existing Active system project via its My Strategy focus; read its actual project ID, revision, all current task pages and assignee participation. Photograph/export current rows and objective description for rollback. If project code or strategy objective identifier is unavailable, preserve existing values instead of guessing.
+2. **Map:** confirm milestone titles and strategy outcome language. Source-create only missing `MILESTONE` records, then `TASK` records; each new command has durable idempotency and source readback; no artificial in-progress or completed status.
+3. **Connect:** record actual `ptk-...` task IDs and dependency links only after EOS readback. Make assignments only to independently eligible contributors. Preserve the original four work items; revise their descriptions or associate them only through approved source commands.
+4. **Refresh:** verify the Projects Work & Milestones list, counts and audit events. Explicitly confirm that any newly assigned active tasks appear in the assignee's My Work; milestones alone and unassigned records may not appear.
+5. **Strategy:** update the original My Strategy objective **using its own authorized source editor**, not the Projects handoff navigation. Enter project URL/identity, success metric and milestone references if supported; if the strategy store lacks linked milestone readback, label linkage `MANUAL / NOT YET WIRED` and open a separate source-contract integration delivery, never show a fabricated score.
+6. **Ongoing:** when work changes in Projects, use actual source revisions and audit readback before issuing a My Strategy progress update; do not calculate business strategy completion from checklist count alone.
+
+**Strategic success measures (targets, not achieved outcomes):** source-backed work inclusion by authorized role, operating/build classification completeness, decision/task action success with audited readback, source diversity, correct overdue/SLA accounting, inaccessible-task leakage rate zero, exact-head authenticated desktop/mobile certification, and no automation without IAM decision. Report verified baseline and target separately; do not fill in invented percentages.
+
+**Critical constraint:** As of this repository version, no direct authenticated EOS connection is available to this GitHub workflow. This register is a proposed implementation plan stored in source control; **no task or My Strategy record is claimed created, modified, assigned or completed** until the user's local EOS reads return successful durable receipts.
+
 ## Production implementation roadmap and acceptance gates
 
 | Stage | Primary delivery, one file at a time | Definition of done | Required tests / blocker |
@@ -162,7 +217,7 @@ Operate in order **DISCOVER → MAP → WIRE → CLEAN → CERTIFY → OBSERVE �
 
 ---
 ARTIFACT: docs/architecture/my-work-role-graph-operating-programme.md
-VERSION: v1.0.0-SOURCE-OWNED-OPERATING-GRAPH-ROADMAP
+VERSION: v1.1.0-STRATEGY-PROJECT-EXECUTION-REGISTER
 TENANT POSTURE: exact-current-tenant policy, authorization before ranking, no Founder bypass.
 AUTHORITY BOUNDARY: architecture and delivery acceptance only; grants, approval and source commands remain EOS owned.
 FAIL-CLOSED POSTURE: unknown sources/classifications are not silently treated as authorized or verified empty.
