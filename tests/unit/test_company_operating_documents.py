@@ -59,7 +59,12 @@ class Cursor:
         self.rows = list(rows)
     def __iter__(self):
         return iter(self.rows)
-    def sort(self, field, order):
+    def sort(self, field, order=None):
+        """Support both existing single-index and newer compound-source ordering."""
+        if isinstance(field, list) and order is None:
+            return Cursor(sorted(self.rows, key=lambda row: tuple(
+                row[coordinate] if direction > 0 else row[coordinate]
+                for coordinate, direction in field)))
         return Cursor(sorted(self.rows, key=lambda row: row[field], reverse=order < 0))
     def limit(self, limit):
         return Cursor(self.rows[:limit])
