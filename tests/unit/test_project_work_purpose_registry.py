@@ -1,11 +1,15 @@
 """TITLE: WILSY OS Source-Owned Project Work Purpose Certificate
-VERSION: v1.0.1-STALE-PURPOSE-RECOVERY-AUDIT-CERT
+VERSION: v1.1.0-BOUNDED-AUDITED-PURPOSE-BATCH-CERT
 AUTHORITY: Test-only proof of canonical Projects work purpose commands.
 EPITOME: No-network immutable audit, current source, CAS, replay and denial.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_work_purpose_registry.py
 COLLABORATION / OWNERSHIP: ProjectWorkPurposeRegistry; Projects router
 remains responsible for live exact-tenant and project:update admission.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.1.0-BOUNDED-AUDITED-PURPOSE-BATCH-CERT proves
+511 admitted work records use three bounded purpose source queries and one
+immutable-event proof query, with visible unclassified rows and no foreign
+or invalid audit acceptance.
 CHANGELOG: v1.0.1-STALE-PURPOSE-RECOVERY-AUDIT-CERT
 verifies stale task revisions preserve exact audited metadata CAS while
 returning UNCLASSIFIED, supports explicit reclassification after task edits,
@@ -57,6 +61,24 @@ class Collection:
             if all(row.get(key) == value for key, value in query.items()):
                 return deepcopy(row)
         return None
+
+    def find(self, query, session):
+        """Apply bounded equality, $in and $or batch matching."""
+        assert session == "caller-session"
+        self.batch_reads = getattr(self, "batch_reads", 0) + 1
+
+        def matches(row, criteria):
+            return all(
+                any(matches(row, option) for option in expected)
+                if key == "$or" else (
+                    row.get(key) in expected["$in"]
+                    if isinstance(expected, dict) and "$in" in expected
+                    else row.get(key) == expected
+                )
+                for key, expected in criteria.items()
+            )
+
+        return [deepcopy(row) for row in self.rows if matches(row, query)]
 
     def insert_one(self, row, session):
         """Insert once; caller owns transaction and retry policy."""
@@ -163,6 +185,38 @@ def test_invalid_or_stale_source_claims_do_not_write(source, overrides, expected
     assert source[2].rows == []
 
 
+def test_511_source_items_read_in_bounded_batch_with_one_audit(source):
+    """Source reading has no task-wise Mongo N+1; 511 is still complete."""
+    command(source)
+    all_tasks = [task()] + [
+        SimpleNamespace(tenant_id=TENANT, project_id=PROJECT,
+                        task_id="ptk-" + format(i + 1, "048x"), revision=1)
+        for i in range(510)
+    ]
+    claims = source[0].current_for_tasks(tasks=all_tasks, session="caller-session")
+    assert len(claims) == 511
+    assert claims[TASK]["audience"] == "PLATFORM_BUILD"
+    assert sum(value is None for value in claims.values()) == 510
+    assert source[1].batch_reads == 3
+    assert source[2].batch_reads == 1
+    stale = source[0].current_for_tasks(tasks=[task(revision=4)], session="caller-session")
+    assert stale[TASK]["audience"] == "UNCLASSIFIED"
+    assert stale[TASK]["purpose_revision"] == 1
+
+
+def test_batch_rejects_foreign_and_tampered_evidence(source):
+    """Foreign source, missing audit and altered current digest fail closed."""
+    command(source)
+    with pytest.raises(WorkPurposeError, match="PROJECT_WORK_PURPOSE_BATCH_SCOPE_INVALID"):
+        source[0].current_for_tasks(
+            tasks=[task(), SimpleNamespace(tenant_id="foreign", project_id=PROJECT,
+                                           task_id="ptk-" + "e" * 48, revision=1)],
+            session="caller-session")
+    source[2].rows.clear()
+    with pytest.raises(WorkPurposeError, match="PROJECT_WORK_PURPOSE_AUDIT_INVALID"):
+        source[0].current_for_tasks(tasks=[task()], session="caller-session")
+
+
 def test_divergent_replay_and_missing_audit_are_denied(source):
     """Idempotency cannot rewrite classification or mint unobserved evidence."""
     command(source)
@@ -182,7 +236,7 @@ def test_tampered_source_fingerprint_is_rejected(source):
 
 
 # ARTIFACT: test_project_work_purpose_registry.py
-# VERSION: v1.0.1-STALE-PURPOSE-RECOVERY-AUDIT-CERT
+# VERSION: v1.1.0-BOUNDED-AUDITED-PURPOSE-BATCH-CERT
 # AUTHORITY BOUNDARY: Synthetic source registry proof, no IAM.
 # TENANT POSTURE: Strict coordinates and CAS, no cross-tenant read.
 # FAIL-CLOSED POSTURE: Divergent replay/tampered evidence deny.
