@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.5.1-EXPLICIT-PROJECT-NAVIGATION-FIXTURE
+ * VERSION: v1.6.0-PLAN-PERSISTENCE-READBACK-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.6.0-PLAN-PERSISTENCE-READBACK-CERT verifies that eighteen
+ *            planned milestones/tasks remain separate from EOS state until
+ *            explicit owner-authorized idempotent creation. Each result
+ *            requires exact-tenant durable readback; repeats skip existing.
  * CHANGELOG: v1.5.1-EXPLICIT-PROJECT-NAVIGATION-FIXTURE provides the
  *            actual Headquarters navigation callback when testing the
  *            conditional Open project control, without changing production
@@ -328,6 +332,54 @@ describe('Strategy source-owned project execution readback', () => {
     expect(call[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId,
       Authorization: 'Bearer synthetic-only' });
   });
+  it('creates eighteen missing programme items only through explicit audited EOS commands and skips them on replay', async () => {
+    const existing = taskList().items;
+    const created = [];
+    const taskUrl = '/projects/' + projectId + '/tasks';
+    api.get.mockImplementation((url, config) => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === taskUrl) {
+        const limit = config?.params?.limit ?? 50;
+        const rows = [...existing, ...created];
+        return Promise.resolve({ data: { ...taskList(), limit, items: rows } });
+      }
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(record('STRATEGY')) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    api.post.mockImplementation((url, body, config) => {
+      if (url !== taskUrl || !config?.headers?.['Idempotency-Key'])
+        return Promise.reject(new Error('INVALID_OR_UNAUTHORIZED_SOURCE_COMMAND'));
+      const index = created.length + 1;
+      const task = { ...existing[0], task_id: 'ptk-' + index.toString(16).padStart(48, '0'),
+        kind: body.kind, title: body.title, status: 'TODO',
+        description: body.description, due_date: null };
+      created.push(task);
+      return Promise.resolve({ data: { schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: scope.tenantId, principal_id: scope.principalId,
+        project_id: projectId, task } });
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Verify execution for Unified Operating Platform Foundation/ }));
+    expect(await screen.findByRole('heading', { name: 'My Work implementation programme' })).toBeVisible();
+    expect(screen.getByText('MW-M01 — Operating taxonomy and strategy alignment')).toBeVisible();
+    expect(screen.getByText('MW-T12 — Certify production readiness and rollback')).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create missing in EOS' }));
+    expect(await screen.findByText(/18 created and independently verified; 0 previously present/, {}, { timeout: 9000 })).toBeVisible();
+    expect(api.post).toHaveBeenCalledTimes(18);
+    expect(created).toHaveLength(18);
+    expect(api.post.mock.calls.every(([, body, config]) =>
+      body.assignee_principal_id === null && body.due_date === null
+      && config.headers['X-Tenant-ID'] === scope.tenantId
+      && config.headers['Idempotency-Key'].startsWith('strategy-foundation-v1-'))).toBe(true);
+    expect(screen.getAllByText('Persisted in EOS')).toHaveLength(18);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create missing in EOS' }));
+    expect(await screen.findByText(/0 created and independently verified; 18 previously present/, {}, { timeout: 9000 })).toBeVisible();
+    expect(api.post).toHaveBeenCalledTimes(18);
+  });
   it('rejects mismatched task tenant and hides unverified delivery', async () => {
     const foreign = taskList();
     foreign.items[0].tenant_id = 'FOREIGN';
@@ -388,7 +440,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.5.1-EXPLICIT-PROJECT-NAVIGATION-FIXTURE
+// VERSION: v1.6.0-PLAN-PERSISTENCE-READBACK-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
