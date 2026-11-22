@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT
+ * VERSION: v1.20.1-CURRENT-SESSION-THREAD-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.20.1-CURRENT-SESSION-THREAD-CERT certifies asynchronous in-memory thread creation/clear, automatic return to the single conversation, and suppression of phantom empty recent-history cards.
  * CHANGELOG: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT certifies general-purpose conversation without decorative suggestion/legal tabs, legal-only tool discovery, exact-tenant interactive work selection, draft-only contextual questions with no metered request, and honest session-only recent history.
  * CHANGELOG: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT certifies that all read-only source/work context renders inside the scrolling conversation before persisted user/assistant turns, with no cards, duplicate source panels, or paid model invocation.
  * CHANGELOG: v1.18.0-FOUNDER-SOURCE-VERIFIED-ACTIVATION-CERT denies Founder subscription activation when context is unavailable, denied or stale; exercises activation only after a source-verified exact-tenant NOT_PROVISIONED response, preserving independent ACTIVE readback and no model usage.
@@ -1209,7 +1210,8 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => {
       expect(mockCreateThread).toHaveBeenCalled();
     });
-    expect(screen.getByText('New Sovereign Session')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
+    expect(screen.queryByText('New Sovereign Session')).not.toBeInTheDocument();
   });
 
   it('refreshes threads and context when "Sync" is clicked', async () => {
@@ -1234,6 +1236,8 @@ describe('WilsyOSIntelligenceDock', () => {
       expect(mockClearThreads).toHaveBeenCalled();
       expect(mockCreateThread).toHaveBeenCalled();
     });
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
+    expect(screen.queryByText('New Sovereign Session')).not.toBeInTheDocument();
   });
 
   it('uses real source-backed work selection and prepares a contextual draft without billing', async () => {
@@ -1419,7 +1423,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT
+ * VERSION: v1.20.1-CURRENT-SESSION-THREAD-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
