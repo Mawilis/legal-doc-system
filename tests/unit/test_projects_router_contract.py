@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT
+VERSION: v1.36.0-READ-ONLY-PROJECT-LIST-RETRY-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.36.0-READ-ONLY-PROJECT-LIST-RETRY-CERT proves exactly one new
+  source-authenticated read transaction after PROJECT_LIST_UNAVAILABLE and
+  proves 403, other 503 and persistent cursor errors never become success.
   v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT certifies positive explicitly initiated same-principal, exact-WILSY, current project Contributor admission through digest-only invitation and ACTIVE role assignment readback without direct role writes.
   v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT enforces canonical company, same actor, tenant-owner capacity, current Enterprise Admin invite authority and separate Projects Platform Owner decision before any role/membership/DB IO.
   v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT pins the new exact-project Founder contributor IAM admission POST to two independent existing IAM admission pairs and no unscoped role-grant path; user initiation and project participation remain separate prerequisites.
@@ -1182,6 +1185,57 @@ def test_canonical_projects_wire_values_keep_strict_validation() -> None:
         })
 
 
+@pytest.mark.parametrize("outcomes,expected_attempts,expected_error", [
+    (("PROJECT_LIST_UNAVAILABLE", None), 2, None),
+    (("PROJECT_LIST_UNAVAILABLE", "PROJECT_LIST_UNAVAILABLE"), 2, "PROJECT_LIST_UNAVAILABLE"),
+    (("PROJECT_DATABASE_UNAVAILABLE", None), 1, "PROJECT_DATABASE_UNAVAILABLE"),
+    (("PROJECT_INDEXES_NOT_READY", None), 1, "PROJECT_INDEXES_NOT_READY"),
+    (("PROJECTS_ENTITLEMENT_REQUIRED", None), 1, "PROJECTS_ENTITLEMENT_REQUIRED"),
+])
+def test_project_list_retries_only_exact_transient_source_read(
+    monkeypatch, outcomes, expected_attempts, expected_error,
+) -> None:
+    """One bounded whole-read retry; never retry IAM, index or unrelated faults."""
+    calls = []
+    context = SimpleNamespace(
+        tenant_id="synthetic-tenant",
+        identity=SimpleNamespace(identity_id="synthetic-reader"),
+    )
+
+    class Registry:
+        def list_page_for_tenant(self, **kwargs):
+            assert kwargs["tenant_id"] == context.tenant_id
+            assert kwargs["session"] == "fresh-transaction"
+            return (), False
+
+    def transaction(actual, callback, **kwargs):
+        assert actual is context
+        assert kwargs == {}
+        calls.append(True)
+        outcome = outcomes[len(calls) - 1]
+        if outcome:
+            raise HTTPException(
+                status_code=403 if outcome == "PROJECTS_ENTITLEMENT_REQUIRED" else 503,
+                detail=outcome,
+            )
+        return callback(Registry(), "fresh-transaction")
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    args = dict(
+        response=Response(), limit=100, offset=0, project_status=None,
+        include_archived=False, owned_by_me=False, context=context,
+    )
+    if expected_error:
+        with pytest.raises(HTTPException) as denied:
+            projects_router.list_projects(**args)
+        assert denied.value.detail == expected_error
+    else:
+        response = projects_router.list_projects(**args)
+        assert response["items"] == []
+        assert response["tenant_id"] == context.tenant_id
+    assert len(calls) == expected_attempts
+
+
 def test_owner_page_uses_current_authenticated_principal_not_participant_grant(monkeypatch) -> None:
     """Owner responsibility is a project-read filter, never an IAM promotion."""
     identity = SimpleNamespace(identity_id="verified-owner")
@@ -1306,7 +1360,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT
+# VERSION: v1.36.0-READ-ONLY-PROJECT-LIST-RETRY-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
