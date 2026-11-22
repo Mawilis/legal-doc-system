@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE
+ * VERSION: v4.23.0-VERIFIED-FOUNDER-ACTIVATION-GUARD
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.23.0-VERIFIED-FOUNDER-ACTIVATION-GUARD removes the unsafe subscription-activation fallback on unavailable context, and binds both the displayed action and its command handler to a current source-verified exact-tenant NOT_PROVISIONED state. Source 503 never becomes an entitlement grant or activation offer.
  * CHANGELOG: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE bypasses only local synthetic 503 GET backoff for exact read-only My Work and independent kernel health probes, so an explicit Refresh/Recheck reaches EOS rather than repeating a cached synthetic 503; backend IAM/timeout unchanged.
  * CHANGELOG: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY makes read-only Headquarters My Work unavailable/denied states visible and explicitly retriable, without fabricating zero tasks or elevating credentials. Currentness and source permission remain EOS-owned.
  * CHANGELOG: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS distinguishes a failed optional kernel health probe from independently verified exact-tenant workspace context, offers a real read-only inspect-source action, and replaces generic ready copy with accurate provider/source capability. No model calls, IAM changes or client-origin facts.
@@ -693,17 +694,28 @@ export function WilsyOSIntelligenceDock({
   const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
   const currentTenantForAI = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
-  const founderActivationEligible = authUser?.id
+  const founderActivationEligible = Boolean(
+    authUser?.id
     && currentTenantForAI === 'WILSYTENANT-4CD2FZ4O'
     && !isLegalDockRole(authUser?.role)
     && founderActivationState !== 'ACTIVE'
-    && (aiEntitlementNotProvisioned
-      || visibleWorkspaceContext?.state === 'UNAVAILABLE');
+    && aiEntitlementNotProvisioned
+    && visibleWorkspaceContext?.data?.tenant_id === currentTenantForAI
+    && visibleWorkspaceContext?.data?.principal_id === authUser.id
+    && visibleWorkspaceContext?.data?.authority?.source === 'PYTHON_EOS'
+  );
   const activateFounderInstitutional = useCallback(async () => {
     const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
     if (founderActivationInFlightRef.current
+      || !founderActivationEligible
       || !authUser?.id || tenant !== 'WILSYTENANT-4CD2FZ4O'
-      || isLegalDockRole(authUser?.role)) return;
+      || isLegalDockRole(authUser?.role)
+      || verifiedWorkspaceContext?.scope !== dockScope
+      || verifiedWorkspaceContext?.locatorKey !== workLocatorKey
+      || verifiedWorkspaceContext?.state !== 'READY'
+      || verifiedWorkspaceContext?.data?.tenant_id !== tenant
+      || verifiedWorkspaceContext?.data?.principal_id !== authUser.id
+      || verifiedWorkspaceContext?.data?.allowance?.state !== 'NOT_PROVISIONED') return;
     founderActivationInFlightRef.current = true;
     const scope = dockScope;
     const key = founderActivationKeyRef.current
@@ -745,7 +757,8 @@ export function WilsyOSIntelligenceDock({
       founderActivationInFlightRef.current = false;
     }
   }, [authUser?.id, authUser?.role, authUser?.tenantId,
-    activeTenant?.tenantId, activeTenant?._id, dockScope]);
+    activeTenant?.tenantId, activeTenant?._id, dockScope, workLocatorKey,
+    founderActivationEligible, verifiedWorkspaceContext]);
 
   /**
    * @function hydrateDockContext
@@ -1968,7 +1981,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE
+ * VERSION: v4.23.0-VERIFIED-FOUNDER-ACTIVATION-GUARD
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
