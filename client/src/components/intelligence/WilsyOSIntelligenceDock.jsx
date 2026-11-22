@@ -504,7 +504,7 @@ function verifyWilsyPOSLocations(payload, tenantId, principalId) {
     || payload.locations.some(row => !row
       || typeof row.location_id !== 'string' || !row.location_id.trim()
       || row.status !== 'ACTIVE'
-      || !Number.isSafeInteger(row.revision) || row.revision < 1)
+      || !Number.isSafeInteger(row.revision) || row.revision < 0)
     || new Set(payload.locations.map(row => row.location_id)).size !== payload.locations.length) {
     throw new Error('WILSY_POS_LOCATION_READ_UNVERIFIED');
   }
