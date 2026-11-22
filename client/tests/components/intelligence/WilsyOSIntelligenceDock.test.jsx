@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.28.1-CSS-MODULE-SCOPED-ACTION-CERT
+ * VERSION: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT certifies polite everyday courtesies as provenance-marked built-in local turns with no provider request, consent requirement or quota charge. Metered substantive questions retain their explicit consent and 503 reconciliation guards.
  * CHANGELOG: v1.28.1-CSS-MODULE-SCOPED-ACTION-CERT asserts the real generated CSS-module action class instead of a literal unscoped classname, preserving the responsive actionable-link semantic test after Vite style compilation.
  * CHANGELOG: v1.28.0-INLINE-CONTEXT-ACTIONS-CERT verifies source-backed work links and related navigation are semantic inline actions with accessible controls and preserve read-only source transitions without metered calls.
  * CHANGELOG: v1.27.0-ONDEMAND-MYWORK-ADMISSION-CERT certifies that ordinary Dock opening does not fan out to the expensive My Work aggregate, requesting work runs one exact-tenant read, leaving the view discards the local snapshot, and explicit recovery stays a bounded independent source GET.
@@ -335,11 +336,53 @@ describe('WilsyOSIntelligenceDock', () => {
     render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
-    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Hello' } });
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Explain the difference between direct and indirect procurement costs.' } });
     fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(screen.getByText('Brand-safe reply')).toBeInTheDocument());
     expect(screen.getByText('WILSY OS')).toBeInTheDocument();
     expect(screen.queryByText('Wilsy AI')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['How is you day?', /How is your day going\?/],
+    ['How are you?', /How is your day going\?/],
+    ['Hello WILSY', /What would you like to work on\?/],
+    ['Thank you', /What would you like to do next\?/],
+  ])('replies to a bounded courtesy %s without model admission or provider HTTP', async (promptText, reply) => {
+    // Provider is deliberately unavailable: a built-in response cannot count as an API inference.
+    mockApiPost.mockRejectedValue(rejectedResponse(503, 'C1B_REASONING_RECONCILIATION_REQUIRED'));
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'courtesy-operator',
+      tenantId: 'TEST_TENANT', role: 'OWNER', firstName: 'Wilson' }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(composer, { target: { value: promptText } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(reply)).toBeVisible());
+    expect(screen.getByText('WILSY OS · Built-in reply')).toBeVisible();
+    expect(screen.getByText(promptText)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(mockExecuteLegalServices).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
+      .not.toBeInTheDocument();
+  });
+
+  it('preserves real provider admission for substantive questions instead of canned fallback', async () => {
+    mockApiPost.mockRejectedValue(rejectedResponse(503, 'C1B_REASONING_RECONCILIATION_REQUIRED'));
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'courtesy-operator',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Explain the procurement risks for a new supplier' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/EOS must reconcile provider execution and usage evidence/));
+    expect(screen.queryByText('WILSY OS · Built-in reply')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Send')).toBeDisabled();
   });
 
   it('displays Wilsy (Pty) Ltd only when active tenant context explicitly proves it', async () => {
@@ -849,7 +892,7 @@ describe('WilsyOSIntelligenceDock', () => {
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Held request must not replay' } });
     fireEvent.click(screen.getByLabelText('Send'));
-    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' })).toHaveTextContent(/EOS must reconcile the provider execution and usage evidence/));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' })).toHaveTextContent(/EOS must reconcile provider execution and usage evidence/));
     expect(textarea).toHaveValue('Held request must not replay');
     expect(screen.getByLabelText('Send')).toBeDisabled();
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
@@ -1627,7 +1670,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.28.1-CSS-MODULE-SCOPED-ACTION-CERT
+ * VERSION: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
