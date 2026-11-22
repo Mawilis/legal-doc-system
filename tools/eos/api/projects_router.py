@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND
+VERSION: v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY exposes only a
+  read-authorized exact-project/task bounded audit timeline with verified
+  decisions and rationale; never returns actor principal IDs, replay keys,
+  database records or cryptographic internals in the browser.
   v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND admits
   reasoned purpose clearing as UNCLASSIFIED with current project:update,
   stable CAS and audit; no unverified source category is projected.
@@ -39,7 +43,7 @@ CHANGELOG:
   v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND adds exact-source project work-purpose GET and audited
   project:update POST, strict revision/idempotency and same-transaction
   current source+event readback. No Founder or participant privilege inheritance.
-  v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND restores the historical
+  v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY restores the historical
   v1.42.0 Founder contributor and participant profile changelog attribution
   without expanding the read-only Projects transaction recovery scope.
   v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
@@ -349,7 +353,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND"
+VERSION: Final[str] = "v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -3216,6 +3220,36 @@ def read_project_task_work_purpose(
     return _transaction(context, read)
 
 
+@router.get("/{project_id}/tasks/{task_id}/work-purpose/events")
+def read_project_work_purpose_history(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=25, ge=1, le=50),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Expose source-verified history through current project read authority."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        task = _project_task_store(registry, context.tenant_id, project_id, session).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        events, more = _work_purpose_store().history_for_task(
+            task=task, session=session, limit=limit,
+        )
+        return {
+            "schema": "WILSY-PROJECT-WORK-PURPOSE-HISTORY/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "items": events, "limit": limit, "has_more": more,
+        }
+
+    return _transaction(context, read)
+
+
 @router.post("/{project_id}/tasks/{task_id}/work-purpose")
 def classify_project_task_work_purpose(
     payload: ProjectTaskWorkPurposeRequest,
@@ -4178,7 +4212,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND
+# VERSION: v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
