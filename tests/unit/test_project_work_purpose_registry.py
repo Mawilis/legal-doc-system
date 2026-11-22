@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Source-Owned Project Work Purpose Certificate
-VERSION: v1.1.0-BOUNDED-AUDITED-PURPOSE-BATCH-CERT
+VERSION: v1.1.1-AUDIT-ACTOR-TAMPER-REJECTION-CERT
 AUTHORITY: Test-only proof of canonical Projects work purpose commands.
 EPITOME: No-network immutable audit, current source, CAS, replay and denial.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_work_purpose_registry.py
 COLLABORATION / OWNERSHIP: ProjectWorkPurposeRegistry; Projects router
 remains responsible for live exact-tenant and project:update admission.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.1.1-AUDIT-ACTOR-TAMPER-REJECTION-CERT
+proves immutable event actor drift or forged recorded time is rejected in
+both direct and batch readback, even when source snapshot remains valid.
 CHANGELOG: v1.1.0-BOUNDED-AUDITED-PURPOSE-BATCH-CERT proves
 511 admitted work records use three bounded purpose source queries and one
 immutable-event proof query, with visible unclassified rows and no foreign
@@ -227,6 +230,22 @@ def test_divergent_replay_and_missing_audit_are_denied(source):
         source[0].current_for_task(task=task(), session="caller-session")
 
 
+@pytest.mark.parametrize("field,value", [
+    ("actor_principal_id", "another-project-owner"),
+    ("recorded_at", "2026-11-25T00:00:00+00:00"),
+    ("event_type", "WORK_PURPOSE_UNRELATED"),
+    ("request_fingerprint", "tampered"),
+])
+def test_immutable_audit_actor_or_event_drift_denied(source, field, value):
+    """Event metadata is checked independently of current source fingerprint."""
+    command(source)
+    source[2].rows[0][field] = value
+    with pytest.raises(WorkPurposeError, match="PROJECT_WORK_PURPOSE_AUDIT_INVALID"):
+        source[0].current_for_task(task=task(), session="caller-session")
+    with pytest.raises(WorkPurposeError, match="PROJECT_WORK_PURPOSE_AUDIT_INVALID"):
+        source[0].current_for_tasks(tasks=[task()], session="caller-session")
+
+
 def test_tampered_source_fingerprint_is_rejected(source):
     """Unverified current snapshot cannot be projected into My Work."""
     command(source)
@@ -236,7 +255,7 @@ def test_tampered_source_fingerprint_is_rejected(source):
 
 
 # ARTIFACT: test_project_work_purpose_registry.py
-# VERSION: v1.1.0-BOUNDED-AUDITED-PURPOSE-BATCH-CERT
+# VERSION: v1.1.1-AUDIT-ACTOR-TAMPER-REJECTION-CERT
 # AUTHORITY BOUNDARY: Synthetic source registry proof, no IAM.
 # TENANT POSTURE: Strict coordinates and CAS, no cross-tenant read.
 # FAIL-CLOSED POSTURE: Divergent replay/tampered evidence deny.
