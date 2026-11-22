@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Unified My Work Client Projection Contract
- * VERSION: v1.2.0-PROJECTS-SOURCE-CLIENT-ACCEPTANCE
+ * VERSION: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Validates the existing EOS My Work read shape consistently across
  *          Daily Attention, Headquarters, and My Work without creating authority.
@@ -8,11 +8,15 @@
  * COLLABORATION / OWNERSHIP: Python EOS owns visibility, records and commands;
  *                            authenticated client views consume this validator.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT validates
+ *            additive exact-source Operating / Platform Build / Unclassified
+ *            purpose claims with provenance, while preserving legacy unknown
+ *            classification as unclassified. No title or role-based inference.
  * CHANGELOG: v1.2.0-PROJECTS-SOURCE-CLIENT-ACCEPTANCE recognizes
  *            separately admitted PROJECTS queue rows, verifying project
  *            ID, own-assignee scope and date-only deadline metadata without
  *            inventing priority, overdue instant or source command authority.
- * CHANGELOG: v1.2.0-PROJECTS-SOURCE-CLIENT-ACCEPTANCE recognizes the EOS-owned HR
+ * CHANGELOG: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT recognizes the EOS-owned HR
  *            source identifier without creating a browser HR permission or
  *            command path. v1.0.0-SOURCE-COVERAGE-CONTRACT establishes one pure validation
  *            contract for tenant/principal scope, source admission, source
@@ -128,6 +132,18 @@ export function assertUnifiedMyWorkProjection(payload, expectedScope = {}) {
         && (typeof item.due_at !== 'string'
           || Number.isNaN(new Date(item.due_at).getTime())))
       || (Object.hasOwn(item, 'tenant_id') && item.tenant_id !== payload.tenant_id)
+      || (Object.hasOwn(item, 'audience') && (
+        !['OPERATING', 'PLATFORM_BUILD', 'UNCLASSIFIED'].includes(item.audience)
+        || typeof item.critical_gate !== 'boolean'
+        || (item.audience === 'UNCLASSIFIED'
+          ? (item.critical_gate !== false || item.audience_evidence_ref != null
+            || item.audience_source_revision != null)
+          : (typeof item.audience_evidence_ref !== 'string'
+            || !item.audience_evidence_ref.trim()
+            || !Number.isSafeInteger(item.audience_source_revision)
+            || item.audience_source_revision < 1
+            || (item.critical_gate && item.audience !== 'PLATFORM_BUILD')))
+      ))
       || (item.source === 'PROJECTS' && (
         typeof item.project_id !== 'string'
         || !/^prj-[0-9a-f]{48}$/.test(item.project_id)
@@ -188,7 +204,7 @@ export function unifiedMyWorkSourceLabel(source) {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.js
- * VERSION: v1.2.0-PROJECTS-SOURCE-CLIENT-ACCEPTANCE
+ * VERSION: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT
  * AUTHORITY BOUNDARY: Client projection validation and source labels only.
  * TENANT POSTURE: Exact supplied scope is checked; server authorization remains canonical.
  * FAIL-CLOSED POSTURE: Malformed scope, counts, rows or source metadata are rejected.
