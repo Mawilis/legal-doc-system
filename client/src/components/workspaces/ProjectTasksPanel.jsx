@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES
+ * VERSION: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS verifies the sovereign task list before starting three auxiliary source calls so new member-directory lookups cannot compete with the critical task read. Distinguishes rejected 401/403/404/429/503, transport timeout and malformed read envelopes without logging secrets, losing task drafts, fabricating task rows or retrying commands.
  * CHANGELOG: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES isolates task, participant and eligible-member reads, preserves only independently verified EOS tasks when a participant directory is denied/unavailable, and gates all contributor/assignee operations until current project participation verifies. Reports which source failed without guessing people, tasks or permissions.
  * CHANGELOG: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES lists exact-tenant currently eligible named member candidates in the assignee selector while keeping only active project contributors directly assignable. Candidate selection opens explicit separate contributor grant; fresh EOS readback must verify new project participation before setting draft assignee. No hidden grants, role inheritance, or synthetic people.
  * CHANGELOG: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR moves governed member selection from above the create form to an immediately visible, viewport-bound dialog with dedicated scrolling and Escape dismissal; preserves active draft and verifies participant grant before assignee refresh. No automatic member or IAM grant.
@@ -360,26 +361,33 @@ export default function ProjectTasksPanel({
       // Task source is mandatory for work-list truth. Personnel reads are
       // independent capabilities: a failed contributor source must not
       // suppress a valid task list, fabricate assignees or authorize writes.
-      const [taskResult, participantResult, actionResult, optionResult] = await Promise.allSettled([
-        api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers }),
+      // Primary-source admission precedes optional directory reads; never
+      // contend with the work-list transaction merely to populate assignees.
+      let taskResponse;
+      try {
+        taskResponse = await api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers });
+      } catch (cause) {
+        const sourceFailure = cause instanceof Error ? cause : new Error('PROJECT_TASK_READ_UNAVAILABLE');
+        if (sourceFailure !== cause && cause?.response) sourceFailure.response = cause.response;
+        sourceFailure.sourceName = 'Project task list';
+        throw sourceFailure;
+      }
+      if (request !== generation.current || currentScope.current !== active) return false;
+      let verified;
+      try {
+        verified = validList(taskResponse?.data, tenantId, principalId, projectId, nextOffset);
+      } catch {
+        const invalid = new Error('PROJECT_TASK_SOURCE_INVALID');
+        invalid.sourceName = 'Project task list';
+        invalid.invalidEnvelope = true;
+        throw invalid;
+      }
+      const [participantResult, actionResult, optionResult] = await Promise.allSettled([
         api.get(root + '/participants?limit=100&offset=0', { headers }),
         api.get(root + '/task-action-capabilities', { headers }),
         api.get(root + '/participant-options?limit=50&offset=0', { headers }),
       ]);
       if (request !== generation.current || currentScope.current !== active) return false;
-      if (taskResult.status !== 'fulfilled') {
-        const sourceFailure = taskResult.reason || new Error('PROJECT_TASK_READ_UNAVAILABLE');
-        sourceFailure.sourceName = 'Project task list';
-        throw sourceFailure;
-      }
-      let verified;
-      try {
-        verified = validList(taskResult.value.data, tenantId, principalId, projectId, nextOffset);
-      } catch {
-        const invalid = new Error('PROJECT_TASK_SOURCE_INVALID');
-        invalid.sourceName = 'Project task list';
-        throw invalid;
-      }
       let eligible = null;
       let participantIssue = '';
       if (participantResult.status === 'fulfilled') {
@@ -456,10 +464,15 @@ export default function ProjectTasksPanel({
       setSelectedWorkIds([]);
       const status = cause?.response?.status;
       const source = cause?.sourceName || 'Project work';
-      setError(status === 401 ? source + ' requires authentication.'
-        : status === 403 ? source + ' access was denied by EOS.'
-          : status === 404 ? source + ' endpoint is unavailable in this EOS runtime.'
-            : source + ' could not be verified from EOS. Retry this source read.');
+      setError(cause?.invalidEnvelope ? source + ' returned an invalid tenant, principal, project or pagination contract.'
+        : status === 401 ? source + ' requires authentication (HTTP 401).'
+          : status === 403 ? source + ' access was denied by EOS (HTTP 403).'
+            : status === 404 ? source + ' endpoint is unavailable in this EOS runtime (HTTP 404).'
+              : status === 429 ? source + ' admission is rate-limited by EOS (HTTP 429).'
+                : status === 503 ? source + ' is unavailable in EOS (HTTP 503).'
+                  : Number.isInteger(status) ? source + ' failed with EOS HTTP ' + status + '.'
+                    : cause?.code === 'ECONNABORTED' ? source + ' timed out before verification.'
+                      : source + ' could not reach or verify EOS. No task list is confirmed.');
       setState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
@@ -1468,7 +1481,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES
+// VERSION: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
