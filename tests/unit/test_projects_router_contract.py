@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT
+VERSION: v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT denies
+  unrecognized classifications, fabricated critical gates, spoofed actor
+  fields and impossible task revisions at strict Pydantic admission.
   v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT verifies
   bounded purpose source/audit unique indexes are included in the canonical
   Projects startup gate before authenticated source endpoints are admitted.
@@ -1251,6 +1254,30 @@ def test_project_list_retries_only_exact_transient_source_read(
     assert len(calls) == expected_attempts
 
 
+def test_project_work_purpose_input_never_accepts_inferred_authority():
+    """Only bounded category, rationale and source revisions enter EOS."""
+    model = projects_router.ProjectTaskWorkPurposeRequest
+    valid = {
+        "audience": "PLATFORM_BUILD",
+        "reason": "Human classification of real project engineering activity.",
+        "expected_task_revision": 3,
+        "expected_purpose_revision": 0,
+    }
+    assert model.model_validate(valid).audience == "PLATFORM_BUILD"
+    assert model.model_validate({**valid, "audience": "UNCLASSIFIED"}).audience == "UNCLASSIFIED"
+    for invalid in [
+        {**valid, "audience": "FOUNDER"},
+        {**valid, "audience": "OPERATIONS"},
+        {**valid, "expected_task_revision": 0},
+        {**valid, "expected_purpose_revision": -1},
+        {**valid, "actor_principal_id": "client-selected-founder"},
+        {**valid, "critical_gate": True},
+        {**valid, "reason": "short"},
+    ]:
+        with pytest.raises(ValidationError):
+            model.model_validate(invalid)
+
+
 def test_source_work_purpose_commands_require_existing_exact_project_authority(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1458,7 +1485,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT
+# VERSION: v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
