@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT
+ * VERSION: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT certifies general-purpose conversation without decorative suggestion/legal tabs, legal-only tool discovery, exact-tenant interactive work selection, draft-only contextual questions with no metered request, and honest session-only recent history.
  * CHANGELOG: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT certifies that all read-only source/work context renders inside the scrolling conversation before persisted user/assistant turns, with no cards, duplicate source panels, or paid model invocation.
  * CHANGELOG: v1.18.0-FOUNDER-SOURCE-VERIFIED-ACTIVATION-CERT denies Founder subscription activation when context is unavailable, denied or stale; exercises activation only after a source-verified exact-tenant NOT_PROVISIONED response, preserving independent ACTIVE readback and no model usage.
  * CHANGELOG: v1.17.1-EXPLICIT-SOURCE-PROBE-CERT certifies explicit read-only My Work and kernel GETs bypass only client-local backoff while preserving backend authorization and hard timeout.
@@ -187,7 +188,7 @@ import WilsyOSIntelligenceDock from '../../../src/components/intelligence/WilsyO
 
 const openLegalAdvisory = async () => {
   fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-  fireEvent.click(screen.getByRole('button', { name: /Legal Advisory/i }));
+  fireEvent.click(screen.getByRole('button', { name: /Legal tools/i }));
   await waitFor(() => expect(screen.getByText('Evidence-backed Legal Advisory')).toBeInTheDocument());
 };
 
@@ -495,19 +496,21 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByText('Bounded legal response')).toBeInTheDocument();
   });
 
-  it('switches tabs correctly', async () => {
-    render(<WilsyOSIntelligenceDock />);
+  it('uses a conversation-first Dock with recent history and no unrelated enterprise tabs', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'general-operator', role: 'OWNER', tenantId: 'TEST_TENANT',
+    }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-
-    fireEvent.click(screen.getByText('Suggestions'));
-    await waitFor(() => {
-      expect(screen.getByText('Dynamic Sovereign Suggestions')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText('History'));
-    await waitFor(() => {
-      expect(screen.getByText('Conversation Threads')).toBeInTheDocument();
-    });
+    expect(screen.getByRole('button', { name: 'Conversation' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Suggestions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Legal tools' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    await waitFor(() => expect(screen.getByText('Conversation Threads')).toBeVisible());
+    expect(screen.getByText(/No conversations recorded in this authenticated session/)).toBeVisible();
+    expect(screen.queryByText('Thread 1')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('welcomes a new conversation with the authenticated first name and local time', () => {
@@ -1233,25 +1236,32 @@ describe('WilsyOSIntelligenceDock', () => {
     });
   });
 
-  it('triggers a suggestion click and sends its prompt', async () => {
-    const mockReply = { data: { response_text: 'Suggestion reply', usage_observation_id: 'usage-3' } };
-    mockApiPost.mockResolvedValue(mockReply);
-
-    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }} />);
+  it('uses real source-backed work selection and prepares a contextual draft without billing', async () => {
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'context-operator',
+        items: [{ title: 'Meet Investors', source: 'CRM', is_overdue: true }],
+        summary: { active_count: 1, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } }) : Promise.reject(rejectedResponse(503, 'nonessential source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'context-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
-    fireEvent.click(screen.getByText('Suggestions'));
-
-    const suggestionButton = screen.getByText('Test Suggestion');
-    fireEvent.click(suggestionButton);
-
-    await waitFor(() => {
-      expect(mockRecordSuggestionUsage).toHaveBeenCalledWith('sug1');
-      expect(mockApiPost).toHaveBeenCalledWith('/wilsy-ai/reasoning', expect.objectContaining({}), expect.anything());
-    });
-    await waitFor(() => {
-      expect(screen.getByText('Suggestion reply')).toBeInTheDocument();
-    });
+    const review = await screen.findByRole('button', { name: 'Review verified work: Meet Investors' });
+    fireEvent.click(review);
+    const focus = screen.getByRole('region', { name: 'Selected verified work' });
+    expect(focus).toHaveTextContent('EOS marks this item overdue');
+    expect(focus).toHaveTextContent('CRM');
+    expect(review).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare a question about this work' }));
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…'))
+      .toHaveValue('What should I review next for "Meet Investors" in CRM?');
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(mockRecordSuggestionUsage).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear focus' }));
+    expect(screen.queryByRole('region', { name: 'Selected verified work' })).not.toBeInTheDocument();
   });
 
   it('handles empty prompt gracefully', async () => {
@@ -1282,11 +1292,11 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('keeps Legal Advisory distinct and never auto-runs C1C/C1E', async () => {
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     expect(mockExecuteLegalServices).not.toHaveBeenCalled();
     expect(mockGenerateLegalNextActions).not.toHaveBeenCalled();
     await openLegalAdvisory();
-    expect(screen.getByRole('button', { name: /Suggestions/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Suggestions/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /History/i })).toBeInTheDocument();
     expect(mockExecuteLegalServices).not.toHaveBeenCalled();
   });
@@ -1297,7 +1307,7 @@ describe('WilsyOSIntelligenceDock', () => {
       data: { orchestration_id: 'orch-001', outcome: 'TOOL_ASSISTED', response_text: 'Evidence found', sources: ['registry'] },
     });
     mockGenerateLegalNextActions.mockResolvedValue({ status: 201, data: advisoryFixture() });
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
     fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Check service address' } });
     fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
@@ -1309,7 +1319,7 @@ describe('WilsyOSIntelligenceDock', () => {
 
   it('does not call C1E for a non-tool-assisted C1C outcome', async () => {
     mockExecuteLegalServices.mockResolvedValue({ status: 200, data: { orchestration_id: 'orch-002', outcome: 'DIRECT_RESPONSE', response_text: 'Service response', sources: [] } });
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
     fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Status?' } });
     fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
@@ -1321,7 +1331,7 @@ describe('WilsyOSIntelligenceDock', () => {
   it('renders the server-owned advisory fields and current status without rewriting rationale', async () => {
     mockExecuteLegalServices.mockResolvedValue({ status: 200, data: { orchestration_id: 'orch-003', outcome: 'TOOL_ASSISTED', response_text: 'Evidence', sources: ['source-a'] } });
     mockGenerateLegalNextActions.mockResolvedValue({ status: 200, data: advisoryFixture() });
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
     fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
     fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
@@ -1338,7 +1348,7 @@ describe('WilsyOSIntelligenceDock', () => {
     mockExecuteLegalServices.mockResolvedValue({ status: 200, data: { orchestration_id: 'orch-004', outcome: 'TOOL_ASSISTED', response_text: 'Evidence', sources: [] } });
     mockGenerateLegalNextActions.mockResolvedValue({ status: 201, data: stale });
     mockReadLegalNextAction.mockResolvedValue({ status: 200, data: advisoryFixture({ advisory_id: 'adv-002', title: 'Successor', status: 'CURRENT' }) });
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
     fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
     fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
@@ -1362,7 +1372,7 @@ describe('WilsyOSIntelligenceDock', () => {
     [503, 'C1E_ADVISORY_UNAVAILABLE', /service unavailable/i],
   ])('maps C1C failures (%s) without creating an advisory', async (status, detail, message) => {
     mockExecuteLegalServices.mockRejectedValue(rejectedResponse(status, detail));
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
     fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
     fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
@@ -1375,7 +1385,7 @@ describe('WilsyOSIntelligenceDock', () => {
   it('maps network failure, does not retry, and keeps C1E out of browser persistence and history', async () => {
     mockExecuteLegalServices.mockRejectedValue(new Error('offline'));
     const setItem = vi.spyOn(Storage.prototype, 'setItem');
-    render(<WilsyOSIntelligenceDock />);
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
     fireEvent.change(screen.getByLabelText('Legal advisory prompt'), { target: { value: 'Prompt' } });
     fireEvent.click(screen.getByRole('button', { name: /Generate evidence-backed next action/i }));
@@ -1386,12 +1396,13 @@ describe('WilsyOSIntelligenceDock', () => {
     setItem.mockRestore();
   });
 
-  it('keeps generic Suggestions separate from the C1E advisory surface', async () => {
-    render(<WilsyOSIntelligenceDock />);
+  it('exposes Legal tools only in a legal operating capacity and returns to conversation', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_PARTNER', tenantId: 'TEST_TENANT' }} />);
     await openLegalAdvisory();
-    expect(screen.queryByText('Dynamic Sovereign Suggestions')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Suggestions/i }));
-    expect(screen.getByText('Dynamic Sovereign Suggestions')).toBeInTheDocument();
+    expect(screen.getByText('Evidence-backed Legal Advisory')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Suggestions/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
     expect(screen.queryByText('Evidence-backed Legal Advisory')).not.toBeInTheDocument();
   });
 });
@@ -1408,7 +1419,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT
+ * VERSION: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
