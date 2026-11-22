@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.24.0-CONVERSATION-FIRST-SOURCE-STREAM
+ * VERSION: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW removes generic Suggestions navigation and model-submitting decorative cards, gates Legal Advisory to legal capacity, and adds live exact-tenant My Work focus with read-only details and draft-only contextual question actions. History omits empty placeholder threads. No model calls or inferred task authority.
  * CHANGELOG: v4.24.0-CONVERSATION-FIRST-SOURCE-STREAM moves independently authorised EOS source and My Work projections from fixed stacking panels into the scrollable conversational transcript with progressive disclosure and a fixed composer. Projections remain read-only, not model responses; no new entitlement or IAM truth.
  * CHANGELOG: v4.23.0-VERIFIED-FOUNDER-ACTIVATION-GUARD removes the unsafe subscription-activation fallback on unavailable context, and binds both the displayed action and its command handler to a current source-verified exact-tenant NOT_PROVISIONED state. Source 503 never becomes an entitlement grant or activation offer.
  * CHANGELOG: v4.22.1-READONLY-EXPLICIT-SOURCE-REPROBE bypasses only local synthetic 503 GET backoff for exact read-only My Work and independent kernel health probes, so an explicit Refresh/Recheck reaches EOS rather than repeating a cached synthetic 503; backend IAM/timeout unchanged.
@@ -154,10 +155,6 @@ import {
   readWilsyAILegalNextAction,
 } from '../../services/wilsyAIAdvisoryApi.js';
 import { getLegalMatterDeadlineIntelligence } from '../../services/legalMatterDeadlineService.js';
-import {
-  buildWilsyDynamicSuggestions,
-  recordWilsyAISuggestionUsage,
-} from './wilsyAIDynamicSuggestionEngine.js';
 import {
   clearWilsyAIConversationThreads,
   resetWilsyAIConversationSession,
@@ -460,6 +457,7 @@ export function WilsyOSIntelligenceDock({
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
   const workspaceDetailsRef = useRef(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
+  const [focusedWorkIndex, setFocusedWorkIndex] = useState(null);
   const [contextRefresh, setContextRefresh] = useState(0);
   const [founderActivationState, setFounderActivationState] = useState('IDLE');
   const [founderActivationMessage, setFounderActivationMessage] = useState('');
@@ -529,6 +527,7 @@ export function WilsyOSIntelligenceDock({
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
+    setFocusedWorkIndex(null);
     setFounderActivationState('IDLE');
     setFounderActivationMessage('');
     founderActivationKeyRef.current = null;
@@ -683,6 +682,10 @@ export function WilsyOSIntelligenceDock({
     });
     return () => { live = false; controller.abort(); };
   }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
+
+  useEffect(() => {
+    setFocusedWorkIndex(null);
+  }, [dockScope, workLocatorKey, contextRefresh]);
 
   const aiProviderUnavailable = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey
@@ -924,18 +927,6 @@ export function WilsyOSIntelligenceDock({
       conversationThreads[0] || { id: null, messages: [] }
     );
   }, [conversationThreads, activeThreadId]);
-
-  const dynamicSuggestions = useMemo(() => {
-    try {
-      return buildWilsyDynamicSuggestions({
-        context: dockContext || {
-          workspace: { focus: 'Authority graph', operatingRole: 'Guest Operator' },
-        },
-      });
-    } catch {
-      return [];
-    }
-  }, [dockContext]);
 
   /**
    * @function handleSendMessage
@@ -1315,6 +1306,14 @@ export function WilsyOSIntelligenceDock({
   const welcomeGreeting = operatorGreeting(authUser);
   const visibleHeadquartersWork = headquartersWork?.scope === dockScope
     && workLocator.workspace === 'HEADQUARTERS' ? headquartersWork : null;
+  // Focus is a view over the current, independently rechecked EOS projection.
+  // Never retain or forward browser-selected task facts as command authority.
+  const focusedWork = visibleHeadquartersWork?.state === 'READY'
+    && Number.isInteger(focusedWorkIndex)
+    ? visibleHeadquartersWork.items[focusedWorkIndex] || null : null;
+  const sourceWorkspaceLabel = visibleWorkspaceContext?.state === 'READY'
+    ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
+      ? 'Project workspace' : 'Headquarters workspace') : null;
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -1396,49 +1395,31 @@ export function WilsyOSIntelligenceDock({
             </div>
           </div>
 
-          <div className={styles.dockNavBar}>
-            <button
-              type="button"
+          <div className={styles.dockNavBar} role="navigation" aria-label="Intelligence Dock navigation">
+            <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'chat' ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab('chat')}
-            >
-              <MessageSquareText size={15} />
-              <span>Ask WILSY OS</span>
+              onClick={() => setActiveTab('chat')}>
+              <MessageSquareText size={15}/><span>Conversation</span>
             </button>
-            <button
-              type="button"
-              className={`${styles.navTabButton} ${activeTab === 'suggestions' ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab('suggestions')}
-            >
-              <Sparkles size={15} />
-              <span>Suggestions</span>
-            </button>
-            <button
-              type="button"
-              className={`${styles.navTabButton} ${activeTab === 'legalAdvisory' ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab('legalAdvisory')}
-            >
-              <FileCheck2 size={15} />
-              <span>Legal Advisory</span>
+            <button type="button"
+              className={`${styles.navTabButton} ${activeTab === 'history' ? styles.activeTab : ''}`}
+              onClick={() => setActiveTab('history')}>
+              <History size={15}/><span>Recent conversations</span>
             </button>
             {isLegalDockRole(authUser?.role) && (
-              <button
-                type="button"
-                className={`${styles.navTabButton} ${activeTab === 'deadlineIntelligence' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('deadlineIntelligence')}
-              >
-                <FileCheck2 size={15} />
-                <span>Deadlines</span>
+              <button type="button"
+                className={`${styles.navTabButton} ${activeTab === 'legalAdvisory' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('legalAdvisory')}>
+                <FileCheck2 size={15}/><span>Legal tools</span>
               </button>
             )}
-            <button
-              type="button"
-              className={`${styles.navTabButton} ${activeTab === 'history' ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab('history')}
-            >
-              <History size={15} />
-              <span>History</span>
-            </button>
+            {isLegalDockRole(authUser?.role) && (
+              <button type="button"
+                className={`${styles.navTabButton} ${activeTab === 'deadlineIntelligence' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('deadlineIntelligence')}>
+                <FileCheck2 size={15}/><span>Deadlines</span>
+              </button>
+            )}
           </div>
 
           <div className={styles.dockBody}>
@@ -1448,6 +1429,18 @@ export function WilsyOSIntelligenceDock({
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
                       <h4>{welcomeGreeting}</h4>
+                      {sourceWorkspaceLabel && (
+                        <p style={{ margin: '0 0 8px', color: '#b9d5e6', fontSize: 13 }}>
+                          Looking at your verified {sourceWorkspaceLabel.toLowerCase()}.
+                        </p>
+                      )}
+                      {visibleHeadquartersWork?.state === 'READY' && (
+                        <p style={{ margin: '0 0 8px', color: '#e0e9f6' }}>
+                          EOS shows {visibleHeadquartersWork.activeCount} active work items,
+                          including {visibleHeadquartersWork.overdueCount} overdue.
+                          Select a work item below to inspect its source-backed status.
+                        </p>
+                      )}
                       {visibleWorkspaceContext?.state === 'READY'
                         && visibleWorkspaceContext.data.work?.project?.name
                         ? <strong>{visibleWorkspaceContext.data.work.project.name}</strong> : null}
@@ -1566,7 +1559,16 @@ export function WilsyOSIntelligenceDock({
                     <ol style={{ margin: '6px 0 0', paddingLeft: 20 }}>
                       {visibleHeadquartersWork.items.map((item, index) =>
                         <li key={index} style={{ marginBottom: 4, overflowWrap: 'anywhere' }}>
-                          {item.title} <span style={{ color: '#abbfd4' }}>
+                          <button type="button"
+                            aria-label={`Review verified work: ${item.title}`}
+                            aria-pressed={focusedWorkIndex === index}
+                            style={{ padding: '5px 2px', color: '#e9f1fb',
+                              textAlign: 'left', textDecoration: 'underline',
+                              textUnderlineOffset: 3 }}
+                            onClick={() => setFocusedWorkIndex(index)}>
+                            {item.title}
+                          </button>
+                          <span style={{ color: '#abbfd4' }}>
                             · {item.source}{item.overdue ? ' · Overdue' : ''}
                           </span>
                         </li>)}
@@ -1592,7 +1594,35 @@ export function WilsyOSIntelligenceDock({
                       Recheck work source
                     </button>
                   </section>}
-                  {(activeThread?.messages || []).map((msg, idx) => (
+                    {focusedWork && (
+                    <section aria-label="Selected verified work" role="region"
+                      style={{ padding: '12px 0', maxWidth: '70ch',
+                        borderTop: '1px solid rgba(148,163,184,.25)',
+                        color: '#e5edf6', fontSize: 14, lineHeight: 1.65 }}>
+                      <p style={{ margin: '0 0 6px', color: '#a9d7e8' }}>
+                        Source-backed work inspection · {focusedWork.source}
+                      </p>
+                      <strong>{focusedWork.title}</strong>
+                      <p style={{ margin: '5px 0 10px' }}>
+                        {focusedWork.overdue
+                          ? 'EOS marks this item overdue.'
+                          : 'EOS has not marked this item overdue.'}
+                        {' '}This is a read-only work summary; no task mutation is authorised from the Dock.
+                      </p>
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 44, color: '#f1f5f9', padding: '8px 12px' }}
+                        onClick={() => {
+                          setPrompt(`What should I review next for "${focusedWork.title}" in ${focusedWork.source}?`);
+                          setErrorMessage('');
+                        }}>
+                        Prepare a question about this work
+                      </button>
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 44, marginLeft: 8, padding: '8px 12px', color: '#cbd5e1' }}
+                        onClick={() => setFocusedWorkIndex(null)}>Clear focus</button>
+                    </section>
+                  )}
+                {(activeThread?.messages || []).map((msg, idx) => (
                     <div
                       key={`${msg.timestamp || idx}-${idx}`}
                       className={`${styles.chatMessageBubble} ${
@@ -1691,40 +1721,7 @@ export function WilsyOSIntelligenceDock({
               </div>
             )}
 
-            {activeTab === 'suggestions' && (
-              <div className={styles.suggestionsTabContent}>
-                <h4>Dynamic Sovereign Suggestions</h4>
-                <div className={styles.suggestionsList}>
-                  {(dynamicSuggestions || []).length === 0 && (
-                    <p className={styles.emptyChatWelcome}>No suggestions for current posture.</p>
-                  )}
-                  {(dynamicSuggestions || []).map((sug, i) => (
-                    <button
-                      type="button"
-                      key={sug.id || i}
-                      className={styles.suggestionCard}
-                      onClick={() => {
-                        try {
-                          recordWilsyAISuggestionUsage(sug.id);
-                        } catch {
-                          /* ignore */
-                        }
-                        setActiveTab('chat');
-                        handleSendMessage(sug.prompt || sug.title);
-                      }}
-                    >
-                      <Sparkles size={16} className={styles.sugIcon} />
-                      <div>
-                        <h5>{sug.title}</h5>
-                        <p>{sug.description}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'legalAdvisory' && (
+            {activeTab === 'legalAdvisory' && isLegalDockRole(authUser?.role) && (
               <div className={styles.legalAdvisoryTab}>
                 <div className={styles.legalAdvisoryHeader}>
                   <div>
@@ -1936,7 +1933,13 @@ export function WilsyOSIntelligenceDock({
                   </div>
                 </div>
                 <div className={styles.threadsList}>
-                  {conversationThreads.map((thread) => (
+                  {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).length === 0
+                    && <p style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
+                      No conversations recorded in this authenticated session.
+                      Conversation history is session-only until an EOS durable
+                      history authority is certified.
+                    </p>}
+                  {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).map((thread) => (
                     <button
                       type="button"
                       key={thread.id}
@@ -1982,7 +1985,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.24.0-CONVERSATION-FIRST-SOURCE-STREAM
+ * VERSION: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
