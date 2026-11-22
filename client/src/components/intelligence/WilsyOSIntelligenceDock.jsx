@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.27.1-CONTEXT-FOCUSED-HEADER
+ * VERSION: v4.28.0-STRICT-READONLY-INTENT-CATALOG
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.28.0-STRICT-READONLY-INTENT-CATALOG registers one strict read-only source-intent catalog for both composer permission gating and execution. Unknown intents never inherit unmetered authority; source views cannot issue a model POST or mutate EOS work; no generated markup or model-supplied action names.
  * CHANGELOG: v4.27.1-CONTEXT-FOCUSED-HEADER removes operational kernel diagnostics as the Dock's hero subtitle while preserving truthful accessible kernel status; the visible header now prioritises current verified workspace and source posture.
  * CHANGELOG: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER treats explicit local read-only queries as ephemeral user turns followed by verified EOS-source result, not a static header; keeps greeting only on an empty thread, offers contextual follow-ups, and never records a source view as paid model output or persisted assistant history.
  * CHANGELOG: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER keeps the read-only source-intent send affordance independent from metered consent and provider state, while preserving all metered sends' existing reconciliation and usage guards; includes complete bounded My Work rows and explicit intent-selected source expansion.
@@ -168,6 +169,25 @@ import {
   persistWilsyAIConversationTurn,
 } from './wilsyAIConversationHistoryEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
+
+/**
+ * @function classifyWilsyAISourceIntent
+ * @description Strict, developer-owned controlled UI catalog. Returns only
+ * WORK, OVERDUE, SOURCE or null. No model decides a component, no raw HTML,
+ * and no source-inspection choice grants backend permissions or mutates work.
+ * Exact-tenant GETs remain independently re-authorised by Python EOS.
+ */
+function classifyWilsyAISourceIntent(value) {
+  const text = String(value || '').trim();
+  if (text.length === 0 || text.length > 160) return null;
+  if (/^(?:show|list|review|open|view|inspect)\s+(?:(?:my|the|current)\s+)?(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?[?.!]?$/i.test(text)) {
+    return /\boverdue\b/i.test(text) ? 'OVERDUE' : 'WORK';
+  }
+  if (/^(?:show|inspect|review|open|view)\s+(?:(?:my|the|current)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
+    return 'SOURCE';
+  }
+  return null;
+}
 
 /**
  * @function humanizeWilsyAIBackendToken
@@ -949,18 +969,12 @@ export function WilsyOSIntelligenceDock({
       if (!text || isSubmitting || sendLockRef.current) return;
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
-      if (!isLegalDockRole(authUser?.role)
-        && /^(?:show|list|review|open|view)\s+(?:(?:my|the)\s+)?(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?[?.!]?$/i.test(text)) {
-        setConversationView(/overdue/i.test(text) ? 'OVERDUE' : 'WORK');
+      const allowedSourceView = isLegalDockRole(authUser?.role)
+        ? null : classifyWilsyAISourceIntent(text);
+      if (allowedSourceView) {
+        setConversationView(allowedSourceView);
         setLocalSourceQuery(text);
-        setPrompt('');
-        setErrorMessage('');
-        return;
-      }
-      if (!isLegalDockRole(authUser?.role)
-        && /^(?:show|inspect|review|open)\s+(?:(?:my|the|current)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
-        setConversationView('SOURCE');
-        setLocalSourceQuery(text);
+        setFocusedWorkIndex(null);
         setPrompt('');
         setErrorMessage('');
         return;
@@ -1343,7 +1357,7 @@ export function WilsyOSIntelligenceDock({
   const sourceWorkspaceLabel = visibleWorkspaceContext?.state === 'READY'
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
-  const readOnlySourceIntent = /^(?:show|list|review|open|view|inspect)\s+(?:(?:my|the|current)\s+)?(?:(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?|(?:workspace|project|context|source)(?:\s+(?:details?|context))?)[?.!]?$/i.test(prompt.trim());
+  const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
   const operatorLabel =
     authUser?.displayName ||
     authUser?.name ||
@@ -2081,7 +2095,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.27.1-CONTEXT-FOCUSED-HEADER
+ * VERSION: v4.28.0-STRICT-READONLY-INTENT-CATALOG
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
