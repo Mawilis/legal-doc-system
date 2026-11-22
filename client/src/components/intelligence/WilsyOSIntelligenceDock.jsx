@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER
+ * VERSION: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER treats explicit local read-only queries as ephemeral user turns followed by verified EOS-source result, not a static header; keeps greeting only on an empty thread, offers contextual follow-ups, and never records a source view as paid model output or persisted assistant history.
  * CHANGELOG: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER keeps the read-only source-intent send affordance independent from metered consent and provider state, while preserving all metered sends' existing reconciliation and usage guards; includes complete bounded My Work rows and explicit intent-selected source expansion.
  * CHANGELOG: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS removes default source/status essays from chat and presents one conversational first turn with user-invoked read-only TaskList or SourceInspection. Deterministic exact-intent routing fills only from current EOS-verified sources; no model-generated UI, arbitrary HTML, task mutations or metered POST. Source failures appear within the requested action, not as static opening cards.
  * CHANGELOG: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS returns to the single conversation on identity/capacity change and new-thread selection, and awaits session-only history clearing and new thread issuance before displaying success; no phantom threads or cross-scope UI state.
@@ -462,6 +463,7 @@ export function WilsyOSIntelligenceDock({
   const [headquartersWork, setHeadquartersWork] = useState(null);
   const [focusedWorkIndex, setFocusedWorkIndex] = useState(null);
   const [conversationView, setConversationView] = useState('WELCOME');
+  const [localSourceQuery, setLocalSourceQuery] = useState('');
   const [contextRefresh, setContextRefresh] = useState(0);
   const [founderActivationState, setFounderActivationState] = useState('IDLE');
   const [founderActivationMessage, setFounderActivationMessage] = useState('');
@@ -534,6 +536,7 @@ export function WilsyOSIntelligenceDock({
     setHeadquartersWork(null);
     setFocusedWorkIndex(null);
     setConversationView('WELCOME');
+    setLocalSourceQuery('');
     setFounderActivationState('IDLE');
     setFounderActivationMessage('');
     founderActivationKeyRef.current = null;
@@ -948,6 +951,7 @@ export function WilsyOSIntelligenceDock({
       if (!isLegalDockRole(authUser?.role)
         && /^(?:show|list|review|open|view)\s+(?:(?:my|the)\s+)?(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?[?.!]?$/i.test(text)) {
         setConversationView(/overdue/i.test(text) ? 'OVERDUE' : 'WORK');
+        setLocalSourceQuery(text);
         setPrompt('');
         setErrorMessage('');
         return;
@@ -955,6 +959,7 @@ export function WilsyOSIntelligenceDock({
       if (!isLegalDockRole(authUser?.role)
         && /^(?:show|inspect|review|open)\s+(?:(?:my|the|current)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
         setConversationView('SOURCE');
+        setLocalSourceQuery(text);
         setPrompt('');
         setErrorMessage('');
         return;
@@ -1450,7 +1455,8 @@ export function WilsyOSIntelligenceDock({
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
                 <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
-                  {(!activeThread?.messages || activeThread.messages.length === 0) && (
+                  {conversationView === 'WELCOME'
+                    && (!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
                       <h4>{welcomeGreeting}</h4>
                       <p style={{ color: '#d1dfef', maxWidth: '68ch', lineHeight: 1.7 }}>
@@ -1471,34 +1477,40 @@ export function WilsyOSIntelligenceDock({
                       {workLocator.workspace === 'HEADQUARTERS' && (
                         <button type="button" className={styles.historyActionButton}
                           style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
-                          onClick={() => setConversationView('WORK')}>
+                          onClick={() => { setConversationView('WORK'); setLocalSourceQuery('Review my work'); }}>
                           Review my work
                         </button>
                       )}
                       <button type="button" className={styles.historyActionButton}
                         style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
-                        onClick={() => setConversationView('SOURCE')}>
+                        onClick={() => { setConversationView('SOURCE'); setLocalSourceQuery('Inspect this workspace'); }}>
                         Inspect this workspace
                       </button>
                       {visibleHeadquartersWork?.state === 'READY' && visibleHeadquartersWork.overdueCount > 0 && (
                         <button type="button" className={styles.historyActionButton}
                           style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
-                          onClick={() => setConversationView('OVERDUE')}>
+                          onClick={() => { setConversationView('OVERDUE'); setLocalSourceQuery('Review overdue work'); }}>
                           Review overdue work
                         </button>
                       )}
+                    </div>
+                  )}
+                  {conversationView !== 'WELCOME' && localSourceQuery && (
+                    <div className={`${styles.chatMessageBubble} ${styles.userBubble}`}
+                      aria-label="Your source request" style={{ margin: '4px 0 14px' }}>
+                      <div className={styles.bubbleBody}>{localSourceQuery}</div>
                     </div>
                   )}
                   {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12,
                       flexWrap: 'wrap', padding: '3px 0 12px' }}>
                       <strong style={{ color: '#eaf3ff', fontSize: 15 }}>
-                        {conversationView === 'SOURCE' ? 'Workspace source' :
-                          conversationView === 'OVERDUE' ? 'Overdue work' : 'My work'}
+                        {conversationView === 'SOURCE' ? 'EOS workspace evidence' :
+                          conversationView === 'OVERDUE' ? 'EOS overdue work' : 'EOS authorised work'}
                       </strong>
                       <button type="button" className={styles.historyActionButton}
                         style={{ minHeight: 40, padding: '6px 10px', color: '#d3e3f8' }}
-                        onClick={() => { setConversationView('WELCOME'); setFocusedWorkIndex(null); }}>
+                        onClick={() => { setConversationView('WELCOME'); setLocalSourceQuery(''); setFocusedWorkIndex(null); }}>
                         Back to conversation
                       </button>
                     </div>
@@ -1665,6 +1677,33 @@ export function WilsyOSIntelligenceDock({
                         onClick={() => setFocusedWorkIndex(null)}>Clear focus</button>
                     </section>
                   )}
+                {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
+                  <div role="group" aria-label="Source follow-up actions"
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '14px 0' }}>
+                    {conversationView !== 'WORK' && workLocator.workspace === 'HEADQUARTERS' && (
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 44, padding: '8px 12px' }}
+                        onClick={() => { setConversationView('WORK'); setLocalSourceQuery('Review my work'); setFocusedWorkIndex(null); }}>
+                        Show my work
+                      </button>
+                    )}
+                    {conversationView !== 'OVERDUE' && visibleHeadquartersWork?.state === 'READY'
+                      && visibleHeadquartersWork.overdueCount > 0 && (
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 44, padding: '8px 12px' }}
+                        onClick={() => { setConversationView('OVERDUE'); setLocalSourceQuery('Show overdue tasks'); setFocusedWorkIndex(null); }}>
+                        Only overdue
+                      </button>
+                    )}
+                    {conversationView !== 'SOURCE' && visibleWorkspaceContext?.state === 'READY' && (
+                      <button type="button" className={styles.historyActionButton}
+                        style={{ minHeight: 44, padding: '8px 12px' }}
+                        onClick={() => { setConversationView('SOURCE'); setLocalSourceQuery('Inspect this workspace'); setFocusedWorkIndex(null); }}>
+                        Source evidence
+                      </button>
+                    )}
+                  </div>
+                )}
                 {(activeThread?.messages || []).map((msg, idx) => (
                     <div
                       key={`${msg.timestamp || idx}-${idx}`}
@@ -2040,7 +2079,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER
+ * VERSION: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
