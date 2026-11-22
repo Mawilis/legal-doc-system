@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE
+ * VERSION: v1.5.0-FLUID-CONVERSATION-READING-SURFACE
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.5.0-FLUID-CONVERSATION-READING-SURFACE gives verified EOS source projections and assistant replies one fluid reading column, removes assistant card treatments, preserves restrained user turns and the independently scrollable conversation with anchored composer, and tightens mobile typography. Pure presentation, no authority changes.
  * CHANGELOG: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE replaces boxed top tabs with
  * compact text-first navigation, uses a restrained neural gradient in the
  * conversation canvas, and highlights the human greeting without changing
@@ -1005,9 +1006,69 @@
   .intelligenceDockContainer .emptyChatWelcome { padding: 16px 8px; }
 }
 
+
+/* The transcript, not stacked status panels, owns the reading experience.
+   Source observations are JSX-owned, scope-verified, and do not imply AI output. */
+.intelligenceDockContainer .messagesContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  align-items: stretch;
+  gap: 14px;
+  padding: 18px clamp(16px, 3.8vw, 32px) 24px;
+  scrollbar-gutter: stable;
+}
+.intelligenceDockContainer .emptyChatWelcome {
+  padding: 6px 0 12px;
+  max-width: 70ch;
+}
+.intelligenceDockContainer .emptyChatWelcome h4 {
+  font-size: clamp(21px, 3vw, 28px);
+  margin-bottom: 8px;
+}
+.intelligenceDockContainer .assistantBubble {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 0;
+  max-width: 100%;
+}
+.intelligenceDockContainer .userBubble {
+  align-self: flex-end;
+  max-width: min(86%, 56ch);
+  border: 1px solid rgba(196, 161, 96, .28);
+  background: rgba(198, 165, 107, .09);
+  border-radius: 15px;
+  padding: 12px 16px;
+}
+.intelligenceDockContainer .assistantBubble .bubbleHeader {
+  color: #becddd;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.intelligenceDockContainer .bubbleBody {
+  color: #ecf2fa;
+  font-size: 14px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.intelligenceDockContainer .chatInputArea {
+  padding: 12px clamp(12px, 2.5vw, 22px);
+}
+@media (max-width: 600px) {
+  .intelligenceDockContainer .messagesContainer {
+    padding: 14px 14px 20px;
+    scrollbar-gutter: auto;
+  }
+  .intelligenceDockContainer .emptyChatWelcome { padding: 3px 0 10px; }
+  .intelligenceDockContainer .userBubble { max-width: 92%; }
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE
+ * VERSION: v1.5.0-FLUID-CONVERSATION-READING-SURFACE
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
