@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Unified My Work Client Projection Contract
- * VERSION: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT
+ * VERSION: v1.3.1-EXACT-AUDIENCE-VERSION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Validates the existing EOS My Work read shape consistently across
  *          Daily Attention, Headquarters, and My Work without creating authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/unifiedMyWorkProjection.js
  * COLLABORATION / OWNERSHIP: Python EOS owns visibility, records and commands;
  *                            authenticated client views consume this validator.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.3.1-EXACT-AUDIENCE-VERSION-CERT preserves the
+ *            historical HR source-admission changelog and refines the
+ *            strict purpose envelope contract without permitting inference.
  * CHANGELOG: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT validates
  *            additive exact-source Operating / Platform Build / Unclassified
  *            purpose claims with provenance, while preserving legacy unknown
@@ -16,7 +19,7 @@
  *            separately admitted PROJECTS queue rows, verifying project
  *            ID, own-assignee scope and date-only deadline metadata without
  *            inventing priority, overdue instant or source command authority.
- * CHANGELOG: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT recognizes the EOS-owned HR
+ * CHANGELOG: v1.2.0-PROJECTS-SOURCE-CLIENT-ACCEPTANCE recognizes the EOS-owned HR
  *            source identifier without creating a browser HR permission or
  *            command path. v1.0.0-SOURCE-COVERAGE-CONTRACT establishes one pure validation
  *            contract for tenant/principal scope, source admission, source
@@ -204,7 +207,7 @@ export function unifiedMyWorkSourceLabel(source) {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.js
- * VERSION: v1.3.0-SOURCE-WORK-AUDIENCE-CONTRACT
+ * VERSION: v1.3.1-EXACT-AUDIENCE-VERSION-CERT
  * AUTHORITY BOUNDARY: Client projection validation and source labels only.
  * TENANT POSTURE: Exact supplied scope is checked; server authorization remains canonical.
  * FAIL-CLOSED POSTURE: Malformed scope, counts, rows or source metadata are rejected.
