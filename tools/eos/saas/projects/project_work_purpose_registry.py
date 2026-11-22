@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY
+VERSION: v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS rejects
+unknown historical audience, invalid source task revision and malformed
+audit replay fields before any timeline entry can be verified.
 CHANGELOG: v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY
 stores the bounded source classification decision in each immutable event,
 reconstructs its exact semantic digest for a tenant/project/task-scoped
@@ -61,7 +64,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY"
+VERSION: Final = "v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD", "UNCLASSIFIED"})
@@ -327,7 +330,10 @@ class ProjectWorkPurposeRegistry:
                 "recorded_at": record.get("recorded_at"),
             }
             expected = _digest(semantic)
-            if (not isinstance(record.get("result_fingerprint"), str)
+            task_revision = semantic["task_revision"]
+            if (semantic["audience"] not in AUDIENCES
+                    or type(task_revision) is not int or task_revision < 1
+                    or not isinstance(record.get("result_fingerprint"), str)
                     or record["result_fingerprint"] != expected
                     or not _audit_event_valid(record, semantic, expected)
                     or not isinstance(semantic["reason"], str)
@@ -432,7 +438,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY
+# VERSION: v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
