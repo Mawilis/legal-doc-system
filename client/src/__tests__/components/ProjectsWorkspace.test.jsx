@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT
+ * VERSION: v2.53.0-COLLAPSIBLE-FILTERS-AND-ASSIGNEE-ONBOARDING-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,7 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.53.0-COLLAPSIBLE-FILTERS-AND-ASSIGNEE-ONBOARDING-CERT certifies default-collapsed work filters and source-backed contributor admission from an unassigned task editor, retaining the draft and refreshing assignees only after independent participant readback; no IAM grant or task write.
  * CHANGELOG: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT verifies an open
  *          EOS-verified task drawer publishes only task id/revision, closing
  *          it clears task focus, and no task title enters browser locators.
@@ -658,6 +659,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select My accountable delivery' }));
     expect(screen.getByText(/1 work item selected on this verified page/)).toBeVisible();
+    fireEvent.click(screen.getByText(/Work filters, grouping and sorting/));
     fireEvent.change(screen.getByRole('combobox', { name: 'Work row density' }), {
       target: { value: 'compact' },
     });
@@ -1379,6 +1381,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
     await waitFor(() => expect(screen.getByRole('row', { name: /Draft deliverable/ })).toBeVisible());
+    fireEvent.click(screen.getByText(/Work filters, grouping and sorting/));
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'SUBTASK' },
     });
@@ -2216,7 +2219,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT
+ * VERSION: v2.53.0-COLLAPSIBLE-FILTERS-AND-ASSIGNEE-ONBOARDING-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
