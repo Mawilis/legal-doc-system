@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT
+VERSION: v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT certifies positive explicitly initiated same-principal, exact-WILSY, current project Contributor admission through digest-only invitation and ACTIVE role assignment readback without direct role writes.
   v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT enforces canonical company, same actor, tenant-owner capacity, current Enterprise Admin invite authority and separate Projects Platform Owner decision before any role/membership/DB IO.
   v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT pins the new exact-project Founder contributor IAM admission POST to two independent existing IAM admission pairs and no unscoped role-grant path; user initiation and project participation remain separate prerequisites.
   v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT certifies all seventeen
@@ -711,6 +712,83 @@ def test_founder_contributor_self_admission_denies_invalid_authority_before_io()
         assert denial.value.detail == "PROJECT_CONTRIBUTOR_IAM_ADMISSION_DENIED"
 
 
+def test_founder_contributor_admission_uses_invitation_and_active_role_readback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A valid command cannot succeed from the participant roster alone."""
+    class FakeSession:
+        def __enter__(self): return self
+        def __exit__(self, *_args): return False
+        def start_transaction(self, **_kwargs): return self
+    class FakeClient:
+        def start_session(self): return FakeSession()
+    class FakeDatabase:
+        def __getitem__(self, key):
+            assert key == "role_assignments"
+            return object()
+    def context(auth_role: str):
+        identity = SovereignIdentity(
+            identity_id="founder-fixture", tenant_id=WILSY_COMPANY_TENANT_ID,
+            auth_method="TEST_FIXTURE", status=PrincipalStatus.ACTIVE,
+        )
+        return projects_router.TenantAuthorizationContext(
+            identity, WILSY_COMPANY_TENANT_ID,
+            TenantAuthorizationDecision(
+                True, TenantAuthorizationReason.AUTHORIZED, "tenant_owner", auth_role,
+            ),
+        )
+    active = {"granted": False}
+    inspected = []
+    def resolve(principal, tenant, role, **kwargs):
+        assert (principal, tenant, role) == (
+            "founder-fixture", WILSY_COMPANY_TENANT_ID,
+            "PROJECTS_PARTICIPANT_CONTRIBUTOR",
+        )
+        if not active["granted"]:
+            raise projects_router.RoleAssignmentNotFoundError("NOT_FOUND")
+        return SimpleNamespace(status=SimpleNamespace(value="ACTIVE"))
+    def invite(**kwargs):
+        assert kwargs["recipient_principal_id"] == "founder-fixture"
+        assert kwargs["tenant_id"] == WILSY_COMPANY_TENANT_ID
+        assert kwargs["authorization_role_id"] == "PROJECTS_PARTICIPANT_CONTRIBUTOR"
+        inspected.append("invited")
+        return SimpleNamespace(
+            invitation=SimpleNamespace(invitation_id="inv-fixture"),
+            capability="synthetic-transient",
+        )
+    def accept(**kwargs):
+        assert kwargs["invitation_id"] == "inv-fixture"
+        inspected.append("accepted")
+        active["granted"] = True
+    def participant_read(_registry, tenant, project, _session):
+        assert tenant == WILSY_COMPANY_TENANT_ID
+        return SimpleNamespace(get=lambda **kwargs: SimpleNamespace(role="CONTRIBUTOR"))
+    def transaction(ctx, callback):
+        assert ctx.decision.authorization_role == "PROJECTS_PLATFORM_OWNER"
+        return callback(object(), object())
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    monkeypatch.setattr(projects_router, "_project_participants", participant_read)
+    monkeypatch.setattr(projects_router.kernel_db, "get_database", lambda: FakeDatabase())
+    monkeypatch.setattr(projects_router.kernel_db, "get_client", lambda: FakeClient())
+    monkeypatch.setattr(projects_router.RoleAssignmentRepository, "resolve", resolve)
+    monkeypatch.setattr(projects_router, "create_invitation", invite)
+    monkeypatch.setattr(projects_router, "admit_invited_member", accept)
+    result = projects_router.admit_founder_project_contributor_iam(
+        Response(), "prj-" + "a" * 48,
+        context("ENTERPRISE_ADMIN"), context("PROJECTS_PLATFORM_OWNER"),
+    )
+    assert inspected == ["invited", "accepted"]
+    assert result["authorization_state"] == "ACTIVE"
+    assert result["authorization_role"] == "PROJECTS_PARTICIPANT_CONTRIBUTOR"
+    assert result["tenant_id"] == WILSY_COMPANY_TENANT_ID
+    assert result["principal_id"] == "founder-fixture"
+    # An ACTIVE existing assignment is strictly read back without a new invite.
+    replay = projects_router.admit_founder_project_contributor_iam(
+        Response(), "prj-" + "a" * 48,
+        context("ENTERPRISE_ADMIN"), context("PROJECTS_PLATFORM_OWNER"),
+    )
+    assert replay["authorization_state"] == "ACTIVE"
+    assert inspected == ["invited", "accepted"]
+
+
 def test_browser_payload_cannot_supply_authority_or_unverified_ownership() -> None:
     """Creation and update bodies exclude tenant, actor, IDs and owner grants."""
     valid = projects_router.ProjectCreateRequest.model_validate(
@@ -1228,7 +1306,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT
+# VERSION: v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
