@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION
+ * VERSION: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY shows real
+ *            verified/remaining plan counts after a partial EOS admission;
+ *            offers an explicit remaining-only retry, and disables creation
+ *            after all 18 matching source-owned items are verified.
  * CHANGELOG: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION distinguishes the
  *            roadmap's six proposed milestones and twelve implementation
  *            tasks from EOS-persisted work. Explicit source-authorized plan
@@ -482,12 +486,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
    * per record and independent current task readback. No blind bulk insert:
    * noncanonical source, extra pages, uncertain POST or stale session halts.
    */
+  const verifiedFoundationPlanCount = delivery.state === 'READY' && delivery.page
+    ? FOUNDATION_EXECUTION_PLAN.filter(entry => delivery.page.items.some(item =>
+      item.title === entry.title && item.kind === entry.kind)).length
+    : 0;
+  const foundationPlanRemaining = FOUNDATION_EXECUTION_PLAN.length - verifiedFoundationPlanCount;
+
   const admitFoundationPlan = async () => {
     const projectId = delivery.projectId;
     const project = projectItems.find(item => item.project_id === projectId);
     const key = sessionKey;
     if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
       || delivery.state !== 'READY' || !project || project.name !== FOUNDATION_PROJECT_NAME
+      || foundationPlanRemaining === 0 || delivery.page.has_more
       || planMutation.current || typeof globalThis.crypto?.randomUUID !== 'function') return;
     const nonce = Symbol('strategy-plan');
     planMutation.current = nonce;
@@ -933,14 +944,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         aria-label="Planned My Work overhaul programme">
                       <div className={styles.strategyPlanHeader}>
                         <div>
-                          <span className={styles.eyebrow}>PLANNED · NOT YET PERSISTED</span>
+                          <span className={styles.eyebrow}>EOS-SOURCE VERIFIED · IMPLEMENTATION REGISTER</span>
                           <h3>My Work implementation programme</h3>
-                          <p>Six proposed milestones and twelve tasks. Existing EOS work is preserved.
-                            This plan is not Strategy completion evidence.</p>
+                          <p role="status">{verifiedFoundationPlanCount} of 18 planned records persisted in EOS.
+                            {' '}{foundationPlanRemaining} still awaiting creation. This is not Strategy completion evidence.</p>
                         </div>
                         <button type="button" onClick={() => void admitFoundationPlan()}
-                          disabled={planState.state === 'RUNNING' || delivery.page.has_more}>
-                          {planState.state === 'RUNNING' ? 'Saving verified work…' : 'Create missing in EOS'}
+                          disabled={planState.state === 'RUNNING' || delivery.page.has_more || foundationPlanRemaining === 0}>
+                          {planState.state === 'RUNNING' ? 'Saving verified work…'
+                            : foundationPlanRemaining === 0 ? 'All 18 verified in EOS'
+                              : verifiedFoundationPlanCount > 0
+                                ? 'Create remaining ' + foundationPlanRemaining + ' in EOS'
+                                : 'Create missing in EOS'}
                         </button>
                       </div>
                       {delivery.page.has_more && <p role="alert">Verify the full project task list before admitting the plan.</p>}
@@ -1088,7 +1103,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION
+// VERSION: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
