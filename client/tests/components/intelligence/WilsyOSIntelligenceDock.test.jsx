@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT
+ * VERSION: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT retains Enter-key paid reasoning coverage using a substantive question rather than a built-in courtesy, so both paths remain independently certified.
  * CHANGELOG: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT certifies polite everyday courtesies as provenance-marked built-in local turns with no provider request, consent requirement or quota charge. Metered substantive questions retain their explicit consent and 503 reconciliation guards.
  * CHANGELOG: v1.28.1-CSS-MODULE-SCOPED-ACTION-CERT asserts the real generated CSS-module action class instead of a literal unscoped classname, preserving the responsive actionable-link semantic test after Vite style compilation.
  * CHANGELOG: v1.28.0-INLINE-CONTEXT-ACTIONS-CERT verifies source-backed work links and related navigation are semantic inline actions with accessible controls and preserve read-only source transitions without metered calls.
@@ -1290,7 +1291,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
 
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
-    fireEvent.change(textarea, { target: { value: 'Hello' } });
+    fireEvent.change(textarea, { target: { value: 'Explain the risks of a new supplier contract.' } });
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
     await waitFor(() => {
@@ -1670,7 +1671,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT
+ * VERSION: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
