@@ -188,7 +188,7 @@ def test_billing_route_does_not_collect_or_persist():
 
 # ARTIFACT: test_wilsy_ai_billing_pos_read_boundaries.py
 # VERSION: v1.0.0-FINANCIAL-SOURCE-READ-NEGATIVE-CERT
-# TENANT BOUNDARY: Exact tenant, principal and POS location.
+# TENANT POSTURE: Exact tenant, principal and POS location.
 # AUTHORITY BOUNDARY: Read-only evidence, no financial execution.
 # FAIL-CLOSED POSTURE: Invalid and cross-tenant sources rejected.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
