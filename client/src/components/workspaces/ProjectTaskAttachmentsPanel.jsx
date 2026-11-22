@@ -419,7 +419,8 @@ export default function ProjectTaskAttachmentsPanel({
       const { data } = await api.post(contributorRoot + '/attachments', form, {
         headers: {
           ...headers,
-          'Content-Type': 'multipart/form-data',
+          // The browser/Axios must generate the multipart boundary from FormData.
+          // Never force an incomplete Content-Type over the current API defaults.
           'Idempotency-Key': uploadOrigin.current.key,
         },
         timeout: 120000,
