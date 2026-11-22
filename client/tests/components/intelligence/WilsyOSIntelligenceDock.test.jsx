@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT
+ * VERSION: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT updates an outdated summary assertion to certify the current available/completed/held disclosure; omitted EOS usage evidence must remain marked unverified rather than asserted as zero.
  * CHANGELOG: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT certifies that a source-confirmed reconciliation hold blocks Enter and manual Send for the exact question, retains the draft, never fabricates an AI reply, and preserves distinct transport replay behavior.
  * CHANGELOG: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT proves
  * only the canonical Founder is offered explicit Institutional activation,
@@ -875,7 +876,7 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => {
       expect(
         screen.getByLabelText('Inspect verified workspace context')
-      ).toHaveTextContent('12 requests available');
+      ).toHaveTextContent('12 available · unverified completed · unverified held');
     });
     await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
       detail: { tenantId: 'TEST_TENANT', principalId: principal,
@@ -1250,7 +1251,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT
+ * VERSION: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
