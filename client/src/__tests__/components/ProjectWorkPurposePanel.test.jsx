@@ -1,11 +1,14 @@
 /**
  * TITLE: WILSY OS Project Work Purpose Authenticated UI Certificate
- * VERSION: v1.0.0-SOURCE-CLASSIFICATION-READBACK-CERT
+ * VERSION: v1.1.0-SOURCE-UNCLASSIFICATION-READBACK-CERT
  * AUTHORITY: Synthetic UI verification only; EOS exclusively admits commands.
  * EPITOME: Tests source-verified purpose, human rationale, CAS and readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectWorkPurposePanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectWorkPurposePanel, project source API contract.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.1.0-SOURCE-UNCLASSIFICATION-READBACK-CERT proves
+ * reasoned clearing of an Operating classification to UNCLASSIFIED remains
+ * an audited source command with exact CAS and independent verified readback.
  * CHANGELOG: v1.0.0-SOURCE-CLASSIFICATION-READBACK-CERT verifies no
  * unauthorized controls, authoritative initial purpose, exact revisioned
  * command, independent GET confirmation and unreadable/stale source denial.
@@ -85,6 +88,26 @@ describe('source-owned work purpose panel', () => {
     expect(api.get).toHaveBeenCalledTimes(2);
   });
 
+  it('clears an audited Operating classification without deleting source history', async () => {
+    api.get.mockResolvedValueOnce({ data: result('OPERATING', 1) })
+      .mockResolvedValueOnce({ data: result('UNCLASSIFIED', 2) });
+    api.post.mockResolvedValue({ data: result('UNCLASSIFIED', 2) });
+    render(<ProjectWorkPurposePanel {...props}/>);
+    await screen.findByText('Operating · Audited source');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Classify project work purpose' }),
+      { target: { value: 'UNCLASSIFIED' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Work classification rationale' }),
+      { target: { value: 'This task purpose requires a fresh owner review.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save audited classification' }));
+    await screen.findByText('Source classification verified and audit persisted in EOS.');
+    expect(api.post).toHaveBeenCalledWith(expect.stringContaining('/work-purpose'),
+      expect.objectContaining({
+        audience: 'UNCLASSIFIED', expected_task_revision: 3,
+        expected_purpose_revision: 1,
+      }), expect.any(Object));
+    expect(screen.getByText('Needs classification')).toBeVisible();
+  });
+
   it('never accepts foreign scope or forged task revision as source truth', () => {
     expect(() => assertPurpose({ ...result('OPERATING', 1), tenant_id: 'other' }, props))
       .toThrow('PROJECT_WORK_PURPOSE_READBACK_INVALID');
@@ -108,7 +131,7 @@ describe('source-owned work purpose panel', () => {
 });
 
 // ARTIFACT: ProjectWorkPurposePanel.test.jsx
-// VERSION: v1.0.0-SOURCE-CLASSIFICATION-READBACK-CERT
+// VERSION: v1.1.0-SOURCE-UNCLASSIFICATION-READBACK-CERT
 // AUTHORITY BOUNDARY: Source read/command UI verification only.
 // TENANT POSTURE: Exact tenant/task/revision equality.
 // FAIL-CLOSED POSTURE: No success until independent source readback.
