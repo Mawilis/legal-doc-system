@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Daily Attention Source Adapter
-VERSION: v1.1.2-STALE-PURPOSE-UNCLASSIFIED-PROJECTION
+VERSION: v1.2.0-BATCH-VERIFIED-SOURCE-WORK-PURPOSE
 AUTHORITY: Python EOS Projects IAM, record-scoped participation and task registry.
 EPITOME: Project tasks enter My Work only with current participant authorization,
          exact tenant and current project participation, inside source transaction.
@@ -8,6 +8,10 @@ COLLABORATION / OWNERSHIP: unified_my_work_router admits independent participant
          read IAM; Projects router owns entitlement, project/participant reads
          and caller-owned majority MongoDB transactions; task registry owns work.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.0-BATCH-VERIFIED-SOURCE-WORK-PURPOSE
+         reads bounded source/audit evidence after exact participant
+         admission in one batched authenticated snapshot, not one query per
+         task. Missing classification remains visible, never inferred.
 CHANGELOG: v1.1.2-STALE-PURPOSE-UNCLASSIFIED-PROJECTION
          withholds old audited purpose evidence whenever source task revision
          changed, retaining the visible UNCLASSIFIED task without guessing.
@@ -49,7 +53,7 @@ from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as TASK_COLLECTION, ProjectTask, ProjectTaskError,
 )
 
-VERSION = "v1.1.2-STALE-PURPOSE-UNCLASSIFIED-PROJECTION"
+VERSION = "v1.2.0-BATCH-VERIFIED-SOURCE-WORK-PURPOSE"
 _ACTIVE = frozenset({"TODO", "IN_PROGRESS", "BLOCKED"})
 _STATUS = {"TODO": "OPEN", "IN_PROGRESS": "IN_PROGRESS", "BLOCKED": "BLOCKED"}
 # Source read is bounded to prevent a single principal's queue from starving EOS.
@@ -93,6 +97,7 @@ def read_project_attention(
             "status": {"$in": sorted(_ACTIVE)},
         }
         rows: list[dict[str, Any]] = []
+        verified_tasks: list[ProjectTask] = []
         validated_projects: set[str] = set()
         rejected_projects: set[str] = set()
         try:
@@ -132,16 +137,11 @@ def read_project_attention(
                     validated_projects.add(task.project_id)
                 # A date-only deadline has no source timezone or exact instant.
                 # Never fabricate UTC 'overdue' truth from a calendar date.
-                evidence = purposes.current_for_task(task=task, session=session)
-                if evidence is not None and evidence["audience"] == "UNCLASSIFIED":
-                    evidence = None
-                elif evidence is not None:
-                    evidence = {key: value for key, value in evidence.items()
-                                if key != "purpose_revision"}
+                verified_tasks.append(task)
                 rows.append({
                     "tenant_id": tenant_id,
                     "revision": task.revision,
-                    "audience_evidence": evidence,
+                    "audience_evidence": None,
                     "work_item_id": task.task_id,
                     "title": task.title,
                     "description": task.description,
@@ -155,6 +155,16 @@ def read_project_attention(
                     "created_by_principal_id": task.created_by_principal_id,
                     "updated_at": task.updated_at.isoformat(),
                 })
+            evidence_by_id = purposes.current_for_tasks(
+                tasks=verified_tasks, session=session,
+            )
+            for row in rows:
+                claim = evidence_by_id[row["work_item_id"]]
+                if claim is not None and claim["audience"] != "UNCLASSIFIED":
+                    row["audience_evidence"] = {
+                        key: value for key, value in claim.items()
+                        if key != "purpose_revision"
+                    }
         except PyMongoError as error:
             raise HTTPException(
                 status_code=503, detail="PROJECT_ATTENTION_SOURCE_UNAVAILABLE",
@@ -175,7 +185,7 @@ def read_project_attention(
 __all__ = ["VERSION", "read_project_attention"]
 
 # ARTIFACT: project_attention_source.py
-# VERSION: v1.1.2-STALE-PURPOSE-UNCLASSIFIED-PROJECTION
+# VERSION: v1.2.0-BATCH-VERIFIED-SOURCE-WORK-PURPOSE
 # AUTHORITY BOUNDARY: read-only current participant source, no mutations
 # TENANT POSTURE: exact assignee, same tenant and active project participation
 # FAIL-CLOSED POSTURE: corrupt, stale, oversized or unavailable source denies
