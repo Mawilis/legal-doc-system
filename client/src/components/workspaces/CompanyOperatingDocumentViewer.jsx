@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK
+ * VERSION: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY retries one safe
+ *            source-owned project list GET after transient HTTP 503, retains
+ *            fail-closed results, and offers existing Projects workspace
+ *            navigation when the Strategy list cannot be verified.
  * CHANGELOG: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK adds read-only, exact-tenant
  *            Projects task/milestone verification from Strategy. Scope, paging
  *            and source status are validated; no objective linkage, progress
@@ -272,7 +276,7 @@ const sourceError = failure => {
  * @param {{classification:'MISSION'|'STRATEGY',onClose:Function,onOpenWork:Function,onOpenProject?:Function}} props
  * @returns {JSX.Element} Accessible responsive source-backed document drawer.
  */
-export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject }) {
+export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject, onOpenProjects }) {
   const auth = useContext(AuthContext) || {};
   const baseScope = currentUnifiedMyWorkScope(auth, auth.user?.tenantId);
   const credential = useRef({ token: auth.token, revision: 0 });
@@ -335,9 +339,25 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       setProjectState('DENIED'); return null;
     }
     try {
-      const reply = await api.get('/projects', { headers: {
-        'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
-      }, params: { limit: 100, offset: 0 }, signal: controller.signal });
+      // A transient EOS 503 may recover while the document remains mounted.
+      // Retry only this side-effect-free owner-authorized GET, once. Do not
+      // retry denials, invalid response shapes, or mutation commands.
+      let reply;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          reply = await api.get('/projects', { headers: {
+            'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
+          }, params: { limit: 100, offset: 0 }, signal: controller.signal });
+          break;
+        } catch (failure) {
+          if (attempt !== 0 || failure?.response?.status !== 503
+            || controller.signal.aborted || !active(key)
+            || request !== projectReadRef.current.sequence) throw failure;
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          if (controller.signal.aborted || !active(key)
+            || request !== projectReadRef.current.sequence) return null;
+        }
+      }
       if (!active(key) || request !== projectReadRef.current.sequence) return null;
       if (!validProjectList(reply.data, scope.tenantId, scope.principalId)) throw new Error('PROJECT_LIST_SCOPE_OR_SHAPE_INVALID');
       setProjectItems(reply.data.items); setProjectState('READY');
@@ -743,6 +763,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </section>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
+                    {projectState === 'UNAVAILABLE' && typeof onOpenProjects === 'function' && <button
+                      type="button" onClick={onOpenProjects}>Open existing Projects workspace</button>}
+                    {projectState === 'UNAVAILABLE' && <p role="status">
+                      Your existing project has not been changed. A transient read was retried once.
+                      Check the Python EOS Projects transaction failure code if the source remains unavailable.
+                    </p>
                     {projectState === 'DENIED' && <button type="button"
                       disabled={admissionBusy} onClick={() => void activateFounderProjects()}>
                       <ShieldCheck size={15}/> {admissionBusy ? 'Verifying Founder authority…' : 'Activate Founder Projects through EOS'}
@@ -855,7 +881,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK
+// VERSION: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
