@@ -1684,9 +1684,7 @@ export function WilsyOSIntelligenceDock({
                 + ' verifies ' + source.receivable_count + ' commercial receivables, '
                 + source.aging_evidence_count + ' aging records and '
                 + source.dunning_evidence_count + ' dunning records. '
-                + 'Outstanding commercial receivables total '
-                + source.receivable_outstanding_amount_minor
-                + ' minor currency units across source evidence; no payment or settlement is asserted.',
+                + 'The evidence does not establish a live account balance or verified payment settlement.',
               source: 'WILSY_EOS_BILLING_EVIDENCE',
               phase: 'SOURCE_VERIFIED_READ_ONLY', domain: 'BILLING', tenantId: exactTenant,
             };
