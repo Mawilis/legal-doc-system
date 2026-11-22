@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.7.0-PARTIAL-STRATEGY-PLAN-RECOVERY-CERT
+ * VERSION: v1.8.0-STRATEGY-LINK-READBACK-BROWSER-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.8.0-STRATEGY-LINK-READBACK-BROWSER-CERT certifies
+ *            distinct source-owned link readback and one independently
+ *            confirmed link command after all 18 implementation records
+ *            exist; linking never certifies a strategy progress percentage.
  * CHANGELOG: v1.7.0-PARTIAL-STRATEGY-PLAN-RECOVERY-CERT validates
  *            accurate planned vs persisted source counts, disables further
  *            creation after full admission and preserves one-write-per-item
@@ -346,6 +350,10 @@ describe('Strategy source-owned project execution readback', () => {
   it('creates eighteen missing programme items only through explicit audited EOS commands and skips them on replay', async () => {
     const existing = taskList().items;
     const created = [];
+    let linked = false;
+    const strategyPublication = { ...record('STRATEGY'),
+      sections: [{ section_id: 'pillar-one', title: 'One OS', body: 'Synthetic operating strategy.' }] };
+    const linkUrl = '/company-operating-documents/STRATEGY/project-links';
     const taskUrl = '/projects/' + projectId + '/tasks';
     api.get.mockImplementation((url, config) => {
       if (url === '/projects') return Promise.resolve({ data: projectList() });
@@ -354,11 +362,34 @@ describe('Strategy source-owned project execution readback', () => {
         const rows = [...existing, ...created];
         return Promise.resolve({ data: { ...taskList(), limit, items: rows } });
       }
+      if (url === linkUrl) return Promise.resolve({ data: {
+        schema: 'WILSY-STRATEGY-PROJECT-LINK-LIST/V1',
+        tenant_id: scope.tenantId, principal_id: scope.principalId, classification: 'STRATEGY',
+        strategy_revision: strategyPublication.revision, source_verified: true,
+        strategy_progress: null, items: linked ? [{ pillar_id: 'pillar-one', project_id: projectId,
+          project_name: project.name, project_status: 'active', source_project_revision: project.revision,
+          source_strategy_revision: strategyPublication.revision, state: 'VERIFIED_CURRENT' }] : [],
+      } });
       if (url === '/company-operating-documents/STRATEGY')
-        return Promise.resolve({ data: view(record('STRATEGY')) });
+        return Promise.resolve({ data: view(strategyPublication) });
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
     });
     api.post.mockImplementation((url, body, config) => {
+      if (url === linkUrl) {
+        expect(created).toHaveLength(18);
+        expect(body).toEqual({ pillar_id: 'pillar-one', project_id: projectId,
+          expected_strategy_revision: strategyPublication.revision,
+          expected_project_revision: project.revision });
+        expect(config.headers['Idempotency-Key']).toContain('strategy-pillar-one-foundation-v1');
+        linked = true;
+        return Promise.resolve({ data: {
+          schema: 'WILSY-STRATEGY-PROJECT-LINK-RESULT/V1',
+          tenant_id: scope.tenantId, principal_id: scope.principalId, classification: 'STRATEGY',
+          pillar_id: 'pillar-one', project_id: projectId, strategy_revision: strategyPublication.revision,
+          project_revision: project.revision, relationship_state: 'RECORDED_NOT_OUTCOME_CERTIFIED',
+          strategy_progress: null,
+        } });
+      }
       if (url !== taskUrl || !config?.headers?.['Idempotency-Key'])
         return Promise.reject(new Error('INVALID_OR_UNAUTHORIZED_SOURCE_COMMAND'));
       const index = created.length + 1;
@@ -391,6 +422,15 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.getByText(/18 of 18 planned records persisted in EOS/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'All 18 verified in EOS' })).toBeDisabled();
     expect(api.post).toHaveBeenCalledTimes(18);
+    const linkButton = await screen.findByRole('button', {
+      name: 'Link verified Foundation project to Pillar 1',
+    });
+    expect(linkButton).toBeEnabled();
+    fireEvent.click(linkButton);
+    expect(await screen.findByText(/Linked in EOS · current Strategy and project snapshots verified/)).toBeVisible();
+    expect(api.post).toHaveBeenCalledTimes(19);
+    expect(linked).toBe(true);
+    expect(screen.getByText(/No outcome score certified/)).toBeVisible();
   });
   it('rejects mismatched task tenant and hides unverified delivery', async () => {
     const foreign = taskList();
@@ -452,7 +492,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.7.0-PARTIAL-STRATEGY-PLAN-RECOVERY-CERT
+// VERSION: v1.8.0-STRATEGY-LINK-READBACK-BROWSER-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
