@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES
+ * VERSION: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES isolates task, participant and eligible-member reads, preserves only independently verified EOS tasks when a participant directory is denied/unavailable, and gates all contributor/assignee operations until current project participation verifies. Reports which source failed without guessing people, tasks or permissions.
  * CHANGELOG: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES lists exact-tenant currently eligible named member candidates in the assignee selector while keeping only active project contributors directly assignable. Candidate selection opens explicit separate contributor grant; fresh EOS readback must verify new project participation before setting draft assignee. No hidden grants, role inheritance, or synthetic people.
  * CHANGELOG: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR moves governed member selection from above the create form to an immediately visible, viewport-bound dialog with dedicated scrolling and Escape dismissal; preserves active draft and verifies participant grant before assignee refresh. No automatic member or IAM grant.
  * CHANGELOG: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS keeps exact-page selection status visible while optional work-filter controls are collapsed, without changing selection authority or mutations.
@@ -306,6 +307,8 @@ export default function ProjectTasksPanel({
   const [participants, setParticipants] = useState([]);
   const [participantHasMore, setParticipantHasMore] = useState(false);
   const [tenantMemberCandidates, setTenantMemberCandidates] = useState([]);
+  const [projectContributorStatus, setProjectContributorStatus] = useState('VERIFYING');
+  const [projectContributorError, setProjectContributorError] = useState('');
   const [memberDirectoryStatus, setMemberDirectoryStatus] = useState('VERIFYING');
   const [pendingMemberChoice, setPendingMemberChoice] = useState('');
   const [actionCapabilities, setActionCapabilities] = useState(null);
@@ -354,47 +357,80 @@ export default function ProjectTasksPanel({
     setState(previous => previous === 'READY' ? 'REFRESHING' : 'LOADING');
     setError('');
     try {
-      const [tasks, people, actionResult, optionResult] = await Promise.all([
+      // Task source is mandatory for work-list truth. Personnel reads are
+      // independent capabilities: a failed contributor source must not
+      // suppress a valid task list, fabricate assignees or authorize writes.
+      const [taskResult, participantResult, actionResult, optionResult] = await Promise.allSettled([
         api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers }),
         api.get(root + '/participants?limit=100&offset=0', { headers }),
-        api.get(root + '/task-action-capabilities', { headers })
-          .then(result => result?.data).catch(() => null),
-        Promise.resolve()
-          .then(() => api.get(root + '/participant-options?limit=50&offset=0', { headers }))
-          .then(result => result?.data).catch(() => null),
+        api.get(root + '/task-action-capabilities', { headers }),
+        api.get(root + '/participant-options?limit=50&offset=0', { headers }),
       ]);
       if (request !== generation.current || currentScope.current !== active) return false;
-      const verified = validList(tasks.data, tenantId, principalId, projectId, nextOffset);
-      const eligible = validParticipants(people.data, tenantId, principalId, projectId);
-      let members = null;
+      if (taskResult.status !== 'fulfilled') {
+        const sourceFailure = taskResult.reason || new Error('PROJECT_TASK_READ_UNAVAILABLE');
+        sourceFailure.sourceName = 'Project task list';
+        throw sourceFailure;
+      }
+      let verified;
       try {
-        if (optionResult) members = validOptions(
-          optionResult, { tenantId, principalId, projectId }, 0,
-        );
+        verified = validList(taskResult.value.data, tenantId, principalId, projectId, nextOffset);
       } catch {
-        members = null;
+        const invalid = new Error('PROJECT_TASK_SOURCE_INVALID');
+        invalid.sourceName = 'Project task list';
+        throw invalid;
+      }
+      let eligible = null;
+      let participantIssue = '';
+      if (participantResult.status === 'fulfilled') {
+        try {
+          eligible = validParticipants(participantResult.value.data, tenantId, principalId, projectId);
+        } catch {
+          participantIssue = 'Project contributor list returned invalid scope or schema.';
+        }
+      } else {
+        const status = participantResult.reason?.response?.status;
+        participantIssue = status === 401 ? 'Project contributor list requires authentication.'
+          : status === 403 ? 'Project contributor list was denied by EOS.'
+            : status === 404 ? 'Project contributor list endpoint was not found in EOS.'
+              : status === 503 ? 'Project contributor list source is unavailable.'
+                : 'Project contributor list could not be reached or verified.';
+      }
+      setProjectContributorStatus(eligible ? 'VERIFIED' : 'UNAVAILABLE');
+      setProjectContributorError(participantIssue);
+      let members = null;
+      if (optionResult.status === 'fulfilled') {
+        try {
+          members = validOptions(
+            optionResult.value.data, { tenantId, principalId, projectId }, 0,
+          );
+        } catch {
+          members = null;
+        }
       }
       setTenantMemberCandidates(members?.items || []);
       setMemberDirectoryStatus(members ? 'VERIFIED' : 'UNAVAILABLE');
-      const currentContributors = eligible.items.filter(item => item.role === 'CONTRIBUTOR');
-      if (newlyAdmittedId && currentContributors.some(item => item.principal_id === newlyAdmittedId)) {
+      const currentContributors = eligible?.items.filter(item => item.role === 'CONTRIBUTOR') || [];
+      if (newlyAdmittedId && eligible
+        && currentContributors.some(item => item.principal_id === newlyAdmittedId)) {
         setDraft(previous => previous.assignee_principal_id
           ? previous : { ...previous, assignee_principal_id: newlyAdmittedId });
       }
+      const action = actionResult.status === 'fulfilled' ? actionResult.value?.data : null;
       const capabilityNames = ['can_start', 'can_complete', 'can_block',
         'can_cancel', 'can_assign', 'can_edit'];
-      const admitted = actionResult?.schema === 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1'
-        && actionResult.tenant_id === tenantId
-        && actionResult.principal_id === principalId
-        && actionResult.project_id === projectId
-        && capabilityNames.every(key => typeof actionResult[key] === 'boolean');
+      const admitted = action?.schema === 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1'
+        && action.tenant_id === tenantId
+        && action.principal_id === principalId
+        && action.project_id === projectId
+        && capabilityNames.every(key => typeof action[key] === 'boolean');
       setActionCapabilities({
-        canStart: admitted && actionResult.can_start,
-        canComplete: admitted && actionResult.can_complete,
-        canBlock: admitted && actionResult.can_block,
-        canCancel: admitted && actionResult.can_cancel,
-        canAssign: admitted && actionResult.can_assign,
-        canEdit: admitted && actionResult.can_edit,
+        canStart: admitted && action.can_start,
+        canComplete: admitted && action.can_complete,
+        canBlock: admitted && action.can_block,
+        canCancel: admitted && action.can_cancel,
+        canAssign: admitted && action.can_assign,
+        canEdit: admitted && action.can_edit,
         canAttachments: true, canActivity: true, canApprovals: true,
       });
       setItems(verified.items);
@@ -402,7 +438,7 @@ export default function ProjectTasksPanel({
       setHasMore(verified.has_more);
       setOffset(nextOffset);
       setParticipants(currentContributors);
-      setParticipantHasMore(eligible.has_more);
+      setParticipantHasMore(eligible?.has_more || false);
       setState('READY');
       return !newlyAdmittedId
         || currentContributors.some(item => item.principal_id === newlyAdmittedId);
@@ -410,6 +446,8 @@ export default function ProjectTasksPanel({
       if (request !== generation.current || currentScope.current !== active) return false;
       setItems([]);
       setParticipants([]);
+      setProjectContributorStatus('UNAVAILABLE');
+      setProjectContributorError('Project contributor list was not independently verified.');
       setTenantMemberCandidates([]);
       setMemberDirectoryStatus('UNAVAILABLE');
       setParticipantHasMore(false);
@@ -417,9 +455,11 @@ export default function ProjectTasksPanel({
       setHasMore(false);
       setSelectedWorkIds([]);
       const status = cause?.response?.status;
-      setError(status === 401 ? 'Authentication required for project work.'
-        : status === 403 ? 'EOS denied project work access.'
-          : 'Project work could not be verified from EOS. Retry the source read.');
+      const source = cause?.sourceName || 'Project work';
+      setError(status === 401 ? source + ' requires authentication.'
+        : status === 403 ? source + ' access was denied by EOS.'
+          : status === 404 ? source + ' endpoint is unavailable in this EOS runtime.'
+            : source + ' could not be verified from EOS. Retry this source read.');
       setState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
@@ -429,6 +469,8 @@ export default function ProjectTasksPanel({
     generation.current += 1;
     setItems([]);
     setParticipants([]);
+    setProjectContributorStatus('VERIFYING');
+    setProjectContributorError('');
     setTenantMemberCandidates([]);
     setMemberDirectoryStatus('VERIFYING');
     setPendingMemberChoice('');
@@ -850,6 +892,12 @@ export default function ProjectTasksPanel({
       </p>}
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
+    {(state === 'READY' || state === 'REFRESHING')
+      && projectContributorStatus === 'UNAVAILABLE' &&
+      <p role="alert" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+        {projectContributorError || 'Project contributor authority is not verified.'}
+        {' '}Existing verified task rows remain visible, but contributor assignment and member admission are unavailable until this EOS source is verified.
+      </p>}
     {(state === 'READY' || state === 'REFRESHING') && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="min-w-0">
@@ -1091,7 +1139,7 @@ export default function ProjectTasksPanel({
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-semibold text-slate-800">Assign to
-            <select aria-label="Task assignee" value={draft.assignee_principal_id}
+            <select aria-label="Task assignee" disabled={projectContributorStatus !== 'VERIFIED'} value={draft.assignee_principal_id}
               onChange={event => {
                 const selected = event.target.value;
                 if (selected.startsWith('member:')) {
@@ -1122,12 +1170,12 @@ export default function ProjectTasksPanel({
               The tenant member directory is not currently verified. Existing active project contributors remain selectable; refresh when EOS restores the directory.
             </span>}
             {participants.length === 0 && !participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
-              No verified project contributors are eligible for task assignment yet. Create this task unassigned, or select an eligible tenant member using the nearby contributor-management action.
+              No verified current project contributors are eligible for task assignment yet. Create this task unassigned, or select an eligible tenant member using the nearby contributor-management action.
             </span>}
             {participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
               More than 100 participants exist. Assignment remains restricted to the verified current participant page.
             </span>}
-            <button type="button" className="wp-button mt-2 !min-h-9 !text-xs"
+            <button type="button" disabled={projectContributorStatus !== 'VERIFIED'} className="wp-button mt-2 !min-h-9 !text-xs"
               aria-expanded={showContributorManagement}
               onClick={() => { setPendingMemberChoice(''); setShowContributorManagement(value => !value); }}>
               {showContributorManagement ? 'Close contributor management' : 'Manage eligible contributors'}
@@ -1420,7 +1468,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES
+// VERSION: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
