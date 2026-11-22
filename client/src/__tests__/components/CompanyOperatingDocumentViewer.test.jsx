@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.5.0-STRATEGY-EXECUTION-LAYOUT-CERT
+ * VERSION: v1.5.1-EXPLICIT-PROJECT-NAVIGATION-FIXTURE
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.5.1-EXPLICIT-PROJECT-NAVIGATION-FIXTURE provides the
+ *            actual Headquarters navigation callback when testing the
+ *            conditional Open project control, without changing production
+ *            authorization or inventing any project route.
  * CHANGELOG: v1.5.0-STRATEGY-EXECUTION-LAYOUT-CERT verifies
  *            project identity/status/action grouping and collapsed creation;
  *            authenticated task reads remain the only source of execution.
@@ -307,9 +311,11 @@ describe('Strategy source-owned project execution readback', () => {
         return Promise.resolve({ data: view(record('STRATEGY')) });
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
     });
-    render(wrap({ classification: 'STRATEGY' }));
+    const onOpenProject = vi.fn();
+    render(wrap({ classification: 'STRATEGY', onOpenProject }));
     const verifyButton = await screen.findByRole('button', { name: /Verify execution for Unified Operating Platform Foundation/ });
     expect(screen.getByRole('button', { name: /Open project delivery for Unified Operating Platform Foundation/ })).toBeVisible();
+    expect(onOpenProject).not.toHaveBeenCalled();
     expect(screen.getByText('Revision 2')).toBeVisible();
     const newProjectForm = document.querySelector('form[aria-label="Create governed EOS project"]');
     expect(newProjectForm?.closest('details')?.open).toBe(false);
@@ -382,7 +388,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.5.0-STRATEGY-EXECUTION-LAYOUT-CERT
+// VERSION: v1.5.1-EXPLICIT-PROJECT-NAVIGATION-FIXTURE
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
