@@ -269,7 +269,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       <p role="status" className="mt-3 flex items-center gap-2 text-sm text-slate-600">
         <LoaderCircle size={14} className="animate-spin"/> Verifying participants…
       </p>}
-    {(state === 'DENIED' || state === 'UNAVAILABLE') &&
+    {(state === 'DENIED' || state === 'UNAVAILABLE' || state === 'PARTIAL') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     {(state === 'READY' || state === 'PARTIAL') && <>
       {participantVerified && <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
