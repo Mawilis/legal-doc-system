@@ -1,17 +1,18 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.4.0-NATIVE-FORMDATA-BOUNDARY-TRANSPORT-CERT
+ * VERSION: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT asserts multipart file bytes, MIME, size and name instead of File object identity (FormData may clone the File upon append), preserving the wire-level safety contract.
  * CHANGELOG: v1.4.0-NATIVE-FORMDATA-BOUNDARY-TRANSPORT-CERT verifies that native FormData clears the global application/json default using AxiosHeaders or ordinary header objects while preserving a single file part, bearer, tenant, idempotency and forensic headers. JSON-only commands retain canonical JSON handling.
  * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies
  *            no extra timestamp fields in CRM status/cancel POSTs while
  *            cryptographic forensic headers remain intact.
- * CHANGELOG: v1.4.0-NATIVE-FORMDATA-BOUNDARY-TRANSPORT-CERT verifies six exact
+ * CHANGELOG: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT verifies six exact
  *            company-document mutation paths retain caller fields and forensic headers.
  * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
  *            covenant status, normal dashboard backoff and 403 separation.
@@ -419,7 +420,10 @@ describe('api.js – Sovereign HTTP Client', () => {
       });
       expect(sealed.data).toBe(form);
       expect(Array.from(sealed.data.keys())).toEqual(['file']);
-      expect(sealed.data.get('file')).toBe(file);
+      expect(sealed.data.get('file').name).toBe(file.name);
+      expect(sealed.data.get('file').type).toBe(file.type);
+      expect(sealed.data.get('file').size).toBe(file.size);
+      expect(await sealed.data.get('file').text()).toBe(await file.text());
       expect(sealed.headers).not.toHaveProperty('Content-Type');
       expect(sealed.headers).not.toHaveProperty('content-type');
       expect(sealed.headers['Idempotency-Key']).toBe('existing-upload-command');
@@ -598,7 +602,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.4.0-NATIVE-FORMDATA-BOUNDARY-TRANSPORT-CERT
+ * VERSION: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.
