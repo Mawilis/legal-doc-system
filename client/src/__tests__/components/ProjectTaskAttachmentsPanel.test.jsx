@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT
+ * VERSION: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT proves that a source-verified existing contributor denied by separate participant attachment IAM is not sent back to People or invited to self-enroll a second time; no upload or implicit grant.
  * CHANGELOG: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT proves owner manifests survive contributor-only HTTP 403 without upload, while independently verified participant reads expose existing contributor-controlled upload.
  * CHANGELOG: v1.2.0-SOURCE-FAILURE-CODE-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
  * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT requires scanner-owned QUARANTINED status and null clearance fingerprint, and proves fail-closed denial of fabricated clean clearance.
@@ -119,7 +120,9 @@ it('preserves verified owner attachment manifests when contributor GET is denied
     projectId={projectId} taskId={taskId} participantMode ownerReadMode
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
   expect(await screen.findByText('design.pdf')).toBeVisible();
-  expect(await screen.findByText(/separate contributor attachment read \(HTTP 403\)/)).toBeVisible();
+  expect(await screen.findByText(/EOS separately denied the contributor attachment endpoint \(HTTP 403\)/)).toBeVisible();
+  expect(screen.getByText(/Project participation: verified Contributor/)).toBeVisible();
+  expect(screen.queryByRole('button', { name: /People access|contributor management/ })).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
@@ -162,7 +165,7 @@ it('rejects fabricated or incomplete scan clearance evidence without download ca
 });
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT
+// VERSION: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
