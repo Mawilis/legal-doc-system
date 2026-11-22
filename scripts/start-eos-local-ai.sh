@@ -14,7 +14,7 @@
 #          current credential/model metadata access using one read-only GET,
 #          no inference or quota admission. --probe-only ends without EOS launch.
 #          Status is safely classified, never prints credentials/vendor bodies.
-# CHANGELOG: v1.2.0-NONBILLABLE-MODEL-METADATA-PREFLIGHT rejects common API key/tracking-id prefixes in the model field before child process launch; no identifier values are logged.
+# CHANGELOG: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS rejects common API key/tracking-id prefixes in the model field before child process launch; no identifier values are logged.
 # CHANGELOG: v1.0.0-LOCAL-AI-PROVIDER-ADMISSION adds a nonpersistent,
 #          hidden-key local provider configuration handoff.
 # COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
