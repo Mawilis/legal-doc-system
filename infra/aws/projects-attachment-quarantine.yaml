@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Project Attachment Quarantine Infrastructure
-# VERSION: v1.0.0-INACTIVE-FUNDED-ACTIVATION
+# VERSION: v1.0.1-IMPLICIT-SCANNER-ROLE-DEPENDENCY
 # AUTHORITY: WILSY OS Core Governance; AWS infrastructure definition only.
 # EPITOME: Stage exact-account private versioned S3, dedicated KMS, restricted
 #   Python EOS write/read authority and opt-in GuardDuty S3 malware scanning.
@@ -7,6 +7,8 @@
 # COLLABORATION / OWNERSHIP: Projects attachment storage adapter owns bytes;
 #   Projects registry owns canonical manifests; AWS is external capability.
 # CERTIFICATION OR UPDATE DATE: 2026-11-22
+# CHANGELOG: v1.0.1-IMPLICIT-SCANNER-ROLE-DEPENDENCY removes the redundant
+#   scanner-role DependsOn: GetAtt Role already establishes dependency.
 # CHANGELOG: v1.0.0-INACTIVE-FUNDED-ACTIVATION introduces a versioned,
 #   private, KMS-encrypted project quarantine with a deliberately disabled
 #   default scanner. Merely committing this template creates no AWS resources.
@@ -236,7 +238,6 @@ Resources:
     Condition: EnableScanning
     DependsOn:
       - ProjectsAttachmentBucketPolicy
-      - ProjectsScannerRole
     Properties:
       Role: !GetAtt ProjectsScannerRole.Arn
       ProtectedResource:
@@ -259,7 +260,7 @@ Outputs:
     Condition: EnableScanning
     Value: !GetAtt ProjectsMalwareProtectionPlan.Arn
 # ARTIFACT: infra/aws/projects-attachment-quarantine.yaml
-# VERSION: v1.0.0-INACTIVE-FUNDED-ACTIVATION
+# VERSION: v1.0.1-IMPLICIT-SCANNER-ROLE-DEPENDENCY
 # AUTHORITY BOUNDARY: S3 transport, KMS and opt-in scanner; no IAM grants issued by commit
 # TENANT POSTURE: EOS scopes tenant and opaque object coordinates, not AWS
 # FAIL-CLOSED POSTURE: default scanner off; no clean-tag proof, no clearance
