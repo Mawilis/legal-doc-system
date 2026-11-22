@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.27.0-COMPACT-EXECUTION-CONTROLS
+ * VERSION: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER adds
+ *            a real Operating / Platform Build / Unclassified queue selector.
+ *            Unsupported or absent audience is visible as Unclassified;
+ *            no inferred title category, hidden work or added IAM authority.
  * CHANGELOG: v1.27.0-COMPACT-EXECUTION-CONTROLS consolidates
  *            duplicated summary rows, source and lifecycle filtering,
  *            saved drafts, search and sort into one responsive toolbar.
@@ -357,6 +361,7 @@ export default function MyWorkWorkspace(props = {}) {
   const [errorStatus, setErrorStatus] = useState(null);
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [audienceFilter, setAudienceFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState('due');
   const [notes, setNotes] = useState({});
@@ -440,6 +445,7 @@ export default function MyWorkWorkspace(props = {}) {
     setCloseGuard(false);
     setSourceFilter('ALL');
     setStatusFilter('ALL');
+    setAudienceFilter('ALL');
     setSearch('');
     pendingRef.current.clear();
   }, [scopeKey]);
@@ -524,6 +530,13 @@ export default function MyWorkWorkspace(props = {}) {
   };
 
   const items = useMemo(() => projection?.items || [], [projection]);
+  const audienceOf = (item) => ['OPERATING', 'PLATFORM_BUILD'].includes(item.audience)
+    ? item.audience : 'UNCLASSIFIED';
+  const audienceCounts = useMemo(() => ({
+    OPERATING: items.filter((item) => audienceOf(item) === 'OPERATING').length,
+    PLATFORM_BUILD: items.filter((item) => audienceOf(item) === 'PLATFORM_BUILD').length,
+    UNCLASSIFIED: items.filter((item) => audienceOf(item) === 'UNCLASSIFIED').length,
+  }), [items]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
   const admittedSources = projection?.sources_included || [];
   const openCount = items.filter((item) => item.status === 'OPEN').length;
@@ -536,6 +549,7 @@ export default function MyWorkWorkspace(props = {}) {
   const filteredItems = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
     return items
+      .filter((item) => audienceFilter === 'ALL' || audienceOf(item) === audienceFilter)
       .filter((item) => sourceFilter === 'ALL' || item.source === sourceFilter)
       .filter((item) => statusFilter === 'ALL' || (statusFilter === 'OVERDUE' ? item.is_overdue : item.status === statusFilter))
       .filter((item) => !query || [item.title, item.description, item.source,
@@ -543,7 +557,7 @@ export default function MyWorkWorkspace(props = {}) {
         typeof value === 'string' && value.toLocaleLowerCase().includes(query)
       )))
       .sort((left, right) => compareItems(left, right, sortMode));
-  }, [items, search, sortMode, sourceFilter, statusFilter]);
+  }, [items, search, sortMode, sourceFilter, statusFilter, audienceFilter]);
 
   useEffect(() => {
     // Exact current-session CRM source read; never a client authorization grant.
@@ -850,6 +864,17 @@ export default function MyWorkWorkspace(props = {}) {
               <input id="my-work-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search title, description or source…"
                 className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-[#0b1421] px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-300/70" />
+              <label className="flex items-center gap-2 text-xs text-slate-300">
+                <span>Work purpose</span>
+                <select value={audienceFilter} aria-label="Filter by verified work purpose"
+                  onChange={(event) => setAudienceFilter(event.target.value)}
+                  className="min-h-9 rounded-lg border border-white/20 bg-[#0b1421] px-3 text-sm text-slate-100 focus:border-slate-200">
+                  <option value="ALL">All ({items.length})</option>
+                  <option value="OPERATING">Operating ({audienceCounts.OPERATING})</option>
+                  <option value="PLATFORM_BUILD">Platform Build ({audienceCounts.PLATFORM_BUILD})</option>
+                  <option value="UNCLASSIFIED">Needs classification ({audienceCounts.UNCLASSIFIED})</option>
+                </select>
+              </label>
               <label className="flex items-center gap-2 text-xs text-slate-400">
                 <span className="sr-only sm:not-sr-only">Sort</span>
                 <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}
@@ -936,8 +961,8 @@ export default function MyWorkWorkspace(props = {}) {
               </div>
             ) : (
               <div className="px-4 py-8 text-center text-sm text-slate-400" role="status">
-                No work matches the current source filter and search.
-                <button type="button" className="ml-2 text-amber-200 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); }}>Clear filters</button>
+                No work matches the current authorized work filters.
+                <button type="button" className="ml-2 text-slate-100 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); setAudienceFilter('ALL'); }}>Clear filters</button>
               </div>
             )}
           </section>
@@ -1642,7 +1667,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.27.0-COMPACT-EXECUTION-CONTROLS
+ * VERSION: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
