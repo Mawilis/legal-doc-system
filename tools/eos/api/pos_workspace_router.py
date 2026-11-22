@@ -5,6 +5,8 @@ VERSION: v1.1.0-READ-ONLY-COMMERCIAL-SUMMARY
 AUTHORITY: Python EOS POS IAM, product entitlement and location assignments.
 EPITOME: Source-backed, location-scoped POS commands and read-only intelligence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/pos_workspace_router.py
+COLLABORATION / OWNERSHIP: Existing POS domain/service and tenant IAM own authority; this router owns transport only.
+AUTHORITY BOUNDARY: No identity, location or financial settlement authority is inferred from caller input.
 CERTIFICATION / UPDATE DATE: 2026-11-22
 CHANGELOG: v1.1.0-READ-ONLY-COMMERCIAL-SUMMARY adds an exact-tenant/location
            sale-count GET through the same _READ permission, _service._admit
