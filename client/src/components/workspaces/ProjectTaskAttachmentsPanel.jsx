@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD
+ * VERSION: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY distinguishes the exact attachment GET failure (HTTP status, bounded project source code or source-schema mismatch) from missing contributor upload authority. Makes the upload entry point and its permission prerequisites visible without attempting unauthorized provider writes or inventing completed scan evidence.
  * CHANGELOG: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD shows
  *          source-owned GuardDuty clearance, recipient-triggered scan
  *          reconciliation and authenticated clean-only byte download.
@@ -95,7 +96,11 @@ export default function ProjectTaskAttachmentsPanel({
         || data.next_offset !== (data.has_more ? nextOffset + data.items.length : null)
         || data.items.some(item => !valid(item, tenantId, projectId, taskId))
         || new Set(data.items.map(item => item.attachment_id)).size !== data.items.length
-      ) throw new Error('PROJECT_ATTACHMENT_SOURCE_INVALID');
+      ) {
+        const invalid = new Error('PROJECT_ATTACHMENT_SOURCE_INVALID');
+        invalid.invalidEnvelope = true;
+        throw invalid;
+      }
       setItems(data.items);
       setOffset(nextOffset);
       setHasMore(data.has_more);
@@ -105,8 +110,20 @@ export default function ProjectTaskAttachmentsPanel({
       if (request !== generation.current || current.current !== active) return false;
       setItems([]);
       setHasMore(false);
-      setState([401, 403, 404].includes(failure?.response?.status) ? 'DENIED' : 'UNAVAILABLE');
-      setError('EOS could not verify the task attachment source. Refresh or check authorization.');
+      const status = failure?.response?.status;
+      const rawDetail = failure?.response?.data?.detail;
+      const safeDetail = typeof rawDetail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(rawDetail)
+        ? ' · EOS ' + rawDetail : '';
+      setState([401, 403, 404].includes(status) ? 'DENIED' : 'UNAVAILABLE');
+      setError(failure?.invalidEnvelope
+        ? 'The task attachment manifest response failed exact tenant, principal, task or schema verification.'
+        : status === 401 ? 'Sign in to inspect task attachments (HTTP 401).'
+          : status === 403 ? 'EOS denied task attachment access (HTTP 403)' + safeDetail + '.'
+            : status === 404 ? 'The task attachment endpoint or record was not found (HTTP 404)' + safeDetail + '.'
+              : status === 503 ? 'The task attachment source is unavailable (HTTP 503)' + safeDetail + '.'
+                : Number.isInteger(status) ? 'Task attachment source failed with HTTP ' + status + safeDetail + '.'
+                  : failure?.code === 'ECONNABORTED' ? 'Task attachment source timed out before verification.'
+                    : 'EOS could not reach or verify the task attachment manifest. No upload or download is confirmed.');
       return false;
     }
   }, [scope, root, tenantId, principalId, projectId, taskId, tenantHeaders]);
@@ -300,6 +317,16 @@ export default function ProjectTaskAttachmentsPanel({
       Only files whose EOS clearance is recorded may be downloaded or linked as review evidence.
       Scan clearance does not prove document authenticity, legal validity or electronic signature.
     </p>
+    <div aria-label="Attachment upload authority" className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+      <p className="text-sm font-semibold text-slate-900">Add an attachment</p>
+      <p className="mt-1 text-xs text-slate-700">
+        {participantMode
+          ? state === 'READY'
+            ? 'Select a file below to submit it to EOS quarantine.'
+            : 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
+          : 'This account is viewing owner-authorized task metadata, not a verified project-contributor upload session. Only a currently admitted contributor with project:participant:contribute may submit evidence. Use the project People workflow to establish that authority; owner status alone does not grant upload permission.'}
+      </p>
+    </div>
     {state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">
       Verifying file manifests with EOS…
     </p>}
@@ -357,7 +384,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD
+// VERSION: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
