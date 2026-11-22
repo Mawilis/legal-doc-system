@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW
+ * VERSION: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS returns to the single conversation on identity/capacity change and new-thread selection, and awaits session-only history clearing and new thread issuance before displaying success; no phantom threads or cross-scope UI state.
  * CHANGELOG: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW removes generic Suggestions navigation and model-submitting decorative cards, gates Legal Advisory to legal capacity, and adds live exact-tenant My Work focus with read-only details and draft-only contextual question actions. History omits empty placeholder threads. No model calls or inferred task authority.
  * CHANGELOG: v4.24.0-CONVERSATION-FIRST-SOURCE-STREAM moves independently authorised EOS source and My Work projections from fixed stacking panels into the scrollable conversational transcript with progressive disclosure and a fixed composer. Projections remain read-only, not model responses; no new entitlement or IAM truth.
  * CHANGELOG: v4.23.0-VERIFIED-FOUNDER-ACTIVATION-GUARD removes the unsafe subscription-activation fallback on unavailable context, and binds both the displayed action and its command handler to a current source-verified exact-tenant NOT_PROVISIONED state. Source 503 never becomes an entitlement grant or activation offer.
@@ -524,6 +525,7 @@ export function WilsyOSIntelligenceDock({
     setIsSubmitting(false);
     setPrompt('');
     setErrorMessage('');
+    setActiveTab('chat');
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
@@ -853,6 +855,7 @@ export function WilsyOSIntelligenceDock({
       if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads((prev) => [fresh, ...prev.filter((item) => item.id !== fresh.id)]);
       setActiveThreadId(fresh.id);
+      setActiveTab('chat');
     } catch (err) {
       if (scopeAtStart === dockScopeRef.current) {
         setErrorMessage(err?.message || 'Failed to create a new thread.');
@@ -1921,11 +1924,22 @@ export function WilsyOSIntelligenceDock({
                     <button
                       type="button"
                       className={styles.clearHistoryButton}
-                      onClick={() => {
-                        clearWilsyAIConversationThreads();
-                        const fresh = [createWilsyAIConversationThread('New Sovereign Session')];
-                        setConversationThreads(fresh);
-                        setActiveThreadId(fresh[0].id);
+                      onClick={async () => {
+                        const scope = dockScopeRef.current;
+                        try {
+                          await clearWilsyAIConversationThreads();
+                          const fresh = await createWilsyAIConversationThread({
+                            title: 'New Sovereign Session', workspace: 'WILSY OS',
+                          });
+                          if (scope !== dockScopeRef.current) return;
+                          setConversationThreads([fresh]);
+                          setActiveThreadId(fresh.id);
+                          setActiveTab('chat');
+                        } catch {
+                          if (scope === dockScopeRef.current) {
+                            setErrorMessage('Session history could not be reset. No completed reset is being claimed.');
+                          }
+                        }
                       }}
                     >
                       Clear
@@ -1985,7 +1999,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW
+ * VERSION: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
