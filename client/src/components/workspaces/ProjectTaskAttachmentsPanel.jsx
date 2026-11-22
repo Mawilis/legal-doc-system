@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION
+ * VERSION: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT preflights the exact project participant list and eligible tenant-member options before leaving the attachment task for People. A denied/unavailable/synthetic source shows its bounded failure in situ and does not navigate; no IAM inference or upload grant.
  * CHANGELOG: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION uses separately authorized owner metadata GET in the owner workspace rather than choosing participant-only GET from a contributor roster. Upload and scan remain on participant-only EOS routes and require independent participant source admission. Both reads validate exact tenant/principal/project/task; no IAM fallback or implicit Founder grant.
  * CHANGELOG: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE supplies a real keyboard-accessible route to project People contributor administration from owner-view attachments, and keeps upload unavailable without independent contributor IAM. Existing authorized upload remains in the contributor mode only.
  * CHANGELOG: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY distinguishes the exact attachment GET failure (HTTP status, bounded project source code or source-schema mismatch) from missing contributor upload authority. Makes the upload entry point and its permission prerequisites visible without attempting unauthorized provider writes or inventing completed scan evidence.
@@ -28,6 +29,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FileLock2, RefreshCw, UploadCloud, X } from 'lucide-react';
 import api from '../../services/api.js';
+import { validParticipants, validOptions } from './ProjectParticipantsPanel.jsx';
 
 const LIMIT = 20 * 1024 * 1024;
 const SCHEMA = 'wilsy.project.attachment.v1';
@@ -70,6 +72,8 @@ export default function ProjectTaskAttachmentsPanel({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [uploadReadState, setUploadReadState] = useState('UNVERIFIED');
+  const [peoplePreflight, setPeoplePreflight] = useState('');
+  const [checkingPeople, setCheckingPeople] = useState(false);
   const scope = [tenantId, principalId, projectId, taskId, participantMode, ownerReadMode].join('\0');
   const current = useRef(scope);
   current.current = scope;
@@ -262,6 +266,58 @@ export default function ProjectTaskAttachmentsPanel({
     }
   };
 
+  const navigateToPeople = async () => {
+    if (checkingPeople || busy || state !== 'READY' || typeof onManageContributors !== 'function') return;
+    const active = scope;
+    setCheckingPeople(true);
+    setPeoplePreflight('');
+    // Never direct the user into another unverified workspace. This is a
+    // read-only preflight; it cannot grant participation or contributor IAM.
+    const projectRoot = '/projects/' + encodeURIComponent(projectId);
+    const sources = [
+      { name: 'Project participants', path: projectRoot + '/participants?limit=50&offset=0',
+        verify: data => validParticipants(data, { tenantId, principalId, projectId }, 0) },
+      { name: 'Eligible tenant member directory', path: projectRoot + '/participant-options?limit=50&offset=0',
+        verify: data => validOptions(data, { tenantId, principalId, projectId }, 0) },
+    ];
+    try {
+      const replies = await Promise.allSettled(sources.map(source =>
+        api.get(source.path, { headers: tenantHeaders || {}, disableSourceBackoff: true }),
+      ));
+      if (current.current !== active) return;
+      const failures = sources.map((source, index) => {
+        const response = replies[index];
+        if (response.status === 'fulfilled') {
+          try {
+            source.verify(response.value?.data);
+            return null;
+          } catch {
+            return source.name + ': response scope or schema not verified.';
+          }
+        }
+        const cause = response.reason;
+        const status = cause?.response?.status || cause?.status;
+        const detail = cause?.response?.data?.detail;
+        const code = typeof detail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(detail)
+          ? ' · EOS ' + detail : '';
+        return source.name + ': '
+          + (status === 403 ? 'denied (HTTP 403)' : status === 401 ? 'authentication required (HTTP 401)'
+            : status === 503 ? 'unavailable (HTTP 503)' : status === 404 ? 'not found (HTTP 404)'
+              : Number.isInteger(status) ? 'HTTP ' + status
+                : cause?.code === 'ECONNABORTED' ? 'timed out' : 'transport unavailable')
+          + code + '.';
+      }).filter(Boolean);
+      if (failures.length) {
+        setPeoplePreflight(failures.join(' ')
+          + ' Project People was not opened because its source was not verified. Participation alone cannot issue contributor IAM.');
+        return;
+      }
+      onManageContributors();
+    } finally {
+      if (current.current === active) setCheckingPeople(false);
+    }
+  };
+
   const upload = async event => {
     event.preventDefault();
     if (!uploadReadVerified || busy || state !== 'READY' || !file) return;
@@ -368,7 +424,14 @@ export default function ProjectTaskAttachmentsPanel({
       </p>
       {!uploadReadVerified && typeof onManageContributors === 'function' &&
         <button type="button" className="wp-button mt-3"
-          onClick={onManageContributors}>Open project People to authorize a contributor</button>}
+          disabled={checkingPeople || busy || state !== 'READY'}
+          onClick={() => { void navigateToPeople(); }}>
+          {checkingPeople ? 'Verifying project People…' : 'Check People access before contributor management'}
+        </button>}
+      {peoplePreflight && <p role="alert" className="mt-2 text-sm text-rose-800">{peoplePreflight}</p>}
+      {!uploadReadVerified && <p className="mt-2 text-xs text-slate-700">
+        Project participation and upload IAM are separate. Even an authorized contributor assignment will not grant project:participant:read or project:participant:contribute.
+      </p>}
     </div>
     {state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">
       Verifying file manifests with EOS…
@@ -427,7 +490,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION
+// VERSION: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
