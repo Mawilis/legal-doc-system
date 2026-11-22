@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT
+ * VERSION: v1.26.0-BOUNDED-MYWORK-FAILURE-DIAGNOSTICS-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.26.0-BOUNDED-MYWORK-FAILURE-DIAGNOSTICS-CERT verifies distinct My Work 403 authorization, 409 stale, 503 source failure, and transport timeout outcomes with exact-tenant read-only retry, no fabricated zero work or provider POST.
  * CHANGELOG: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT certifies the Founder-browser phrase 'What are my outstanding work?' resolves to EOS read-only My Work without posting to metered reasoning, while third-party/work-write/sensitive prompts cannot use the local bypass.
  * CHANGELOG: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT verifies no permanent source pills, EOS-only person label or neutral You, read-only composer source selection, and blocked reconciliation without duplicate POST.
  * CHANGELOG: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT proves only strictly allowlisted read-only source intents can be submitted without AI consent; mixed write/sensitive prompts retain metered/authority rejection and do not trigger local source surfaces.
@@ -595,8 +596,9 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it.each([
-    [403, /Current work is not authorised for this operating capacity/],
-    [503, /Current work could not be verified from EOS/],
+    [403, /EOS has not authorised My Work for this operating capacity/],
+    [409, /My Work source state changed/],
+    [503, /EOS My Work returned a source-unavailable response \(HTTP 503\)/],
   ])('identifies Headquarters work-source status %s and permits read-only retry', async (status, message) => {
     mockApiGet.mockImplementation(path => path === '/my-work'
       ? Promise.reject(rejectedResponse(status, 'source refusal'))
@@ -623,6 +625,32 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')[1][1].forceNetworkRetry).toBe(true);
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText(/0 active · 0 overdue/)).not.toBeInTheDocument();
+  });
+
+  it('identifies bounded My Work transport timeout without treating it as an empty queue', async () => {
+    mockApiGet.mockImplementation(path => {
+      if (path === '/my-work') {
+        const timeout = new Error('timeout of 15000ms exceeded');
+        timeout.code = 'ECONNABORTED';
+        return Promise.reject(timeout);
+      }
+      if (path === '/kernel') return Promise.reject(new Error('timeout of 8000ms exceeded'));
+      return Promise.reject(rejectedResponse(503, 'optional source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
+    requestReadOnlySource('What are my outstanding work?');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Headquarters work source status' }))
+      .toHaveTextContent('EOS My Work timed out before its response was verified.'));
+    expect(screen.queryByRole('region', { name: 'Current authorized work' })).not.toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Recheck work source' }));
+    await waitFor(() => expect(
+      mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length,
+    ).toBe(2));
   });
 
   it('renders source observations inside one conversational transcript, not fixed stacked panels', async () => {
@@ -1578,7 +1606,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT
+ * VERSION: v1.26.0-BOUNDED-MYWORK-FAILURE-DIAGNOSTICS-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
