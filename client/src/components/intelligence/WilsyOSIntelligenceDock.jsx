@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT
+ * VERSION: v4.30.0-NATURAL-OUTSTANDING-WORK-INTENT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.30.0-NATURAL-OUTSTANDING-WORK-INTENT routes bounded natural-language questions about the operator's outstanding/pending/incomplete or overdue work through source-authorized read-only My Work instead of C1B metered reasoning. Questions asking for other people's work, writes or sensitive records remain outside the free local catalog. No release or replay of reconciliation holds.
  * CHANGELOG: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT supports natural local read-only 'inspect this workspace' expression through the same strictly bounded source-intent parser, preserving no-payment/no-write semantics.
  * CHANGELOG: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT places mandatory sovereign boundary declarations in the opening header census; existing authority semantics unchanged.
  * CHANGELOG: v4.29.1-STABLE-COMPOSER-CONTRACT preserves the existing accessible composer placeholder/selector contract while the default conversation, authenticated identity label and no-status-cards interaction change.
@@ -191,6 +192,14 @@ function classifyWilsyAISourceIntent(value) {
   const text = String(value || '').trim();
   if (text.length === 0 || text.length > 160) return null;
   if (/^(?:show|list|review|open|view|inspect)\s+(?:(?:my|the|current)\s+)?(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?[?.!]?$/i.test(text)) {
+    return /\boverdue\b/i.test(text) ? 'OVERDUE' : 'WORK';
+  }
+  // Narrow natural questions about the signed-in operator's own work.
+  // No scope expansion, third-party query or work mutation is ever inferred.
+  if (/^(?:what\s+(?:are|is)|which|show\s+me|tell\s+me\s+about)\s+(?:(?:all|the)\s+)?(?:my|mine)\s+(?:(?:currently|still)\s+)?(?:(?:outstanding|open|pending|unfinished|incomplete|overdue)\s+)?(?:work|tasks?|work\s+items?|to-?dos?)(?:\s+(?:items?|remaining|outstanding|pending|overdue|today|right\s+now))?[?.!]?$/i.test(text)) {
+    return /\boverdue\b/i.test(text) ? 'OVERDUE' : 'WORK';
+  }
+  if (/^(?:what\s+(?:work|tasks?)|which\s+(?:work|tasks?))\s+do\s+i\s+(?:have|need\s+to\s+do)(?:\s+(?:outstanding|pending|overdue|today|right\s+now))?[?.!]?$/i.test(text)) {
     return /\boverdue\b/i.test(text) ? 'OVERDUE' : 'WORK';
   }
   if (/^(?:show|inspect|review|open|view)\s+(?:(?:my|the|current|this)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
@@ -2089,7 +2098,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT
+ * VERSION: v4.30.0-NATURAL-OUTSTANDING-WORK-INTENT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
