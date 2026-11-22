@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY
+ * VERSION: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR closes the
+ *            conditional unavailable-state JSX expression correctly so
+ *            OXC, Vitest and production Vite compile the Strategy viewer.
  * CHANGELOG: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY retries one safe
  *            source-owned project list GET after transient HTTP 503, retains
  *            fail-closed results, and offers existing Projects workspace
@@ -768,7 +771,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     {projectState === 'UNAVAILABLE' && <p role="status">
                       Your existing project has not been changed. A transient read was retried once.
                       Check the Python EOS Projects transaction failure code if the source remains unavailable.
-                    </p>
+                    </p>}
                     {projectState === 'DENIED' && <button type="button"
                       disabled={admissionBusy} onClick={() => void activateFounderProjects()}>
                       <ShieldCheck size={15}/> {admissionBusy ? 'Verifying Founder authority…' : 'Activate Founder Projects through EOS'}
@@ -881,7 +884,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY
+// VERSION: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
