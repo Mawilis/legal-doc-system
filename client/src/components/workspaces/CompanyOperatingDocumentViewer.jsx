@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.7.2-PROJECTS-DELIVERY-HANDOFF
+ * VERSION: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK adds read-only, exact-tenant
+ *            Projects task/milestone verification from Strategy. Scope, paging
+ *            and source status are validated; no objective linkage, progress
+ *            percentage, IAM or task mutation is inferred.
  * CHANGELOG: v1.7.2-PROJECTS-DELIVERY-HANDOFF links source-verified Strategy project rows
  *            to the existing authenticated EOS Projects delivery lifecycle.
  *            No strategic linkage, IAM grant, or ownership is inferred.
@@ -293,6 +297,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [message, setMessage] = useState('');
   const [projectState, setProjectState] = useState('IDLE');
   const [projectItems, setProjectItems] = useState([]);
+  const [delivery, setDelivery] = useState({ state: 'IDLE', projectId: null, page: null, error: '' });
+  const deliveryReadRef = useRef({ sequence: 0, controller: null });
   const [projectError, setProjectError] = useState('');
   const [projectPillar, setProjectPillar] = useState('pillar-one');
   const [projectName, setProjectName] = useState('');
@@ -344,16 +350,68 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     }
   }, [classification, sessionKey, auth.token, scope.tenantId, scope.principalId]);
 
+  /**
+   * Source-owned Projects task readback for Strategy planning; never a durable
+   * strategy-objective relationship, task command, or completion assertion.
+   */
+  const loadDelivery = async (projectId, offset = 0) => {
+    const request = ++deliveryReadRef.current.sequence;
+    deliveryReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    deliveryReadRef.current.controller = controller;
+    const key = sessionKey;
+    setDelivery({ state: 'LOADING', projectId, page: null, error: '' });
+    if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
+      || !/^prj-[a-f0-9]{48}$/.test(projectId) || !Number.isSafeInteger(offset) || offset < 0
+      || !projectItems.some(item => item.project_id === projectId)) {
+      setDelivery({ state: 'DENIED', projectId: null, page: null, error: '' });
+      return;
+    }
+    try {
+      const { data: page } = await api.get('/projects/' + encodeURIComponent(projectId) + '/tasks', {
+        params: { limit: 50, offset },
+        headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token },
+        signal: controller.signal,
+      });
+      if (!active(key) || request !== deliveryReadRef.current.sequence) return;
+      const validItems = Array.isArray(page?.items) && page.items.length <= 50
+        && new Set(page.items.map(item => item.task_id)).size === page.items.length
+        && page.items.every(item => item?.tenant_id === scope.tenantId
+          && item.project_id === projectId && /^ptk-[a-f0-9]{48}$/.test(item.task_id)
+          && ['TASK', 'MILESTONE'].includes(item.kind)
+          && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status)
+          && typeof item.title === 'string' && item.title.trim());
+      if (page?.schema !== 'WILSY-PROJECT-TASK-LIST/V1'
+        || page.tenant_id !== scope.tenantId || page.principal_id !== scope.principalId
+        || page.project_id !== projectId || page.offset !== offset || page.limit !== 50
+        || typeof page.has_more !== 'boolean' || !validItems
+        || (page.has_more
+          ? !Number.isSafeInteger(page.next_offset)
+            || page.next_offset !== offset + page.items.length || page.items.length === 0
+          : page.next_offset !== null)) throw new Error('STRATEGY_PROJECT_TASK_READBACK_INVALID');
+      setDelivery({ state: 'READY', projectId, page, error: '' });
+    } catch (failure) {
+      if (!active(key) || request !== deliveryReadRef.current.sequence) return;
+      if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      setDelivery({ state: failure?.response?.status === 401 || failure?.response?.status === 403
+        ? 'DENIED' : 'UNAVAILABLE', projectId, page: null,
+      error: 'EOS could not verify the project task page. No Strategy progress was inferred.' });
+    }
+  };
+
   useEffect(() => {
     projectReadRef.current.sequence += 1;
     projectReadRef.current.controller?.abort();
+    deliveryReadRef.current.sequence += 1;
+    deliveryReadRef.current.controller?.abort();
+    setDelivery({ state: 'IDLE', projectId: null, page: null, error: '' });
     projectMutation.current = null;
     projectReplay.current = { intent: '', key: null };
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
     setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription(''); setProjectEditSource(false);
     setProjectPillar('pillar-one');
     if (classification === 'STRATEGY' && sessionKey) void loadProjects();
-    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); projectMutation.current = null; };
+    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); projectMutation.current = null; };
   }, [classification, sessionKey, loadProjects]);
 
   /** Explicitly request the existing administrator-governed Founder admission. */
@@ -666,8 +724,23 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           onClick={() => onOpenProject(item.project_id)}>
                           Open project delivery <ArrowUpRight size={14}/>
                         </button>}
+                        <button type="button" disabled={delivery.state === 'LOADING'}
+                          onClick={() => void loadDelivery(item.project_id)}>
+                          Verify execution <RefreshCw size={14}/>
+                        </button>
                       </li>)}
                     </ul>}
+                    {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
+                    {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
+                    {delivery.state === 'READY' && delivery.page && <section aria-label="Verified project execution">
+                      <h3>Source-verified project execution</h3>
+                      <p>{projectItems.find(item => item.project_id === delivery.projectId)?.name} · {delivery.page.items.length} tasks on this verified page. No Strategy completion percentage is inferred.</p>
+                      {delivery.page.items.length === 0 ? <p>EOS verified no tasks on this page.</p>
+                        : <ul>{delivery.page.items.map(item => <li key={item.task_id}><strong>{item.title}</strong> · {item.kind} · {item.status}{item.due_date ? ' · Due ' + item.due_date : ''}</li>)}</ul>}
+                      {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
+                      {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
+                      <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.offset)}>Refresh execution</button>
+                    </section>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
                     {projectState === 'DENIED' && <button type="button"
@@ -782,7 +855,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.7.2-PROJECTS-DELIVERY-HANDOFF
+// VERSION: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
