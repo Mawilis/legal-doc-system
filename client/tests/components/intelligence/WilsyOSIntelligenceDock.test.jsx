@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT
+ * VERSION: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT certifies compound count-and-details planning from verified Projects provenance and fresh read-only EOS endpoints, including denial of unsafe mixed-domain compound prompts.
  * CHANGELOG: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT certifies a three-turn total -> active count -> project detail conversation, independent source reads, exact current project identity/revision, zero model POST, and refusal on denied/mismatched records.
  * CHANGELOG: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT proves a two-turn Projects count then status follow-up (including 'How may are active?') uses fresh canonical EOS summary without paid POST, and refuses subject carryover after unrelated conversation or ambiguous multiple-status questions.
  * CHANGELOG: v1.31.0-VERIFIED-PROJECT-COUNT-READ-CERT tests exact-tenant and current-principal Projects summary count read, no POST, missing consent independence, and fail-closed denied/mismatched source. Existing metered query/replay tests retained.
@@ -494,6 +495,68 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiGet).toHaveBeenCalledWith('/projects/' + projectId, expect.objectContaining({
       headers: { 'X-Tenant-ID': 'TEST_TENANT' },
     }));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('composes a verified project count and details query without provider inference', async () => {
+    const projectId = 'prj-' + 'c'.repeat(48);
+    const counts = { total: 4, active: 1, planned: 2, on_hold: 1, done: 0, cancelled: 0 };
+    const project = {
+      project_id: projectId, tenant_id: 'TEST_TENANT', name: 'Institutional launch',
+      summary: 'Certified execution planning', status: 'active',
+      archived_at: null, revision: 1, start_date: null, target_date: null,
+    };
+    const requestPaths = [];
+    mockApiGet.mockImplementation(path => {
+      requestPaths.push(path);
+      if (path === '/projects/summary') return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-SUMMARY/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator', counts,
+      } });
+      if (path === '/projects?project_status=active&limit=100&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: 'project-count-operator', items: [project],
+          limit: 100, offset: 0, has_more: false, next_offset: null,
+        } });
+      }
+      if (path === '/projects/' + projectId) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+        project, events: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(composer, { target: { value: 'How many projects do I have?' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/You have 4 projects in this tenant/)).toBeVisible());
+    fireEvent.change(composer, { target: { value: 'How many are active and what are details ?' } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/Name: Institutional launch/)).toBeVisible());
+    expect(screen.getByText(/1 of your 4 projects are active/)).toBeVisible();
+    expect(requestPaths.filter(path => path === '/projects/summary')).toHaveLength(2);
+    expect(requestPaths).toContain('/projects?project_status=active&limit=100&offset=0');
+    expect(requestPaths).toContain('/projects/' + projectId);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('denies mixed-domain compound reads without silently promoting project authority', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many projects are active and delete their invoices?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1915,7 +1978,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT
+ * VERSION: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
