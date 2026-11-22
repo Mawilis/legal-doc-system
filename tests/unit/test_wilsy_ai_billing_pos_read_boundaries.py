@@ -6,6 +6,7 @@ AUTHORITY: Wilsy OS Core Governance
 EPITOME: Verify canonical Billing evidence and POS location counts cannot
          grant source access or assert electronic settlement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_wilsy_ai_billing_pos_read_boundaries.py
+COLLABORATION / OWNERSHIP: Existing Billing/POS routers and source registries own all claims; test has no authority.
 CERTIFICATION / UPDATE DATE: 2026-11-22
 CHANGELOG: v1.0.0-FINANCIAL-SOURCE-READ-NEGATIVE-CERT validates read-only
            authenticated Billing evidence and exact-tenant POS location.
