@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT
+ * VERSION: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,7 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT certifies that independently verified task records remain available despite rejected contributor-directory reads; task assignment is refused while participant authorization is unverified and source failure is explicit.
  * CHANGELOG: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT verifies tenant employee names appear in the task Assignee selector as candidate choices and selecting a candidate opens a preselected explicit contributor grant. The task draft is assigned only after independent exact-project readback, not by dropdown choice alone.
  * CHANGELOG: v2.54.0-VIEWPORT-CONTRIBUTOR-SELECTOR-CERT tests immediately visible contributor admission dialog instead of the offscreen inline panel, with the original task editor draft preserved and EOS readback gating assignment.
  * CHANGELOG: v2.53.0-COLLAPSIBLE-FILTERS-AND-ASSIGNEE-ONBOARDING-CERT certifies default-collapsed work filters and source-backed contributor admission from an unassigned task editor, retaining the draft and refreshing assignees only after independent participant readback; no IAM grant or task write.
@@ -1278,6 +1279,41 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
 
+  it('keeps EOS-verified work visible when project participants fail independently', async () => {
+    const persisted = project();
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`)
+        throw { response: { status: 503 } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`)
+        throw { response: { status: 503 } };
+      throw new Error('Unexpected work source: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="participant-source-failure-isolation"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const region = await screen.findByRole('region', { name: 'Project work execution' });
+    await waitFor(() => expect(within(region).getByRole('alert'))
+      .toHaveTextContent('Project contributor list source is unavailable'));
+    expect(within(region).getByText(/0 verified work items/)).toBeVisible();
+    expect(within(region).queryByText(/Project work could not be verified/)).not.toBeInTheDocument();
+    fireEvent.click(within(region).getByRole('button', { name: 'Create task' }));
+    const select = within(region).getByRole('combobox', { name: 'Task assignee' });
+    expect(select).toBeDisabled();
+    expect(within(region).getByRole('button', { name: 'Manage eligible contributors' }))
+      .toBeDisabled();
+    expect(within(region).queryByRole('dialog', {
+      name: 'Manage contributors for task assignment',
+    })).not.toBeInTheDocument();
+  });
+
   it('keeps an unsaved task while a verified contributor is admitted inline', async () => {
     const persisted = project();
     const memberId = 'employee-' + 'd'.repeat(24);
@@ -1339,7 +1375,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
       target: { value: 'Preserved governance draft' },
     });
-    expect(screen.getByText(/No verified project contributors are eligible/)).toBeVisible();
+    expect(screen.getByText(/No verified current project contributors are eligible/)).toBeVisible();
     const assignee = screen.getByRole('combobox', { name: 'Task assignee' });
     const candidate = within(assignee).getByRole('option', {
       name: 'Alex Mokoena · Authorize contributor',
@@ -2306,7 +2342,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT
+ * VERSION: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
