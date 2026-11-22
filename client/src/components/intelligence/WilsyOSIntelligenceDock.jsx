@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.28.0-STRICT-READONLY-INTENT-CATALOG
+ * VERSION: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION removes the last permanently rendered quick-action button row, prefers a verified non-email person name (or neutral You) in user turns, and presents provider reconciliation as a distinct pending request in the transcript without claiming completion or retrying metered usage. Retains exact-key replay refusal and authenticated source introspection on natural-language intent.
  * CHANGELOG: v4.28.0-STRICT-READONLY-INTENT-CATALOG registers one strict read-only source-intent catalog for both composer permission gating and execution. Unknown intents never inherit unmetered authority; source views cannot issue a model POST or mutate EOS work; no generated markup or model-supplied action names.
  * CHANGELOG: v4.27.1-CONTEXT-FOCUSED-HEADER removes operational kernel diagnostics as the Dock's hero subtitle while preserving truthful accessible kernel status; the visible header now prioritises current verified workspace and source posture.
  * CHANGELOG: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER treats explicit local read-only queries as ephemeral user turns followed by verified EOS-source result, not a static header; keeps greeting only on an empty thread, offers contextual follow-ups, and never records a source view as paid model output or persisted assistant history.
@@ -986,7 +987,7 @@ export function WilsyOSIntelligenceDock({
         && reasoningReplayRef.current.scope === dockScopeRef.current
         && reasoningReplayRef.current.text === text
         && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current) {
-        setErrorMessage('This AI attempt requires EOS reconciliation. Do not resubmit the same question until the execution evidence is resolved.');
+        setErrorMessage('This request is awaiting EOS execution and usage reconciliation. No verified answer exists. Resubmitting the same request is blocked.');
         return;
       }
       if (!isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
@@ -1186,7 +1187,7 @@ export function WilsyOSIntelligenceDock({
           : status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT'
             ? 'This AI request conflicts with a previously recorded attempt. No answer was generated. Review the question and press Send to create a separate request.'
           : status === 503 && detail === 'C1B_REASONING_RECONCILIATION_REQUIRED'
-            ? 'AI execution or usage evidence requires reconciliation. Available requests may be held, not completed usage. Do not submit this question again until EOS verifies the attempt.'
+            ? 'This request has not produced a verified answer. EOS must reconcile the provider execution and usage evidence. The original request is blocked from resubmission; your draft is preserved. This does not prove a billable model response.'
           : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
           : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
           : 'WILSY AI could not verify this answer. Your question remains in the composer.';
@@ -1358,11 +1359,12 @@ export function WilsyOSIntelligenceDock({
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
-  const operatorLabel =
-    authUser?.displayName ||
-    authUser?.name ||
-    authUser?.email ||
-    'Operator';
+  const operatorNameCandidate = [
+    [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
+      .filter(value => typeof value === 'string' && value.trim()).join(' '),
+    authUser?.displayName, authUser?.name,
+  ].find(value => typeof value === 'string' && value.trim() && !value.includes('@'));
+  const operatorLabel = operatorNameCandidate?.trim().slice(0, 96) || 'You';
   const legalStatus = String(legalAdvisory?.status || '').toUpperCase();
   const authoritativeTenantBrand = resolveAuthoritativeTenantBrand(activeTenant);
 
@@ -1481,34 +1483,9 @@ export function WilsyOSIntelligenceDock({
                             ? `You're viewing “${visibleWorkspaceContext.data.work.selected_task.title}”. What would you like to do with this verified task context?`
                             : visibleWorkspaceContext.data.work?.project?.name
                               ? `You're viewing “${visibleWorkspaceContext.data.work.project.name}”. What would you like to inspect?`
-                              : 'What would you like to work on? I can inspect the sources your EOS session authorises.')
-                          : 'What would you like to work on? I can check authorised EOS sources without spending AI credits.'}
+                              : 'Ask about your work, overdue tasks or this workspace. EOS will determine what you are authorised to see.')
+                          : 'Ask me about the work or workspace you are viewing. I can inspect authorised EOS sources without using AI credits.'}
                       </p>
-                    </div>
-                  )}
-                  {conversationView === 'WELCOME' && !isLegalDockRole(authUser?.role) && (
-                    <div role="group" aria-label="Available source actions"
-                      style={{ display: 'flex', gap: 10, flexWrap: 'wrap',
-                        maxWidth: '70ch', padding: '2px 0 18px' }}>
-                      {workLocator.workspace === 'HEADQUARTERS' && (
-                        <button type="button" className={styles.historyActionButton}
-                          style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
-                          onClick={() => { setConversationView('WORK'); setLocalSourceQuery('Review my work'); }}>
-                          Review my work
-                        </button>
-                      )}
-                      <button type="button" className={styles.historyActionButton}
-                        style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
-                        onClick={() => { setConversationView('SOURCE'); setLocalSourceQuery('Inspect this workspace'); }}>
-                        Inspect this workspace
-                      </button>
-                      {visibleHeadquartersWork?.state === 'READY' && visibleHeadquartersWork.overdueCount > 0 && (
-                        <button type="button" className={styles.historyActionButton}
-                          style={{ minHeight: 44, padding: '8px 14px', color: '#eaf3ff' }}
-                          onClick={() => { setConversationView('OVERDUE'); setLocalSourceQuery('Review overdue work'); }}>
-                          Review overdue work
-                        </button>
-                      )}
                     </div>
                   )}
                   {conversationView !== 'WELCOME' && localSourceQuery && (
@@ -1746,7 +1723,15 @@ export function WilsyOSIntelligenceDock({
                       <div className={styles.bubbleBody}>Consulting operator intelligence…</div>
                     </div>
                   )}
-                  {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
+                  {errorMessage && (
+                    <div className={styles.assistantBubble} role="status"
+                      aria-label="WILSY OS request status"
+                      style={{ padding: '10px 0', maxWidth: '70ch' }}>
+                      <div className={styles.bubbleHeader}>WILSY OS · Request status</div>
+                      <p style={{ margin: 0, color: '#f4d9cd', lineHeight: 1.65,
+                        overflowWrap: 'anywhere' }}>{errorMessage}</p>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -1796,7 +1781,9 @@ export function WilsyOSIntelligenceDock({
                         handleSendMessage();
                       }
                     }}
-                    placeholder="Ask Wilsy OS…"
+                    placeholder={workLocator.workspace === 'PROJECTS'
+                      ? 'Ask about this project…'
+                      : 'Ask WILSY OS about your work…'}
                     rows={2}
                     disabled={isSubmitting}
                   />
@@ -2095,7 +2082,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.28.0-STRICT-READONLY-INTENT-CATALOG
+ * VERSION: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
