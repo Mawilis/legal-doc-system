@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.3.0-APPROVED-SOURCE-PENDING-PUBLICATION-CERT
+ * VERSION: v1.4.0-STRATEGY-PROJECT-EXECUTION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.4.0-STRATEGY-PROJECT-EXECUTION-CERT checks authenticated
+ *            exact-project source readback and rejection of malformed task
+ *            pages without inferring strategy completion or granting access.
  * CHANGELOG: v1.3.0-APPROVED-SOURCE-PENDING-PUBLICATION-CERT certifies the
  *            existing approved-source preparation workflow while retaining
  *            publication, permission, scope, replay and independent readback gates.
@@ -274,6 +277,56 @@ describe('governed company document experience', () => {
   });
 });
 
+describe('Strategy source-owned project execution readback', () => {
+  const projectId = 'prj-' + 'a'.repeat(48);
+  const taskId = 'ptk-' + 'b'.repeat(48);
+  const project = { project_id: projectId, tenant_id: scope.tenantId,
+    name: 'Unified Operating Platform Foundation', status: 'ACTIVE', revision: 2 };
+  const projectList = () => ({ schema: 'WILSY-PROJECT-LIST/V1',
+    tenant_id: scope.tenantId, principal_id: scope.principalId,
+    limit: 100, offset: 0, has_more: false, next_offset: null, items: [project] });
+  const taskList = () => ({ schema: 'WILSY-PROJECT-TASK-LIST/V1',
+    tenant_id: scope.tenantId, principal_id: scope.principalId, project_id: projectId,
+    offset: 0, limit: 50, has_more: false, next_offset: null,
+    items: [{ tenant_id: scope.tenantId, project_id: projectId, task_id: taskId,
+      kind: 'MILESTONE', title: 'Complete operating taxonomy',
+      status: 'TODO', due_date: null }] });
+  it('shows independently verified project tasks, not invented Strategy progress', async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === '/projects/' + projectId + '/tasks')
+        return Promise.resolve({ data: taskList() });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(record('STRATEGY')) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Verify execution/ }));
+    expect(await screen.findByRole('heading', { name: 'Source-verified project execution' })).toBeVisible();
+    expect(screen.getByText(/Complete operating taxonomy/)).toBeVisible();
+    expect(screen.getByText(/No Strategy completion percentage is inferred/)).toBeVisible();
+    const call = api.get.mock.calls.find(([url]) => url === '/projects/' + projectId + '/tasks');
+    expect(call[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId,
+      Authorization: 'Bearer synthetic-only' });
+  });
+  it('rejects mismatched task tenant and hides unverified delivery', async () => {
+    const foreign = taskList();
+    foreign.items[0].tenant_id = 'FOREIGN';
+    api.get.mockImplementation(url => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === '/projects/' + projectId + '/tasks')
+        return Promise.resolve({ data: foreign });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(record('STRATEGY')) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Verify execution/ }));
+    expect(await screen.findByText(/No Strategy progress was inferred/)).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Source-verified project execution' })).not.toBeInTheDocument();
+  });
+});
+
 describe('source contract rejection', () => {
   it.each([
     value => ({ ...value, tenant_id: 'foreign' }),
@@ -295,7 +348,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.3.0-APPROVED-SOURCE-PENDING-PUBLICATION-CERT
+// VERSION: v1.4.0-STRATEGY-PROJECT-EXECUTION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
