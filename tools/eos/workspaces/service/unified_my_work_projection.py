@@ -1,12 +1,15 @@
 """TITLE: WILSY OS Unified My Work Read Projection
-VERSION: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY
+VERSION: v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Deterministically compose independently admitted EOS source work while
          preserving source identity, tenant scope and visibility provenance.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/workspaces/service/unified_my_work_projection.py
 COLLABORATION / OWNERSHIP: unified_my_work_router admits Legal, Operations,
                            Intelligence, CRM and HR through their own authorities.
-CERTIFICATION / UPDATE DATE: 2026-11-15.
+CERTIFICATION / UPDATE DATE: 2026-11-23.
+CHANGELOG: v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG
+         restores the historical HR admission version and revalidates the
+         sovereign source-backed audience contract without changing IAM.
 CHANGELOG: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY
          leaves preexisting source revision formats untouched when no audited
          audience evidence is provided. A claimed audience always requires
@@ -18,7 +21,7 @@ CHANGELOG: v1.3.0-SOURCE-GOVERNED-WORK-AUDIENCE-PROJECTION
 CHANGELOG: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION includes independently admitted
          exact-participant project tasks, preserving project/due-date source
          coordinates and blocked visibility without inventing due-at instants.
-CHANGELOG: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY accepts only the sanitized,
+CHANGELOG: v1.2.0-PROJECTS-AUTHORIZED-WORK-PROJECTION accepts only the sanitized,
            independently admitted HR action envelope supplied by the existing
            headcount and hiring source owners. It never reads personnel
            collections or introduces HR command authority.
@@ -47,7 +50,7 @@ from typing import Any, Iterable, Mapping
 
 from tools.eos.workspaces.service.work_audience_policy import evaluate_work_audience
 
-VERSION = "v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY"
+VERSION = "v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG"
 SCHEMA = "WILSY-OS-UNIFIED-MY-WORK/V1"
 
 _SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR", "PROJECTS")
@@ -292,7 +295,7 @@ def build_unified_my_work(
 __all__ = ["SCHEMA", "VERSION", "UnifiedMyWorkProjectionError", "build_unified_my_work"]
 
 # ARTIFACT: unified_my_work_projection.py
-# VERSION: v1.3.1-LEGACY-SOURCE-REVISION-COMPATIBILITY
+# VERSION: v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG
 # AUTHORITY BOUNDARY: Read projection of independently admitted source work only.
 # TENANT POSTURE: Exact envelope and explicit item tenant binding; no cross-tenant lookup.
 # FAIL-CLOSED POSTURE: Malformed, foreign and divergent source evidence rejects.
