@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.37.1-EXACT-PURPOSE-DEPENDENCY-CERT
+VERSION: v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT uses the
+  canonical RequireTenantAuthorization.permission_id/operation contract
+  for source classification route assertions.
   v1.37.1-EXACT-PURPOSE-DEPENDENCY-CERT asserts direct existing
   RequireTenantAuthorization permission pairs rather than introspecting
   class implementation details.
@@ -1321,8 +1324,8 @@ def test_source_work_purpose_commands_require_existing_exact_project_authority(
                 and "POST" in route.methods]
     assert len(reads) == len(commands) == 1
     assert reads[0].dependant.dependencies != commands[0].dependant.dependencies
-    assert projects_router._DETAIL.permission == "project:read"
-    assert projects_router._UPDATE.permission == "project:update"
+    assert projects_router._DETAIL.permission_id == "project:read"
+    assert projects_router._UPDATE.permission_id == "project:update"
 
 
 def test_owner_page_uses_current_authenticated_principal_not_participant_grant(monkeypatch) -> None:
@@ -1449,7 +1452,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.37.1-EXACT-PURPOSE-DEPENDENCY-CERT
+# VERSION: v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
