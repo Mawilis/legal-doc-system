@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.5.0-STRATEGY-PLAN-ADMISSION-PRESENTATION
+ * VERSION: v1.6.0-VERIFIED-STRATEGY-PILLAR-LINK-PANEL
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.6.0-VERIFIED-STRATEGY-PILLAR-LINK-PANEL separates
+ *            source-verified Strategy pillar/project relationships from
+ *            unverified progress, with explicit authoritative link action.
  * CHANGELOG: v1.5.0-STRATEGY-PLAN-ADMISSION-PRESENTATION separates
  *            uncommitted roadmap milestones/tasks from verified EOS work,
  *            with explicit source-state labels, responsive grouped lists
@@ -172,8 +175,18 @@
 @media(max-width:900px){.strategyPlanGroups{grid-template-columns:1fr}}
 @media(max-width:650px){.strategyPlan{padding:13px}.strategyPlanHeader button{width:100%}.strategyPlanGroups li{flex-direction:column;gap:6px}}
 
+/* Strategy link: evidence of relationship only, never strategic attainment. */
+.strategyLinkPanel{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:18px 0 8px;padding:16px;border:1px solid #82b4cc83;border-radius:12px;background:#071b3080}
+.strategyLinkPanel>div{flex:1 1 270px;min-width:0}
+.strategyLinkPanel h4{margin:0 0 8px;font-size:13px;color:#f4f8ff}
+.execution .strategyLinkPanel p{font-size:11px;line-height:1.6;margin:0 0 8px;color:#bacce3}
+.strategyLinkPanel>button{flex:0 1 auto;min-height:37px;padding:9px 13px;border:1px solid #e7bf65;border-radius:8px;background:#e9c165;color:#15263d;font-size:11px;font-weight:750}
+.strategyLinkPanel>button:disabled{opacity:.5;cursor:not-allowed}
+.strategyLinkPanel>p{flex-basis:100%}
+@media(max-width:650px){.strategyLinkPanel>button{width:100%;flex:1 1 100%}}
+
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.5.0-STRATEGY-PLAN-ADMISSION-PRESENTATION
+ * VERSION: v1.6.0-VERIFIED-STRATEGY-PILLAR-LINK-PANEL
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
