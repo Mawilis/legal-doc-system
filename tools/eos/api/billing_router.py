@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 TITLE: WILSY OS Python EOS Billing HTTP Router
-VERSION: v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
+VERSION: v1.13.0-AUTHORIZED-READ-ONLY-INTELLIGENCE-EVIDENCE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Composes Python-owned billing HTTP surfaces. Invoice proof reference
          verification uses canonical own-tenant authorization and persists an
@@ -11,6 +11,7 @@ COLLABORATION / OWNERSHIP: BillingRegistry, billing domain, TenantAuthorizationC
                            Kernel database and client billing projections.
 CERTIFICATION / UPDATE DATE: 2026-11-10
 CHANGELOG:
+  2026-11-22 v1.13.0-AUTHORIZED-READ-ONLY-INTELLIGENCE-EVIDENCE adds a side-effect-free exact-tenant Billing evidence lookup by immutable certified identity. Reuses billing_intelligence:evidence:read, strict canonical registry hydration and source evidence fingerprint; no collect_and_persist, settlement, financial execution or legacy root fallback.
   2026-11-10 v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY confines legacy QR
     matching to tenant-owned client invoices, rejects conflicting tenant and
     identity aliases, requires persisted currency, and uses the canonical
@@ -68,6 +69,11 @@ from ..saas.domain.billing import (
     TaxType,
     LineItem,
 )
+from ..saas.billing.billing_intelligence_registry import (
+    BillingIntelligenceRegistry,
+    BillingIntelligenceRegistryError,
+    COLLECTION as BILLING_INTELLIGENCE_EVIDENCE_COLLECTION,
+)
 from ..saas.billing.billing_intelligence_orchestrator import (
     BillingIntelligenceOrchestrator,
     BillingIntelligenceOrchestratorError,
@@ -95,7 +101,7 @@ from ..saas.billing.invoice_qr_legacy_contract import (
 )
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY"
+VERSION = "v1.13.0-AUTHORIZED-READ-ONLY-INTELLIGENCE-EVIDENCE"
 
 _BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION = RequireTenantAuthorization(
     "billing_intelligence:evidence:read",
@@ -1020,6 +1026,54 @@ async def get_billing_analytics(
 ) -> Any:
     """Reject uncertified legacy analytics without fabricating intelligence."""
     _legacy_intelligence_unavailable("/billing/analytics")
+
+
+@router.get("/intelligence/verified-evidence/{evidence_identity}", response_model=Dict[str, Any])
+async def read_verified_billing_intelligence_evidence(
+    evidence_identity: str,
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Read existing immutable billing intelligence without source mutation.
+
+    The supplied identifier selects an existing record only. The server owns
+    exact tenant membership/permission and the registry checks persisted
+    fingerprint, source contract, currency and evidence integrity. This route
+    is safe for authorised read-only tool consumers; it NEVER invokes a
+    derivation, creates a snapshot, or asserts payment settlement.
+    """
+    try:
+        value = BillingIntelligenceRegistry.get(
+            authorization.tenant_id, evidence_identity,
+            _require_db()[BILLING_INTELLIGENCE_EVIDENCE_COLLECTION],
+        )
+        payload = BillingIntelligenceOrchestrator.response_payload(value)
+        if payload.get("tenant_id") != authorization.tenant_id \
+                or payload.get("evidence_identity") != evidence_identity:
+            raise BillingIntelligenceRegistryError("M12P2_EVIDENCE_SCOPE_INVALID")
+        return {
+            "schema": "WILSY-BILLING-VERIFIED-EVIDENCE-READ/V1",
+            "tenant_id": authorization.tenant_id,
+            "principal_id": authorization.identity.identity_id,
+            "authority": {
+                "source": "PYTHON_EOS_BILLING_INTELLIGENCE_REGISTRY",
+                "read_only": True,
+                "model_invoked": False,
+                "financial_execution": False,
+                "settlement_not_asserted": True,
+            },
+            "evidence": payload,
+        }
+    except BillingIntelligenceRegistryError as error:
+        code = str(error)
+        if code in {"M12P2_EVIDENCE_NOT_FOUND", "M12P2_IDENTITY_INVALID"}:
+            raise HTTPException(status_code=404, detail="BILLING_EVIDENCE_NOT_FOUND") from error
+        raise HTTPException(status_code=503, detail="BILLING_EVIDENCE_NOT_VERIFIED") from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="BILLING_EVIDENCE_UNAVAILABLE") from error
 
 
 @router.get("/intelligence/evidence", response_model=Dict[str, Any])
@@ -2439,10 +2493,10 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.13.0-AUTHORIZED-READ-ONLY-INTELLIGENCE-EVIDENCE
 ════════════════════════════════════════════════════════════════════════════════
 Status:          ENGINEERING ARTIFACT — PRODUCTION ACTIVATION NOT CERTIFIED
-Version:         v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
+Version:         v1.13.0-AUTHORIZED-READ-ONLY-INTELLIGENCE-EVIDENCE
 Fixes:           Financial-truth HTTP firewall; canonical billing-intelligence authorization seam and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue authority is PlanRegistry; Kennel remains exclusive financial execution authority. Dunning is a separate collection projection and cannot mutate subscription lifecycle or access.
@@ -2453,7 +2507,7 @@ Note:            Plan catalogue authority is PlanRegistry; Kennel remains exclus
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
+# VERSION: v1.13.0-AUTHORIZED-READ-ONLY-INTELLIGENCE-EVIDENCE
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:
