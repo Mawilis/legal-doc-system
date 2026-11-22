@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT
+VERSION: v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
+  extends the existing exhaustively enumerated Projects path and IAM-pair
+  certificate with the three new source-owned work-purpose actions; no
+  wildcard route or unaccounted permission pair is admitted.
   v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT locks
   immutable purpose history GET to exact project/detail IAM, bounded 25-event
   readback and omission of actor IDs and idempotency tokens from response.
@@ -485,6 +489,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision", ("POST",)),
         ("/projects/{project_id}/tasks/{task_id}/events", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose/events", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/events", ("GET",)),
         ("/projects/{project_id}/tasks/{task_id}/comments", ("GET",)),
         ("/projects/{project_id}/tasks/{task_id}/comments", ("POST",)),
@@ -538,6 +545,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/tasks/{task_id}/events", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose/events", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/events", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/tasks/{task_id}/comments", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/tasks/{task_id}/comments", "POST"): ("project:update", "project_update"),
@@ -1550,7 +1560,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT
+# VERSION: v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
