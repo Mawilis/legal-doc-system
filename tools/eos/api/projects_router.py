@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION
+VERSION: v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION restores the historical
+  v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND adds exact-source project work-purpose GET and audited
+  project:update POST, strict revision/idempotency and same-transaction
+  current source+event readback. No Founder or participant privilege inheritance.
+  v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND restores the historical
   v1.42.0 Founder contributor and participant profile changelog attribution
   without expanding the read-only Projects transaction recovery scope.
   v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
@@ -307,6 +310,11 @@ from tools.eos.saas.projects.project_comment_registry import (
 from tools.eos.saas.projects.project_template_catalogue import (
     get_blueprint, list_blueprints, SCHEMA as PROJECT_TEMPLATE_SCHEMA,
 )
+from tools.eos.saas.projects.project_work_purpose_registry import (
+    COLLECTION as PROJECT_WORK_PURPOSE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_WORK_PURPOSE_EVENT_COLLECTION,
+    ProjectWorkPurposeRegistry, WorkPurposeError, WorkPurposeConflict,
+)
 from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as PROJECT_TASK_COLLECTION,
     EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
@@ -335,7 +343,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION"
+VERSION: Final[str] = "v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -544,6 +552,16 @@ class ProjectTaskReviseRequest(BaseModel):
     def parse_wire_date(cls, value: object) -> object:
         """Retain strict revision admission for canonical calendar strings."""
         return _project_wire_iso_date(value)
+
+
+class ProjectTaskWorkPurposeRequest(BaseModel):
+    """Source-owner categorization command; no inferred approval or gate."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    audience: Literal["OPERATING", "PLATFORM_BUILD"]
+    reason: str = Field(min_length=10, max_length=1000)
+    expected_task_revision: int = Field(ge=1)
+    expected_purpose_revision: int = Field(ge=0)
 
 
 class ProjectTaskTransitionRequest(BaseModel):
@@ -793,6 +811,10 @@ def _transaction(
         raise HTTPException(status_code=409, detail=error.code) from error
     except ProjectCommentError as error:
         logger.error("PROJECT_COMMENT_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
+    except WorkPurposeConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except WorkPurposeError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectTaskNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
@@ -3146,6 +3168,89 @@ def read_project_task_action_capabilities(
     return _transaction(context, read)
 
 
+def _work_purpose_store() -> ProjectWorkPurposeRegistry:
+    """Compose the source-owned purpose registry without introducing new IAM."""
+    database = kernel_db.get_database()
+    if database is None:
+        raise WorkPurposeError("PROJECT_WORK_PURPOSE_SOURCE_UNAVAILABLE")
+    return ProjectWorkPurposeRegistry(
+        database[PROJECT_WORK_PURPOSE_COLLECTION],
+        database[PROJECT_WORK_PURPOSE_EVENT_COLLECTION],
+    )
+
+
+@router.get("/{project_id}/tasks/{task_id}/work-purpose")
+def read_project_task_work_purpose(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Read source-audited task purpose after exact project-detail authority."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        task = _project_task_store(registry, context.tenant_id, project_id, session).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        purpose = _work_purpose_store().current_for_task(task=task, session=session)
+        return {
+            "schema": "WILSY-PROJECT-WORK-PURPOSE/V1",
+            "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "task_revision": task.revision, "audience": purpose["audience"] if purpose else "UNCLASSIFIED",
+            "evidence_ref": purpose["evidence_ref"] if purpose else None,
+            "source_revision": purpose["source_revision"] if purpose else None,
+            "critical_gate": False,
+        }
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/tasks/{task_id}/work-purpose")
+def classify_project_task_work_purpose(
+    payload: ProjectTaskWorkPurposeRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Audited exact-source purpose command, separately gated by project:update."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    timestamp = datetime.now(timezone.utc)
+
+    def commit(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        task = _project_task_store(registry, context.tenant_id, project_id, session).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        purpose_registry = _work_purpose_store()
+        purpose_registry.classify(
+            task=task, actor_principal_id=context.identity.identity_id,
+            audience=payload.audience, reason=payload.reason,
+            expected_task_revision=payload.expected_task_revision,
+            expected_purpose_revision=payload.expected_purpose_revision,
+            idempotency_key=key, session=session, now=timestamp,
+        )
+        verified = purpose_registry.current_for_task(task=task, session=session)
+        if verified is None or verified["audience"] != payload.audience:
+            raise WorkPurposeError("PROJECT_WORK_PURPOSE_READBACK_UNVERIFIED")
+        return {
+            "schema": "WILSY-PROJECT-WORK-PURPOSE/V1",
+            "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "task_revision": task.revision, "audience": verified["audience"],
+            "evidence_ref": verified["evidence_ref"],
+            "source_revision": verified["source_revision"],
+            "critical_gate": False,
+        }
+
+    return _transaction(context, commit, write=True)
+
+
 @router.get("/{project_id}/tasks")
 def list_project_tasks(
     response: Response,
@@ -4063,7 +4168,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION
+# VERSION: v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
