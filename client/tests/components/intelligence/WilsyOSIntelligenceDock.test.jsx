@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT
+ * VERSION: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT certifies exact-principal POS location commercial counts and immutable Billing evidence-by-ID, excludes settlement and paid inference, refuses foreign or malformed financial evidence.
  * CHANGELOG: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT certifies exact-tenant/principal My Work source coverage for CRM, HR and Operations counts, a composable multi-domain count, omitted-source refusal, unrecognised-semantic denial and zero provider POST.
  * CHANGELOG: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT certifies compound count-and-details planning from verified Projects provenance and fresh read-only EOS endpoints, including denial of unsafe mixed-domain compound prompts.
  * CHANGELOG: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT certifies a three-turn total -> active count -> project detail conversation, independent source reads, exact current project identity/revision, zero model POST, and refusal on denied/mismatched records.
@@ -632,6 +633,136 @@ describe('WilsyOSIntelligenceDock', () => {
       expect(screen.getByLabelText('Send')).toBeDisabled();
     }
     expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(false);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reads verified POS commercial counts at one currently assigned location without model POST', async () => {
+    mockApiGet.mockImplementation(path => {
+      if (path === '/pos/locations') return Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        locations: [{ location_id: 'BRANCH_1', revision: 0, status: 'ACTIVE' }],
+      } });
+      if (path === '/pos/locations/BRANCH_1/commercial-summary') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-POS-COMMERCIAL-SUMMARY/V1',
+          tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+          location_id: 'BRANCH_1',
+          counts: { total: 5, DRAFT: 1, OPEN: 1,
+            COMPLETED_COMMERCIAL: 2, VOIDED: 1 },
+          authority: {
+            source: 'PYTHON_EOS_POS_SALE_REGISTRY', read_only: true,
+            model_invoked: false, financial_execution: false,
+            settlement_not_asserted: true,
+          },
+        } });
+      }
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many POS sales do I have?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified POS')).toBeVisible());
+    expect(screen.getByText(/EOS verifies 5 commercial sales/)).toBeVisible();
+    expect(screen.getByText(/does not prove payment settlement/)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith(
+      '/pos/locations/BRANCH_1/commercial-summary',
+      expect.objectContaining({ headers: { 'X-Tenant-ID': 'TEST_TENANT' } }),
+    );
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('does not aggregate POS across multiple assigned locations without selecting one', async () => {
+    mockApiGet.mockImplementation(path => path === '/pos/locations'
+      ? Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        locations: [
+          { location_id: 'BRANCH_1', revision: 0, status: 'ACTIVE' },
+          { location_id: 'BRANCH_2', revision: 0, status: 'ACTIVE' },
+        ],
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many POS sales do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/Select a location in POS/)).toBeVisible());
+    expect(mockApiGet.mock.calls.some(([path]) => path.includes('commercial-summary'))).toBe(false);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('denies cross-tenant POS commercial summaries and never guesses settlement', async () => {
+    mockApiGet.mockImplementation(path => {
+      if (path === '/pos/locations') return Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        locations: [{ location_id: 'BRANCH_1', revision: 0, status: 'ACTIVE' }],
+      } });
+      if (path.includes('commercial-summary')) return Promise.resolve({ data: {
+        schema: 'WILSY-POS-COMMERCIAL-SUMMARY/V1',
+        tenant_id: 'FOREIGN_TENANT', principal_id: 'financial-operator',
+        location_id: 'BRANCH_1',
+        counts: { total: 2, DRAFT: 0, OPEN: 0,
+          COMPLETED_COMMERCIAL: 2, VOIDED: 0 },
+        authority: {
+          source: 'PYTHON_EOS_POS_SALE_REGISTRY', read_only: true,
+          model_invoked: false, financial_execution: false,
+          settlement_not_asserted: true,
+        },
+      } });
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many POS sales do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByRole('status', {
+      name: 'WILSY OS request status',
+    })).toHaveTextContent(/could not verify the requested Billing or POS evidence/));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText(/completed commercially/)).not.toBeInTheDocument();
+  });
+
+  it('reads immutable Billing intelligence evidence by exact certified identity without writes', async () => {
+    const evidenceId = 'a'.repeat(128);
+    mockApiGet.mockImplementation(path => path === '/billing/intelligence/verified-evidence/' + evidenceId
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-BILLING-VERIFIED-EVIDENCE-READ/V1',
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        authority: {
+          source: 'PYTHON_EOS_BILLING_INTELLIGENCE_REGISTRY', read_only: true,
+          model_invoked: false, financial_execution: false,
+          settlement_not_asserted: true,
+        },
+        evidence: {
+          tenant_id: 'TEST_TENANT', evidence_identity: evidenceId,
+          as_of: '2026-11-22T12:00:00+00:00',
+          receivable_count: 3, receivable_outstanding_amount_minor: 45000,
+          aging_evidence_count: 3, dunning_evidence_count: 1,
+        },
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Show billing evidence ' + evidenceId },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Billing')).toBeVisible());
+    expect(screen.getByText(/verifies 3 commercial receivables/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -2066,7 +2197,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT
+ * VERSION: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
