@@ -15,7 +15,7 @@
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
- * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY responds naturally to greetings and tightly scoped day-status acknowledgements after a verified built-in turn in the same session. No model invocation, quota admission, inferred work, or bypass for substantive prompts.
+ * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY responds naturally to greetings and tightly scoped day-status acknowledgements after a verified built-in turn (including the previous certified wording) in the same session. No model invocation, quota admission, inferred work, or bypass for substantive prompts.
  * CHANGELOG: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS converts oversized work-navigation, recovery and contextual follow-ups into accessible inline transcript actions with coherent hierarchy and focus states. The five EOS-authorised CRM tasks remain source-owned; no task mutations, AI charges, changes to admissibility or fabricated records.
  * CHANGELOG: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION defers the costly cross-source My Work aggregate until a real work-related conversational intent is selected; entering work/overdue initiates a fresh independently admitted read, leaving other Dock surfaces unaffected and avoiding eager concurrent startup load. Scope changes and leaving the view abort/clear local projections; no partial-source/fabricated results.
  * CHANGELOG: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION distinguishes exact-tenant My Work IAM refusal, bounded transport timeout, EOS 503 source failure and other transport errors in the chat, without inventing tasks, exposing vendor/request data, extending the client deadline or relaxing backend authority. Kernel health timeout remains an independent optional probe.
@@ -243,7 +243,8 @@ function resolveWilsyLocalCourtesy(value, previousTurns = []) {
   const previous = Array.isArray(previousTurns) ? previousTurns.at(-1) : null;
   if (previous?.role === 'assistant'
     && previous?.meta?.source === 'WILSY_LOCAL_COURTESY'
-    && previous?.content === 'I’m doing well, thanks for asking. How is your day going?') {
+    && (previous?.content === 'I’m doing well, thanks for asking. How is your day going?'
+      || previous?.content === 'I’m here and ready to help. How is your day going?')) {
     if (/^(?:(?:i(?:'|’)m|i am)\s+)?(?:going\s+)?(?:well|good|great|fine|okay|ok|not bad)(?:,?\s+thanks)?[.!\s]*$/i.test(text)) {
       return 'Glad to hear it! What would you like to work on?';
     }
