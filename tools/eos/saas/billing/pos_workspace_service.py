@@ -303,3 +303,11 @@ class POSWorkspaceService:
 
 
 __all__ = ["POSWorkspaceService", "POSWorkspaceServiceError"]
+
+# ARTIFACT: tools/eos/saas/billing/pos_workspace_service.py
+# VERSION: v1.1.0-READ-ONLY-LOCATION-SUMMARY
+# AUTHORITY BOUNDARY: Tenant IAM, POS entitlement and active location assignment remain sovereign.
+# TENANT POSTURE: Exact authenticated tenant and principal; location selector is untrusted.
+# FAIL-CLOSED POSTURE: Invalid, unavailable, unauthorized or divergent sale evidence refuses.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
