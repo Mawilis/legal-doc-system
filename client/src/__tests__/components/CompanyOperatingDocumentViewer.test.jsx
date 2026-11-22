@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.8.2-EXACT-UNPUBLISHED-STRATEGY-FIXTURE
+ * VERSION: v1.9.0-STRATEGY-PUBLICATION-LIFECYCLE-CTA-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.9.0-STRATEGY-PUBLICATION-LIFECYCLE-CTA-CERT verifies
+ *            exact source-authorized review and draft submission action
+ *            exposure, no unauthorized publish, and no auto document writes.
  * CHANGELOG: v1.8.2-EXACT-UNPUBLISHED-STRATEGY-FIXTURE corrects
  *            the synthetic no-publication response classification to
  *            STRATEGY, retaining strict source validation and independent
@@ -355,6 +358,28 @@ describe('Strategy source-owned project execution readback', () => {
     expect(call[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId,
       Authorization: 'Bearer synthetic-only' });
   });
+  it('exposes source-owned Strategy draft lifecycle without inventing a publisher', async () => {
+    const draft = record('STRATEGY', 'DRAFT', 1);
+    api.get.mockImplementation((url, config) => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === '/company-operating-documents/STRATEGY') {
+        return Promise.resolve({ data: config?.params?.review === true
+          ? view(draft, ['READ_HISTORY', 'REVIEW_DRAFTS', 'SUBMIT'], true)
+          : { ...view(null, ['READ_HISTORY', 'REVIEW_DRAFTS'], false),
+              classification: 'STRATEGY' } });
+      }
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    expect(await screen.findByText(/Official publication not yet established/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Review authorized publication state' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Open independent approval form' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Review authorized publication state' }));
+    expect(await screen.findByText(/Stage 1 of 3 · Author draft/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Submit Strategy for independent approval' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Open independent approval form' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
   it('explains exact unpublished Strategy source and offers authorized review without linking', async () => {
     api.get.mockImplementation((url, config) => {
       if (url === '/projects') return Promise.resolve({ data: projectList() });
@@ -533,7 +558,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.8.2-EXACT-UNPUBLISHED-STRATEGY-FIXTURE
+// VERSION: v1.9.0-STRATEGY-PUBLICATION-LIFECYCLE-CTA-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
