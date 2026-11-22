@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.18.0-FOUNDER-SOURCE-VERIFIED-ACTIVATION-CERT
+ * VERSION: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT certifies that all read-only source/work context renders inside the scrolling conversation before persisted user/assistant turns, with no cards, duplicate source panels, or paid model invocation.
  * CHANGELOG: v1.18.0-FOUNDER-SOURCE-VERIFIED-ACTIVATION-CERT denies Founder subscription activation when context is unavailable, denied or stale; exercises activation only after a source-verified exact-tenant NOT_PROVISIONED response, preserving independent ACTIVE readback and no model usage.
  * CHANGELOG: v1.17.1-EXPLICIT-SOURCE-PROBE-CERT certifies explicit read-only My Work and kernel GETs bypass only client-local backoff while preserving backend authorization and hard timeout.
  * CHANGELOG: v1.17.0-HEADQUARTERS-SOURCE-REFUSAL-CERT certifies precise authorised work denial versus unavailable source, explicit no-fabricated-empty-queue semantics and a working retry without AI metering or grants.
@@ -583,6 +584,48 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')[1][1].forceNetworkRetry).toBe(true);
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText(/0 active · 0 overdue/)).not.toBeInTheDocument();
+  });
+
+  it('renders source observations inside one conversational transcript, not fixed stacked panels', async () => {
+    const principal = 'stream-operator';
+    mockApiGet.mockImplementation((path, options) => {
+      if (path === '/kernel') return Promise.reject(rejectedResponse(503, 'optional health unavailable'));
+      if (path === '/my-work') return Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        items: [{ title: 'Review verified CRM work', source: 'CRM', is_overdue: true }],
+        summary: { active_count: 1, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } });
+      if (path === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false,
+          provider_binding: 'UNAVAILABLE' },
+        context_fingerprint: 'e'.repeat(128),
+        observed_at: '2026-11-22T08:00:00+00:00',
+        locator: options.params,
+        allowance: { state: 'ACTIVE', available_request_units: 450,
+          daily_consumed_request_units: 0, held_request_units: 0,
+          seat_allocation: { state: 'UNAVAILABLE' } },
+        work: null,
+      } });
+      return Promise.reject(rejectedResponse(503, 'unexpected source'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('Review verified CRM work')).toBeVisible());
+    const transcript = screen.getByText('Review verified CRM work').closest('[class*="messagesContainer"]');
+    expect(transcript).toBeTruthy();
+    expect(transcript).toContainElement(screen.getByLabelText('Verified workspace context'));
+    expect(transcript).toContainElement(screen.getByText(/Good (morning|afternoon|evening)/));
+    expect(screen.getByLabelText('Verified workspace context').querySelector('details')).not.toHaveAttribute('open');
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText('Institutional AI entitlement is active. Verifying provider and workspace context…'))
+      .not.toBeInTheDocument();
   });
 
   it('remembers accepted usage within the same browser and exact authorized scope', () => {
@@ -1365,7 +1408,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.18.0-FOUNDER-SOURCE-VERIFIED-ACTIVATION-CERT
+ * VERSION: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
