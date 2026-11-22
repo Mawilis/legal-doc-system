@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Daily Attention Source Adapter
-VERSION: v1.0.0-EXACT-PARTICIPANT-ATTENTION-SOURCE
+VERSION: v1.1.0-VERIFIED-PROJECT-WORK-PURPOSE-PROJECTION
 AUTHORITY: Python EOS Projects IAM, record-scoped participation and task registry.
 EPITOME: Project tasks enter My Work only with current participant authorization,
          exact tenant and current project participation, inside source transaction.
@@ -8,6 +8,10 @@ COLLABORATION / OWNERSHIP: unified_my_work_router admits independent participant
          read IAM; Projects router owns entitlement, project/participant reads
          and caller-owned majority MongoDB transactions; task registry owns work.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.0-VERIFIED-PROJECT-WORK-PURPOSE-PROJECTION reads
+         audited source and event purpose evidence in the same admitted
+         exact-project snapshot; stale task revisions remain UNCLASSIFIED.
+         Neither source role nor purpose labels can grant commands.
 CHANGELOG: v1.0.0-EXACT-PARTICIPANT-ATTENTION-SOURCE maps delegated and
          blocked project work to the existing source-owned queue contract.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -30,11 +34,16 @@ from pymongo.errors import PyMongoError
 from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.api import projects_router as projects
 from tools.eos.kernel import db as kernel_db
+from tools.eos.saas.projects.project_work_purpose_registry import (
+    COLLECTION as PURPOSE_COLLECTION,
+    EVENT_COLLECTION as PURPOSE_EVENT_COLLECTION,
+    ProjectWorkPurposeRegistry, WorkPurposeError,
+)
 from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as TASK_COLLECTION, ProjectTask, ProjectTaskError,
 )
 
-VERSION = "v1.0.0-EXACT-PARTICIPANT-ATTENTION-SOURCE"
+VERSION = "v1.1.0-VERIFIED-PROJECT-WORK-PURPOSE-PROJECTION"
 _ACTIVE = frozenset({"TODO", "IN_PROGRESS", "BLOCKED"})
 _STATUS = {"TODO": "OPEN", "IN_PROGRESS": "IN_PROGRESS", "BLOCKED": "BLOCKED"}
 # Source read is bounded to prevent a single principal's queue from starving EOS.
@@ -69,6 +78,9 @@ def read_project_attention(
         if database is None:
             raise HTTPException(status_code=503, detail="PROJECT_ATTENTION_SOURCE_UNAVAILABLE")
         collection = database[TASK_COLLECTION]
+        purposes = ProjectWorkPurposeRegistry(
+            database[PURPOSE_COLLECTION], database[PURPOSE_EVENT_COLLECTION],
+        )
         query = {
             "tenant_id": tenant_id,
             "assignee_principal_id": principal_id,
@@ -114,8 +126,11 @@ def read_project_attention(
                     validated_projects.add(task.project_id)
                 # A date-only deadline has no source timezone or exact instant.
                 # Never fabricate UTC 'overdue' truth from a calendar date.
+                evidence = purposes.current_for_task(task=task, session=session)
                 rows.append({
                     "tenant_id": tenant_id,
+                    "revision": task.revision,
+                    "audience_evidence": evidence,
                     "work_item_id": task.task_id,
                     "title": task.title,
                     "description": task.description,
@@ -133,6 +148,10 @@ def read_project_attention(
             raise HTTPException(
                 status_code=503, detail="PROJECT_ATTENTION_SOURCE_UNAVAILABLE",
             ) from error
+        except WorkPurposeError as error:
+            raise HTTPException(
+                status_code=503, detail="PROJECT_ATTENTION_PURPOSE_SOURCE_INVALID",
+            ) from error
         except ProjectTaskError as error:
             raise HTTPException(
                 status_code=503, detail="PROJECT_ATTENTION_SOURCE_INVALID",
@@ -145,7 +164,7 @@ def read_project_attention(
 __all__ = ["VERSION", "read_project_attention"]
 
 # ARTIFACT: project_attention_source.py
-# VERSION: v1.0.0-EXACT-PARTICIPANT-ATTENTION-SOURCE
+# VERSION: v1.1.0-VERIFIED-PROJECT-WORK-PURPOSE-PROJECTION
 # AUTHORITY BOUNDARY: read-only current participant source, no mutations
 # TENANT POSTURE: exact assignee, same tenant and active project participation
 # FAIL-CLOSED POSTURE: corrupt, stale, oversized or unavailable source denies
