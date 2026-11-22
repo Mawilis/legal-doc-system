@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.2.0-EXPLICIT-AUDITED-UNCLASSIFIED-REVERT
+VERSION: v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY
+stores the bounded source classification decision in each immutable event,
+reconstructs its exact semantic digest for a tenant/project/task-scoped
+paginated timeline, and never exposes idempotency or internal fingerprints.
 CHANGELOG: v1.2.0-EXPLICIT-AUDITED-UNCLASSIFIED-REVERT
 allows an explicitly reasoned UNCLASSIFIED command with same CAS, actor,
 immutable audit and replay; source read returns no audience evidence
@@ -57,7 +61,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.2.0-EXPLICIT-AUDITED-UNCLASSIFIED-REVERT"
+VERSION: Final = "v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD", "UNCLASSIFIED"})
@@ -127,6 +131,9 @@ def _audit_event_valid(
         and event.get("task_id") == semantic["task_id"]
         and event.get("revision") == semantic["revision"]
         and event.get("actor_principal_id") == semantic["actor_principal_id"]
+        and event.get("audience") == semantic["audience"]
+        and event.get("reason") == semantic["reason"]
+        and event.get("task_revision") == semantic["task_revision"]
         and event.get("recorded_at") == semantic["recorded_at"]
         and event.get("evidence_ref") == semantic["evidence_ref"]
         and event.get("result_fingerprint") == fingerprint
@@ -283,6 +290,58 @@ class ProjectWorkPurposeRegistry:
                     }
         return result
 
+    def history_for_task(
+        self, *, task: ProjectTask, session: Any, limit: int = 25,
+    ) -> tuple[list[dict[str, object]], bool]:
+        """Read bounded immutable purpose history; never expose replay secrets.
+
+        Every event carries the canonical post-command source semantics
+        necessary to verify its SHA3-512 digest, including old revisions.
+        This is a digest integrity check, not a digital signature or IAM.
+        """
+        if session is None or type(limit) is not int or not 1 <= limit <= 50:
+            raise WorkPurposeError("PROJECT_WORK_PURPOSE_HISTORY_PAGE_INVALID")
+        query = {"tenant_id": task.tenant_id, "project_id": task.project_id,
+                 "task_id": task.task_id}
+        try:
+            events = list(self.events.find(query, session=session)
+                          .sort([("revision", -1)]).limit(limit + 1))
+        except PyMongoError as error:
+            raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_UNAVAILABLE") from error
+        results: list[dict[str, object]] = []
+        previous_revision: int | None = None
+        for record in events:
+            revision = record.get("revision")
+            if type(revision) is not int or revision < 1 or (
+                previous_revision is not None and revision >= previous_revision
+            ):
+                raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
+            previous_revision = revision
+            semantic: dict[str, object] = {
+                **query, "audience": record.get("audience"),
+                "task_revision": record.get("task_revision"),
+                "revision": revision,
+                "actor_principal_id": record.get("actor_principal_id"),
+                "reason": record.get("reason"), "evidence_ref": record.get("evidence_ref"),
+                "critical_gate": False, "critical_gate_evidence_ref": None,
+                "recorded_at": record.get("recorded_at"),
+            }
+            expected = _digest(semantic)
+            if (not isinstance(record.get("result_fingerprint"), str)
+                    or record["result_fingerprint"] != expected
+                    or not _audit_event_valid(record, semantic, expected)
+                    or not isinstance(semantic["reason"], str)
+                    or not 10 <= len(cast(str, semantic["reason"])) <= 1000
+                    or not _coordinate(semantic["actor_principal_id"])):
+                raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
+            results.append({
+                "revision": revision, "audience": semantic["audience"],
+                "reason": semantic["reason"],
+                "recorded_at": semantic["recorded_at"],
+                "task_revision": semantic["task_revision"],
+            })
+        return results[:limit], len(results) > limit
+
     def classify(
         self, *, task: ProjectTask, actor_principal_id: str, audience: str,
         reason: str, expected_task_revision: int, expected_purpose_revision: int,
@@ -354,6 +413,8 @@ class ProjectWorkPurposeRegistry:
             self.events.insert_one({
                 **scope, "revision": new_revision, "event_type": "WORK_PURPOSE_CLASSIFIED",
                 "actor_principal_id": actor_principal_id,
+                "audience": audience, "reason": reason,
+                "task_revision": task.revision,
                 "idempotency_key": idempotency_key,
                 "request_fingerprint": request,
                 "result_fingerprint": candidate["fingerprint"],
@@ -371,7 +432,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.2.0-EXPLICIT-AUDITED-UNCLASSIFIED-REVERT
+# VERSION: v1.3.0-SOURCE-WORK-PURPOSE-AUDIT-HISTORY
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
