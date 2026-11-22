@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
+ * VERSION: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
+ *            distinguishes a timed-out Projects read from a source HTTP 503,
+ *            avoids falsely claiming the Strategy link schema is absent, and
+ *            preserves fail-closed unverified project-list presentation.
  * CHANGELOG: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
  *            makes independent approval form labeling dynamic by current
  *            source classification; Mission is never mislabeled Strategy.
@@ -132,6 +136,9 @@ const validProjectList = (value, tenantId, principalId) => Boolean(
 );
 const projectFailure = failure => {
   const status = failure?.response?.status;
+  if (!status && (failure?.code === 'ECONNABORTED' || failure?.code === 'ETIMEDOUT')) {
+    return 'Project list request timed out before an EOS response. No current project result verified; inspect the exact /api/projects request duration and Python EOS transaction failure code.';
+  }
   const detail = failure?.response?.data?.detail;
   // Only EOS's closed machine codes enter the UI; never arbitrary diagnostic
   // strings, database details, credentials or nested exception objects.
@@ -1049,7 +1056,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                 </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
                 <section className={styles.execution} aria-label="Company operating execution">
                   <h2>Business execution</h2>
-                  <p>No governed objective-to-project or pillar-to-project relationship is present in the current EOS schema. Project ownership and completion percentages are not inferred.</p>
+                  <p>Pillar-to-project relationships require an effective, independently published Strategy and an explicit EOS link. Project ownership and completion percentages are not inferred.</p>
                   {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
                     <div className={styles.editorHeading}><div>
                       <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
@@ -1307,7 +1314,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
+// VERSION: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
