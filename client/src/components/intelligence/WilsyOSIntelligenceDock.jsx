@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.30.1-NATURAL-OVERDUE-WORK-QUERY
+ * VERSION: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION distinguishes exact-tenant My Work IAM refusal, bounded transport timeout, EOS 503 source failure and other transport errors in the chat, without inventing tasks, exposing vendor/request data, extending the client deadline or relaxing backend authority. Kernel health timeout remains an independent optional probe.
  * CHANGELOG: v4.30.1-NATURAL-OVERDUE-WORK-QUERY includes tightly scoped 'Which of my tasks are overdue?' questions in the same read-only EOS work catalog without granting scope or metered access.
  * CHANGELOG: v4.30.0-NATURAL-OUTSTANDING-WORK-INTENT routes bounded natural-language questions about the operator's outstanding/pending/incomplete or overdue work through source-authorized read-only My Work instead of C1B metered reasoning. Questions asking for other people's work, writes or sensitive records remain outside the free local catalog. No release or replay of reconciliation holds.
  * CHANGELOG: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT supports natural local read-only 'inspect this workspace' expression through the same strictly bounded source-intent parser, preserving no-payment/no-write semantics.
@@ -210,6 +211,24 @@ function classifyWilsyAISourceIntent(value) {
     return 'SOURCE';
   }
   return null;
+}
+
+/**
+ * @function classifyWilsyMyWorkReadFailure
+ * @description Small allowlist for client-visible source diagnostics.
+ * No raw response bodies, tokens, tenant identifiers or stack traces are
+ * surfaced. EOS exclusively owns work source admission and transport health.
+ */
+function classifyWilsyMyWorkReadFailure(error) {
+  const status = error?.response?.status;
+  if (status === 401 || status === 403) return 'DENIED';
+  if (status === 409) return 'STALE';
+  if (status === 503) return 'EOS_UNAVAILABLE';
+  const errorCode = String(error?.code || '').toUpperCase();
+  if (errorCode === 'ECONNABORTED' || errorCode === 'ETIMEDOUT'
+    || (typeof error?.message === 'string'
+      && /^timeout of [0-9]+ms exceeded$/.test(error.message))) return 'TIMEOUT';
+  return 'UNAVAILABLE';
 }
 
 /**
@@ -728,9 +747,15 @@ export function WilsyOSIntelligenceDock({
         overdueCount: data.summary.overdue_count });
     }).catch(error => {
       if (live && !controller.signal.aborted && dockScopeRef.current === scope) {
-        const status = error?.response?.status;
-        setHeadquartersWork({ scope,
-          state: status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE' });
+        const state = classifyWilsyMyWorkReadFailure(error);
+        setHeadquartersWork({ scope, state });
+        if (import.meta.env.DEV) {
+          console.info('[IntelligenceDock] My Work source check', {
+            outcome: state,
+            http_status: Number.isInteger(error?.response?.status)
+              ? error.response.status : 'NO_HTTP_RESPONSE',
+          });
+        }
       }
     });
     return () => { live = false; controller.abort(); };
@@ -886,7 +911,11 @@ export function WilsyOSIntelligenceDock({
       setDockContext(null);
       setKennelPosture('SOURCE_SILENT');
       if (import.meta.env.DEV) {
-        console.warn('[IntelligenceDock] EOS health unavailable; verified context withheld.', err);
+        console.info('[IntelligenceDock] Optional kernel health probe not verified; independent workspace status is unchanged.', {
+          outcome: err?.code === 'ECONNABORTED' ? 'TIMEOUT' : 'SOURCE_UNAVAILABLE',
+          http_status: Number.isInteger(err?.response?.status)
+            ? err.response.status : 'NO_HTTP_RESPONSE',
+        });
       }
     }
   }, [dockScope, authUser?.role, activeTenant?.tenantId, activeTenant?._id]);
@@ -1645,8 +1674,8 @@ export function WilsyOSIntelligenceDock({
                   && <p role="status">Checking your authorised work source…</p>}
                 {(conversationView === 'WORK' || conversationView === 'OVERDUE')
                   && workLocator.workspace === 'HEADQUARTERS'
-                  && (visibleHeadquartersWork?.state === 'DENIED'
-                    || visibleHeadquartersWork?.state === 'UNAVAILABLE')
+                  && ['DENIED', 'STALE', 'EOS_UNAVAILABLE', 'TIMEOUT', 'UNAVAILABLE']
+                    .includes(visibleHeadquartersWork?.state)
                   && <section aria-label="Headquarters work source status" role="status"
                     style={{ padding: '12px 0', background: 'transparent',
                       color: '#e2e8f0', borderTop: '1px solid rgba(148,163,184,.25)',
@@ -1654,8 +1683,14 @@ export function WilsyOSIntelligenceDock({
                       alignItems: 'center', gap: 12, flexWrap: 'wrap',
                       fontSize: 13, lineHeight: 1.65 }}>
                     <span>{visibleHeadquartersWork.state === 'DENIED'
-                      ? 'Current work is not authorised for this operating capacity. No tasks are being inferred.'
-                      : 'Current work could not be verified from EOS. This is not a confirmed empty work queue.'}
+                      ? 'EOS has not authorised My Work for this operating capacity. No tasks are inferred.'
+                      : visibleHeadquartersWork.state === 'STALE'
+                        ? 'My Work source state changed. An independently authorised refresh is required.'
+                        : visibleHeadquartersWork.state === 'EOS_UNAVAILABLE'
+                          ? 'EOS My Work returned a source-unavailable response (HTTP 503). No task results were verified.'
+                          : visibleHeadquartersWork.state === 'TIMEOUT'
+                            ? 'EOS My Work timed out before its response was verified. No tasks were inferred.'
+                            : 'Current work could not be verified from EOS. This is not a confirmed empty work queue.'}
                     </span>
                     <button type="button" className={styles.historyActionButton}
                       style={{ minHeight: 44, padding: '7px 12px',
@@ -2102,7 +2137,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.30.1-NATURAL-OVERDUE-WORK-QUERY
+ * VERSION: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
