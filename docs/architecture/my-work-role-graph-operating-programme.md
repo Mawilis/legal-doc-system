@@ -6,6 +6,7 @@ ARTIFACT: docs/architecture/my-work-role-graph-operating-programme.md
 UPDATE DATE: 2026-11-22
 STATUS: DISCOVERED AND MAPPED; IMPLEMENTATION / CERTIFICATION GATES OPEN
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+CHANGELOG: v1.1.0-STRATEGY-PROJECT-EXECUTION-REGISTER adds an existing-project milestone and task execution register, non-duplicate source-create protocol and evidence-bound My Strategy update steps; navigation alone is never synchronization.
 CHANGELOG: v1.0.0 establishes a source-grounded current-state inventory, permission-first target graph, migration sequence, role/ranking/automation contracts and executable production-readiness gates. No runtime or IAM authority is changed by this document.
 
 ## Decision and non-negotiables
