@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS
+ * VERSION: v1.8.0-BALANCED-FOLLOWUP-ROW
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.8.0-BALANCED-FOLLOWUP-ROW uses a full-width responsive auto-fit grid for contextual follow-ups so two choices occupy balanced equal-width action lanes; retains transparent inline actions, keyboard focus, reduced-motion and source-only authority.
  * CHANGELOG: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS adds accessible, low-chrome inline contextual actions, a flexible follow-up row, clearly focused work links and restrained responsive focus treatment instead of bulky black/gold rectangular status buttons.
  * CHANGELOG: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS makes the two-entry conversation/history navigation a compact toolbar and renders authenticated session threads as text rows, not dark static cards; reuses existing focus and keyboard contrast.
  * CHANGELOG: v1.5.0-FLUID-CONVERSATION-READING-SURFACE gives verified EOS source projections and assistant replies one fluid reading column, removes assistant card treatments, preserves restrained user turns and the independently scrollable conversation with anchored composer, and tightens mobile typography. Pure presentation, no authority changes.
@@ -1153,15 +1154,22 @@
   border-color: transparent;
 }
 .intelligenceDockContainer .conversationFollowUps {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 22px;
-  row-gap: 3px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: stretch;
+  column-gap: clamp(12px, 2vw, 24px);
+  row-gap: 4px;
+  width: 100%;
+  max-width: none;
   padding: 12px 0;
   margin-top: 8px;
-  max-width: 72ch;
   border-top: 1px solid rgba(148,163,184,.18);
+}
+.intelligenceDockContainer .conversationFollowUps > .conversationInlineAction {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
 }
 .intelligenceDockContainer .conversationWorkLink {
   min-height: 36px;
@@ -1189,7 +1197,8 @@
     gap: 4px 14px;
   }
   .intelligenceDockContainer .conversationFollowUps {
-    column-gap: 16px;
+    column-gap: 12px;
+    row-gap: 2px;
   }
   .intelligenceDockContainer .conversationInlineAction {
     min-height: 44px;
@@ -1204,7 +1213,7 @@
 
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS
+ * VERSION: v1.8.0-BALANCED-FOLLOWUP-ROW
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
