@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH
+VERSION: v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE
+rejects even two different revision records for one task in a supposedly
+unique current batch; corruption never silently picks the last row.
 CHANGELOG: v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH
 adds task-bounded batch source/audit reads for large exact-principal attention
 queues, rejecting duplicate, divergent or corrupt evidence without N+1 calls.
@@ -44,7 +47,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH"
+VERSION: Final = "v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD"})
@@ -190,10 +193,12 @@ class ProjectWorkPurposeRegistry:
             except PyMongoError as error:
                 raise WorkPurposeError("PROJECT_WORK_PURPOSE_READ_UNAVAILABLE") from error
             audited: dict[tuple[str, int], tuple[ProjectTask, dict[str, object]]] = {}
+            seen_current: set[str] = set()
             for row in rows:
                 task = by_id.get(row.get("task_id"))
-                if task is None or task.task_id in result and result[task.task_id] is not None:
+                if task is None or task.task_id in seen_current:
                     raise WorkPurposeError("PROJECT_WORK_PURPOSE_BATCH_SCOPE_INVALID")
+                seen_current.add(task.task_id)
                 value = _verify(row, task)
                 key = task.task_id, value["revision"]
                 if key in audited:
@@ -326,7 +331,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH
+# VERSION: v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
