@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS
+ * VERSION: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS exposes only strict canonical PROJECT_ uppercase backend error codes alongside HTTP state, without logging source payloads, identity, URLs or unknown exception text. Helps differentiate unavailable task transport from malformed persisted records at the next browser acceptance.
  * CHANGELOG: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS verifies the sovereign task list before starting three auxiliary source calls so new member-directory lookups cannot compete with the critical task read. Distinguishes rejected 401/403/404/429/503, transport timeout and malformed read envelopes without logging secrets, losing task drafts, fabricating task rows or retrying commands.
  * CHANGELOG: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES isolates task, participant and eligible-member reads, preserves only independently verified EOS tasks when a participant directory is denied/unavailable, and gates all contributor/assignee operations until current project participation verifies. Reports which source failed without guessing people, tasks or permissions.
  * CHANGELOG: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES lists exact-tenant currently eligible named member candidates in the assignee selector while keeping only active project contributors directly assignable. Candidate selection opens explicit separate contributor grant; fresh EOS readback must verify new project participation before setting draft assignee. No hidden grants, role inheritance, or synthetic people.
@@ -464,12 +465,16 @@ export default function ProjectTasksPanel({
       setSelectedWorkIds([]);
       const status = cause?.response?.status;
       const source = cause?.sourceName || 'Project work';
+      const rawCode = cause?.response?.data?.detail;
+      const safeSourceCode = typeof rawCode === 'string'
+        && /^PROJECT_[A-Z0-9_]{1,80}$/.test(rawCode)
+        ? ' · EOS ' + rawCode : '';
       setError(cause?.invalidEnvelope ? source + ' returned an invalid tenant, principal, project or pagination contract.'
         : status === 401 ? source + ' requires authentication (HTTP 401).'
           : status === 403 ? source + ' access was denied by EOS (HTTP 403).'
             : status === 404 ? source + ' endpoint is unavailable in this EOS runtime (HTTP 404).'
               : status === 429 ? source + ' admission is rate-limited by EOS (HTTP 429).'
-                : status === 503 ? source + ' is unavailable in EOS (HTTP 503).'
+                : status === 503 ? source + ' is unavailable in EOS (HTTP 503)' + safeSourceCode + '.'
                   : Number.isInteger(status) ? source + ' failed with EOS HTTP ' + status + '.'
                     : cause?.code === 'ECONNABORTED' ? source + ' timed out before verification.'
                       : source + ' could not reach or verify EOS. No task list is confirmed.');
@@ -1481,7 +1486,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS
+// VERSION: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
