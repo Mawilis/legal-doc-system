@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER
+ * VERSION: v4.27.1-CONTEXT-FOCUSED-HEADER
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.27.1-CONTEXT-FOCUSED-HEADER removes operational kernel diagnostics as the Dock's hero subtitle while preserving truthful accessible kernel status; the visible header now prioritises current verified workspace and source posture.
  * CHANGELOG: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER treats explicit local read-only queries as ephemeral user turns followed by verified EOS-source result, not a static header; keeps greeting only on an empty thread, offers contextual follow-ups, and never records a source view as paid model output or persisted assistant history.
  * CHANGELOG: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER keeps the read-only source-intent send affordance independent from metered consent and provider state, while preserving all metered sends' existing reconciliation and usage guards; includes complete bounded My Work rows and explicit intent-selected source expansion.
  * CHANGELOG: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS removes default source/status essays from chat and presents one conversational first turn with user-invoked read-only TaskList or SourceInspection. Deterministic exact-intent routing fills only from current EOS-verified sources; no model-generated UI, arbitrary HTML, task mutations or metered POST. Source failures appear within the requested action, not as static opening cards.
@@ -1384,14 +1385,15 @@ export function WilsyOSIntelligenceDock({
               <img src="/brand/wilsy-ai-emblem.svg" className={styles.headerEmblem} alt="Wilsy AI neural core"/>
               <div>
                 <span>WILSY OS Intelligence Dock</span>
-                <small className={styles.kennelBadge} data-posture={kennelPosture}>
-                  {kennelPosture === 'OPERATIONAL' ? 'Kernel health verified'
-                    : kennelPosture === 'SOURCE_SILENT' && visibleWorkspaceContext?.state === 'READY'
-                      ? 'Workspace verified · Kernel health unavailable'
-                      : kennelPosture === 'SOURCE_SILENT' ? 'Kernel health not verified'
-                        : kennelPosture === 'DEGRADED' ? 'Kernel health degraded'
-                          : kennelPosture === 'CLIENT_OFFLINE' ? 'Connection unavailable'
-                            : 'Checking EOS source status'}
+                <small className={styles.kennelBadge} data-posture={kennelPosture}
+                  aria-label={`EOS source status: ${visibleWorkspaceContext?.state === 'READY' ? 'workspace verified' : 'workspace not yet verified'}; kernel health ${kennelPosture === 'OPERATIONAL' ? 'available' : 'not verified'}`}>
+                  {visibleWorkspaceContext?.state === 'READY'
+                    ? 'Workspace verified'
+                    : kennelPosture === 'OPERATIONAL'
+                      ? 'EOS connected'
+                      : kennelPosture === 'CLIENT_OFFLINE'
+                        ? 'Connection unavailable'
+                        : 'Source verification pending'}
                 </small>
                 {authoritativeTenantBrand && (
                   <small className={styles.workspaceBrand} data-brand-source="ACTIVE_TENANT_CONTEXT">
@@ -2079,7 +2081,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.27.0-SOURCE-TURN-CONVERSATION-LEDGER
+ * VERSION: v4.27.1-CONTEXT-FOCUSED-HEADER
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
