@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.9.0-STRATEGY-PUBLICATION-LIFECYCLE-CTA-CERT
+ * VERSION: v1.9.1-EXACT-PROJECTS-503-TRANSPORT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.9.1-EXACT-PROJECTS-503-TRANSPORT-CERT verifies
+ *            timed-out no-response Projects read distinguishes network from
+ *            EOS denial while keeping the project source unavailable;
+ *            current Strategy relationship description is source-owned.
  * CHANGELOG: v1.9.0-STRATEGY-PUBLICATION-LIFECYCLE-CTA-CERT verifies
  *            exact source-authorized review and draft submission action
  *            exposure, no unauthorized publish, and no auto document writes.
@@ -517,6 +521,21 @@ describe('Strategy source-owned project execution readback', () => {
 });
 
 describe('Strategy Projects read recovery', () => {
+  it('identifies a timed-out project list without claiming an empty current registry', async () => {
+    const onOpenProjects = vi.fn();
+    api.get.mockImplementation(url => {
+      if (url === '/projects')
+        return Promise.reject({ code: 'ECONNABORTED', message: 'synthetic-only timeout' });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(record('STRATEGY')) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY', onOpenProjects }));
+    expect(await screen.findByText(/Project list request timed out before an EOS response/)).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Source-verified project execution' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('keeps a persistent 503 unavailable and navigates to existing Projects without creating a record', async () => {
     const onOpenProjects = vi.fn();
     api.get.mockImplementation(url => {
@@ -558,7 +577,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.9.0-STRATEGY-PUBLICATION-LIFECYCLE-CTA-CERT
+// VERSION: v1.9.1-EXACT-PROJECTS-503-TRANSPORT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
