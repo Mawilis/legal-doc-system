@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT
+ * VERSION: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT supports natural local read-only 'inspect this workspace' expression through the same strictly bounded source-intent parser, preserving no-payment/no-write semantics.
  * CHANGELOG: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT places mandatory sovereign boundary declarations in the opening header census; existing authority semantics unchanged.
  * CHANGELOG: v4.29.1-STABLE-COMPOSER-CONTRACT preserves the existing accessible composer placeholder/selector contract while the default conversation, authenticated identity label and no-status-cards interaction change.
  * CHANGELOG: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION removes the last permanently rendered quick-action button row, prefers a verified non-email person name (or neutral You) in user turns, and presents provider reconciliation as a distinct pending request in the transcript without claiming completion or retrying metered usage. Retains exact-key replay refusal and authenticated source introspection on natural-language intent.
@@ -192,7 +193,7 @@ function classifyWilsyAISourceIntent(value) {
   if (/^(?:show|list|review|open|view|inspect)\s+(?:(?:my|the|current)\s+)?(?:overdue\s+)?(?:tasks?|work|work\s+queue)(?:\s+(?:items?|queue))?[?.!]?$/i.test(text)) {
     return /\boverdue\b/i.test(text) ? 'OVERDUE' : 'WORK';
   }
-  if (/^(?:show|inspect|review|open|view)\s+(?:(?:my|the|current)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
+  if (/^(?:show|inspect|review|open|view)\s+(?:(?:my|the|current|this)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
     return 'SOURCE';
   }
   return null;
@@ -2088,7 +2089,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT
+ * VERSION: v4.29.3-CONTEXT-DEICTIC-INTENT-CERT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
