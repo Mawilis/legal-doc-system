@@ -5,15 +5,19 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ
+ * VERSION: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF routes a
+ *            failed Strategy project-list read into the existing Projects
+ *            workspace with its own current EOS IAM checks; no project
+ *            is invented or selected from a failed read.
  * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ removes unauthorized speculative Overview HR workforce requests; directory reads occur only when People is opened and retain exact-session authorization/tenant validation and fail-closed UI. Existing My Work and Projects summary feeds are unchanged.
- * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
+ * CHANGELOG: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
  * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY adds a
  *            verified Blocked attention filter and renders project date-only
  *            deadlines without manufacturing a timezone or overdue instant.
@@ -1053,6 +1057,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
         </div>
       </div>
       {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={() => setOperatingDocumentClass(null)} onOpenWork={() => { setOperatingDocumentClass(null); openMyWork(); }}
+        onOpenProjects={() => { setProjectDeliveryFocus(null); setOperatingDocumentClass(null); navigateSection('projects'); }}
         onOpenProject={(projectId) => {
           if (!/^prj-[0-9a-f]{48}$/.test(projectId)) return;
           setProjectDeliveryFocus(projectId);
@@ -1530,7 +1535,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ
+ * VERSION: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
