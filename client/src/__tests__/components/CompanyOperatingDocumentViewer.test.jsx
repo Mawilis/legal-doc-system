@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.4.0-STRATEGY-PROJECT-EXECUTION-CERT
+ * VERSION: v1.4.1-STRATEGY-TRANSIENT-503-RECOVERY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.4.1-STRATEGY-TRANSIENT-503-RECOVERY-CERT verifies
+ *            a persistent Projects HTTP 503 never fabricates Strategy
+ *            project task readback and presents an authorized navigation
+ *            route into the existing Projects workspace.
  * CHANGELOG: v1.4.0-STRATEGY-PROJECT-EXECUTION-CERT checks authenticated
  *            exact-project source readback and rejection of malformed task
  *            pages without inferring strategy completion or granting access.
@@ -327,6 +331,27 @@ describe('Strategy source-owned project execution readback', () => {
   });
 });
 
+describe('Strategy Projects read recovery', () => {
+  it('keeps a persistent 503 unavailable and navigates to existing Projects without creating a record', async () => {
+    const onOpenProjects = vi.fn();
+    api.get.mockImplementation(url => {
+      if (url === '/projects') return Promise.reject({ response: { status: 503, data: {
+        detail: 'PROJECT_DATABASE_UNAVAILABLE',
+      } } });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(record('STRATEGY')) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY', onOpenProjects }));
+    expect(await screen.findByRole('button', { name: 'Open existing Projects workspace' }, { timeout: 5000 })).toBeVisible();
+    expect(screen.getByText(/HTTP 503/)).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Source-verified project execution' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open existing Projects workspace' }));
+    expect(onOpenProjects).toHaveBeenCalledTimes(1);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+});
+
 describe('source contract rejection', () => {
   it.each([
     value => ({ ...value, tenant_id: 'foreign' }),
@@ -348,7 +373,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.4.0-STRATEGY-PROJECT-EXECUTION-CERT
+// VERSION: v1.4.1-STRATEGY-TRANSIENT-503-RECOVERY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
