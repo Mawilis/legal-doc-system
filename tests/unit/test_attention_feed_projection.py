@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.5.0-SIX-SOURCE-ATTENTION-REGRESSION
+VERSION: v1.5.1-EXPLICIT-FASTAPI-DEPENDENCY-FIXTURES
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.5.1-EXPLICIT-FASTAPI-DEPENDENCY-FIXTURES explicitly supplies
+           optional FastAPI dependencies as None when calling async routes
+           directly; the framework resolves Depends only for HTTP dispatch.
 CHANGELOG: v1.5.0-SIX-SOURCE-ATTENTION-REGRESSION covers admitted HR and
            PROJECTS sources, exact count parity, source filters and rejection
            of unadmitted source requests without creating source authority.
@@ -245,6 +248,7 @@ async def certify_actions(source, **overrides):
         "operations_create": None,
         "intelligence_create": None,
         "crm_create": None,
+        "crm_update": None,
     }
     contexts.update(overrides)
     return await attention_authorised_actions(source=source, **contexts)
@@ -305,15 +309,15 @@ def test_isolated_crm_commands_do_not_depend_on_other_module_authorization():
         tenant_id=TENANT,
         identity=SimpleNamespace(identity_id=PRINCIPAL),
     )
-    allowed = asyncio.run(attention_crm_actions(source, create=good, complete=good))
+    allowed = asyncio.run(attention_crm_actions(source, create=good, complete=good, update=None))
     assert allowed["sourceActions"] == {"CRM": ["CREATE", "COMPLETE"]}
-    denied = asyncio.run(attention_crm_actions(source, create=None, complete=None))
+    denied = asyncio.run(attention_crm_actions(source, create=None, complete=None, update=None))
     assert denied["sourceActions"] == {}
     with pytest.raises(HTTPException) as exc:
         asyncio.run(attention_crm_actions(source, create=SimpleNamespace(
             tenant_id="FOREIGN",
             identity=SimpleNamespace(identity_id=PRINCIPAL),
-        ), complete=None))
+        ), complete=None, update=None))
     assert exc.value.status_code == 503
 
 
@@ -330,7 +334,7 @@ def test_isolated_unadmitted_module_never_reports_command_capabilities():
     assert allowed["sourceActions"] == {"OPERATIONS": ["CREATE"]}
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.5.0-SIX-SOURCE-ATTENTION-REGRESSION
+# VERSION: v1.5.1-EXPLICIT-FASTAPI-DEPENDENCY-FIXTURES
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
