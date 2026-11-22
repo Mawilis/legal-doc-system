@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorization-Role Delegation Policy.
-VERSION: v1.3.0-PROJECTS-PLATFORM-OWNER-DELEGATION
+VERSION: v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE
 AUTHORITY: Explicit GD1 authorization-role grant law.
 PURPOSE: Evaluate whether canonical role evidence may grant a target role.
 EPITOME: Pure, deterministic, fail-closed tenant-local delegation authority.
@@ -12,6 +12,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial or Kennel execution authority.
 TRANSACTION BOUNDARY: Pure evaluator; caller owns orchestration and sessions.
 CERTIFICATION / UPDATE DATE: 2026-11-14
 CHANGELOG:
+    2026-11-22 v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE permits an already ACTIVE same-tenant ENTERPRISE_ADMIN inviter to issue a short-lived invitation for PROJECTS_PARTICIPANT_CONTRIBUTOR only in the canonical WILSY company tenant. The caller must separately verify exact-project contributor participation and recipient identity, accept the invitation and read back active role before any attachment use. No role inheritance or silent grants.
     2026-11-16 v1.3.0-PROJECTS-PLATFORM-OWNER-DELEGATION permits the existing same-tenant ENTERPRISE_ADMIN delegation path to issue an invitation for the separately assignable Projects Platform Owner role only inside the canonical WILSY company tenant. Invitation acceptance remains required; no direct or automatic assignment occurs.
     2026-11-14 v1.2.0-COMPANY-DOCUMENT-READER-DELEGATION permits only ENTERPRISE_ADMIN to
     delegate COMPANY_DOCUMENT_READER in the canonical WILSY company tenant.
@@ -32,7 +33,7 @@ from .role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
 from .roles import ROLE_PERMISSIONS_MAP
 from .workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
-VERSION = "v1.3.0-PROJECTS-PLATFORM-OWNER-DELEGATION"
+VERSION = "v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE"
 ROLE_GRANT_PERMISSION = "tenant:role_assignment:write"
 CANONICAL_AUTHORIZATION_ROLES: Final = frozenset(ROLE_PERMISSIONS_MAP)
 PLATFORM_EMPLOYEE_ADMISSION_ROLE: Final[str] = (
@@ -40,12 +41,14 @@ PLATFORM_EMPLOYEE_ADMISSION_ROLE: Final[str] = (
 )
 COMPANY_DOCUMENT_READER_ROLE: Final[str] = "COMPANY_DOCUMENT_READER"
 PROJECTS_PLATFORM_OWNER_ROLE: Final[str] = "PROJECTS_PLATFORM_OWNER"
+PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE: Final[str] = "PROJECTS_PARTICIPANT_CONTRIBUTOR"
 _ALLOW_EDGES: Final = frozenset({
     ("ENTERPRISE_ADMIN", "AUDITOR"),
     ("ENTERPRISE_ADMIN", "SERVICE_WORKER"),
     ("ENTERPRISE_ADMIN", PLATFORM_EMPLOYEE_ADMISSION_ROLE),
     ("ENTERPRISE_ADMIN", COMPANY_DOCUMENT_READER_ROLE),
     ("ENTERPRISE_ADMIN", PROJECTS_PLATFORM_OWNER_ROLE),
+    ("ENTERPRISE_ADMIN", PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE),
 })
 ALLOW_EDGES: Final = frozenset(_ALLOW_EDGES)
 
@@ -100,7 +103,7 @@ def evaluate_authorization_role_grant(
     if (inviter_role, target_role) not in ALLOW_EDGES:
         return _deny(inviter_role, target_role, target_tenant_id, AuthorizationRoleGrantDenialCode.GRANT_NOT_PERMITTED)
     if (
-        target_role in {PLATFORM_EMPLOYEE_ADMISSION_ROLE, COMPANY_DOCUMENT_READER_ROLE, PROJECTS_PLATFORM_OWNER_ROLE}
+        target_role in {PLATFORM_EMPLOYEE_ADMISSION_ROLE, COMPANY_DOCUMENT_READER_ROLE, PROJECTS_PLATFORM_OWNER_ROLE, PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE}
         and target_tenant_id != WILSY_COMPANY_TENANT_ID
     ):
         return _deny(
@@ -112,10 +115,10 @@ def evaluate_authorization_role_grant(
     return AuthorizationRoleGrantDecision(True, inviter_role, target_role, target_tenant_id)
 
 
-__all__ = ["VERSION", "ROLE_GRANT_PERMISSION", "PLATFORM_EMPLOYEE_ADMISSION_ROLE", "COMPANY_DOCUMENT_READER_ROLE", "PROJECTS_PLATFORM_OWNER_ROLE", "CANONICAL_AUTHORIZATION_ROLES", "ALLOW_EDGES", "AuthorizationRoleGrantDenialCode", "AuthorizationRoleGrantDecision", "evaluate_authorization_role_grant"]
+__all__ = ["VERSION", "ROLE_GRANT_PERMISSION", "PLATFORM_EMPLOYEE_ADMISSION_ROLE", "COMPANY_DOCUMENT_READER_ROLE", "PROJECTS_PLATFORM_OWNER_ROLE", "PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE", "CANONICAL_AUTHORIZATION_ROLES", "ALLOW_EDGES", "AuthorizationRoleGrantDenialCode", "AuthorizationRoleGrantDecision", "evaluate_authorization_role_grant"]
 
 # ARTIFACT: authorization_role_delegation_policy.py
-# VERSION: v1.3.0-PROJECTS-PLATFORM-OWNER-DELEGATION
+# VERSION: v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE
 # AUTHORITY BOUNDARY: explicit authorization-role delegation evaluation only; this policy creates no assignment
 # TENANT POSTURE: exact assignment tenant equality required; platform-only roles are limited to the canonical WILSY company tenant
 # FAIL-CLOSED POSTURE: unknown, inactive, malformed, unauthorized, and out-of-scope inputs deny
