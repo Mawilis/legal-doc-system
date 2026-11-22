@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.8.0-STRATEGY-LINK-READBACK-BROWSER-CERT
+ * VERSION: v1.8.1-PUBLISHED-STRATEGY-DEPENDENCY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.8.1-PUBLISHED-STRATEGY-DEPENDENCY-CERT certifies
+ *            exact EOS 409 publication-required UI recovery, explicit
+ *            separately authorized review path, and no link mutation from
+ *            approved but unpublished source content.
  * CHANGELOG: v1.8.0-STRATEGY-LINK-READBACK-BROWSER-CERT certifies
  *            distinct source-owned link readback and one independently
  *            confirmed link command after all 18 implementation records
@@ -347,6 +351,37 @@ describe('Strategy source-owned project execution readback', () => {
     expect(call[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId,
       Authorization: 'Bearer synthetic-only' });
   });
+  it('explains exact unpublished Strategy source and offers authorized review without linking', async () => {
+    api.get.mockImplementation((url, config) => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === '/projects/' + projectId + '/tasks')
+        return Promise.resolve({ data: taskList() });
+      if (url === '/company-operating-documents/STRATEGY/project-links')
+        return Promise.reject({ response: { status: 409, data: { detail: {
+          error: 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED',
+        } } } });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(null,
+          ['READ_HISTORY', 'REVIEW_DRAFTS'], config?.params?.review === true) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', {
+      name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
+    }));
+    expect(await screen.findByText(/No currently effective EOS-published Strategy exists/)).toBeVisible();
+    expect(screen.getByText(/An authorized author must prepare and submit the Strategy/)).toBeVisible();
+    expect(screen.queryByRole('button', {
+      name: 'Link verified Foundation project to Pillar 1',
+    })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Review private Strategy publication workflow',
+    }));
+    await waitFor(() => expect(api.get.mock.calls.some(([url, config]) =>
+      url === '/company-operating-documents/STRATEGY' && config?.params?.review === true)).toBe(true));
+    expect(api.post).not.toHaveBeenCalled();
+  });
   it('creates eighteen missing programme items only through explicit audited EOS commands and skips them on replay', async () => {
     const existing = taskList().items;
     const created = [];
@@ -492,7 +527,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.8.0-STRATEGY-LINK-READBACK-BROWSER-CERT
+// VERSION: v1.8.1-PUBLISHED-STRATEGY-DEPENDENCY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
