@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.8.1-PUBLISHED-STRATEGY-DEPENDENCY-CERT
+ * VERSION: v1.8.2-EXACT-UNPUBLISHED-STRATEGY-FIXTURE
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.8.2-EXACT-UNPUBLISHED-STRATEGY-FIXTURE corrects
+ *            the synthetic no-publication response classification to
+ *            STRATEGY, retaining strict source validation and independent
+ *            review handoff without changing production response checks.
  * CHANGELOG: v1.8.1-PUBLISHED-STRATEGY-DEPENDENCY-CERT certifies
  *            exact EOS 409 publication-required UI recovery, explicit
  *            separately authorized review path, and no link mutation from
@@ -361,8 +365,10 @@ describe('Strategy source-owned project execution readback', () => {
           error: 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED',
         } } } });
       if (url === '/company-operating-documents/STRATEGY')
-        return Promise.resolve({ data: view(null,
-          ['READ_HISTORY', 'REVIEW_DRAFTS'], config?.params?.review === true) });
+        return Promise.resolve({ data: {
+          ...view(null, ['READ_HISTORY', 'REVIEW_DRAFTS'], config?.params?.review === true),
+          classification: 'STRATEGY',
+        } });
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
     });
     render(wrap({ classification: 'STRATEGY' }));
@@ -527,7 +533,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.8.1-PUBLISHED-STRATEGY-DEPENDENCY-CERT
+// VERSION: v1.8.2-EXACT-UNPUBLISHED-STRATEGY-FIXTURE
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
