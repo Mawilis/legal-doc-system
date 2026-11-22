@@ -1021,7 +1021,7 @@ export default function ProjectTasksPanel({
         <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
         </div>
       </details>
-      {showContributorManagement && <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/30 p-3" aria-label="Manage contributors for task assignment">
+      {showContributorManagement && <div role="region" className="mt-4 rounded-xl border border-blue-200 bg-blue-50/30 p-3" aria-label="Manage contributors for task assignment">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-slate-900">Authorize a project contributor</p>
           <button type="button" className="wp-button" onClick={() => setShowContributorManagement(false)}>Close contributor management</button>
