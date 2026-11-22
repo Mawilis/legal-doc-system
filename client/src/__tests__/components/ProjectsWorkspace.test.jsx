@@ -1276,6 +1276,84 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
 
+  it('keeps an unsaved task while a verified contributor is admitted inline', async () => {
+    const persisted = project();
+    const memberId = 'employee-' + 'd'.repeat(24);
+    let admitted = false;
+    const participant = {
+      tenant_id: TENANT, project_id: PROJECT_ID, principal_id: memberId,
+      state: 'ACTIVE', role: 'CONTRIBUTOR', revision: 1,
+      fingerprint: 'a'.repeat(128), first_name: 'Alex', last_name: 'Mokoena',
+    };
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: admitted ? [participant] : [], limit: 100, offset: 0,
+        has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: admitted ? [participant] : [], limit: 50, offset: 0,
+        has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [{ principal_id: memberId, first_name: 'Alex', last_name: 'Mokoena' }],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected project contributor source ' + path);
+    });
+    api.post.mockImplementation(async (path, body, options) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/participants`);
+      expect(body).toEqual({ principal_id: memberId, role: 'CONTRIBUTOR' });
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      admitted = true;
+      return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        participant,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="inline-contributor-admission-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    await screen.findByRole('region', { name: 'Project work execution' });
+    expect(screen.getByText(/Work filters, grouping and sorting/)).toBeVisible();
+    const filters = screen.getByText(/Work filters, grouping and sorting/).closest('details');
+    expect(filters).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
+      target: { value: 'Preserved governance draft' },
+    });
+    expect(screen.getByText(/No verified project contributors are eligible/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Manage eligible contributors' }));
+    const management = await screen.findByRole('region', { name: 'Manage contributors for task assignment' });
+    const eligible = await within(management).findByRole('combobox', { name: 'Eligible participant' });
+    fireEvent.change(eligible, { target: { value: memberId } });
+    fireEvent.click(within(management).getByRole('button', { name: /Add participant/ }));
+    await waitFor(() => expect(within(screen.getByRole('combobox', { name: 'Task assignee' }))
+      .getByRole('option', { name: 'Alex Mokoena' })).toHaveValue(memberId));
+    expect(screen.getByPlaceholderText('Deliverable and action')).toHaveValue('Preserved governance draft');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Task assignee' }), {
+      target: { value: memberId },
+    });
+    expect(screen.getByRole('combobox', { name: 'Task assignee' })).toHaveValue(memberId);
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('labels eligible exact-tenant participants using sourced names, not opaque IDs', async () => {
     const persisted = project();
     const memberId = 'employee-' + 'b'.repeat(24);
