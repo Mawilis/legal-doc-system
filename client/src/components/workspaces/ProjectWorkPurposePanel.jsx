@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Project Task Source-Owned Work Purpose Panel
- * VERSION: v1.2.1-SESSION-STABLE-AUDIT-HISTORY-READ
+ * VERSION: v1.2.2-CANONICAL-TRANSPORT-HEADER-MEMO
  * AUTHORITY: Python EOS Projects work-purpose GET/POST owns source and audit.
  * EPITOME: One focused project task classification action with reason and CAS.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkPurposePanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel provides already verified task
  * coordinates; EOS independently reauthorizes project:update and task revision.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.2.2-CANONICAL-TRANSPORT-HEADER-MEMO
+ * normalizes the exact supplied session header snapshot using its
+ * deterministic signature, avoiding referential refresh loops without
+ * caching credentials beyond the selected component session.
  * CHANGELOG: v1.2.1-SESSION-STABLE-AUDIT-HISTORY-READ
  * separates source-read and audit-read generations, preventing a concurrent
  * history request from blocking fresh source recovery. Transport headers
@@ -94,7 +98,7 @@ export default function ProjectWorkPurposePanel({
   const epoch = useRef(0);
   const historyEpoch = useRef(0);
   const headerSignature = JSON.stringify(tenantHeaders || {});
-  const stableHeaders = useMemo(() => tenantHeaders || {}, [headerSignature]);
+  const stableHeaders = useMemo(() => JSON.parse(headerSignature), [headerSignature]);
   const path = '/projects/' + encodeURIComponent(projectId)
     + '/tasks/' + encodeURIComponent(task.task_id) + '/work-purpose';
   const scope = { task, projectId, tenantId, principalId };
@@ -293,7 +297,7 @@ export default function ProjectWorkPurposePanel({
 export { assertPurpose, assertHistory };
 
 // ARTIFACT: ProjectWorkPurposePanel.jsx
-// VERSION: v1.2.1-SESSION-STABLE-AUDIT-HISTORY-READ
+// VERSION: v1.2.2-CANONICAL-TRANSPORT-HEADER-MEMO
 // AUTHORITY BOUNDARY: Explicit command only; source validates IAM and revision.
 // TENANT POSTURE: Exact source and actor response verification.
 // FAIL-CLOSED POSTURE: Unverified receipt or independent readback never succeeds.
