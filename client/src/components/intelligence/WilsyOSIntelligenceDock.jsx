@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS
+ * VERSION: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY makes read-only Headquarters My Work unavailable/denied states visible and explicitly retriable, without fabricating zero tasks or elevating credentials. Currentness and source permission remain EOS-owned.
  * CHANGELOG: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS distinguishes a failed optional kernel health probe from independently verified exact-tenant workspace context, offers a real read-only inspect-source action, and replaces generic ready copy with accurate provider/source capability. No model calls, IAM changes or client-origin facts.
  * CHANGELOG: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD blocks the exact unresolved reconciliation attempt from manual resubmission while retaining its draft, preserving ordinary uncertain-transport exact-key retry and forbidding fabricated answers or browser quota mutations.
  * CHANGELOG: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY distinguishes confirmed completed usage from held reservations and available quota using EOS source fields, and preserves a reconciliation-required prompt with an explicit do-not-resubmit warning. No reservation state or financial facts are changed in the browser.
@@ -669,9 +670,11 @@ export function WilsyOSIntelligenceDock({
       setHeadquartersWork({ scope, state: 'READY', items,
         activeCount: data.summary.active_count,
         overdueCount: data.summary.overdue_count });
-    }).catch(() => {
+    }).catch(error => {
       if (live && !controller.signal.aborted && dockScopeRef.current === scope) {
-        setHeadquartersWork({ scope, state: 'UNAVAILABLE' });
+        const status = error?.response?.status;
+        setHeadquartersWork({ scope,
+          state: status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE' });
       }
     });
     return () => { live = false; controller.abort(); };
@@ -1514,6 +1517,26 @@ export function WilsyOSIntelligenceDock({
                         </li>)}
                     </ol>
                   </section>}
+                {workLocator.workspace === 'HEADQUARTERS'
+                  && (visibleHeadquartersWork?.state === 'DENIED'
+                    || visibleHeadquartersWork?.state === 'UNAVAILABLE')
+                  && <section aria-label="Headquarters work source status" role="status"
+                    style={{ padding: '10px 14px', background: '#101e32',
+                      color: '#e2e8f0', borderBottom: '1px solid #43566b',
+                      display: 'flex', justifyContent: 'space-between',
+                      alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                      fontSize: 13 }}>
+                    <span>{visibleHeadquartersWork.state === 'DENIED'
+                      ? 'Current work is not authorised for this operating capacity. No tasks are being inferred.'
+                      : 'Current work could not be verified from EOS. This is not a confirmed empty work queue.'}
+                    </span>
+                    <button type="button" className={styles.historyActionButton}
+                      style={{ minHeight: 44, padding: '7px 12px',
+                        border: '1px solid #77879c', color: '#f1f5f9' }}
+                      onClick={() => setContextRefresh(value => value + 1)}>
+                      Recheck work source
+                    </button>
+                  </section>}
                 <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
                   {(!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
@@ -1942,7 +1965,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS
+ * VERSION: v4.22.0-EXACT-WORK-SOURCE-DENIAL-RETRY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
