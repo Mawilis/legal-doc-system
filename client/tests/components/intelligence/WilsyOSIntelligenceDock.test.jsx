@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT
+ * VERSION: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT certifies that a source-confirmed reconciliation hold blocks Enter and manual Send for the exact question, retains the draft, never fabricates an AI reply, and preserves distinct transport replay behavior.
  * CHANGELOG: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT proves
  * only the canonical Founder is offered explicit Institutional activation,
  * exact-tenant POST and stable retry key are sent, and no visual ACTIVE claim
@@ -637,6 +638,27 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(await screen.findByText('Recovered from the same reasoning admission.')).toBeVisible();
   });
 
+  it('blocks exact manual replay after confirmed reconciliation without inventing a reply', async () => {
+    mockApiPost.mockRejectedValueOnce(
+      rejectedResponse(503, 'C1B_REASONING_RECONCILIATION_REQUIRED'),
+    );
+    render(<WilsyOSIntelligenceDock authUser={{ tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(textarea, { target: { value: 'Held request must not replay' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/AI execution or usage evidence requires reconciliation/)).toBeVisible());
+    expect(textarea).toHaveValue('Held request must not replay');
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
+    expect(mockApiPost).toHaveBeenCalledTimes(1);
+    expect(mockPersistTurn.mock.calls.filter(([, payload]) =>
+      payload?.message?.role === 'assistant')).toHaveLength(0);
+    fireEvent.change(textarea, { target: { value: 'Different, deliberate question' } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+  });
+
   it.each([
     ['tenant', { tenantId: 'NEXT_TENANT' }],
     ['principal', { id: 'next-principal' }],
@@ -1228,7 +1250,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT
+ * VERSION: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
