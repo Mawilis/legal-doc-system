@@ -1897,12 +1897,14 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {projectView === 'work' && <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders}
-              onFocusedTaskChange={handleFocusedTaskChange}/>}
+              onFocusedTaskChange={handleFocusedTaskChange}
+              onOpenProjectPeople={() => setProjectView('people')}/>}
             {projectView === 'discussions' && <ProjectTasksPanel
               key={'discussions:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders} discussionOnly
-              onFocusedTaskChange={handleFocusedTaskChange}/>}
+              onFocusedTaskChange={handleFocusedTaskChange}
+              onOpenProjectPeople={() => setProjectView('people')}/>}
             {projectView === 'notes' && <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
               tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>}
             {projectView === 'settings' && <div className="max-w-5xl">
