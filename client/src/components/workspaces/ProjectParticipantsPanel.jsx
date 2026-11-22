@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.8.0-ISOLATED-PROJECT-PEOPLE-SOURCE-READS
+ * VERSION: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION exports the already-governed exact-tenant participant validator for the task attachment People preflight. No new authority, command or synthetic identity.
  * CHANGELOG: v1.8.0-ISOLATED-PROJECT-PEOPLE-SOURCE-READS validates and presents independently authorised project participants even when the eligible tenant member-directory read is blocked. Separately reports each source HTTP/timeout/backoff class; grants and revokes are disabled unless both source contracts are current. Avoids routing owner attachment users into a hidden generic failure.
  * CHANGELOG: v1.7.0-PRESELECT-VERIFIED-TENANT-MEMBER supports selecting an eligible tenant member in the task Assignee control, then reviewing and explicitly granting project contributor admission in a viewport dialog. Parent gets the newly admitted principal only after confirmed EOS readback; no implied IAM.
  * CHANGELOG: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION identifies failing participant-list versus eligible-member directory read, including HTTP denial/unavailability and invalid source schema. No roster is guessed and grant remains fail-closed until both exact-scope reads validate.
@@ -41,7 +42,7 @@ const PARTICIPANTS = 'WILSY-PROJECT-PARTICIPANT-LIST/V1';
 const OPTIONS = 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1';
 const RESULT = 'WILSY-PROJECT-PARTICIPANT-RESULT/V1';
 
-function validParticipants(data, { tenantId, principalId, projectId }, offset) {
+export function validParticipants(data, { tenantId, principalId, projectId }, offset) {
   if (
     data?.schema !== PARTICIPANTS || data.tenant_id !== tenantId
     || data.principal_id !== principalId || data.project_id !== projectId
@@ -342,7 +343,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.8.0-ISOLATED-PROJECT-PEOPLE-SOURCE-READS
+// VERSION: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
