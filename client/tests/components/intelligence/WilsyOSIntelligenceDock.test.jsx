@@ -551,7 +551,7 @@ describe('WilsyOSIntelligenceDock', () => {
   it.each([
     ['How many CRM tasks do I have?', /1 active work item.*CRM/],
     ['How many HR tasks do I have?', /0 active work items.*HR & Hiring/],
-    ['How many CRM and HR tasks do I have?', /1 active work item.*CRM and HR & Hiring/],
+    ['How many CRM and HR tasks do I have?', /1 active work item.*HR & Hiring and CRM/],
     ['How many overdue CRM tasks do I have?', /1 overdue work item.*CRM/],
   ])('reads authorised multi-domain work count %s without model POST', async (question, expected) => {
     const admitted = {
