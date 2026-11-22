@@ -1,11 +1,14 @@
 /**
  * TITLE: WILSY OS Project Work Purpose Authenticated UI Certificate
- * VERSION: v1.1.0-SOURCE-UNCLASSIFICATION-READBACK-CERT
+ * VERSION: v1.2.0-SOURCE-PURPOSE-HISTORY-UI-CERT
  * AUTHORITY: Synthetic UI verification only; EOS exclusively admits commands.
  * EPITOME: Tests source-verified purpose, human rationale, CAS and readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectWorkPurposePanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectWorkPurposePanel, project source API contract.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.2.0-SOURCE-PURPOSE-HISTORY-UI-CERT verifies
+ * on-demand independently validated immutable event history, rejects
+ * cross-project history and displays the source rationale without keys.
  * CHANGELOG: v1.1.0-SOURCE-UNCLASSIFICATION-READBACK-CERT proves
  * reasoned clearing of an Operating classification to UNCLASSIFIED remains
  * an audited source command with exact CAS and independent verified readback.
@@ -21,7 +24,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import ProjectWorkPurposePanel, { assertPurpose } from '../../components/workspaces/ProjectWorkPurposePanel.jsx';
+import ProjectWorkPurposePanel, { assertPurpose, assertHistory } from '../../components/workspaces/ProjectWorkPurposePanel.jsx';
 import api from '../../services/api.js';
 
 vi.mock('../../services/api.js', () => ({
@@ -108,6 +111,34 @@ describe('source-owned work purpose panel', () => {
     expect(screen.getByText('Needs classification')).toBeVisible();
   });
 
+  it('opens source-backed classification history only when requested', async () => {
+    const past = {
+      schema: 'WILSY-PROJECT-WORK-PURPOSE-HISTORY/V1',
+      tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT,
+      task_id: TASK.task_id, limit: 25, has_more: false,
+      items: [{
+        revision: 1, task_revision: 3,
+        audience: 'OPERATING',
+        reason: 'Operational source owner verified ongoing service delivery.',
+        recorded_at: '2026-11-23T00:00:00+00:00',
+      }],
+    };
+    api.get.mockResolvedValueOnce({ data: result('OPERATING', 1) })
+      .mockResolvedValueOnce({ data: past });
+    render(<ProjectWorkPurposePanel {...props}/>);
+    await screen.findByText('Operating · Audited source');
+    expect(api.get).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'View classification history' }));
+    expect(await screen.findByText('Operational source owner verified ongoing service delivery.')).toBeVisible();
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(api.get.mock.calls[1][0]).toContain('/work-purpose/events');
+    expect(screen.getByRole('list', { name: 'Verified classification decisions' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide classification history' }));
+    expect(screen.queryByText('Operational source owner verified ongoing service delivery.')).toBeNull();
+    expect(() => assertHistory({ ...past, project_id: 'foreign' }, props))
+      .toThrow('PROJECT_WORK_PURPOSE_HISTORY_INVALID');
+  });
+
   it('never accepts foreign scope or forged task revision as source truth', () => {
     expect(() => assertPurpose({ ...result('OPERATING', 1), tenant_id: 'other' }, props))
       .toThrow('PROJECT_WORK_PURPOSE_READBACK_INVALID');
@@ -131,7 +162,7 @@ describe('source-owned work purpose panel', () => {
 });
 
 // ARTIFACT: ProjectWorkPurposePanel.test.jsx
-// VERSION: v1.1.0-SOURCE-UNCLASSIFICATION-READBACK-CERT
+// VERSION: v1.2.0-SOURCE-PURPOSE-HISTORY-UI-CERT
 // AUTHORITY BOUNDARY: Source read/command UI verification only.
 // TENANT POSTURE: Exact tenant/task/revision equality.
 // FAIL-CLOSED POSTURE: No success until independent source readback.
