@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD
+ * VERSION: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS distinguishes a failed optional kernel health probe from independently verified exact-tenant workspace context, offers a real read-only inspect-source action, and replaces generic ready copy with accurate provider/source capability. No model calls, IAM changes or client-origin facts.
  * CHANGELOG: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD blocks the exact unresolved reconciliation attempt from manual resubmission while retaining its draft, preserving ordinary uncertain-transport exact-key retry and forbidding fabricated answers or browser quota mutations.
  * CHANGELOG: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY distinguishes confirmed completed usage from held reservations and available quota using EOS source fields, and preserves a reconciliation-required prompt with an explicit do-not-resubmit warning. No reservation state or financial facts are changed in the browser.
  * CHANGELOG: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY handles a server-confirmed replay conflict without automatically reissuing an AI request: the original prompt stays editable, and only a separate operator Send generates a new idempotency key. No replay conflict is treated as provider outage.
@@ -453,6 +454,7 @@ export function WilsyOSIntelligenceDock({
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
+  const workspaceDetailsRef = useRef(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
   const [contextRefresh, setContextRefresh] = useState(0);
   const [founderActivationState, setFounderActivationState] = useState('IDLE');
@@ -1335,10 +1337,13 @@ export function WilsyOSIntelligenceDock({
               <div>
                 <span>WILSY OS Intelligence Dock</span>
                 <small className={styles.kennelBadge} data-posture={kennelPosture}>
-                  {kennelPosture === 'OPERATIONAL' ? 'Kennel source connected'
-                    : kennelPosture === 'SOURCE_SILENT' ? 'Kennel source not responding'
-                      : kennelPosture === 'CLIENT_OFFLINE' ? 'Connection unavailable'
-                        : 'Kennel source not verified'}
+                  {kennelPosture === 'OPERATIONAL' ? 'Kernel health verified'
+                    : kennelPosture === 'SOURCE_SILENT' && visibleWorkspaceContext?.state === 'READY'
+                      ? 'Workspace verified · Kernel health unavailable'
+                      : kennelPosture === 'SOURCE_SILENT' ? 'Kernel health not verified'
+                        : kennelPosture === 'DEGRADED' ? 'Kernel health degraded'
+                          : kennelPosture === 'CLIENT_OFFLINE' ? 'Connection unavailable'
+                            : 'Checking EOS source status'}
                 </small>
                 {authoritativeTenantBrand && (
                   <small className={styles.workspaceBrand} data-brand-source="ACTIVE_TENANT_CONTEXT">
@@ -1424,7 +1429,7 @@ export function WilsyOSIntelligenceDock({
                   style={{ padding: '10px 14px', background: '#111827', color: '#f1f5f9',
                     borderBottom: '1px solid #475569', fontSize: 12, lineHeight: 1.5,
                     flexShrink: 0, maxHeight: 220, overflowY: 'auto' }}>
-                  {visibleWorkspaceContext?.state === 'READY' ? <details>
+                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef}>
                     <summary aria-label="Inspect verified workspace context"
                       style={{ cursor: 'pointer', minHeight: 44 }}>
                       <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Current authorized workspace'}</strong>
@@ -1519,12 +1524,32 @@ export function WilsyOSIntelligenceDock({
                       <p>{visibleWorkspaceContext?.state === 'READY'
                         ? (visibleWorkspaceContext.data.work?.selected_task?.title
                           ? `You're viewing the verified task “${visibleWorkspaceContext.data.work.selected_task.title}”. Ask about this task, its status or its project. EOS rechecks its facts before AI reasoning.`
-                          : 'EOS has verified this workspace. With your consent, AI can use independently rechecked project facts for this request.')
+                          : aiProviderUnavailable
+                            ? 'Your workspace source is verified. Model reasoning is unavailable in this EOS session; inspecting your permitted source information does not require AI credits.'
+                            : kennelPosture === 'SOURCE_SILENT'
+                              ? 'EOS verified this workspace independently. The separate kernel health probe is unavailable; refresh the source to recheck before relying on its currentness.'
+                              : 'This workspace is verified by EOS. Source inspection is available now; model reasoning requires your consent and separately admitted usage.')
                         : visibleWorkspaceContext?.state === 'LOADING'
                           ? 'Checking which workspace information EOS permits you to access.'
                           : visibleWorkspaceContext?.state === 'DENIED'
                             ? 'EOS did not authorize workspace context. I will not invent project or task facts.'
                             : 'Ask a general question, or open an authorized project for verified work context.'}</p>
+                      {visibleWorkspaceContext?.state === 'READY' && !isLegalDockRole(authUser?.role) && (
+                        <button
+                          type="button"
+                          className={styles.historyActionButton}
+                          style={{ display: 'inline-flex', marginTop: 14, minHeight: 44,
+                            padding: '10px 14px', color: '#f5e3b4', fontSize: 13,
+                            border: '1px solid #846c42', borderRadius: 10 }}
+                          onClick={() => {
+                            if (!workspaceDetailsRef.current) return;
+                            workspaceDetailsRef.current.open = true;
+                            workspaceDetailsRef.current.scrollIntoView?.({ block: 'nearest' });
+                          }}
+                        >
+                          Inspect verified source details
+                        </button>
+                      )}
                     </div>
                   )}
                   {(activeThread?.messages || []).map((msg, idx) => (
@@ -1917,7 +1942,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD
+ * VERSION: v4.21.0-INDEPENDENT-SOURCE-HEALTH-WORKSPACE-ACTIONS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
