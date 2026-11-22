@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION
+ * VERSION: v1.7.0-PRESELECT-VERIFIED-TENANT-MEMBER
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.7.0-PRESELECT-VERIFIED-TENANT-MEMBER supports selecting an eligible tenant member in the task Assignee control, then reviewing and explicitly granting project contributor admission in a viewport dialog. Parent gets the newly admitted principal only after confirmed EOS readback; no implied IAM.
  * CHANGELOG: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION identifies failing participant-list versus eligible-member directory read, including HTTP denial/unavailability and invalid source schema. No roster is guessed and grant remains fail-closed until both exact-scope reads validate.
  * CHANGELOG: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION explains the absence of eligible tenant members in the contributor selector and distinguishes membership/IAM admissions from project participation; preserves EOS-only grants and existing errors.
  * CHANGELOG: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF notifies a mounting work editor only after a participant grant/revoke has been independently source-read back. Does not grant IAM or task authority.
@@ -59,7 +60,7 @@ function validParticipants(data, { tenantId, principalId, projectId }, offset) {
   return data;
 }
 
-function validOptions(data, { tenantId, principalId, projectId }, offset) {
+export function validOptions(data, { tenantId, principalId, projectId }, offset) {
   if (
     data?.schema !== OPTIONS || data.tenant_id !== tenantId
     || data.principal_id !== principalId || data.project_id !== projectId
@@ -77,14 +78,14 @@ function validOptions(data, { tenantId, principalId, projectId }, offset) {
 }
 
 /** Display-only source names; identity and commands continue using principal_id. */
-function optionName(person) {
+export function optionName(person) {
   const parts = [person.first_name, person.last_name].filter(value =>
     typeof value === 'string' && value.trim());
   return parts.length ? parts.join(' ') : null;
 }
 
 /** @description A source-owned project participant management surface. */
-export default function ProjectParticipantsPanel({ projectId, tenantId, principalId, tenantHeaders, onParticipantsChanged = null }) {
+export default function ProjectParticipantsPanel({ projectId, tenantId, principalId, tenantHeaders, onParticipantsChanged = null, initialSelectedPrincipal = '' }) {
   const [items, setItems] = useState([]);
   const [choices, setChoices] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -176,7 +177,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     generation.current += 1;
     setItems([]);
     setChoices([]);
-    setSelectedPrincipal('');
+    setSelectedPrincipal(initialSelectedPrincipal);
     setSelectedRole('CONTRIBUTOR');
     replay.current = { fingerprint: '', key: '' };
     void load(0, 0);
@@ -193,7 +194,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     return replay.current.key;
   };
 
-  const execute = async (fingerprint, action) => {
+  const execute = async (fingerprint, action, admittedPrincipalId = null) => {
     if (busy || state !== 'READY') return;
     const active = scope;
     setBusy(true);
@@ -213,7 +214,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       if (!verified || currentScope.current !== active) return;
       replay.current = { fingerprint: '', key: '' };
       setSelectedPrincipal('');
-      if (typeof onParticipantsChanged === 'function') onParticipantsChanged();
+      if (typeof onParticipantsChanged === 'function') onParticipantsChanged(admittedPrincipalId);
     } catch (cause) {
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
@@ -232,7 +233,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     void execute(JSON.stringify(['grant', body]), key =>
       api.post(root + '/participants', body, {
         headers: { ...headers, 'Idempotency-Key': key },
-      }),
+      }), selectedPrincipal,
     );
   };
 
@@ -332,7 +333,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION
+// VERSION: v1.7.0-PRESELECT-VERIFIED-TENANT-MEMBER
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
