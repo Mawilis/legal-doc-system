@@ -434,6 +434,13 @@ function planWilsyWorkSourceQuestion(value) {
   if (overdue && activeQualifier) return null;
   // Do not treat a project *portfolio* lifecycle count as a My Work task count.
   if (selectors[0]?.[0] === 'PROJECTS' && !/\b(?:tasks?|work items?|work)\b/.test(text)) return null;
+  // Reject any lexical remainder outside the bounded count grammar, including
+  // "finished", "belong to someone", financial qualifiers, or arbitrary text.
+  const remainder = text
+    .replace(/\b(?:human resources|customer relationship|work items?|to dos?)\b/g, ' ')
+    .replace(/\b(?:hr|hiring|crm|operations|operational|legal|intelligence|project|projects|tasks?|work|overdue|late|outstanding|open|pending|active|incomplete|unfinished|and)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+  if (!/^(?:(?:how many|number of|count)(?: do i have| are there| are)?|what(?:'s| is) (?:the |my |our )?(?:number of |total )?(?:do i have|are there)?)$/.test(remainder)) return null;
   return Object.freeze({
     domain: 'MY_WORK',
     capability: WILSY_READ_ONLY_SOURCE_CAPABILITIES.MY_WORK,
