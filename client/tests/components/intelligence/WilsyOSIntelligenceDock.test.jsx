@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.27.0-ONDEMAND-MYWORK-ADMISSION-CERT
+ * VERSION: v1.28.0-INLINE-CONTEXT-ACTIONS-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.28.0-INLINE-CONTEXT-ACTIONS-CERT verifies source-backed work links and related navigation are semantic inline actions with accessible controls and preserve read-only source transitions without metered calls.
  * CHANGELOG: v1.27.0-ONDEMAND-MYWORK-ADMISSION-CERT certifies that ordinary Dock opening does not fan out to the expensive My Work aggregate, requesting work runs one exact-tenant read, leaving the view discards the local snapshot, and explicit recovery stays a bounded independent source GET.
  * CHANGELOG: v1.26.0-BOUNDED-MYWORK-FAILURE-DIAGNOSTICS-CERT verifies distinct My Work 403 authorization, 409 stale, 503 source failure, and transport timeout outcomes with exact-tenant read-only retry, no fabricated zero work or provider POST.
  * CHANGELOG: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT certifies the Founder-browser phrase 'What are my outstanding work?' resolves to EOS read-only My Work without posting to metered reasoning, while third-party/work-write/sensitive prompts cannot use the local bypass.
@@ -1393,6 +1394,15 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText('Send')).toBeEnabled();
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
     const work = await screen.findByRole('region', { name: 'Current authorized work' });
+    const returnAction = screen.getByRole('button', { name: 'Back to conversation' });
+    expect(returnAction).toHaveClass('conversationInlineAction');
+    expect(returnAction).toHaveAttribute('type', 'button');
+    expect(screen.getByRole('navigation', { name: 'Source follow-up actions' }))
+      .toContainElement(screen.getByRole('button', { name: 'Show my work' }));
+    expect(screen.getByRole('button', { name: 'Show my work' }))
+      .toHaveClass('conversationInlineAction');
+    expect(screen.getByRole('button', { name: 'Review verified work: Review contract' }))
+      .toHaveClass('conversationWorkLink');
     expect(screen.getByLabelText('Your source request')).toHaveTextContent('Show my overdue tasks');
     expect(work).toHaveTextContent('Review contract');
     expect(work).not.toHaveTextContent('Prepare warehouse plan');
@@ -1616,7 +1626,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.27.0-ONDEMAND-MYWORK-ADMISSION-CERT
+ * VERSION: v1.28.0-INLINE-CONTEXT-ACTIONS-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
