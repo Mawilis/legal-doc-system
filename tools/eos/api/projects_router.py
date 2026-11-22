@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK
+VERSION: v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,13 +30,16 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND admits
+  reasoned purpose clearing as UNCLASSIFIED with current project:update,
+  stable CAS and audit; no unverified source category is projected.
   v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK includes the exact
   independent source-purpose revision in authorized GET and POST readback
   so clients use source CAS instead of guessing current metadata revision.
   v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND adds exact-source project work-purpose GET and audited
   project:update POST, strict revision/idempotency and same-transaction
   current source+event readback. No Founder or participant privilege inheritance.
-  v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK restores the historical
+  v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND restores the historical
   v1.42.0 Founder contributor and participant profile changelog attribution
   without expanding the read-only Projects transaction recovery scope.
   v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
@@ -346,7 +349,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK"
+VERSION: Final[str] = "v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -561,7 +564,7 @@ class ProjectTaskWorkPurposeRequest(BaseModel):
     """Source-owner categorization command; no inferred approval or gate."""
 
     model_config = ConfigDict(extra="forbid", strict=True)
-    audience: Literal["OPERATING", "PLATFORM_BUILD"]
+    audience: Literal["OPERATING", "PLATFORM_BUILD", "UNCLASSIFIED"]
     reason: str = Field(min_length=10, max_length=1000)
     expected_task_revision: int = Field(ge=1)
     expected_purpose_revision: int = Field(ge=0)
@@ -4175,7 +4178,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK
+# VERSION: v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
