@@ -1,11 +1,15 @@
 """TITLE: WILSY OS Exact-Participant Project Daily Attention Certificate
-VERSION: v1.0.0-PROJECT-ATTENTION-SOURCE-DENIAL-CERT
+VERSION: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT
 AUTHORITY: Synthetic authenticated-source isolation and projection tests.
 EPITOME: Verify exact principal/tenant queue, current project participation,
          blocked work, revoked visibility and denial of inherited founder IAM.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_attention_source.py
 COLLABORATION / OWNERSHIP: project_attention_source, Projects router, My Work.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT certifies
+         missing work-purpose evidence remains visible as UNCLASSIFIED,
+         forwards exact source task revision and fails closed on tampering
+         while retaining existing participant/tenant scope.
 CHANGELOG: v1.0.0-PROJECT-ATTENTION-SOURCE-DENIAL-CERT certifies no cross-
          principal/tenant work, no revoked participant visibility or fake due time.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -75,7 +79,15 @@ def _context(role="PROJECTS_PARTICIPANT_CONTRIBUTOR"):
 
 
 def _wire(monkeypatch, rows, *, active=True, role="CONTRIBUTOR"):
-    database = {source.TASK_COLLECTION: _Collection(rows)}
+    class _AbsentPurpose:
+        def find_one(self, _query, *, session):
+            assert session is not None
+            return None
+    database = {
+        source.TASK_COLLECTION: _Collection(rows),
+        source.PURPOSE_COLLECTION: _AbsentPurpose(),
+        source.PURPOSE_EVENT_COLLECTION: _AbsentPurpose(),
+    }
     monkeypatch.setattr(source.kernel_db, "get_database", lambda: database)
     def run(_context, callback):
         return callback(object(), object())
@@ -108,6 +120,8 @@ def test_projects_source_includes_delegated_and_blocked_work(monkeypatch):
     assert all(row["project_id"] == PROJECT for row in result["items"])
     assert all(row["due_at"] is None for row in result["items"])
     assert all(row["due_date"] == "2026-11-20" for row in result["items"])
+    assert all(row["revision"] == 1 and row["audience_evidence"] is None
+               for row in result["items"])
     assert calls == [PROJECT]  # one authorization per distinct project
 
 
@@ -154,7 +168,7 @@ def test_corrupt_task_source_denies_complete_queue(monkeypatch):
 
 
 # ARTIFACT: test_project_attention_source.py
-# VERSION: v1.0.0-PROJECT-ATTENTION-SOURCE-DENIAL-CERT
+# VERSION: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT
 # AUTHORITY BOUNDARY: synthetic source admission, no live tenant IAM
 # TENANT POSTURE: exact principal and active-project record mandatory
 # FAIL-CLOSED POSTURE: stale, forged, revoked and inherited authority denied
