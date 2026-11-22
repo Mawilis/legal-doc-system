@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF
+ * VERSION: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS exposes a contextual inline governed contributor-management workflow when no assignees are admitted, refreshes only after source-confirmed participant changes while keeping unsaved task drafts, and collapses the page-only work filters by default. No IAM shortcuts or task mutation semantics altered.
  * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF emits a bounded, EOS-hydrated task id/revision
  *          to the parent while a detail, editor or task discussion is in view;
  *          selection clears on dismissal, remount or source unavailability.
@@ -173,6 +174,7 @@ import ProjectWorkRow from './ProjectWorkRow.jsx';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
+import ProjectParticipantsPanel from './ProjectParticipantsPanel.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -315,6 +317,7 @@ export default function ProjectTasksPanel({
   const [workKind, setWorkKind] = useState('ALL');
   const [workGroup, setWorkGroup] = useState('NONE');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
+  const [showContributorManagement, setShowContributorManagement] = useState(false);
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
   const [drawerTaskId, setDrawerTaskId] = useState(null);
@@ -412,6 +415,7 @@ export default function ProjectTasksPanel({
     setWorkKind('ALL');
     setWorkGroup('NONE');
     setWorkOrder('DUE_ASC');
+    setShowContributorManagement(false);
     setCompletionCandidate(null);
     setCompletionAttested(false);
     setEditor(null);
@@ -952,7 +956,11 @@ export default function ProjectTasksPanel({
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
-      <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
+      <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+          Work filters, grouping and sorting · {workRows.length} shown on this verified page
+        </summary>
+        <div className="flex flex-wrap items-end gap-3 border-t border-slate-200 p-3">
         <label className="flex min-w-[145px] flex-col gap-1 text-xs font-semibold text-slate-800">
           Group work
           <select aria-label="Group project work" value={workGroup}
@@ -1011,7 +1019,18 @@ export default function ProjectTasksPanel({
           </select>
         </label>
         <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
-      </div>
+        </div>
+      </details>
+      {showContributorManagement && <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/30 p-3" aria-label="Manage contributors for task assignment">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-900">Authorize a project contributor</p>
+          <button type="button" className="wp-button" onClick={() => setShowContributorManagement(false)}>Close contributor management</button>
+        </div>
+        <p className="mt-1 text-xs text-slate-700">Choose an existing eligible tenant member and grant explicit project contributor participation. EOS independently verifies membership, role and project authority. Your unsaved task draft remains in this editor.</p>
+        <ProjectParticipantsPanel projectId={projectId} tenantId={tenantId}
+          principalId={principalId} tenantHeaders={tenantHeaders}
+          onParticipantsChanged={() => { void load(offset); }}/>
+      </div>}
       {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
         {workType === 'SUBTASK' && draft.parent_task_id && <p role="status" className="text-xs font-semibold text-blue-900">
@@ -1060,6 +1079,17 @@ export default function ProjectTasksPanel({
                 {contributorName(person.principal_id)}
               </option>)}
             </select>
+            {participants.length === 0 && !participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
+              No verified project contributors are eligible for task assignment yet. Create this task unassigned, or add a contributor below using EOS-authorized project participation.
+            </span>}
+            {participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
+              More than 100 participants exist. Assignment remains restricted to the verified current participant page.
+            </span>}
+            <button type="button" className="wp-button mt-2 !min-h-9 !text-xs"
+              aria-expanded={showContributorManagement}
+              onClick={() => setShowContributorManagement(value => !value)}>
+              {showContributorManagement ? 'Close contributor management' : 'Manage eligible contributors'}
+            </button>
           </label>
           <label className="block text-sm font-semibold text-slate-800">Parent task {workType === 'SUBTASK' ? '(required)' : '(not applicable)'}
             <select aria-label="Parent task" required={workType === 'SUBTASK'} disabled={workType !== 'SUBTASK'}
@@ -1312,7 +1342,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF
+// VERSION: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
