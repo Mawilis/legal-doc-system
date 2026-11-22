@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT
+ * VERSION: v1.16.0-INDEPENDENT-KERNEL-SOURCE-UX-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.16.0-INDEPENDENT-KERNEL-SOURCE-UX-CERT verifies a source-authorized workspace remains inspectable when the optional kernel health probe fails, without calling a model or falsifying EOS status.
  * CHANGELOG: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT updates an outdated summary assertion to certify the current available/completed/held disclosure; omitted EOS usage evidence must remain marked unverified rather than asserted as zero.
  * CHANGELOG: v1.15.0-RECONCILIATION-REPLAY-GUARD-CERT certifies that a source-confirmed reconciliation hold blocks Enter and manual Send for the exact question, retains the draft, never fabricates an AI reply, and preserves distinct transport replay behavior.
  * CHANGELOG: v1.14.0-FOUNDER-AI-ACTIVATION-ACTION-CERT proves
@@ -513,6 +514,44 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     expect(screen.getByText(/^Good (morning|afternoon|evening), Nandi\.$/))
       .toBeVisible();
+  });
+
+  it('keeps verified workspace inspectable when optional kernel health fails', async () => {
+    const principal = 'source-operator';
+    mockApiGet.mockImplementation((path, options) => {
+      if (path !== '/wilsy-ai/reasoning/context') {
+        return Promise.reject(rejectedResponse(503, 'source probe unavailable'));
+      }
+      return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT',
+        principal_id: principal,
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false, provider_binding: 'UNAVAILABLE' },
+        context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-22T07:00:00+00:00',
+        locator: options.params,
+        allowance: { available_request_units: 450,
+          daily_consumed_request_units: 0, held_request_units: 0,
+          seat_allocation: { state: 'UNAVAILABLE' } },
+        work: null,
+      } });
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText(
+      'Workspace verified · Kernel health unavailable',
+    )).toBeVisible());
+    const summary = screen.getByLabelText('Inspect verified workspace context');
+    expect(summary).toHaveTextContent('AI provider unavailable');
+    expect(summary.closest('details').open).toBe(false);
+    expect(screen.getByText(/inspecting your permitted source information does not require AI credits/i)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect verified source details' }));
+    expect(summary.closest('details').open).toBe(true);
+    expect(screen.getByText(/450 requests available/)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('remembers accepted usage within the same browser and exact authorized scope', () => {
@@ -1251,7 +1290,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT
+ * VERSION: v1.16.0-INDEPENDENT-KERNEL-SOURCE-UX-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
