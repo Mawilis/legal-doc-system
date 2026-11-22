@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Unified My Work Source Projection Certificate
-VERSION: v1.1.0-SOURCE-WORK-AUDIENCE-ENVELOPE-CERT
+VERSION: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
 AUTHORITY: Synthetic read-only EOS source composition and denial tests.
 EPITOME: Verify independently admitted Legal, Operations, Intelligence, CRM,
          HR and Projects work shapes, cross-tenant rejection and blocked work.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: unified_my_work_projection composes only sources
          already admitted by the canonical authenticated My Work router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
+         preserves previously admitted source rows carrying an unrelated
+         zero-based source revision when no category evidence is present.
 CHANGELOG: v1.1.0-SOURCE-WORK-AUDIENCE-ENVELOPE-CERT proves
          work rows remain visible and UNCLASSIFIED without classification
          evidence, accepts exact revision-attested audience metadata and
@@ -57,6 +60,17 @@ def test_m01_work_audience_is_visible_unclassified_until_source_attests():
     assert result["items"][0]["audience"] == "UNCLASSIFIED"
     assert result["items"][0]["critical_gate"] is False
     assert result["items"][0]["audience_evidence_ref"] is None
+
+
+def test_legacy_zero_based_source_revision_without_audience_remains_visible():
+    """An unrelated version-zero work source is not made inaccessible by M01."""
+    row = {**item("legacy-zero"), "revision": 0}
+    snapshot = build_unified_my_work(
+        tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+        crm={"tenant_id": TENANT, "items": [row]},
+    )
+    assert snapshot["summary"]["active_count"] == 1
+    assert snapshot["items"][0]["audience"] == "UNCLASSIFIED"
 
 
 def test_m01_current_source_audience_proof_and_foreign_revision_denial():
@@ -261,7 +275,7 @@ def test_rejects_malformed_source_item_instead_of_silently_dropping_it():
         )
 
 # ARTIFACT: test_unified_my_work_projection.py
-# VERSION: v1.1.0-SOURCE-WORK-AUDIENCE-ENVELOPE-CERT
+# VERSION: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
 # AUTHORITY BOUNDARY: pure projection checks; no IAM or source mutation
 # TENANT POSTURE: exact source envelope and row validation
 # FAIL-CLOSED POSTURE: malformed, forged or foreign project work denies
