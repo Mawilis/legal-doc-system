@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.31.0-VERIFIED-PROJECT-COUNT-READ-CERT
+ * VERSION: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT proves a two-turn Projects count then status follow-up (including 'How may are active?') uses fresh canonical EOS summary without paid POST, and refuses subject carryover after unrelated conversation or ambiguous multiple-status questions.
  * CHANGELOG: v1.31.0-VERIFIED-PROJECT-COUNT-READ-CERT tests exact-tenant and current-principal Projects summary count read, no POST, missing consent independence, and fail-closed denied/mismatched source. Existing metered query/replay tests retained.
  * CHANGELOG: v1.30.0-DEVICE-TIME-PROGRESSIVE-RENDER-CERT certifies current device clock without a provider POST, excludes arbitrary schedules from the local catalog, and checks progressive presentation teardown and accessibility.
  * CHANGELOG: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT retains Enter-key paid reasoning coverage using a substantive question rather than a built-in courtesy, so both paths remain independently certified.
@@ -411,6 +412,51 @@ describe('WilsyOSIntelligenceDock', () => {
       headers: { 'X-Tenant-ID': 'TEST_TENANT' },
     }));
     expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['How many are active?', /3 of your 7 projects are active/],
+    ['How may are active?', /3 of your 7 projects are active/],
+    ['How many are done?', /1 of your 7 projects are completed/],
+    ['How many are on hold?', /1 of your 7 projects are on hold/],
+  ])('resolves a source-verified conversational follow-up %s without inference', async (question, expected) => {
+    const projectGet = vi.fn().mockResolvedValue({ data: {
+      schema: 'WILSY-PROJECT-SUMMARY/V1',
+      tenant_id: 'TEST_TENANT',
+      principal_id: 'project-count-operator',
+      counts: { total: 7, active: 3, planned: 2, on_hold: 1, done: 1, cancelled: 0 },
+    } });
+    mockApiGet.mockImplementation(path => path === '/projects/summary'
+      ? projectGet() : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(composer, { target: { value: 'How many projects do I have?' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Projects')).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/You have 7 projects in this tenant/)).toBeVisible());
+    fireEvent.change(composer, { target: { value: question } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(expected)).toBeVisible());
+    expect(projectGet).toHaveBeenCalledTimes(2);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('cannot invent a Projects subject for an ungrounded pronoun or mixed domain', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    for (const question of ['How may are active?', 'How many active employees?', 'How many projects should we delete?']) {
+      fireEvent.change(composer, { target: { value: question } });
+      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(mockApiPost).not.toHaveBeenCalled();
+    }
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
   });
 
   it.each(['FOREIGN_TENANT', 'BAD_TOTAL'])('does not invent project counts from %s', async failure => {
@@ -1780,7 +1826,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.31.0-VERIFIED-PROJECT-COUNT-READ-CERT
+ * VERSION: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
