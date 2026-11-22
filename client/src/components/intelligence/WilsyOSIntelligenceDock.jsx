@@ -1,13 +1,20 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.29.1-STABLE-COMPOSER-CONTRACT
+ * VERSION: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * COMPLIANCE: AGENTS.md; exact-scope fail-closed source evidence.
+ * SECURITY / PRIVACY POSTURE: Session-person label never displays account email;
+ * no model calls arise from read-only context inspection.
+ * TENANT BOUNDARY: Current authenticated tenant and principal only.
+ * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
+ * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT places mandatory sovereign boundary declarations in the opening header census; existing authority semantics unchanged.
  * CHANGELOG: v4.29.1-STABLE-COMPOSER-CONTRACT preserves the existing accessible composer placeholder/selector contract while the default conversation, authenticated identity label and no-status-cards interaction change.
  * CHANGELOG: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION removes the last permanently rendered quick-action button row, prefers a verified non-email person name (or neutral You) in user turns, and presents provider reconciliation as a distinct pending request in the transcript without claiming completion or retrying metered usage. Retains exact-key replay refusal and authenticated source introspection on natural-language intent.
  * CHANGELOG: v4.28.0-STRICT-READONLY-INTENT-CATALOG registers one strict read-only source-intent catalog for both composer permission gating and execution. Unknown intents never inherit unmetered authority; source views cannot issue a model POST or mutate EOS work; no generated markup or model-supplied action names.
@@ -2081,7 +2088,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.29.1-STABLE-COMPOSER-CONTRACT
+ * VERSION: v4.29.2-SOVEREIGN-HEADER-PREFLIGHT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
