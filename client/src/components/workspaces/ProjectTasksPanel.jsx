@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS
+ * VERSION: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS keeps exact-page selection status visible while optional work-filter controls are collapsed, without changing selection authority or mutations.
  * CHANGELOG: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS exposes a contextual inline governed contributor-management workflow when no assignees are admitted, refreshes only after source-confirmed participant changes while keeping unsaved task drafts, and collapses the page-only work filters by default. No IAM shortcuts or task mutation semantics altered.
  * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF emits a bounded, EOS-hydrated task id/revision
  *          to the parent while a detail, editor or task discussion is in view;
@@ -956,6 +957,10 @@ export default function ProjectTasksPanel({
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
+      {selectedWorkIds.length > 0 && <p role="status" className="mt-3 text-xs font-semibold text-blue-800">
+        {selectedWorkIds.length} work item{selectedWorkIds.length === 1 ? '' : 's'} selected on this verified page
+        · Actions remain individual until EOS authorizes bulk commands
+      </p>}
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} shown on this verified page
@@ -981,10 +986,6 @@ export default function ProjectTasksPanel({
             <option value="compact">Compact</option>
           </select>
         </label>
-        {selectedWorkIds.length > 0 && <span role="status" className="text-xs font-semibold text-blue-800">
-          {selectedWorkIds.length} work item{selectedWorkIds.length === 1 ? '' : 's'} selected on this verified page
-          · Actions remain individual until EOS authorizes bulk commands
-        </span>}
         <button type="button" className="wp-button min-h-10" aria-pressed={workMineOnly}
           onClick={() => setWorkMineOnly(previous => !previous)}>
           {workMineOnly ? 'All work on this page' : 'My work on this page'}
@@ -1342,7 +1343,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS
+// VERSION: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
