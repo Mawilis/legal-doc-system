@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF
+ * VERSION: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
+ *            makes independent approval form labeling dynamic by current
+ *            source classification; Mission is never mislabeled Strategy.
  * CHANGELOG: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF exposes
  *            source-state-specific draft, submit and distinct publisher
  *            handoffs in the current Strategy drawer, with accessible
@@ -1294,7 +1297,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </div>
                 </form>}
-                {actions.includes('PUBLISH') && <form className={styles.form} aria-label="Independent Strategy publication approval" onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
+                {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
               </>}
         </div>
       </div>
@@ -1304,7 +1307,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF
+// VERSION: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
