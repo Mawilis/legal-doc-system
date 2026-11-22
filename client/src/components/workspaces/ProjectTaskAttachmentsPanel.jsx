@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY
+ * VERSION: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE supplies a real keyboard-accessible route to project People contributor administration from owner-view attachments, and keeps upload unavailable without independent contributor IAM. Existing authorized upload remains in the contributor mode only.
  * CHANGELOG: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY distinguishes the exact attachment GET failure (HTTP status, bounded project source code or source-schema mismatch) from missing contributor upload authority. Makes the upload entry point and its permission prerequisites visible without attempting unauthorized provider writes or inventing completed scan evidence.
  * CHANGELOG: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD shows
  *          source-owned GuardDuty clearance, recipient-triggered scan
@@ -58,7 +59,7 @@ function valid(record, tenantId, projectId, taskId) {
 /** @description Render quarantined source evidence and an exact-scope upload. */
 export default function ProjectTaskAttachmentsPanel({
   tenantId, principalId, projectId, taskId, tenantHeaders,
-  participantMode = false, onClose,
+  participantMode = false, onClose, onManageContributors = null,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
@@ -326,6 +327,9 @@ export default function ProjectTaskAttachmentsPanel({
             : 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
           : 'This account is viewing owner-authorized task metadata, not a verified project-contributor upload session. Only a currently admitted contributor with project:participant:contribute may submit evidence. Use the project People workflow to establish that authority; owner status alone does not grant upload permission.'}
       </p>
+      {!participantMode && typeof onManageContributors === 'function' &&
+        <button type="button" className="wp-button mt-3"
+          onClick={onManageContributors}>Open project People to authorize a contributor</button>}
     </div>
     {state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">
       Verifying file manifests with EOS…
@@ -384,7 +388,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY
+// VERSION: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
