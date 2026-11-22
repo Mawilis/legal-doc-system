@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION
+ * VERSION: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION defers the costly cross-source My Work aggregate until a real work-related conversational intent is selected; entering work/overdue initiates a fresh independently admitted read, leaving other Dock surfaces unaffected and avoiding eager concurrent startup load. Scope changes and leaving the view abort/clear local projections; no partial-source/fabricated results.
  * CHANGELOG: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION distinguishes exact-tenant My Work IAM refusal, bounded transport timeout, EOS 503 source failure and other transport errors in the chat, without inventing tasks, exposing vendor/request data, extending the client deadline or relaxing backend authority. Kernel health timeout remains an independent optional probe.
  * CHANGELOG: v4.30.1-NATURAL-OVERDUE-WORK-QUERY includes tightly scoped 'Which of my tasks are overdue?' questions in the same read-only EOS work catalog without granting scope or metered access.
  * CHANGELOG: v4.30.0-NATURAL-OUTSTANDING-WORK-INTENT routes bounded natural-language questions about the operator's outstanding/pending/incomplete or overdue work through source-authorized read-only My Work instead of C1B metered reasoning. Questions asking for other people's work, writes or sensitive records remain outside the free local catalog. No release or replay of reconciliation holds.
@@ -706,12 +707,15 @@ export function WilsyOSIntelligenceDock({
     return () => { current = false; controller.abort(); };
   }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
 
+  const workInspectionRequested = conversationView === 'WORK' || conversationView === 'OVERDUE';
+
   // Read-only EOS My Work is independently authorized from AI commercial
   // entitlement. It is a UI projection only; never forwarded to a model as
   // client-provided fact or used to authorize workflow commands.
   useEffect(() => {
     const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
-    if (!isOpen || !authUser?.id || !exactTenant || workLocator.workspace !== 'HEADQUARTERS') {
+    if (!isOpen || !authUser?.id || !exactTenant
+      || workLocator.workspace !== 'HEADQUARTERS' || !workInspectionRequested) {
       setHeadquartersWork(null);
       return undefined;
     }
@@ -759,7 +763,7 @@ export function WilsyOSIntelligenceDock({
       }
     });
     return () => { live = false; controller.abort(); };
-  }, [isOpen, dockScope, workLocatorKey, contextRefresh]);
+  }, [isOpen, dockScope, workLocatorKey, contextRefresh, workInspectionRequested]);
 
   useEffect(() => {
     setFocusedWorkIndex(null);
@@ -2137,7 +2141,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION
+ * VERSION: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
