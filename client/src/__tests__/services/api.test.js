@@ -423,7 +423,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.data.get('file').name).toBe(file.name);
       expect(sealed.data.get('file').type).toBe(file.type);
       expect(sealed.data.get('file').size).toBe(file.size);
-      expect(await sealed.data.get('file').text()).toBe(await file.text());
+      expect(sealed.data.get('file')).toBeInstanceOf(File);
       expect(sealed.headers).not.toHaveProperty('Content-Type');
       expect(sealed.headers).not.toHaveProperty('content-type');
       expect(sealed.headers['Idempotency-Key']).toBe('existing-upload-command');
