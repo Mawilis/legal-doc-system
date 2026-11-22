@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Authenticated Feed Client
- * VERSION: v1.7.0-SOURCE-SAVED-DRAFT-CREATION
+ * VERSION: v1.8.0-SIX-SOURCE-READ-PARITY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns authoritative work.
  * EPITOME: Validate and read the exact scoped AttentionItem feed without
  *          browser-side IAM claims, task persistence or command authority.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: AuthContext establishes the authenticated session;
  *          unifiedMyWorkSync builds its exact scope; attention_router owns the
  *          EOS feed and source-owned registries retain all business commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.8.0-SIX-SOURCE-READ-PARITY accepts exactly six
+ *          canonical Python EOS My Work sources for read-only feed coverage,
+ *          including independently admitted HR and PROJECTS. Action capability
+ *          transport remains limited to its source-owned command routes.
  * CHANGELOG: v1.7.0-SOURCE-SAVED-DRAFT-CREATION validates explicit
  *          CRM-only DRAFT initial status and forwards it to the real EOS
  *          source create endpoint. No other module's create contract changes;
@@ -47,7 +51,7 @@
 import api from './api.js';
 
 const SCHEMA = 'WILSY-OS-ATTENTION-FEED/V1';
-const SOURCES = new Set(['LEGAL', 'OPERATIONS', 'INTELLIGENCE', 'CRM']);
+const SOURCES = new Set(['LEGAL', 'OPERATIONS', 'INTELLIGENCE', 'CRM', 'HR', 'PROJECTS']);
 const PRIORITIES = new Set(['CRITICAL', 'HIGH', 'NORMAL', 'LOW']);
 const SOURCE_STATES = new Set(['ok', 'empty']);
 const VIEWS = new Set(['active', 'overdue', 'due_today', 'high_priority']);
@@ -310,7 +314,7 @@ export async function createAttentionSourceWork(moduleId, scope, form, idempoten
 }
 
 // ARTIFACT: client/src/services/attentionFeedClient.js
-// VERSION: v1.7.0-SOURCE-SAVED-DRAFT-CREATION
+// VERSION: v1.8.0-SIX-SOURCE-READ-PARITY
 // AUTHORITY BOUNDARY: EOS actions availability; source-owned POST reauthorizes.
 // TENANT POSTURE: Current EOS tenant and principal required for each response.
 // FAIL-CLOSED POSTURE: Foreign, invalid or overstated source evidence rejects.

@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Daily Attention Feed Client Contract Certificate
- * VERSION: v1.6.0-DIRECT-SAVED-DRAFT-TRANSPORT-CERT
+ * VERSION: v1.7.0-SIX-SOURCE-ATTENTION-BROWSER-CERT
  * AUTHORITY: WILSY OS Core Engineering disposable verification.
  * EPITOME: Prove current-principal feed read, real source coverage checks,
  *          command non-authority, cursor and foreign-tenant rejection.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/attentionFeedClient.test.js
  * COLLABORATION / OWNERSHIP: attentionFeedClient.js and EOS attention_router.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.7.0-SIX-SOURCE-ATTENTION-BROWSER-CERT proves that an
+ *          EOS-authorized seven-work-item CRM/PROJECTS feed is accepted,
+ *          while unsupported source IDs still fail closed and HR/PROJECTS
+ *          reads do not invent command-capability endpoints.
  * CHANGELOG: v1.6.0-DIRECT-SAVED-DRAFT-TRANSPORT-CERT checks
  *          source-owned CRM-only initial Draft creation, exact status
  *          readback, and preservation of non-CRM create schema.
@@ -93,6 +97,54 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
       forceNetworkRetry: true,
     });
     expect(feed.authority.attentionCommandsEnabled).toBe(false);
+  });
+
+  it('accepts EOS six-source admission and all seven real source work identities', async () => {
+    const payload = response();
+    const projectId = 'ptk-' + 'a'.repeat(48);
+    payload.sources = [
+      { moduleId: 'CRM', state: 'ok', count: 5 },
+      { moduleId: 'PROJECTS', state: 'ok', count: 2 },
+    ];
+    payload.coverage.admittedSources = ['CRM', 'PROJECTS'];
+    payload.coverage.notRepresentedSources = [
+      'LEGAL', 'OPERATIONS', 'INTELLIGENCE', 'HR', 'FINANCE', 'PEOPLE',
+    ];
+    payload.items = [
+      ...Array.from({ length: 5 }, (_, index) => ({
+        ...response().items[0],
+        id: 'CRM:crm-' + index,
+        sourceModule: 'CRM',
+        sourceRecordId: 'crm-' + index,
+      })),
+      ...Array.from({ length: 2 }, (_, index) => ({
+        ...response().items[0],
+        id: 'PROJECTS:' + projectId + '-' + index,
+        sourceModule: 'PROJECTS',
+        sourceRecordId: projectId + '-' + index,
+        priority: 'NORMAL',
+      })),
+    ];
+    payload.counts = { active: 7, overdue: 0, dueToday: 0, highPriority: 5 };
+    payload.filteredTotal = 7;
+    api.get.mockResolvedValue({ data: payload });
+    const verified = await readAttentionFeed(scope, { view: 'active', limit: 50 });
+    expect(verified.items).toHaveLength(7);
+    expect(verified.coverage.admittedSources).toEqual(['CRM', 'PROJECTS']);
+    expect(verified.items.filter(item => item.sourceModule === 'PROJECTS')).toHaveLength(2);
+    expect(verified.authority.attentionCommandsEnabled).toBe(false);
+
+    api.get.mockClear();
+    expect(await readAttentionSourceActions(scope, ['HR', 'PROJECTS'])).toEqual({
+      sourceActions: {}, unavailableSources: [],
+    });
+    expect(api.get).not.toHaveBeenCalled();
+
+    const unsupported = { ...payload, coverage: {
+      ...payload.coverage, admittedSources: ['CRM', 'PROJECTS', 'PEOPLE'],
+    }, sources: [...payload.sources, { moduleId: 'PEOPLE', state: 'empty', count: 0 }] };
+    expect(() => assertAttentionFeed(unsupported, scope))
+      .toThrow('ATTENTION_SOURCE_COVERAGE_INVALID');
   });
 
   it('does not send work requests without exact user and tenant scope', async () => {
@@ -298,7 +350,7 @@ describe('EOS authoritative AttentionItem feed browser boundary', () => {
 
 
  // ARTIFACT: client/src/__tests__/services/attentionFeedClient.test.js
-// VERSION: v1.6.0-DIRECT-SAVED-DRAFT-TRANSPORT-CERT
+// VERSION: v1.7.0-SIX-SOURCE-ATTENTION-BROWSER-CERT
 // AUTHORITY BOUNDARY: Capability availability verified; source IAM owns each completion.
 // TENANT POSTURE: Exact current tenant and principal required for every page.
 // FAIL-CLOSED POSTURE: Foreign identities, unknown sources/actions and count drift reject.

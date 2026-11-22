@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorised Daily Attention Feed Projection
-VERSION: v1.1.0-FULL-ADMISSION-COVERAGE
+VERSION: v1.2.0-SIX-SOURCE-ATTENTION-PARITY
 AUTHORITY: WILSY OS Core Governance; source EOS registries remain canonical.
 EPITOME: Present independently authorized My Work rows as deterministic,
          cursor-paginated attention obligations without inventing commands.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: unified_my_work_router admits each source and owns
          its source transaction; attention_router exposes read-only HTTP;
          the browser presents only validated, bounded attention projections.
 CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: v1.2.0-SIX-SOURCE-ATTENTION-PARITY admits source-owned HR and
+           PROJECTS work already certified in unified My Work, preserving
+           exact source counts, filters, and fail-closed record validation.
 CHANGELOG: v1.1.0-FULL-ADMISSION-COVERAGE identifies every omitted
            module without asserting whether it is licensed or inaccessible.
            v1.0.1-STABLE-REVALIDATED-PAGINATION makes cursor
@@ -40,7 +43,7 @@ from datetime import datetime, timezone
 from typing import Any, Mapping
 
 SCHEMA = "WILSY-OS-ATTENTION-FEED/V1"
-SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM")
+SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR", "PROJECTS")
 PRIORITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3}
 VIEWS = frozenset({"active", "overdue", "due_today", "high_priority"})
 MAX_PAGE = 100
@@ -301,7 +304,7 @@ def build_attention_feed(
 __all__ = ["SCHEMA", "SOURCE_ORDER", "AttentionFeedError", "build_attention_feed"]
 
 # ARTIFACT: tools/eos/workspaces/service/attention_feed_projection.py
-# VERSION: v1.1.0-FULL-ADMISSION-COVERAGE
+# VERSION: v1.2.0-SIX-SOURCE-ATTENTION-PARITY
 # AUTHORITY BOUNDARY: Exact previously admitted EOS source projection; read only.
 # TENANT POSTURE: Exact caller tenant/principal and bounded source-dependent cursor.
 # FAIL-CLOSED POSTURE: Invalid source, scope, counts, dates and cursor reject.
