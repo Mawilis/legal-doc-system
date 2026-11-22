@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION
+ * VERSION: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION exports the already-governed exact-tenant participant validator for the task attachment People preflight. No new authority, command or synthetic identity.
+ * CHANGELOG: v1.8.0-ISOLATED-PROJECT-PEOPLE-SOURCE-READS validates and presents independently authorised project participants even when the eligible tenant member-directory read is blocked. Separately reports each source HTTP/timeout/backoff class; grants and revokes are disabled unless both source contracts are current. Avoids routing owner attachment users into a hidden generic failure.
+ * CHANGELOG: v1.7.0-PRESELECT-VERIFIED-TENANT-MEMBER supports selecting an eligible tenant member in the task Assignee control, then reviewing and explicitly granting project contributor admission in a viewport dialog. Parent gets the newly admitted principal only after confirmed EOS readback; no implied IAM.
+ * CHANGELOG: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION identifies failing participant-list versus eligible-member directory read, including HTTP denial/unavailability and invalid source schema. No roster is guessed and grant remains fail-closed until both exact-scope reads validate.
+ * CHANGELOG: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION explains the absence of eligible tenant members in the contributor selector and distinguishes membership/IAM admissions from project participation; preserves EOS-only grants and existing errors.
+ * CHANGELOG: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF notifies a mounting work editor only after a participant grant/revoke has been independently source-read back. Does not grant IAM or task authority.
  * CHANGELOG: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION removes long principal codes from the
  *          visible member-choice surface while preserving the exact source
  *          identity as an EOS-only command input and audit key.
@@ -36,7 +42,7 @@ const PARTICIPANTS = 'WILSY-PROJECT-PARTICIPANT-LIST/V1';
 const OPTIONS = 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1';
 const RESULT = 'WILSY-PROJECT-PARTICIPANT-RESULT/V1';
 
-function validParticipants(data, { tenantId, principalId, projectId }, offset) {
+export function validParticipants(data, { tenantId, principalId, projectId }, offset) {
   if (
     data?.schema !== PARTICIPANTS || data.tenant_id !== tenantId
     || data.principal_id !== principalId || data.project_id !== projectId
@@ -56,7 +62,7 @@ function validParticipants(data, { tenantId, principalId, projectId }, offset) {
   return data;
 }
 
-function validOptions(data, { tenantId, principalId, projectId }, offset) {
+export function validOptions(data, { tenantId, principalId, projectId }, offset) {
   if (
     data?.schema !== OPTIONS || data.tenant_id !== tenantId
     || data.principal_id !== principalId || data.project_id !== projectId
@@ -74,14 +80,14 @@ function validOptions(data, { tenantId, principalId, projectId }, offset) {
 }
 
 /** Display-only source names; identity and commands continue using principal_id. */
-function optionName(person) {
+export function optionName(person) {
   const parts = [person.first_name, person.last_name].filter(value =>
     typeof value === 'string' && value.trim());
   return parts.length ? parts.join(' ') : null;
 }
 
 /** @description A source-owned project participant management surface. */
-export default function ProjectParticipantsPanel({ projectId, tenantId, principalId, tenantHeaders }) {
+export default function ProjectParticipantsPanel({ projectId, tenantId, principalId, tenantHeaders, onParticipantsChanged = null, initialSelectedPrincipal = '' }) {
   const [items, setItems] = useState([]);
   const [choices, setChoices] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -90,6 +96,8 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
   const [hasMoreChoices, setHasMoreChoices] = useState(false);
   const [state, setState] = useState('LOADING');
   const [error, setError] = useState('');
+  const [participantVerified, setParticipantVerified] = useState(false);
+  const [choicesVerified, setChoicesVerified] = useState(false);
   const [selectedPrincipal, setSelectedPrincipal] = useState('');
   const [selectedRole, setSelectedRole] = useState('CONTRIBUTOR');
   const [busy, setBusy] = useState(false);
@@ -108,29 +116,66 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     setState(previous => previous === 'READY' ? 'REFRESHING' : 'LOADING');
     setError('');
     try {
-      const [people, options] = await Promise.all([
+      const [peopleResult, optionsResult] = await Promise.allSettled([
         api.get(root + '/participants?limit=50&offset=' + personOffset, { headers }),
         api.get(root + '/participant-options?limit=50&offset=' + membersOffset, { headers }),
       ]);
       if (current !== generation.current || currentScope.current !== active) return false;
-      const verified = validParticipants(people.data, coordinates, personOffset);
-      const permitted = validOptions(options.data, coordinates, membersOffset);
-      setItems(verified.items);
-      setChoices(permitted.items);
-      setHasMore(verified.has_more);
-      setHasMoreChoices(permitted.has_more);
+      const sourceError = (result, name) => {
+        if (result.status === 'fulfilled') return null;
+        const failure = result.reason;
+        const status = failure?.response?.status || failure?.status;
+        const detail = failure?.response?.data?.detail;
+        const boundedCode = typeof detail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(detail)
+          ? ' · EOS ' + detail : '';
+        const category = failure?.isSourceBackoff ? 'source retry temporarily suppressed after EOS unavailability (HTTP 503)'
+          : status === 401 ? 'authentication required (HTTP 401)'
+            : status === 403 ? 'permission denied by EOS (HTTP 403)'
+              : status === 404 ? 'endpoint not available in EOS (HTTP 404)'
+                : status === 503 ? 'EOS source unavailable (HTTP 503)'
+                  : status === 422 ? 'source request rejected (HTTP 422)'
+                    : Number.isInteger(status) ? 'HTTP ' + status
+                      : failure?.code === 'ECONNABORTED' ? 'request timed out'
+                        : 'network transport could not be verified';
+        return name + ': ' + category + boundedCode + '.';
+      };
+      const peopleError = sourceError(peopleResult, 'Project participants');
+      const membersError = sourceError(optionsResult, 'Eligible tenant member directory');
+      let verified = null;
+      let permitted = null;
+      let peopleIssue = peopleError;
+      let optionsIssue = membersError;
+      if (peopleResult.status === 'fulfilled') {
+        try { verified = validParticipants(peopleResult.value.data, coordinates, personOffset); }
+        catch { peopleIssue = 'Project participants: response scope or schema invalid.'; }
+      }
+      if (optionsResult.status === 'fulfilled') {
+        try { permitted = validOptions(optionsResult.value.data, coordinates, membersOffset); }
+        catch { optionsIssue = 'Eligible tenant member directory: response scope or schema invalid.'; }
+      }
+      setItems(verified?.items || []);
+      setChoices(permitted?.items || []);
+      setParticipantVerified(Boolean(verified));
+      setChoicesVerified(Boolean(permitted));
+      setHasMore(verified?.has_more || false);
+      setHasMoreChoices(permitted?.has_more || false);
+      setError([peopleIssue, optionsIssue].filter(Boolean).join(' '));
       setOffset(personOffset);
       setOptionOffset(membersOffset);
-      setState('READY');
-      return true;
+      setState(verified && permitted ? 'READY' : 'PARTIAL');
+      return Boolean(verified && permitted);
     } catch (cause) {
       if (current !== generation.current || currentScope.current !== active) return false;
       setItems([]);
       setChoices([]);
+      setParticipantVerified(false);
+      setChoicesVerified(false);
       const code = cause?.response?.status;
-      setError(code === 401 ? 'Authentication required for project participants.'
-        : code === 403 ? 'EOS denied participant management.'
-          : 'Participant assignment source could not be verified. Retry.');
+      setError(cause?.sourceMessage
+        ? cause.sourceMessage + ' Refresh after the underlying EOS source is available.'
+        : code === 401 ? 'Authentication required for project participants.'
+          : code === 403 ? 'EOS denied participant management.'
+            : 'Project participant sources could not be verified. Retry.');
       setState(code === 401 || code === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
@@ -140,7 +185,9 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     generation.current += 1;
     setItems([]);
     setChoices([]);
-    setSelectedPrincipal('');
+    setParticipantVerified(false);
+    setChoicesVerified(false);
+    setSelectedPrincipal(initialSelectedPrincipal);
     setSelectedRole('CONTRIBUTOR');
     replay.current = { fingerprint: '', key: '' };
     void load(0, 0);
@@ -157,8 +204,8 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     return replay.current.key;
   };
 
-  const execute = async (fingerprint, action) => {
-    if (busy || state !== 'READY') return;
+  const execute = async (fingerprint, action, admittedPrincipalId = null) => {
+    if (busy || state !== 'READY' || !participantVerified || !choicesVerified) return;
     const active = scope;
     setBusy(true);
     setError('');
@@ -177,6 +224,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       if (!verified || currentScope.current !== active) return;
       replay.current = { fingerprint: '', key: '' };
       setSelectedPrincipal('');
+      if (typeof onParticipantsChanged === 'function') onParticipantsChanged(admittedPrincipalId);
     } catch (cause) {
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
@@ -195,7 +243,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     void execute(JSON.stringify(['grant', body]), key =>
       api.post(root + '/participants', body, {
         headers: { ...headers, 'Idempotency-Key': key },
-      }),
+      }), selectedPrincipal,
     );
   };
 
@@ -222,10 +270,10 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       <p role="status" className="mt-3 flex items-center gap-2 text-sm text-slate-600">
         <LoaderCircle size={14} className="animate-spin"/> Verifying participants…
       </p>}
-    {(state === 'DENIED' || state === 'UNAVAILABLE') &&
+    {(state === 'DENIED' || state === 'UNAVAILABLE' || state === 'PARTIAL') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    {state === 'READY' && <>
-      <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
+    {(state === 'READY' || state === 'PARTIAL') && <>
+      {participantVerified && <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
         {items.map(item => <li key={item.principal_id}
           className="flex flex-wrap items-center justify-between gap-2 bg-white p-3">
           <div>
@@ -236,14 +284,14 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
               {item.role === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer'}
             </p>
           </div>
-          <button type="button" disabled={busy} onClick={() => revoke(item)}
+          <button type="button" disabled={busy || !choicesVerified} onClick={() => revoke(item)}
             className="wp-button wp-button-danger !min-h-8 !px-2 !py-1 !text-xs">
             <UserMinus size={14}/> Revoke participation
           </button>
         </li>)}
         {items.length === 0 && <li className="p-4 text-sm text-slate-600">No verified active participants on this page.</li>}
-      </ul>
-      {(hasMore || offset > 0) && <nav aria-label="Participant pages"
+      </ul>}
+      {participantVerified && (hasMore || offset > 0) && <nav aria-label="Participant pages"
         className="mt-2 flex items-center justify-between gap-2">
         <button type="button" className="wp-button" disabled={busy || !offset}
           onClick={() => void load(Math.max(0, offset - 50), optionOffset)}>Previous participants</button>
@@ -251,7 +299,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50, optionOffset)}>Next participants</button>
       </nav>}
-      <form onSubmit={grant} className="mt-4 grid gap-4 rounded-xl border border-slate-300 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.6fr)]">
+      {participantVerified && choicesVerified && <form onSubmit={grant} className="mt-4 grid gap-4 rounded-xl border border-slate-300 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.6fr)]">
         <label className="block text-sm font-semibold text-slate-950">Eligible tenant member
           <select aria-label="Eligible participant" required value={selectedPrincipal}
             onChange={event => setSelectedPrincipal(event.target.value)}
@@ -262,6 +310,9 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
           </select>
 
         </label>
+        {choices.length === 0 && !hasMoreChoices && <p role="status" className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+          EOS has not verified any eligible tenant member for project participation. A current tenant membership and matching business IAM role must be established through their independent governed workflows before this project can grant contributor access. No automatic Founder or owner privilege is inferred.
+        </p>}
         <label className="block text-sm font-semibold text-slate-950">Project role
           <select aria-label="Project participation role" value={selectedRole}
             onChange={event => setSelectedRole(event.target.value)}
@@ -285,14 +336,14 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
           <button type="button" className="wp-button" disabled={busy || !hasMoreChoices}
             onClick={() => void load(offset, optionOffset + 50)}>Next members</button>
         </nav>}
-      </form>
+      </form>}
     </>}
-    {state === 'READY' && error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
+    
   </section>;
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION
+// VERSION: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject

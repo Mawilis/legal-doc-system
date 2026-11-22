@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT
+ * VERSION: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,15 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT asserts failed attachment sources cannot send the user into an unverified People workflow; exact-scope project participants and eligible tenant-member directory are independently preflighted on deliberate action and 403 stays on the task surface.
+ * CHANGELOG: v2.60.0-ATTACHMENT-ERROR-SCHEMA-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
+ * CHANGELOG: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT certifies owner-view attachment 503 source-code diagnosis and a functional route to People for explicit contributor admission. Upload stays unavailable without independently admitted participant IAM; unverified manifests do not fabricate empty files.
+ * CHANGELOG: v2.58.0-BOUNDED-ERROR-CODE-PRESENTATION-CERT certifies sanitized source code visibility for HTTP 503 while task list still fails closed; unknown error text is never reflected.
+ * CHANGELOG: v2.57.0-PRIMARY-TASK-READ-FIRST-CERT certifies mandatory task GET dispatch completes before optional participant/member queries and exposes actual 503 task source failure instead of fabricating rows. Preserves isolation of independently verified work from failed directories.
+ * CHANGELOG: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT certifies that independently verified task records remain available despite rejected contributor-directory reads; task assignment is refused while participant authorization is unverified and source failure is explicit.
+ * CHANGELOG: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT verifies tenant employee names appear in the task Assignee selector as candidate choices and selecting a candidate opens a preselected explicit contributor grant. The task draft is assigned only after independent exact-project readback, not by dropdown choice alone.
+ * CHANGELOG: v2.54.0-VIEWPORT-CONTRIBUTOR-SELECTOR-CERT tests immediately visible contributor admission dialog instead of the offscreen inline panel, with the original task editor draft preserved and EOS readback gating assignment.
+ * CHANGELOG: v2.53.0-COLLAPSIBLE-FILTERS-AND-ASSIGNEE-ONBOARDING-CERT certifies default-collapsed work filters and source-backed contributor admission from an unassigned task editor, retaining the draft and refreshing assignees only after independent participant readback; no IAM grant or task write.
  * CHANGELOG: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT verifies an open
  *          EOS-verified task drawer publishes only task id/revision, closing
  *          it clears task focus, and no task title enters browser locators.
@@ -279,6 +288,7 @@ vi.mock('../../services/api.js', () => ({ default: api }));
 import ProjectsWorkspace from '../../components/workspaces/ProjectsWorkspace.jsx';
 import ProjectWorkRowActions from '../../components/workspaces/ProjectWorkRowActions.jsx';
 import ProjectWorkRow from '../../components/workspaces/ProjectWorkRow.jsx';
+import ProjectTaskAttachmentsPanel from '../../components/workspaces/ProjectTaskAttachmentsPanel.jsx';
 
 const TENANT = 'projects-cert-tenant';
 const PRINCIPAL = 'projects-cert-principal';
@@ -361,6 +371,125 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+});
+
+describe('Project task attachment source and contributor authority boundary', () => {
+  it('reports exact EOS attachment failure without sending owner into unverified People', async () => {
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const openPeople = vi.fn();
+    api.get.mockRejectedValue({
+      response: { status: 503, data: { detail: 'PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE' } },
+    });
+    render(<ProjectTaskAttachmentsPanel
+      tenantId={TENANT} principalId={PRINCIPAL} projectId={PROJECT_ID}
+      taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
+      participantMode={false} onManageContributors={openPeople}
+      onClose={vi.fn()}/>);
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
+      /task attachment source is unavailable \(HTTP 503\) · EOS PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE/i,
+    ));
+    expect(screen.getByText('Add an attachment')).toBeVisible();
+    expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {
+      name: 'Check People access before contributor management',
+    })).toBeDisabled();
+    expect(openPeople).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.get).toHaveBeenCalledWith(
+      `/projects/${PROJECT_ID}/tasks/${taskId}/attachments?limit=50&offset=0`,
+      expect.objectContaining({ headers: { 'X-Tenant-ID': TENANT } }),
+    );
+  });
+
+  it('checks eligible-member and participant sources before leaving an authorized task', async () => {
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const openPeople = vi.fn();
+    api.get.mockImplementation(async path => {
+      if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/attachments?limit=50&offset=0`)
+        return { data: {
+          schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          task_id: taskId, items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=50&offset=0`)
+        return { data: {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [],
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`) {
+        const denied = new Error('Forbidden');
+        denied.response = { status: 403, data: { detail: 'PROJECT_PARTICIPANT_DIRECTORY_DENIED' } };
+        throw denied;
+      }
+      throw new Error('Unexpected source ' + path);
+    });
+    render(<ProjectTaskAttachmentsPanel tenantId={TENANT} principalId={PRINCIPAL}
+      projectId={PROJECT_ID} taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
+      participantMode={false} onManageContributors={openPeople} onClose={vi.fn()}/>);
+    expect(await screen.findByText(/EOS verified no file manifests/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Check People access before contributor management',
+    }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
+      'Eligible tenant member directory: denied (HTTP 403) · EOS PROJECT_PARTICIPANT_DIRECTORY_DENIED',
+    ));
+    expect(screen.getByRole('alert')).toHaveTextContent('Project People was not opened');
+    expect(openPeople).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('navigates only after both People sources return verified exact-project contracts', async () => {
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const openPeople = vi.fn();
+    api.get.mockImplementation(async path => {
+      if (path === `/projects/${PROJECT_ID}/tasks/${taskId}/attachments?limit=50&offset=0`)
+        return { data: {
+          schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          task_id: taskId, items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=50&offset=0`)
+        return { data: {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`)
+        return { data: {
+          schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      throw new Error('Unexpected source ' + path);
+    });
+    render(<ProjectTaskAttachmentsPanel tenantId={TENANT} principalId={PRINCIPAL}
+      projectId={PROJECT_ID} taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
+      participantMode={false} onManageContributors={openPeople} onClose={vi.fn()}/>);
+    expect(await screen.findByText(/EOS verified no file manifests/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Check People access before contributor management',
+    }));
+    await waitFor(() => expect(openPeople).toHaveBeenCalledTimes(1));
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('shows source-verified quarantine upload only to admitted project contributors', async () => {
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    api.get.mockResolvedValue({ data: {
+      schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1',
+      tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+      task_id: taskId, items: [], limit: 50, offset: 0,
+      has_more: false, next_offset: null,
+    } });
+    render(<ProjectTaskAttachmentsPanel
+      tenantId={TENANT} principalId={PRINCIPAL} projectId={PROJECT_ID}
+      taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
+      participantMode={true} onClose={vi.fn()}/>);
+    expect(await screen.findByLabelText('Project attachment file')).toBeVisible();
+    expect(screen.getByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+  });
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
@@ -658,6 +787,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select My accountable delivery' }));
     expect(screen.getByText(/1 work item selected on this verified page/)).toBeVisible();
+    fireEvent.click(screen.getByText(/Work filters, grouping and sorting/));
     fireEvent.change(screen.getByRole('combobox', { name: 'Work row density' }), {
       target: { value: 'compact' },
     });
@@ -1274,6 +1404,158 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
 
+  it('prioritizes the task source and classifies real EOS HTTP 503 without auxiliary reads', async () => {
+    const persisted = project();
+    let rejectTasks;
+    let tasksStarted = false;
+    const pendingTasks = new Promise((resolve, reject) => {
+      rejectTasks = reject;
+    });
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) {
+        tasksStarted = true;
+        return pendingTasks;
+      }
+      throw new Error('Auxiliary source must not execute before mandatory task read: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="primary-task-read-first-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const region = await screen.findByRole('region', { name: 'Project work execution' });
+    await waitFor(() => expect(tasksStarted).toBe(true));
+    expect(api.get.mock.calls.some(([path]) => String(path).includes('/participants?'))).toBe(false);
+    expect(api.get.mock.calls.some(([path]) => String(path).includes('/participant-options?'))).toBe(false);
+    rejectTasks({ response: { status: 503, data: { detail: 'PROJECT_TASK_LIST_UNAVAILABLE' } } });
+    await waitFor(() => expect(within(region).getByRole('alert'))
+      .toHaveTextContent('Project task list is unavailable in EOS (HTTP 503) · EOS PROJECT_TASK_LIST_UNAVAILABLE'));
+    expect(within(region).queryByText(/verified work items/)).not.toBeInTheDocument();
+    expect(within(region).queryByRole('button', { name: 'Create task' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('keeps EOS-verified work visible when project participants fail independently', async () => {
+    const persisted = project();
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`)
+        throw { response: { status: 503 } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`)
+        throw { response: { status: 503 } };
+      throw new Error('Unexpected work source: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="participant-source-failure-isolation"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const region = await screen.findByRole('region', { name: 'Project work execution' });
+    await waitFor(() => expect(within(region).getByRole('alert'))
+      .toHaveTextContent('Project contributor list source is unavailable'));
+    expect(within(region).getByText(/0 verified work items/)).toBeVisible();
+    expect(within(region).queryByText(/Project work could not be verified/)).not.toBeInTheDocument();
+    fireEvent.click(within(region).getByRole('button', { name: 'Create task' }));
+    const select = within(region).getByRole('combobox', { name: 'Task assignee' });
+    expect(select).toBeDisabled();
+    expect(within(region).getByRole('button', { name: 'Manage eligible contributors' }))
+      .toBeDisabled();
+    expect(within(region).queryByRole('dialog', {
+      name: 'Manage contributors for task assignment',
+    })).not.toBeInTheDocument();
+  });
+
+  it('keeps an unsaved task while a verified contributor is admitted inline', async () => {
+    const persisted = project();
+    const memberId = 'employee-' + 'd'.repeat(24);
+    let admitted = false;
+    const participant = {
+      tenant_id: TENANT, project_id: PROJECT_ID, principal_id: memberId,
+      state: 'ACTIVE', role: 'CONTRIBUTOR', revision: 1,
+      fingerprint: 'a'.repeat(128), first_name: 'Alex', last_name: 'Mokoena',
+    };
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: admitted ? [participant] : [], limit: 100, offset: 0,
+        has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: admitted ? [participant] : [], limit: 50, offset: 0,
+        has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        items: [{ principal_id: memberId, first_name: 'Alex', last_name: 'Mokoena' }],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected project contributor source ' + path);
+    });
+    api.post.mockImplementation(async (path, body, options) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/participants`);
+      expect(body).toEqual({ principal_id: memberId, role: 'CONTRIBUTOR' });
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      admitted = true;
+      return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+        participant,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="inline-contributor-admission-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    await screen.findByRole('region', { name: 'Project work execution' });
+    expect(screen.getByText(/Work filters, grouping and sorting/)).toBeVisible();
+    const filters = screen.getByText(/Work filters, grouping and sorting/).closest('details');
+    expect(filters).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    fireEvent.change(screen.getByPlaceholderText('Deliverable and action'), {
+      target: { value: 'Preserved governance draft' },
+    });
+    expect(screen.getByText(/No verified current project contributors are eligible/)).toBeVisible();
+    const assignee = screen.getByRole('combobox', { name: 'Task assignee' });
+    const candidate = within(assignee).getByRole('option', {
+      name: 'Alex Mokoena · Authorize contributor',
+    });
+    expect(candidate).toHaveValue('member:' + memberId);
+    fireEvent.change(assignee, { target: { value: 'member:' + memberId } });
+    const management = await screen.findByRole('dialog', { name: 'Manage contributors for task assignment' });
+    expect(management).toBeVisible();
+    expect(within(management).getByRole('button', { name: 'Close' })).toHaveFocus();
+    const eligible = await within(management).findByRole('combobox', { name: 'Eligible participant' });
+    expect(eligible).toHaveValue(memberId);
+    fireEvent.click(within(management).getByRole('button', { name: /Add participant/ }));
+    await waitFor(() => expect(within(screen.getByRole('combobox', { name: 'Task assignee' }))
+      .getByRole('option', { name: 'Alex Mokoena' })).toHaveValue(memberId));
+    expect(screen.getByPlaceholderText('Deliverable and action')).toHaveValue('Preserved governance draft');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Task assignee' }), {
+      target: { value: memberId },
+    });
+    expect(screen.getByRole('combobox', { name: 'Task assignee' })).toHaveValue(memberId);
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('labels eligible exact-tenant participants using sourced names, not opaque IDs', async () => {
     const persisted = project();
     const memberId = 'employee-' + 'b'.repeat(24);
@@ -1379,6 +1661,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
     await waitFor(() => expect(screen.getByRole('row', { name: /Draft deliverable/ })).toBeVisible());
+    fireEvent.click(screen.getByText(/Work filters, grouping and sorting/));
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'SUBTASK' },
     });
@@ -2216,7 +2499,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT
+ * VERSION: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.

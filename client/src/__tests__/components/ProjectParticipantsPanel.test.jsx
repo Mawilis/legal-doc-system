@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Project Participant Command UI Certificate
- * VERSION: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT
+ * VERSION: v1.3.0-FAULT-ISOLATED-PROJECT-PEOPLE-CERT
  * AUTHORITY: Synthetic client contract tests; EOS alone owns IAM and grants.
  * EPITOME: Verify source choices, explicit role grant/revoke, fresh state
  *          readback and denial of invented members or session-scoped outcomes.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectParticipantsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectParticipantsPanel; vi mocks api.js only.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-FAULT-ISOLATED-PROJECT-PEOPLE-CERT verifies current participant listing remains readable after independent eligible-directory 403, distinguishes actual HTTP 403 from network loss, and prevents any grant or revocation without both verified current EOS sources.
  * CHANGELOG: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT scopes contributor label checks to the active participant list rather than the adjacent role picker.
  * CHANGELOG: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT ensures audit-only
  *          revision numbers never appear in active participant labels.
@@ -123,13 +124,62 @@ it('does not expose unverified candidate options or a grant button', async () =>
   }));
   render(<ProjectParticipantsPanel tenantId={tenantId} principalId={principalId}
     projectId={projectId} tenantHeaders={{ 'X-Tenant-ID': tenantId }}/>);
-  expect(await screen.findByRole('alert')).toHaveTextContent('could not be verified');
+  expect(await screen.findByRole('alert')).toHaveTextContent('response scope or schema invalid');
+  expect(screen.queryByRole('button', { name: 'Add participant' })).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+
+it('preserves existing participant view but blocks commands if eligible member directory returns HTTP 403', async () => {
+  api.get.mockImplementation(async path => {
+    if (path.includes('/participant-options?')) {
+      const denied = new Error('Forbidden');
+      denied.response = { status: 403, data: { detail: 'PROJECT_PARTICIPANT_DIRECTORY_DENIED' } };
+      throw denied;
+    }
+    return { data: {
+      schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      limit: 50, offset: 0, items: [record], has_more: false, next_offset: null,
+    } };
+  });
+  render(<ProjectParticipantsPanel tenantId={tenantId} principalId={principalId}
+    projectId={projectId} tenantHeaders={{ 'X-Tenant-ID': tenantId }}/>);
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent('Eligible tenant member directory: permission denied by EOS (HTTP 403)');
+  expect(screen.getByText('Verified project participant')).toBeVisible();
+  expect(screen.getByText('Contributor')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Revoke participation' })).toBeDisabled();
+  expect(screen.queryByRole('button', { name: 'Add participant' })).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('does not treat denied participant-list authority as an empty project roster', async () => {
+  api.get.mockImplementation(async path => {
+    if (path.includes('/participants?')) {
+      const denied = new Error('Forbidden');
+      denied.response = { status: 403 };
+      throw denied;
+    }
+    return { data: {
+      schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      limit: 50, offset: 0, items: [{ principal_id: target }],
+      has_more: false, next_offset: null,
+    } };
+  });
+  render(<ProjectParticipantsPanel tenantId={tenantId} principalId={principalId}
+    projectId={projectId} tenantHeaders={{ 'X-Tenant-ID': tenantId }}/>);
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Project participants: permission denied by EOS (HTTP 403)',
+  );
+  expect(screen.queryByText('No verified active participants on this page.')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Add participant' })).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
 });
 
 // ARTIFACT: ProjectParticipantsPanel.test.jsx
-// VERSION: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT
+// VERSION: v1.3.0-FAULT-ISOLATED-PROJECT-PEOPLE-CERT
 // AUTHORITY BOUNDARY: mocked EOS client only, no real assignments
 // TENANT POSTURE: foreign tenant options discarded
 // FAIL-CLOSED POSTURE: no grant without valid source choice and exact readback

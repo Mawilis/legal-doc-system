@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # TITLE: WILSY OS Local Institutional AI + Global Principal MFA Launcher
-# VERSION: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS
+# VERSION: v1.2.0-NONBILLABLE-MODEL-METADATA-PREFLIGHT
 # AUTHORITY: Wilsy OS Core Governance; nonproduction local launch only.
 # EPITOME: Supply explicit ephemeral OpenAI provider configuration to the
 #          already-certified Python EOS/MFA launcher without changing IAM,
@@ -9,7 +9,11 @@
 # COLLABORATION / OWNERSHIP: Scripts/start-eos-local-mfa.sh owns AWS/KMS and
 #          Python EOS startup; reasoning_provider_runtime.py owns the binding;
 #          wilsy_ai_reasoning_router.py owns tenant and usage authorization.
-# CERTIFICATION / UPDATE DATE: 2026-11-20
+# CERTIFICATION / UPDATE DATE: 2026-11-22
+# CHANGELOG: v1.2.0-NONBILLABLE-MODEL-METADATA-PREFLIGHT validates
+#          current credential/model metadata access using one read-only GET,
+#          no inference or quota admission. --probe-only ends without EOS launch.
+#          Status is safely classified, never prints credentials/vendor bodies.
 # CHANGELOG: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS rejects common API key/tracking-id prefixes in the model field before child process launch; no identifier values are logged.
 # CHANGELOG: v1.0.0-LOCAL-AI-PROVIDER-ADMISSION adds a nonpersistent,
 #          hidden-key local provider configuration handoff.
@@ -22,13 +26,19 @@
 #          tenant entitlement, provider usage and consent remain EOS governed.
 # FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 # FAIL-CLOSED DECLARATION: Production markers, unsupported provider, missing
-#          interactive secret/model or malformed configuration refuse launch.
+#          interactive secret/model, unavailable model metadata, malformed
+#          configuration or a failed nonbillable preflight refuse launch.
 
 set +x
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+
+if [[ $# -gt 1 || ( $# -eq 1 && "$1" != "--probe-only" ) ]]; then
+  echo "EOS_LOCAL_AI_CONFIG_ERROR=UNSUPPORTED_ARGUMENT" >&2
+  exit 2
+fi
 
 case "${WILSY_ENV:-}" in
   production|Production|PRODUCTION|prod|Prod|PROD)
@@ -83,6 +93,63 @@ fi
 export WILSY_AI_REASONING_PROVIDER=openai
 export WILSY_AI_REASONING_MODEL OPENAI_API_KEY
 
+# A non-generative model metadata read. This cannot establish API quota,
+# billable execution, current tenant entitlement, or usage finalization.
+# urllib uses system certificate verification and makes no automatic retries.
+python - <<'PY'
+import os
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+
+model = os.environ["WILSY_AI_REASONING_MODEL"]
+key = os.environ["OPENAI_API_KEY"]
+url = "https://api.openai.com/v1/models/" + urllib.parse.quote(model, safe="")
+request = urllib.request.Request(
+    url,
+    method="GET",
+    headers={"Authorization": "Bearer " + key, "Accept": "application/json"},
+)
+
+try:
+    with urllib.request.urlopen(request, timeout=10) as response:
+        if response.status != 200:
+            print("EOS_LOCAL_AI_PREFLIGHT=UNEXPECTED_HTTP_STATUS", file=sys.stderr)
+            sys.exit(3)
+except urllib.error.HTTPError as error:
+    status = error.code
+    if status in (401, 403):
+        reason = "CREDENTIAL_OR_ACCESS_REJECTED"
+    elif status == 404:
+        reason = "MODEL_NOT_ACCESSIBLE"
+    elif status == 429:
+        reason = "RATE_LIMIT_OR_QUOTA_UNVERIFIED"
+    elif status in (408, 409) or status >= 500:
+        reason = "PROVIDER_HTTP_UNAVAILABLE"
+    else:
+        reason = "PROVIDER_HTTP_REJECTED"
+    print("EOS_LOCAL_AI_PREFLIGHT=" + reason, file=sys.stderr)
+    print("EOS_LOCAL_AI_PREFLIGHT_HTTP_STATUS=" + str(status), file=sys.stderr)
+    sys.exit(3)
+except (urllib.error.URLError, TimeoutError, OSError):
+    print("EOS_LOCAL_AI_PREFLIGHT=TRANSPORT_UNAVAILABLE", file=sys.stderr)
+    sys.exit(3)
+except Exception:
+    print("EOS_LOCAL_AI_PREFLIGHT=UNCLASSIFIED_FAILURE", file=sys.stderr)
+    sys.exit(3)
+
+print("EOS_LOCAL_AI_PREFLIGHT=MODEL_METADATA_VERIFIED_ONLY")
+print("EOS_LOCAL_AI_QUOTA=NOT_VERIFIED")
+print("EOS_LOCAL_AI_BILLABLE_EXECUTION=NOT_PERFORMED")
+PY
+
+if [[ "${1:-}" == "--probe-only" ]]; then
+  echo "EOS_LOCAL_AI_NEXT=NO_EOS_LAUNCH_PROBE_ONLY"
+  exit 0
+fi
+
+
 echo "EOS_LOCAL_AI_PROVIDER_SELECTOR=CONFIGURED"
 echo "EOS_LOCAL_AI_PROVIDER_CREDENTIAL=SUPPLIED_NOT_VERIFIED"
 echo "EOS_LOCAL_AI_PROVIDER_MODEL=CONFIGURED_NOT_VERIFIED"
@@ -90,7 +157,7 @@ echo "EOS_LOCAL_AI_NEXT=PYTHON_EOS_GLOBAL_PRINCIPAL_MFA_STARTUP"
 exec bash "$ROOT_DIR/scripts/start-eos-local-mfa.sh"
 
 # ARTIFACT: scripts/start-eos-local-ai.sh
-# VERSION: v1.1.0-REJECT-CREDENTIAL-LIKE-MODEL-IDENTIFIERS
+# VERSION: v1.2.0-NONBILLABLE-MODEL-METADATA-PREFLIGHT
 # AUTHORITY BOUNDARY: nonproduction provider configuration only; no IAM or usage grants
 # TENANT POSTURE: exact-tenant admission continues inside Python EOS
 # FAIL-CLOSED POSTURE: no provider fallback, no synthetic answer, no secret output

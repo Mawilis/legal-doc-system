@@ -1,12 +1,19 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT
+ * VERSION: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT certifies exact-principal POS location commercial counts and immutable Billing evidence-by-ID, excludes settlement and paid inference, refuses foreign or malformed financial evidence.
+ * CHANGELOG: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT certifies exact-tenant/principal My Work source coverage for CRM, HR and Operations counts, a composable multi-domain count, omitted-source refusal, unrecognised-semantic denial and zero provider POST.
+ * CHANGELOG: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT certifies compound count-and-details planning from verified Projects provenance and fresh read-only EOS endpoints, including denial of unsafe mixed-domain compound prompts.
+ * CHANGELOG: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT certifies a three-turn total -> active count -> project detail conversation, independent source reads, exact current project identity/revision, zero model POST, and refusal on denied/mismatched records.
+ * CHANGELOG: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT proves a two-turn Projects count then status follow-up (including 'How may are active?') uses fresh canonical EOS summary without paid POST, and refuses subject carryover after unrelated conversation or ambiguous multiple-status questions.
+ * CHANGELOG: v1.31.0-VERIFIED-PROJECT-COUNT-READ-CERT tests exact-tenant and current-principal Projects summary count read, no POST, missing consent independence, and fail-closed denied/mismatched source. Existing metered query/replay tests retained.
+ * CHANGELOG: v1.30.0-DEVICE-TIME-PROGRESSIVE-RENDER-CERT certifies current device clock without a provider POST, excludes arbitrary schedules from the local catalog, and checks progressive presentation teardown and accessibility.
  * CHANGELOG: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT retains Enter-key paid reasoning coverage using a substantive question rather than a built-in courtesy, so both paths remain independently certified.
  * CHANGELOG: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT certifies polite everyday courtesies as provenance-marked built-in local turns with no provider request, consent requirement or quota charge. Metered substantive questions retain their explicit consent and 503 reconciliation guards.
  * CHANGELOG: v1.28.1-CSS-MODULE-SCOPED-ACTION-CERT asserts the real generated CSS-module action class instead of a literal unscoped classname, preserving the responsive actionable-link semantic test after Vite style compilation.
@@ -366,6 +373,525 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockExecuteLegalServices).not.toHaveBeenCalled();
     expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
       .not.toBeInTheDocument();
+  });
+
+  it('answers current device time without OpenAI credits or provider POST', async () => {
+    mockApiPost.mockRejectedValue(rejectedResponse(503, 'C1B_REASONING_RECONCILIATION_REQUIRED'));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'clock-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What time is it?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Device time')).toBeVisible());
+    expect(screen.getByText(/According to your device clock, it’s/)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
+      .not.toBeInTheDocument();
+  });
+
+  it('answers how many projects from EOS summary without metered inference', async () => {
+    mockApiGet.mockImplementation(path => path === '/projects/summary'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-SUMMARY/V1',
+        tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        counts: { total: 7, active: 3, planned: 2, on_hold: 1, done: 1, cancelled: 0 },
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many projects do i have ?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Projects')).toBeVisible());
+    expect(screen.getByText(/You have 7 projects in this tenant/)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith('/projects/summary', expect.objectContaining({
+      headers: { 'X-Tenant-ID': 'TEST_TENANT' },
+    }));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['How many are active?', /3 of your 7 projects are active/],
+    ['How may are active?', /3 of your 7 projects are active/],
+    ['How many are done?', /1 of your 7 projects are completed/],
+    ['How many are on hold?', /1 of your 7 projects are on hold/],
+  ])('resolves a source-verified conversational follow-up %s without inference', async (question, expected) => {
+    const projectGet = vi.fn().mockResolvedValue({ data: {
+      schema: 'WILSY-PROJECT-SUMMARY/V1',
+      tenant_id: 'TEST_TENANT',
+      principal_id: 'project-count-operator',
+      counts: { total: 7, active: 3, planned: 2, on_hold: 1, done: 1, cancelled: 0 },
+    } });
+    mockApiGet.mockImplementation(path => path === '/projects/summary'
+      ? projectGet() : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(composer, { target: { value: 'How many projects do I have?' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Projects')).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/You have 7 projects in this tenant/)).toBeVisible());
+    fireEvent.change(composer, { target: { value: question } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(expected)).toBeVisible());
+    expect(projectGet).toHaveBeenCalledTimes(2);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reads the only active project details from independently authorised EOS data', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const counts = { total: 4, active: 1, planned: 2, on_hold: 1, done: 0, cancelled: 0 };
+    const summary = {
+      schema: 'WILSY-PROJECT-SUMMARY/V1', tenant_id: 'TEST_TENANT',
+      principal_id: 'project-count-operator', counts,
+    };
+    const active = {
+      project_id: projectId, tenant_id: 'TEST_TENANT', name: 'Launch quality',
+      summary: 'Prepare verified institutional acceptance.',
+      status: 'active', archived_at: null, revision: 2,
+      start_date: '2026-11-20', target_date: '2026-12-04',
+    };
+    mockApiGet.mockImplementation(path => {
+      if (path === '/projects/summary') return Promise.resolve({ data: summary });
+      if (path === '/projects?project_status=active&limit=100&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: 'project-count-operator', items: [active],
+          offset: 0, limit: 100, has_more: false, next_offset: null,
+        } });
+      }
+      if (path === '/projects/' + projectId) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+        project: active, events: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    const ask = async (text, expected) => {
+      fireEvent.change(composer, { target: { value: text } });
+      expect(screen.getByLabelText('Send')).toBeEnabled();
+      fireEvent.click(screen.getByLabelText('Send'));
+      await waitFor(() => expect(screen.getByText(expected)).toBeVisible());
+    };
+    await ask('How many projects do I have?', /You have 4 projects/);
+    await ask('How may are active?', /1 of your 4 projects are active/);
+    await ask('What are the details of the active project?', /Name: Launch quality/);
+    expect(screen.getByText(/Prepare verified institutional acceptance/)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith('/projects/' + projectId, expect.objectContaining({
+      headers: { 'X-Tenant-ID': 'TEST_TENANT' },
+    }));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('composes a verified project count and details query without provider inference', async () => {
+    const projectId = 'prj-' + 'c'.repeat(48);
+    const counts = { total: 4, active: 1, planned: 2, on_hold: 1, done: 0, cancelled: 0 };
+    const project = {
+      project_id: projectId, tenant_id: 'TEST_TENANT', name: 'Institutional launch',
+      summary: 'Certified execution planning', status: 'active',
+      archived_at: null, revision: 1, start_date: null, target_date: null,
+    };
+    const requestPaths = [];
+    mockApiGet.mockImplementation(path => {
+      requestPaths.push(path);
+      if (path === '/projects/summary') return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-SUMMARY/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator', counts,
+      } });
+      if (path === '/projects?project_status=active&limit=100&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: 'project-count-operator', items: [project],
+          limit: 100, offset: 0, has_more: false, next_offset: null,
+        } });
+      }
+      if (path === '/projects/' + projectId) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+        project, events: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(composer, { target: { value: 'How many projects do I have?' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/You have 4 projects in this tenant/)).toBeVisible());
+    fireEvent.change(composer, { target: { value: 'How many are active and what are details ?' } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/Name: Institutional launch/)).toBeVisible());
+    expect(screen.getByText(/1 of your 4 projects are active/)).toBeVisible();
+    expect(requestPaths.filter(path => path === '/projects/summary')).toHaveLength(2);
+    expect(requestPaths).toContain('/projects?project_status=active&limit=100&offset=0');
+    expect(requestPaths).toContain('/projects/' + projectId);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['How many CRM tasks do I have?', /1 active work item.*CRM/],
+    ['How many HR tasks do I have?', /0 active work items.*HR & Hiring/],
+    ['How many CRM and HR tasks do I have?', /1 active work item.*HR & Hiring and CRM/],
+    ['How many overdue CRM tasks do I have?', /1 overdue work item.*CRM/],
+  ])('reads authorised multi-domain work count %s without model POST', async (question, expected) => {
+    const admitted = {
+      schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+      tenant_id: 'TEST_TENANT',
+      principal_id: 'source-count-operator',
+      as_of: '2026-11-22T12:00:00+00:00',
+      authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false,
+        permits_approval: false },
+      sources_included: ['CRM', 'HR', 'OPERATIONS'],
+      summary: {
+        active_count: 1, overdue_count: 1,
+        source_counts: { CRM: 1, HR: 0, OPERATIONS: 0 },
+      },
+      items: [{
+        source: 'CRM', work_item_id: 'crm-attention-1',
+        source_key: 'CRM:crm-attention-1',
+        title: 'Follow up with supplier', priority: 'NORMAL',
+        is_overdue: true, due_at: null, status: 'OPEN',
+      }],
+    };
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: admitted })
+      : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'source-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: question },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Work')).toBeVisible());
+    expect(screen.getByText(expected)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith('/my-work', expect.objectContaining({
+      headers: { 'X-Tenant-ID': 'TEST_TENANT' },
+    }));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('does not treat an unadmitted HR source as a verified zero', async () => {
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+        tenant_id: 'TEST_TENANT', principal_id: 'source-count-operator',
+        as_of: '2026-11-22T12:00:00+00:00',
+        authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+        sources_included: ['CRM'], summary: {
+          active_count: 0, overdue_count: 0, source_counts: { CRM: 0 },
+        }, items: [],
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'source-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many HR tasks do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/source is not included|sources are not included/)).toBeVisible());
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText(/EOS verifies 0 active work items for you in HR/)).not.toBeInTheDocument();
+  });
+
+  it('rejects arbitrary unrecognised modifiers and commands from the read-only tool plan', () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'source-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    for (const question of [
+      'How many HR tasks did I finish?',
+      'How many CRM tasks belong to everyone?',
+      'How many HR and CRM tasks should we delete?',
+    ]) {
+      fireEvent.change(composer, { target: { value: question } });
+      expect(screen.getByLabelText('Send')).toBeDisabled();
+    }
+    expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(false);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reads verified POS commercial counts at one currently assigned location without model POST', async () => {
+    mockApiGet.mockImplementation(path => {
+      if (path === '/pos/locations') return Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        locations: [{ location_id: 'BRANCH_1', revision: 0, status: 'ACTIVE' }],
+      } });
+      if (path === '/pos/locations/BRANCH_1/commercial-summary') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-POS-COMMERCIAL-SUMMARY/V1',
+          tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+          location_id: 'BRANCH_1',
+          counts: { total: 5, DRAFT: 1, OPEN: 1,
+            COMPLETED_COMMERCIAL: 2, VOIDED: 1 },
+          authority: {
+            source: 'PYTHON_EOS_POS_SALE_REGISTRY', read_only: true,
+            model_invoked: false, financial_execution: false,
+            settlement_not_asserted: true,
+          },
+        } });
+      }
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many POS sales do I have?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified POS')).toBeVisible());
+    expect(screen.getByText(/EOS verifies 5 commercial sales/)).toBeVisible();
+    expect(screen.getByText(/does not prove payment settlement/)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith(
+      '/pos/locations/BRANCH_1/commercial-summary',
+      expect.objectContaining({ headers: { 'X-Tenant-ID': 'TEST_TENANT' } }),
+    );
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('does not aggregate POS across multiple assigned locations without selecting one', async () => {
+    mockApiGet.mockImplementation(path => path === '/pos/locations'
+      ? Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        locations: [
+          { location_id: 'BRANCH_1', revision: 0, status: 'ACTIVE' },
+          { location_id: 'BRANCH_2', revision: 0, status: 'ACTIVE' },
+        ],
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many POS sales do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/Select a location in POS/)).toBeVisible());
+    expect(mockApiGet.mock.calls.some(([path]) => path.includes('commercial-summary'))).toBe(false);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('denies cross-tenant POS commercial summaries and never guesses settlement', async () => {
+    mockApiGet.mockImplementation(path => {
+      if (path === '/pos/locations') return Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        locations: [{ location_id: 'BRANCH_1', revision: 0, status: 'ACTIVE' }],
+      } });
+      if (path.includes('commercial-summary')) return Promise.resolve({ data: {
+        schema: 'WILSY-POS-COMMERCIAL-SUMMARY/V1',
+        tenant_id: 'FOREIGN_TENANT', principal_id: 'financial-operator',
+        location_id: 'BRANCH_1',
+        counts: { total: 2, DRAFT: 0, OPEN: 0,
+          COMPLETED_COMMERCIAL: 2, VOIDED: 0 },
+        authority: {
+          source: 'PYTHON_EOS_POS_SALE_REGISTRY', read_only: true,
+          model_invoked: false, financial_execution: false,
+          settlement_not_asserted: true,
+        },
+      } });
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many POS sales do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByRole('status', {
+      name: 'WILSY OS request status',
+    })).toHaveTextContent(/could not verify the requested Billing or POS evidence/));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText(/completed commercially/)).not.toBeInTheDocument();
+  });
+
+  it('reads immutable Billing intelligence evidence by exact certified identity without writes', async () => {
+    const evidenceId = 'a'.repeat(128);
+    mockApiGet.mockImplementation(path => path === '/billing/intelligence/verified-evidence/' + evidenceId
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-BILLING-VERIFIED-EVIDENCE-READ/V1',
+        tenant_id: 'TEST_TENANT', principal_id: 'financial-operator',
+        authority: {
+          source: 'PYTHON_EOS_BILLING_INTELLIGENCE_REGISTRY', read_only: true,
+          model_invoked: false, financial_execution: false,
+          settlement_not_asserted: true,
+        },
+        evidence: {
+          tenant_id: 'TEST_TENANT', evidence_identity: evidenceId,
+          as_of: '2026-11-22T12:00:00+00:00',
+          receivable_count: 3, receivable_outstanding_amount_minor: 45000,
+          aging_evidence_count: 3, dunning_evidence_count: 1,
+        },
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'financial-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Show billing evidence ' + evidenceId },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Billing')).toBeVisible());
+    expect(screen.getByText(/verifies 3 commercial receivables/)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('denies mixed-domain compound reads without silently promoting project authority', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many projects are active and delete their invoices?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('refuses active-project detail if a separately read record is foreign or stale', async () => {
+    const projectId = 'prj-' + 'b'.repeat(48);
+    const active = { project_id: projectId, tenant_id: 'TEST_TENANT',
+      name: 'Verified current project', status: 'active', archived_at: null, revision: 2 };
+    const summary = { schema: 'WILSY-PROJECT-SUMMARY/V1',
+      tenant_id: 'TEST_TENANT', principal_id: 'project-count-operator',
+      counts: { total: 1, active: 1, planned: 0, on_hold: 0, done: 0, cancelled: 0 } };
+    mockApiGet.mockImplementation(path => {
+      if (path === '/projects/summary') return Promise.resolve({ data: summary });
+      if (path.includes('project_status=active')) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-LIST/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator', items: [active], limit: 100,
+        offset: 0, has_more: false, next_offset: null,
+      } });
+      if (path === '/projects/' + projectId) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-RESULT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        authority: { source: 'PYTHON_EOS_PROJECT_REGISTRY', financial_execution: false },
+        project: { ...active, tenant_id: 'OTHER_TENANT' }, events: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What are the details of the active project?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByRole('status', {
+      name: 'WILSY OS request status',
+    })).toHaveTextContent(/could not verify current active-project details/));
+    expect(screen.queryByText(/Verified current project/)).not.toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('cannot invent a Projects subject for an ungrounded pronoun or mixed domain', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    for (const question of ['How may are active?', 'How many active employees?', 'How many projects should we delete?']) {
+      fireEvent.change(composer, { target: { value: question } });
+      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(mockApiPost).not.toHaveBeenCalled();
+    }
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
+  });
+
+  it.each(['FOREIGN_TENANT', 'BAD_TOTAL'])('does not invent project counts from %s', async failure => {
+    mockApiGet.mockImplementation(path => path === '/projects/summary'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-SUMMARY/V1',
+        tenant_id: failure === 'FOREIGN_TENANT' ? 'OTHER_TENANT' : 'TEST_TENANT',
+        principal_id: 'project-count-operator',
+        counts: { total: failure === 'BAD_TOTAL' ? 10 : 7, active: 3,
+          planned: 2, on_hold: 1, done: 1, cancelled: 0 },
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many projects do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByRole('status', {
+      name: 'WILSY OS request status',
+    })).toHaveTextContent(/cannot verify your Projects count/));
+    expect(screen.queryByText('WILSY OS · Verified Projects')).not.toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reports project read access denial without treating it as a model failure', async () => {
+    mockApiGet.mockImplementation(path => path === '/projects/summary'
+      ? Promise.reject(rejectedResponse(403, 'PROJECTS_ACCESS_DENIED'))
+      : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'project-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many projects do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByRole('status', {
+      name: 'WILSY OS request status',
+    })).toHaveTextContent(/not authorized to view this tenant/));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('keeps arbitrary schedules outside local time intent under EOS consent', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'clock-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What time is my meeting tomorrow?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText('WILSY OS · Device time')).not.toBeInTheDocument();
+  });
+
+  it('retains a cancellable assistant-text renderer with motion preference', () => {
+    const source = readFileSync('src/components/intelligence/WilsyOSIntelligenceDock.jsx', 'utf8');
+    expect(source).toContain('function WilsyProgressiveAssistantText');
+    expect(source).toContain('prefers-reduced-motion: reduce');
+    expect(source).toContain('window.clearInterval(timer)');
+    expect(source).toContain('aria-hidden={animate');
+    expect(source).toContain('<WilsyProgressiveAssistantText');
   });
 
   it('preserves real provider admission for substantive questions instead of canned fallback', async () => {
@@ -1671,7 +2197,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT
+ * VERSION: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards

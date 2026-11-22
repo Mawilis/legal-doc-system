@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.16.0-STRICT-WILSY-AI-REASONING-REQUEST-BODY
+ * VERSION: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,6 +16,7 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY clears the global application/json Content-Type for native FormData uploads so Axios cannot transform the binary multipart form into JSON. The browser supplies its own boundary; existing bearer, exact tenant, forensic headers and command idempotency survive unchanged.
  * CHANGELOG: v74.16.0-STRICT-WILSY-AI-REASONING-REQUEST-BODY excludes the strict Python EOS WILSY AI reasoning command body from transport timestamp injection while retaining forensic timestamp, nonce, trace and request-seal headers; the Pydantic prompt-only contract and exact-tenant admission remain unchanged.
  * CHANGELOG: v74.15.0-ALL-STRICT-PROJECTS-MUTATION-BODIES preserves exact canonical JSON for all Python EOS Projects mutation routes (assignment, departments, task/note/comment/participant/approval commands) rather than injecting a forbidden body timestamp. Existing forensic timestamp and SHA3 request-seal headers remain unchanged.
  * CHANGELOG: v74.15.0-ALL-STRICT-PROJECTS-MUTATION-BODIES preserves EOS
@@ -517,6 +518,20 @@ api.interceptors.request.use(
       );
       const isMultipartBody = typeof FormData !== 'undefined'
         && config.data instanceof FormData;
+      if (isMultipartBody) {
+        // api instance defaults to application/json. Axios transforms FormData
+        // into JSON if this header survives, causing EOS to see zero 'file'
+        // multipart fields (PROJECT_ATTACHMENT_MULTIPART_FIELDS_INVALID).
+        // Clearing the value allows the browser's XHR adapter to generate
+        // multipart/form-data WITH its unique boundary. Never manufacture it.
+        if (typeof config.headers?.setContentType === 'function') {
+          config.headers.setContentType(undefined);
+        } else if (config.headers) {
+          delete config.headers['Content-Type'];
+          delete config.headers['content-type'];
+        }
+      }
+
 
       if (
         !preservesCanonicalRequestBody
@@ -836,7 +851,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.16.0-STRICT-WILSY-AI-REASONING-REQUEST-BODY
+ * VERSION: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata

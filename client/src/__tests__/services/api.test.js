@@ -1,16 +1,18 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT
+ * VERSION: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT asserts multipart file bytes, MIME, size and name instead of File object identity (FormData may clone the File upon append), preserving the wire-level safety contract.
+ * CHANGELOG: v1.4.0-NATIVE-FORMDATA-BOUNDARY-TRANSPORT-CERT verifies that native FormData clears the global application/json default using AxiosHeaders or ordinary header objects while preserving a single file part, bearer, tenant, idempotency and forensic headers. JSON-only commands retain canonical JSON handling.
  * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies
  *            no extra timestamp fields in CRM status/cancel POSTs while
  *            cryptographic forensic headers remain intact.
- * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies six exact
+ * CHANGELOG: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT verifies six exact
  *            company-document mutation paths retain caller fields and forensic headers.
  * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
  *            covenant status, normal dashboard backoff and 403 separation.
@@ -401,6 +403,57 @@ describe('api.js – Sovereign HTTP Client', () => {
       }
     });
 
+    it('allows the browser to generate the multipart boundary and preserves the exact file part', async () => {
+      bindAuthenticatedTransport();
+      const file = new File(['%PDF-1.4\\nsynthetic'], 'design.pdf', { type: 'application/pdf' });
+      const form = new FormData();
+      form.append('file', file, file.name);
+      const headers = {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'existing-upload-command',
+        'X-Tenant-ID': tenantId,
+      };
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/projects/prj-' + 'a'.repeat(48) + '/my-project/tasks/ptk-'
+          + 'b'.repeat(48) + '/attachments',
+        method: 'post', data: form, headers,
+      });
+      expect(sealed.data).toBe(form);
+      expect(Array.from(sealed.data.keys())).toEqual(['file']);
+      expect(sealed.data.get('file').name).toBe(file.name);
+      expect(sealed.data.get('file').type).toBe(file.type);
+      expect(sealed.data.get('file').size).toBe(file.size);
+      expect(sealed.data.get('file')).toBeInstanceOf(File);
+      expect(sealed.headers).not.toHaveProperty('Content-Type');
+      expect(sealed.headers).not.toHaveProperty('content-type');
+      expect(sealed.headers['Idempotency-Key']).toBe('existing-upload-command');
+      expect(sealed.headers['X-Tenant-ID']).toBe(tenantId);
+      expect(sealed.headers.Authorization).toEqual(expect.stringMatching(/^Bearer /));
+      expect(sealed.headers['x-request-seal']).toBeTruthy();
+      expect(sealed.headers['x-forensic-timestamp']).toBeTruthy();
+      expect(sealed.data.get('timestamp')).toBeNull();
+    });
+
+    it('clears an AxiosHeaders-style JSON default before native multipart serialization', async () => {
+      bindAuthenticatedTransport();
+      const form = new FormData();
+      form.append('file', new File(['%PDF-1.4'], 'report.pdf', { type: 'application/pdf' }));
+      const headers = {
+        currentType: 'application/json',
+        setContentType: vi.fn(function (value) { this.currentType = value; }),
+        getContentType: vi.fn(function () { return this.currentType; }),
+      };
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/projects/prj-' + 'a'.repeat(48) + '/my-project/tasks/ptk-'
+          + 'b'.repeat(48) + '/attachments',
+        method: 'post', data: form, headers,
+      });
+      expect(headers.setContentType).toHaveBeenCalledWith(undefined);
+      expect(headers.getContentType()).toBeUndefined();
+      expect(sealed.data).toBe(form);
+      expect(sealed.data.get('file').name).toBe('report.pdf');
+    });
+
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
@@ -549,7 +602,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT
+ * VERSION: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.

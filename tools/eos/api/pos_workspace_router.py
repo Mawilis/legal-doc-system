@@ -1,5 +1,21 @@
 """Authenticated tenant POS HTTP authority.
 
+TITLE: WILSY OS POS Workspace HTTP Router
+VERSION: v1.1.0-READ-ONLY-COMMERCIAL-SUMMARY
+AUTHORITY: Python EOS POS IAM, product entitlement and location assignments.
+EPITOME: Source-backed, location-scoped POS commands and read-only intelligence.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/pos_workspace_router.py
+COLLABORATION / OWNERSHIP: Existing POS domain/service and tenant IAM own authority; this router owns transport only.
+AUTHORITY BOUNDARY: No identity, location or financial settlement authority is inferred from caller input.
+CERTIFICATION / UPDATE DATE: 2026-11-22
+CHANGELOG: v1.1.0-READ-ONLY-COMMERCIAL-SUMMARY adds an exact-tenant/location
+           sale-count GET through the same _READ permission, _service._admit
+           entitlement and live-location verification used for sale detail.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: no payment identity or settlement data in summary.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
+TENANT BOUNDARY: Current principal and active location assignment are mandatory.
+
 Every POS business operation requires exact IAM permission, active POS product
 entitlement and a server-resolved active location assignment. Location IDs in
 URLs are selectors only. Location assignment issuance/revocation is a separate
@@ -381,6 +397,20 @@ async def create_sale(
     return _transaction(command)
 
 
+@router.get("/locations/{location_id}/commercial-summary")
+async def read_pos_commercial_summary(
+    location_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+):
+    """Read live commercial counts, never financial settlement truth."""
+    return _transaction(lambda collections, session: _service(collections).read_commercial_summary(
+        tenant_id=context.tenant_id,
+        principal_id=context.identity.identity_id,
+        location_id=location_id,
+        session=session,
+    ))
+
+
 @router.get("/locations/{location_id}/sales/{sale_id}")
 async def read_sale(
     location_id: str, sale_id: str,
@@ -590,3 +620,11 @@ def ensure_pos_workspace_indexes(database: Any) -> None:
 
 
 __all__ = ["router", "require_pos_workspace_indexes_ready", "ensure_pos_workspace_indexes"]
+
+# ARTIFACT: tools/eos/api/pos_workspace_router.py
+# VERSION: v1.1.0-READ-ONLY-COMMERCIAL-SUMMARY
+# AUTHORITY BOUNDARY: Tenant IAM, POS entitlement and active location assignment remain sovereign.
+# TENANT POSTURE: Exact authenticated tenant and principal; location selector is untrusted.
+# FAIL-CLOSED POSTURE: Invalid, unavailable, unauthorized or divergent sale evidence refuses.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

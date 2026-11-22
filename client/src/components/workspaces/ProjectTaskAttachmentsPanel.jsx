@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD
+ * VERSION: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,14 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS validates the accepted upload by one independent full exact-tenant/task paginated manifest GET without unmounting the selected file input. On uncertain readback, the original File and idempotency key remain available for explicit reconciliation; no silent duplicate upload.
+ * CHANGELOG: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS separates rejected multipart commands, unconfigured S3/KMS transport and uncertain provider execution from accepted EOS upload receipts followed by readback mismatch. Maintains the same durable idempotency key and prevents silent replay or claimed completion without exact manifest confirmation.
+ * CHANGELOG: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION makes the already-contributing canonical WILSY Founder able to explicitly request narrow contributor attachment IAM activation using an independently governed EOS command, then verifies the role admission response and rechecks original contributor GET. No automatic grant, client permission inference, replay of uploads, or fallback for paying tenants.
+ * CHANGELOG: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION recognizes source-verified existing project contributor participation and never routes that member into a duplicate People onboarding path when independent attachment IAM denies. Shows the specific contributor HTTP denial and requires independent IAM/capacity remediation rather than project re-enrollment or silent grants.
+ * CHANGELOG: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT preflights the exact project participant list and eligible tenant-member options before leaving the attachment task for People. A denied/unavailable/synthetic source shows its bounded failure in situ and does not navigate; no IAM inference or upload grant.
+ * CHANGELOG: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION uses separately authorized owner metadata GET in the owner workspace rather than choosing participant-only GET from a contributor roster. Upload and scan remain on participant-only EOS routes and require independent participant source admission. Both reads validate exact tenant/principal/project/task; no IAM fallback or implicit Founder grant.
+ * CHANGELOG: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE supplies a real keyboard-accessible route to project People contributor administration from owner-view attachments, and keeps upload unavailable without independent contributor IAM. Existing authorized upload remains in the contributor mode only.
+ * CHANGELOG: v1.2.0-EXPLICIT-SOURCE-AND-UPLOAD-AUTHORITY distinguishes the exact attachment GET failure (HTTP status, bounded project source code or source-schema mismatch) from missing contributor upload authority. Makes the upload entry point and its permission prerequisites visible without attempting unauthorized provider writes or inventing completed scan evidence.
  * CHANGELOG: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD shows
  *          source-owned GuardDuty clearance, recipient-triggered scan
  *          reconciliation and authenticated clean-only byte download.
@@ -25,6 +33,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FileLock2, RefreshCw, UploadCloud, X } from 'lucide-react';
 import api from '../../services/api.js';
+import { validParticipants, validOptions } from './ProjectParticipantsPanel.jsx';
 
 const LIMIT = 20 * 1024 * 1024;
 const SCHEMA = 'wilsy.project.attachment.v1';
@@ -57,7 +66,7 @@ function valid(record, tenantId, projectId, taskId) {
 /** @description Render quarantined source evidence and an exact-scope upload. */
 export default function ProjectTaskAttachmentsPanel({
   tenantId, principalId, projectId, taskId, tenantHeaders,
-  participantMode = false, onClose,
+  participantMode = false, ownerReadMode = false, onClose, onManageContributors = null,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
@@ -66,23 +75,32 @@ export default function ProjectTaskAttachmentsPanel({
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const scope = [tenantId, principalId, projectId, taskId, participantMode].join('\0');
+  const [uploadReadState, setUploadReadState] = useState('UNVERIFIED');
+  const [peoplePreflight, setPeoplePreflight] = useState('');
+  const [checkingPeople, setCheckingPeople] = useState(false);
+  const [activatingContributorIAM, setActivatingContributorIAM] = useState(false);
+  const [contributorIAMMessage, setContributorIAMMessage] = useState('');
+  const scope = [tenantId, principalId, projectId, taskId, participantMode, ownerReadMode].join('\0');
   const current = useRef(scope);
   current.current = scope;
   const generation = useRef(0);
   const uploadOrigin = useRef({ fingerprint: '', key: '' });
-  const root = '/projects/' + encodeURIComponent(projectId)
-    + (participantMode ? '/my-project/tasks/' : '/tasks/')
-    + encodeURIComponent(taskId);
+  const projectRoot = '/projects/' + encodeURIComponent(projectId);
+  const ownerRoot = projectRoot + '/tasks/' + encodeURIComponent(taskId);
+  const contributorRoot = projectRoot + '/my-project/tasks/' + encodeURIComponent(taskId);
+  const readRoot = ownerReadMode ? ownerRoot
+    : (participantMode ? contributorRoot : ownerRoot);
+  const uploadReadVerified = participantMode && uploadReadState === 'VERIFIED';
   const headers = tenantHeaders || {};
 
   const load = useCallback(async (nextOffset = 0) => {
     const request = ++generation.current;
     const active = scope;
     setState('LOADING');
+    setUploadReadState('UNVERIFIED');
     setError('');
     try {
-      const { data } = await api.get(root + '/attachments?limit=50&offset=' + nextOffset, { headers });
+      const { data } = await api.get(readRoot + '/attachments?limit=50&offset=' + nextOffset, { headers });
       if (request !== generation.current || current.current !== active) return false;
       if (
         data?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
@@ -95,21 +113,66 @@ export default function ProjectTaskAttachmentsPanel({
         || data.next_offset !== (data.has_more ? nextOffset + data.items.length : null)
         || data.items.some(item => !valid(item, tenantId, projectId, taskId))
         || new Set(data.items.map(item => item.attachment_id)).size !== data.items.length
-      ) throw new Error('PROJECT_ATTACHMENT_SOURCE_INVALID');
+      ) {
+        const invalid = new Error('PROJECT_ATTACHMENT_SOURCE_INVALID');
+        invalid.invalidEnvelope = true;
+        throw invalid;
+      }
       setItems(data.items);
       setOffset(nextOffset);
       setHasMore(data.has_more);
       setState('READY');
+      // A current contributor roster is not an HTTP project:participant:read
+      // permission. Verify the participant-only list independently before
+      // exposing contributor commands; owner metadata stays independently valid.
+      if (participantMode && ownerReadMode) {
+        try {
+          const { data: contributorData } = await api.get(
+            contributorRoot + '/attachments?limit=50&offset=' + nextOffset, { headers },
+          );
+          if (request !== generation.current || current.current !== active) return true;
+          const authorized = contributorData?.schema === 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
+            && contributorData.tenant_id === tenantId
+            && contributorData.principal_id === principalId
+            && contributorData.project_id === projectId && contributorData.task_id === taskId
+            && contributorData.limit === 50 && contributorData.offset === nextOffset
+            && typeof contributorData.has_more === 'boolean'
+            && Array.isArray(contributorData.items) && contributorData.items.length <= 50
+            && (!contributorData.has_more || contributorData.items.length > 0)
+            && contributorData.next_offset === (contributorData.has_more
+              ? nextOffset + contributorData.items.length : null)
+            && contributorData.items.every(item => valid(item, tenantId, projectId, taskId))
+            && new Set(contributorData.items.map(item => item.attachment_id)).size === contributorData.items.length;
+          setUploadReadState(authorized ? 'VERIFIED' : 'INVALID');
+        } catch (failure) {
+          if (request !== generation.current || current.current !== active) return true;
+          setUploadReadState(failure?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+        }
+      } else {
+        setUploadReadState(participantMode ? 'VERIFIED' : 'UNVERIFIED');
+      }
       return true;
     } catch (failure) {
       if (request !== generation.current || current.current !== active) return false;
       setItems([]);
       setHasMore(false);
-      setState([401, 403, 404].includes(failure?.response?.status) ? 'DENIED' : 'UNAVAILABLE');
-      setError('EOS could not verify the task attachment source. Refresh or check authorization.');
+      const status = failure?.response?.status;
+      const rawDetail = failure?.response?.data?.detail;
+      const safeDetail = typeof rawDetail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(rawDetail)
+        ? ' · EOS ' + rawDetail : '';
+      setState([401, 403, 404].includes(status) ? 'DENIED' : 'UNAVAILABLE');
+      setError(failure?.invalidEnvelope
+        ? 'The task attachment manifest response failed exact tenant, principal, task or schema verification.'
+        : status === 401 ? 'Sign in to inspect task attachments (HTTP 401).'
+          : status === 403 ? 'EOS denied task attachment access (HTTP 403)' + safeDetail + '.'
+            : status === 404 ? 'The task attachment endpoint or record was not found (HTTP 404)' + safeDetail + '.'
+              : status === 503 ? 'The task attachment source is unavailable (HTTP 503)' + safeDetail + '.'
+                : Number.isInteger(status) ? 'Task attachment source failed with HTTP ' + status + safeDetail + '.'
+                  : failure?.code === 'ECONNABORTED' ? 'Task attachment source timed out before verification.'
+                    : 'EOS could not reach or verify the task attachment manifest. No upload or download is confirmed.');
       return false;
     }
-  }, [scope, root, tenantId, principalId, projectId, taskId, tenantHeaders]);
+  }, [scope, readRoot, contributorRoot, ownerReadMode, participantMode, tenantId, principalId, projectId, taskId, tenantHeaders]);
 
   useEffect(() => {
     generation.current += 1;
@@ -122,7 +185,7 @@ export default function ProjectTaskAttachmentsPanel({
   }, [scope, load]);
 
   const verifyScan = async item => {
-    if (!participantMode || busy || state !== 'READY'
+    if (!uploadReadVerified || busy || state !== 'READY'
       || item.scan_clearance_status !== 'QUARANTINED'
       || !valid(item, tenantId, projectId, taskId)) return;
     const active = scope;
@@ -134,7 +197,7 @@ export default function ProjectTaskAttachmentsPanel({
     setBusy(true);
     setError('');
     try {
-      const { data } = await api.post(root + '/attachments/'
+      const { data } = await api.post(contributorRoot + '/attachments/'
         + encodeURIComponent(item.attachment_id) + '/verify-scan',
       null, { headers: { ...headers, 'Idempotency-Key': key } });
       if (current.current !== active) return;
@@ -149,7 +212,7 @@ export default function ProjectTaskAttachmentsPanel({
       const confirmed = await load(0);
       if (!confirmed || current.current !== active) return;
       const { data: verify } = await api.get(
-        root + '/attachments?limit=50&offset=0', { headers },
+        readRoot + '/attachments?limit=50&offset=0', { headers },
       );
       if (
         current.current !== active
@@ -181,7 +244,7 @@ export default function ProjectTaskAttachmentsPanel({
     setError('');
     try {
       const { data, headers: resultHeaders } = await api.get(
-        root + '/attachments/' + encodeURIComponent(item.attachment_id) + '/download',
+        readRoot + '/attachments/' + encodeURIComponent(item.attachment_id) + '/download',
         { headers, responseType: 'blob', timeout: 120000 },
       );
       if (current.current !== active) return;
@@ -209,9 +272,128 @@ export default function ProjectTaskAttachmentsPanel({
     }
   };
 
+  const activateContributorIAM = async () => {
+    if (activatingContributorIAM || busy || state !== 'READY'
+      || !participantMode || uploadReadVerified
+      || tenantId !== 'WILSYTENANT-4CD2FZ4O') return;
+    const active = scope;
+    setActivatingContributorIAM(true);
+    setContributorIAMMessage('');
+    try {
+      const { data } = await api.post(
+        projectRoot + '/founder-contributor-iam-admission', null,
+        { headers: tenantHeaders || {} },
+      );
+      if (current.current !== active) return;
+      if (data?.schema !== 'WILSY-PROJECT-CONTRIBUTOR-IAM-ADMISSION/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId
+        || data.authorization_role !== 'PROJECTS_PARTICIPANT_CONTRIBUTOR'
+        || data.authorization_state !== 'ACTIVE'
+        || data.authority?.source !== 'PYTHON_EOS_ROLE_ASSIGNMENT') {
+        setContributorIAMMessage('EOS returned an invalid contributor IAM admission readback. No upload access has been confirmed.');
+        return;
+      }
+      // A successful role readback is not proof that this session's selected
+      // capacity was refreshed. The original contributor GET is the gate.
+      const verified = await load(0);
+      if (current.current !== active) return;
+      if (verified) setContributorIAMMessage(
+        'EOS verified the contributor role assignment. Recheck attachment access; if this session remains denied, sign out and authenticate with the authorized contributor capacity.',
+      );
+    } catch (cause) {
+      if (current.current !== active) return;
+      const status = cause?.response?.status;
+      setContributorIAMMessage(status === 403
+        ? 'EOS denied this explicit role admission (HTTP 403). The signed-in operating capacity lacks independent invitation authority. An authorized tenant IAM administrator must issue the contributor role; no access was granted.'
+        : status === 409
+          ? 'EOS could not verify a governed contributor invitation or admission (HTTP 409). No upload access is confirmed.'
+          : status === 503
+            ? 'EOS contributor IAM authority is unavailable (HTTP 503). No upload access is confirmed.'
+            : 'EOS did not confirm contributor IAM admission. No upload access is confirmed.');
+    } finally {
+      if (current.current === active) setActivatingContributorIAM(false);
+    }
+  };
+
+  const navigateToPeople = async () => {
+    if (checkingPeople || busy || state !== 'READY' || typeof onManageContributors !== 'function') return;
+    const active = scope;
+    setCheckingPeople(true);
+    setPeoplePreflight('');
+    // Never direct the user into another unverified workspace. This is a
+    // read-only preflight; it cannot grant participation or contributor IAM.
+    const projectRoot = '/projects/' + encodeURIComponent(projectId);
+    const sources = [
+      { name: 'Project participants', path: projectRoot + '/participants?limit=50&offset=0',
+        verify: data => validParticipants(data, { tenantId, principalId, projectId }, 0) },
+      { name: 'Eligible tenant member directory', path: projectRoot + '/participant-options?limit=50&offset=0',
+        verify: data => validOptions(data, { tenantId, principalId, projectId }, 0) },
+    ];
+    try {
+      const replies = await Promise.allSettled(sources.map(source =>
+        api.get(source.path, { headers: tenantHeaders || {}, disableSourceBackoff: true }),
+      ));
+      if (current.current !== active) return;
+      const failures = sources.map((source, index) => {
+        const response = replies[index];
+        if (response.status === 'fulfilled') {
+          try {
+            source.verify(response.value?.data);
+            return null;
+          } catch {
+            return source.name + ': response scope or schema not verified.';
+          }
+        }
+        const cause = response.reason;
+        const status = cause?.response?.status || cause?.status;
+        const detail = cause?.response?.data?.detail;
+        const code = typeof detail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(detail)
+          ? ' · EOS ' + detail : '';
+        return source.name + ': '
+          + (status === 403 ? 'denied (HTTP 403)' : status === 401 ? 'authentication required (HTTP 401)'
+            : status === 503 ? 'unavailable (HTTP 503)' : status === 404 ? 'not found (HTTP 404)'
+              : Number.isInteger(status) ? 'HTTP ' + status
+                : cause?.code === 'ECONNABORTED' ? 'timed out' : 'transport unavailable')
+          + code + '.';
+      }).filter(Boolean);
+      if (failures.length) {
+        setPeoplePreflight(failures.join(' ')
+          + ' Project People was not opened because its source was not verified. Participation alone cannot issue contributor IAM.');
+        return;
+      }
+      onManageContributors();
+    } finally {
+      if (current.current === active) setCheckingPeople(false);
+    }
+  };
+
+  const formatUploadFailure = (failure, stage) => {
+    const status = failure?.response?.status;
+    const detail = failure?.response?.data?.detail;
+    const code = typeof detail === 'string' && /^PROJECT_[A-Z0-9_]{1,80}$/.test(detail) ? detail : null;
+    if (stage === 'READBACK') {
+      return 'EOS accepted the attachment command, but its exact persisted file manifest could not be verified. The original upload key is retained. Refresh to reconcile before taking another action; do not submit this file as a new command.';
+    }
+    if (stage === 'RECEIPT') {
+      return 'EOS returned an attachment response that failed exact tenant, task, uploader or content verification. No file is confirmed. The original command key is retained for reconciliation.';
+    }
+    if (status === 403) return 'EOS denied the attachment upload command (HTTP 403). Contributor read access does not prove contributor write authority or selected operating capacity.';
+    if (status === 401) return 'Authentication is required for this attachment upload (HTTP 401). The file has not been confirmed as submitted.';
+    if (status === 413) return 'EOS rejected the attachment size (HTTP 413). Select a PDF, PNG or JPEG no larger than 20 MiB.';
+    if (status === 422) return 'EOS rejected the multipart file or content (HTTP 422)' + (code ? ' · ' + code : '') + '. No accepted upload is confirmed.';
+    if (status === 409) return 'EOS found an attachment command replay or conflict (HTTP 409)' + (code ? ' · ' + code : '') + '. Do not generate a new upload key; reconcile the existing command.';
+    if (status === 503 && code === 'PROJECT_ATTACHMENT_STORAGE_NOT_CONFIGURED') return 'EOS quarantine storage is not configured (HTTP 503 · PROJECT_ATTACHMENT_STORAGE_NOT_CONFIGURED). The backend requires a versioned private S3 bucket, approved region and KMS key before real file uploads can be accepted.';
+    if (status === 503 && code === 'PROJECT_ATTACHMENT_VERSIONING_REQUIRED') return 'EOS rejected storage because S3 bucket versioning is not enabled (HTTP 503 · PROJECT_ATTACHMENT_VERSIONING_REQUIRED). No verified quarantine receipt was issued.';
+    if (status === 503) return 'EOS could not verify the quarantined storage operation (HTTP 503)' + (code ? ' · ' + code : '') + '. Provider execution may be uncertain; the original upload command key is retained. Reconcile the manifest before another attempt.';
+    if (Number.isInteger(status)) return 'EOS rejected or could not verify the attachment operation (HTTP ' + status + ')' + (code ? ' · ' + code : '') + '. The original command key is retained.';
+    if (failure?.code === 'ECONNABORTED') return 'The upload timed out without a verified EOS receipt. Storage may have accepted bytes; keep the original command key and reconcile before retrying.';
+    return 'The attachment upload transport or EOS receipt could not be verified. The original command key is retained; reconcile the task manifest before retrying.';
+  };
+
   const upload = async event => {
     event.preventDefault();
-    if (!participantMode || busy || state !== 'READY' || !file) return;
+    if (!uploadReadVerified || busy || state !== 'READY' || !file) return;
     if (!SAFE.has(file.type) || file.size <= 0 || file.size > LIMIT) {
       setError('Choose a PDF, PNG or JPEG up to 20 MiB.');
       return;
@@ -231,18 +413,21 @@ export default function ProjectTaskAttachmentsPanel({
     const active = scope;
     setBusy(true);
     setError('');
+    let stage = 'UPLOAD';
     try {
       const form = new FormData();
       form.append('file', file, file.name);
-      const { data } = await api.post(root + '/attachments', form, {
+      const { data } = await api.post(contributorRoot + '/attachments', form, {
         headers: {
           ...headers,
-          'Content-Type': 'multipart/form-data',
+          // The browser/Axios must generate the multipart boundary from FormData.
+          // Never force an incomplete Content-Type over the current API defaults.
           'Idempotency-Key': uploadOrigin.current.key,
         },
         timeout: 120000,
       });
       if (current.current !== active) return;
+      stage = 'RECEIPT';
       if (
         data?.schema !== 'WILSY-PROJECT-ATTACHMENT-RESULT/V1'
         || data.tenant_id !== tenantId || data.principal_id !== principalId
@@ -250,33 +435,40 @@ export default function ProjectTaskAttachmentsPanel({
         || !valid(data.attachment, tenantId, projectId, taskId)
         || data.attachment.uploader_principal_id !== principalId
       ) throw new Error('PROJECT_ATTACHMENT_RESULT_INVALID');
-      const listed = await load(0);
-      if (!listed || current.current !== active) return;
-      // Reconcile independently from a fresh EOS read; never infer completion
-      // from a successful storage/command acknowledgement.
+      stage = 'READBACK';
+      // One independently authenticated, exact-scope manifest readback.
+      // Do not call load(): it flips READY->LOADING and unmounts the selected
+      // file input before readback, losing the visible selection on failure.
       const { data: verification } = await api.get(
-        root + '/attachments?limit=50&offset=0', { headers },
+        readRoot + '/attachments?limit=50&offset=0', { headers },
       );
+      if (current.current !== active) return;
       if (
-        current.current !== active || verification?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
+        verification?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
         || verification.tenant_id !== tenantId || verification.principal_id !== principalId
         || verification.project_id !== projectId || verification.task_id !== taskId
-        || !Array.isArray(verification.items)
+        || verification.limit !== 50 || verification.offset !== 0
+        || !Array.isArray(verification.items) || verification.items.length > 50
+        || typeof verification.has_more !== 'boolean'
+        || (verification.has_more && verification.items.length === 0)
+        || verification.next_offset !== (verification.has_more
+          ? verification.items.length : null)
+        || verification.items.some(item => !valid(item, tenantId, projectId, taskId))
+        || new Set(verification.items.map(item => item.attachment_id)).size !== verification.items.length
         || !verification.items.some(item =>
-          valid(item, tenantId, projectId, taskId)
-          && item.attachment_id === data.attachment.attachment_id
+          item.attachment_id === data.attachment.attachment_id
           && item.content_sha3_512 === data.attachment.content_sha3_512
+          && item.uploader_principal_id === principalId
         )
       ) throw new Error('PROJECT_ATTACHMENT_READBACK_UNVERIFIED');
+      setItems(verification.items);
+      setOffset(0);
+      setHasMore(verification.has_more);
       setFile(null);
       uploadOrigin.current = { fingerprint: '', key: '' };
     } catch (failure) {
       if (current.current !== active) return;
-      setError(failure?.response?.status === 409
-        ? 'EOS detected a changed or replayed attachment. Reconcile before retrying.'
-        : failure?.response?.status === 403
-          ? 'EOS denied upload under your current project participation.'
-          : 'Upload or independent EOS readback was not verified. Refresh before retrying.');
+      setError(formatUploadFailure(failure, stage));
     } finally {
       if (current.current === active) setBusy(false);
     }
@@ -300,6 +492,41 @@ export default function ProjectTaskAttachmentsPanel({
       Only files whose EOS clearance is recorded may be downloaded or linked as review evidence.
       Scan clearance does not prove document authenticity, legal validity or electronic signature.
     </p>
+    <div aria-label="Attachment upload authority" className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+      <p className="text-sm font-semibold text-slate-900">Add an attachment</p>
+      <p className="mt-1 text-xs text-slate-700">
+        {uploadReadVerified
+          ? 'Contributor attachment read is verified. Select a PDF, PNG or JPEG below; EOS still independently authorizes the contributor upload command.'
+          : state !== 'READY'
+            ? 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
+            : participantMode && uploadReadState === 'DENIED'
+              ? 'You are already a verified contributor on this project. EOS separately denied the contributor attachment endpoint (HTTP 403). Re-adding yourself in People will not fix the missing or inactive project:participant:read authorization. Upload also requires project:participant:contribute in an authorized contributor operating capacity. No file has been submitted.'
+              : participantMode
+                ? 'You are already a verified project contributor, but the separate authenticated contributor attachment source is not verified. Check the current operating capacity and project:participant:read authority; project participation alone cannot authorize uploads.'
+                : 'Owner access can read attachment manifests but cannot upload. Current project contributor admission and project:participant:contribute are required.'}
+      </p>
+      {!participantMode && !uploadReadVerified && typeof onManageContributors === 'function' &&
+        <button type="button" className="wp-button mt-3"
+          disabled={checkingPeople || busy || state !== 'READY'}
+          onClick={() => { void navigateToPeople(); }}>
+          {checkingPeople ? 'Verifying project People…' : 'Check People access before contributor management'}
+        </button>}
+      {peoplePreflight && <p role="alert" className="mt-2 text-sm text-rose-800">{peoplePreflight}</p>}
+      {!uploadReadVerified && participantMode && tenantId === 'WILSYTENANT-4CD2FZ4O'
+        && <button type="button" className="wp-button mt-3"
+          disabled={activatingContributorIAM || busy || state !== 'READY'}
+          onClick={() => { void activateContributorIAM(); }}>
+          {activatingContributorIAM ? 'Verifying contributor IAM…' : 'Activate my contributor attachment access'}
+        </button>}
+      {contributorIAMMessage && <p role="status" className="mt-2 text-sm text-slate-800">{contributorIAMMessage}</p>}
+      {!uploadReadVerified && participantMode && <p role="status" className="mt-2 text-xs font-medium text-slate-800">
+        Project participation: verified Contributor. Attachment contributor authority: {uploadReadState === 'DENIED' ? 'denied by EOS (HTTP 403)' : 'not verified'}.
+        A tenant IAM administrator must verify the separate contributor role assignment and selected operating capacity. This screen cannot create that grant.
+      </p>}
+      {!uploadReadVerified && !participantMode && <p className="mt-2 text-xs text-slate-700">
+        Project participation and upload IAM are separate. Even an authorized contributor assignment will not grant project:participant:read or project:participant:contribute.
+      </p>}
+    </div>
     {state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">
       Verifying file manifests with EOS…
     </p>}
@@ -316,7 +543,7 @@ export default function ProjectTaskAttachmentsPanel({
             {' · '}{item.media_type} · {item.size_bytes.toLocaleString()} bytes
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {participantMode && item.scan_clearance_status === 'QUARANTINED' &&
+            {uploadReadVerified && item.scan_clearance_status === 'QUARANTINED' &&
               <button type="button" disabled={busy} className="wp-button"
                 onClick={() => void verifyScan(item)}>Check malware scan result</button>}
             {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED' &&
@@ -337,7 +564,7 @@ export default function ProjectTaskAttachmentsPanel({
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next</button>
       </nav>}
-      {participantMode && <form className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-white p-3"
+      {uploadReadVerified && <form className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-white p-3"
         onSubmit={upload}>
         <label className="block text-sm font-semibold text-slate-800">Submit a file to quarantine
           <input type="file" aria-label="Project attachment file"
@@ -357,7 +584,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.1.0-GOVERNED-SCAN-AND-CLEAN-DOWNLOAD
+// VERSION: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented

@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF
+ * VERSION: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,14 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION passes project People navigation into both selected-task attachment views, so owner-view upload prerequisites have a real navigation action instead of an inert advisory.
+ * CHANGELOG: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS exposes only strict canonical PROJECT_ uppercase backend error codes alongside HTTP state, without logging source payloads, identity, URLs or unknown exception text. Helps differentiate unavailable task transport from malformed persisted records at the next browser acceptance.
+ * CHANGELOG: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS verifies the sovereign task list before starting three auxiliary source calls so new member-directory lookups cannot compete with the critical task read. Distinguishes rejected 401/403/404/429/503, transport timeout and malformed read envelopes without logging secrets, losing task drafts, fabricating task rows or retrying commands.
+ * CHANGELOG: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES isolates task, participant and eligible-member reads, preserves only independently verified EOS tasks when a participant directory is denied/unavailable, and gates all contributor/assignee operations until current project participation verifies. Reports which source failed without guessing people, tasks or permissions.
+ * CHANGELOG: v1.36.0-TENANT-MEMBER-ASSIGNEE-CHOICES lists exact-tenant currently eligible named member candidates in the assignee selector while keeping only active project contributors directly assignable. Candidate selection opens explicit separate contributor grant; fresh EOS readback must verify new project participation before setting draft assignee. No hidden grants, role inheritance, or synthetic people.
+ * CHANGELOG: v1.35.0-ASSIGNEE-DIALOG-VIEWPORT-REPAIR moves governed member selection from above the create form to an immediately visible, viewport-bound dialog with dedicated scrolling and Escape dismissal; preserves active draft and verifies participant grant before assignee refresh. No automatic member or IAM grant.
+ * CHANGELOG: v1.34.0-ALWAYS-VISIBLE-WORK-SELECTION-CURRENTNESS keeps exact-page selection status visible while optional work-filter controls are collapsed, without changing selection authority or mutations.
+ * CHANGELOG: v1.33.0-INLINE-CONTRIBUTOR-ADMISSION-AND-COLLAPSIBLE-WORK-FILTERS exposes a contextual inline governed contributor-management workflow when no assignees are admitted, refreshes only after source-confirmed participant changes while keeping unsaved task drafts, and collapses the page-only work filters by default. No IAM shortcuts or task mutation semantics altered.
  * CHANGELOG: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF emits a bounded, EOS-hydrated task id/revision
  *          to the parent while a detail, editor or task discussion is in view;
  *          selection clears on dismissal, remount or source unavailability.
@@ -173,6 +181,7 @@ import ProjectWorkRow from './ProjectWorkRow.jsx';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
+import ProjectParticipantsPanel, { validOptions, optionName } from './ProjectParticipantsPanel.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -295,11 +304,16 @@ function validParticipants(data, tenantId, principalId, projectId) {
 /** @description Display one exact-project task/participant workflow, never local truth. */
 export default function ProjectTasksPanel({
   projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
-  onFocusedTaskChange = null,
+  onFocusedTaskChange = null, onOpenProjectPeople = null,
 }) {
   const [items, setItems] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [participantHasMore, setParticipantHasMore] = useState(false);
+  const [tenantMemberCandidates, setTenantMemberCandidates] = useState([]);
+  const [projectContributorStatus, setProjectContributorStatus] = useState('VERIFYING');
+  const [projectContributorError, setProjectContributorError] = useState('');
+  const [memberDirectoryStatus, setMemberDirectoryStatus] = useState('VERIFYING');
+  const [pendingMemberChoice, setPendingMemberChoice] = useState('');
   const [actionCapabilities, setActionCapabilities] = useState(null);
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
@@ -315,6 +329,7 @@ export default function ProjectTasksPanel({
   const [workKind, setWorkKind] = useState('ALL');
   const [workGroup, setWorkGroup] = useState('NONE');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
+  const [showContributorManagement, setShowContributorManagement] = useState(false);
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
   const [drawerTaskId, setDrawerTaskId] = useState(null);
@@ -339,57 +354,131 @@ export default function ProjectTasksPanel({
   const root = '/projects/' + encodeURIComponent(projectId);
   const headers = tenantHeaders || {};
 
-  const load = useCallback(async (nextOffset = 0) => {
+  const load = useCallback(async (nextOffset = 0, newlyAdmittedId = null) => {
     const request = ++generation.current;
     const active = scope;
     setState(previous => previous === 'READY' ? 'REFRESHING' : 'LOADING');
     setError('');
     try {
-      const [tasks, people, actionResult] = await Promise.all([
-        api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers }),
+      // Task source is mandatory for work-list truth. Personnel reads are
+      // independent capabilities: a failed contributor source must not
+      // suppress a valid task list, fabricate assignees or authorize writes.
+      // Primary-source admission precedes optional directory reads; never
+      // contend with the work-list transaction merely to populate assignees.
+      let taskResponse;
+      try {
+        taskResponse = await api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers });
+      } catch (cause) {
+        const sourceFailure = cause instanceof Error ? cause : new Error('PROJECT_TASK_READ_UNAVAILABLE');
+        if (sourceFailure !== cause && cause?.response) sourceFailure.response = cause.response;
+        sourceFailure.sourceName = 'Project task list';
+        throw sourceFailure;
+      }
+      if (request !== generation.current || currentScope.current !== active) return false;
+      let verified;
+      try {
+        verified = validList(taskResponse?.data, tenantId, principalId, projectId, nextOffset);
+      } catch {
+        const invalid = new Error('PROJECT_TASK_SOURCE_INVALID');
+        invalid.sourceName = 'Project task list';
+        invalid.invalidEnvelope = true;
+        throw invalid;
+      }
+      const [participantResult, actionResult, optionResult] = await Promise.allSettled([
         api.get(root + '/participants?limit=100&offset=0', { headers }),
-        api.get(root + '/task-action-capabilities', { headers })
-          .then(result => result?.data).catch(() => null),
+        api.get(root + '/task-action-capabilities', { headers }),
+        api.get(root + '/participant-options?limit=50&offset=0', { headers }),
       ]);
       if (request !== generation.current || currentScope.current !== active) return false;
-      const verified = validList(tasks.data, tenantId, principalId, projectId, nextOffset);
-      const eligible = validParticipants(people.data, tenantId, principalId, projectId);
+      let eligible = null;
+      let participantIssue = '';
+      if (participantResult.status === 'fulfilled') {
+        try {
+          eligible = validParticipants(participantResult.value.data, tenantId, principalId, projectId);
+        } catch {
+          participantIssue = 'Project contributor list returned invalid scope or schema.';
+        }
+      } else {
+        const status = participantResult.reason?.response?.status;
+        participantIssue = status === 401 ? 'Project contributor list requires authentication.'
+          : status === 403 ? 'Project contributor list was denied by EOS.'
+            : status === 404 ? 'Project contributor list endpoint was not found in EOS.'
+              : status === 503 ? 'Project contributor list source is unavailable.'
+                : 'Project contributor list could not be reached or verified.';
+      }
+      setProjectContributorStatus(eligible ? 'VERIFIED' : 'UNAVAILABLE');
+      setProjectContributorError(participantIssue);
+      let members = null;
+      if (optionResult.status === 'fulfilled') {
+        try {
+          members = validOptions(
+            optionResult.value.data, { tenantId, principalId, projectId }, 0,
+          );
+        } catch {
+          members = null;
+        }
+      }
+      setTenantMemberCandidates(members?.items || []);
+      setMemberDirectoryStatus(members ? 'VERIFIED' : 'UNAVAILABLE');
+      const currentContributors = eligible?.items.filter(item => item.role === 'CONTRIBUTOR') || [];
+      if (newlyAdmittedId && eligible
+        && currentContributors.some(item => item.principal_id === newlyAdmittedId)) {
+        setDraft(previous => previous.assignee_principal_id
+          ? previous : { ...previous, assignee_principal_id: newlyAdmittedId });
+      }
+      const action = actionResult.status === 'fulfilled' ? actionResult.value?.data : null;
       const capabilityNames = ['can_start', 'can_complete', 'can_block',
         'can_cancel', 'can_assign', 'can_edit'];
-      const admitted = actionResult?.schema === 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1'
-        && actionResult.tenant_id === tenantId
-        && actionResult.principal_id === principalId
-        && actionResult.project_id === projectId
-        && capabilityNames.every(key => typeof actionResult[key] === 'boolean');
+      const admitted = action?.schema === 'WILSY-PROJECT-TASK-ACTION-CAPABILITIES/V1'
+        && action.tenant_id === tenantId
+        && action.principal_id === principalId
+        && action.project_id === projectId
+        && capabilityNames.every(key => typeof action[key] === 'boolean');
       setActionCapabilities({
-        canStart: admitted && actionResult.can_start,
-        canComplete: admitted && actionResult.can_complete,
-        canBlock: admitted && actionResult.can_block,
-        canCancel: admitted && actionResult.can_cancel,
-        canAssign: admitted && actionResult.can_assign,
-        canEdit: admitted && actionResult.can_edit,
+        canStart: admitted && action.can_start,
+        canComplete: admitted && action.can_complete,
+        canBlock: admitted && action.can_block,
+        canCancel: admitted && action.can_cancel,
+        canAssign: admitted && action.can_assign,
+        canEdit: admitted && action.can_edit,
         canAttachments: true, canActivity: true, canApprovals: true,
       });
       setItems(verified.items);
       setSelectedWorkIds(previous => previous.filter(id => nextOffset === offset && verified.items.some(item => item.task_id === id)));
       setHasMore(verified.has_more);
       setOffset(nextOffset);
-      setParticipants(eligible.items.filter(item => item.role === 'CONTRIBUTOR'));
-      setParticipantHasMore(eligible.has_more);
+      setParticipants(currentContributors);
+      setParticipantHasMore(eligible?.has_more || false);
       setState('READY');
-      return true;
+      return !newlyAdmittedId
+        || currentContributors.some(item => item.principal_id === newlyAdmittedId);
     } catch (cause) {
       if (request !== generation.current || currentScope.current !== active) return false;
       setItems([]);
       setParticipants([]);
+      setProjectContributorStatus('UNAVAILABLE');
+      setProjectContributorError('Project contributor list was not independently verified.');
+      setTenantMemberCandidates([]);
+      setMemberDirectoryStatus('UNAVAILABLE');
       setParticipantHasMore(false);
       setActionCapabilities(null);
       setHasMore(false);
       setSelectedWorkIds([]);
       const status = cause?.response?.status;
-      setError(status === 401 ? 'Authentication required for project work.'
-        : status === 403 ? 'EOS denied project work access.'
-          : 'Project work could not be verified from EOS. Retry the source read.');
+      const source = cause?.sourceName || 'Project work';
+      const rawCode = cause?.response?.data?.detail;
+      const safeSourceCode = typeof rawCode === 'string'
+        && /^PROJECT_[A-Z0-9_]{1,80}$/.test(rawCode)
+        ? ' · EOS ' + rawCode : '';
+      setError(cause?.invalidEnvelope ? source + ' returned an invalid tenant, principal, project or pagination contract.'
+        : status === 401 ? source + ' requires authentication (HTTP 401).'
+          : status === 403 ? source + ' access was denied by EOS (HTTP 403).'
+            : status === 404 ? source + ' endpoint is unavailable in this EOS runtime (HTTP 404).'
+              : status === 429 ? source + ' admission is rate-limited by EOS (HTTP 429).'
+                : status === 503 ? source + ' is unavailable in EOS (HTTP 503)' + safeSourceCode + '.'
+                  : Number.isInteger(status) ? source + ' failed with EOS HTTP ' + status + '.'
+                    : cause?.code === 'ECONNABORTED' ? source + ' timed out before verification.'
+                      : source + ' could not reach or verify EOS. No task list is confirmed.');
       setState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
@@ -399,6 +488,11 @@ export default function ProjectTasksPanel({
     generation.current += 1;
     setItems([]);
     setParticipants([]);
+    setProjectContributorStatus('VERIFYING');
+    setProjectContributorError('');
+    setTenantMemberCandidates([]);
+    setMemberDirectoryStatus('VERIFYING');
+    setPendingMemberChoice('');
     setActionCapabilities(null);
     setOffset(0);
     setHasMore(false);
@@ -412,6 +506,7 @@ export default function ProjectTasksPanel({
     setWorkKind('ALL');
     setWorkGroup('NONE');
     setWorkOrder('DUE_ASC');
+    setShowContributorManagement(false);
     setCompletionCandidate(null);
     setCompletionAttested(false);
     setEditor(null);
@@ -720,7 +815,8 @@ export default function ProjectTasksPanel({
         {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel
           key={[scope, focusedAction.id].join(':')}
           tenantId={tenantId} projectId={projectId} principalId={principalId}
-          taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
+          taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
+          onManageContributors={onOpenProjectPeople}
           onClose={() => { setAttachmentTaskId(null); setDiscussionTaskId(focusedAction.id); }}/>}
         {focusedAction.type !== 'discussion' &&
           <button type="button" className="wp-button mt-2" onClick={() => {
@@ -816,6 +912,12 @@ export default function ProjectTasksPanel({
       </p>}
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
+    {(state === 'READY' || state === 'REFRESHING')
+      && projectContributorStatus === 'UNAVAILABLE' &&
+      <p role="alert" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+        {projectContributorError || 'Project contributor authority is not verified.'}
+        {' '}Existing verified task rows remain visible, but contributor assignment and member admission are unavailable until this EOS source is verified.
+      </p>}
     {(state === 'READY' || state === 'REFRESHING') && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="min-w-0">
@@ -837,7 +939,8 @@ export default function ProjectTasksPanel({
         onClose={closeFocusedAction}/>}
       {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
-        taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
+        taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
+          onManageContributors={onOpenProjectPeople}
         onClose={closeFocusedAction}/>}
     </div> : <>
       {!actionCapabilities?.canEdit && <p role="status" className="mt-2 text-xs font-semibold text-amber-900">
@@ -952,7 +1055,15 @@ export default function ProjectTasksPanel({
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
-      <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3" aria-label="Project work queue controls">
+      {selectedWorkIds.length > 0 && <p role="status" className="mt-3 text-xs font-semibold text-blue-800">
+        {selectedWorkIds.length} work item{selectedWorkIds.length === 1 ? '' : 's'} selected on this verified page
+        · Actions remain individual until EOS authorizes bulk commands
+      </p>}
+      <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+          Work filters, grouping and sorting · {workRows.length} shown on this verified page
+        </summary>
+        <div className="flex flex-wrap items-end gap-3 border-t border-slate-200 p-3">
         <label className="flex min-w-[145px] flex-col gap-1 text-xs font-semibold text-slate-800">
           Group work
           <select aria-label="Group project work" value={workGroup}
@@ -973,10 +1084,6 @@ export default function ProjectTasksPanel({
             <option value="compact">Compact</option>
           </select>
         </label>
-        {selectedWorkIds.length > 0 && <span role="status" className="text-xs font-semibold text-blue-800">
-          {selectedWorkIds.length} work item{selectedWorkIds.length === 1 ? '' : 's'} selected on this verified page
-          · Actions remain individual until EOS authorizes bulk commands
-        </span>}
         <button type="button" className="wp-button min-h-10" aria-pressed={workMineOnly}
           onClick={() => setWorkMineOnly(previous => !previous)}>
           {workMineOnly ? 'All work on this page' : 'My work on this page'}
@@ -1011,7 +1118,8 @@ export default function ProjectTasksPanel({
           </select>
         </label>
         <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
-      </div>
+        </div>
+      </details>
       {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
         {workType === 'SUBTASK' && draft.parent_task_id && <p role="status" className="text-xs font-semibold text-blue-900">
@@ -1052,14 +1160,47 @@ export default function ProjectTasksPanel({
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-semibold text-slate-800">Assign to
-            <select aria-label="Task assignee" value={draft.assignee_principal_id}
-              onChange={event => setDraft(value => ({ ...value, assignee_principal_id: event.target.value }))}
+            <select aria-label="Task assignee" disabled={projectContributorStatus !== 'VERIFIED'} value={draft.assignee_principal_id}
+              onChange={event => {
+                const selected = event.target.value;
+                if (selected.startsWith('member:')) {
+                  const candidateId = selected.slice(7);
+                  if (!tenantMemberCandidates.some(member => member.principal_id === candidateId)) return;
+                  setPendingMemberChoice(candidateId);
+                  setShowContributorManagement(true);
+                  return;
+                }
+                setDraft(value => ({ ...value, assignee_principal_id: selected }));
+              }}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900">
               <option value="">Unassigned</option>
               {participants.map(person => <option key={person.principal_id} value={person.principal_id}>
                 {contributorName(person.principal_id)}
               </option>)}
+              {tenantMemberCandidates.some(member => !participants.some(
+                person => person.principal_id === member.principal_id,
+              )) && <optgroup label="Eligible tenant members — authorize contributor first">
+                {tenantMemberCandidates.filter(member => !participants.some(
+                  person => person.principal_id === member.principal_id,
+                )).map(member => <option key={member.principal_id} value={'member:' + member.principal_id}>
+                  {optionName(member) || 'Verified member — name unavailable'} · Authorize contributor
+                </option>)}
+              </optgroup>}
             </select>
+            {memberDirectoryStatus === 'UNAVAILABLE' && <span role="status" className="mt-2 block text-xs font-normal text-amber-900">
+              The tenant member directory is not currently verified. Existing active project contributors remain selectable; refresh when EOS restores the directory.
+            </span>}
+            {participants.length === 0 && !participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
+              No verified current project contributors are eligible for task assignment yet. Create this task unassigned, or select an eligible tenant member using the nearby contributor-management action.
+            </span>}
+            {participantHasMore && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
+              More than 100 participants exist. Assignment remains restricted to the verified current participant page.
+            </span>}
+            <button type="button" disabled={projectContributorStatus !== 'VERIFIED'} className="wp-button mt-2 !min-h-9 !text-xs"
+              aria-expanded={showContributorManagement}
+              onClick={() => { setPendingMemberChoice(''); setShowContributorManagement(value => !value); }}>
+              {showContributorManagement ? 'Close contributor management' : 'Manage eligible contributors'}
+            </button>
           </label>
           <label className="block text-sm font-semibold text-slate-800">Parent task {workType === 'SUBTASK' ? '(required)' : '(not applicable)'}
             <select aria-label="Parent task" required={workType === 'SUBTASK'} disabled={workType !== 'SUBTASK'}
@@ -1108,6 +1249,42 @@ export default function ProjectTasksPanel({
           <Plus size={14}/> Save work to EOS
         </button>
       </form>}
+      {showContributorManagement && <div
+        className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/55 p-3 sm:p-6"
+        onMouseDown={event => {
+          if (event.target === event.currentTarget) setShowContributorManagement(false);
+        }}>
+        <div role="dialog" aria-modal="true" aria-label="Manage contributors for task assignment"
+          onKeyDown={event => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              setShowContributorManagement(false);
+            }
+          }}
+          className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <div>
+              <h4 className="text-base font-bold text-slate-950">Select an eligible tenant member</h4>
+              <p className="mt-1 text-xs text-slate-700">Project participation must be verified before a person can be assigned a task. Your unsaved task remains intact.</p>
+            </div>
+            <button type="button" autoFocus className="wp-button shrink-0"
+              onClick={() => setShowContributorManagement(false)}>Close</button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ProjectParticipantsPanel projectId={projectId} tenantId={tenantId}
+              principalId={principalId} tenantHeaders={tenantHeaders}
+              initialSelectedPrincipal={pendingMemberChoice}
+              onParticipantsChanged={admittedId => {
+                void load(offset, admittedId).then(verified => {
+                  if (verified) {
+                    setShowContributorManagement(false);
+                    setPendingMemberChoice('');
+                  }
+                });
+              }}/>
+          </div>
+        </div>
+      </div>}
       {editor && <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 md:items-center md:p-5"
         onClick={event => { if (event.target === event.currentTarget && !busy) setEditor(null); }}>
         <div role="dialog" aria-modal="true" aria-label={assignmentOnly ? 'Assign work' : 'Edit work'}
@@ -1312,7 +1489,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.32.0-SELECTED-TASK-AI-LOCATOR-HANDOFF
+// VERSION: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible

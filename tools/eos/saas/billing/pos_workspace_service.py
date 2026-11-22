@@ -1,5 +1,20 @@
 """Authenticated-context POS commercial workspace service.
 
+TITLE: WILSY OS POS Commercial Workspace Service
+VERSION: v1.1.0-READ-ONLY-LOCATION-SUMMARY
+AUTHORITY: Wilsy OS Core Governance; POS source and exact location assignment.
+EPITOME: Authenticated tenant/location commercial evidence, never settlement.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/billing/pos_workspace_service.py
+COLLABORATION / OWNERSHIP: POS domain, location registry, product entitlement and caller transaction remain sovereign.
+CERTIFICATION / UPDATE DATE: 2026-11-22
+CHANGELOG: v1.1.0-READ-ONLY-LOCATION-SUMMARY adds a bounded exact-tenant
+           independently admitted location sale-status count snapshot.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No payment/identity payloads exposed by summary.
+TENANT BOUNDARY: Location is a selector; active assignment resolved by EOS.
+AUTHORITY BOUNDARY: POS sale read only; no financial execution.
+FINANCIAL AUTHORITY BOUNDARY: Kennel exclusively owns settlement.
+
 The caller supplies authenticated principal/tenant context and a requested
 location selector. This service independently resolves active POS entitlement
 and the principal's durable location assignment in the caller transaction
@@ -129,6 +144,53 @@ class POSWorkspaceService:
             "status": item.status.value,
         } for item in assignments)
 
+    def read_commercial_summary(self, *, tenant_id: str, principal_id: str,
+                                location_id: str, session: Any) -> dict[str, Any]:
+        """Count canonical commercial sale states under live location authority.
+
+        The service re-admits active entitlement and a current principal
+        location assignment in the caller transaction, not from client state.
+        It never claims tender payment, collection or settlement truth.
+        """
+        self._admit(
+            tenant_id=tenant_id, principal_id=principal_id,
+            location_id=location_id, session=session,
+        )
+        query = {"tenant_id": tenant_id, "location_id": location_id}
+        states = (
+            POSStatus.DRAFT, POSStatus.OPEN, POSStatus.COMPLETED_COMMERCIAL,
+            POSStatus.VOIDED,
+        )
+        try:
+            counts = {
+                state.value: self._sales.count_documents(
+                    {**query, "status": state.value}, session=session,
+                )
+                for state in states
+            }
+            total = self._sales.count_documents(query, session=session)
+        except Exception as error:
+            raise POSWorkspaceServiceError("POS_COMMERCIAL_SUMMARY_READ_UNAVAILABLE") from error
+        if not isinstance(total, int) or isinstance(total, bool) or total < 0 \
+                or any(not isinstance(value, int) or isinstance(value, bool) or value < 0
+                       for value in counts.values()) \
+                or sum(counts.values()) != total:
+            raise POSWorkspaceServiceError("POS_COMMERCIAL_SUMMARY_INCONSISTENT")
+        return {
+            "schema": "WILSY-POS-COMMERCIAL-SUMMARY/V1",
+            "tenant_id": tenant_id,
+            "principal_id": principal_id,
+            "location_id": location_id,
+            "counts": {"total": total, **counts},
+            "authority": {
+                "source": "PYTHON_EOS_POS_SALE_REGISTRY",
+                "read_only": True,
+                "model_invoked": False,
+                "financial_execution": False,
+                "settlement_not_asserted": True,
+            },
+        }
+
     def create_sale(self, *, tenant_id: str, principal_id: str, location_id: str,
                     sale_id: str, currency: str, lines: tuple[POSLineItem, ...],
                     idempotency_key: str, session: Any) -> POSSale:
@@ -242,3 +304,11 @@ class POSWorkspaceService:
 
 
 __all__ = ["POSWorkspaceService", "POSWorkspaceServiceError"]
+
+# ARTIFACT: tools/eos/saas/billing/pos_workspace_service.py
+# VERSION: v1.1.0-READ-ONLY-LOCATION-SUMMARY
+# AUTHORITY BOUNDARY: Tenant IAM, POS entitlement and active location assignment remain sovereign.
+# TENANT POSTURE: Exact authenticated tenant and principal; location selector is untrusted.
+# FAIL-CLOSED POSTURE: Invalid, unavailable, unauthorized or divergent sale evidence refuses.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

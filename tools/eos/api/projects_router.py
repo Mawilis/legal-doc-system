@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP
+VERSION: v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,11 +30,12 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-  v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP validates participant
+  v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION adds an explicit POST admission for an already-active Founder project contributor with a separately verified current ENTERPRISE_ADMIN grant authority. Delegates the narrow WILSY-only contributor IAM role through existing digest-only invitation/acceptance and durable readback, never by direct role write, automatic project participation or root fallback.
+    v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP validates participant
   principal identifiers as nonempty strings before bounded display-name
   enrichment. Malformed identifiers fail closed; tenant IAM, project
   participation, persistence and financial authority remain unchanged.
-  v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP resolves exact-tenant first/last
+  v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION resolves exact-tenant first/last
   names alongside source-verified active project participants for display
   only. Registry identity, permission, audit and assignment commands stay
   unchanged. Missing names yield null rather than an opaque identifier.
@@ -327,7 +328,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP"
+VERSION: Final[str] = "v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -998,6 +999,113 @@ def admit_founder_projects(
         "principal_id": principal_id,
         "project_role": "ACTIVE",
         "projects_entitlement": "ACTIVE",
+    }
+
+
+@router.post("/{project_id}/founder-contributor-iam-admission")
+def admit_founder_project_contributor_iam(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    grant_context: TenantAuthorizationContext = Depends(_FOUNDER_INVITE),
+    project_context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Explicit self-admission of the narrowly scoped contributor IAM role.
+
+    Only the canonical WILSY Founder tenant, an already current project
+    CONTRIBUTOR and a separately authorized ENTERPRISE_ADMIN with current
+    membership-invite authority may request this command. Grant executes
+    through existing invitation+acceptance authority, never a direct database
+    role write or a fabricated permission. User initiation is required.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    tenant_id = WILSY_COMPANY_TENANT_ID
+    actor = grant_context.identity.identity_id
+    if (
+        grant_context.tenant_id != tenant_id
+        or project_context.tenant_id != tenant_id
+        or project_context.identity.identity_id != actor
+        or grant_context.decision.business_role != "tenant_owner"
+        or project_context.decision.business_role != "tenant_owner"
+        or grant_context.decision.authorization_role != "ENTERPRISE_ADMIN"
+        or project_context.decision.authorization_role != "PROJECTS_PLATFORM_OWNER"
+    ):
+        raise HTTPException(status_code=403, detail="PROJECT_CONTRIBUTOR_IAM_ADMISSION_DENIED")
+
+    def require_existing_participant(registry: ProjectRegistry, session: Any) -> None:
+        participants = _project_participants(registry, tenant_id, project_id, session)
+        person = participants.get(
+            tenant_id=tenant_id, project_id=project_id,
+            principal_id=actor, session=session,
+        )
+        if person.role != "CONTRIBUTOR":
+            raise HTTPException(status_code=403, detail="PROJECT_CONTRIBUTOR_SCOPE_REQUIRED")
+
+    _transaction(project_context, require_existing_participant)
+
+    database = kernel_db.get_database()
+    if database is None:
+        raise HTTPException(status_code=503, detail="PROJECT_DATABASE_UNAVAILABLE")
+    role_id = "PROJECTS_PARTICIPANT_CONTRIBUTOR"
+
+    try:
+        try:
+            assignment = RoleAssignmentRepository.resolve(
+                actor, tenant_id, role_id, collection=database["role_assignments"],
+            )
+        except RoleAssignmentNotFoundError:
+            assignment = None
+        if assignment is None:
+            invitation = create_invitation(
+                identity=grant_context.identity,
+                tenant_id=tenant_id,
+                recipient_principal_id=actor,
+                authorization_role_id=role_id,
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+            )
+            admit_invited_member(
+                identity=grant_context.identity,
+                invitation_id=invitation.invitation.invitation_id,
+                capability=invitation.capability,
+            )
+        elif assignment.status.value != "ACTIVE":
+            raise HTTPException(status_code=409, detail="PROJECT_CONTRIBUTOR_IAM_REVOKED")
+    except HTTPException:
+        raise
+    except (InvitationCreationError, InvitedMemberAdmissionError, RoleAssignmentRepositoryError) as error:
+        raise HTTPException(
+            status_code=409, detail="PROJECT_CONTRIBUTOR_IAM_ADMISSION_UNVERIFIED",
+        ) from error
+
+    client = kernel_db.get_client()
+    if client is None:
+        raise HTTPException(status_code=503, detail="PROJECT_DATABASE_UNAVAILABLE")
+    try:
+        with client.start_session() as session:
+            with session.start_transaction(read_concern=ReadConcern("snapshot")):
+                assignment = RoleAssignmentRepository.resolve(
+                    actor, tenant_id, role_id,
+                    collection=database["role_assignments"], session=session,
+                )
+                if assignment.status.value != "ACTIVE":
+                    raise HTTPException(
+                        status_code=503,
+                        detail="PROJECT_CONTRIBUTOR_IAM_READBACK_UNVERIFIED",
+                    )
+    except HTTPException:
+        raise
+    except (RoleAssignmentRepositoryError, RoleAssignmentNotFoundError, PyMongoError) as error:
+        raise HTTPException(
+            status_code=503, detail="PROJECT_CONTRIBUTOR_IAM_READBACK_UNVERIFIED",
+        ) from error
+
+    return {
+        "schema": "WILSY-PROJECT-CONTRIBUTOR-IAM-ADMISSION/V1",
+        "tenant_id": tenant_id,
+        "principal_id": actor,
+        "project_id": project_id,
+        "authorization_role": role_id,
+        "authorization_state": "ACTIVE",
+        "authority": {"source": "PYTHON_EOS_ROLE_ASSIGNMENT", "financial_execution": False},
     }
 
 
@@ -3936,7 +4044,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP
+# VERSION: v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
