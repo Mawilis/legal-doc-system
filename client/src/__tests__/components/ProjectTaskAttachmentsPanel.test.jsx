@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT
+ * VERSION: v1.5.0-FOUNDER-EXPLICIT-CONTRIBUTOR-ACTIVATION-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.5.0-FOUNDER-EXPLICIT-CONTRIBUTOR-ACTIVATION-CERT proves the explicit WILSY Founder admission UI uses the governed POST only after deliberate interaction, checks exact role readback and separately re-verifies contributor GET before showing upload. A denied admission never enables file selection or re-adds project participation.
  * CHANGELOG: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT proves that a source-verified existing contributor denied by separate participant attachment IAM is not sent back to People or invited to self-enroll a second time; no upload or implicit grant.
  * CHANGELOG: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT proves owner manifests survive contributor-only HTTP 403 without upload, while independently verified participant reads expose existing contributor-controlled upload.
  * CHANGELOG: v1.2.0-SOURCE-FAILURE-CODE-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
@@ -142,6 +143,64 @@ it('exposes contributor upload only after owner and participant source reads ver
   expect(api.post).not.toHaveBeenCalled();
 });
 
+it('activates WILSY Founder contributor IAM only by deliberate click and independently verifies upload', async () => {
+  const founderTenant = 'WILSYTENANT-4CD2FZ4O';
+  const founderList = {
+    ...list([]), tenant_id: founderTenant,
+  };
+  let activated = false;
+  api.get.mockImplementation(async path => {
+    if (path === ownerRoute + '/attachments?limit=50&offset=0') return { data: founderList };
+    if (path === memberRoute + '/attachments?limit=50&offset=0') {
+      if (!activated) throw { response: { status: 403 } };
+      return { data: founderList };
+    }
+    throw new Error('Unexpected source ' + path);
+  });
+  api.post.mockImplementationOnce(async (path, _body, options) => {
+    expect(path).toBe('/projects/' + projectId + '/founder-contributor-iam-admission');
+    expect(options.headers['X-Tenant-ID']).toBe(founderTenant);
+    activated = true;
+    return { data: {
+      schema: 'WILSY-PROJECT-CONTRIBUTOR-IAM-ADMISSION/V1',
+      tenant_id: founderTenant, principal_id: principalId, project_id: projectId,
+      authorization_role: 'PROJECTS_PARTICIPANT_CONTRIBUTOR',
+      authorization_state: 'ACTIVE',
+      authority: { source: 'PYTHON_EOS_ROLE_ASSIGNMENT', financial_execution: false },
+    } };
+  });
+  render(<ProjectTaskAttachmentsPanel tenantId={founderTenant} principalId={principalId}
+    projectId={projectId} taskId={taskId} participantMode ownerReadMode
+    tenantHeaders={{ 'X-Tenant-ID': founderTenant }} onClose={() => {}}/>);
+  const activate = await screen.findByRole('button', {
+    name: 'Activate my contributor attachment access',
+  });
+  expect(api.post).not.toHaveBeenCalled();
+  expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
+  fireEvent.click(activate);
+  await waitFor(() => expect(screen.getByLabelText('Project attachment file')).toBeVisible());
+  expect(api.post).toHaveBeenCalledTimes(1);
+  expect(api.get.mock.calls.filter(([path]) => path === memberRoute + '/attachments?limit=50&offset=0').length).toBeGreaterThanOrEqual(2);
+});
+
+it('keeps upload denied when Founder admission command itself is denied', async () => {
+  const founderTenant = 'WILSYTENANT-4CD2FZ4O';
+  api.get.mockImplementation(async path => {
+    if (path === ownerRoute + '/attachments?limit=50&offset=0') return { data: { ...list([]), tenant_id: founderTenant } };
+    if (path === memberRoute + '/attachments?limit=50&offset=0')
+      throw { response: { status: 403 } };
+    throw new Error('Unexpected source ' + path);
+  });
+  api.post.mockRejectedValueOnce({ response: { status: 403 } });
+  render(<ProjectTaskAttachmentsPanel tenantId={founderTenant} principalId={principalId}
+    projectId={projectId} taskId={taskId} participantMode ownerReadMode
+    tenantHeaders={{ 'X-Tenant-ID': founderTenant }} onClose={() => {}}/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Activate my contributor attachment access' }));
+  expect(await screen.findByText(/EOS denied this explicit role admission \(HTTP 403\)/)).toBeVisible();
+  expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
+  expect(api.post).toHaveBeenCalledTimes(1);
+});
+
 it('fails closed on a foreign tenant source record or fabricated download URL', async () => {
   api.get.mockResolvedValue({ data: list([
     { ...record, download_url: 'https://untrusted.example/x' },
@@ -165,7 +224,7 @@ it('rejects fabricated or incomplete scan clearance evidence without download ca
 });
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT
+// VERSION: v1.5.0-FOUNDER-EXPLICIT-CONTRIBUTOR-ACTIVATION-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
