@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR
+ * VERSION: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI presents each
+ *            independently verified project as a structured accessible row,
+ *            styles source-owned task results, and places creation behind a
+ *            deliberate expandable workflow; source IAM and counts are unchanged.
  * CHANGELOG: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR closes the
  *            conditional unavailable-state JSX expression correctly so
  *            OXC, Vitest and production Vite compile the Strategy viewer.
@@ -736,33 +740,59 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
                       <RefreshCw size={15}/> Refresh projects</button></div>
                     {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
-                    {projectState === 'READY' && <div role="status">{projectItems.length === 0
-                      ? 'No projects returned by EOS on the first page.'
-                      : projectItems.length + ' source-confirmed project(s) on the first page.'}</div>}
-                    {projectState === 'READY' && projectItems.length > 0 && <ul aria-label="EOS project list">
-                      {projectItems.map(item => <li key={item.project_id}>
-                        <strong>{item.name}</strong>{' · '}{item.status}{' · revision '}{item.revision}
-                        {typeof onOpenProject === 'function' && <button type="button"
-                          aria-label={'Open project delivery for ' + item.name}
-                          onClick={() => onOpenProject(item.project_id)}>
-                          Open project delivery <ArrowUpRight size={14}/>
-                        </button>}
-                        <button type="button" disabled={delivery.state === 'LOADING'}
-                          onClick={() => void loadDelivery(item.project_id)}>
-                          Verify execution <RefreshCw size={14}/>
-                        </button>
+                    {projectState === 'READY' && <div className={styles.projectListSummary} role="status">
+                      <span>{projectItems.length === 0 ? 'No projects returned by EOS on this page.' : projectItems.length + ' verified projects on this page'}</span>
+                      <span className={styles.sourceVerified}>Source verified · EOS</span>
+                    </div>}
+                    {projectState === 'READY' && projectItems.length > 0 && <ul className={styles.strategyProjectList} aria-label="EOS project list">
+                      {projectItems.map(item => <li className={styles.strategyProjectRow} key={item.project_id}>
+                        <div className={styles.strategyProjectIdentity}>
+                          <strong>{item.name}</strong>
+                          <div className={styles.strategyProjectMeta}>
+                            <span className={styles.projectStatus} data-status={item.status}>{item.status}</span>
+                            <span>Revision {item.revision}</span>
+                          </div>
+                        </div>
+                        <div className={styles.strategyProjectActions}>
+                          <button type="button" disabled={delivery.state === 'LOADING'}
+                            aria-label={'Verify execution for ' + item.name}
+                            aria-pressed={delivery.state === 'READY' && delivery.projectId === item.project_id}
+                            onClick={() => void loadDelivery(item.project_id)}>
+                            <RefreshCw size={15}/> Verify execution
+                          </button>
+                          {typeof onOpenProject === 'function' && <button type="button"
+                            aria-label={'Open project delivery for ' + item.name}
+                            onClick={() => onOpenProject(item.project_id)}>
+                            Open project <ArrowUpRight size={15}/>
+                          </button>}
+                        </div>
                       </li>)}
                     </ul>}
                     {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
                     {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
-                    {delivery.state === 'READY' && delivery.page && <section aria-label="Verified project execution">
-                      <h3>Source-verified project execution</h3>
-                      <p>{projectItems.find(item => item.project_id === delivery.projectId)?.name} · {delivery.page.items.length} tasks on this verified page. No Strategy completion percentage is inferred.</p>
-                      {delivery.page.items.length === 0 ? <p>EOS verified no tasks on this page.</p>
-                        : <ul>{delivery.page.items.map(item => <li key={item.task_id}><strong>{item.title}</strong> · {item.kind} · {item.status}{item.due_date ? ' · Due ' + item.due_date : ''}</li>)}</ul>}
-                      {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
-                      {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
-                      <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.offset)}>Refresh execution</button>
+                    {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution">
+                      <div className={styles.strategyDeliveryHeader}>
+                        <div>
+                          <span className={styles.eyebrow}>EOS · VERIFIED SOURCE RECORDS</span>
+                          <h3>Source-verified project execution</h3>
+                          <p>{projectItems.find(item => item.project_id === delivery.projectId)?.name} · {delivery.page.items.length} items on this verified page</p>
+                        </div>
+                        <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.offset)}>
+                          <RefreshCw size={15}/> Refresh execution
+                        </button>
+                      </div>
+                      <p className={styles.strategyDeliveryNote}>Lifecycle records only. No strategic pillar linkage or Strategy completion percentage is inferred.</p>
+                      {delivery.page.items.length === 0 ? <p role="status">EOS verified no tasks on this page.</p>
+                        : <ul className={styles.strategyTaskList}>{delivery.page.items.map(item =>
+                          <li key={item.task_id}>
+                            <div><strong>{item.title}</strong><span>{item.kind === 'MILESTONE' ? 'Milestone' : 'Task'}{item.due_date ? ' · Due ' + item.due_date : ''}</span></div>
+                            <span className={styles.projectStatus} data-status={item.status}>{item.status.replaceAll('_', ' ')}</span>
+                          </li>)}</ul>}
+                      {(delivery.page.offset > 0 || delivery.page.has_more) && <div className={styles.strategyPagination}>
+                        {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
+                        <span>Page {Math.floor(delivery.page.offset / 50) + 1}</span>
+                        {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
+                      </div>}
                     </section>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
@@ -779,7 +809,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     {admissionStatus && <p role="status">{admissionStatus}</p>}
                     {projectError && projectState === 'READY' && <p role="alert">{projectError}</p>}
                     {projectSuccess && <p role="status">{projectSuccess}</p>}
-                    {(projectState === 'READY' || projectState === 'UNAVAILABLE') && <form onSubmit={createStrategyProject} aria-label="Create governed EOS project">
+                    {(projectState === 'READY' || projectState === 'UNAVAILABLE') && <details className={styles.strategyCreateDisclosure}>
+                      <summary><span><strong>Create another project</strong><small>Separate governed EOS project · does not link to a strategic pillar</small></span></summary>
+                      <form className={styles.strategyCreateForm} onSubmit={createStrategyProject} aria-label="Create governed EOS project">
                       <h3>Create a project in EOS</h3>
                       <p>Choose the strategic context for its description. This does not establish a formal strategy relationship or appoint an owner.</p>
                       {projectState === 'UNAVAILABLE' && <p role="status">Your draft remains available to inspect and edit. Project creation is disabled until a fresh EOS Projects read succeeds. Use Refresh projects to reverify source availability.</p>}
@@ -808,7 +840,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       <button type="submit" disabled={projectBusy || projectState !== 'READY' || !projectName.trim()}>
                         {projectBusy ? 'Verifying EOS readback…' : 'Create project in EOS'}
                       </button>
-                    </form>}
+                      </form>
+                    </details>}
                   </div>}
                   <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
                 </section>
@@ -884,7 +917,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR
+// VERSION: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
