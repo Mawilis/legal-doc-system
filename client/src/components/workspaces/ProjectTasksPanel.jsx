@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION
+ * VERSION: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION mounts
+ *          the independently authorized source classification command
+ *          directly inside selected task details with fresh EOS audit readback,
+ *          no inferred purpose, task mutation or simulated IAM.
  * CHANGELOG: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION passes project People navigation into both selected-task attachment views, so owner-view upload prerequisites have a real navigation action instead of an inert advisory.
  * CHANGELOG: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS exposes only strict canonical PROJECT_ uppercase backend error codes alongside HTTP state, without logging source payloads, identity, URLs or unknown exception text. Helps differentiate unavailable task transport from malformed persisted records at the next browser acceptance.
  * CHANGELOG: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS verifies the sovereign task list before starting three auxiliary source calls so new member-directory lookups cannot compete with the critical task read. Distinguishes rejected 401/403/404/429/503, transport timeout and malformed read envelopes without logging secrets, losing task drafts, fabricating task rows or retrying commands.
@@ -181,6 +185,7 @@ import ProjectWorkRow from './ProjectWorkRow.jsx';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
+import ProjectWorkPurposePanel from './ProjectWorkPurposePanel.jsx';
 import ProjectParticipantsPanel, { validOptions, optionName } from './ProjectParticipantsPanel.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
@@ -1440,6 +1445,11 @@ export default function ProjectTasksPanel({
               {drawerTask.description || 'No description recorded'}
             </p>
           </section>
+          <ProjectWorkPurposePanel
+            key={[scope, drawerTask.task_id, drawerTask.revision].join(':')}
+            task={drawerTask} projectId={projectId}
+            tenantId={tenantId} principalId={principalId}
+            tenantHeaders={tenantHeaders} canClassify={Boolean(actionCapabilities?.canEdit)}/>
           <section className="mt-5 border-t border-slate-200 pt-4">
             <h4 className="text-sm font-bold text-slate-900">Dependencies</h4>
             {drawerTask.depends_on.length === 0
@@ -1489,7 +1499,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION
+// VERSION: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
