@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS
+ * VERSION: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
  * CHANGELOG: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS converts oversized work-navigation, recovery and contextual follow-ups into accessible inline transcript actions with coherent hierarchy and focus states. The five EOS-authorised CRM tasks remain source-owned; no task mutations, AI charges, changes to admissibility or fabricated records.
  * CHANGELOG: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION defers the costly cross-source My Work aggregate until a real work-related conversational intent is selected; entering work/overdue initiates a fresh independently admitted read, leaving other Dock surfaces unaffected and avoiding eager concurrent startup load. Scope changes and leaving the view abort/clear local projections; no partial-source/fabricated results.
  * CHANGELOG: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION distinguishes exact-tenant My Work IAM refusal, bounded transport timeout, EOS 503 source failure and other transport errors in the chat, without inventing tasks, exposing vendor/request data, extending the client deadline or relaxing backend authority. Kernel health timeout remains an independent optional probe.
@@ -215,6 +216,28 @@ function classifyWilsyAISourceIntent(value) {
   }
   if (/^(?:show|inspect|review|open|view)\s+(?:(?:my|the|current|this)\s+)?(?:workspace|project|context|source)(?:\s+(?:details?|context))?[?.!]?$/i.test(text)) {
     return 'SOURCE';
+  }
+  return null;
+}
+
+/**
+ * @function resolveWilsyLocalCourtesy
+ * @description Narrow non-generative conversational etiquette for greetings
+ * and acknowledgements. No personal/project/business facts are inferred.
+ * Replies are labelled built-in, not model answers, and do not cross EOS IAM,
+ * financial or provider boundaries.
+ */
+function resolveWilsyLocalCourtesy(value) {
+  const text = String(value || '').trim();
+  if (!text || text.length > 120) return null;
+  if (/^(?:hi|hello|hey|hey\s+wilsy|hello\s+wilsy|hi\s+wilsy|good\s+(?:morning|afternoon|evening))[!.?\s]*$/i.test(text)) {
+    return 'Hello! I’m here and ready to help. What would you like to work on?';
+  }
+  if (/^(?:(?:hey|hello|hi)[,\s]+)?how\s+(?:(?:are|r)\s+you|(?:is|was)\s+(?:you|your)\s+day|(?:has|have)\s+(?:you|your)\s+day\s+been)[?.!\s]*$/i.test(text)) {
+    return 'I’m here and ready to help. How is your day going?';
+  }
+  if (/^(?:thanks|thank\s+you|thank\s+you\s+wilsy|much\s+appreciated)[!.\s]*$/i.test(text)) {
+    return 'You’re welcome. What would you like to do next?';
   }
   return null;
 }
@@ -1030,6 +1053,8 @@ export function WilsyOSIntelligenceDock({
       if (!text || isSubmitting || sendLockRef.current) return;
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
+      const localCourtesyReply = isLegalDockRole(authUser?.role)
+        ? null : resolveWilsyLocalCourtesy(text);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1043,22 +1068,23 @@ export function WilsyOSIntelligenceDock({
       // A server-confirmed reconciliation hold is not an uncertain network
       // retry. Preserve the draft but refuse further sends of this exact
       // attempt, including the Enter key and dynamic suggestion route.
-      if (reasoningReplayRef.current.blocked === true
+      if (!localCourtesyReply
+        && reasoningReplayRef.current.blocked === true
         && reasoningReplayRef.current.scope === dockScopeRef.current
         && reasoningReplayRef.current.text === text
         && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current) {
         setErrorMessage('This request is awaiting EOS execution and usage reconciliation. No verified answer exists. Resubmitting the same request is blocked.');
         return;
       }
-      if (!isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
+      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
         setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
         return;
       }
-      if (!isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
+      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
         setErrorMessage('Workspace information is available, but the EOS AI provider is not configured.');
         return;
       }
-      if (!isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
+      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
       }
@@ -1066,7 +1092,7 @@ export function WilsyOSIntelligenceDock({
         && visibleWorkspaceContext?.state === 'READY'
         && visibleWorkspaceContext.data.work?.project?.project_id === workLocator.project_id
         ? { ...workLocator } : null;
-      if (!isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
+      if (!localCourtesyReply && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
         setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
         return;
       }
@@ -1128,7 +1154,16 @@ export function WilsyOSIntelligenceDock({
 
       try {
         let result;
-        if (isLegalDockRole(authUser?.role)) {
+        if (localCourtesyReply) {
+          // Clearly distinguished from a provider inference; no usage admission.
+          result = {
+            reply: localCourtesyReply,
+            source: 'WILSY_LOCAL_COURTESY',
+            phase: 'NON_GENERATIVE_BUILT_IN',
+            domain: 'GENERAL',
+            tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
+          };
+        } else if (isLegalDockRole(authUser?.role)) {
           const response = await executeWilsyAILegalServices(text, uuidv4());
           const legal = response?.data || {};
           result = {
@@ -1247,7 +1282,7 @@ export function WilsyOSIntelligenceDock({
           : status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT'
             ? 'This AI request conflicts with a previously recorded attempt. No answer was generated. Review the question and press Send to create a separate request.'
           : status === 503 && detail === 'C1B_REASONING_RECONCILIATION_REQUIRED'
-            ? 'This request has not produced a verified answer. EOS must reconcile the provider execution and usage evidence. The original request is blocked from resubmission; your draft is preserved. This does not prove a billable model response.'
+            ? 'I could not verify an AI answer. EOS must reconcile provider execution and usage evidence before this specific request can be retried. Your draft is preserved; no billable result is confirmed.'
           : status === 429 ? 'WILSY AI usage capacity is exhausted for the current period.'
           : status === 503 ? 'The EOS AI provider or entitlement source is temporarily unavailable.'
           : 'WILSY AI could not verify this answer. Your question remains in the composer.';
@@ -1419,6 +1454,7 @@ export function WilsyOSIntelligenceDock({
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
+  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
       .filter(value => typeof value === 'string' && value.trim()).join(' '),
@@ -1767,7 +1803,9 @@ export function WilsyOSIntelligenceDock({
                       }`}
                     >
                       <div className={styles.bubbleHeader}>
-                        <span>{msg.role === 'user' ? operatorLabel : 'WILSY OS'}</span>
+                        <span>{msg.role === 'user' ? operatorLabel
+                          : msg.meta?.source === 'WILSY_LOCAL_COURTESY'
+                            ? 'WILSY OS · Built-in reply' : 'WILSY OS'}</span>
                         <span>
                           {msg.timestamp
                             ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -1853,7 +1891,7 @@ export function WilsyOSIntelligenceDock({
                     onClick={() => handleSendMessage()}
                     disabled={isSubmitting || !prompt.trim()
                       || (!isLegalDockRole(authUser?.role)
-                        && !readOnlySourceIntent
+                        && !readOnlySourceIntent && !localCourtesyIntent
                         && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
                           || (reasoningReplayRef.current.blocked === true
                             && reasoningReplayRef.current.scope === dockScopeRef.current
@@ -2142,7 +2180,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS
+ * VERSION: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
