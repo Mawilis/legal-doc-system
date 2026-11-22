@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.6.0-PLAN-PERSISTENCE-READBACK-CERT
+ * VERSION: v1.6.1-EXACT-FOUNDATION-NAME-FIXTURE
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.6.1-EXACT-FOUNDATION-NAME-FIXTURE uses the source-owned
+ *            canonical existing WILSY OS foundation project name for the
+ *            plan admission test. The production exact-project gate is kept;
+ *            unrelated projects remain ineligible for plan creation.
  * CHANGELOG: v1.6.0-PLAN-PERSISTENCE-READBACK-CERT verifies that eighteen
  *            planned milestones/tasks remain separate from EOS state until
  *            explicit owner-authorized idempotent creation. Each result
@@ -296,7 +300,7 @@ describe('Strategy source-owned project execution readback', () => {
   const projectId = 'prj-' + 'a'.repeat(48);
   const taskId = 'ptk-' + 'b'.repeat(48);
   const project = { project_id: projectId, tenant_id: scope.tenantId,
-    name: 'Unified Operating Platform Foundation', status: 'ACTIVE', revision: 2 };
+    name: 'WILSY OS — Unified Operating Platform Foundation', status: 'ACTIVE', revision: 2 };
   const projectList = () => ({ schema: 'WILSY-PROJECT-LIST/V1',
     tenant_id: scope.tenantId, principal_id: scope.principalId,
     limit: 100, offset: 0, has_more: false, next_offset: null, items: [project] });
@@ -440,7 +444,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.6.0-PLAN-PERSISTENCE-READBACK-CERT
+// VERSION: v1.6.1-EXACT-FOUNDATION-NAME-FIXTURE
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
