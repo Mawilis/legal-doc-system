@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS
+ * VERSION: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,7 +14,8 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
- * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY responds naturally to greetings and tightly scoped day-status acknowledgements after a verified built-in turn in the same session. No model invocation, quota admission, inferred work, or bypass for substantive prompts.
  * CHANGELOG: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS converts oversized work-navigation, recovery and contextual follow-ups into accessible inline transcript actions with coherent hierarchy and focus states. The five EOS-authorised CRM tasks remain source-owned; no task mutations, AI charges, changes to admissibility or fabricated records.
  * CHANGELOG: v4.32.0-ONDEMAND-MYWORK-SOURCE-ADMISSION defers the costly cross-source My Work aggregate until a real work-related conversational intent is selected; entering work/overdue initiates a fresh independently admitted read, leaving other Dock surfaces unaffected and avoiding eager concurrent startup load. Scope changes and leaving the view abort/clear local projections; no partial-source/fabricated results.
  * CHANGELOG: v4.31.0-MYWORK-SOURCE-FAILURE-CLASSIFICATION distinguishes exact-tenant My Work IAM refusal, bounded transport timeout, EOS 503 source failure and other transport errors in the chat, without inventing tasks, exposing vendor/request data, extending the client deadline or relaxing backend authority. Kernel health timeout remains an independent optional probe.
@@ -227,14 +228,28 @@ function classifyWilsyAISourceIntent(value) {
  * Replies are labelled built-in, not model answers, and do not cross EOS IAM,
  * financial or provider boundaries.
  */
-function resolveWilsyLocalCourtesy(value) {
+function resolveWilsyLocalCourtesy(value, previousTurns = []) {
   const text = String(value || '').trim();
   if (!text || text.length > 120) return null;
   if (/^(?:hi|hello|hey|hey\s+wilsy|hello\s+wilsy|hi\s+wilsy|good\s+(?:morning|afternoon|evening))[!.?\s]*$/i.test(text)) {
     return 'Hello! I’m here and ready to help. What would you like to work on?';
   }
   if (/^(?:(?:hey|hello|hi)[,\s]+)?how\s+(?:(?:are|r)\s+you|(?:is|was)\s+(?:you|your)\s+day|(?:has|have)\s+(?:you|your)\s+day\s+been)[?.!\s]*$/i.test(text)) {
-    return 'I’m here and ready to help. How is your day going?';
+    return 'I’m doing well, thanks for asking. How is your day going?';
+  }
+  // Day-status replies are nonmetered only when directly answering the
+  // canonical built-in question in the same authenticated session thread.
+  // No previous provider answer or unrelated user text authorizes this path.
+  const previous = Array.isArray(previousTurns) ? previousTurns.at(-1) : null;
+  if (previous?.role === 'assistant'
+    && previous?.meta?.source === 'WILSY_LOCAL_COURTESY'
+    && previous?.content === 'I’m doing well, thanks for asking. How is your day going?') {
+    if (/^(?:(?:i(?:'|’)m|i am)\s+)?(?:going\s+)?(?:well|good|great|fine|okay|ok|not bad)(?:,?\s+thanks)?[.!\s]*$/i.test(text)) {
+      return 'Glad to hear it! What would you like to work on?';
+    }
+    if (/^(?:not\s+(?:so\s+)?(?:good|great|well)|(?:having\s+)?a\s+(?:rough|hard)\s+day)[.!\s]*$/i.test(text)) {
+      return 'Sorry to hear your day has been difficult. Would you like to tell me what’s going on, or focus on a task?';
+    }
   }
   if (/^(?:thanks|thank\s+you|thank\s+you\s+wilsy|much\s+appreciated)[!.\s]*$/i.test(text)) {
     return 'You’re welcome. What would you like to do next?';
@@ -1054,7 +1069,7 @@ export function WilsyOSIntelligenceDock({
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
-        ? null : resolveWilsyLocalCourtesy(text);
+        ? null : resolveWilsyLocalCourtesy(text, activeThread?.messages);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1454,7 +1469,7 @@ export function WilsyOSIntelligenceDock({
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
-  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt));
+  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
       .filter(value => typeof value === 'string' && value.trim()).join(' '),
@@ -2180,7 +2195,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS
+ * VERSION: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
