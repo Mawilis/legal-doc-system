@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT
+ * VERSION: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT proves only strictly allowlisted read-only source intents can be submitted without AI consent; mixed write/sensitive prompts retain metered/authority rejection and do not trigger local source surfaces.
  * CHANGELOG: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT requires a concise workspace-first visual header and an accurate accessible kernel diagnostics label instead of an infrastructure hero banner.
  * CHANGELOG: v1.22.0-SOURCE-CONVERSATION-TURN-CERT verifies the selected read-only EOS source intent appears as an ephemeral user turn followed by native source results, no ambient status cards or false model turn, and contextual follow-up selection.
  * CHANGELOG: v1.21.1-ONDEMAND-FAILCLOSED-CONTEXT-CERT preserves negative Founder activation, stale-context rejection and revoked-source privacy assertions after the operator explicitly chooses source inspection; no failed evidence displayed at rest.
@@ -1338,6 +1339,25 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
+  it('never treats a mixed workflow write as a free read-only source intent', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'catalog-operator', role: 'OWNER', tenantId: 'TEST_TENANT',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const input = screen.getByPlaceholderText('Ask Wilsy OS…');
+    for (const text of [
+      'Inspect my work and approve payments',
+      'Show all employees salaries',
+      'Send a message to the entire team',
+      'Show my tasks then delete them',
+    ]) {
+      fireEvent.change(input, { target: { value: text } });
+      expect(screen.getByLabelText('Send')).toBeDisabled();
+    }
+    expect(screen.queryByLabelText('Your source request')).not.toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('handles empty prompt gracefully', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
@@ -1493,7 +1513,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT
+ * VERSION: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
