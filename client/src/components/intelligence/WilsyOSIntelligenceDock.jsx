@@ -428,7 +428,7 @@ function planWilsyWorkSourceQuestion(value) {
     ['INTELLIGENCE', /\bintelligence\b/],
     ['PROJECTS', /\b(?:project|projects)\b/],
   ].filter(([, pattern]) => pattern.test(text));
-  if (selectors.length > 1) return null;
+  if (selectors.length > 3) return null; // bounded multi-domain tool selection
   const overdue = /\b(?:overdue|late)\b/.test(text);
   const activeQualifier = /\b(?:outstanding|open|pending|active|incomplete|unfinished)\b/.test(text);
   if (overdue && activeQualifier) return null;
@@ -437,7 +437,7 @@ function planWilsyWorkSourceQuestion(value) {
   return Object.freeze({
     domain: 'MY_WORK',
     capability: WILSY_READ_ONLY_SOURCE_CAPABILITIES.MY_WORK,
-    source: selectors[0]?.[0] || null,
+    sources: Object.freeze(selectors.map(([source]) => source)),
     overdue,
   });
 }
@@ -449,22 +449,24 @@ function planWilsyWorkSourceQuestion(value) {
  */
 function formatWilsyGovernedMyWorkCount(payload, plan) {
   const included = payload.sources_included;
-  const source = plan.source;
-  if (source && !included.includes(source)) {
-    return 'I cannot verify this work-source count for the current account. The source is not included in the authorised EOS My Work projection.';
+  const sources = plan.sources;
+  if (sources.some(source => !included.includes(source))) {
+    return 'I cannot verify a complete work count for the requested departments. One or more sources are not included in your current authorised EOS My Work projection.';
   }
   const count = plan.overdue
-    ? source
-      ? payload.items.filter(item => item.source === source && item.is_overdue === true).length
+    ? sources.length
+      ? payload.items.filter(item => sources.includes(item.source) && item.is_overdue === true).length
       : payload.summary.overdue_count
-    : source
-      ? payload.summary.source_counts[source]
+    : sources.length
+      ? sources.reduce((total, source) => total + payload.summary.source_counts[source], 0)
       : payload.summary.active_count;
-  const sourceName = source ? unifiedMyWorkSourceLabel(source) : 'all admitted work sources';
+  const names = sources.length
+    ? sources.map(source => unifiedMyWorkSourceLabel(source)).join(' and ')
+    : 'all admitted work sources';
   const status = plan.overdue ? 'overdue' : 'active';
   return 'EOS verifies ' + count + ' ' + status
     + ' work ' + (count === 1 ? 'item' : 'items')
-    + ' for you in ' + sourceName
+    + ' for you in ' + names
     + ' under the current tenant and authorised source coverage.';
 }
 
