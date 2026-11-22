@@ -374,7 +374,7 @@ describe('Strategy source-owned project execution readback', () => {
       body.assignee_principal_id === null && body.due_date === null
       && config.headers['X-Tenant-ID'] === scope.tenantId
       && config.headers['Idempotency-Key'].startsWith('strategy-foundation-v1-'))).toBe(true);
-    expect(screen.getAllByText('Persisted in EOS')).toHaveLength(18);
+    await waitFor(() => expect(screen.getAllByText('Persisted in EOS')).toHaveLength(18));
 
     fireEvent.click(screen.getByRole('button', { name: 'Create missing in EOS' }));
     expect(await screen.findByText(/0 created and independently verified; 18 previously present/, {}, { timeout: 9000 })).toBeVisible();
