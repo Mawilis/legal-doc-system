@@ -815,7 +815,7 @@ export default function ProjectTasksPanel({
         {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel
           key={[scope, focusedAction.id].join(':')}
           tenantId={tenantId} projectId={projectId} principalId={principalId}
-          taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
+          taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
           onManageContributors={onOpenProjectPeople}
           onClose={() => { setAttachmentTaskId(null); setDiscussionTaskId(focusedAction.id); }}/>}
         {focusedAction.type !== 'discussion' &&
@@ -939,7 +939,7 @@ export default function ProjectTasksPanel({
         onClose={closeFocusedAction}/>}
       {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
-        taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
+        taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
           onManageContributors={onOpenProjectPeople}
         onClose={closeFocusedAction}/>}
     </div> : <>
