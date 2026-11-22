@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION
+ * VERSION: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION makes the already-contributing canonical WILSY Founder able to explicitly request narrow contributor attachment IAM activation using an independently governed EOS command, then verifies the role admission response and rechecks original contributor GET. No automatic grant, client permission inference, replay of uploads, or fallback for paying tenants.
  * CHANGELOG: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION recognizes source-verified existing project contributor participation and never routes that member into a duplicate People onboarding path when independent attachment IAM denies. Shows the specific contributor HTTP denial and requires independent IAM/capacity remediation rather than project re-enrollment or silent grants.
  * CHANGELOG: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT preflights the exact project participant list and eligible tenant-member options before leaving the attachment task for People. A denied/unavailable/synthetic source shows its bounded failure in situ and does not navigate; no IAM inference or upload grant.
  * CHANGELOG: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION uses separately authorized owner metadata GET in the owner workspace rather than choosing participant-only GET from a contributor roster. Upload and scan remain on participant-only EOS routes and require independent participant source admission. Both reads validate exact tenant/principal/project/task; no IAM fallback or implicit Founder grant.
@@ -75,6 +76,8 @@ export default function ProjectTaskAttachmentsPanel({
   const [uploadReadState, setUploadReadState] = useState('UNVERIFIED');
   const [peoplePreflight, setPeoplePreflight] = useState('');
   const [checkingPeople, setCheckingPeople] = useState(false);
+  const [activatingContributorIAM, setActivatingContributorIAM] = useState(false);
+  const [contributorIAMMessage, setContributorIAMMessage] = useState('');
   const scope = [tenantId, principalId, projectId, taskId, participantMode, ownerReadMode].join('\0');
   const current = useRef(scope);
   current.current = scope;
@@ -267,6 +270,50 @@ export default function ProjectTaskAttachmentsPanel({
     }
   };
 
+  const activateContributorIAM = async () => {
+    if (activatingContributorIAM || busy || state !== 'READY'
+      || !participantMode || uploadReadVerified
+      || tenantId !== 'WILSYTENANT-4CD2FZ4O') return;
+    const active = scope;
+    setActivatingContributorIAM(true);
+    setContributorIAMMessage('');
+    try {
+      const { data } = await api.post(
+        projectRoot + '/founder-contributor-iam-admission', null,
+        { headers: tenantHeaders || {} },
+      );
+      if (current.current !== active) return;
+      if (data?.schema !== 'WILSY-PROJECT-CONTRIBUTOR-IAM-ADMISSION/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId
+        || data.authorization_role !== 'PROJECTS_PARTICIPANT_CONTRIBUTOR'
+        || data.authorization_state !== 'ACTIVE'
+        || data.authority?.source !== 'PYTHON_EOS_ROLE_ASSIGNMENT') {
+        setContributorIAMMessage('EOS returned an invalid contributor IAM admission readback. No upload access has been confirmed.');
+        return;
+      }
+      // A successful role readback is not proof that this session's selected
+      // capacity was refreshed. The original contributor GET is the gate.
+      const verified = await load(0);
+      if (current.current !== active) return;
+      if (verified) setContributorIAMMessage(
+        'EOS verified the contributor role assignment. Recheck attachment access; if this session remains denied, sign out and authenticate with the authorized contributor capacity.',
+      );
+    } catch (cause) {
+      if (current.current !== active) return;
+      const status = cause?.response?.status;
+      setContributorIAMMessage(status === 403
+        ? 'EOS denied this explicit role admission (HTTP 403). The signed-in operating capacity lacks independent invitation authority. An authorized tenant IAM administrator must issue the contributor role; no access was granted.'
+        : status === 409
+          ? 'EOS could not verify a governed contributor invitation or admission (HTTP 409). No upload access is confirmed.'
+          : status === 503
+            ? 'EOS contributor IAM authority is unavailable (HTTP 503). No upload access is confirmed.'
+            : 'EOS did not confirm contributor IAM admission. No upload access is confirmed.');
+    } finally {
+      if (current.current === active) setActivatingContributorIAM(false);
+    }
+  };
+
   const navigateToPeople = async () => {
     if (checkingPeople || busy || state !== 'READY' || typeof onManageContributors !== 'function') return;
     const active = scope;
@@ -430,6 +477,13 @@ export default function ProjectTaskAttachmentsPanel({
           {checkingPeople ? 'Verifying project People…' : 'Check People access before contributor management'}
         </button>}
       {peoplePreflight && <p role="alert" className="mt-2 text-sm text-rose-800">{peoplePreflight}</p>}
+      {!uploadReadVerified && participantMode && tenantId === 'WILSYTENANT-4CD2FZ4O'
+        && <button type="button" className="wp-button mt-3"
+          disabled={activatingContributorIAM || busy || state !== 'READY'}
+          onClick={() => { void activateContributorIAM(); }}>
+          {activatingContributorIAM ? 'Verifying contributor IAM…' : 'Activate my contributor attachment access'}
+        </button>}
+      {contributorIAMMessage && <p role="status" className="mt-2 text-sm text-slate-800">{contributorIAMMessage}</p>}
       {!uploadReadVerified && participantMode && <p role="status" className="mt-2 text-xs font-medium text-slate-800">
         Project participation: verified Contributor. Attachment contributor authority: {uploadReadState === 'DENIED' ? 'denied by EOS (HTTP 403)' : 'not verified'}.
         A tenant IAM administrator must verify the separate contributor role assignment and selected operating capacity. This screen cannot create that grant.
@@ -495,7 +549,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION
+// VERSION: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
