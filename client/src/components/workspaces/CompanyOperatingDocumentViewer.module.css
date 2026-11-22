@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.4.0-STRUCTURED-STRATEGY-EXECUTION
+ * VERSION: v1.5.0-STRATEGY-PLAN-ADMISSION-PRESENTATION
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.5.0-STRATEGY-PLAN-ADMISSION-PRESENTATION separates
+ *            uncommitted roadmap milestones/tasks from verified EOS work,
+ *            with explicit source-state labels, responsive grouped lists
+ *            and a focused create-missing command that cannot imply completion.
  * CHANGELOG: v1.4.0-STRUCTURED-STRATEGY-EXECUTION defines legible dark
  *            project rows with wrapped titles, aligned EOS actions, source
  *            status badges, readable task result lists and responsive creation
@@ -149,8 +153,27 @@
 @media(max-width:830px){.strategyProjectRow{align-items:stretch;flex-direction:column}.strategyProjectActions{justify-content:flex-start}.strategyProjectActions button{flex:1 1 150px}}
 @media(max-width:650px){.strategyProjectRow{padding:12px}.strategyProjectActions{flex-direction:column;align-items:stretch}.strategyProjectActions button{width:100%}.strategyDelivery{padding:13px}.strategyTaskList li{align-items:flex-start;flex-direction:column}.strategyCreateDisclosure>summary{padding:13px}}
 
+/* Reviewed strategy work register is intentionally distinct from EOS tasks. */
+.strategyPlan{margin-top:18px;padding:19px;border:1px solid #bd9d6078;border-radius:14px;background:linear-gradient(145deg,#31405c45,#101e33)}
+.strategyPlanHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.strategyPlanHeader h3{font-size:16px;color:#f5f7fc!important;margin:6px 0}
+.execution .strategyPlanHeader p{font-size:11px;line-height:1.65;color:#b6c9df;max-width:530px;margin:0}
+.execution .strategyPlanHeader button{display:inline-flex;justify-content:center;align-items:center;min-height:39px;padding:9px 13px;border:1px solid #f1c368;border-radius:9px;color:#14243a;background:#f0c760;font-size:12px;font-weight:750}
+.strategyPlanGroups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:18px}
+.strategyPlanGroups>div{min-width:0;border:1px solid #d8e6f020;border-radius:12px;overflow:hidden;background:#081a3085}
+.strategyPlanGroups h4{font-size:13px;color:#f2d38d;margin:0;padding:13px 14px;border-bottom:1px solid #d8e6f026}
+.strategyPlanGroups ul{list-style:none;margin:0;padding:0}
+.strategyPlanGroups li{display:flex;align-items:flex-start;justify-content:space-between;gap:13px;padding:11px 13px;border-bottom:1px solid #e8f1fa16;font-size:11px;line-height:1.55;color:#e5edf9}
+.strategyPlanGroups li:last-child{border-bottom:0}
+.strategyPlanGroups li>span:first-child{min-width:0;overflow-wrap:anywhere}
+.planPersisted,.planProposed{display:inline-flex;flex:none;max-width:100%;padding:3px 7px;border:1px solid;border-radius:6px;font-size:10px;font-weight:650;white-space:nowrap}
+.planPersisted{color:#aaf0cd;border-color:#4eaf85a0;background:#1a704d50}
+.planProposed{color:#f4dca5;border-color:#caab6780;background:#674e2640}
+@media(max-width:900px){.strategyPlanGroups{grid-template-columns:1fr}}
+@media(max-width:650px){.strategyPlan{padding:13px}.strategyPlanHeader button{width:100%}.strategyPlanGroups li{flex-direction:column;gap:6px}}
+
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.4.0-STRUCTURED-STRATEGY-EXECUTION
+ * VERSION: v1.5.0-STRATEGY-PLAN-ADMISSION-PRESENTATION
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
