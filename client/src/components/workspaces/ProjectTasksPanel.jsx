@@ -404,7 +404,8 @@ export default function ProjectTasksPanel({
       setParticipants(currentContributors);
       setParticipantHasMore(eligible.has_more);
       setState('READY');
-      return true;
+      return !newlyAdmittedId
+        || currentContributors.some(item => item.principal_id === newlyAdmittedId);
     } catch (cause) {
       if (request !== generation.current || currentScope.current !== active) return false;
       setItems([]);
