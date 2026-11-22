@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT
+VERSION: v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT pins the new exact-project Founder contributor IAM admission POST to two independent existing IAM admission pairs and no unscoped role-grant path; user initiation and project participation remain separate prerequisites.
   v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT certifies all seventeen
   platform blueprint DAGs through the existing atomic project test suite.
   v1.31.0-WORK-ACTION-CAPABILITY-AUTHORITY-CERT pins an
@@ -448,6 +449,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", ("POST",)),
         ("/projects/{project_id}/assignment", ("PATCH",)),
         ("/projects/founder-projects-admission", ("POST",)),
+        ("/projects/{project_id}/founder-contributor-iam-admission", ("POST",)),
         ("/projects/my-approvals", ("GET",)),
         ("/projects/{project_id}/tasks/{task_id}/attachments", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/attachments", ("GET",)),
@@ -500,6 +502,7 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/departments", "POST"): ("tenant:profile:write", "profile_update"),
         ("/projects/{project_id}/assignment", "PATCH"): ("project:update", "project_update"),
         ("/projects/founder-projects-admission", "POST"): ("tenant:membership:write", "membership_invite"),
+        ("/projects/{project_id}/founder-contributor-iam-admission", "POST"): ("tenant:membership:write", "membership_invite"),
         ("/projects/my-approvals", "GET"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/tasks/{task_id}/attachments", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/attachments", "GET"): ("project:participant:read", "project_participant_detail"),
@@ -582,6 +585,17 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("tenant:membership:write", "membership_invite"),
         ("tenant_product_entitlement:issue", "tenant_product_entitlement_issue"),
     }
+    contributor_route = routes[("/projects/{project_id}/founder-contributor-iam-admission", ("POST",))]
+    contributor_pairs = {
+        (dependency.call.permission_id, dependency.call.operation)
+        for dependency in contributor_route.dependant.dependencies
+        if isinstance(dependency.call, RequireTenantAuthorization)
+    }
+    assert contributor_pairs == {
+        ("tenant:membership:write", "membership_invite"),
+        ("project:read", "project_detail"),
+    }
+
 
 
 def test_selected_session_tenant_must_equal_request_scope() -> None:
@@ -1181,7 +1195,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT
+# VERSION: v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
