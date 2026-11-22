@@ -181,7 +181,7 @@ class StrategyProjectRelationshipRegistry:
             record = {**material, "schema": "WILSY-STRATEGY-PROJECT-LINK/V1",
                       "idempotency_key": command, "recorded_at": when,
                       "command_fingerprint": fingerprint}
-            self.links.insert_one(record, session=session)
+            self.links.insert_one(dict(record), session=session)
             self.events.insert_one({"schema": "WILSY-STRATEGY-PROJECT-LINK-EVENT/V1",
                 "tenant_id": tenant, "idempotency_key": command,
                 "command_fingerprint": fingerprint, "project_id": project,
