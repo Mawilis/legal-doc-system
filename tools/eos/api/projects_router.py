@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY
+VERSION: v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -12,7 +12,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/pr
 COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            tenant authorization and entitlement registries own
                            independent admission; server.py mounts this router.
-CERTIFICATION / UPDATE DATE: 2026-11-20.
+CERTIFICATION / UPDATE DATE: 2026-11-23.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No client-provided actor or tenant authority; IDs,
                             idempotency and revision are bounded; no-store
@@ -30,6 +30,9 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION restores the historical
+  v1.42.0 Founder contributor and participant profile changelog attribution
+  without expanding the read-only Projects transaction recovery scope.
   v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
   transaction only if a read-only list's source cursor failed with the exact
   PROJECT_LIST_UNAVAILABLE code. It never retries IAM, entitlement, other
@@ -39,7 +42,7 @@ CHANGELOG:
   principal identifiers as nonempty strings before bounded display-name
   enrichment. Malformed identifiers fail closed; tenant IAM, project
   participation, persistence and financial authority remain unchanged.
-  v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY resolves exact-tenant first/last
+  v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION resolves exact-tenant first/last
   names alongside source-verified active project participants for display
   only. Registry identity, permission, audit and assignment commands stay
   unchanged. Missing names yield null rather than an opaque identifier.
@@ -332,7 +335,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY"
+VERSION: Final[str] = "v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -4060,7 +4063,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY
+# VERSION: v1.43.1-SOURCE-RETRY-HISTORY-CORRECTION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
