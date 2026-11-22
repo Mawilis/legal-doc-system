@@ -1,11 +1,16 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.3.0-ENTERPRISE-ADMIN-READ-CERT
+VERSION: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
+CHANGELOG: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT tests
+that independently admitted Strategy author and project read scopes bind
+current independently published strategy pillar and exact active project
+revisions in a majority source transaction, deny mismatched currentness and
+foreign actor scopes, and require explicit relationship indexes.
 CHANGELOG: v1.3.0-ENTERPRISE-ADMIN-READ-CERT asserts the exact existing
 ENTERPRISE_ADMIN read grant while preserving dedicated-reader access and every
 author, publish, review, session, foreign-tenant and source-lifecycle denial.
@@ -236,6 +241,102 @@ def test_http_current_approved_and_privileged_review(monkeypatch, registry):
     assert "sections" not in client.get("/api/company-operating-documents/MISSION/revisions").json()["items"][0]
 
 
+
+def test_strategy_project_link_http_requires_exact_independent_source_and_stable_readback(monkeypatch, registry):
+    """Company Strategy relationships require BOTH company and project permission."""
+    from tools.eos.saas.strategy_project_relationship_registry import (
+        LINK_COLLECTION, EVENT_COLLECTION, StrategyProjectRelationshipRegistry,
+    )
+    from tools.eos.saas.domain.project import ProjectStatus
+
+    now = datetime.now(timezone.utc)
+    project_id = "prj-" + "a" * 48
+    proposal = {"title": "Approved synthetic strategy", "document_version": "1.0.0",
+                "sections": [{"section_id": "pillar-one", "title": "One OS", "body": "Synthetic source objective."}]}
+    draft = registry.command(TENANT, Class.STRATEGY, actor_id="author",
+        action="CREATE_DRAFT", payload=proposal, expected_revision=0,
+        idempotency_key="strategy-draft", now=now, session=SESSION)
+    submitted = registry.command(TENANT, Class.STRATEGY, actor_id="author",
+        action="SUBMIT", payload={}, expected_revision=draft.revision,
+        idempotency_key="strategy-submit", now=now, session=SESSION)
+    publication = registry.command(TENANT, Class.STRATEGY, actor_id="publisher",
+        action="PUBLISH", payload={"approval_reference": "independent-proof",
+                                "effective_from": instant(now - timedelta(days=1))},
+        expected_revision=submitted.revision, idempotency_key="strategy-publish",
+        now=now, session=SESSION)
+    database = {LINK_COLLECTION: Collection(), EVENT_COLLECTION: Collection()}
+    source = StrategyProjectRelationshipRegistry(database)
+    source.ensure_indexes()
+    actor = SimpleNamespace(tenant_id=TENANT, identity=SimpleNamespace(identity_id="author"))
+    project = SimpleNamespace(project_id=project_id, name="Existing operating foundation",
+                              revision=6, status=ProjectStatus.ACTIVE)
+    monkeypatch.setattr(http.kernel_db, "get_database", lambda: database)
+    monkeypatch.setattr(http, "_project_source",
+                        lambda db, tenant, identity, session: project)
+    monkeypatch.setattr(http, "_transaction",
+                        lambda context, callback, **kw: callback(registry, SESSION))
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http._READ] = lambda: actor
+    app.dependency_overrides[http._AUTHOR] = lambda: actor
+    app.dependency_overrides[http._PROJECT_READ] = lambda: actor
+    client = TestClient(app)
+    endpoint = "/api/company-operating-documents/STRATEGY/project-links"
+    empty = client.get(endpoint)
+    assert empty.status_code == 200 and empty.json()["items"] == []
+    assert empty.json()["strategy_progress"] is None
+
+    payload = {"pillar_id": "pillar-one", "project_id": project_id,
+               "expected_strategy_revision": publication.revision,
+               "expected_project_revision": project.revision}
+    first = client.post(endpoint, json=payload, headers={"Idempotency-Key": "strategy-first"})
+    assert first.status_code == 201, first.text
+    assert first.json()["relationship_state"] == "RECORDED_NOT_OUTCOME_CERTIFIED"
+    assert first.json()["strategy_progress"] is None
+    assert client.post(endpoint, json=payload, headers={"Idempotency-Key": "strategy-first"}).json() == first.json()
+    assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
+
+    linked = client.get(endpoint)
+    assert linked.status_code == 200
+    assert linked.json()["items"][0]["pillar_id"] == "pillar-one"
+    assert linked.json()["items"][0]["project_id"] == project_id
+    assert linked.json()["items"][0]["state"] == "VERIFIED_CURRENT"
+    assert linked.json()["strategy_progress"] is None
+
+    invalid = client.post(endpoint, json={**payload, "expected_project_revision": 5},
+                          headers={"Idempotency-Key": "different"})
+    assert invalid.status_code == 409
+    assert len(database[LINK_COLLECTION].rows) == 1
+    app.dependency_overrides[http._PROJECT_READ] = lambda: SimpleNamespace(
+        tenant_id="OTHER", identity=SimpleNamespace(identity_id="author"))
+    assert client.get(endpoint).status_code == 403
+    assert client.post(endpoint, json=payload, headers={"Idempotency-Key": "foreign"}).status_code == 403
+
+
+def test_strategy_link_http_denies_unprovisioned_indexes(monkeypatch, registry):
+    """Link writes never self-provision unique indexes in business requests."""
+    from tools.eos.saas.strategy_project_relationship_registry import LINK_COLLECTION, EVENT_COLLECTION
+
+    database = {LINK_COLLECTION: Collection(), EVENT_COLLECTION: Collection()}
+    monkeypatch.setattr(http.kernel_db, "get_database", lambda: database)
+    actor = SimpleNamespace(tenant_id=TENANT, identity=SimpleNamespace(identity_id="author"))
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http._READ] = lambda: actor
+    app.dependency_overrides[http._AUTHOR] = lambda: actor
+    app.dependency_overrides[http._PROJECT_READ] = lambda: actor
+    client = TestClient(app)
+    result = client.post("/api/company-operating-documents/STRATEGY/project-links",
+        headers={"Idempotency-Key": "strict-index"},
+        json={"pillar_id": "pillar-one", "project_id": "prj-" + "a" * 48,
+              "expected_strategy_revision": 3, "expected_project_revision": 6})
+    assert result.status_code == 503
+    assert result.json()["detail"]["error"] == "STRATEGY_LINK_INDEX_UNAVAILABLE"
+    assert database[LINK_COLLECTION].indexes == {} and database[EVENT_COLLECTION].indexes == {}
+
+
 def test_enterprise_admin_read_is_explicit_and_all_other_document_authority_remains_dedicated():
     """Only Enterprise Admin adds read; author, publish and review stay separately scoped."""
     permissions = {"company_operating_document:read", "company_operating_document:author", "company_operating_document:publish"}
@@ -356,7 +457,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.3.0-ENTERPRISE-ADMIN-READ-CERT
+# VERSION: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
