@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.54.0-VIEWPORT-CONTRIBUTOR-SELECTOR-CERT
+ * VERSION: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,7 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT verifies tenant employee names appear in the task Assignee selector as candidate choices and selecting a candidate opens a preselected explicit contributor grant. The task draft is assigned only after independent exact-project readback, not by dropdown choice alone.
  * CHANGELOG: v2.54.0-VIEWPORT-CONTRIBUTOR-SELECTOR-CERT tests immediately visible contributor admission dialog instead of the offscreen inline panel, with the original task editor draft preserved and EOS readback gating assignment.
  * CHANGELOG: v2.53.0-COLLAPSIBLE-FILTERS-AND-ASSIGNEE-ONBOARDING-CERT certifies default-collapsed work filters and source-backed contributor admission from an unassigned task editor, retaining the draft and refreshing assignees only after independent participant readback; no IAM grant or task write.
  * CHANGELOG: v2.52.0-SELECTED-TASK-LOCATOR-LIFECYCLE-CERT verifies an open
@@ -1339,12 +1340,17 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       target: { value: 'Preserved governance draft' },
     });
     expect(screen.getByText(/No verified project contributors are eligible/)).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Manage eligible contributors' }));
+    const assignee = screen.getByRole('combobox', { name: 'Task assignee' });
+    const candidate = within(assignee).getByRole('option', {
+      name: 'Alex Mokoena · Authorize contributor',
+    });
+    expect(candidate).toHaveValue('member:' + memberId);
+    fireEvent.change(assignee, { target: { value: 'member:' + memberId } });
     const management = await screen.findByRole('dialog', { name: 'Manage contributors for task assignment' });
     expect(management).toBeVisible();
     expect(within(management).getByRole('button', { name: 'Close' })).toHaveFocus();
     const eligible = await within(management).findByRole('combobox', { name: 'Eligible participant' });
-    fireEvent.change(eligible, { target: { value: memberId } });
+    expect(eligible).toHaveValue(memberId);
     fireEvent.click(within(management).getByRole('button', { name: /Add participant/ }));
     await waitFor(() => expect(within(screen.getByRole('combobox', { name: 'Task assignee' }))
       .getByRole('option', { name: 'Alex Mokoena' })).toHaveValue(memberId));
@@ -2300,7 +2306,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.54.0-VIEWPORT-CONTRIBUTOR-SELECTOR-CERT
+ * VERSION: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
