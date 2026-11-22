@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Project Task Source-Owned Work Purpose Panel
- * VERSION: v1.0.1-STALE-TASK-PURPOSE-RECOVERY
+ * VERSION: v1.1.0-AUDITED-UNCLASSIFIED-CLEARANCE-CONTROL
  * AUTHORITY: Python EOS Projects work-purpose GET/POST owns source and audit.
  * EPITOME: One focused project task classification action with reason and CAS.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkPurposePanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel provides already verified task
  * coordinates; EOS independently reauthorizes project:update and task revision.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.1.0-AUDITED-UNCLASSIFIED-CLEARANCE-CONTROL
+ * permits explicit, reasoned return to Needs classification with the same
+ * source-owned CAS/audit and independent readback; no silent deletion.
  * CHANGELOG: v1.0.1-STALE-TASK-PURPOSE-RECOVERY accepts an
  * audited metadata revision greater than zero for tasks whose old purpose
  * was invalidated by a source-task edit; no old category is displayed.
@@ -92,7 +95,7 @@ export default function ProjectWorkPurposePanel({
 
   const save = async event => {
     event.preventDefault();
-    if (!canClassify || state !== 'READY' || !read || !OPTIONS.slice(0, 2).includes(purpose)
+    if (!canClassify || state !== 'READY' || !read || !OPTIONS.includes(purpose)
       || reason.trim().length < 10 || reason.trim().length > 1000) return;
     const body = {
       audience: purpose, reason: reason.trim(),
@@ -173,6 +176,7 @@ export default function ProjectWorkPurposePanel({
           className="w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-slate-950">
           <option value="OPERATING">Operating</option>
           <option value="PLATFORM_BUILD">Platform Build</option>
+          <option value="UNCLASSIFIED">Needs classification (clear purpose)</option>
         </select>
         <label className="block text-sm font-semibold text-slate-900" htmlFor="task-work-purpose-reason">
           Classification rationale
@@ -199,7 +203,7 @@ export default function ProjectWorkPurposePanel({
 export { assertPurpose };
 
 // ARTIFACT: ProjectWorkPurposePanel.jsx
-// VERSION: v1.0.1-STALE-TASK-PURPOSE-RECOVERY
+// VERSION: v1.1.0-AUDITED-UNCLASSIFIED-CLEARANCE-CONTROL
 // AUTHORITY BOUNDARY: Explicit command only; source validates IAM and revision.
 // TENANT POSTURE: Exact source and actor response verification.
 // FAIL-CLOSED POSTURE: Unverified receipt or independent readback never succeeds.
