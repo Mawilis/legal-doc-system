@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.39.0-VERIFIED-ACTIVE-PROJECT-DETAILS
+ * VERSION: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -15,6 +15,7 @@
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING plans multiple safe read-only operations in one Projects source turn from verified conversation context, including 'How many are active and what are details?'. Reuses independently authorised EOS source reads and never sends the combined request to paid inference. Rejects mixed domain, ambiguous and write commands; no IAM or financial changes.
  * CHANGELOG: v4.39.0-VERIFIED-ACTIVE-PROJECT-DETAILS continues a verified Projects status conversation into source-authorised active-project detail, using independent exact-tenant summary, bounded status-filtered list and detail GETs, validating each response; no model request, inferred project data, financial authority, tenant expansion or held-admission changes.
  * CHANGELOG: v4.38.0-SOURCE-GROUNDED-FOLLOWUP-CONTEXT preserves semantic topic continuity only from the previous explicitly verified Projects source reply. A bounded count/status grammar handles natural and imperfect follow-ups (including 'How may are active?') with fresh EOS readback of total/active/planned/on_hold/done/cancelled, not brittle canned answers or paid provider calls. Every read is tenant/principal validated; ungrounded requests retain consented EOS reasoning.
  * CHANGELOG: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT answers strictly scoped project portfolio count requests from independent exact-tenant/principal EOS Projects summary (GET only), verifying the canonical status-count envelope. No paid reasoning, guessed count, permissions, persistence or reconciliation changes; denial/unavailability remains explicit.
@@ -341,6 +342,52 @@ function classifyWilsyActiveProjectDetailIntent(value, previousTurns = []) {
   if (!hasProjectTopic || !/\bactive\b/.test(text)) return false;
   if (/\b(?:employees?|tasks?|invoices?|meetings?|people|clients?|financial|delete|archive|update|change|edit|assign|create|approve|payments?)\b/.test(text)) return false;
   return /^(?:what (?:are|is) (?:the )?details? (?:of|about|for) (?:the |my |our )?active projects?|(?:tell me about|show|give me|describe) (?:the |my |our )?(?:details? (?:of|for) )?active projects?|(?:show|give me) (?:the )?details? (?:of|for) (?:the |my |our )?active projects?)$/.test(text);
+}
+
+/**
+ * @function planWilsyGovernedReadOnlyQuestion
+ * @description Composes a bounded multi-step source-read plan from verified
+ * conversation context. This is NOT general LLM parsing or model-generated
+ * tool calling: only registered read operations can execute, and each EOS
+ * endpoint independently reauthorises the selected tenant and principal.
+ *
+ * Composition is intentionally separate from source execution, so future
+ * read-only business capabilities can register their own schemas, validators,
+ * and provenance contracts without creating hundreds of canned replies.
+ */
+function planWilsyGovernedReadOnlyQuestion(value, previousTurns = []) {
+  const text = String(value || '').trim().toLowerCase()
+    .replace(/[?!.;,]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text || text.length > 220) return null;
+
+  const previous = Array.isArray(previousTurns) ? previousTurns.at(-1) : null;
+  const previousVerifiedProjects = previous?.role === 'assistant'
+    && ['WILSY_EOS_PROJECT_SUMMARY', 'WILSY_EOS_PROJECT_DETAIL'].includes(previous?.meta?.source)
+    && previous?.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && previous?.meta?.domain === 'PROJECTS';
+  if (!previousVerifiedProjects && !/\bprojects?\b/.test(text)) return null;
+  // This capability is strictly a read-only, tenant-wide Projects query.
+  if (/\b(?:employees?|tasks?|clients?|staff|meetings?|invoices?|payments?|revenue|budgets?|people|delete|change|edit|create|archive|assign|approve|transfer|update|after|before|yesterday|tomorrow)\b/.test(text)) return null;
+
+  const clauses = text.split(/\s+(?:and|&)\s+/);
+  if (clauses.length !== 2) return null;
+
+  const count = classifyWilsyProjectPortfolioCountIntent(clauses[0], previousTurns);
+  if (count?.status !== 'active') return null;
+
+  // The requested details refer only to the active Projects established by
+  // clause one; no entity ID, personal identity or authority is inferred.
+  const detailsClause = clauses[1];
+  if (!/^(?:(?:what (?:are|is) (?:the )?)|(?:(?:show|give|tell) me (?:the )?))details?(?: (?:of|about|for) (?:the |my |our )?(?:active )?projects?)?$/.test(detailsClause)) {
+    return null;
+  }
+  return Object.freeze({
+    domain: 'PROJECTS',
+    operations: Object.freeze(['VERIFY_STATUS_COUNTS', 'READ_ACTIVE_LIST', 'READ_PROJECT_DETAIL_IF_UNIQUE']),
+    status: 'active',
+    includeCount: true,
+    includeDetails: true,
+  });
 }
 
 /**
@@ -1318,10 +1365,14 @@ export function WilsyOSIntelligenceDock({
       const localClockReply = isLegalDockRole(authUser?.role)
         ? null : resolveWilsyLocalClock(text);
       const localNonmeteredReply = localCourtesyReply || localClockReply;
-      const projectCountIntent = isLegalDockRole(authUser?.role)
-        ? null : classifyWilsyProjectPortfolioCountIntent(text, activeThread?.messages);
-      const activeProjectDetailIntent = !isLegalDockRole(authUser?.role)
-        && classifyWilsyActiveProjectDetailIntent(text, activeThread?.messages);
+      const governedReadPlan = isLegalDockRole(authUser?.role)
+        ? null : planWilsyGovernedReadOnlyQuestion(text, activeThread?.messages);
+      const projectCountIntent = governedReadPlan
+        ? null : isLegalDockRole(authUser?.role)
+          ? null : classifyWilsyProjectPortfolioCountIntent(text, activeThread?.messages);
+      const activeProjectDetailIntent = Boolean(governedReadPlan)
+        || (!isLegalDockRole(authUser?.role)
+          && classifyWilsyActiveProjectDetailIntent(text, activeThread?.messages));
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1483,6 +1534,10 @@ export function WilsyOSIntelligenceDock({
           const counts = verifyWilsyProjectPortfolioSummary(
             summaryResponse?.data, exactTenant, exactPrincipal,
           );
+          const statusPrefix = governedReadPlan
+            ? counts.active + ' of your ' + counts.total
+              + ' projects are active, according to the current EOS Projects registry.\n\n'
+            : '';
           let responseText;
           if (counts.active === 0) {
             responseText = 'The current EOS Projects registry verifies no active projects in this tenant.';
@@ -1513,7 +1568,7 @@ export function WilsyOSIntelligenceDock({
             }
           }
           result = {
-            reply: responseText,
+            reply: statusPrefix + responseText,
             source: 'WILSY_EOS_PROJECT_DETAIL',
             phase: 'SOURCE_VERIFIED_READ_ONLY',
             domain: 'PROJECTS',
@@ -1824,7 +1879,8 @@ export function WilsyOSIntelligenceDock({
   const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages)
     || resolveWilsyLocalClock(prompt)
     || (!isLegalDockRole(authUser?.role)
-      && (classifyWilsyProjectPortfolioCountIntent(prompt, activeThread?.messages)
+      && (planWilsyGovernedReadOnlyQuestion(prompt, activeThread?.messages)
+        || classifyWilsyProjectPortfolioCountIntent(prompt, activeThread?.messages)
         || classifyWilsyActiveProjectDetailIntent(prompt, activeThread?.messages))));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
@@ -2566,7 +2622,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.39.0-VERIFIED-ACTIVE-PROJECT-DETAILS
+ * VERSION: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
