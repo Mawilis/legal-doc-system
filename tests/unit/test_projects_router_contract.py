@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT
+VERSION: v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT locks
+  immutable purpose history GET to exact project/detail IAM, bounded 25-event
+  readback and omission of actor IDs and idempotency tokens from response.
   v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT denies
   unrecognized classifications, fabricated critical gates, spoofed actor
   fields and impossible task revisions at strict Pydantic admission.
@@ -1254,6 +1257,68 @@ def test_project_list_retries_only_exact_transient_source_read(
     assert len(calls) == expected_attempts
 
 
+def test_project_work_purpose_history_uses_read_only_source_authority(monkeypatch):
+    """No audit replay data or internal principal identifiers leave the route."""
+    project_id = "prj-" + "a" * 48
+    task_id = "ptk-" + "b" * 48
+    actor = SimpleNamespace(
+        tenant_id="synthetic-tenant",
+        identity=SimpleNamespace(identity_id="synthetic-reader"),
+    )
+    task = SimpleNamespace(task_id=task_id, revision=3)
+
+    class Tasks:
+        def get(self, **kwargs):
+            assert kwargs["tenant_id"] == actor.tenant_id
+            assert kwargs["project_id"] == project_id
+            assert kwargs["task_id"] == task_id
+            return task
+
+    class Source:
+        def history_for_task(self, *, task: object, session: object, limit: int):
+            assert task is task_ref
+            assert session == "read-transaction"
+            assert limit == 25
+            return [{
+                "revision": 1,
+                "audience": "PLATFORM_BUILD",
+                "reason": "Verified independent source engineering classification.",
+                "recorded_at": "2026-11-23T00:00:00+00:00",
+                "task_revision": 3,
+            }], False
+
+    task_ref = task
+    calls = []
+
+    def transaction(context, operation, **kwargs):
+        assert context is actor and kwargs == {}
+        calls.append(True)
+        return operation(object(), "read-transaction")
+
+    monkeypatch.setattr(projects_router, "_project_task_store", lambda *_args: Tasks())
+    monkeypatch.setattr(projects_router, "_work_purpose_store", lambda: Source())
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    result = projects_router.read_project_work_purpose_history(
+        response=Response(), project_id=project_id,
+        task_id=task_id, limit=25, context=actor,
+    )
+    assert result["schema"] == "WILSY-PROJECT-WORK-PURPOSE-HISTORY/V1"
+    assert result["principal_id"] == actor.identity.identity_id
+    assert len(result["items"]) == 1
+    assert result["items"][0]["audience"] == "PLATFORM_BUILD"
+    assert not any(secret in result["items"][0]
+                   for secret in ("actor_principal_id", "idempotency_key",
+                                  "request_fingerprint", "result_fingerprint"))
+    assert calls == [True]
+    routes = [route for route in projects_router.router.routes
+              if isinstance(route, APIRoute)]
+    history = next(route for route in routes
+                   if route.path == "/projects/{project_id}/tasks/{task_id}/work-purpose/events"
+                   and "GET" in route.methods)
+    assert any(dependency.call is projects_router._DETAIL
+               for dependency in history.dependant.dependencies)
+
+
 def test_project_work_purpose_input_never_accepts_inferred_authority():
     """Only bounded category, rationale and source revisions enter EOS."""
     model = projects_router.ProjectTaskWorkPurposeRequest
@@ -1485,7 +1550,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT
+# VERSION: v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
