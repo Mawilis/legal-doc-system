@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS
+ * VERSION: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS validates the accepted upload by one independent full exact-tenant/task paginated manifest GET without unmounting the selected file input. On uncertain readback, the original File and idempotency key remain available for explicit reconciliation; no silent duplicate upload.
  * CHANGELOG: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS separates rejected multipart commands, unconfigured S3/KMS transport and uncertain provider execution from accepted EOS upload receipts followed by readback mismatch. Maintains the same durable idempotency key and prevents silent replay or claimed completion without exact manifest confirmation.
  * CHANGELOG: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION makes the already-contributing canonical WILSY Founder able to explicitly request narrow contributor attachment IAM activation using an independently governed EOS command, then verifies the role admission response and rechecks original contributor GET. No automatic grant, client permission inference, replay of uploads, or fallback for paying tenants.
  * CHANGELOG: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION recognizes source-verified existing project contributor participation and never routes that member into a duplicate People onboarding path when independent attachment IAM denies. Shows the specific contributor HTTP denial and requires independent IAM/capacity remediation rather than project re-enrollment or silent grants.
@@ -435,27 +436,34 @@ export default function ProjectTaskAttachmentsPanel({
         || data.attachment.uploader_principal_id !== principalId
       ) throw new Error('PROJECT_ATTACHMENT_RESULT_INVALID');
       stage = 'READBACK';
-      const listed = await load(0);
-      if (!listed || current.current !== active) {
-        if (current.current === active) throw new Error('PROJECT_ATTACHMENT_READBACK_UNVERIFIED');
-        return;
-      }
-      // Reconcile independently from a fresh EOS read; never infer completion
-      // from a successful storage/command acknowledgement.
+      // One independently authenticated, exact-scope manifest readback.
+      // Do not call load(): it flips READY->LOADING and unmounts the selected
+      // file input before readback, losing the visible selection on failure.
       const { data: verification } = await api.get(
         readRoot + '/attachments?limit=50&offset=0', { headers },
       );
+      if (current.current !== active) return;
       if (
-        current.current !== active || verification?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
+        verification?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
         || verification.tenant_id !== tenantId || verification.principal_id !== principalId
         || verification.project_id !== projectId || verification.task_id !== taskId
-        || !Array.isArray(verification.items)
+        || verification.limit !== 50 || verification.offset !== 0
+        || !Array.isArray(verification.items) || verification.items.length > 50
+        || typeof verification.has_more !== 'boolean'
+        || (verification.has_more && verification.items.length === 0)
+        || verification.next_offset !== (verification.has_more
+          ? verification.items.length : null)
+        || verification.items.some(item => !valid(item, tenantId, projectId, taskId))
+        || new Set(verification.items.map(item => item.attachment_id)).size !== verification.items.length
         || !verification.items.some(item =>
-          valid(item, tenantId, projectId, taskId)
-          && item.attachment_id === data.attachment.attachment_id
+          item.attachment_id === data.attachment.attachment_id
           && item.content_sha3_512 === data.attachment.content_sha3_512
+          && item.uploader_principal_id === principalId
         )
       ) throw new Error('PROJECT_ATTACHMENT_READBACK_UNVERIFIED');
+      setItems(verification.items);
+      setOffset(0);
+      setHasMore(verification.has_more);
       setFile(null);
       uploadOrigin.current = { fingerprint: '', key: '' };
     } catch (failure) {
@@ -576,7 +584,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS
+// VERSION: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
