@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Project Task Source-Owned Work Purpose Panel
- * VERSION: v1.2.0-VERIFIED-PURPOSE-AUDIT-TIMELINE
+ * VERSION: v1.2.1-SESSION-STABLE-AUDIT-HISTORY-READ
  * AUTHORITY: Python EOS Projects work-purpose GET/POST owns source and audit.
  * EPITOME: One focused project task classification action with reason and CAS.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkPurposePanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel provides already verified task
  * coordinates; EOS independently reauthorizes project:update and task revision.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.2.1-SESSION-STABLE-AUDIT-HISTORY-READ
+ * separates source-read and audit-read generations, preventing a concurrent
+ * history request from blocking fresh source recovery. Transport headers
+ * are memoized by exact supplied session values, not object identity.
  * CHANGELOG: v1.2.0-VERIFIED-PURPOSE-AUDIT-TIMELINE adds
  * a user-invoked, bounded source-owned classification history with verified
  * exact task/tenant/principal and chronological revisions. History and
@@ -28,7 +32,7 @@
  * AUTHORITY BOUNDARY: Only EOS can admit project:update or persist metadata.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../services/api.js';
 
 const SCHEMA = 'WILSY-PROJECT-WORK-PURPOSE/V1';
@@ -88,14 +92,17 @@ export default function ProjectWorkPurposePanel({
   const [historyState, setHistoryState] = useState('CLOSED');
   const operation = useRef(null);
   const epoch = useRef(0);
+  const historyEpoch = useRef(0);
+  const headerSignature = JSON.stringify(tenantHeaders || {});
+  const stableHeaders = useMemo(() => tenantHeaders || {}, [headerSignature]);
   const path = '/projects/' + encodeURIComponent(projectId)
     + '/tasks/' + encodeURIComponent(task.task_id) + '/work-purpose';
   const scope = { task, projectId, tenantId, principalId };
 
   const refresh = useCallback(async (signal) => {
-    const { data } = await api.get(path, { headers: tenantHeaders, signal });
+    const { data } = await api.get(path, { headers: stableHeaders, signal });
     return assertPurpose(data, scope);
-  }, [path, tenantHeaders, tenantId, principalId, projectId, task]);
+  }, [path, stableHeaders, tenantId, principalId, projectId, task]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,6 +112,7 @@ export default function ProjectWorkPurposePanel({
     setMessage('');
     setHistory(null);
     setHistoryState('CLOSED');
+    historyEpoch.current += 1;
     void refresh(controller.signal).then(result => {
       if (epoch.current !== id) return;
       setRead(result);
@@ -116,7 +124,7 @@ export default function ProjectWorkPurposePanel({
         ? 'DENIED' : 'UNAVAILABLE');
       setMessage('EOS could not verify the current work classification. No change is authorized.');
     });
-    return () => { controller.abort(); epoch.current += 1; };
+    return () => { controller.abort(); epoch.current += 1; historyEpoch.current += 1; };
   }, [refresh]);
 
   const save = async event => {
@@ -159,6 +167,7 @@ export default function ProjectWorkPurposePanel({
       setState('READY');
       setHistory(null);
       setHistoryState('CLOSED');
+      historyEpoch.current += 1;
       setReason('');
       setMessage('Source classification verified and audit persisted in EOS.');
       operation.current = null;
@@ -178,18 +187,18 @@ export default function ProjectWorkPurposePanel({
       setHistoryState('CLOSED'); return;
     }
     if (historyState === 'LOADING') return;
-    const id = ++epoch.current;
+    const id = ++historyEpoch.current;
     setHistoryState('LOADING');
     try {
       const { data } = await api.get(path + '/events', {
-        headers: tenantHeaders, params: { limit: 25 },
+        headers: stableHeaders, params: { limit: 25 },
       });
       const accepted = assertHistory(data, scope);
-      if (epoch.current !== id) return;
+      if (historyEpoch.current !== id) return;
       setHistory(accepted);
       setHistoryState('READY');
     } catch {
-      if (epoch.current === id) setHistoryState('UNAVAILABLE');
+      if (historyEpoch.current === id) setHistoryState('UNAVAILABLE');
     }
   };
 
@@ -284,7 +293,7 @@ export default function ProjectWorkPurposePanel({
 export { assertPurpose, assertHistory };
 
 // ARTIFACT: ProjectWorkPurposePanel.jsx
-// VERSION: v1.2.0-VERIFIED-PURPOSE-AUDIT-TIMELINE
+// VERSION: v1.2.1-SESSION-STABLE-AUDIT-HISTORY-READ
 // AUTHORITY BOUNDARY: Explicit command only; source validates IAM and revision.
 // TENANT POSTURE: Exact source and actor response verification.
 // FAIL-CLOSED POSTURE: Unverified receipt or independent readback never succeeds.
