@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS
+ * VERSION: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -15,6 +15,7 @@
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT answers strictly scoped project portfolio count requests from independent exact-tenant/principal EOS Projects summary (GET only), verifying the canonical status-count envelope. No paid reasoning, guessed count, permissions, persistence or reconciliation changes; denial/unavailability remains explicit.
  * CHANGELOG: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS answers strictly bounded current-time requests from the local device clock and reveals newly persisted assistant text progressively with accessible reduced-motion fallbacks. No provider call, EOS admission, IAM expansion, quota bypass, or historical replay.
  * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY responds naturally to greetings and tightly scoped day-status acknowledgements after a verified built-in turn (including the previous certified wording) in the same session. No model invocation, quota admission, inferred work, or bypass for substantive prompts.
  * CHANGELOG: v4.33.0-INLINE-CONVERSATIONAL-WORK-ACTIONS converts oversized work-navigation, recovery and contextual follow-ups into accessible inline transcript actions with coherent hierarchy and focus states. The five EOS-authorised CRM tasks remain source-owned; no task mutations, AI charges, changes to admissibility or fabricated records.
@@ -257,6 +258,38 @@ function resolveWilsyLocalCourtesy(value, previousTurns = []) {
     return 'You’re welcome. What would you like to do next?';
   }
   return null;
+}
+
+/**
+ * @function classifyWilsyProjectPortfolioCountIntent
+ * @description Strictly admit a tenant-wide read-only project count question.
+ * The actual number comes only from EOS Projects summary with current IAM,
+ * never from browser-held project lists, inference, or an untrusted snapshot.
+ */
+function classifyWilsyProjectPortfolioCountIntent(value) {
+  const text = String(value || '').trim();
+  if (!text || text.length > 120) return false;
+  return /^(?:(?:how many|number of)\s+(?:(?:projects)\s+(?:do i have|are there|in (?:my|our|the) (?:tenant|workspace|portfolio|organisation|organization|company))|(?:(?:my|our|the)\s+projects)\s+(?:do i have|are there))|(?:what(?:'s| is) (?:my|our|the) (?:total )?project count)|(?:count (?:my|our|the) projects))[?.!\s]*$/i.test(text);
+}
+
+/**
+ * @function verifyWilsyProjectPortfolioSummary
+ * @description Accept only a complete current EOS project-count envelope
+ * matching both the selected tenant and authenticated principal. A missing
+ * status, inconsistent total, or cross-scope response fails closed.
+ */
+function verifyWilsyProjectPortfolioSummary(payload, tenantId, principalId) {
+  const counts = payload?.counts;
+  const statuses = ['active', 'planned', 'on_hold', 'done', 'cancelled'];
+  if (payload?.schema !== 'WILSY-PROJECT-SUMMARY/V1'
+    || payload?.tenant_id !== tenantId
+    || payload?.principal_id !== principalId
+    || !counts || !Number.isSafeInteger(counts.total) || counts.total < 0
+    || !statuses.every((key) => Number.isSafeInteger(counts[key]) && counts[key] >= 0)
+    || statuses.reduce((total, key) => total + counts[key], 0) !== counts.total) {
+    throw new Error('WILSY_PROJECT_SUMMARY_UNVERIFIED');
+  }
+  return counts;
 }
 
 /**
@@ -1143,6 +1176,8 @@ export function WilsyOSIntelligenceDock({
       const localClockReply = isLegalDockRole(authUser?.role)
         ? null : resolveWilsyLocalClock(text);
       const localNonmeteredReply = localCourtesyReply || localClockReply;
+      const projectCountIntent = !isLegalDockRole(authUser?.role)
+        && classifyWilsyProjectPortfolioCountIntent(text);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1156,7 +1191,7 @@ export function WilsyOSIntelligenceDock({
       // A server-confirmed reconciliation hold is not an uncertain network
       // retry. Preserve the draft but refuse further sends of this exact
       // attempt, including the Enter key and dynamic suggestion route.
-      if (!localNonmeteredReply
+      if (!localNonmeteredReply && !projectCountIntent
         && reasoningReplayRef.current.blocked === true
         && reasoningReplayRef.current.scope === dockScopeRef.current
         && reasoningReplayRef.current.text === text
@@ -1164,15 +1199,15 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('This request is awaiting EOS execution and usage reconciliation. No verified answer exists. Resubmitting the same request is blocked.');
         return;
       }
-      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
+      if (!localNonmeteredReply && !projectCountIntent && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
         setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
         return;
       }
-      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
+      if (!localNonmeteredReply && !projectCountIntent && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
         setErrorMessage('Workspace information is available, but the EOS AI provider is not configured.');
         return;
       }
-      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
+      if (!localNonmeteredReply && !projectCountIntent && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
       }
@@ -1180,7 +1215,7 @@ export function WilsyOSIntelligenceDock({
         && visibleWorkspaceContext?.state === 'READY'
         && visibleWorkspaceContext.data.work?.project?.project_id === workLocator.project_id
         ? { ...workLocator } : null;
-      if (!localNonmeteredReply && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
+      if (!localNonmeteredReply && !projectCountIntent && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
         setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
         return;
       }
@@ -1250,6 +1285,33 @@ export function WilsyOSIntelligenceDock({
             phase: 'NON_GENERATIVE_BUILT_IN',
             domain: 'GENERAL',
             tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
+          };
+        } else if (projectCountIntent) {
+          const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+          const exactPrincipal = authUser?.id;
+          if (typeof exactTenant !== 'string' || !exactTenant.trim()
+            || typeof exactPrincipal !== 'string' || !exactPrincipal.trim()) {
+            throw new Error('WILSY_PROJECT_SUMMARY_IDENTITY_UNVERIFIED');
+          }
+          // This route independently checks Projects entitlement and current
+          // tenant-authorized reader capacity. Never reuse stale UI totals.
+          const response = await api.get('/projects/summary', {
+            headers: { 'X-Tenant-ID': exactTenant },
+            timeout: 15000,
+            signal: controller.signal,
+          });
+          if (!requestIsCurrent()) return;
+          const counts = verifyWilsyProjectPortfolioSummary(
+            response?.data, exactTenant, exactPrincipal,
+          );
+          result = {
+            reply: counts.total === 1
+              ? 'You have 1 project in this tenant, according to the current EOS Projects registry.'
+              : 'You have ' + counts.total + ' projects in this tenant, according to the current EOS Projects registry.',
+            source: 'WILSY_EOS_PROJECT_SUMMARY',
+            phase: 'SOURCE_VERIFIED_READ_ONLY',
+            domain: 'PROJECTS',
+            tenantId: exactTenant,
           };
         } else if (isLegalDockRole(authUser?.role)) {
           const response = await executeWilsyAILegalServices(text, uuidv4());
@@ -1365,7 +1427,13 @@ export function WilsyOSIntelligenceDock({
           && status === 503 && detail === 'C1B_REASONING_RECONCILIATION_REQUIRED') {
           reasoningReplayRef.current = { ...reasoningReplayRef.current, blocked: true };
         }
-        const safeMessage = status === 401
+        const safeMessage = projectCountIntent
+          ? (status === 401
+            ? 'Sign in to inspect your Projects registry.'
+            : status === 403
+              ? 'The current account is not authorized to view this tenant’s Projects summary.'
+              : 'I cannot verify your Projects count from EOS right now. No project total was guessed, and no AI request was sent.')
+          : status === 401
           ? 'Authentication is required to use WILSY AI.'
           : status === 403 ? 'WILSY AI permission or subscription entitlement is not verified.'
           : status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT'
@@ -1544,7 +1612,8 @@ export function WilsyOSIntelligenceDock({
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
   const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages)
-    || resolveWilsyLocalClock(prompt));
+    || resolveWilsyLocalClock(prompt)
+    || (!isLegalDockRole(authUser?.role) && classifyWilsyProjectPortfolioCountIntent(prompt)));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
       .filter(value => typeof value === 'string' && value.trim()).join(' '),
@@ -1897,7 +1966,9 @@ export function WilsyOSIntelligenceDock({
                           : msg.meta?.source === 'WILSY_LOCAL_COURTESY'
                             ? 'WILSY OS · Built-in reply'
                             : msg.meta?.source === 'WILSY_LOCAL_DEVICE_TIME'
-                              ? 'WILSY OS · Device time' : 'WILSY OS'}</span>
+                              ? 'WILSY OS · Device time'
+                              : msg.meta?.source === 'WILSY_EOS_PROJECT_SUMMARY'
+                                ? 'WILSY OS · Verified Projects' : 'WILSY OS'}</span>
                         <span>
                           {msg.timestamp
                             ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -2283,7 +2354,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS
+ * VERSION: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
