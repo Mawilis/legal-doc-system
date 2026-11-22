@@ -90,7 +90,7 @@ export default function ProjectTaskAttachmentsPanel({
     setUploadReadState('UNVERIFIED');
     setError('');
     try {
-      const { data } = await api.get(readRoot + '/attachments?limit=50&offset= + nextOffset, { headers });
+      const { data } = await api.get(readRoot + '/attachments?limit=50&offset=' + nextOffset, { headers });
       if (request !== generation.current || current.current !== active) return false;
       if (
         data?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
@@ -308,7 +308,7 @@ export default function ProjectTaskAttachmentsPanel({
       // Reconcile independently from a fresh EOS read; never infer completion
       // from a successful storage/command acknowledgement.
       const { data: verification } = await api.get(
-        root + '/attachments?limit=50&offset=0', { headers },
+        readRoot + '/attachments?limit=50&offset=0', { headers },
       );
       if (
         current.current !== active || verification?.schema !== 'WILSY-PROJECT-ATTACHMENT-LIST/V1'
@@ -366,7 +366,7 @@ export default function ProjectTaskAttachmentsPanel({
                 ? 'Owner-authorized attachment records are available, but contributor attachment authority is not verified. Upload remains disabled.'
                 : 'Owner access can read attachment manifests but cannot upload. Current project contributor admission and project:participant:contribute are required.'}
       </p>
-      {!participantMode && typeof onManageContributors === 'function' &&
+      {!uploadReadVerified && typeof onManageContributors === 'function' &&
         <button type="button" className="wp-button mt-3"
           onClick={onManageContributors}>Open project People to authorize a contributor</button>}
     </div>
