@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.21.0-CONTROLLED-INTENT-NONMETERED-UI-CERT
+ * VERSION: v1.21.1-ONDEMAND-FAILCLOSED-CONTEXT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.21.1-ONDEMAND-FAILCLOSED-CONTEXT-CERT preserves negative Founder activation, stale-context rejection and revoked-source privacy assertions after the operator explicitly chooses source inspection; no failed evidence displayed at rest.
  * CHANGELOG: v1.21.0-CONTROLLED-INTENT-NONMETERED-UI-CERT certifies the attached controlled UI requirement: no status cards at rest, read-only source intent selection without consent/POST, on-demand verified task rows, fail-closed denied/unavailable source, keyboard intent route and retained metered-permission boundary.
  * CHANGELOG: v1.20.2-CONTEXTUAL-NAVIGATION-EXPECTATIONS retains existing branded, history and legal navigation coverage against the real conversation-first labels without reintroducing decorative tabs.
  * CHANGELOG: v1.20.1-CURRENT-SESSION-THREAD-CERT certifies asynchronous in-memory thread creation/clear, automatic return to the single conversation, and suppression of phantom empty recent-history cards.
@@ -872,8 +873,10 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'other-person', tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    await waitFor(() => expect(screen.getByText('Verified workspace context unavailable.'))
-      .toBeVisible());
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
+    expect(screen.queryByText('Verified workspace context unavailable.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    await waitFor(() => expect(screen.getByText('Verified workspace context unavailable.')).toBeVisible());
     expect(screen.queryByRole('button', {
       name: 'Activate Founder Institutional AI',
     })).not.toBeInTheDocument();
@@ -911,6 +914,7 @@ describe('WilsyOSIntelligenceDock', () => {
       fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
       await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) =>
         path === '/wilsy-ai/reasoning/context')).toBe(true));
+      fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
       await waitFor(() => expect(screen.getByText(status === 401 || status === 403
         ? 'Workspace context access denied by EOS.'
         : status === 409
@@ -936,6 +940,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'founder-operator', tenantId: tenant, role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
     const action = await screen.findByRole('button', {
       name: 'Activate Founder Institutional AI',
     });
@@ -965,6 +970,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'founder-operator', tenantId: tenant, role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
     fireEvent.click(await screen.findByRole('button', {
       name: 'Activate Founder Institutional AI',
     }));
@@ -1110,6 +1116,9 @@ describe('WilsyOSIntelligenceDock', () => {
     mockApiGet.mockRejectedValue(rejectedResponse(status, 'safe-source-code'));
     render(<WilsyOSIntelligenceDock authUser={{ id: 'context-person', tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
+    expect(screen.queryByText(copy)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
     expect(await screen.findByText(copy)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
@@ -1130,6 +1139,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(obsoleteSignal.aborted).toBe(true);
     await act(async () => finish({ data: { work: { project: { name: 'Obsolete source secret' } } } }));
     expect(screen.queryByText('Obsolete source secret')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
     expect(await screen.findByText('Workspace context access denied by EOS.')).toBeVisible();
   });
 
@@ -1477,7 +1487,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.21.0-CONTROLLED-INTENT-NONMETERED-UI-CERT
+ * VERSION: v1.21.1-ONDEMAND-FAILCLOSED-CONTEXT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
