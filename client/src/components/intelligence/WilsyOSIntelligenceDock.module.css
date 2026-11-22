@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.5.0-FLUID-CONVERSATION-READING-SURFACE
+ * VERSION: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS makes the two-entry conversation/history navigation a compact toolbar and renders authenticated session threads as text rows, not dark static cards; reuses existing focus and keyboard contrast.
  * CHANGELOG: v1.5.0-FLUID-CONVERSATION-READING-SURFACE gives verified EOS source projections and assistant replies one fluid reading column, removes assistant card treatments, preserves restrained user turns and the independently scrollable conversation with anchored composer, and tightens mobile typography. Pure presentation, no authority changes.
  * CHANGELOG: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE replaces boxed top tabs with
  * compact text-first navigation, uses a restrained neural gradient in the
@@ -1066,9 +1067,47 @@
   .intelligenceDockContainer .userBubble { max-width: 92%; }
 }
 
+/* Contextual single-conversation navigation and real recent-thread rows. */
+.intelligenceDockContainer .dockNavBar {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 6px clamp(12px, 2.5vw, 22px);
+}
+.intelligenceDockContainer .navTabButton {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  min-height: 44px;
+  font-size: 13px;
+}
+.intelligenceDockContainer .historyTabContent {
+  padding: 20px clamp(16px, 3.8vw, 32px);
+}
+.intelligenceDockContainer .threadsList {
+  gap: 0;
+}
+.intelligenceDockContainer .threadCard {
+  border: 0;
+  border-bottom: 1px solid rgba(164,183,205,.22);
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 13px 8px;
+  color: #e7eef9;
+  min-height: 52px;
+}
+.intelligenceDockContainer .threadCard:hover,
+.intelligenceDockContainer .activeThreadCard {
+  border-color: rgba(212,175,55,.42);
+  background: rgba(166,192,220,.07);
+}
+.intelligenceDockContainer .threadCard:focus-visible {
+  outline: 2px solid #a2ccff;
+  outline-offset: -2px;
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.5.0-FLUID-CONVERSATION-READING-SURFACE
+ * VERSION: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
