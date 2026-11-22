@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Source-Owned Project Work Purpose Certificate
-VERSION: v1.2.0-AUDITED-UNCLASSIFIED-REVERT-CERT
+VERSION: v1.3.0-IMMUTABLE-PURPOSE-HISTORY-CERT
 AUTHORITY: Test-only proof of canonical Projects work purpose commands.
 EPITOME: No-network immutable audit, current source, CAS, replay and denial.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_work_purpose_registry.py
 COLLABORATION / OWNERSHIP: ProjectWorkPurposeRegistry; Projects router
 remains responsible for live exact-tenant and project:update admission.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.3.0-IMMUTABLE-PURPOSE-HISTORY-CERT certifies
+bounded newest-first event history, source-event digest reconstruction,
+paginator count and corruption denial, preserving no replay leakage.
 CHANGELOG: v1.2.0-AUDITED-UNCLASSIFIED-REVERT-CERT proves
 audited reasoned clearance to UNCLASSIFIED without inventing live
 source-verified category, and later source-owner reclassification.
@@ -48,6 +51,25 @@ TASK = "ptk-" + "b" * 48
 ACTOR = "synthetic-project-owner"
 
 
+class Cursor:
+    """Small in-memory Mongo cursor supporting source history pagination."""
+
+    def __init__(self, rows):
+        self.rows = rows
+
+    def sort(self, fields):
+        assert fields == [("revision", -1)]
+        self.rows.sort(key=lambda row: row["revision"], reverse=True)
+        return self
+
+    def limit(self, count):
+        self.rows = self.rows[:count]
+        return self
+
+    def __iter__(self):
+        return iter(self.rows)
+
+
 class Collection:
     """Synthetic source collection honoring exact filtered equality and CAS."""
 
@@ -84,7 +106,7 @@ class Collection:
                 for key, expected in criteria.items()
             )
 
-        return [deepcopy(row) for row in self.rows if matches(row, query)]
+        return Cursor([deepcopy(row) for row in self.rows if matches(row, query)])
 
     def insert_one(self, row, session):
         """Insert once; caller owns transaction and retry policy."""
@@ -248,6 +270,31 @@ def test_batch_rejects_foreign_and_tampered_evidence(source):
         source[0].current_for_tasks(tasks=[task()], session="caller-session")
 
 
+def test_history_reconstructs_old_immutable_decision_digests(source):
+    """History never trusts event claims without matching source event digest."""
+    command(source)
+    command(source, audience="UNCLASSIFIED",
+            reason="Purpose withdrawn pending further owner investigation.",
+            expected_purpose_revision=1, idempotency_key="second-command")
+    page, has_more = source[0].history_for_task(
+        task=task(), session="caller-session", limit=1)
+    assert has_more is True
+    assert len(page) == 1
+    assert page[0]["revision"] == 2
+    assert page[0]["audience"] == "UNCLASSIFIED"
+    assert page[0]["reason"].startswith("Purpose withdrawn")
+    assert "idempotency_key" not in page[0]
+    all_events, more = source[0].history_for_task(
+        task=task(), session="caller-session", limit=25)
+    assert more is False
+    assert [event["revision"] for event in all_events] == [2, 1]
+    assert all("result_fingerprint" not in event for event in all_events)
+    source[2].rows[0]["reason"] = "Tampered historical justification."
+    with pytest.raises(WorkPurposeError, match="PROJECT_WORK_PURPOSE_AUDIT_INVALID"):
+        source[0].history_for_task(
+            task=task(), session="caller-session", limit=25)
+
+
 def test_divergent_replay_and_missing_audit_are_denied(source):
     """Idempotency cannot rewrite classification or mint unobserved evidence."""
     command(source)
@@ -283,7 +330,7 @@ def test_tampered_source_fingerprint_is_rejected(source):
 
 
 # ARTIFACT: test_project_work_purpose_registry.py
-# VERSION: v1.2.0-AUDITED-UNCLASSIFIED-REVERT-CERT
+# VERSION: v1.3.0-IMMUTABLE-PURPOSE-HISTORY-CERT
 # AUTHORITY BOUNDARY: Synthetic source registry proof, no IAM.
 # TENANT POSTURE: Strict coordinates and CAS, no cross-tenant read.
 # FAIL-CLOSED POSTURE: Divergent replay/tampered evidence deny.
