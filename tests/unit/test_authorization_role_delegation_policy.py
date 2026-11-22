@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorization-Role Delegation Certificate.
-VERSION: v1.4.0-PROJECTS-PLATFORM-OWNER-DELEGATION-CERT
+VERSION: v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT
 AUTHORITY: Direct certificate of explicit GD1 grant law.
 EPITOME: Certifies the explicit authorization-role delegation graph, exact WILSY-only admission-officer issuance, and fail-closed boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authorization_role_delegation_policy.py
@@ -11,6 +11,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 TRANSACTION BOUNDARY: No transaction ownership.
 CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
+    2026-11-22 v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT certifies exact WILSY-only Enterprise Admin invite of a narrow PROJECTS_PARTICIPANT_CONTRIBUTOR role and denies cross-tenant, revoked, other inviter or grant-free paths.
     2026-11-16 v1.4.0-PROJECTS-PLATFORM-OWNER-DELEGATION-CERT verifies the dedicated Projects role invitation edge is Enterprise-Admin-only and WILSY-tenant-only, with acceptance required before assignment.
     2026-11-15 v1.3.0-COMPANY-READER-DELEGATION-AND-ADMIN-READ-CERT confirms
     the static Enterprise Admin read permission does not alter the existing
@@ -36,6 +37,7 @@ ROLES = (
     "SERVICE_WORKER",
     "PLATFORM_EMPLOYEE_ADMISSION_OFFICER",
     "PROJECTS_PLATFORM_OWNER",
+    "PROJECTS_PARTICIPANT_CONTRIBUTOR",
 )
 EXPECTED = {
     ("ENTERPRISE_ADMIN", "AUDITOR"),
@@ -43,6 +45,7 @@ EXPECTED = {
     ("ENTERPRISE_ADMIN", "PLATFORM_EMPLOYEE_ADMISSION_OFFICER"),
     ("ENTERPRISE_ADMIN", "COMPANY_DOCUMENT_READER"),
     ("ENTERPRISE_ADMIN", "PROJECTS_PLATFORM_OWNER"),
+    ("ENTERPRISE_ADMIN", "PROJECTS_PARTICIPANT_CONTRIBUTOR"),
 }
 
 def assignment(role="ENTERPRISE_ADMIN", tenant="t1", status=RoleAssignmentStatus.ACTIVE):
@@ -50,9 +53,9 @@ def assignment(role="ENTERPRISE_ADMIN", tenant="t1", status=RoleAssignmentStatus
 
 @pytest.mark.parametrize("inviter", ROLES)
 @pytest.mark.parametrize("target", ROLES)
-def test_complete_thirty_six_pair_matrix(inviter, target):
+def test_complete_seven_role_pair_matrix(inviter, target):
     result = evaluate_authorization_role_grant(assignment(inviter), "t1", target)
-    expected = (inviter, target) in EXPECTED and target != PLATFORM_EMPLOYEE_ADMISSION_ROLE and not (target == PROJECTS_PLATFORM_OWNER_ROLE and "t1" != WILSY_COMPANY_TENANT_ID)
+    expected = (inviter, target) in EXPECTED and target != PLATFORM_EMPLOYEE_ADMISSION_ROLE and not (target in {PROJECTS_PLATFORM_OWNER_ROLE, PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE} and "t1" != WILSY_COMPANY_TENANT_ID)
     assert result.allowed is expected
 
 def test_allowed_edges_require_canonical_permission():
@@ -125,6 +128,33 @@ def test_projects_platform_owner_delegation_is_wilsy_only_and_explicit():
         assert denied.denial_code is AuthorizationRoleGrantDenialCode.GRANT_NOT_PERMITTED
 
 
+def test_project_contributor_grant_is_canonical_founder_only_and_not_inherited():
+    target = PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE
+    allowed = evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID),
+        WILSY_COMPANY_TENANT_ID, target,
+    )
+    assert allowed.allowed is True
+    assert ROLE_PERMISSIONS_MAP[target] == [
+        "project:participant:read", "project:participant:contribute",
+    ]
+    for tenant in ("t1", "customer-tenant"):
+        result = evaluate_authorization_role_grant(
+            assignment(tenant=tenant), tenant, target,
+        )
+        assert result.allowed is False
+        assert result.denial_code is AuthorizationRoleGrantDenialCode.GRANT_NOT_PERMITTED
+    for inviter in ("AUDITOR", "SERVICE_WORKER", "PROJECTS_PLATFORM_OWNER"):
+        assert not evaluate_authorization_role_grant(
+            assignment(role=inviter, tenant=WILSY_COMPANY_TENANT_ID),
+            WILSY_COMPANY_TENANT_ID, target,
+        ).allowed
+    assert not evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID, status=RoleAssignmentStatus.REVOKED),
+        WILSY_COMPANY_TENANT_ID, target,
+    ).allowed
+
+
 def test_company_reader_edge_is_explicit_tenant_local_and_non_possessory():
     assert evaluate_authorization_role_grant(assignment(tenant=WILSY_COMPANY_TENANT_ID), WILSY_COMPANY_TENANT_ID, COMPANY_DOCUMENT_READER_ROLE).allowed
     assert not evaluate_authorization_role_grant(assignment(), "t1", COMPANY_DOCUMENT_READER_ROLE).allowed
@@ -134,7 +164,7 @@ def test_company_reader_edge_is_explicit_tenant_local_and_non_possessory():
     assert "company_operating_document:publish" not in ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"]
 
 # ARTIFACT: test_authorization_role_delegation_policy.py
-# VERSION: v1.4.0-PROJECTS-PLATFORM-OWNER-DELEGATION-CERT
+# VERSION: v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT
 # AUTHORITY BOUNDARY: certificate only; no authority grant or assignment is created
 # TENANT POSTURE: platform-only Projects delegation is confined to the canonical WILSY company tenant
 # FAIL-CLOSED POSTURE: non-WILSY and unlisted delegation edges deny
