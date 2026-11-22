@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY
+ * VERSION: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD blocks the exact unresolved reconciliation attempt from manual resubmission while retaining its draft, preserving ordinary uncertain-transport exact-key retry and forbidding fabricated answers or browser quota mutations.
  * CHANGELOG: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY distinguishes confirmed completed usage from held reservations and available quota using EOS source fields, and preserves a reconciliation-required prompt with an explicit do-not-resubmit warning. No reservation state or financial facts are changed in the browser.
  * CHANGELOG: v4.18.0-REASONING-REPLAY-CONFLICT-RECOVERY handles a server-confirmed replay conflict without automatically reissuing an AI request: the original prompt stays editable, and only a separate operator Send generates a new idempotency key. No replay conflict is treated as provider outage.
  * CHANGELOG: v4.17.0-FOUNDER-INSTITUTIONAL-ACTIVATION-ACTION adds
@@ -922,6 +923,16 @@ export function WilsyOSIntelligenceDock({
     async (rawText) => {
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting || sendLockRef.current) return;
+      // A server-confirmed reconciliation hold is not an uncertain network
+      // retry. Preserve the draft but refuse further sends of this exact
+      // attempt, including the Enter key and dynamic suggestion route.
+      if (reasoningReplayRef.current.blocked === true
+        && reasoningReplayRef.current.scope === dockScopeRef.current
+        && reasoningReplayRef.current.text === text
+        && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current) {
+        setErrorMessage('This AI attempt requires EOS reconciliation. Do not resubmit the same question until the execution evidence is resolved.');
+        return;
+      }
       if (!isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
         setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
         return;
@@ -1104,9 +1115,14 @@ export function WilsyOSIntelligenceDock({
         const detail = err?.response?.data?.detail;
         if (!isLegalDockRole(authUser?.role)
           && status === 409 && detail === 'C1B_REASONING_REPLAY_CONFLICT') {
-          // A definitive server conflict cannot be reused. Never resubmit
-          // automatically: a new key is generated only on the next manual Send.
-          reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
+          // The server has confirmed this attempt cannot be replayed.
+          // Keep its draft but block same-question re-admission; a new
+          // question requires a deliberate different operator input.
+          reasoningReplayRef.current = { ...reasoningReplayRef.current, blocked: true };
+        }
+        if (!isLegalDockRole(authUser?.role)
+          && status === 503 && detail === 'C1B_REASONING_RECONCILIATION_REQUIRED') {
+          reasoningReplayRef.current = { ...reasoningReplayRef.current, blocked: true };
         }
         const safeMessage = status === 401
           ? 'Authentication is required to use WILSY AI.'
@@ -1597,7 +1613,11 @@ export function WilsyOSIntelligenceDock({
                     onClick={() => handleSendMessage()}
                     disabled={isSubmitting || !prompt.trim()
                       || (!isLegalDockRole(authUser?.role)
-                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable))}
+                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
+                          || (reasoningReplayRef.current.blocked === true
+                            && reasoningReplayRef.current.scope === dockScopeRef.current
+                            && reasoningReplayRef.current.text === prompt.trim()
+                            && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)))}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -1897,7 +1917,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.19.0-RECONCILIATION-CAPACITY-TRANSPARENCY
+ * VERSION: v4.20.0-RECONCILIATION-ATTEMPT-REPLAY-GUARD
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
