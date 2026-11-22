@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY
+ * VERSION: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK reads
+ *            separately governed Strategy/project link status through EOS,
+ *            validates exact tenant/principal/project/pillar, and offers a
+ *            deliberate source-authorized idempotent relationship command
+ *            only after 18 plan items are verified. A link is not a score
+ *            or Strategy publication and never implies financial authority.
  * CHANGELOG: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY shows real
  *            verified/remaining plan counts after a partial EOS admission;
  *            offers an explicit remaining-only retry, and disables creation
@@ -359,6 +365,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const projectMutation = useRef(null);
   const planMutation = useRef(null);
   const [planState, setPlanState] = useState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
+  const [strategyLink, setStrategyLink] = useState({ state: 'IDLE', items: [], message: '' });
+  const strategyLinkReadRef = useRef({ sequence: 0, controller: null });
+  const strategyLinkWriteRef = useRef(null);
   const projectReplay = useRef({ intent: '', key: null });
   const readId = useRef(0);
   const readController = useRef(null);
@@ -455,6 +464,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
             || page.next_offset !== offset + page.items.length || page.items.length === 0
           : page.next_offset !== null)) throw new Error('STRATEGY_PROJECT_TASK_READBACK_INVALID');
       setDelivery({ state: 'READY', projectId, page, error: '' });
+      if (projectItems.some(item => item.project_id === projectId && item.name === FOUNDATION_PROJECT_NAME)) void loadStrategyLinks();
     } catch (failure) {
       if (!active(key) || request !== deliveryReadRef.current.sequence) return;
       if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
@@ -473,12 +483,16 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     projectMutation.current = null;
     planMutation.current = null;
     setPlanState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
+    strategyLinkReadRef.current.sequence += 1;
+    strategyLinkReadRef.current.controller?.abort();
+    strategyLinkWriteRef.current = null;
+    setStrategyLink({ state: 'IDLE', items: [], message: '' });
     projectReplay.current = { intent: '', key: null };
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
     setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription(''); setProjectEditSource(false);
     setProjectPillar('pillar-one');
     if (classification === 'STRATEGY' && sessionKey) void loadProjects();
-    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); projectMutation.current = null; };
+    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); strategyLinkReadRef.current.sequence += 1; strategyLinkReadRef.current.controller?.abort(); strategyLinkWriteRef.current = null; projectMutation.current = null; };
   }, [classification, sessionKey, loadProjects]);
 
   /**
@@ -486,6 +500,103 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
    * per record and independent current task readback. No blind bulk insert:
    * noncanonical source, extra pages, uncertain POST or stale session halts.
    */
+  /**
+   * Independent EOS strategy/project source read, never an inferred linkage
+   * from navigation or matching project title.
+   */
+  const loadStrategyLinks = async () => {
+    const key = sessionKey;
+    const request = ++strategyLinkReadRef.current.sequence;
+    strategyLinkReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    strategyLinkReadRef.current.controller = controller;
+    setStrategyLink({ state: 'LOADING', items: [], message: '' });
+    if (!key || classification !== 'STRATEGY' || !scope.tenantId || !scope.principalId) {
+      setStrategyLink({ state: 'DENIED', items: [], message: 'Current Strategy scope is unverified.' });
+      return;
+    }
+    try {
+      const { data: result } = await api.get('/company-operating-documents/STRATEGY/project-links', {
+        headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token },
+        signal: controller.signal,
+      });
+      if (!active(key) || request !== strategyLinkReadRef.current.sequence) return;
+      if (result?.schema !== 'WILSY-STRATEGY-PROJECT-LINK-LIST/V1'
+        || result.tenant_id !== scope.tenantId || result.principal_id !== scope.principalId
+        || result.classification !== 'STRATEGY' || result.source_verified !== true
+        || result.strategy_progress !== null || !Number.isSafeInteger(result.strategy_revision)
+        || !Array.isArray(result.items) || result.items.length > 100
+        || result.items.some(item => !/^prj-[a-f0-9]{48}$/.test(item?.project_id)
+          || !/^pillar-(one|two|three|four|five|six)$/.test(item?.pillar_id)
+          || !['VERIFIED_CURRENT', 'SOURCE_CHANGED'].includes(item?.state))) {
+        throw new Error('STRATEGY_LINK_SOURCE_RESPONSE_INVALID');
+      }
+      setStrategyLink({ state: 'READY', items: result.items, message: '' });
+    } catch (failure) {
+      if (!active(key) || request !== strategyLinkReadRef.current.sequence) return;
+      if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      setStrategyLink({ state: 'UNAVAILABLE', items: [],
+        message: failure?.response?.status === 403
+          ? 'EOS did not admit current Strategy and Projects read permissions.'
+          : 'EOS could not verify the current Strategy project relationships. No link or progress is inferred.' });
+    }
+  };
+
+  /**
+   * Explicitly authorize and persist one linked publication/project snapshot;
+   * readback, not a successful POST alone, proves a current relationship.
+   */
+  const linkFoundationStrategy = async () => {
+    const key = sessionKey;
+    const project = projectItems.find(item => item.project_id === delivery.projectId
+      && item.name === FOUNDATION_PROJECT_NAME);
+    const published = classification === 'STRATEGY' && data?.state === 'PUBLISHED'
+      && query.review === false && Number.isSafeInteger(document?.revision)
+      && document?.sections?.some(section => section.section_id === 'pillar-one');
+    if (!key || !project || !published || delivery.state !== 'READY'
+      || foundationPlanRemaining !== 0 || delivery.page.has_more
+      || strategyLink.state !== 'READY' || strategyLinkWriteRef.current
+      || strategyLink.items.some(item => item.project_id === project.project_id
+        && item.pillar_id === 'pillar-one')) return;
+    const attempt = Symbol('strategy-project-link');
+    strategyLinkWriteRef.current = attempt;
+    setStrategyLink(prev => ({ ...prev, state: 'LINKING',
+      message: 'EOS is independently authorizing the Strategy and Projects sources…' }));
+    const headers = {
+      'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
+      'Idempotency-Key': 'strategy-pillar-one-foundation-v1-' + project.project_id,
+    };
+    try {
+      const { data: receipt } = await api.post('/company-operating-documents/STRATEGY/project-links', {
+        pillar_id: 'pillar-one', project_id: project.project_id,
+        expected_strategy_revision: document.revision,
+        expected_project_revision: project.revision,
+      }, { headers });
+      if (!active(key) || strategyLinkWriteRef.current !== attempt) return;
+      if (receipt?.schema !== 'WILSY-STRATEGY-PROJECT-LINK-RESULT/V1'
+        || receipt.tenant_id !== scope.tenantId || receipt.principal_id !== scope.principalId
+        || receipt.project_id !== project.project_id || receipt.pillar_id !== 'pillar-one'
+        || receipt.strategy_revision !== document.revision
+        || receipt.project_revision !== project.revision
+        || receipt.relationship_state !== 'RECORDED_NOT_OUTCOME_CERTIFIED'
+        || receipt.strategy_progress !== null) {
+        throw new Error('STRATEGY_LINK_COMMAND_RECEIPT_UNVERIFIED');
+      }
+      await loadStrategyLinks();
+    } catch (failure) {
+      if (active(key) && strategyLinkWriteRef.current === attempt) {
+        setStrategyLink({ state: 'UNAVAILABLE', items: [],
+          message: failure?.response?.status === 403
+            ? 'EOS denied Strategy author or Projects source authorization.'
+            : failure?.response?.status === 409
+              ? 'The published Strategy or project revision changed. Refresh both sources.'
+              : 'Link command or its readback could not be verified; refresh before any retry.' });
+      }
+    } finally {
+      if (strategyLinkWriteRef.current === attempt) strategyLinkWriteRef.current = null;
+    }
+  };
+
   const verifiedFoundationPlanCount = delivery.state === 'READY' && delivery.page
     ? FOUNDATION_EXECUTION_PLAN.filter(entry => delivery.page.items.some(item =>
       item.title === entry.title && item.kind === entry.kind)).length
@@ -977,6 +1088,32 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       {planState.state !== 'IDLE' && <p role="status" aria-live="polite">
                         {planState.message} {planState.state === 'RUNNING' ? planState.created + ' created so far.' : ''}
                       </p>}
+                      <div className={styles.strategyLinkPanel} aria-label="Governed Strategy project relationship">
+                        <div>
+                          <h4>Strategic Pillar 1 · Project relationship</h4>
+                          {strategyLink.state === 'LOADING' && <p role="status">Verifying current Strategy project link…</p>}
+                          {strategyLink.state === 'UNAVAILABLE' && <p role="alert">{strategyLink.message}</p>}
+                          {strategyLink.state === 'LINKING' && <p role="status">{strategyLink.message}</p>}
+                          {strategyLink.state === 'READY' && (() => {
+                            const item = strategyLink.items.find(row => row.pillar_id === 'pillar-one'
+                              && row.project_id === delivery.projectId);
+                            return item ? <p role="status">{item.state === 'VERIFIED_CURRENT'
+                              ? 'Linked in EOS · current Strategy and project snapshots verified. No outcome score certified.'
+                              : 'Linked record found; Strategy publication or project source changed. Reverification required.'}</p>
+                              : <p role="status">No governed relationship recorded for this project and pillar.</p>;
+                          })()}
+                        </div>
+                        {strategyLink.state === 'READY'
+                          && !strategyLink.items.some(item => item.project_id === delivery.projectId
+                            && item.pillar_id === 'pillar-one')
+                          && <button type="button" onClick={() => void linkFoundationStrategy()}
+                            disabled={foundationPlanRemaining !== 0 || data?.state !== 'PUBLISHED'
+                              || query.review || !document?.sections?.some(s => s.section_id === 'pillar-one')}>
+                            Link verified Foundation project to Pillar 1
+                          </button>}
+                        <p>This binds approved source identities only. Strategic outcome attainment, independent publication,
+                          task completion and financial authorization remain separate EOS authorities.</p>
+                      </div>
                       <p className={styles.strategyDeliveryNote}>Creation requires current EOS project:update authority. No assignee,
                         deadline, task completion, approval, financial authorization or strategy linkage is inferred.</p>
                     </section>}
@@ -1103,7 +1240,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY
+// VERSION: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
