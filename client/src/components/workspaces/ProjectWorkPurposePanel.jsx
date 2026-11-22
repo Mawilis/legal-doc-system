@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Project Task Source-Owned Work Purpose Panel
- * VERSION: v1.1.0-AUDITED-UNCLASSIFIED-CLEARANCE-CONTROL
+ * VERSION: v1.2.0-VERIFIED-PURPOSE-AUDIT-TIMELINE
  * AUTHORITY: Python EOS Projects work-purpose GET/POST owns source and audit.
  * EPITOME: One focused project task classification action with reason and CAS.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkPurposePanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel provides already verified task
  * coordinates; EOS independently reauthorizes project:update and task revision.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.2.0-VERIFIED-PURPOSE-AUDIT-TIMELINE adds
+ * a user-invoked, bounded source-owned classification history with verified
+ * exact task/tenant/principal and chronological revisions. History and
+ * source updates remain independent; no replay keys or internal IDs shown.
  * CHANGELOG: v1.1.0-AUDITED-UNCLASSIFIED-CLEARANCE-CONTROL
  * permits explicit, reasoned return to Needs classification with the same
  * source-owned CAS/audit and independent readback; no silent deletion.
@@ -54,6 +58,24 @@ function assertPurpose(value, { tenantId, principalId, projectId, task }) {
   return value;
 }
 
+function assertHistory(value, { tenantId, principalId, projectId, task }) {
+  if (!value || value.schema !== 'WILSY-PROJECT-WORK-PURPOSE-HISTORY/V1'
+    || value.tenant_id !== tenantId || value.principal_id !== principalId
+    || value.project_id !== projectId || value.task_id !== task.task_id
+    || value.limit !== 25 || typeof value.has_more !== 'boolean'
+    || !Array.isArray(value.items) || value.items.length > 25
+    || value.items.some((entry, index) =>
+      !entry || !OPTIONS.includes(entry.audience)
+      || !Number.isSafeInteger(entry.revision) || entry.revision < 1
+      || !Number.isSafeInteger(entry.task_revision) || entry.task_revision < 1
+      || typeof entry.reason !== 'string' || entry.reason.length < 10 || entry.reason.length > 1000
+      || typeof entry.recorded_at !== 'string' || Number.isNaN(Date.parse(entry.recorded_at))
+      || (index > 0 && value.items[index - 1].revision <= entry.revision))) {
+    throw new Error('PROJECT_WORK_PURPOSE_HISTORY_INVALID');
+  }
+  return value;
+}
+
 export default function ProjectWorkPurposePanel({
   task, projectId, tenantId, principalId, tenantHeaders, canClassify,
 }) {
@@ -62,6 +84,8 @@ export default function ProjectWorkPurposePanel({
   const [purpose, setPurpose] = useState('PLATFORM_BUILD');
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
+  const [history, setHistory] = useState(null);
+  const [historyState, setHistoryState] = useState('CLOSED');
   const operation = useRef(null);
   const epoch = useRef(0);
   const path = '/projects/' + encodeURIComponent(projectId)
@@ -79,6 +103,8 @@ export default function ProjectWorkPurposePanel({
     setState('LOADING');
     setRead(null);
     setMessage('');
+    setHistory(null);
+    setHistoryState('CLOSED');
     void refresh(controller.signal).then(result => {
       if (epoch.current !== id) return;
       setRead(result);
@@ -131,6 +157,8 @@ export default function ProjectWorkPurposePanel({
       }
       setRead(verified);
       setState('READY');
+      setHistory(null);
+      setHistoryState('CLOSED');
       setReason('');
       setMessage('Source classification verified and audit persisted in EOS.');
       operation.current = null;
@@ -142,6 +170,26 @@ export default function ProjectWorkPurposePanel({
         : error?.response?.status === 409
           ? 'Task or purpose revision changed. Refresh source before trying again.'
           : 'Command or independent readback could not be verified. Inspect current EOS state before retrying; no duplicate submission was made.');
+    }
+  };
+
+  const toggleHistory = async () => {
+    if (historyState === 'READY') {
+      setHistoryState('CLOSED'); return;
+    }
+    if (historyState === 'LOADING') return;
+    const id = ++epoch.current;
+    setHistoryState('LOADING');
+    try {
+      const { data } = await api.get(path + '/events', {
+        headers: tenantHeaders, params: { limit: 25 },
+      });
+      const accepted = assertHistory(data, scope);
+      if (epoch.current !== id) return;
+      setHistory(accepted);
+      setHistoryState('READY');
+    } catch {
+      if (epoch.current === id) setHistoryState('UNAVAILABLE');
     }
   };
 
@@ -195,15 +243,48 @@ export default function ProjectWorkPurposePanel({
         Current project:update authority is required to classify this task.
       </p>}
     </>}
+    {state === 'READY' && <div className="mt-4 border-t border-slate-200 pt-3">
+      <button type="button" className="text-sm font-semibold text-blue-800 underline"
+        onClick={() => void toggleHistory()}>
+        {historyState === 'READY' ? 'Hide classification history' : 'View classification history'}
+      </button>
+      {historyState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-700">
+        Verifying audited history…
+      </p>}
+      {historyState === 'UNAVAILABLE' && <p role="alert" className="mt-2 text-sm text-rose-900">
+        EOS classification history could not be verified.
+      </p>}
+      {historyState === 'READY' && history && <>
+        {history.items.length === 0
+          ? <p className="mt-2 text-sm text-slate-700">No classification decisions recorded.</p>
+          : <ol className="mt-3 space-y-3" aria-label="Verified classification decisions">
+            {history.items.map(entry => <li key={entry.revision}
+              className="border-l-2 border-slate-300 pl-3">
+              <p className="text-sm font-semibold text-slate-950">
+                {LABELS[entry.audience]}
+              </p>
+              <p className="text-xs text-slate-700">
+                {new Date(entry.recorded_at).toLocaleString()}
+              </p>
+              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-800">
+                {entry.reason}
+              </p>
+            </li>)}
+          </ol>}
+        {history.has_more && <p className="mt-2 text-xs text-slate-700">
+          Showing 25 most recent decisions. Earlier records remain in EOS.
+        </p>}
+      </>}
+    </div>}
     {message && <p role={state === 'READY' ? 'status' : 'alert'}
       className="mt-2 text-sm text-slate-700">{message}</p>}
   </section>;
 }
 
-export { assertPurpose };
+export { assertPurpose, assertHistory };
 
 // ARTIFACT: ProjectWorkPurposePanel.jsx
-// VERSION: v1.1.0-AUDITED-UNCLASSIFIED-CLEARANCE-CONTROL
+// VERSION: v1.2.0-VERIFIED-PURPOSE-AUDIT-TIMELINE
 // AUTHORITY BOUNDARY: Explicit command only; source validates IAM and revision.
 // TENANT POSTURE: Exact source and actor response verification.
 // FAIL-CLOSED POSTURE: Unverified receipt or independent readback never succeeds.
