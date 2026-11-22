@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS
+ * VERSION: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION passes project People navigation into both selected-task attachment views, so owner-view upload prerequisites have a real navigation action instead of an inert advisory.
  * CHANGELOG: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS exposes only strict canonical PROJECT_ uppercase backend error codes alongside HTTP state, without logging source payloads, identity, URLs or unknown exception text. Helps differentiate unavailable task transport from malformed persisted records at the next browser acceptance.
  * CHANGELOG: v1.38.0-PRIMARY-TASK-READ-FIRST-AND-EXPLICIT-HTTP-DIAGNOSTICS verifies the sovereign task list before starting three auxiliary source calls so new member-directory lookups cannot compete with the critical task read. Distinguishes rejected 401/403/404/429/503, transport timeout and malformed read envelopes without logging secrets, losing task drafts, fabricating task rows or retrying commands.
  * CHANGELOG: v1.37.0-INDEPENDENT-TASK-AND-CONTRIBUTOR-READ-FAILURE-BOUNDARIES isolates task, participant and eligible-member reads, preserves only independently verified EOS tasks when a participant directory is denied/unavailable, and gates all contributor/assignee operations until current project participation verifies. Reports which source failed without guessing people, tasks or permissions.
@@ -303,7 +304,7 @@ function validParticipants(data, tenantId, principalId, projectId) {
 /** @description Display one exact-project task/participant workflow, never local truth. */
 export default function ProjectTasksPanel({
   projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
-  onFocusedTaskChange = null,
+  onFocusedTaskChange = null, onOpenProjectPeople = null,
 }) {
   const [items, setItems] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -815,6 +816,7 @@ export default function ProjectTasksPanel({
           key={[scope, focusedAction.id].join(':')}
           tenantId={tenantId} projectId={projectId} principalId={principalId}
           taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
+          onManageContributors={onOpenProjectPeople}
           onClose={() => { setAttachmentTaskId(null); setDiscussionTaskId(focusedAction.id); }}/>}
         {focusedAction.type !== 'discussion' &&
           <button type="button" className="wp-button mt-2" onClick={() => {
@@ -938,6 +940,7 @@ export default function ProjectTasksPanel({
       {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
         taskId={focusedAction.id} participantMode={selfIsContributor} tenantHeaders={tenantHeaders}
+          onManageContributors={onOpenProjectPeople}
         onClose={closeFocusedAction}/>}
     </div> : <>
       {!actionCapabilities?.canEdit && <p role="status" className="mt-2 text-xs font-semibold text-amber-900">
@@ -1486,7 +1489,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.39.0-SANITIZED-EOS-TASK-ERROR-CODE-DIAGNOSTICS
+// VERSION: v1.40.0-ATTACHMENT-CONTRIBUTOR-NAVIGATION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
