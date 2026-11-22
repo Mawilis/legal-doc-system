@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT
+ * VERSION: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION recognizes source-verified existing project contributor participation and never routes that member into a duplicate People onboarding path when independent attachment IAM denies. Shows the specific contributor HTTP denial and requires independent IAM/capacity remediation rather than project re-enrollment or silent grants.
  * CHANGELOG: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT preflights the exact project participant list and eligible tenant-member options before leaving the attachment task for People. A denied/unavailable/synthetic source shows its bounded failure in situ and does not navigate; no IAM inference or upload grant.
  * CHANGELOG: v1.4.0-OWNER-READ-CONTRIBUTOR-WRITE-SEPARATION uses separately authorized owner metadata GET in the owner workspace rather than choosing participant-only GET from a contributor roster. Upload and scan remain on participant-only EOS routes and require independent participant source admission. Both reads validate exact tenant/principal/project/task; no IAM fallback or implicit Founder grant.
  * CHANGELOG: v1.3.0-ACTIONABLE-PROJECT-CONTRIBUTOR-ROUTE supplies a real keyboard-accessible route to project People contributor administration from owner-view attachments, and keeps upload unavailable without independent contributor IAM. Existing authorized upload remains in the contributor mode only.
@@ -417,19 +418,23 @@ export default function ProjectTaskAttachmentsPanel({
           : state !== 'READY'
             ? 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
             : participantMode && uploadReadState === 'DENIED'
-              ? 'Owner-authorized attachment records are available, but EOS denied the separate contributor attachment read (HTTP 403). Upload needs project:participant:read and project:participant:contribute plus active project participation.'
+              ? 'You are already a verified contributor on this project. EOS separately denied the contributor attachment endpoint (HTTP 403). Re-adding yourself in People will not fix the missing or inactive project:participant:read authorization. Upload also requires project:participant:contribute in an authorized contributor operating capacity. No file has been submitted.'
               : participantMode
-                ? 'Owner-authorized attachment records are available, but contributor attachment authority is not verified. Upload remains disabled.'
+                ? 'You are already a verified project contributor, but the separate authenticated contributor attachment source is not verified. Check the current operating capacity and project:participant:read authority; project participation alone cannot authorize uploads.'
                 : 'Owner access can read attachment manifests but cannot upload. Current project contributor admission and project:participant:contribute are required.'}
       </p>
-      {!uploadReadVerified && typeof onManageContributors === 'function' &&
+      {!participantMode && !uploadReadVerified && typeof onManageContributors === 'function' &&
         <button type="button" className="wp-button mt-3"
           disabled={checkingPeople || busy || state !== 'READY'}
           onClick={() => { void navigateToPeople(); }}>
           {checkingPeople ? 'Verifying project People…' : 'Check People access before contributor management'}
         </button>}
       {peoplePreflight && <p role="alert" className="mt-2 text-sm text-rose-800">{peoplePreflight}</p>}
-      {!uploadReadVerified && <p className="mt-2 text-xs text-slate-700">
+      {!uploadReadVerified && participantMode && <p role="status" className="mt-2 text-xs font-medium text-slate-800">
+        Project participation: verified Contributor. Attachment contributor authority: {uploadReadState === 'DENIED' ? 'denied by EOS (HTTP 403)' : 'not verified'}.
+        A tenant IAM administrator must verify the separate contributor role assignment and selected operating capacity. This screen cannot create that grant.
+      </p>}
+      {!uploadReadVerified && !participantMode && <p className="mt-2 text-xs text-slate-700">
         Project participation and upload IAM are separate. Even an authorized contributor assignment will not grant project:participant:read or project:participant:contribute.
       </p>}
     </div>
@@ -490,7 +495,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.5.0-PEOPLE-NAVIGATION-SOURCE-PREFLIGHT
+// VERSION: v1.6.0-NO-DUPLICATE-CONTRIBUTOR-ADMISSION
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
