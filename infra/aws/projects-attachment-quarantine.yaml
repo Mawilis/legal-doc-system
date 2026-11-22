@@ -1,0 +1,268 @@
+# TITLE: WILSY OS Project Attachment Quarantine Infrastructure
+# VERSION: v1.0.1-IMPLICIT-SCANNER-ROLE-DEPENDENCY
+# AUTHORITY: WILSY OS Core Governance; AWS infrastructure definition only.
+# EPITOME: Stage exact-account private versioned S3, dedicated KMS, restricted
+#   Python EOS write/read authority and opt-in GuardDuty S3 malware scanning.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/projects-attachment-quarantine.yaml
+# COLLABORATION / OWNERSHIP: Projects attachment storage adapter owns bytes;
+#   Projects registry owns canonical manifests; AWS is external capability.
+# CERTIFICATION OR UPDATE DATE: 2026-11-22
+# CHANGELOG: v1.0.1-IMPLICIT-SCANNER-ROLE-DEPENDENCY removes the redundant
+#   scanner-role DependsOn: GetAtt Role already establishes dependency.
+# CHANGELOG: v1.0.0-INACTIVE-FUNDED-ACTIVATION introduces a versioned,
+#   private, KMS-encrypted project quarantine with a deliberately disabled
+#   default scanner. Merely committing this template creates no AWS resources.
+# COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: No public objects, static keys, presigned URLs,
+#   cross-domain IAM, or default provision/deployment; scanner alone tags.
+# TENANT BOUNDARY: EOS derives opaque exact-tenant/task object keys; S3 is
+#   never a tenant authorizer or canonical manifest authority.
+# AUTHORITY BOUNDARY: Only the nominated existing EOS runtime role can write
+#   quarantine bytes; GuardDuty service role is exclusively for malware scans.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively; infra is not payment.
+# FAIL-CLOSED DECLARATION: Scanner requires explicit paid activation, and
+#   absent verified policy pin/tag means no EOS clearance or download.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Inert until explicitly deployed: WILSY Projects private versioned quarantine,
+  dedicated KMS and scoped Python EOS runtime IAM. Malware scan opt-in.
+Rules:
+  ApprovedAccountAndRegion:
+    Assertions:
+      - Assert: !Equals [!Ref AWS::AccountId, '121014832643']
+        AssertDescription: Restricted to the verified WILSY account.
+      - Assert: !Equals [!Ref AWS::Region, 'af-south-1']
+        AssertDescription: Restricted to Cape Town.
+Parameters:
+  EosRuntimeRoleName:
+    Type: String
+    Default: wilsy-eos-global-mfa-local-development
+    AllowedPattern: '^[a-zA-Z0-9+=,.@_-]{1,64}$'
+    Description: >-
+      Existing independently verified local EOS runtime role; no new principal
+      or MFA role trust relationship is created or broadened.
+  ActivatePaidMalwareScanning:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['false', 'true']
+    Description: >-
+      Explicit funding/service activation gate; false provisions no GuardDuty
+      malware-protection plan. Do not activate without budget approval.
+Conditions:
+  EnableScanning: !Equals [!Ref ActivatePaidMalwareScanning, 'true']
+Resources:
+  ProjectsAttachmentKmsKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: WILSY Projects attachment quarantine, never MFA or HR
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      PendingWindowInDays: 30
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AccountIAMGovernance
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource: '*'
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Purpose
+          Value: PROJECT_ATTACHMENT_QUARANTINE
+  ProjectsAttachmentKmsAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/wilsy/projects/quarantine
+      TargetKeyId: !Ref ProjectsAttachmentKmsKey
+  ProjectsAttachmentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub wilsy-projects-quarantine-${AWS::AccountId}-${AWS::Region}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt ProjectsAttachmentKmsKey.Arn
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Classification
+          Value: ConfidentialQuarantine
+  ProjectsScannerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: wilsy-projects-guardduty-s3-scanner
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: GuardDutyMalwareProtectionOnly
+            Effect: Allow
+            Principal:
+              Service: malware-protection-plan.guardduty.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: WilsyProjectsMalwareProtection
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ManageGuardDutyEventBridgeRule
+                Effect: Allow
+                Action:
+                  - events:PutRule
+                  - events:DeleteRule
+                  - events:PutTargets
+                  - events:RemoveTargets
+                Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*
+                Condition:
+                  StringLike:
+                    events:ManagedBy: malware-protection-plan.guardduty.amazonaws.com
+              - Sid: InspectGuardDutyEventBridgeRule
+                Effect: Allow
+                Action:
+                  - events:DescribeRule
+                  - events:ListTargetsByRule
+                Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*
+              - Sid: ScopedScannerTagsAndRead
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObjectTagging
+                  - s3:GetObjectTagging
+                  - s3:PutObjectVersionTagging
+                  - s3:GetObjectVersionTagging
+                Resource: !Sub ${ProjectsAttachmentBucket.Arn}/quarantine/v1/*
+              - Sid: ScannerResourceValidationWrite
+                Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${ProjectsAttachmentBucket.Arn}/malware-protection-resource-validation-object
+              - Sid: BucketNotificationsAndOwnership
+                Effect: Allow
+                Action:
+                  - s3:PutBucketNotification
+                  - s3:GetBucketNotification
+                  - s3:ListBucket
+                Resource: !GetAtt ProjectsAttachmentBucket.Arn
+              - Sid: ScannerKmsViaS3
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !GetAtt ProjectsAttachmentKmsKey.Arn
+                Condition:
+                  StringEquals:
+                    kms:ViaService: !Sub s3.${AWS::Region}.amazonaws.com
+  ProjectsAttachmentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ProjectsAttachmentBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: RequireTransportEncryption
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt ProjectsAttachmentBucket.Arn
+              - !Sub ${ProjectsAttachmentBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+          - Sid: OnlyScannerMayWriteObjectTags
+            Effect: Deny
+            Principal: '*'
+            Action:
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Resource: !Sub ${ProjectsAttachmentBucket.Arn}/*
+            Condition:
+              ArnNotEquals:
+                aws:PrincipalArn: !GetAtt ProjectsScannerRole.Arn
+  ProjectsEosRuntimeAccess:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: WilsyProjectsQuarantineExactBucket
+      Roles:
+        - !Ref EosRuntimeRoleName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CheckBucketVersioningAndPolicy
+            Effect: Allow
+            Action:
+              - s3:GetBucketVersioning
+              - s3:GetBucketPolicy
+            Resource: !GetAtt ProjectsAttachmentBucket.Arn
+          - Sid: StoreAndVerifyOnlyQuarantineObjects
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:GetObjectTagging
+              - s3:GetObjectVersionTagging
+            Resource: !Sub ${ProjectsAttachmentBucket.Arn}/quarantine/v1/*
+          - Sid: AttachmentKmsOnlyViaS3
+            Effect: Allow
+            Action:
+              - kms:GenerateDataKey
+              - kms:Decrypt
+            Resource: !GetAtt ProjectsAttachmentKmsKey.Arn
+            Condition:
+              StringEquals:
+                kms:ViaService: !Sub s3.${AWS::Region}.amazonaws.com
+  ProjectsMalwareProtectionPlan:
+    Type: AWS::GuardDuty::MalwareProtectionPlan
+    Condition: EnableScanning
+    DependsOn:
+      - ProjectsAttachmentBucketPolicy
+    Properties:
+      Role: !GetAtt ProjectsScannerRole.Arn
+      ProtectedResource:
+        S3Bucket:
+          BucketName: !Ref ProjectsAttachmentBucket
+          ObjectPrefixes:
+            - quarantine/v1/
+      Actions:
+        Tagging:
+          Status: ENABLED
+Outputs:
+  ProjectsAttachmentBucketName:
+    Description: Configure only after stack deployment and AWS readback.
+    Value: !Ref ProjectsAttachmentBucket
+  ProjectsAttachmentKmsKeyArn:
+    Value: !GetAtt ProjectsAttachmentKmsKey.Arn
+  ProjectsAttachmentRegion:
+    Value: !Ref AWS::Region
+  ProjectsMalwareScanPlanArn:
+    Condition: EnableScanning
+    Value: !GetAtt ProjectsMalwareProtectionPlan.Arn
+# ARTIFACT: infra/aws/projects-attachment-quarantine.yaml
+# VERSION: v1.0.1-IMPLICIT-SCANNER-ROLE-DEPENDENCY
+# AUTHORITY BOUNDARY: S3 transport, KMS and opt-in scanner; no IAM grants issued by commit
+# TENANT POSTURE: EOS scopes tenant and opaque object coordinates, not AWS
+# FAIL-CLOSED POSTURE: default scanner off; no clean-tag proof, no clearance
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
