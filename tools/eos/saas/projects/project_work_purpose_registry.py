@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY
+VERSION: v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH
+adds task-bounded batch source/audit reads for large exact-principal attention
+queues, rejecting duplicate, divergent or corrupt evidence without N+1 calls.
 CHANGELOG: v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY preserves
 audited purpose revision when its attached task revision has advanced, while
 displaying UNCLASSIFIED without stale provenance; the owner can explicitly
@@ -41,7 +44,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY"
+VERSION: Final = "v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD"})
@@ -155,6 +158,86 @@ class ProjectWorkPurposeRegistry:
             "critical_gate": False, "critical_gate_evidence_ref": None,
         }
 
+    def current_for_tasks(
+        self, *, tasks: list[ProjectTask], session: Any,
+    ) -> dict[str, dict[str, object] | None]:
+        """Read all source-audited purposes in bounded batches, never N+1.
+
+        Caller must have already admitted these tasks under its own exact
+        assignee, tenant and active project participation. This method only
+        consumes that admitted list; it cannot expand visibility.
+        """
+        if session is None or len(tasks) > 10000:
+            raise WorkPurposeError("PROJECT_WORK_PURPOSE_BATCH_INVALID")
+        if not tasks:
+            return {}
+        tenant = tasks[0].tenant_id
+        by_id: dict[str, ProjectTask] = {}
+        for task in tasks:
+            if task.tenant_id != tenant or task.task_id in by_id:
+                raise WorkPurposeError("PROJECT_WORK_PURPOSE_BATCH_SCOPE_INVALID")
+            by_id[task.task_id] = task
+        result: dict[str, dict[str, object] | None] = {
+            task_id: None for task_id in by_id
+        }
+        ids = list(by_id)
+        for start in range(0, len(ids), 200):
+            batch = ids[start:start + 200]
+            try:
+                rows = list(self.current.find({
+                    "tenant_id": tenant, "task_id": {"$in": batch},
+                }, session=session))
+            except PyMongoError as error:
+                raise WorkPurposeError("PROJECT_WORK_PURPOSE_READ_UNAVAILABLE") from error
+            audited: dict[tuple[str, int], tuple[ProjectTask, dict[str, object]]] = {}
+            for row in rows:
+                task = by_id.get(row.get("task_id"))
+                if task is None or task.task_id in result and result[task.task_id] is not None:
+                    raise WorkPurposeError("PROJECT_WORK_PURPOSE_BATCH_SCOPE_INVALID")
+                value = _verify(row, task)
+                key = task.task_id, value["revision"]
+                if key in audited:
+                    raise WorkPurposeError("PROJECT_WORK_PURPOSE_SOURCE_INVALID")
+                audited[key] = (task, row)
+            if not audited:
+                continue
+            selectors = [{
+                "project_id": task.project_id, "task_id": task.task_id,
+                "revision": revision, "result_fingerprint": row["fingerprint"],
+            } for (task_id, revision), (task, row) in audited.items()]
+            try:
+                events = list(self.events.find({
+                    "tenant_id": tenant, "$or": selectors,
+                }, session=session))
+            except PyMongoError as error:
+                raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_UNAVAILABLE") from error
+            matched: set[tuple[str, int]] = set()
+            for event in events:
+                key = event.get("task_id"), event.get("revision")
+                verified = audited.get(key)
+                if verified is None or key in matched or event.get("evidence_ref") != verified[1]["evidence_ref"]:
+                    raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
+                matched.add(key)
+            if matched != set(audited):
+                raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
+            for (task_id, revision), (task, row) in audited.items():
+                value = _verify(row, task)
+                if value["task_revision"] != task.revision:
+                    result[task_id] = {
+                        "audience": "UNCLASSIFIED", "purpose_revision": revision,
+                        "evidence_ref": None, "source_revision": None,
+                        "critical_gate": False,
+                    }
+                else:
+                    result[task_id] = {
+                        "tenant_id": task.tenant_id, "source": "PROJECTS",
+                        "record_id": task.task_id, "source_revision": task.revision,
+                        "audience": value["audience"], "purpose_revision": revision,
+                        "evidence_ref": value["evidence_ref"], "source_verified": True,
+                        "critical_gate": False, "critical_gate_evidence_ref": None,
+                    }
+        return result
+
     def classify(
         self, *, task: ProjectTask, actor_principal_id: str, audience: str,
         reason: str, expected_task_revision: int, expected_purpose_revision: int,
@@ -243,7 +326,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY
+# VERSION: v1.1.0-BOUNDED-PURPOSE-PROVENANCE-BATCH
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
