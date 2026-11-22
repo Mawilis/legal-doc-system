@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT
+ * VERSION: v2.57.0-PRIMARY-TASK-READ-FIRST-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,7 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.57.0-PRIMARY-TASK-READ-FIRST-CERT certifies mandatory task GET dispatch completes before optional participant/member queries and exposes actual 503 task source failure instead of fabricating rows. Preserves isolation of independently verified work from failed directories.
  * CHANGELOG: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT certifies that independently verified task records remain available despite rejected contributor-directory reads; task assignment is refused while participant authorization is unverified and source failure is explicit.
  * CHANGELOG: v2.55.0-TENANT-NAMED-ASSIGNEE-ADMISSION-CERT verifies tenant employee names appear in the task Assignee selector as candidate choices and selecting a candidate opens a preselected explicit contributor grant. The task draft is assigned only after independent exact-project readback, not by dropdown choice alone.
  * CHANGELOG: v2.54.0-VIEWPORT-CONTRIBUTOR-SELECTOR-CERT tests immediately visible contributor admission dialog instead of the offscreen inline panel, with the original task editor draft preserved and EOS readback gating assignment.
@@ -1279,6 +1280,38 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
 
+  it('prioritizes the task source and classifies real EOS HTTP 503 without auxiliary reads', async () => {
+    const persisted = project();
+    let rejectTasks;
+    let tasksStarted = false;
+    const pendingTasks = new Promise((resolve, reject) => {
+      rejectTasks = reject;
+    });
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) {
+        tasksStarted = true;
+        return pendingTasks;
+      }
+      throw new Error('Auxiliary source must not execute before mandatory task read: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="primary-task-read-first-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    const region = await screen.findByRole('region', { name: 'Project work execution' });
+    await waitFor(() => expect(tasksStarted).toBe(true));
+    expect(api.get.mock.calls.some(([path]) => String(path).includes('/participants?'))).toBe(false);
+    expect(api.get.mock.calls.some(([path]) => String(path).includes('/participant-options?'))).toBe(false);
+    rejectTasks({ response: { status: 503 } });
+    await waitFor(() => expect(within(region).getByRole('alert'))
+      .toHaveTextContent('Project task list is unavailable in EOS (HTTP 503)'));
+    expect(within(region).queryByText(/verified work items/)).not.toBeInTheDocument();
+    expect(within(region).queryByRole('button', { name: 'Create task' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('keeps EOS-verified work visible when project participants fail independently', async () => {
     const persisted = project();
     mockProjectGet(async path => {
@@ -2342,7 +2375,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT
+ * VERSION: v2.57.0-PRIMARY-TASK-READ-FIRST-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
