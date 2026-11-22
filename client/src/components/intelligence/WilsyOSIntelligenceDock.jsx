@@ -491,7 +491,7 @@ function planWilsyFinancialSourceRead(value) {
   if (billing) {
     return Object.freeze({ domain: 'BILLING', evidenceId: billing[1].toLowerCase() });
   }
-  if (/^(?:how many|count|what(?:'s| is) (?:the |my |our )?(?:number of )?)\s*(?:pos\s+)?(?:commercial\s+)?sales\s+(?:do i have|are there|have i recorded)?[?.!\s]*$/i.test(text)
+  if (/^(?:how many|count|what(?:'s| is) (?:the |my |our )?(?:number of )?)\s*(?:pos\s+|point of sale\s+)(?:commercial\s+)?sales\s+(?:do i have|are there|have i recorded)?[?.!\s]*$/i.test(text)
     || /^(?:how many|count)\s+(?:completed\s+)?pos\s+sales(?:\s+do i have)?[?.!\s]*$/i.test(text)) {
     return Object.freeze({ domain: 'POS' });
   }
