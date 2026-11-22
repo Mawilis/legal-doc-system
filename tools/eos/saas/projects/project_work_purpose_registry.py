@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT
+VERSION: v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK returns
+current purpose revision exclusively for the source-owned classification
+command and separately verifies the task revision; My Work retains the
+strict existing audience_evidence projection contract.
 CHANGELOG: v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT introduces exact-tenant
 classification snapshots and immutable events with SHA3-512 semantic checks,
 bounded reason, actor-bound replay and independent source-revision currentness.
@@ -33,7 +37,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT"
+VERSION: Final = "v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD"})
@@ -138,7 +142,7 @@ class ProjectWorkPurposeRegistry:
         return {
             "tenant_id": task.tenant_id, "source": "PROJECTS",
             "record_id": task.task_id, "source_revision": task.revision,
-            "audience": value["audience"],
+            "audience": value["audience"], "purpose_revision": value["revision"],
             "evidence_ref": value["evidence_ref"], "source_verified": True,
             "critical_gate": False, "critical_gate_evidence_ref": None,
         }
@@ -231,7 +235,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.0.0-PROJECT-WORK-PURPOSE-CAS-AUDIT
+# VERSION: v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
