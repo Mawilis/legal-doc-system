@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT
+ * VERSION: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT certifies exact-tenant/principal My Work source coverage for CRM, HR and Operations counts, a composable multi-domain count, omitted-source refusal, unrecognised-semantic denial and zero provider POST.
  * CHANGELOG: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT certifies compound count-and-details planning from verified Projects provenance and fresh read-only EOS endpoints, including denial of unsafe mixed-domain compound prompts.
  * CHANGELOG: v1.33.0-VERIFIED-ACTIVE-PROJECT-DETAIL-CERT certifies a three-turn total -> active count -> project detail conversation, independent source reads, exact current project identity/revision, zero model POST, and refusal on denied/mismatched records.
  * CHANGELOG: v1.32.0-VERIFIED-PROJECT-FOLLOWUP-CONTEXT-CERT proves a two-turn Projects count then status follow-up (including 'How may are active?') uses fresh canonical EOS summary without paid POST, and refuses subject carryover after unrelated conversation or ambiguous multiple-status questions.
@@ -544,6 +545,93 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(requestPaths.filter(path => path === '/projects/summary')).toHaveLength(2);
     expect(requestPaths).toContain('/projects?project_status=active&limit=100&offset=0');
     expect(requestPaths).toContain('/projects/' + projectId);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['How many CRM tasks do I have?', /1 active work item.*CRM/],
+    ['How many HR tasks do I have?', /0 active work items.*HR & Hiring/],
+    ['How many CRM and HR tasks do I have?', /1 active work item.*CRM and HR & Hiring/],
+    ['How many overdue CRM tasks do I have?', /1 overdue work item.*CRM/],
+  ])('reads authorised multi-domain work count %s without model POST', async (question, expected) => {
+    const admitted = {
+      schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+      tenant_id: 'TEST_TENANT',
+      principal_id: 'source-count-operator',
+      as_of: '2026-11-22T12:00:00+00:00',
+      authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false,
+        permits_approval: false },
+      sources_included: ['CRM', 'HR', 'OPERATIONS'],
+      summary: {
+        active_count: 1, overdue_count: 1,
+        source_counts: { CRM: 1, HR: 0, OPERATIONS: 0 },
+      },
+      items: [{
+        source: 'CRM', work_item_id: 'crm-attention-1',
+        source_key: 'CRM:crm-attention-1',
+        title: 'Follow up with supplier', priority: 'NORMAL',
+        is_overdue: true, due_at: null, status: 'OPEN',
+      }],
+    };
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: admitted })
+      : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'source-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: question },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Verified Work')).toBeVisible());
+    expect(screen.getByText(expected)).toBeVisible();
+    expect(mockApiGet).toHaveBeenCalledWith('/my-work', expect.objectContaining({
+      headers: { 'X-Tenant-ID': 'TEST_TENANT' },
+    }));
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('does not treat an unadmitted HR source as a verified zero', async () => {
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+        tenant_id: 'TEST_TENANT', principal_id: 'source-count-operator',
+        as_of: '2026-11-22T12:00:00+00:00',
+        authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+        sources_included: ['CRM'], summary: {
+          active_count: 0, overdue_count: 0, source_counts: { CRM: 0 },
+        }, items: [],
+      } }) : Promise.reject(rejectedResponse(503, 'source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'source-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'How many HR tasks do I have?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText(/source is not included|sources are not included/)).toBeVisible());
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText(/EOS verifies 0 active work items for you in HR/)).not.toBeInTheDocument();
+  });
+
+  it('rejects arbitrary unrecognised modifiers and commands from the read-only tool plan', () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'source-count-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+    for (const question of [
+      'How many HR tasks did I finish?',
+      'How many CRM tasks belong to everyone?',
+      'How many HR and CRM tasks should we delete?',
+    ]) {
+      fireEvent.change(composer, { target: { value: question } });
+      expect(screen.getByLabelText('Send')).toBeDisabled();
+    }
+    expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(false);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1978,7 +2066,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT
+ * VERSION: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
