@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Project Task Source-Owned Work Purpose Panel
- * VERSION: v1.0.0-AUDITED-WORK-PURPOSE-CLASSIFICATION
+ * VERSION: v1.0.1-STALE-TASK-PURPOSE-RECOVERY
  * AUTHORITY: Python EOS Projects work-purpose GET/POST owns source and audit.
  * EPITOME: One focused project task classification action with reason and CAS.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkPurposePanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel provides already verified task
  * coordinates; EOS independently reauthorizes project:update and task revision.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.0.1-STALE-TASK-PURPOSE-RECOVERY accepts an
+ * audited metadata revision greater than zero for tasks whose old purpose
+ * was invalidated by a source-task edit; no old category is displayed.
  * CHANGELOG: v1.0.0-AUDITED-WORK-PURPOSE-CLASSIFICATION exposes an authorized
  * source purpose field, explicit human rationale and guarded EOS command,
  * preserves command idempotency on ambiguous transport, validates the exact
@@ -38,8 +41,7 @@ function assertPurpose(value, { tenantId, principalId, projectId, task }) {
     || !Number.isSafeInteger(value.purpose_revision) || value.purpose_revision < 0
     || value.critical_gate !== false
     || (value.audience === 'UNCLASSIFIED'
-      ? (value.purpose_revision !== 0 || value.evidence_ref !== null
-        || value.source_revision !== null)
+      ? (value.evidence_ref !== null || value.source_revision !== null)
       : (value.purpose_revision < 1
         || !Number.isSafeInteger(value.source_revision)
         || value.source_revision !== task.revision
@@ -197,7 +199,7 @@ export default function ProjectWorkPurposePanel({
 export { assertPurpose };
 
 // ARTIFACT: ProjectWorkPurposePanel.jsx
-// VERSION: v1.0.0-AUDITED-WORK-PURPOSE-CLASSIFICATION
+// VERSION: v1.0.1-STALE-TASK-PURPOSE-RECOVERY
 // AUTHORITY BOUNDARY: Explicit command only; source validates IAM and revision.
 // TENANT POSTURE: Exact source and actor response verification.
 // FAIL-CLOSED POSTURE: Unverified receipt or independent readback never succeeds.
