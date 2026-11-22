@@ -402,6 +402,17 @@ function planWilsyGovernedReadOnlyQuestion(value, previousTurns = []) {
 const WILSY_READ_ONLY_SOURCE_CAPABILITIES = Object.freeze({
   PROJECTS: Object.freeze({ endpoint: '/projects/summary', schema: 'WILSY-PROJECT-SUMMARY/V1' }),
   MY_WORK: Object.freeze({ endpoint: '/my-work', schema: 'WILSY-OS-UNIFIED-MY-WORK/V1' }),
+  BILLING_EVIDENCE: Object.freeze({
+    endpoint: '/billing/intelligence/verified-evidence/',
+    schema: 'WILSY-BILLING-VERIFIED-EVIDENCE-READ/V1',
+    source: 'PYTHON_EOS_BILLING_INTELLIGENCE_REGISTRY',
+  }),
+  POS_LOCATIONS: Object.freeze({ endpoint: '/pos/locations' }),
+  POS_COMMERCIAL: Object.freeze({
+    endpoint: '/pos/locations/',
+    schema: 'WILSY-POS-COMMERCIAL-SUMMARY/V1',
+    source: 'PYTHON_EOS_POS_SALE_REGISTRY',
+  }),
 });
 
 /**
@@ -514,10 +525,10 @@ function verifyWilsyPOSLocations(payload, tenantId, principalId) {
 function verifyWilsyPOSCommercialSummary(payload, tenantId, principalId, locationId) {
   const names = ['DRAFT', 'OPEN', 'COMPLETED_COMMERCIAL', 'VOIDED'];
   const counts = payload?.counts;
-  if (payload?.schema !== 'WILSY-POS-COMMERCIAL-SUMMARY/V1'
+  if (payload?.schema !== WILSY_READ_ONLY_SOURCE_CAPABILITIES.POS_COMMERCIAL.schema
     || payload?.tenant_id !== tenantId || payload?.principal_id !== principalId
     || payload?.location_id !== locationId
-    || payload?.authority?.source !== 'PYTHON_EOS_POS_SALE_REGISTRY'
+    || payload?.authority?.source !== WILSY_READ_ONLY_SOURCE_CAPABILITIES.POS_COMMERCIAL.source
     || payload?.authority?.read_only !== true
     || payload?.authority?.model_invoked !== false
     || payload?.authority?.financial_execution !== false
@@ -532,9 +543,9 @@ function verifyWilsyPOSCommercialSummary(payload, tenantId, principalId, locatio
 
 function verifyWilsyBillingEvidenceRead(payload, tenantId, principalId, evidenceId) {
   const evidence = payload?.evidence;
-  if (payload?.schema !== 'WILSY-BILLING-VERIFIED-EVIDENCE-READ/V1'
+  if (payload?.schema !== WILSY_READ_ONLY_SOURCE_CAPABILITIES.BILLING_EVIDENCE.schema
     || payload?.tenant_id !== tenantId || payload?.principal_id !== principalId
-    || payload?.authority?.source !== 'PYTHON_EOS_BILLING_INTELLIGENCE_REGISTRY'
+    || payload?.authority?.source !== WILSY_READ_ONLY_SOURCE_CAPABILITIES.BILLING_EVIDENCE.source
     || payload?.authority?.read_only !== true
     || payload?.authority?.model_invoked !== false
     || payload?.authority?.financial_execution !== false
@@ -1661,7 +1672,7 @@ export function WilsyOSIntelligenceDock({
           };
           if (financialSourcePlan.domain === 'BILLING') {
             const response = await api.get(
-              '/billing/intelligence/verified-evidence/' + financialSourcePlan.evidenceId,
+              WILSY_READ_ONLY_SOURCE_CAPABILITIES.BILLING_EVIDENCE.endpoint + financialSourcePlan.evidenceId,
               options,
             );
             if (!requestIsCurrent()) return;
@@ -1680,7 +1691,7 @@ export function WilsyOSIntelligenceDock({
               phase: 'SOURCE_VERIFIED_READ_ONLY', domain: 'BILLING', tenantId: exactTenant,
             };
           } else {
-            const locationResponse = await api.get('/pos/locations', options);
+            const locationResponse = await api.get(WILSY_READ_ONLY_SOURCE_CAPABILITIES.POS_LOCATIONS.endpoint, options);
             if (!requestIsCurrent()) return;
             const locations = verifyWilsyPOSLocations(
               locationResponse?.data, exactTenant, exactPrincipal,
@@ -1694,7 +1705,8 @@ export function WilsyOSIntelligenceDock({
             } else {
               const locationId = locations[0].location_id;
               const response = await api.get(
-                '/pos/locations/' + encodeURIComponent(locationId) + '/commercial-summary',
+                WILSY_READ_ONLY_SOURCE_CAPABILITIES.POS_COMMERCIAL.endpoint
+                + encodeURIComponent(locationId) + '/commercial-summary',
                 options,
               );
               if (!requestIsCurrent()) return;
