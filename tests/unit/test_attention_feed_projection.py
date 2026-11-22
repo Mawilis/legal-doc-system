@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.4.0-ISOLATED-SOURCE-COMMAND-IAM-CERT
+VERSION: v1.5.0-SIX-SOURCE-ATTENTION-REGRESSION
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.5.0-SIX-SOURCE-ATTENTION-REGRESSION covers admitted HR and
+           PROJECTS sources, exact count parity, source filters and rejection
+           of unadmitted source requests without creating source authority.
 CHANGELOG: v1.4.0-ISOLATED-SOURCE-COMMAND-IAM-CERT ensures
            CRM create and complete availability is derived only from
            current exact-tenant CRM command context, never foreign sources.
@@ -86,7 +89,7 @@ def test_attention_item_is_real_source_derived_and_non_executable():
         "active": 5, "overdue": 1, "dueToday": 1, "highPriority": 2,
     }
     assert feed["coverage"]["admittedSources"] == ["OPERATIONS", "CRM"]
-    assert feed["coverage"]["notRepresentedSources"] == ["LEGAL", "INTELLIGENCE", "FINANCE", "PEOPLE"]
+    assert feed["coverage"]["notRepresentedSources"] == ["LEGAL", "INTELLIGENCE", "HR", "PROJECTS", "FINANCE", "PEOPLE"]
     assert feed["coverage"]["completeEnterpriseCoverage"] is False
     assert feed["sources"] == [
         {"moduleId": "OPERATIONS", "state": "ok", "count": 5},
@@ -101,6 +104,47 @@ def test_attention_item_is_real_source_derived_and_non_executable():
     assert overdue["authzScope"] == "SOURCE_SERVICE_ONLY"
     assert overdue["slaBreachAt"] is None
     assert feed["authority"]["attentionCommandsEnabled"] is False
+
+
+
+def test_hr_and_projects_are_verified_attention_sources_without_new_authority():
+    """The active exact-assignee Projects source cannot break Attention coverage."""
+    project_id = "prj-" + "a" * 48
+    task_id = "ptk-" + "b" * 48
+    current = build_unified_my_work(
+        tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+        crm={"tenant_id": TENANT, "items": []},
+        hr={"tenant_id": TENANT, "items": []},
+        projects={"tenant_id": TENANT, "items": [{
+            "work_item_id": task_id,
+            "title": "Activate governed project attachments",
+            "description": "Budget gated production activation",
+            "status": "OPEN",
+            "priority": "NORMAL",
+            "project_id": project_id,
+            "owner_principal_id": PRINCIPAL,
+            "due_at": None,
+            "due_date": None,
+        }]},
+    )
+    current["sources_included"] = ["CRM", "HR", "PROJECTS"]
+    feed = build_attention_feed(current)
+    assert feed["counts"]["active"] == 1
+    assert feed["coverage"]["admittedSources"] == ["CRM", "HR", "PROJECTS"]
+    assert "PROJECTS" not in feed["coverage"]["notRepresentedSources"]
+    assert "HR" not in feed["coverage"]["notRepresentedSources"]
+    assert feed["items"][0]["id"] == "PROJECTS:" + task_id
+    assert feed["items"][0]["sourceModule"] == "PROJECTS"
+    assert feed["items"][0]["authzScope"] == "SOURCE_SERVICE_ONLY"
+    assert build_attention_feed(current, sources=("PROJECTS",))["counts"]["active"] == 1
+    assert build_attention_feed(current, sources=("HR",))["counts"]["active"] == 0
+    with pytest.raises(AttentionFeedError, match="ATTENTION_SOURCE_NOT_AUTHORIZED"):
+        build_attention_feed(current, sources=("LEGAL",))
+
+    invalid = deepcopy(current)
+    invalid["summary"]["source_counts"]["PROJECTS"] = 0
+    with pytest.raises(AttentionFeedError, match="ATTENTION_SOURCE_COUNTS_INVALID"):
+        build_attention_feed(invalid)
 
 
 def test_filters_operate_on_real_rows_and_authorised_sources():
@@ -286,7 +330,7 @@ def test_isolated_unadmitted_module_never_reports_command_capabilities():
     assert allowed["sourceActions"] == {"OPERATIONS": ["CREATE"]}
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.4.0-ISOLATED-SOURCE-COMMAND-IAM-CERT
+# VERSION: v1.5.0-SIX-SOURCE-ATTENTION-REGRESSION
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
