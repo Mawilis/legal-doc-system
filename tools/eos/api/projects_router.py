@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND
+VERSION: v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,10 +30,13 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+  v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK includes the exact
+  independent source-purpose revision in authorized GET and POST readback
+  so clients use source CAS instead of guessing current metadata revision.
   v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND adds exact-source project work-purpose GET and audited
   project:update POST, strict revision/idempotency and same-transaction
   current source+event readback. No Founder or participant privilege inheritance.
-  v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND restores the historical
+  v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK restores the historical
   v1.42.0 Founder contributor and participant profile changelog attribution
   without expanding the read-only Projects transaction recovery scope.
   v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
@@ -343,7 +346,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND"
+VERSION: Final[str] = "v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK"
 logger = logging.getLogger("WilsyOS.API.Projects")
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
@@ -3199,7 +3202,9 @@ def read_project_task_work_purpose(
             "schema": "WILSY-PROJECT-WORK-PURPOSE/V1",
             "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
             "project_id": project_id, "task_id": task_id,
-            "task_revision": task.revision, "audience": purpose["audience"] if purpose else "UNCLASSIFIED",
+            "task_revision": task.revision,
+            "purpose_revision": purpose["purpose_revision"] if purpose else 0,
+            "audience": purpose["audience"] if purpose else "UNCLASSIFIED",
             "evidence_ref": purpose["evidence_ref"] if purpose else None,
             "source_revision": purpose["source_revision"] if purpose else None,
             "critical_gate": False,
@@ -3242,7 +3247,9 @@ def classify_project_task_work_purpose(
             "schema": "WILSY-PROJECT-WORK-PURPOSE/V1",
             "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
             "project_id": project_id, "task_id": task_id,
-            "task_revision": task.revision, "audience": verified["audience"],
+            "task_revision": task.revision,
+            "purpose_revision": verified["purpose_revision"],
+            "audience": verified["audience"],
             "evidence_ref": verified["evidence_ref"],
             "source_revision": verified["source_revision"],
             "critical_gate": False,
@@ -4168,7 +4175,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND
+# VERSION: v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
