@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT
+ * VERSION: v1.30.0-DEVICE-TIME-PROGRESSIVE-RENDER-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.30.0-DEVICE-TIME-PROGRESSIVE-RENDER-CERT certifies current device clock without a provider POST, excludes arbitrary schedules from the local catalog, and checks progressive presentation teardown and accessibility.
  * CHANGELOG: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT retains Enter-key paid reasoning coverage using a substantive question rather than a built-in courtesy, so both paths remain independently certified.
  * CHANGELOG: v1.29.0-LOCAL-COURTESY-PROVENANCE-CERT certifies polite everyday courtesies as provenance-marked built-in local turns with no provider request, consent requirement or quota charge. Metered substantive questions retain their explicit consent and 503 reconciliation guards.
  * CHANGELOG: v1.28.1-CSS-MODULE-SCOPED-ACTION-CERT asserts the real generated CSS-module action class instead of a literal unscoped classname, preserving the responsive actionable-link semantic test after Vite style compilation.
@@ -366,6 +367,46 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockExecuteLegalServices).not.toHaveBeenCalled();
     expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
       .not.toBeInTheDocument();
+  });
+
+  it('answers current device time without OpenAI credits or provider POST', async () => {
+    mockApiPost.mockRejectedValue(rejectedResponse(503, 'C1B_REASONING_RECONCILIATION_REQUIRED'));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'clock-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What time is it?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('WILSY OS · Device time')).toBeVisible());
+    expect(screen.getByText(/According to your device clock, it’s/)).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
+      .not.toBeInTheDocument();
+  });
+
+  it('keeps arbitrary schedules outside local time intent under EOS consent', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'clock-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }} />);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'What time is my meeting tomorrow?' },
+    });
+    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByText('WILSY OS · Device time')).not.toBeInTheDocument();
+  });
+
+  it('retains a cancellable assistant-text renderer with motion preference', () => {
+    const source = readFileSync('src/components/intelligence/WilsyOSIntelligenceDock.jsx', 'utf8');
+    expect(source).toContain('function WilsyProgressiveAssistantText');
+    expect(source).toContain('prefers-reduced-motion: reduce');
+    expect(source).toContain('window.clearInterval(timer)');
+    expect(source).toContain('aria-hidden={animate');
+    expect(source).toContain('<WilsyProgressiveAssistantText');
   });
 
   it('preserves real provider admission for substantive questions instead of canned fallback', async () => {
@@ -1671,7 +1712,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.29.1-ENTER-METERED-SUBSTANTIVE-CERT
+ * VERSION: v1.30.0-DEVICE-TIME-PROGRESSIVE-RENDER-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
