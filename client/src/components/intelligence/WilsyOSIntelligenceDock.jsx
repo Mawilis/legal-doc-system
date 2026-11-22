@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT
+ * VERSION: v4.38.0-SOURCE-GROUNDED-FOLLOWUP-CONTEXT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -15,6 +15,7 @@
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.38.0-SOURCE-GROUNDED-FOLLOWUP-CONTEXT preserves semantic topic continuity only from the previous explicitly verified Projects source reply. A bounded count/status grammar handles natural and imperfect follow-ups (including 'How may are active?') with fresh EOS readback of total/active/planned/on_hold/done/cancelled, not brittle canned answers or paid provider calls. Every read is tenant/principal validated; ungrounded requests retain consented EOS reasoning.
  * CHANGELOG: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT answers strictly scoped project portfolio count requests from independent exact-tenant/principal EOS Projects summary (GET only), verifying the canonical status-count envelope. No paid reasoning, guessed count, permissions, persistence or reconciliation changes; denial/unavailability remains explicit.
  * CHANGELOG: v4.36.0-LIVE-LOCAL-CLOCK-AND-PROGRESSIVE-TURNS answers strictly bounded current-time requests from the local device clock and reveals newly persisted assistant text progressively with accessible reduced-motion fallbacks. No provider call, EOS admission, IAM expansion, quota bypass, or historical replay.
  * CHANGELOG: v4.35.0-CONTEXTUAL-NONMETERED-COURTESY responds naturally to greetings and tightly scoped day-status acknowledgements after a verified built-in turn (including the previous certified wording) in the same session. No model invocation, quota admission, inferred work, or bypass for substantive prompts.
@@ -266,10 +267,57 @@ function resolveWilsyLocalCourtesy(value, previousTurns = []) {
  * The actual number comes only from EOS Projects summary with current IAM,
  * never from browser-held project lists, inference, or an untrusted snapshot.
  */
-function classifyWilsyProjectPortfolioCountIntent(value) {
-  const text = String(value || '').trim();
-  if (!text || text.length > 120) return false;
-  return /^(?:(?:how many|number of)\s+(?:(?:projects)\s+(?:do i have|are there|in (?:my|our|the) (?:tenant|workspace|portfolio|organisation|organization|company))|(?:(?:my|our|the)\s+projects)\s+(?:do i have|are there))|(?:what(?:'s| is) (?:my|our|the) (?:total )?project count)|(?:count (?:my|our|the) projects))[?.!\s]*$/i.test(text);
+function classifyWilsyProjectPortfolioCountIntent(value, previousTurns = []) {
+  const text = String(value || '').trim().toLowerCase()
+    .replace(/[?!.;,]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text || text.length > 160) return null;
+
+  // The only implicit subject allowed is the immediately previous certified
+  // EOS Projects read in this session. The browser does NOT inherit business
+  // authority, counts, identity or tenant from a chat transcript.
+  const previous = Array.isArray(previousTurns) ? previousTurns.at(-1) : null;
+  const verifiedProjectTopic = previous?.role === 'assistant'
+    && previous?.meta?.source === 'WILSY_EOS_PROJECT_SUMMARY'
+    && previous?.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && previous?.meta?.domain === 'PROJECTS';
+  const explicitProjectTopic = /\bprojects?\b/.test(text);
+  if (!explicitProjectTopic && !verifiedProjectTopic) return null;
+
+  // Mixed subjects, requests for records other than the tenant portfolio, and
+  // any command or mutation must not inherit the free source-count capability.
+  if (/\b(?:employees?|people|users?|clients?|deals?|invoices?|payments?|tasks?|meetings?|staff|revenue|budgets?|delete|edit|change|create|assign|transfer|archive)\b/.test(text)) {
+    return null;
+  }
+  const interrogative = /^(?:how (?:many|may)|number of|count|what(?:'s| is) (?:the |my |our )?(?:total |number of )?|tell me (?:the |my |our )?(?:number of |total )?)/.test(text);
+  if (!interrogative) return null;
+
+  const stateWords = [
+    ['active', /\bactive\b/],
+    ['planned', /\b(?:planned|planning)\b/],
+    ['on_hold', /\b(?:on hold|paused)\b/],
+    ['done', /\b(?:done|completed|finished)\b/],
+    ['cancelled', /\b(?:cancelled|canceled)\b/],
+  ];
+  const selectedStates = stateWords.filter(([, pattern]) => pattern.test(text));
+  if (selectedStates.length > 1) return null;
+
+  if (explicitProjectTopic) {
+    // A compact grammatical boundary: do not interpret explanatory, historical,
+    // ownership, third-party, conditional or mutation questions as a count.
+    if (/\b(?:why|when|who|which|before|after|last|next|tomorrow|yesterday|by|per|each|should|could|would)\b/.test(text)) return null;
+    if (!/\b(?:how many|how may|number of|count|total|are there|do i have)\b/.test(text)) return null;
+    if (/\b(?:other|another|their|someone|anyone)\b/.test(text)) return null;
+    return { status: selectedStates[0]?.[0] || 'total' };
+  }
+
+  // A pronoun-only follow-up is admissible ONLY as a short quantity/status
+  // question immediately after a verified Projects reply, not an open-ended
+  // question about unidentified records.
+  if (!selectedStates.length || text.split(' ').length > 8) return null;
+  if (!/^(?:how (?:many|may) (?:of (?:them|these|those) )?are |how (?:many|may) (?:of (?:them|these|those) )?|number of |count |what(?:'s| is) (?:the |my |our )?(?:number of )?)/.test(text)) return null;
+  const stripped = text.replace(/^(?:how (?:many|may) (?:of (?:them|these|those) )?(?:are )?|number of |count |what(?:'s| is) (?:the |my |our )?(?:number of )?)/, '').trim();
+  if (!/^(?:active|planned|planning|on hold|paused|done|completed|finished|cancelled|canceled)(?: (?:ones|projects|are there))?$/.test(stripped)) return null;
+  return { status: selectedStates[0][0] };
 }
 
 /**
@@ -1176,8 +1224,8 @@ export function WilsyOSIntelligenceDock({
       const localClockReply = isLegalDockRole(authUser?.role)
         ? null : resolveWilsyLocalClock(text);
       const localNonmeteredReply = localCourtesyReply || localClockReply;
-      const projectCountIntent = !isLegalDockRole(authUser?.role)
-        && classifyWilsyProjectPortfolioCountIntent(text);
+      const projectCountIntent = isLegalDockRole(authUser?.role)
+        ? null : classifyWilsyProjectPortfolioCountIntent(text, activeThread?.messages);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1305,9 +1353,16 @@ export function WilsyOSIntelligenceDock({
             response?.data, exactTenant, exactPrincipal,
           );
           result = {
-            reply: counts.total === 1
-              ? 'You have 1 project in this tenant, according to the current EOS Projects registry.'
-              : 'You have ' + counts.total + ' projects in this tenant, according to the current EOS Projects registry.',
+            reply: projectCountIntent.status === 'total'
+              ? (counts.total === 1
+                ? 'You have 1 project in this tenant, according to the current EOS Projects registry.'
+                : 'You have ' + counts.total + ' projects in this tenant, according to the current EOS Projects registry.')
+              : counts[projectCountIntent.status] + ' of your ' + counts.total
+                + ' projects are ' + ({
+                  active: 'active', planned: 'planned', on_hold: 'on hold',
+                  done: 'completed', cancelled: 'cancelled',
+                })[projectCountIntent.status]
+                + ', according to the current EOS Projects registry.',
             source: 'WILSY_EOS_PROJECT_SUMMARY',
             phase: 'SOURCE_VERIFIED_READ_ONLY',
             domain: 'PROJECTS',
@@ -1613,7 +1668,8 @@ export function WilsyOSIntelligenceDock({
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt));
   const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages)
     || resolveWilsyLocalClock(prompt)
-    || (!isLegalDockRole(authUser?.role) && classifyWilsyProjectPortfolioCountIntent(prompt)));
+    || (!isLegalDockRole(authUser?.role)
+      && classifyWilsyProjectPortfolioCountIntent(prompt, activeThread?.messages)));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
       .filter(value => typeof value === 'string' && value.trim()).join(' '),
@@ -2354,7 +2410,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.37.0-SOURCE-VERIFIED-PROJECT-COUNT
+ * VERSION: v4.38.0-SOURCE-GROUNDED-FOLLOWUP-CONTEXT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
