@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK
+ * VERSION: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY identifies
+ *            EOS's exact unpublished-Strategy 409 separately from IAM and
+ *            transport failure, shows an authorized private-review handoff,
+ *            and blocks link commands before publication. A Founder-approved
+ *            source proposal is never substituted for published EOS truth.
  * CHANGELOG: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK reads
  *            separately governed Strategy/project link status through EOS,
  *            validates exact tenant/principal/project/pillar, and offers a
@@ -535,6 +540,13 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     } catch (failure) {
       if (!active(key) || request !== strategyLinkReadRef.current.sequence) return;
       if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      const reason = failure?.response?.data?.detail?.error;
+      if (failure?.response?.status === 409
+        && reason === 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED') {
+        setStrategyLink({ state: 'PUBLICATION_REQUIRED', items: [],
+          message: 'No currently effective EOS-published Strategy exists. The approved source text and 22 project records do not substitute for independent publication. An authorized author must prepare and submit the Strategy, and a different authorized publisher must approve it with an effective date before Pillar 1 can be linked.' });
+        return;
+      }
       setStrategyLink({ state: 'UNAVAILABLE', items: [],
         message: failure?.response?.status === 403
           ? 'EOS did not admit current Strategy and Projects read permissions.'
@@ -1093,6 +1105,11 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           <h4>Strategic Pillar 1 · Project relationship</h4>
                           {strategyLink.state === 'LOADING' && <p role="status">Verifying current Strategy project link…</p>}
                           {strategyLink.state === 'UNAVAILABLE' && <p role="alert">{strategyLink.message}</p>}
+                          {strategyLink.state === 'PUBLICATION_REQUIRED' && <p role="status">{strategyLink.message}</p>}
+                          {strategyLink.state === 'PUBLICATION_REQUIRED' && reviewPermitted && !query.review
+                            && <button type="button" onClick={() => changeQuery({ review: true, revision: null })}>
+                              Review private Strategy publication workflow
+                            </button>}
                           {strategyLink.state === 'LINKING' && <p role="status">{strategyLink.message}</p>}
                           {strategyLink.state === 'READY' && (() => {
                             const item = strategyLink.items.find(row => row.pillar_id === 'pillar-one'
@@ -1240,7 +1257,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK
+// VERSION: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
