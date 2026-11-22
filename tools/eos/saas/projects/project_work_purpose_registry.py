@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE
+VERSION: v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE verifies
+event type, actor, timestamp and fixed digest format against canonical
+current source before either single or bounded-batch projection.
 CHANGELOG: v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE
 rejects even two different revision records for one task in a supposedly
 unique current batch; corruption never silently picks the last row.
@@ -47,7 +50,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE"
+VERSION: Final = "v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD"})
@@ -85,10 +88,13 @@ def _verify(row: dict[str, object], task: ProjectTask) -> dict[str, object]:
             or semantic.get("task_id") != task.task_id
             or semantic.get("audience") not in AUDIENCES
             or type(semantic.get("task_revision")) is not int
+            or semantic["task_revision"] < 1
             or type(semantic.get("revision")) is not int
             or semantic["revision"] < 1
             or not _coordinate(semantic.get("actor_principal_id"))
             or not _coordinate(semantic.get("evidence_ref"))
+            or not isinstance(semantic.get("recorded_at"), str)
+            or not semantic["recorded_at"].endswith("+00:00")
             or not isinstance(semantic.get("reason"), str)
             or not 10 <= len(semantic["reason"]) <= 1000
             or semantic.get("critical_gate") is not False
@@ -97,6 +103,28 @@ def _verify(row: dict[str, object], task: ProjectTask) -> dict[str, object]:
             or not compare_digest(row["fingerprint"], _digest(semantic))):
         raise WorkPurposeError("PROJECT_WORK_PURPOSE_SOURCE_INVALID")
     return semantic
+
+
+def _audit_event_valid(
+    event: dict[str, object], semantic: dict[str, object],
+    fingerprint: str,
+) -> bool:
+    """Require immutable event identity, actor, time and source checksum parity."""
+    replay = event.get("request_fingerprint")
+    return (
+        event.get("event_type") == "WORK_PURPOSE_CLASSIFIED"
+        and event.get("tenant_id") == semantic["tenant_id"]
+        and event.get("project_id") == semantic["project_id"]
+        and event.get("task_id") == semantic["task_id"]
+        and event.get("revision") == semantic["revision"]
+        and event.get("actor_principal_id") == semantic["actor_principal_id"]
+        and event.get("recorded_at") == semantic["recorded_at"]
+        and event.get("evidence_ref") == semantic["evidence_ref"]
+        and event.get("result_fingerprint") == fingerprint
+        and _coordinate(event.get("idempotency_key"))
+        and isinstance(replay, str) and len(replay) == 128
+        and all(char in "0123456789abcdef" for char in replay)
+    )
 
 
 class ProjectWorkPurposeRegistry:
@@ -145,7 +173,7 @@ class ProjectWorkPurposeRegistry:
             }, session=session)
         except PyMongoError as error:
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_UNAVAILABLE") from error
-        if event is None or event.get("evidence_ref") != value["evidence_ref"]:
+        if event is None or not _audit_event_valid(event, value, row["fingerprint"]):
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
         if value["task_revision"] != task.revision:
             # A task update invalidates purpose truth, not the purpose's own
@@ -220,7 +248,10 @@ class ProjectWorkPurposeRegistry:
             for event in events:
                 key = event.get("task_id"), event.get("revision")
                 verified = audited.get(key)
-                if verified is None or key in matched or event.get("evidence_ref") != verified[1]["evidence_ref"]:
+                if verified is None or key in matched or not _audit_event_valid(
+                    event, _verify(verified[1], verified[0]),
+                    verified[1]["fingerprint"],
+                ):
                     raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
                 matched.add(key)
             if matched != set(audited):
@@ -331,7 +362,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.1.1-DUPLICATE-PURPOSE-SOURCE-GATE
+# VERSION: v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
