@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI
+ * VERSION: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,13 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION distinguishes the
+ *            roadmap's six proposed milestones and twelve implementation
+ *            tasks from EOS-persisted work. Explicit source-authorized plan
+ *            admission checks the complete bounded project page, skips exact
+ *            existing plan records, uses stable per-item idempotency and
+ *            requires independent persisted readback after each create.
+ *            No assignees, deadlines, dependencies or progress are inferred.
  * CHANGELOG: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI presents each
  *            independently verified project as a structured accessible row,
  *            styles source-owned task results, and places creation behind a
@@ -221,6 +228,31 @@ const FOUNDER_APPROVED_SOURCE = Object.freeze({
   },
 });
 const STRATEGY_PILLARS = FOUNDER_APPROVED_SOURCE.STRATEGY.sections.filter(section => section.section_id.startsWith('pillar-'));
+
+// Approved engineering register, not a source project task list. Only EOS can
+// persist these as real Work & Milestones; no planned item is counted as done.
+const FOUNDATION_PROJECT_NAME = 'WILSY OS — Unified Operating Platform Foundation';
+const FOUNDATION_EXECUTION_PLAN = Object.freeze([
+  { key: 'MW-M01', kind: 'MILESTONE', title: 'MW-M01 — Operating taxonomy and strategy alignment', description: 'Audited operating, platform build and unclassified audience taxonomy; existing seven tasks remain accessible; Founder default certified.' },
+  { key: 'MW-M02', kind: 'MILESTONE', title: 'MW-M02 — Governed work graph and multi-source accountability', description: 'Canonical source-owned work identities and reason edges for authorized work and independent project decisions; real Mongo and IAM evidence.' },
+  { key: 'MW-M03', kind: 'MILESTONE', title: 'MW-M03 — Role-aware work execution and approval decisions', description: 'Founder, HQ and tenant-capacity queues and genuine source-owned review decisions; source reauthorization and segregation of duties.' },
+  { key: 'MW-M04', kind: 'MILESTONE', title: 'MW-M04 — Ranked Founder operating workspace', description: 'Explainable priorities, deterministic pagination, diverse sources, operating/build split and desktop/mobile certification.' },
+  { key: 'MW-M05', kind: 'MILESTONE', title: 'MW-M05 — Audited workflow automation and Intelligence Dock parity', description: 'Source-authorized event rules with replay safeguards, independently authorized Dock suggestions, no inferred financial execution.' },
+  { key: 'MW-M06', kind: 'MILESTONE', title: 'MW-M06 — Production readiness and strategy outcome certification', description: 'Exact-head security, role/IAM, real Mongo, performance, accessibility, browser and rollback gates green; approved Strategy evidence readback.' },
+  { key: 'MW-T01', kind: 'TASK', title: 'MW-T01 — Inventory canonical My Work sources, capacities and IAM', description: 'MW-M01. Approve source/consumer/command matrix, existing authority and all current work identities; prohibit duplicate work ledgers.' },
+  { key: 'MW-T02', kind: 'TASK', title: 'MW-T02 — Define Operating, Platform Build and Unclassified work', description: 'MW-M01. Source-owned classification evidence, no title regex, no hidden unclassified or unauthorized work.' },
+  { key: 'MW-T03', kind: 'TASK', title: 'MW-T03 — Implement audited source-owned work classification', description: 'MW-M01. CAS/idempotency, exact tenant and owner authorization; preserve all seven current work records.' },
+  { key: 'MW-T04', kind: 'TASK', title: 'MW-T04 — Derive source-authorized work identities and accountability', description: 'MW-M02. Current IAM, source revisions and exact role edges; no graph-owned task or permission grants.' },
+  { key: 'MW-T05', kind: 'TASK', title: 'MW-T05 — Integrate independent project approvals in My Work', description: 'MW-M02. Approver-specific pending review, segregation of duties, decision readback and revoked-participation denial.' },
+  { key: 'MW-T06', kind: 'TASK', title: 'MW-T06 — Deliver Founder Operating, Platform and Waiting filters', description: 'MW-M03. Verified classification filters, work reasons, unclassified/denied/empty states, accessible presentation.' },
+  { key: 'MW-T07', kind: 'TASK', title: 'MW-T07 — Certify role capacity packs and tenant isolation', description: 'MW-M03. Independent Founder/HQ/customer queue tests, seat/entitlement checks and denied cross-tenant cases.' },
+  { key: 'MW-T08', kind: 'TASK', title: 'MW-T08 — Implement explainable ranking and source diversity', description: 'MW-M04. Stable EOS scoring/cursors, defensible urgency and 500+ work item regression.' },
+  { key: 'MW-T09', kind: 'TASK', title: 'MW-T09 — Wire source-owned task and decision commands', description: 'MW-M04. Create, edit, assign, complete, approve, reject through source IAM, CAS, idempotency and durable readback.' },
+  { key: 'MW-T10', kind: 'TASK', title: 'MW-T10 — Build governed event-driven workflow automation', description: 'MW-M05. Event replay, rule conflicts, current IAM, revocation, audits and no unintended external effects.' },
+  { key: 'MW-T11', kind: 'TASK', title: 'MW-T11 — Align Intelligence Dock with the authorized work graph', description: 'MW-M05. One source identity/ranking explanation, no invented execution/approval; independently confirmed handoff.' },
+  { key: 'MW-T12', kind: 'TASK', title: 'MW-T12 — Certify production readiness and rollback', description: 'MW-M06. Exact-head Python/JS, Mongo replica set, authenticated browser, role matrix, observability and SLO evidence.' },
+]);
+
 const founderApprovedProposal = classification => {
   const source = FOUNDER_APPROVED_SOURCE[classification];
   return { title: source.title, document_version: source.document_version,
@@ -321,6 +353,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [admissionStatus, setAdmissionStatus] = useState('');
   const projectReadRef = useRef({ sequence: 0, controller: null });
   const projectMutation = useRef(null);
+  const planMutation = useRef(null);
+  const [planState, setPlanState] = useState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
   const projectReplay = useRef({ intent: '', key: null });
   const readId = useRef(0);
   const readController = useRef(null);
@@ -433,6 +467,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     deliveryReadRef.current.controller?.abort();
     setDelivery({ state: 'IDLE', projectId: null, page: null, error: '' });
     projectMutation.current = null;
+    planMutation.current = null;
+    setPlanState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
     projectReplay.current = { intent: '', key: null };
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
     setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription(''); setProjectEditSource(false);
@@ -440,6 +476,104 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     if (classification === 'STRATEGY' && sessionKey) void loadProjects();
     return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); projectMutation.current = null; };
   }, [classification, sessionKey, loadProjects]);
+
+  /**
+   * Create only missing reviewed plan records, through one audited EOS command
+   * per record and independent current task readback. No blind bulk insert:
+   * noncanonical source, extra pages, uncertain POST or stale session halts.
+   */
+  const admitFoundationPlan = async () => {
+    const projectId = delivery.projectId;
+    const project = projectItems.find(item => item.project_id === projectId);
+    const key = sessionKey;
+    if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
+      || delivery.state !== 'READY' || !project || project.name !== FOUNDATION_PROJECT_NAME
+      || planMutation.current || typeof globalThis.crypto?.randomUUID !== 'function') return;
+    const nonce = Symbol('strategy-plan');
+    planMutation.current = nonce;
+    setPlanState({ state: 'RUNNING', created: 0, skipped: 0, message: 'Rechecking existing EOS tasks before any creation…' });
+    const headers = { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token };
+    let created = 0;
+    let skipped = 0;
+    try {
+      const getPage = async () => {
+        const { data: page } = await api.get('/projects/' + encodeURIComponent(projectId) + '/tasks', {
+          params: { limit: 100, offset: 0 }, headers,
+        });
+        if (!active(key) || planMutation.current !== nonce) throw new Error('PLAN_SCOPE_CHANGED');
+        if (page?.schema !== 'WILSY-PROJECT-TASK-LIST/V1'
+          || page.tenant_id !== scope.tenantId || page.principal_id !== scope.principalId
+          || page.project_id !== projectId || page.limit !== 100 || page.offset !== 0
+          || page.has_more !== false || page.next_offset !== null
+          || !Array.isArray(page.items) || page.items.length > 100
+          || new Set(page.items.map(item => item.task_id)).size !== page.items.length
+          || page.items.some(item => item?.tenant_id !== scope.tenantId
+            || item.project_id !== projectId
+            || !/^ptk-[a-f0-9]{48}$/.test(item.task_id)
+            || !['TASK', 'MILESTONE'].includes(item.kind)
+            || typeof item.title !== 'string')) {
+          throw new Error('PLAN_PROJECT_TASK_PAGE_UNVERIFIED');
+        }
+        return page.items;
+      };
+      let current = await getPage();
+      for (const entry of FOUNDATION_EXECUTION_PLAN) {
+        if (!active(key) || planMutation.current !== nonce) throw new Error('PLAN_SCOPE_CHANGED');
+        // Exact project-title identity is deterministic; never match by
+        // keyword, auto-edit existing tasks, or assume earlier plans are done.
+        const matches = current.filter(item => item.title === entry.title);
+        if (matches.length > 1 || (matches.length === 1 && matches[0].kind !== entry.kind))
+          throw new Error('PLAN_DUPLICATE_OR_KIND_CONFLICT');
+        if (matches.length === 1) {
+          skipped += 1;
+          setPlanState({ state: 'RUNNING', created, skipped, message: entry.key + ' already source-verified.' });
+          continue;
+        }
+        const body = {
+          kind: entry.kind, title: entry.title, description: entry.description,
+          assignee_principal_id: null, due_date: null, parent_task_id: null, depends_on: [],
+        };
+        // Scoped stable key supports safe server replay when a response was
+        // lost; do not use random keys that could double-create on retry.
+        const commandKey = 'strategy-foundation-v1-' + projectId + '-' + entry.key;
+        const { data: receipt } = await api.post('/projects/' + encodeURIComponent(projectId) + '/tasks',
+          body, { headers: { ...headers, 'Idempotency-Key': commandKey } });
+        if (!active(key) || planMutation.current !== nonce) throw new Error('PLAN_SCOPE_CHANGED');
+        if (receipt?.schema !== 'WILSY-PROJECT-TASK-RESULT/V1'
+          || receipt.tenant_id !== scope.tenantId || receipt.principal_id !== scope.principalId
+          || receipt.project_id !== projectId || receipt.task?.tenant_id !== scope.tenantId
+          || receipt.task?.project_id !== projectId || receipt.task?.kind !== entry.kind
+          || receipt.task?.title !== entry.title
+          || !/^ptk-[a-f0-9]{48}$/.test(receipt.task?.task_id || '')) {
+          throw new Error('PLAN_CREATE_RECEIPT_INVALID');
+        }
+        current = await getPage();
+        if (!current.some(item => item.task_id === receipt.task.task_id
+          && item.title === entry.title && item.kind === entry.kind)) {
+          throw new Error('PLAN_CREATE_READBACK_UNVERIFIED');
+        }
+        created += 1;
+        setPlanState({ state: 'RUNNING', created, skipped, message: entry.key + ' source-verified.' });
+      }
+      setPlanState({ state: 'COMPLETE', created, skipped,
+        message: created + ' created and independently verified; ' + skipped + ' previously present.' });
+      await loadDelivery(projectId, 0);
+    } catch (failure) {
+      if (active(key) && planMutation.current === nonce) {
+        const status = failure?.response?.status;
+        const bounded = status === 401 || status === 403 ? 'EOS denied task creation or readback.'
+          : status === 409 ? 'EOS reported a task conflict.'
+            : status === 503 ? 'EOS task source is unavailable.'
+              : 'One plan item could not be independently verified.';
+        setPlanState({ state: 'FAILED', created, skipped,
+          message: bounded + ' ' + created + ' created, ' + skipped
+            + ' already verified. Refresh the project before retrying; existing tasks are retained.' });
+        await loadDelivery(projectId, 0);
+      }
+    } finally {
+      if (planMutation.current === nonce) planMutation.current = null;
+    }
+  };
 
   /** Explicitly request the existing administrator-governed Founder admission. */
   const activateFounderProjects = async () => {
@@ -794,6 +928,43 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
                       </div>}
                     </section>}
+                    {delivery.state === 'READY' && projectItems.some(item => item.project_id === delivery.projectId
+                      && item.name === FOUNDATION_PROJECT_NAME) && <section className={styles.strategyPlan}
+                        aria-label="Planned My Work overhaul programme">
+                      <div className={styles.strategyPlanHeader}>
+                        <div>
+                          <span className={styles.eyebrow}>PLANNED · NOT YET PERSISTED</span>
+                          <h3>My Work implementation programme</h3>
+                          <p>Six proposed milestones and twelve tasks. Existing EOS work is preserved.
+                            This plan is not Strategy completion evidence.</p>
+                        </div>
+                        <button type="button" onClick={() => void admitFoundationPlan()}
+                          disabled={planState.state === 'RUNNING' || delivery.page.has_more}>
+                          {planState.state === 'RUNNING' ? 'Saving verified work…' : 'Create missing in EOS'}
+                        </button>
+                      </div>
+                      {delivery.page.has_more && <p role="alert">Verify the full project task list before admitting the plan.</p>}
+                      <div className={styles.strategyPlanGroups}>
+                        {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
+                          <h4>{kind === 'MILESTONE' ? 'Milestones · 6' : 'Implementation tasks · 12'}</h4>
+                          <ul>{FOUNDATION_EXECUTION_PLAN.filter(entry => entry.kind === kind).map(entry => {
+                            const matches = delivery.page.items.filter(item => item.title === entry.title);
+                            const verified = matches.length === 1 && matches[0].kind === entry.kind;
+                            return <li key={entry.key}>
+                              <span>{entry.title}</span>
+                              <span className={verified ? styles.planPersisted : styles.planProposed}>
+                                {verified ? 'Persisted in EOS' : 'Planned'}
+                              </span>
+                            </li>;
+                          })}</ul>
+                        </div>)}
+                      </div>
+                      {planState.state !== 'IDLE' && <p role="status" aria-live="polite">
+                        {planState.message} {planState.state === 'RUNNING' ? planState.created + ' created so far.' : ''}
+                      </p>}
+                      <p className={styles.strategyDeliveryNote}>Creation requires current EOS project:update authority. No assignee,
+                        deadline, task completion, approval, financial authorization or strategy linkage is inferred.</p>
+                    </section>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
                     {projectState === 'UNAVAILABLE' && typeof onOpenProjects === 'function' && <button
@@ -917,7 +1088,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI
+// VERSION: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
