@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.4.1-STRATEGY-TRANSIENT-503-RECOVERY-CERT
+ * VERSION: v1.5.0-STRATEGY-EXECUTION-LAYOUT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.5.0-STRATEGY-EXECUTION-LAYOUT-CERT verifies
+ *            project identity/status/action grouping and collapsed creation;
+ *            authenticated task reads remain the only source of execution.
  * CHANGELOG: v1.4.1-STRATEGY-TRANSIENT-503-RECOVERY-CERT verifies
  *            a persistent Projects HTTP 503 never fabricates Strategy
  *            project task readback and presents an authorized navigation
@@ -305,10 +308,16 @@ describe('Strategy source-owned project execution readback', () => {
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
     });
     render(wrap({ classification: 'STRATEGY' }));
-    fireEvent.click(await screen.findByRole('button', { name: /Verify execution/ }));
+    const verifyButton = await screen.findByRole('button', { name: /Verify execution for Unified Operating Platform Foundation/ });
+    expect(screen.getByRole('button', { name: /Open project delivery for Unified Operating Platform Foundation/ })).toBeVisible();
+    expect(screen.getByText('Revision 2')).toBeVisible();
+    const newProjectForm = document.querySelector('form[aria-label="Create governed EOS project"]');
+    expect(newProjectForm?.closest('details')?.open).toBe(false);
+    expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(verifyButton);
     expect(await screen.findByRole('heading', { name: 'Source-verified project execution' })).toBeVisible();
     expect(screen.getByText(/Complete operating taxonomy/)).toBeVisible();
-    expect(screen.getByText(/No Strategy completion percentage is inferred/)).toBeVisible();
+    expect(screen.getByText(/No strategic pillar linkage or Strategy completion percentage is inferred/)).toBeVisible();
     const call = api.get.mock.calls.find(([url]) => url === '/projects/' + projectId + '/tasks');
     expect(call[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId,
       Authorization: 'Bearer synthetic-only' });
@@ -373,7 +382,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.4.1-STRATEGY-TRANSIENT-503-RECOVERY-CERT
+// VERSION: v1.5.0-STRATEGY-EXECUTION-LAYOUT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
