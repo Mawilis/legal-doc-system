@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Exact-Participant Project Daily Attention Certificate
-VERSION: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT
+VERSION: v1.1.1-BATCH-ATTENTION-PURPOSE-CERT
 AUTHORITY: Synthetic authenticated-source isolation and projection tests.
 EPITOME: Verify exact principal/tenant queue, current project participation,
          blocked work, revoked visibility and denial of inherited founder IAM.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_attention_source.py
 COLLABORATION / OWNERSHIP: project_attention_source, Projects router, My Work.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.1-BATCH-ATTENTION-PURPOSE-CERT adjusts synthetic
+         collection reads for bounded batch evidence while preserving exact
+         participant admission and unclassified visibility.
 CHANGELOG: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT certifies
          missing work-purpose evidence remains visible as UNCLASSIFIED,
          forwards exact source task revision and fails closed on tampering
@@ -80,9 +83,11 @@ def _context(role="PROJECTS_PARTICIPANT_CONTRIBUTOR"):
 
 def _wire(monkeypatch, rows, *, active=True, role="CONTRIBUTOR"):
     class _AbsentPurpose:
-        def find_one(self, _query, *, session):
+        def find(self, query, *, session):
             assert session is not None
-            return None
+            assert query["tenant_id"] == TENANT
+            assert set(query["task_id"]["$in"]).issubset({row["task_id"] for row in rows})
+            return []
     database = {
         source.TASK_COLLECTION: _Collection(rows),
         source.PURPOSE_COLLECTION: _AbsentPurpose(),
@@ -168,7 +173,7 @@ def test_corrupt_task_source_denies_complete_queue(monkeypatch):
 
 
 # ARTIFACT: test_project_attention_source.py
-# VERSION: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT
+# VERSION: v1.1.1-BATCH-ATTENTION-PURPOSE-CERT
 # AUTHORITY BOUNDARY: synthetic source admission, no live tenant IAM
 # TENANT POSTURE: exact principal and active-project record mandatory
 # FAIL-CLOSED POSTURE: stale, forged, revoked and inherited authority denied
