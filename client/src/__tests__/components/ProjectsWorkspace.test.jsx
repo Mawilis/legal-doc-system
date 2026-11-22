@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.58.0-BOUNDED-ERROR-CODE-PRESENTATION-CERT
+ * VERSION: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,7 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT certifies owner-view attachment 503 source-code diagnosis and a functional route to People for explicit contributor admission. Upload stays unavailable without independently admitted participant IAM; unverified manifests do not fabricate empty files.
  * CHANGELOG: v2.58.0-BOUNDED-ERROR-CODE-PRESENTATION-CERT certifies sanitized source code visibility for HTTP 503 while task list still fails closed; unknown error text is never reflected.
  * CHANGELOG: v2.57.0-PRIMARY-TASK-READ-FIRST-CERT certifies mandatory task GET dispatch completes before optional participant/member queries and exposes actual 503 task source failure instead of fabricating rows. Preserves isolation of independently verified work from failed directories.
  * CHANGELOG: v2.56.0-FAULT-ISOLATED-WORK-READ-CERT certifies that independently verified task records remain available despite rejected contributor-directory reads; task assignment is refused while participant authorization is unverified and source failure is explicit.
@@ -285,6 +286,7 @@ vi.mock('../../services/api.js', () => ({ default: api }));
 import ProjectsWorkspace from '../../components/workspaces/ProjectsWorkspace.jsx';
 import ProjectWorkRowActions from '../../components/workspaces/ProjectWorkRowActions.jsx';
 import ProjectWorkRow from '../../components/workspaces/ProjectWorkRow.jsx';
+import ProjectTaskAttachmentsPanel from '../../components/workspaces/ProjectTaskAttachmentsPanel.jsx';
 
 const TENANT = 'projects-cert-tenant';
 const PRINCIPAL = 'projects-cert-principal';
@@ -367,6 +369,52 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+});
+
+describe('Project task attachment source and contributor authority boundary', () => {
+  it('reports exact sanitized EOS manifest failure and navigates to project People without uploading', async () => {
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const openPeople = vi.fn();
+    api.get.mockRejectedValue({
+      response: { status: 503, data: { detail: 'PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE' } },
+    });
+    render(<ProjectTaskAttachmentsPanel
+      tenantId={TENANT} principalId={PRINCIPAL} projectId={PROJECT_ID}
+      taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
+      participantMode={false} onManageContributors={openPeople}
+      onClose={vi.fn()}/>);
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
+      'Task attachment source is unavailable (HTTP 503) · EOS PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE',
+    ));
+    expect(screen.getByText('Add an attachment')).toBeVisible();
+    expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Open project People to authorize a contributor',
+    }));
+    expect(openPeople).toHaveBeenCalledTimes(1);
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.get).toHaveBeenCalledWith(
+      `/projects/${PROJECT_ID}/tasks/${taskId}/attachments?limit=50&offset=0`,
+      expect.objectContaining({ headers: { 'X-Tenant-ID': TENANT } }),
+    );
+  });
+
+  it('shows source-verified quarantine upload only to admitted project contributors', async () => {
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    api.get.mockResolvedValue({ data: {
+      schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1',
+      tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+      task_id: taskId, items: [], limit: 50, offset: 0,
+      has_more: false, next_offset: null,
+    } });
+    render(<ProjectTaskAttachmentsPanel
+      tenantId={TENANT} principalId={PRINCIPAL} projectId={PROJECT_ID}
+      taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
+      participantMode={true} onClose={vi.fn()}/>);
+    expect(await screen.findByLabelText('Project attachment file')).toBeVisible();
+    expect(screen.getByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+  });
 });
 
 describe('ProjectsWorkspace source-backed lifecycle', () => {
@@ -2376,7 +2424,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.58.0-BOUNDED-ERROR-CODE-PRESENTATION-CERT
+ * VERSION: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
