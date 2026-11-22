@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION
+ * VERSION: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION identifies failing participant-list versus eligible-member directory read, including HTTP denial/unavailability and invalid source schema. No roster is guessed and grant remains fail-closed until both exact-scope reads validate.
  * CHANGELOG: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION explains the absence of eligible tenant members in the contributor selector and distinguishes membership/IAM admissions from project participation; preserves EOS-only grants and existing errors.
  * CHANGELOG: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF notifies a mounting work editor only after a participant grant/revoke has been independently source-read back. Does not grant IAM or task authority.
  * CHANGELOG: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION removes long principal codes from the
@@ -110,13 +111,44 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
     setState(previous => previous === 'READY' ? 'REFRESHING' : 'LOADING');
     setError('');
     try {
-      const [people, options] = await Promise.all([
+      const [peopleResult, optionsResult] = await Promise.allSettled([
         api.get(root + '/participants?limit=50&offset=' + personOffset, { headers }),
         api.get(root + '/participant-options?limit=50&offset=' + membersOffset, { headers }),
       ]);
       if (current !== generation.current || currentScope.current !== active) return false;
-      const verified = validParticipants(people.data, coordinates, personOffset);
-      const permitted = validOptions(options.data, coordinates, membersOffset);
+      const sourceError = (result, name) => {
+        if (result.status === 'fulfilled') return null;
+        const status = result.reason?.response?.status;
+        const category = status === 401 ? 'authentication required'
+          : status === 403 ? 'permission denied'
+            : status === 404 ? 'endpoint not available in this EOS runtime'
+              : status === 503 ? 'EOS source unavailable'
+                : status === 422 ? 'source request rejected'
+                  : Number.isInteger(status) ? 'HTTP ' + status : 'network unavailable';
+        const error = new Error(name + ': ' + category + '.');
+        error.response = result.reason?.response;
+        error.sourceMessage = name + ': ' + category + '.';
+        return error;
+      };
+      const readFailure = sourceError(peopleResult, 'Project participants')
+        || sourceError(optionsResult, 'Eligible tenant member directory');
+      if (readFailure) throw readFailure;
+      let verified;
+      let permitted;
+      try {
+        verified = validParticipants(peopleResult.value.data, coordinates, personOffset);
+      } catch {
+        const error = new Error('PROJECT_PARTICIPANT_LIST_INVALID');
+        error.sourceMessage = 'Project participants: response scope or schema could not be verified.';
+        throw error;
+      }
+      try {
+        permitted = validOptions(optionsResult.value.data, coordinates, membersOffset);
+      } catch {
+        const error = new Error('PROJECT_MEMBER_CHOICES_INVALID');
+        error.sourceMessage = 'Eligible tenant member directory: response scope or schema could not be verified.';
+        throw error;
+      }
       setItems(verified.items);
       setChoices(permitted.items);
       setHasMore(verified.has_more);
@@ -130,9 +162,11 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       setItems([]);
       setChoices([]);
       const code = cause?.response?.status;
-      setError(code === 401 ? 'Authentication required for project participants.'
-        : code === 403 ? 'EOS denied participant management.'
-          : 'Participant assignment source could not be verified. Retry.');
+      setError(cause?.sourceMessage
+        ? cause.sourceMessage + ' Refresh after the underlying EOS source is available.'
+        : code === 401 ? 'Authentication required for project participants.'
+          : code === 403 ? 'EOS denied participant management.'
+            : 'Project participant sources could not be verified. Retry.');
       setState(code === 401 || code === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
@@ -298,7 +332,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION
+// VERSION: v1.6.0-SEPARATE-SOURCE-FAILURE-CLASSIFICATION
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
