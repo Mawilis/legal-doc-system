@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT
+ * VERSION: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT verifies no permanent source pills, EOS-only person label or neutral You, read-only composer source selection, and blocked reconciliation without duplicate POST.
  * CHANGELOG: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT proves only strictly allowlisted read-only source intents can be submitted without AI consent; mixed write/sensitive prompts retain metered/authority rejection and do not trigger local source surfaces.
  * CHANGELOG: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT requires a concise workspace-first visual header and an accurate accessible kernel diagnostics label instead of an infrastructure hero banner.
  * CHANGELOG: v1.22.0-SOURCE-CONVERSATION-TURN-CERT verifies the selected read-only EOS source intent appears as an ephemeral user turn followed by native source results, no ambient status cards or false model turn, and contextual follow-up selection.
@@ -192,6 +193,12 @@ vi.mock('../../../src/components/intelligence/wilsyAIConversationHistoryEngine.j
 mockLoadThreads.mockImplementation(() => mockThreads);
 
 import WilsyOSIntelligenceDock from '../../../src/components/intelligence/WilsyOSIntelligenceDock.jsx';
+
+const requestReadOnlySource = value => {
+  const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
+  fireEvent.change(composer, { target: { value } });
+  fireEvent.keyDown(composer, { key: 'Enter', code: 'Enter' });
+};
 
 const openLegalAdvisory = async () => {
   fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
@@ -530,6 +537,24 @@ describe('WilsyOSIntelligenceDock', () => {
       .toBeVisible();
   });
 
+  it.each([
+    [{ firstName: 'Wilson', lastName: 'Khanyezi', email: 'private@example.com' }, 'Wilson Khanyezi'],
+    [{ email: 'private@example.com' }, 'You'],
+  ])('uses person identity or neutral You, never email in conversation', async (identity, expected) => {
+    mockApiPost.mockResolvedValue({ data: { response_text: 'EOS verified model reply',
+      usage_observation_id: 'usage-person' } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'name-person', tenantId: 'TEST_TENANT', role: 'OWNER', ...identity,
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), { target: { value: 'Hello WILSY' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(screen.getByText('Hello WILSY')).toBeVisible());
+    expect(screen.getByText(expected)).toBeVisible();
+    expect(screen.queryByText('private@example.com')).not.toBeInTheDocument();
+  });
+
   it('keeps verified workspace inspectable when optional kernel health fails', async () => {
     const principal = 'source-operator';
     mockApiGet.mockImplementation((path, options) => {
@@ -559,7 +584,7 @@ describe('WilsyOSIntelligenceDock', () => {
       'Workspace verified',
     )).toBeVisible());
     expect(screen.queryByLabelText('Inspect verified workspace context')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     expect(screen.getByLabelText(/EOS source status: workspace verified; kernel health not verified/)).toBeVisible();
     const summary = screen.getByLabelText('Inspect verified workspace context');
     expect(summary).toHaveTextContent('AI provider unavailable');
@@ -583,7 +608,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
     expect(screen.queryByRole('status', { name: 'Headquarters work source status' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Review my work' }));
+    requestReadOnlySource('Review my work');
     await waitFor(() => expect(screen.getByRole('status', { name: 'Headquarters work source status' }))
       .toHaveTextContent(message));
     const readCount = mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length;
@@ -633,7 +658,7 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
     expect(screen.queryByText('Review verified CRM work')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Verified workspace context')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Review my work' }));
+    requestReadOnlySource('Review my work');
     const transcript = screen.getByRole('button', { name: 'Review verified work: Review verified CRM work' })
       .closest('[class*="messagesContainer"]');
     expect(transcript).toBeTruthy();
@@ -641,7 +666,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText('Your source request')).toHaveTextContent('Review my work');
     expect(screen.queryByText(/Good (morning|afternoon|evening)/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Back to conversation' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     expect(transcript).toContainElement(screen.getByLabelText('Verified workspace context'));
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText('Institutional AI entitlement is active. Verifying provider and workspace context…'))
@@ -699,7 +724,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
     expect(screen.queryByRole('region', { name: 'Current authorized work' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Review my work' }));
+    requestReadOnlySource('Review my work');
     const work = await screen.findByRole('region', { name: 'Current authorized work' });
     expect(work).toHaveTextContent('Resolve overdue agreement');
     expect(work).toHaveTextContent('Review delivery');
@@ -785,7 +810,7 @@ describe('WilsyOSIntelligenceDock', () => {
     const textarea = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(textarea, { target: { value: 'Held request must not replay' } });
     fireEvent.click(screen.getByLabelText('Send'));
-    await waitFor(() => expect(screen.getByText(/AI execution or usage evidence requires reconciliation/)).toBeVisible());
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' })).toHaveTextContent(/EOS must reconcile the provider execution and usage evidence/));
     expect(textarea).toHaveValue('Held request must not replay');
     expect(screen.getByLabelText('Send')).toBeDisabled();
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
@@ -881,7 +906,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
     expect(screen.queryByText('Verified workspace context unavailable.')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     await waitFor(() => expect(screen.getByText('Verified workspace context unavailable.')).toBeVisible());
     expect(screen.queryByRole('button', {
       name: 'Activate Founder Institutional AI',
@@ -920,7 +945,7 @@ describe('WilsyOSIntelligenceDock', () => {
       fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
       await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) =>
         path === '/wilsy-ai/reasoning/context')).toBe(true));
-      fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+      requestReadOnlySource('Inspect this workspace');
       await waitFor(() => expect(screen.getByText(status === 401 || status === 403
         ? 'Workspace context access denied by EOS.'
         : status === 409
@@ -946,7 +971,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'founder-operator', tenantId: tenant, role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     const action = await screen.findByRole('button', {
       name: 'Activate Founder Institutional AI',
     });
@@ -976,7 +1001,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'founder-operator', tenantId: tenant, role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     fireEvent.click(await screen.findByRole('button', {
       name: 'Activate Founder Institutional AI',
     }));
@@ -1005,7 +1030,7 @@ describe('WilsyOSIntelligenceDock', () => {
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     await waitFor(() => expect(screen.getByLabelText('Inspect verified workspace context'))
       .toHaveTextContent('AI provider unavailable'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
@@ -1035,7 +1060,7 @@ describe('WilsyOSIntelligenceDock', () => {
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     await waitFor(() => expect(screen.getByLabelText('Inspect verified workspace context'))
       .toHaveTextContent('AI reasoning not activated'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
@@ -1063,7 +1088,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(false);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     await waitFor(() => {
       expect(
         screen.getByLabelText('Inspect verified workspace context')
@@ -1124,7 +1149,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/wilsy-ai/reasoning/context')).toBe(true));
     expect(screen.queryByText(copy)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     expect(await screen.findByText(copy)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
@@ -1145,7 +1170,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(obsoleteSignal.aborted).toBe(true);
     await act(async () => finish({ data: { work: { project: { name: 'Obsolete source secret' } } } }));
     expect(screen.queryByText('Obsolete source secret')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    requestReadOnlySource('Inspect this workspace');
     expect(await screen.findByText('Workspace context access denied by EOS.')).toBeVisible();
   });
 
@@ -1287,7 +1312,7 @@ describe('WilsyOSIntelligenceDock', () => {
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Review my work' }));
+    requestReadOnlySource('Review my work');
     const review = await screen.findByRole('button', { name: 'Review verified work: Meet Investors' });
     fireEvent.click(review);
     const focus = screen.getByRole('region', { name: 'Selected verified work' });
@@ -1320,6 +1345,9 @@ describe('WilsyOSIntelligenceDock', () => {
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
+    expect(screen.queryByRole('group', { name: 'Available source actions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Review my work' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Inspect this workspace' })).not.toBeInTheDocument();
     expect(screen.queryByText('Review contract')).not.toBeInTheDocument();
     expect(screen.queryByText('Verified workspace context unavailable.')).not.toBeInTheDocument();
     const input = screen.getByPlaceholderText('Ask Wilsy OS…');
@@ -1333,7 +1361,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Back to conversation' }));
     expect(screen.queryByRole('region', { name: 'Current authorized work' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Review my work' }));
+    requestReadOnlySource('Review my work');
     expect(screen.getByRole('region', { name: 'Current authorized work' }))
       .toHaveTextContent('Prepare warehouse plan');
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -1513,7 +1541,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT
+ * VERSION: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
