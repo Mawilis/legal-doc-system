@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT
+ * VERSION: v2.60.0-ATTACHMENT-ERROR-SCHEMA-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,7 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.60.0-ATTACHMENT-ERROR-SCHEMA-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
  * CHANGELOG: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT certifies owner-view attachment 503 source-code diagnosis and a functional route to People for explicit contributor admission. Upload stays unavailable without independently admitted participant IAM; unverified manifests do not fabricate empty files.
  * CHANGELOG: v2.58.0-BOUNDED-ERROR-CODE-PRESENTATION-CERT certifies sanitized source code visibility for HTTP 503 while task list still fails closed; unknown error text is never reflected.
  * CHANGELOG: v2.57.0-PRIMARY-TASK-READ-FIRST-CERT certifies mandatory task GET dispatch completes before optional participant/member queries and exposes actual 503 task source failure instead of fabricating rows. Preserves isolation of independently verified work from failed directories.
@@ -384,7 +385,7 @@ describe('Project task attachment source and contributor authority boundary', ()
       participantMode={false} onManageContributors={openPeople}
       onClose={vi.fn()}/>);
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
-      'Task attachment source is unavailable (HTTP 503) · EOS PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE',
+      /task attachment source is unavailable \(HTTP 503\) · EOS PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE/i,
     ));
     expect(screen.getByText('Add an attachment')).toBeVisible();
     expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
@@ -2424,7 +2425,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT
+ * VERSION: v2.60.0-ATTACHMENT-ERROR-SCHEMA-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
