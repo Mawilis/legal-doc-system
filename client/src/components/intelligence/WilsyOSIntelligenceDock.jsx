@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION
+ * VERSION: v4.29.1-STABLE-COMPOSER-CONTRACT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.29.1-STABLE-COMPOSER-CONTRACT preserves the existing accessible composer placeholder/selector contract while the default conversation, authenticated identity label and no-status-cards interaction change.
  * CHANGELOG: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION removes the last permanently rendered quick-action button row, prefers a verified non-email person name (or neutral You) in user turns, and presents provider reconciliation as a distinct pending request in the transcript without claiming completion or retrying metered usage. Retains exact-key replay refusal and authenticated source introspection on natural-language intent.
  * CHANGELOG: v4.28.0-STRICT-READONLY-INTENT-CATALOG registers one strict read-only source-intent catalog for both composer permission gating and execution. Unknown intents never inherit unmetered authority; source views cannot issue a model POST or mutate EOS work; no generated markup or model-supplied action names.
  * CHANGELOG: v4.27.1-CONTEXT-FOCUSED-HEADER removes operational kernel diagnostics as the Dock's hero subtitle while preserving truthful accessible kernel status; the visible header now prioritises current verified workspace and source posture.
@@ -1781,9 +1782,7 @@ export function WilsyOSIntelligenceDock({
                         handleSendMessage();
                       }
                     }}
-                    placeholder={workLocator.workspace === 'PROJECTS'
-                      ? 'Ask about this project…'
-                      : 'Ask WILSY OS about your work…'}
+                    placeholder="Ask Wilsy OS…"
                     rows={2}
                     disabled={isSubmitting}
                   />
@@ -2082,7 +2081,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.29.0-REAL-CONVERSATION-IDENTITY-RECONCILIATION
+ * VERSION: v4.29.1-STABLE-COMPOSER-CONTRACT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
