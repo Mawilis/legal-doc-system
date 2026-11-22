@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS
+VERSION: v1.3.2-MALFORMED-AUDIENCE-INTEGRITY-DENIAL
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.3.2-MALFORMED-AUDIENCE-INTEGRITY-DENIAL
+rejects non-string source/historical classifications and malformed task
+IDs with bounded source errors instead of accidental type exceptions.
 CHANGELOG: v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS rejects
 unknown historical audience, invalid source task revision and malformed
 audit replay fields before any timeline entry can be verified.
@@ -64,7 +67,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS"
+VERSION: Final = "v1.3.2-MALFORMED-AUDIENCE-INTEGRITY-DENIAL"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD", "UNCLASSIFIED"})
@@ -104,7 +107,8 @@ def _verify(row: dict[str, object], task: ProjectTask) -> dict[str, object]:
     if (semantic.get("tenant_id") != task.tenant_id
             or semantic.get("project_id") != task.project_id
             or semantic.get("task_id") != task.task_id
-            or semantic.get("audience") not in AUDIENCES
+            or not isinstance(semantic.get("audience"), str)
+            or semantic["audience"] not in AUDIENCES
             or type(task_revision) is not int or task_revision < 1
             or type(revision) is not int or revision < 1
             or not _coordinate(semantic.get("actor_principal_id"))
@@ -242,7 +246,10 @@ class ProjectWorkPurposeRegistry:
             audited: dict[tuple[str, int], tuple[ProjectTask, dict[str, object]]] = {}
             seen_current: set[str] = set()
             for row in rows:
-                task = by_id.get(row.get("task_id"))
+                record_id = row.get("task_id")
+                if not isinstance(record_id, str):
+                    raise WorkPurposeError("PROJECT_WORK_PURPOSE_SOURCE_INVALID")
+                task = by_id.get(record_id)
                 if task is None or task.task_id in seen_current:
                     raise WorkPurposeError("PROJECT_WORK_PURPOSE_BATCH_SCOPE_INVALID")
                 seen_current.add(task.task_id)
@@ -331,7 +338,8 @@ class ProjectWorkPurposeRegistry:
             }
             expected = _digest(semantic)
             task_revision = semantic["task_revision"]
-            if (semantic["audience"] not in AUDIENCES
+            if (not isinstance(semantic["audience"], str)
+                    or semantic["audience"] not in AUDIENCES
                     or type(task_revision) is not int or task_revision < 1
                     or not isinstance(record.get("result_fingerprint"), str)
                     or record["result_fingerprint"] != expected
@@ -438,7 +446,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.3.1-BOUNDED-AUDIT-HISTORY-SEMANTICS
+# VERSION: v1.3.2-MALFORMED-AUDIENCE-INTEGRITY-DENIAL
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
