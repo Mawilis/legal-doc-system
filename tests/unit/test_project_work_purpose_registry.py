@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Source-Owned Project Work Purpose Certificate
-VERSION: v1.1.1-AUDIT-ACTOR-TAMPER-REJECTION-CERT
+VERSION: v1.2.0-AUDITED-UNCLASSIFIED-REVERT-CERT
 AUTHORITY: Test-only proof of canonical Projects work purpose commands.
 EPITOME: No-network immutable audit, current source, CAS, replay and denial.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_work_purpose_registry.py
 COLLABORATION / OWNERSHIP: ProjectWorkPurposeRegistry; Projects router
 remains responsible for live exact-tenant and project:update admission.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.2.0-AUDITED-UNCLASSIFIED-REVERT-CERT proves
+audited reasoned clearance to UNCLASSIFIED without inventing live
+source-verified category, and later source-owner reclassification.
 CHANGELOG: v1.1.1-AUDIT-ACTOR-TAMPER-REJECTION-CERT
 proves immutable event actor drift or forged recorded time is rejected in
 both direct and batch readback, even when source snapshot remains valid.
@@ -153,6 +156,31 @@ def test_purpose_commit_readback_and_identical_replay(source):
     assert len(current.rows) == len(events.rows) == 1
 
 
+def test_explicit_unclassification_is_audited_and_can_be_reclassified(source):
+    """Clearing purpose is an explicit actor CAS event, not an invisible delete."""
+    command(source)
+    cleared = command(
+        source, audience="UNCLASSIFIED",
+        reason="Business purpose needs independent source review.",
+        expected_purpose_revision=1, idempotency_key="synthetic-clear-2",
+    )
+    assert cleared["revision"] == 2
+    claim = source[0].current_for_task(task=task(), session="caller-session")
+    assert claim["audience"] == "UNCLASSIFIED"
+    assert claim["purpose_revision"] == 2
+    assert claim["evidence_ref"] is None
+    assert len(source[1].rows) == 1
+    assert len(source[2].rows) == 2
+    classified = command(
+        source, expected_purpose_revision=2,
+        idempotency_key="synthetic-reclassify-3",
+    )
+    assert classified["revision"] == 3
+    assert source[0].current_for_task(
+        task=task(), session="caller-session",
+    )["audience"] == "PLATFORM_BUILD"
+
+
 def test_new_revision_and_stale_task_go_unclassified(source):
     """Current source category is not inherited across independent task edits."""
     command(source)
@@ -255,7 +283,7 @@ def test_tampered_source_fingerprint_is_rejected(source):
 
 
 # ARTIFACT: test_project_work_purpose_registry.py
-# VERSION: v1.1.1-AUDIT-ACTOR-TAMPER-REJECTION-CERT
+# VERSION: v1.2.0-AUDITED-UNCLASSIFIED-REVERT-CERT
 # AUTHORITY BOUNDARY: Synthetic source registry proof, no IAM.
 # TENANT POSTURE: Strict coordinates and CAS, no cross-tenant read.
 # FAIL-CLOSED POSTURE: Divergent replay/tampered evidence deny.
