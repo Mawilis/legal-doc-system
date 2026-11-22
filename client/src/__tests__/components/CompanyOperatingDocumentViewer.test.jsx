@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.6.1-EXACT-FOUNDATION-NAME-FIXTURE
+ * VERSION: v1.6.2-EXACT-PROJECT-ACTION-QUERIES
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.6.2-EXACT-PROJECT-ACTION-QUERIES aligns three action
+ *            selector assertions to the canonical, full EOS project name.
+ *            Test setup and source-owned IAM and command guards stay intact.
  * CHANGELOG: v1.6.1-EXACT-FOUNDATION-NAME-FIXTURE uses the source-owned
  *            canonical existing WILSY OS foundation project name for the
  *            plan admission test. The production exact-project gate is kept;
@@ -321,8 +324,8 @@ describe('Strategy source-owned project execution readback', () => {
     });
     const onOpenProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject }));
-    const verifyButton = await screen.findByRole('button', { name: /Verify execution for Unified Operating Platform Foundation/ });
-    expect(screen.getByRole('button', { name: /Open project delivery for Unified Operating Platform Foundation/ })).toBeVisible();
+    const verifyButton = await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ });
+    expect(screen.getByRole('button', { name: /Open project delivery for WILSY OS — Unified Operating Platform Foundation/ })).toBeVisible();
     expect(onOpenProject).not.toHaveBeenCalled();
     expect(screen.getByText('Revision 2')).toBeVisible();
     const newProjectForm = document.querySelector('form[aria-label="Create governed EOS project"]');
@@ -364,7 +367,7 @@ describe('Strategy source-owned project execution readback', () => {
         project_id: projectId, task } });
     });
     render(wrap({ classification: 'STRATEGY' }));
-    fireEvent.click(await screen.findByRole('button', { name: /Verify execution for Unified Operating Platform Foundation/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ }));
     expect(await screen.findByRole('heading', { name: 'My Work implementation programme' })).toBeVisible();
     expect(screen.getByText('MW-M01 — Operating taxonomy and strategy alignment')).toBeVisible();
     expect(screen.getByText('MW-T12 — Certify production readiness and rollback')).toBeVisible();
@@ -444,7 +447,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.6.1-EXACT-FOUNDATION-NAME-FIXTURE
+// VERSION: v1.6.2-EXACT-PROJECT-ACTION-QUERIES
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
