@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF
+ * VERSION: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION explains the absence of eligible tenant members in the contributor selector and distinguishes membership/IAM admissions from project participation; preserves EOS-only grants and existing errors.
  * CHANGELOG: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF notifies a mounting work editor only after a participant grant/revoke has been independently source-read back. Does not grant IAM or task authority.
  * CHANGELOG: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION removes long principal codes from the
  *          visible member-choice surface while preserving the exact source
@@ -264,6 +265,9 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
           </select>
 
         </label>
+        {choices.length === 0 && !hasMoreChoices && <p role="status" className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+          EOS has not verified any eligible tenant member for project participation. A current tenant membership and matching business IAM role must be established through their independent governed workflows before this project can grant contributor access. No automatic Founder or owner privilege is inferred.
+        </p>}
         <label className="block text-sm font-semibold text-slate-950">Project role
           <select aria-label="Project participation role" value={selectedRole}
             onChange={event => setSelectedRole(event.target.value)}
@@ -294,7 +298,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF
+// VERSION: v1.5.0-ELIGIBILITY-EMPTY-STATE-EXPLANATION
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
