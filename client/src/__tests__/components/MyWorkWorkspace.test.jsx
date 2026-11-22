@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.17.1-SOVEREIGN-AUDIENCE-TEST-CHANGELOG
+ * VERSION: v1.17.2-SOURCE-PROVENANCE-FIXTURE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.17.2-SOURCE-PROVENANCE-FIXTURE-CERT repairs
+ *            the new Operating work fixture to carry exact source evidence
+ *            and revision while keeping an explicitly unclassified row
+ *            unverified. The production source validator remains strict.
  * CHANGELOG: v1.17.1-SOVEREIGN-AUDIENCE-TEST-CHANGELOG restores
  *            the exact historical compact-toolbar test-version attribution
  *            while preserving source-taxonomy filter regression coverage.
@@ -611,8 +615,12 @@ describe('authenticated My Work execution queue', () => {
     api.get.mockResolvedValueOnce({ data: {
       ...payload,
       items: [
-        { ...payload.items[0], audience: 'OPERATING' },
-        { ...payload.items[1], audience: 'UNCLASSIFIED' },
+        { ...payload.items[0], audience: 'OPERATING',
+          audience_evidence_ref: 'synthetic-operations-source-audit-3',
+          audience_source_revision: 3, critical_gate: false },
+        { ...payload.items[1], audience: 'UNCLASSIFIED',
+          audience_evidence_ref: null,
+          audience_source_revision: null, critical_gate: false },
       ],
     } });
     renderWorkspace();
@@ -788,7 +796,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.17.1-SOVEREIGN-AUDIENCE-TEST-CHANGELOG
+ * VERSION: v1.17.2-SOURCE-PROVENANCE-FIXTURE-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
