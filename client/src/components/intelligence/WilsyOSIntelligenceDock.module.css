@@ -1,12 +1,16 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE
+ * VERSION: v1.8.0-BALANCED-FOLLOWUP-ROW
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.8.0-BALANCED-FOLLOWUP-ROW uses a full-width responsive auto-fit grid for contextual follow-ups so two choices occupy balanced equal-width action lanes; retains transparent inline actions, keyboard focus, reduced-motion and source-only authority.
+ * CHANGELOG: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS adds accessible, low-chrome inline contextual actions, a flexible follow-up row, clearly focused work links and restrained responsive focus treatment instead of bulky black/gold rectangular status buttons.
+ * CHANGELOG: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS makes the two-entry conversation/history navigation a compact toolbar and renders authenticated session threads as text rows, not dark static cards; reuses existing focus and keyboard contrast.
+ * CHANGELOG: v1.5.0-FLUID-CONVERSATION-READING-SURFACE gives verified EOS source projections and assistant replies one fluid reading column, removes assistant card treatments, preserves restrained user turns and the independently scrollable conversation with anchored composer, and tightens mobile typography. Pure presentation, no authority changes.
  * CHANGELOG: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE replaces boxed top tabs with
  * compact text-first navigation, uses a restrained neural gradient in the
  * conversation canvas, and highlights the human greeting without changing
@@ -1005,9 +1009,211 @@
   .intelligenceDockContainer .emptyChatWelcome { padding: 16px 8px; }
 }
 
+
+/* The transcript, not stacked status panels, owns the reading experience.
+   Source observations are JSX-owned, scope-verified, and do not imply AI output. */
+.intelligenceDockContainer .messagesContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  align-items: stretch;
+  gap: 14px;
+  padding: 18px clamp(16px, 3.8vw, 32px) 24px;
+  scrollbar-gutter: stable;
+}
+.intelligenceDockContainer .emptyChatWelcome {
+  padding: 6px 0 12px;
+  max-width: 70ch;
+}
+.intelligenceDockContainer .emptyChatWelcome h4 {
+  font-size: clamp(21px, 3vw, 28px);
+  margin-bottom: 8px;
+}
+.intelligenceDockContainer .assistantBubble {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 0;
+  max-width: 100%;
+}
+.intelligenceDockContainer .userBubble {
+  align-self: flex-end;
+  max-width: min(86%, 56ch);
+  border: 1px solid rgba(196, 161, 96, .28);
+  background: rgba(198, 165, 107, .09);
+  border-radius: 15px;
+  padding: 12px 16px;
+}
+.intelligenceDockContainer .assistantBubble .bubbleHeader {
+  color: #becddd;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.intelligenceDockContainer .bubbleBody {
+  color: #ecf2fa;
+  font-size: 14px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.intelligenceDockContainer .chatInputArea {
+  padding: 12px clamp(12px, 2.5vw, 22px);
+}
+@media (max-width: 600px) {
+  .intelligenceDockContainer .messagesContainer {
+    padding: 14px 14px 20px;
+    scrollbar-gutter: auto;
+  }
+  .intelligenceDockContainer .emptyChatWelcome { padding: 3px 0 10px; }
+  .intelligenceDockContainer .userBubble { max-width: 92%; }
+}
+
+/* Contextual single-conversation navigation and real recent-thread rows. */
+.intelligenceDockContainer .dockNavBar {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 6px clamp(12px, 2.5vw, 22px);
+}
+.intelligenceDockContainer .navTabButton {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  min-height: 44px;
+  font-size: 13px;
+}
+.intelligenceDockContainer .historyTabContent {
+  padding: 20px clamp(16px, 3.8vw, 32px);
+}
+.intelligenceDockContainer .threadsList {
+  gap: 0;
+}
+.intelligenceDockContainer .threadCard {
+  border: 0;
+  border-bottom: 1px solid rgba(164,183,205,.22);
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 13px 8px;
+  color: #e7eef9;
+  min-height: 52px;
+}
+.intelligenceDockContainer .threadCard:hover,
+.intelligenceDockContainer .activeThreadCard {
+  border-color: rgba(212,175,55,.42);
+  background: rgba(166,192,220,.07);
+}
+.intelligenceDockContainer .threadCard:focus-visible {
+  outline: 2px solid #a2ccff;
+  outline-offset: -2px;
+}
+
+/* Contextual source actions read as part of the answer, not a dashboard.
+   Buttons preserve semantic focus, keyboard and touch targets. */
+.intelligenceDockContainer .conversationSectionHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0 12px;
+  max-width: 72ch;
+}
+.intelligenceDockContainer .conversationInlineAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 7px 4px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  color: #c5d7ed;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.intelligenceDockContainer .conversationInlineAction:hover {
+  color: #f4e3b5;
+  border-bottom-color: rgba(230, 197, 126, .6);
+}
+.intelligenceDockContainer .conversationInlineAction:focus-visible,
+.intelligenceDockContainer .conversationWorkLink:focus-visible {
+  outline: 2px solid #aacdff;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.intelligenceDockContainer .conversationInlineAction:disabled {
+  color: #8296ad;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+.intelligenceDockContainer .conversationFollowUps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: stretch;
+  column-gap: clamp(12px, 2vw, 24px);
+  row-gap: 4px;
+  width: 100%;
+  max-width: none;
+  padding: 12px 0;
+  margin-top: 8px;
+  border-top: 1px solid rgba(148,163,184,.18);
+}
+.intelligenceDockContainer .conversationFollowUps > .conversationInlineAction {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+}
+.intelligenceDockContainer .conversationWorkLink {
+  min-height: 36px;
+  padding: 5px 1px;
+  border: 0;
+  background: transparent;
+  color: #e6effa;
+  font: inherit;
+  font-weight: 530;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(174, 201, 233, .30);
+  overflow-wrap: anywhere;
+}
+.intelligenceDockContainer .conversationWorkLink:hover,
+.intelligenceDockContainer .conversationWorkLink[aria-pressed="true"] {
+  color: #f4dfa9;
+  border-bottom-color: #e3c477;
+}
+@media (max-width: 600px) {
+  .intelligenceDockContainer .conversationSectionHeading {
+    align-items: flex-start;
+    gap: 4px 14px;
+  }
+  .intelligenceDockContainer .conversationFollowUps {
+    column-gap: 12px;
+    row-gap: 2px;
+  }
+  .intelligenceDockContainer .conversationInlineAction {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intelligenceDockContainer .conversationInlineAction {
+    transition: none;
+  }
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.4.0-CONVERSATION-FIRST-NEURAL-SURFACE
+ * VERSION: v1.8.0-BALANCED-FOLLOWUP-ROW
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
