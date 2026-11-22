@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT
+VERSION: v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -9,6 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
+  v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT enforces canonical company, same actor, tenant-owner capacity, current Enterprise Admin invite authority and separate Projects Platform Owner decision before any role/membership/DB IO.
   v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT pins the new exact-project Founder contributor IAM admission POST to two independent existing IAM admission pairs and no unscoped role-grant path; user initiation and project participation remain separate prerequisites.
   v1.32.0-SEVENTEEN-INDUSTRY-CI-CERT certifies all seventeen
   platform blueprint DAGs through the existing atomic project test suite.
@@ -678,6 +679,38 @@ def test_founder_projects_admission_denies_wrong_tenant_role_and_actor_before_io
         assert denial.value.detail == "FOUNDER_PROJECTS_AUTHORITY_REQUIRED"
 
 
+def test_founder_contributor_self_admission_denies_invalid_authority_before_io() -> None:
+    """No body-supplied IAM, role inheritance, tenant alias or other actor."""
+    def context(principal: str, tenant: str, business_role: str, authorization_role: str):
+        identity = SovereignIdentity(
+            identity_id=principal, tenant_id=tenant,
+            auth_method="TEST_FIXTURE", status=PrincipalStatus.ACTIVE,
+        )
+        return projects_router.TenantAuthorizationContext(
+            identity, tenant,
+            TenantAuthorizationDecision(
+                True, TenantAuthorizationReason.AUTHORIZED,
+                business_role, authorization_role,
+            ),
+        )
+    actor = context("p1", WILSY_COMPANY_TENANT_ID, "tenant_owner", "ENTERPRISE_ADMIN")
+    project = context("p1", WILSY_COMPANY_TENANT_ID, "tenant_owner", "PROJECTS_PLATFORM_OWNER")
+    bad = [
+        (context("p1", "other-tenant", "tenant_owner", "ENTERPRISE_ADMIN"), project),
+        (actor, context("p2", WILSY_COMPANY_TENANT_ID, "tenant_owner", "PROJECTS_PLATFORM_OWNER")),
+        (context("p1", WILSY_COMPANY_TENANT_ID, "tenant_admin", "ENTERPRISE_ADMIN"), project),
+        (context("p1", WILSY_COMPANY_TENANT_ID, "tenant_owner", "PROJECTS_PLATFORM_OWNER"), project),
+        (actor, context("p1", WILSY_COMPANY_TENANT_ID, "tenant_owner", "ENTERPRISE_ADMIN")),
+    ]
+    for grant, reader in bad:
+        with pytest.raises(HTTPException) as denial:
+            projects_router.admit_founder_project_contributor_iam(
+                Response(), "prj-" + "a" * 48, grant, reader,
+            )
+        assert denial.value.status_code == 403
+        assert denial.value.detail == "PROJECT_CONTRIBUTOR_IAM_ADMISSION_DENIED"
+
+
 def test_browser_payload_cannot_supply_authority_or_unverified_ownership() -> None:
     """Creation and update bodies exclude tenant, actor, IDs and owner grants."""
     valid = projects_router.ProjectCreateRequest.model_validate(
@@ -1195,7 +1228,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT
+# VERSION: v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
