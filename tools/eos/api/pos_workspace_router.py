@@ -620,3 +620,11 @@ def ensure_pos_workspace_indexes(database: Any) -> None:
 
 
 __all__ = ["router", "require_pos_workspace_indexes_ready", "ensure_pos_workspace_indexes"]
+
+# ARTIFACT: tools/eos/api/pos_workspace_router.py
+# VERSION: v1.1.0-READ-ONLY-COMMERCIAL-SUMMARY
+# AUTHORITY BOUNDARY: Tenant IAM, POS entitlement and active location assignment remain sovereign.
+# TENANT POSTURE: Exact authenticated tenant and principal; location selector is untrusted.
+# FAIL-CLOSED POSTURE: Invalid, unavailable, unauthorized or divergent sale evidence refuses.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
