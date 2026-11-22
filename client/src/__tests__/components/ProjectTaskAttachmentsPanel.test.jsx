@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.2.0-SOURCE-FAILURE-CODE-CERT
+ * VERSION: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT proves owner manifests survive contributor-only HTTP 403 without upload, while independently verified participant reads expose existing contributor-controlled upload.
  * CHANGELOG: v1.2.0-SOURCE-FAILURE-CODE-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
  * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT requires scanner-owned QUARANTINED status and null clearance fingerprint, and proves fail-closed denial of fabricated clean clearance.
  * CHANGELOG: v1.1.0-SCAN-STATE-SOURCE-CONTRACT-CERT checks exact task
@@ -107,6 +108,37 @@ it('does not expose upload controls from the owner read-only attachment source',
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
 });
 
+it('preserves verified owner attachment manifests when contributor GET is denied', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === ownerRoute + '/attachments?limit=50&offset=0') return { data: list([record]) };
+    if (path === memberRoute + '/attachments?limit=50&offset=0')
+      throw { response: { status: 403 } };
+    throw new Error('Unexpected source ' + path);
+  });
+  render(<ProjectTaskAttachmentsPanel tenantId={tenantId} principalId={principalId}
+    projectId={projectId} taskId={taskId} participantMode ownerReadMode
+    tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
+  expect(await screen.findByText('design.pdf')).toBeVisible();
+  expect(await screen.findByText(/separate contributor attachment read \(HTTP 403\)/)).toBeVisible();
+  expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('exposes contributor upload only after owner and participant source reads verify', async () => {
+  api.get.mockImplementation(async path => {
+    expect([ownerRoute + '/attachments?limit=50&offset=0',
+      memberRoute + '/attachments?limit=50&offset=0']).toContain(path);
+    return { data: list([]) };
+  });
+  render(<ProjectTaskAttachmentsPanel tenantId={tenantId} principalId={principalId}
+    projectId={projectId} taskId={taskId} participantMode ownerReadMode
+    tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
+  expect(await screen.findByLabelText('Project attachment file')).toBeVisible();
+  expect(api.get).toHaveBeenCalledTimes(2);
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 it('fails closed on a foreign tenant source record or fabricated download URL', async () => {
   api.get.mockResolvedValue({ data: list([
     { ...record, download_url: 'https://untrusted.example/x' },
@@ -130,7 +162,7 @@ it('rejects fabricated or incomplete scan clearance evidence without download ca
 });
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.2.0-SOURCE-FAILURE-CODE-CERT
+// VERSION: v1.3.0-INDEPENDENT-OWNER-READ-CONTRIBUTOR-403-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
