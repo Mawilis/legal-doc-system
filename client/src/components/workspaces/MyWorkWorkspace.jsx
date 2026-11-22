@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER
+ * VERSION: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
+ *            centralizes work-purpose interpretation as a pure module helper
+ *            to keep memoized source-verified counts/filter logic stable.
  * CHANGELOG: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER adds
  *            a real Operating / Platform Build / Unclassified queue selector.
  *            Unsupported or absent audience is visible as Unclassified;
@@ -216,6 +219,10 @@ const isDueToday = (item, now = new Date()) => {
     && due.getMonth() === now.getMonth()
     && due.getDate() === now.getDate();
 };
+
+const sourceVerifiedAudience = (item) => item?.audience === 'OPERATING'
+  || item?.audience === 'PLATFORM_BUILD'
+  ? item.audience : 'UNCLASSIFIED';
 
 const compareItems = (left, right, sortMode) => {
   if (left.is_overdue !== right.is_overdue) return left.is_overdue ? -1 : 1;
@@ -530,12 +537,10 @@ export default function MyWorkWorkspace(props = {}) {
   };
 
   const items = useMemo(() => projection?.items || [], [projection]);
-  const audienceOf = (item) => ['OPERATING', 'PLATFORM_BUILD'].includes(item.audience)
-    ? item.audience : 'UNCLASSIFIED';
   const audienceCounts = useMemo(() => ({
-    OPERATING: items.filter((item) => audienceOf(item) === 'OPERATING').length,
-    PLATFORM_BUILD: items.filter((item) => audienceOf(item) === 'PLATFORM_BUILD').length,
-    UNCLASSIFIED: items.filter((item) => audienceOf(item) === 'UNCLASSIFIED').length,
+    OPERATING: items.filter((item) => sourceVerifiedAudience(item) === 'OPERATING').length,
+    PLATFORM_BUILD: items.filter((item) => sourceVerifiedAudience(item) === 'PLATFORM_BUILD').length,
+    UNCLASSIFIED: items.filter((item) => sourceVerifiedAudience(item) === 'UNCLASSIFIED').length,
   }), [items]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
   const admittedSources = projection?.sources_included || [];
@@ -549,7 +554,7 @@ export default function MyWorkWorkspace(props = {}) {
   const filteredItems = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
     return items
-      .filter((item) => audienceFilter === 'ALL' || audienceOf(item) === audienceFilter)
+      .filter((item) => audienceFilter === 'ALL' || sourceVerifiedAudience(item) === audienceFilter)
       .filter((item) => sourceFilter === 'ALL' || item.source === sourceFilter)
       .filter((item) => statusFilter === 'ALL' || (statusFilter === 'OVERDUE' ? item.is_overdue : item.status === statusFilter))
       .filter((item) => !query || [item.title, item.description, item.source,
@@ -1667,7 +1672,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER
+ * VERSION: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
