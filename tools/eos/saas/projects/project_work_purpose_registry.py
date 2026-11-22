@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE
+VERSION: v1.1.3-TYPED-PURPOSE-REVISION-BOUNDARY
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.1.3-TYPED-PURPOSE-REVISION-BOUNDARY narrows
+persisted dynamic revision fields before arithmetic/typing and preserves
+strict audit denial without unsafe object comparisons.
 CHANGELOG: v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE verifies
 event type, actor, timestamp and fixed digest format against canonical
 current source before either single or bounded-batch projection.
@@ -43,14 +46,14 @@ from datetime import datetime, timezone
 from hashlib import sha3_512
 from hmac import compare_digest
 import json
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE"
+VERSION: Final = "v1.1.3-TYPED-PURPOSE-REVISION-BOUNDARY"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD"})
@@ -83,20 +86,22 @@ def _coordinate(value: object) -> bool:
 def _verify(row: dict[str, object], task: ProjectTask) -> dict[str, object]:
     """Verify stored label provenance, scope and digest before projection."""
     semantic = {key: value for key, value in row.items() if key not in {"_id", "fingerprint"}}
+    revision = semantic.get("revision")
+    task_revision = semantic.get("task_revision")
+    recorded_at = semantic.get("recorded_at")
+    reason = semantic.get("reason")
     if (semantic.get("tenant_id") != task.tenant_id
             or semantic.get("project_id") != task.project_id
             or semantic.get("task_id") != task.task_id
             or semantic.get("audience") not in AUDIENCES
-            or type(semantic.get("task_revision")) is not int
-            or semantic["task_revision"] < 1
-            or type(semantic.get("revision")) is not int
-            or semantic["revision"] < 1
+            or type(task_revision) is not int or task_revision < 1
+            or type(revision) is not int or revision < 1
             or not _coordinate(semantic.get("actor_principal_id"))
             or not _coordinate(semantic.get("evidence_ref"))
-            or not isinstance(semantic.get("recorded_at"), str)
-            or not semantic["recorded_at"].endswith("+00:00")
-            or not isinstance(semantic.get("reason"), str)
-            or not 10 <= len(semantic["reason"]) <= 1000
+            or not isinstance(recorded_at, str)
+            or not recorded_at.endswith("+00:00")
+            or not isinstance(reason, str)
+            or not 10 <= len(reason) <= 1000
             or semantic.get("critical_gate") is not False
             or semantic.get("critical_gate_evidence_ref") is not None
             or not isinstance(row.get("fingerprint"), str)
@@ -173,7 +178,7 @@ class ProjectWorkPurposeRegistry:
             }, session=session)
         except PyMongoError as error:
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_UNAVAILABLE") from error
-        if event is None or not _audit_event_valid(event, value, row["fingerprint"]):
+        if event is None or not _audit_event_valid(event, value, cast(str, row["fingerprint"])):
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
         if value["task_revision"] != task.revision:
             # A task update invalidates purpose truth, not the purpose's own
@@ -228,7 +233,7 @@ class ProjectWorkPurposeRegistry:
                     raise WorkPurposeError("PROJECT_WORK_PURPOSE_BATCH_SCOPE_INVALID")
                 seen_current.add(task.task_id)
                 value = _verify(row, task)
-                key = task.task_id, value["revision"]
+                key = task.task_id, cast(int, value["revision"])
                 if key in audited:
                     raise WorkPurposeError("PROJECT_WORK_PURPOSE_SOURCE_INVALID")
                 audited[key] = (task, row)
@@ -250,7 +255,7 @@ class ProjectWorkPurposeRegistry:
                 verified = audited.get(key)
                 if verified is None or key in matched or not _audit_event_valid(
                     event, _verify(verified[1], verified[0]),
-                    verified[1]["fingerprint"],
+                    cast(str, verified[1]["fingerprint"]),
                 ):
                     raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
                 matched.add(key)
@@ -317,7 +322,7 @@ class ProjectWorkPurposeRegistry:
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_READ_UNAVAILABLE") from error
         if previous is not None:
             _verify(previous, task)
-        revision = 0 if previous is None else previous["revision"]
+        revision = 0 if previous is None else cast(int, previous["revision"])
         if revision != expected_purpose_revision:
             raise WorkPurposeConflict("PROJECT_WORK_PURPOSE_REVISION_CONFLICT")
         new_revision = revision + 1
@@ -362,7 +367,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.1.2-STRONGER-PURPOSE-EVENT-PROVENANCE
+# VERSION: v1.1.3-TYPED-PURPOSE-REVISION-BOUNDARY
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
