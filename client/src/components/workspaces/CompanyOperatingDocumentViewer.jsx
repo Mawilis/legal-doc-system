@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY
+ * VERSION: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF exposes
+ *            source-state-specific draft, submit and distinct publisher
+ *            handoffs in the current Strategy drawer, with accessible
+ *            follow-through to existing EOS-authorized commands. No automatic
+ *            approval, IAM grant, fabricated publication or synthetic progress.
  * CHANGELOG: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY identifies
  *            EOS's exact unpublished-Strategy 409 separately from IAM and
  *            transport failure, shows an authorized private-review handoff,
@@ -986,6 +991,48 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
                 </nav>
+                {classification === 'STRATEGY' && <section className={styles.commandDeck}
+                  aria-label="Governed Strategy publication lifecycle">
+                  <div className={styles.commandStatus}>
+                    <strong>Strategy publication · source-owned execution</strong>
+                    <span>{!document ? (query.review ? 'No private revision verified' : 'Official publication not yet established')
+                      : document.state === 'DRAFT' ? 'Stage 1 of 3 · Author draft'
+                        : document.state === 'SUBMITTED' ? 'Stage 2 of 3 · Await independent publisher'
+                          : Date.parse(document.effective_from) > Date.parse(data.as_of)
+                            ? 'Stage 3 of 3 · Published, awaiting effective date'
+                            : 'Stage 3 of 3 · Published and effective'}</span>
+                  </div>
+                  <div className={styles.commandButtons}>
+                    {!query.review && reviewPermitted && <button type="button" disabled={busy}
+                      onClick={() => changeQuery({ review: true, revision: null })}>
+                      Review authorized publication state
+                    </button>}
+                    {query.review && !document && draftPermitted && !editorOpen
+                      && <button type="button" disabled={busy}
+                        onClick={() => { setProposal(founderApprovedProposal('STRATEGY')); setPreviewOpen(false); setEditorOpen(true); }}>
+                        Prepare Strategy draft
+                      </button>}
+                    {query.review && document?.state === 'DRAFT' && actions.includes('SUBMIT')
+                      && <button type="button" disabled={busy}
+                        onClick={() => void perform('SUBMIT', { expected_revision: expected })}>
+                        Submit Strategy for independent approval
+                      </button>}
+                    {query.review && document?.state === 'SUBMITTED' && actions.includes('PUBLISH')
+                      && <button type="button" disabled={busy}
+                        onClick={() => containerRef.current.querySelector('[aria-label="Independent Strategy publication approval"]')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                        Open independent approval form
+                      </button>}
+                  </div>
+                  {query.review && document?.state === 'DRAFT' && !actions.includes('SUBMIT')
+                    && <p className={styles.permissionNotice}>Only the draft's source-authorized author can submit this revision.</p>}
+                  {query.review && document?.state === 'SUBMITTED' && !actions.includes('PUBLISH')
+                    && <p className={styles.permissionNotice}>This submission needs a different principal with current company-document publisher authority. No Founder label or project role substitutes for independent approval.</p>}
+                  {!query.review && !document && !reviewPermitted
+                    && <p className={styles.permissionNotice}>Your current capacity can read the approved source but cannot inspect private revision states or create a publication. Current Strategy author/publisher authority must be established separately in tenant IAM.</p>}
+                  {document?.state === 'PUBLISHED' && Date.parse(document.effective_from) <= Date.parse(data.as_of)
+                    && <p className={styles.permissionNotice}>The official Strategy publication is effective. Return to Projects &amp; Delivery to verify the independent project relationship.</p>}
+                </section>}
                 <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
                 {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
                   <div className={styles.documentIdentity}>
@@ -1247,7 +1294,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </div>
                 </form>}
-                {actions.includes('PUBLISH') && <form className={styles.form} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
+                {actions.includes('PUBLISH') && <form className={styles.form} aria-label="Independent Strategy publication approval" onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
               </>}
         </div>
       </div>
@@ -1257,7 +1304,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY
+// VERSION: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
