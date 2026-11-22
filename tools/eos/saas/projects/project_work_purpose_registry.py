@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Work Purpose Source Registry
-VERSION: v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK
+VERSION: v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY
 AUTHORITY: Projects EOS source-owned work metadata; not IAM.
 EPITOME: Persist source-owned Operating / Platform Build labels with exact
 task-revision CAS, immutable event evidence and replay-safe commands.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router authorizes commands; ProjectTaskRegistry
 validates current task; My Work consumes validated current purpose evidence.
 CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY preserves
+audited purpose revision when its attached task revision has advanced, while
+displaying UNCLASSIFIED without stale provenance; the owner can explicitly
+reclassify using correct metadata CAS instead of being trapped in conflict.
 CHANGELOG: v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK returns
 current purpose revision exclusively for the source-owned classification
 command and separately verifies the task revision; My Work retains the
@@ -37,7 +41,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.saas.projects.project_task_registry import ProjectTask
 
-VERSION: Final = "v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK"
+VERSION: Final = "v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY"
 COLLECTION: Final = "wilsy_project_work_purposes"
 EVENT_COLLECTION: Final = "wilsy_project_work_purpose_events"
 AUDIENCES: Final = frozenset({"OPERATING", "PLATFORM_BUILD"})
@@ -128,8 +132,6 @@ class ProjectWorkPurposeRegistry:
         if row is None:
             return None
         value = _verify(row, task)
-        if value["task_revision"] != task.revision:
-            return None  # Source changed; never carry old classification forward.
         try:
             event = self.events.find_one({
                 **query, "revision": value["revision"],
@@ -139,6 +141,12 @@ class ProjectWorkPurposeRegistry:
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_UNAVAILABLE") from error
         if event is None or event.get("evidence_ref") != value["evidence_ref"]:
             raise WorkPurposeError("PROJECT_WORK_PURPOSE_AUDIT_INVALID")
+        if value["task_revision"] != task.revision:
+            # A task update invalidates purpose truth, not the purpose's own
+            # durable revision. Reclassification must CAS that real revision.
+            return {"audience": "UNCLASSIFIED", "purpose_revision": value["revision"],
+                    "evidence_ref": None, "source_revision": None,
+                    "critical_gate": False}
         return {
             "tenant_id": task.tenant_id, "source": "PROJECTS",
             "record_id": task.task_id, "source_revision": task.revision,
@@ -235,7 +243,7 @@ __all__ = ["VERSION", "COLLECTION", "EVENT_COLLECTION",
            "ProjectWorkPurposeRegistry", "WorkPurposeError", "WorkPurposeConflict"]
 
 # ARTIFACT: project_work_purpose_registry.py
-# VERSION: v1.0.1-EXPLICIT-PURPOSE-REVISION-READBACK
+# VERSION: v1.0.2-STALE-TASK-PURPOSE-CAS-RECOVERY
 # AUTHORITY BOUNDARY: Source-owned metadata, no IAM or command authorization.
 # TENANT POSTURE: Exact task/tenant/project revision and actor coordinates.
 # FAIL-CLOSED POSTURE: Missing audit or stale task returns no category.
