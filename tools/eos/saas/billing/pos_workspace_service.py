@@ -9,6 +9,7 @@ COLLABORATION / OWNERSHIP: POS domain, location registry, product entitlement an
 CERTIFICATION / UPDATE DATE: 2026-11-22
 CHANGELOG: v1.1.0-READ-ONLY-LOCATION-SUMMARY adds a bounded exact-tenant
            independently admitted location sale-status count snapshot.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No payment/identity payloads exposed by summary.
 TENANT BOUNDARY: Location is a selector; active assignment resolved by EOS.
 AUTHORITY BOUNDARY: POS sale read only; no financial execution.
