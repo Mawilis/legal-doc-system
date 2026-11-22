@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.17.0-HEADQUARTERS-SOURCE-REFUSAL-CERT
+ * VERSION: v1.17.1-EXPLICIT-SOURCE-PROBE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.17.1-EXPLICIT-SOURCE-PROBE-CERT certifies explicit read-only My Work and kernel GETs bypass only client-local backoff while preserving backend authorization and hard timeout.
  * CHANGELOG: v1.17.0-HEADQUARTERS-SOURCE-REFUSAL-CERT certifies precise authorised work denial versus unavailable source, explicit no-fabricated-empty-queue semantics and a working retry without AI metering or grants.
  * CHANGELOG: v1.16.0-INDEPENDENT-KERNEL-SOURCE-UX-CERT verifies a source-authorized workspace remains inspectable when the optional kernel health probe fails, without calling a model or falsifying EOS status.
  * CHANGELOG: v1.15.1-ACCOUNTING-DISCLOSURE-ASSERTION-CERT updates an outdated summary assertion to certify the current available/completed/held disclosure; omitted EOS usage evidence must remain marked unverified rather than asserted as zero.
@@ -572,10 +573,13 @@ describe('WilsyOSIntelligenceDock', () => {
       .toHaveTextContent(message));
     const readCount = mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length;
     expect(readCount).toBe(1);
+    expect(mockApiGet.mock.calls.find(([path]) => path === '/my-work')[1].forceNetworkRetry).toBe(true);
+    expect(mockApiGet.mock.calls.find(([path]) => path === '/kernel')[1].forceNetworkRetry).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Recheck work source' }));
     await waitFor(() => expect(
       mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length,
     ).toBe(2));
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')[1][1].forceNetworkRetry).toBe(true);
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText(/0 active · 0 overdue/)).not.toBeInTheDocument();
   });
@@ -1316,7 +1320,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.17.0-HEADQUARTERS-SOURCE-REFUSAL-CERT
+ * VERSION: v1.17.1-EXPLICIT-SOURCE-PROBE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
