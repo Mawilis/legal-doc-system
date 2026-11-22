@@ -1,25 +1,28 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.17.0-GOVERNED-WORK-AUDIENCE-FILTER-CERT
+ * VERSION: v1.17.1-SOVEREIGN-AUDIENCE-TEST-CHANGELOG
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.17.1-SOVEREIGN-AUDIENCE-TEST-CHANGELOG restores
+ *            the exact historical compact-toolbar test-version attribution
+ *            while preserving source-taxonomy filter regression coverage.
  * CHANGELOG: v1.17.0-GOVERNED-WORK-AUDIENCE-FILTER-CERT verifies
  *            the operational Operating/Platform/Needs classification selector,
  *            visible unclassified items and no implied category or hidden work.
  * CHANGELOG: v1.16.0-COMPACT-EXECUTION-TOOLBAR-CERT confirms
  *            one responsive control region, actionable verified filters,
  *            due-today visibility and no duplicate vertical summary rows.
- * CHANGELOG: v1.17.0-GOVERNED-WORK-AUDIENCE-FILTER-CERT distinguishes
+ * CHANGELOG: v1.16.0-COMPACT-EXECUTION-TOOLBAR-CERT distinguishes
  *            the verified Overdue filter count from per-row overdue badges.
- * CHANGELOG: v1.17.0-GOVERNED-WORK-AUDIENCE-FILTER-CERT proves
+ * CHANGELOG: v1.16.0-COMPACT-EXECUTION-TOOLBAR-CERT proves
  *            successful audited Draft transition removes the active row,
  *            decrements the verified count and exposes saved owner drafts.
- * CHANGELOG: v1.17.0-GOVERNED-WORK-AUDIENCE-FILTER-CERT verifies
+ * CHANGELOG: v1.16.0-COMPACT-EXECUTION-TOOLBAR-CERT verifies
  *            modeless desktop dialogue and accessible concurrent queue,
  *            alongside mouse drag and keyboard edge resizing.
  * CHANGELOG: v1.12.0-MOUSE-DRAG-RESIZE-CERT exercises the
@@ -785,7 +788,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.17.0-GOVERNED-WORK-AUDIENCE-FILTER-CERT
+ * VERSION: v1.17.1-SOVEREIGN-AUDIENCE-TEST-CHANGELOG
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
