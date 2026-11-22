@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.6.2-EXACT-PROJECT-ACTION-QUERIES
+ * VERSION: v1.7.0-PARTIAL-STRATEGY-PLAN-RECOVERY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.7.0-PARTIAL-STRATEGY-PLAN-RECOVERY-CERT validates
+ *            accurate planned vs persisted source counts, disables further
+ *            creation after full admission and preserves one-write-per-item
+ *            replay safety when the UI refreshes.
  * CHANGELOG: v1.6.2-EXACT-PROJECT-ACTION-QUERIES aligns three action
  *            selector assertions to the canonical, full EOS project name.
  *            Test setup and source-owned IAM and command guards stay intact.
@@ -369,6 +373,7 @@ describe('Strategy source-owned project execution readback', () => {
     render(wrap({ classification: 'STRATEGY' }));
     fireEvent.click(await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ }));
     expect(await screen.findByRole('heading', { name: 'My Work implementation programme' })).toBeVisible();
+    expect(screen.getByText(/0 of 18 planned records persisted in EOS/)).toBeVisible();
     expect(screen.getByText('MW-M01 — Operating taxonomy and strategy alignment')).toBeVisible();
     expect(screen.getByText('MW-T12 — Certify production readiness and rollback')).toBeVisible();
     expect(api.post).not.toHaveBeenCalled();
@@ -383,8 +388,8 @@ describe('Strategy source-owned project execution readback', () => {
       && config.headers['Idempotency-Key'].startsWith('strategy-foundation-v1-'))).toBe(true);
     await waitFor(() => expect(screen.getAllByText('Persisted in EOS')).toHaveLength(18));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create missing in EOS' }));
-    expect(await screen.findByText(/0 created and independently verified; 18 previously present/, {}, { timeout: 9000 })).toBeVisible();
+    expect(screen.getByText(/18 of 18 planned records persisted in EOS/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'All 18 verified in EOS' })).toBeDisabled();
     expect(api.post).toHaveBeenCalledTimes(18);
   });
   it('rejects mismatched task tenant and hides unverified delivery', async () => {
@@ -447,7 +452,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.6.2-EXACT-PROJECT-ACTION-QUERIES
+// VERSION: v1.7.0-PARTIAL-STRATEGY-PLAN-RECOVERY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
