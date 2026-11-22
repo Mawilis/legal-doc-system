@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS
+ * VERSION: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
  * CERTIFICATION / UPDATE DATE: 2026-11-21
+ * CHANGELOG: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER keeps the read-only source-intent send affordance independent from metered consent and provider state, while preserving all metered sends' existing reconciliation and usage guards; includes complete bounded My Work rows and explicit intent-selected source expansion.
  * CHANGELOG: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS removes default source/status essays from chat and presents one conversational first turn with user-invoked read-only TaskList or SourceInspection. Deterministic exact-intent routing fills only from current EOS-verified sources; no model-generated UI, arbitrary HTML, task mutations or metered POST. Source failures appear within the requested action, not as static opening cards.
  * CHANGELOG: v4.25.1-SESSION-CURRENT-HISTORY-CONTROLS returns to the single conversation on identity/capacity change and new-thread selection, and awaits session-only history clearing and new thread issuance before displaying success; no phantom threads or cross-scope UI state.
  * CHANGELOG: v4.25.0-CONTEXTUAL-ONE-CONVERSATION-WORKFLOW removes generic Suggestions navigation and model-submitting decorative cards, gates Legal Advisory to legal capacity, and adds live exact-tenant My Work focus with read-only details and draft-only contextual question actions. History omits empty placeholder threads. No model calls or inferred task authority.
@@ -670,7 +671,7 @@ export function WilsyOSIntelligenceDock({
         setHeadquartersWork({ scope, state: 'UNAVAILABLE' });
         return;
       }
-      const items = data.items.slice(0, 3).map(item => ({
+      const items = data.items.slice(0, 25).map(item => ({
         title: typeof item.title === 'string' ? item.title.slice(0, 180) : '',
         source: typeof item.source === 'string' ? item.source.slice(0, 32) : '',
         overdue: item.is_overdue === true,
@@ -1508,7 +1509,7 @@ export function WilsyOSIntelligenceDock({
                   style={{ padding: '10px 0', background: 'transparent', color: '#e5edf6',
                     borderTop: '1px solid rgba(148,163,184,.25)',
                     fontSize: 13, lineHeight: 1.65, overflowWrap: 'anywhere' }}>
-                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef}>
+                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef} open>
                     <summary aria-label="Inspect verified workspace context"
                       style={{ cursor: 'pointer', minHeight: 44 }}>
                       <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Verified workspace source'}</strong>
@@ -1750,7 +1751,8 @@ export function WilsyOSIntelligenceDock({
                     onClick={() => handleSendMessage()}
                     disabled={isSubmitting || !prompt.trim()
                       || (!isLegalDockRole(authUser?.role)
-                        && (!readOnlySourceIntent && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable)
+                        && !readOnlySourceIntent
+                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
                           || (reasoningReplayRef.current.blocked === true
                             && reasoningReplayRef.current.scope === dockScopeRef.current
                             && reasoningReplayRef.current.text === prompt.trim()
@@ -2038,7 +2040,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.26.0-CONTROLLED-CONVERSATIONAL-SOURCE-INTENTS
+ * VERSION: v4.26.1-SAFE-LOCAL-INTENT-COMPOSER
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
