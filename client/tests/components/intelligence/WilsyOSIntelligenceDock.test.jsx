@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.22.0-SOURCE-CONVERSATION-TURN-CERT
+ * VERSION: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT requires a concise workspace-first visual header and an accurate accessible kernel diagnostics label instead of an infrastructure hero banner.
  * CHANGELOG: v1.22.0-SOURCE-CONVERSATION-TURN-CERT verifies the selected read-only EOS source intent appears as an ephemeral user turn followed by native source results, no ambient status cards or false model turn, and contextual follow-up selection.
  * CHANGELOG: v1.21.1-ONDEMAND-FAILCLOSED-CONTEXT-CERT preserves negative Founder activation, stale-context rejection and revoked-source privacy assertions after the operator explicitly chooses source inspection; no failed evidence displayed at rest.
  * CHANGELOG: v1.21.0-CONTROLLED-INTENT-NONMETERED-UI-CERT certifies the attached controlled UI requirement: no status cards at rest, read-only source intent selection without consent/POST, on-demand verified task rows, fail-closed denied/unavailable source, keyboard intent route and retained metered-permission boundary.
@@ -554,10 +555,11 @@ describe('WilsyOSIntelligenceDock', () => {
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(screen.getByText(
-      'Workspace verified · Kernel health unavailable',
+      'Workspace verified',
     )).toBeVisible());
     expect(screen.queryByLabelText('Inspect verified workspace context')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect this workspace' }));
+    expect(screen.getByLabelText(/EOS source status: workspace verified; kernel health not verified/)).toBeVisible();
     const summary = screen.getByLabelText('Inspect verified workspace context');
     expect(summary).toHaveTextContent('AI provider unavailable');
     expect(summary.closest('details').open).toBe(true);
@@ -1491,7 +1493,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.22.0-SOURCE-CONVERSATION-TURN-CERT
+ * VERSION: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
