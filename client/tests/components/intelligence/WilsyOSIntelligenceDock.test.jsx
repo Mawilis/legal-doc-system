@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.20.1-CURRENT-SESSION-THREAD-CERT
+ * VERSION: v1.20.2-CONTEXTUAL-NAVIGATION-EXPECTATIONS
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.20.2-CONTEXTUAL-NAVIGATION-EXPECTATIONS retains existing branded, history and legal navigation coverage against the real conversation-first labels without reintroducing decorative tabs.
  * CHANGELOG: v1.20.1-CURRENT-SESSION-THREAD-CERT certifies asynchronous in-memory thread creation/clear, automatic return to the single conversation, and suppression of phantom empty recent-history cards.
  * CHANGELOG: v1.20.0-CONTEXTUAL-SOURCE-WORK-INTERACTION-CERT certifies general-purpose conversation without decorative suggestion/legal tabs, legal-only tool discovery, exact-tenant interactive work selection, draft-only contextual questions with no metered request, and honest session-only recent history.
  * CHANGELOG: v1.19.0-CONVERSATION-FIRST-SOURCE-FLOW-CERT certifies that all read-only source/work context renders inside the scrolling conversation before persisted user/assistant turns, with no cards, duplicate source panels, or paid model invocation.
@@ -309,7 +310,7 @@ describe('WilsyOSIntelligenceDock', () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(screen.getByText('WILSY OS Intelligence Dock')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /Ask WILSY OS/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Conversation' })).toBeInTheDocument();
   });
 
   it('uses WILSY OS with paid EOS reasoning and no legacy BFF', async () => {
@@ -1204,7 +1205,7 @@ describe('WilsyOSIntelligenceDock', () => {
   it('creates a new thread when "New thread" is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    fireEvent.click(screen.getByText('History'));
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     fireEvent.click(screen.getByText('+ New'));
 
     await waitFor(() => {
@@ -1217,7 +1218,7 @@ describe('WilsyOSIntelligenceDock', () => {
   it('refreshes threads and context when "Sync" is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    fireEvent.click(screen.getByText('History'));
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     fireEvent.click(screen.getByText('⟳ Sync'));
 
     await waitFor(() => {
@@ -1229,7 +1230,7 @@ describe('WilsyOSIntelligenceDock', () => {
   it('clears history when "Clear" is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    fireEvent.click(screen.getByText('History'));
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     fireEvent.click(screen.getByText('Clear'));
 
     await waitFor(() => {
@@ -1301,7 +1302,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockGenerateLegalNextActions).not.toHaveBeenCalled();
     await openLegalAdvisory();
     expect(screen.queryByRole('button', { name: /Suggestions/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /History/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Recent conversations' })).toBeInTheDocument();
     expect(mockExecuteLegalServices).not.toHaveBeenCalled();
   });
 
@@ -1423,7 +1424,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.20.1-CURRENT-SESSION-THREAD-CERT
+ * VERSION: v1.20.2-CONTEXTUAL-NAVIGATION-EXPECTATIONS
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
