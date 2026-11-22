@@ -1,10 +1,11 @@
 # TITLE: WILSY OS AI Gateway and Founder Commercial Certification
-# VERSION: v1.7.0-ZERO-COST-AI-DOCK-CLIENT-CERT
+# VERSION: v1.8.0-FLUID-AI-DOCK-PRESENTATION-CERT
 # AUTHORITY: WILSY OS Core Governance; workflow may certify, never grant.
 # EPITOME: Run locked focused AI and exact-Founder commercial denial tests.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ai-advisory-certification.yml
 # COLLABORATION / OWNERSHIP: Existing AI advisory, entitlement and context gates.
 # CERTIFICATION / UPDATE DATE: 2026-11-22
+# CHANGELOG: v1.8.0-FLUID-AI-DOCK-PRESENTATION-CERT extends existing AI client test/build trigger to the conversational Dock stylesheet so any text-first layout change is certified on exact HEAD.
 # CHANGELOG: v1.7.0-ZERO-COST-AI-DOCK-CLIENT-CERT extends the existing non-billable AI workflow to certify client Dock reconciled-attempt replay guards and Vite production build; no vendor network or new workflow.
 # CHANGELOG: v1.6.0-P0-OPENAI-RECONCILIATION-CERT extends the existing disposable-Mongo workflow with
 #   P0 AI admission, reconciliation, non-generative provider readiness,
@@ -48,6 +49,7 @@ on:
       - "tests/unit/test_wilsy_ai_reasoning_orchestrator.py"
       - "tests/unit/test_openai_*.py"
       - "client/src/components/intelligence/WilsyOSIntelligenceDock.jsx"
+      - "client/src/components/intelligence/WilsyOSIntelligenceDock.module.css"
       - "client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx"
       - "tests/integration/test_wilsy_ai_reasoning_http_real_mongo.py"
       - "tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py"
@@ -150,7 +152,7 @@ jobs:
           python -m pytest -q tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py
 
 # ARTIFACT: eos-ai-advisory-certification.yml
-# VERSION: v1.7.0-ZERO-COST-AI-DOCK-CLIENT-CERT
+# VERSION: v1.8.0-FLUID-AI-DOCK-PRESENTATION-CERT
 # AUTHORITY BOUNDARY: synthetic CI certification only; no IAM/commerce grants
 # TENANT POSTURE: isolated test resources, exact scope, never live Atlas writes
 # FAIL-CLOSED POSTURE: failed commercial and reasoning tests reject the PR
