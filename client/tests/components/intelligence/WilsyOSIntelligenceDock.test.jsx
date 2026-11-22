@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT
+ * VERSION: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT certifies the Founder-browser phrase 'What are my outstanding work?' resolves to EOS read-only My Work without posting to metered reasoning, while third-party/work-write/sensitive prompts cannot use the local bypass.
  * CHANGELOG: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT verifies no permanent source pills, EOS-only person label or neutral You, read-only composer source selection, and blocked reconciliation without duplicate POST.
  * CHANGELOG: v1.23.0-STRICT-SOURCE-CATALOG-BOUNDARY-CERT proves only strictly allowlisted read-only source intents can be submitted without AI consent; mixed write/sensitive prompts retain metered/authority rejection and do not trigger local source surfaces.
  * CHANGELOG: v1.22.1-CONTEXT-FIRST-STATUS-ACCESSIBILITY-CERT requires a concise workspace-first visual header and an accurate accessible kernel diagnostics label instead of an infrastructure hero banner.
@@ -1367,6 +1368,39 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['What are my outstanding work?', 'WORK'],
+    ['What are my outstanding tasks?', 'WORK'],
+    ['Which of my tasks are overdue?', 'OVERDUE'],
+    ['What work do I have pending?', 'WORK'],
+  ])('uses read-only EOS My Work for natural request %s', async (question, expected) => {
+    mockApiGet.mockImplementation(path => path === '/my-work'
+      ? Promise.resolve({ data: {
+        tenant_id: 'TEST_TENANT', principal_id: 'natural-operator',
+        items: [{ title: 'Meet Investors', source: 'CRM', is_overdue: true }],
+        summary: { active_count: 1, overdue_count: 1 },
+        authority: { commands_owned_by: 'SOURCE_SERVICES',
+          permits_completion: false, permits_approval: false },
+      } }) : Promise.reject(rejectedResponse(503, 'optional source unavailable')));
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'natural-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
+    const input = screen.getByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(input, { target: { value: question } });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+    const work = await screen.findByRole('region', { name: 'Current authorized work' });
+    expect(work).toHaveTextContent('Meet Investors');
+    expect(screen.getByLabelText('Your source request')).toHaveTextContent(question);
+    expect(expected === 'OVERDUE'
+      ? screen.getByText('EOS overdue work')
+      : screen.getByText('EOS authorised work')).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(mockPersistTurn).not.toHaveBeenCalled();
+  });
+
   it('never treats a mixed workflow write as a free read-only source intent', async () => {
     render(<WilsyOSIntelligenceDock authUser={{
       id: 'catalog-operator', role: 'OWNER', tenantId: 'TEST_TENANT',
@@ -1377,6 +1411,9 @@ describe('WilsyOSIntelligenceDock', () => {
       'Inspect my work and approve payments',
       'Show all employees salaries',
       'Send a message to the entire team',
+      'What are my employees salaries?',
+      'What are their outstanding work?',
+      'What are my outstanding work and approve them?',
       'Show my tasks then delete them',
     ]) {
       fireEvent.change(input, { target: { value: text } });
@@ -1541,7 +1578,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.24.0-NO-STATIC-CHIPS-PERSON-RECONCILIATION-CERT
+ * VERSION: v1.25.0-OUTSTANDING-WORK-NONMETERED-INTENT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
