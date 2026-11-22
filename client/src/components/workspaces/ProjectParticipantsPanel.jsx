@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION
+ * VERSION: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF notifies a mounting work editor only after a participant grant/revoke has been independently source-read back. Does not grant IAM or task authority.
  * CHANGELOG: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION removes long principal codes from the
  *          visible member-choice surface while preserving the exact source
  *          identity as an EOS-only command input and audit key.
@@ -81,7 +82,7 @@ function optionName(person) {
 }
 
 /** @description A source-owned project participant management surface. */
-export default function ProjectParticipantsPanel({ projectId, tenantId, principalId, tenantHeaders }) {
+export default function ProjectParticipantsPanel({ projectId, tenantId, principalId, tenantHeaders, onParticipantsChanged = null }) {
   const [items, setItems] = useState([]);
   const [choices, setChoices] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -177,6 +178,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       if (!verified || currentScope.current !== active) return;
       replay.current = { fingerprint: '', key: '' };
       setSelectedPrincipal('');
+      if (typeof onParticipantsChanged === 'function') onParticipantsChanged();
     } catch (cause) {
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
@@ -292,7 +294,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.3.0-NO-BACKEND-IDENTITY-PRESENTATION
+// VERSION: v1.4.0-ASSIGNEE-EDITOR-READBACK-HANDOFF
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject
