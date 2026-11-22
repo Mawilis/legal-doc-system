@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Unified My Work Projection Contract Tests
- * VERSION: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT
+ * VERSION: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies one shared fail-closed client contract for EOS aggregate
  *          scope, source coverage, row identity and summary reconciliation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/unifiedMyWorkProjection.test.js
  * COLLABORATION / OWNERSHIP: unifiedMyWorkProjection.js and EOS /api/my-work.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT checks
+ *            that only evidenced Operating/Platform labels pass and that
+ *            absent categories, unsupported claims and fabricated critical
+ *            gates cannot invent a verified work purpose.
  * CHANGELOG: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT certifies
  *            the source-admitted PROJECTS queue, own assignment, blocker,
  *            deadline-only metadata and rejection of a forged project ID.
@@ -70,6 +74,35 @@ describe('unified My Work projection contract', () => {
       tenantId: 'tenant-a',
       principalId: 'principal-a',
     })).toBe(payload);
+  });
+
+  it('admits proven source audience and preserves unclassified legacy rows', () => {
+    const legacy = valid();
+    expect(assertUnifiedMyWorkProjection(legacy)).toBe(legacy);
+    const typed = valid();
+    typed.items[0].audience = 'OPERATING';
+    typed.items[0].audience_evidence_ref = 'source-audit-revision-3';
+    typed.items[0].audience_source_revision = 3;
+    typed.items[0].critical_gate = false;
+    typed.items[1].audience = 'UNCLASSIFIED';
+    typed.items[1].audience_evidence_ref = null;
+    typed.items[1].audience_source_revision = null;
+    typed.items[1].critical_gate = false;
+    expect(assertUnifiedMyWorkProjection(typed)).toBe(typed);
+  });
+
+  it('rejects unsupported source audience, unproven classification and fabricated critical gate', () => {
+    for (const changes of [
+      { audience: 'OPERATING', critical_gate: false, audience_evidence_ref: null, audience_source_revision: 3 },
+      { audience: 'PLATFORM_BUILD', critical_gate: true, audience_evidence_ref: null, audience_source_revision: 3 },
+      { audience: 'OPERATING', critical_gate: true, audience_evidence_ref: 'audit', audience_source_revision: 3 },
+      { audience: 'UNCLASSIFIED', critical_gate: true, audience_evidence_ref: null, audience_source_revision: null },
+      { audience: 'DEVELOPMENT', critical_gate: false, audience_evidence_ref: 'audit', audience_source_revision: 3 },
+    ]) {
+      const payload = valid();
+      payload.items[0] = { ...payload.items[0], ...changes };
+      expect(() => assertUnifiedMyWorkProjection(payload)).toThrow('ATTENTION_ITEM_INVALID');
+    }
   });
 
   it('rejects a tenant or principal mismatch', () => {
@@ -156,7 +189,7 @@ describe('unified My Work projection contract', () => {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.test.js
- * VERSION: v1.2.0-PROJECTS-SOURCE-READBACK-CLIENT-CERT
+ * VERSION: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT
  * AUTHORITY BOUNDARY: Deterministic projection contract evidence only.
  * TENANT POSTURE: Synthetic exact-scope and mismatch tests.
  * FAIL-CLOSED POSTURE: Unknown or divergent source metadata is rejected.
