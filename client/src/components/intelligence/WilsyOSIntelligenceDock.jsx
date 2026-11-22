@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING
+ * VERSION: v4.41.0-GOVERNED-MULTIDOMAIN-WORK-SOURCE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -15,6 +15,7 @@
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
+ * CHANGELOG: v4.41.0-GOVERNED-MULTIDOMAIN-WORK-SOURCE adds independently authorised multi-domain work intelligence (HR, CRM, Operations, Legal, Intelligence and Projects task queues) using the canonical My Work aggregate and its complete tenant/principal/source-coverage validator. Uses typed read-only plans, no provider calls or omitted-source zeros, keeps business writes and the existing AI replay boundary closed.
  * CHANGELOG: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING plans multiple safe read-only operations in one Projects source turn from verified conversation context, including 'How many are active and what are details?'. Reuses independently authorised EOS source reads and never sends the combined request to paid inference. Rejects mixed domain, ambiguous and write commands; no IAM or financial changes.
  * CHANGELOG: v4.39.0-VERIFIED-ACTIVE-PROJECT-DETAILS continues a verified Projects status conversation into source-authorised active-project detail, using independent exact-tenant summary, bounded status-filtered list and detail GETs, validating each response; no model request, inferred project data, financial authority, tenant expansion or held-admission changes.
  * CHANGELOG: v4.38.0-SOURCE-GROUNDED-FOLLOWUP-CONTEXT preserves semantic topic continuity only from the previous explicitly verified Projects source reply. A bounded count/status grammar handles natural and imperfect follow-ups (including 'How may are active?') with fresh EOS readback of total/active/planned/on_hold/done/cancelled, not brittle canned answers or paid provider calls. Every read is tenant/principal validated; ungrounded requests retain consented EOS reasoning.
@@ -181,6 +182,7 @@ import {
   X,
 } from 'lucide-react';
 import api from '../../services/api.js'; // Sovereign HTTP client – forensic seals, tenant headers, auto refresh
+import { assertUnifiedMyWorkProjection, unifiedMyWorkSourceLabel } from '../../services/unifiedMyWorkProjection.js';
 import {
   executeWilsyAILegalServices,
   generateWilsyAILegalNextActions,
@@ -388,6 +390,82 @@ function planWilsyGovernedReadOnlyQuestion(value, previousTurns = []) {
     includeCount: true,
     includeDetails: true,
   });
+}
+
+/**
+ * @constant WILSY_READ_ONLY_SOURCE_CAPABILITIES
+ * @description Developer-owned, minimum-authority source registry. A tool
+ * selects a canonical EOS read, never a browser-trusted business fact or
+ * write action; an authenticated endpoint independently enforces every grant.
+ */
+const WILSY_READ_ONLY_SOURCE_CAPABILITIES = Object.freeze({
+  PROJECTS: Object.freeze({ endpoint: '/projects/summary', schema: 'WILSY-PROJECT-SUMMARY/V1' }),
+  MY_WORK: Object.freeze({ endpoint: '/my-work', schema: 'WILSY-OS-UNIFIED-MY-WORK/V1' }),
+});
+
+/**
+ * @function planWilsyWorkSourceQuestion
+ * @description Parse a bounded read-only business-work count into an explicit
+ * source selector. This does not imply that the source is entitled: the
+ * independently admitted /my-work projection must list it as included.
+ * The registered source vocabulary is HR, CRM, OPERATIONS, LEGAL,
+ * INTELLIGENCE and PROJECTS; source owner IAM is never granted here.
+ */
+function planWilsyWorkSourceQuestion(value) {
+  const text = String(value || '').trim().toLowerCase()
+    .replace(/[?!.;,]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text || text.length > 180
+    || /\b(?:delete|edit|change|update|create|assign|approve|transfer|complete|payments?|invoices?|users?|other|their|everyone|all employees)\b/.test(text)) return null;
+  if (!/^(?:how many|number of|count|what(?:'s| is) (?:the |my |our )?(?:number of |total )?)/.test(text)) return null;
+  if (!/\b(?:tasks?|work|work items?|to dos?)\b/.test(text)) return null;
+  if (/\b(?:tomorrow|yesterday|last week|next week|by|before|after)\b/.test(text)) return null;
+
+  const selectors = [
+    ['HR', /\b(?:hr|hiring|human resources)\b/],
+    ['CRM', /\b(?:crm|customer relationship)\b/],
+    ['OPERATIONS', /\b(?:operations|operational)\b/],
+    ['LEGAL', /\blegal\b/],
+    ['INTELLIGENCE', /\bintelligence\b/],
+    ['PROJECTS', /\b(?:project|projects)\b/],
+  ].filter(([, pattern]) => pattern.test(text));
+  if (selectors.length > 1) return null;
+  const overdue = /\b(?:overdue|late)\b/.test(text);
+  const activeQualifier = /\b(?:outstanding|open|pending|active|incomplete|unfinished)\b/.test(text);
+  if (overdue && activeQualifier) return null;
+  // Do not treat a project *portfolio* lifecycle count as a My Work task count.
+  if (selectors[0]?.[0] === 'PROJECTS' && !/\b(?:tasks?|work items?|work)\b/.test(text)) return null;
+  return Object.freeze({
+    domain: 'MY_WORK',
+    capability: WILSY_READ_ONLY_SOURCE_CAPABILITIES.MY_WORK,
+    source: selectors[0]?.[0] || null,
+    overdue,
+  });
+}
+
+/**
+ * @function formatWilsyGovernedMyWorkCount
+ * @description Format only an independently validated and admitted EOS result.
+ * Absent source is not a verified zero and cannot be exposed as one.
+ */
+function formatWilsyGovernedMyWorkCount(payload, plan) {
+  const included = payload.sources_included;
+  const source = plan.source;
+  if (source && !included.includes(source)) {
+    return 'I cannot verify this work-source count for the current account. The source is not included in the authorised EOS My Work projection.';
+  }
+  const count = plan.overdue
+    ? source
+      ? payload.items.filter(item => item.source === source && item.is_overdue === true).length
+      : payload.summary.overdue_count
+    : source
+      ? payload.summary.source_counts[source]
+      : payload.summary.active_count;
+  const sourceName = source ? unifiedMyWorkSourceLabel(source) : 'all admitted work sources';
+  const status = plan.overdue ? 'overdue' : 'active';
+  return 'EOS verifies ' + count + ' ' + status
+    + ' work ' + (count === 1 ? 'item' : 'items')
+    + ' for you in ' + sourceName
+    + ' under the current tenant and authorised source coverage.';
 }
 
 /**
@@ -1373,6 +1451,8 @@ export function WilsyOSIntelligenceDock({
       const activeProjectDetailIntent = Boolean(governedReadPlan)
         || (!isLegalDockRole(authUser?.role)
           && classifyWilsyActiveProjectDetailIntent(text, activeThread?.messages));
+      const workSourcePlan = isLegalDockRole(authUser?.role)
+        ? null : planWilsyWorkSourceQuestion(text);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       if (allowedSourceView) {
@@ -1386,7 +1466,7 @@ export function WilsyOSIntelligenceDock({
       // A server-confirmed reconciliation hold is not an uncertain network
       // retry. Preserve the draft but refuse further sends of this exact
       // attempt, including the Enter key and dynamic suggestion route.
-      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent
+      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !workSourcePlan
         && reasoningReplayRef.current.blocked === true
         && reasoningReplayRef.current.scope === dockScopeRef.current
         && reasoningReplayRef.current.text === text
@@ -1394,15 +1474,15 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('This request is awaiting EOS execution and usage reconciliation. No verified answer exists. Resubmitting the same request is blocked.');
         return;
       }
-      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
+      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !workSourcePlan && !isLegalDockRole(authUser?.role) && aiEntitlementNotProvisioned) {
         setErrorMessage('Your workspace is verified, but AI reasoning is not yet activated for this tenant.');
         return;
       }
-      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
+      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !workSourcePlan && !isLegalDockRole(authUser?.role) && aiProviderUnavailable) {
         setErrorMessage('Workspace information is available, but the EOS AI provider is not configured.');
         return;
       }
-      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
+      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !workSourcePlan && !isLegalDockRole(authUser?.role) && !reasoningUsageConsent) {
         setErrorMessage('Confirm the WILSY AI usage terms before requesting reasoning.');
         return;
       }
@@ -1410,7 +1490,7 @@ export function WilsyOSIntelligenceDock({
         && visibleWorkspaceContext?.state === 'READY'
         && visibleWorkspaceContext.data.work?.project?.project_id === workLocator.project_id
         ? { ...workLocator } : null;
-      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
+      if (!localNonmeteredReply && !projectCountIntent && !activeProjectDetailIntent && !workSourcePlan && !isLegalDockRole(authUser?.role) && workLocator.project_id && !currentProject) {
         setErrorMessage('EOS must verify the current project before AI can answer about it. Refresh context.');
         return;
       }
@@ -1480,6 +1560,34 @@ export function WilsyOSIntelligenceDock({
             phase: 'NON_GENERATIVE_BUILT_IN',
             domain: 'GENERAL',
             tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
+          };
+        } else if (workSourcePlan) {
+          const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+          const exactPrincipal = authUser?.id;
+          if (typeof exactTenant !== 'string' || !exactTenant.trim()
+            || typeof exactPrincipal !== 'string' || !exactPrincipal.trim()) {
+            throw new Error('WILSY_WORK_SOURCE_SCOPE_UNVERIFIED');
+          }
+          // The same canonical source-coverage validator used by Headquarters
+          // and Daily Attention checks tenant, principal, item provenance,
+          // source admission, every source count, and command authority.
+          const response = await api.get(workSourcePlan.capability.endpoint, {
+            headers: { 'X-Tenant-ID': exactTenant },
+            timeout: 15000,
+            signal: controller.signal,
+            forceNetworkRetry: true,
+          });
+          if (!requestIsCurrent()) return;
+          const evidence = assertUnifiedMyWorkProjection(response?.data, {
+            tenantId: exactTenant,
+            principalId: exactPrincipal,
+          });
+          result = {
+            reply: formatWilsyGovernedMyWorkCount(evidence, workSourcePlan),
+            source: 'WILSY_EOS_MULTI_SOURCE_WORK',
+            phase: 'SOURCE_VERIFIED_READ_ONLY',
+            domain: 'MY_WORK',
+            tenantId: exactTenant,
           };
         } else if (projectCountIntent) {
           const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
@@ -1688,7 +1796,11 @@ export function WilsyOSIntelligenceDock({
           && status === 503 && detail === 'C1B_REASONING_RECONCILIATION_REQUIRED') {
           reasoningReplayRef.current = { ...reasoningReplayRef.current, blocked: true };
         }
-        const safeMessage = activeProjectDetailIntent
+        const safeMessage = workSourcePlan
+          ? (status === 401 ? 'Sign in to inspect your authorised work sources.'
+            : status === 403 ? 'Your current session does not have permission for the requested work sources.'
+              : 'EOS could not verify a complete current work-source projection. No count was guessed, and no AI request was sent.')
+          : activeProjectDetailIntent
           ? (status === 401 ? 'Sign in to inspect current Projects.'
             : status === 403 ? 'The current account is not authorised to inspect these Projects.'
               : 'EOS could not verify current active-project details. No project facts were guessed and no AI request was sent.')
@@ -1881,7 +1993,8 @@ export function WilsyOSIntelligenceDock({
     || (!isLegalDockRole(authUser?.role)
       && (planWilsyGovernedReadOnlyQuestion(prompt, activeThread?.messages)
         || classifyWilsyProjectPortfolioCountIntent(prompt, activeThread?.messages)
-        || classifyWilsyActiveProjectDetailIntent(prompt, activeThread?.messages))));
+        || classifyWilsyActiveProjectDetailIntent(prompt, activeThread?.messages)
+        || planWilsyWorkSourceQuestion(prompt))));
   const operatorNameCandidate = [
     [authUser?.firstName || authUser?.first_name, authUser?.lastName || authUser?.last_name]
       .filter(value => typeof value === 'string' && value.trim()).join(' '),
@@ -2236,7 +2349,9 @@ export function WilsyOSIntelligenceDock({
                             : msg.meta?.source === 'WILSY_LOCAL_DEVICE_TIME'
                               ? 'WILSY OS · Device time'
                               : ['WILSY_EOS_PROJECT_SUMMARY', 'WILSY_EOS_PROJECT_DETAIL'].includes(msg.meta?.source)
-                                ? 'WILSY OS · Verified Projects' : 'WILSY OS'}</span>
+                                ? 'WILSY OS · Verified Projects'
+                                : msg.meta?.source === 'WILSY_EOS_MULTI_SOURCE_WORK'
+                                  ? 'WILSY OS · Verified Work' : 'WILSY OS'}</span>
                         <span>
                           {msg.timestamp
                             ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -2622,7 +2737,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING
+ * VERSION: v4.41.0-GOVERNED-MULTIDOMAIN-WORK-SOURCE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
