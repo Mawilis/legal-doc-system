@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.62.1-BOUNDED-CONTEXT-PANE-WIDTH
+ * VERSION: v1.63.0-WORK-LIST-FIRST-LAYOUT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.63.0-WORK-LIST-FIRST-LAYOUT puts the source-
+ *          verified work grid immediately after the compact filters
+ *          and context strip, moving lifecycle and checklist into one
+ *          below-list optional disclosure. The queue stays primary
+ *          and the same authorized actions remain available.
  * CHANGELOG: v1.62.1-BOUNDED-CONTEXT-PANE-WIDTH prevents
  *          viewport overflow by resolving inset-constrained width
  *          instead of combining 100%-width with left/right gutters.
@@ -1478,111 +1483,6 @@ export default function ProjectTasksPanel({
           Often opened this session: {frequentWork.map(item => item.title).join(' · ')}
         </span>}
       </div>}
-      <details className="mt-2 border-b border-slate-200 pb-2" aria-label="Verified task lifecycle chart">
-        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">View lifecycle breakdown · {chartTotal} work items on this page</summary>
-        <section className="rounded-lg bg-slate-50 p-3">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h4 className="text-sm font-bold text-slate-900">Work lifecycle · current page</h4>
-            <p className="mt-1 text-xs text-slate-600">Every bar uses EOS-verified tasks, not portfolio estimates. Select a bar to filter the work table.</p>
-          </div>
-          <div className="text-right" aria-label="Verified task completion on current page">
-            <span className="block text-2xl font-bold tabular-nums text-slate-900">{chartTotal ? Math.round(100 * counts.find(item => item.status === 'DONE').count / chartTotal) : 0}%</span>
-            <span className="text-xs text-slate-600">Done on this page · {counts.find(item => item.status === 'DONE').count} / {chartTotal}</span>
-          </div>
-        </div>
-        <div className="mt-4 space-y-2">
-          {counts.map(({ status, count }) => {
-            const percent = chartTotal ? Math.round(100 * count / chartTotal) : 0;
-            const color = ({
-              TODO: '#64748b', IN_PROGRESS: '#2563eb', BLOCKED: '#c2410c',
-              DONE: '#15803d', CANCELLED: '#475569',
-            })[status];
-            return <button key={status} type="button"
-              aria-label={'Filter work to ' + label(status) + ': ' + count + ' of ' + chartTotal + ' verified on page'}
-              aria-pressed={workStatus === status} onClick={() => setWorkStatus(current => current === status ? 'ALL' : status)}
-              className={'grid w-full grid-cols-[minmax(75px,130px)_minmax(0,1fr)_50px] items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ' +
-                (workStatus === status ? 'bg-blue-50 ring-1 ring-blue-300' : '')}>
-              <span className="text-xs font-semibold text-slate-800">{label(status)}</span>
-              <span className="block h-3 overflow-hidden rounded-full bg-slate-100" role="img"
-                aria-label={label(status) + ': ' + percent + ' percent of the verified page'}>
-                <span className="block h-full rounded-full transition-[width] duration-200"
-                  data-lifecycle-status={status} style={{ width: percent + '%', backgroundColor: color }}/>
-              </span>
-              <span className="text-right text-xs font-semibold tabular-nums text-slate-800">{count} · {percent}%</span>
-            </button>;
-          })}
-        </div>
-        <p role="status" className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-600">
-          {overdueOnPage > 0 ? overdueOnPage + ' overdue on this page.' : 'No overdue items on this page.'}
-          {' '}Lifecycle actions update this chart only after a fresh verified EOS list read.
-        </p>
-      </section>
-      </details>
-      <details className="mt-2 border-b border-slate-200 pb-2" aria-label="EOS verified To-do checklist">
-        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">
-          Checklist mode · {doneTodos}/{todoRows.length} completed
-        </summary>
-        <section className="rounded-lg bg-slate-50 p-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h4 className="text-sm font-bold text-slate-900">To-do checklist · current verified page</h4>
-            <p className="mt-1 text-xs text-slate-600">Each checkbox is an actual EOS task or subtask, not a browser-only checklist item. Work must be In progress before it can be completed.</p>
-          </div>
-          <span role="status" className="text-sm font-semibold tabular-nums text-slate-800">{doneTodos} of {todoRows.length} completed</span>
-        </div>
-        <div role="progressbar" aria-label="Verified To-do completion on this page"
-          aria-valuemin={0} aria-valuemax={todoRows.length || 1}
-          aria-valuenow={doneTodos}
-          aria-valuetext={doneTodos + ' of ' + todoRows.length + ' verified tasks completed'}
-          className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-full bg-emerald-700"
-            style={{ width: (todoRows.length ? 100 * doneTodos / todoRows.length : 0) + '%' }}/>
-        </div>
-        {todoRows.length === 0
-          ? <p className="mt-3 text-xs text-slate-600">No verified tasks or subtasks on this page. Create a task to begin a persisted checklist.</p>
-          : <ul className="mt-3 divide-y divide-slate-200" aria-label="Persisted project task checklist">
-            {todoRows.map(item => {
-              const complete = item.status === 'DONE';
-              const canComplete = item.status === 'IN_PROGRESS';
-              return <li key={item.task_id} className="flex flex-wrap items-center gap-3 py-3">
-                <label className="flex min-w-[200px] flex-1 items-start gap-3 text-sm text-slate-900">
-                  <input type="checkbox" className="mt-1 size-4 accent-emerald-700"
-                    aria-label={'Mark completed: ' + item.title}
-                    checked={complete} disabled={busy || !canComplete || !actionCapabilities?.canComplete}
-                    onChange={() => {
-                      if (!canComplete || !actionCapabilities?.canComplete) return;
-                      setCompletionCandidate(item.task_id);
-                      setCompletionAttested(false);
-                    }}/>
-                  <span className={complete ? 'text-slate-600 line-through' : ''}>
-                    <span className="block font-semibold">{item.title}</span>
-                    <span className="mt-0.5 block text-xs text-slate-600">{item.parent_task_id ? 'Subtask' : 'Task'} · {label(item.status)}{item.due_date ? ' · due ' + item.due_date : ''}</span>
-                  </span>
-                </label>
-                {item.status === 'TODO' && actionCapabilities?.canStart && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
-                  disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Start work</button>}
-                {item.status === 'BLOCKED' && actionCapabilities?.canStart && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
-                  disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Resume work</button>}
-                {canComplete && actionCapabilities?.canComplete && <span className="text-xs text-slate-600">Tick to verify completion</span>}
-                {complete && <span className="text-xs font-semibold text-emerald-800">EOS confirmed Done</span>}
-                {item.status !== 'DONE' && actionCapabilities?.canEdit && <button type="button"
-                  className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
-                  aria-label={'Add checklist step to ' + item.title}
-                  onClick={() => {
-                    setCreating(true);
-                    setEditor(null);
-                    setWorkType('SUBTASK');
-                    setDraft({ ...EMPTY, kind: 'TASK', parent_task_id: item.task_id });
-                  }}>Add checklist step</button>}
-                <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
-                  onClick={() => setDiscussionTaskId(item.task_id)}>Activity &amp; discussion</button>
-              </li>;
-            })}
-          </ul>}
-        {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
-      </section>
-      </details>
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
@@ -1977,6 +1877,118 @@ export default function ProjectTasksPanel({
         </table>
       </div>
       {workPager}
+      <details className="mt-3 border-t border-slate-200 pt-2" aria-label="Additional project work views">
+        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">
+          Additional views · lifecycle and checklist
+        </summary>
+        <div className="mt-2 space-y-1">
+      <details className="mt-2 border-b border-slate-200 pb-2" aria-label="Verified task lifecycle chart">
+        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">View lifecycle breakdown · {chartTotal} work items on this page</summary>
+        <section className="rounded-lg bg-slate-50 p-3">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">Work lifecycle · current page</h4>
+            <p className="mt-1 text-xs text-slate-600">Every bar uses EOS-verified tasks, not portfolio estimates. Select a bar to filter the work table.</p>
+          </div>
+          <div className="text-right" aria-label="Verified task completion on current page">
+            <span className="block text-2xl font-bold tabular-nums text-slate-900">{chartTotal ? Math.round(100 * counts.find(item => item.status === 'DONE').count / chartTotal) : 0}%</span>
+            <span className="text-xs text-slate-600">Done on this page · {counts.find(item => item.status === 'DONE').count} / {chartTotal}</span>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          {counts.map(({ status, count }) => {
+            const percent = chartTotal ? Math.round(100 * count / chartTotal) : 0;
+            const color = ({
+              TODO: '#64748b', IN_PROGRESS: '#2563eb', BLOCKED: '#c2410c',
+              DONE: '#15803d', CANCELLED: '#475569',
+            })[status];
+            return <button key={status} type="button"
+              aria-label={'Filter work to ' + label(status) + ': ' + count + ' of ' + chartTotal + ' verified on page'}
+              aria-pressed={workStatus === status} onClick={() => setWorkStatus(current => current === status ? 'ALL' : status)}
+              className={'grid w-full grid-cols-[minmax(75px,130px)_minmax(0,1fr)_50px] items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ' +
+                (workStatus === status ? 'bg-blue-50 ring-1 ring-blue-300' : '')}>
+              <span className="text-xs font-semibold text-slate-800">{label(status)}</span>
+              <span className="block h-3 overflow-hidden rounded-full bg-slate-100" role="img"
+                aria-label={label(status) + ': ' + percent + ' percent of the verified page'}>
+                <span className="block h-full rounded-full transition-[width] duration-200"
+                  data-lifecycle-status={status} style={{ width: percent + '%', backgroundColor: color }}/>
+              </span>
+              <span className="text-right text-xs font-semibold tabular-nums text-slate-800">{count} · {percent}%</span>
+            </button>;
+          })}
+        </div>
+        <p role="status" className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-600">
+          {overdueOnPage > 0 ? overdueOnPage + ' overdue on this page.' : 'No overdue items on this page.'}
+          {' '}Lifecycle actions update this chart only after a fresh verified EOS list read.
+        </p>
+      </section>
+      </details>
+      <details className="mt-2 border-b border-slate-200 pb-2" aria-label="EOS verified To-do checklist">
+        <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">
+          Checklist mode · {doneTodos}/{todoRows.length} completed
+        </summary>
+        <section className="rounded-lg bg-slate-50 p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">To-do checklist · current verified page</h4>
+            <p className="mt-1 text-xs text-slate-600">Each checkbox is an actual EOS task or subtask, not a browser-only checklist item. Work must be In progress before it can be completed.</p>
+          </div>
+          <span role="status" className="text-sm font-semibold tabular-nums text-slate-800">{doneTodos} of {todoRows.length} completed</span>
+        </div>
+        <div role="progressbar" aria-label="Verified To-do completion on this page"
+          aria-valuemin={0} aria-valuemax={todoRows.length || 1}
+          aria-valuenow={doneTodos}
+          aria-valuetext={doneTodos + ' of ' + todoRows.length + ' verified tasks completed'}
+          className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-emerald-700"
+            style={{ width: (todoRows.length ? 100 * doneTodos / todoRows.length : 0) + '%' }}/>
+        </div>
+        {todoRows.length === 0
+          ? <p className="mt-3 text-xs text-slate-600">No verified tasks or subtasks on this page. Create a task to begin a persisted checklist.</p>
+          : <ul className="mt-3 divide-y divide-slate-200" aria-label="Persisted project task checklist">
+            {todoRows.map(item => {
+              const complete = item.status === 'DONE';
+              const canComplete = item.status === 'IN_PROGRESS';
+              return <li key={item.task_id} className="flex flex-wrap items-center gap-3 py-3">
+                <label className="flex min-w-[200px] flex-1 items-start gap-3 text-sm text-slate-900">
+                  <input type="checkbox" className="mt-1 size-4 accent-emerald-700"
+                    aria-label={'Mark completed: ' + item.title}
+                    checked={complete} disabled={busy || !canComplete || !actionCapabilities?.canComplete}
+                    onChange={() => {
+                      if (!canComplete || !actionCapabilities?.canComplete) return;
+                      setCompletionCandidate(item.task_id);
+                      setCompletionAttested(false);
+                    }}/>
+                  <span className={complete ? 'text-slate-600 line-through' : ''}>
+                    <span className="block font-semibold">{item.title}</span>
+                    <span className="mt-0.5 block text-xs text-slate-600">{item.parent_task_id ? 'Subtask' : 'Task'} · {label(item.status)}{item.due_date ? ' · due ' + item.due_date : ''}</span>
+                  </span>
+                </label>
+                {item.status === 'TODO' && actionCapabilities?.canStart && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                  disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Start work</button>}
+                {item.status === 'BLOCKED' && actionCapabilities?.canStart && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                  disabled={busy} onClick={() => transition(item, 'IN_PROGRESS')}>Resume work</button>}
+                {canComplete && actionCapabilities?.canComplete && <span className="text-xs text-slate-600">Tick to verify completion</span>}
+                {complete && <span className="text-xs font-semibold text-emerald-800">EOS confirmed Done</span>}
+                {item.status !== 'DONE' && actionCapabilities?.canEdit && <button type="button"
+                  className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+                  aria-label={'Add checklist step to ' + item.title}
+                  onClick={() => {
+                    setCreating(true);
+                    setEditor(null);
+                    setWorkType('SUBTASK');
+                    setDraft({ ...EMPTY, kind: 'TASK', parent_task_id: item.task_id });
+                  }}>Add checklist step</button>}
+                <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+                  onClick={() => setDiscussionTaskId(item.task_id)}>Activity &amp; discussion</button>
+              </li>;
+            })}
+          </ul>}
+        {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
+      </section>
+      </details>
+        </div>
+      </details>
 
         {bulkAssignment && <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-950/55 p-3"
           onMouseDown={event => {
@@ -2252,7 +2264,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.62.1-BOUNDED-CONTEXT-PANE-WIDTH
+// VERSION: v1.63.0-WORK-LIST-FIRST-LAYOUT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
