@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF
+ * VERSION: v2.7.0-DIRECT-AUTHOR-WORKSPACE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.7.0-DIRECT-AUTHOR-WORKSPACE renders the private
+ *            draft editor immediately below the active command rail and
+ *            replaces the long publication/Projects read-only content while
+ *            editing. Closing restores the unchanged live source view. No
+ *            Strategy write, authorization or persistence semantics change.
  * CHANGELOG: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF chooses the
  *            separately source-admitted Founder Strategy link endpoint after
  *            effective publication, preserving exact revisions, IAM Projects
@@ -1040,7 +1045,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
       <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button></div>
       <div className={styles.body}>
-        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
+        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
         <div className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
           {error && <section className={styles.notice} role="alert" data-document-state={error.kind}>
@@ -1093,6 +1098,69 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
                 </nav>
+                {editorOpen && draftPermitted && <form className={styles.form}
+                  aria-label="Company private draft editor"
+                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform(founderDraftPermitted ? 'FOUNDER_CREATE_DRAFT' : 'CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
+                  <div className={styles.editorHeading}>
+                    <div><span className={styles.eyebrow}>AUTHOR WORKSPACE · PRIVATE</span>
+                      <h2>Prepare {classification === 'MISSION' ? 'Our Mission' : 'Our Strategy'}</h2>
+                      <p>Review the Founder-approved v1.1.0 wording from the supplied PDF. Save only through authorized Python EOS; content approval does not imply EOS publication.</p>
+                    </div>
+                    <button type="button" disabled={busy} onClick={() => setPreviewOpen(value => !value)}
+                      aria-pressed={previewOpen}>{previewOpen ? 'Edit document' : 'Preview draft'}</button>
+                  </div>
+                  {previewOpen ? <div className={styles.preview} role="region" aria-label="Unpublished draft preview">
+                    <span className={styles.eyebrow}>UNPUBLISHED PREVIEW · NOT COMPANY POLICY</span>
+                    <h3>{proposal.title || 'Untitled private proposal'}</h3>
+                    <p>Version {proposal.document_version || 'not set'}</p>
+                    {proposal.sections.map(section => <section key={section.section_id}>
+                      <h4>{section.title || 'Untitled section'}</h4>
+                      <p>{section.body || 'No content yet'}</p>
+                    </section>)}
+                  </div> : <>
+                    <div className={styles.editorMeta}>
+                      <label>Document title<input required maxLength={200} value={proposal.title}
+                        onChange={event => setProposal(value => ({ ...value, title: event.target.value }))}/></label>
+                      <label>Document version<input required pattern="[0-9]+\.[0-9]+\.[0-9]+"
+                        value={proposal.document_version}
+                        onChange={event => setProposal(value => ({ ...value, document_version: event.target.value }))}/></label>
+                    </div>
+                    <div className={styles.sectionList}>
+                      {proposal.sections.map((section, index) => <fieldset key={section.section_id}>
+                        <legend>Section {index + 1}</legend>
+                        <div className={styles.sectionControls}>
+                          <span>{section.body.trim().split(/\s+/).filter(Boolean).length} words</span>
+                          <button type="button" disabled={busy || index === 0}
+                            aria-label={`Move section ${index + 1} up`}
+                            onClick={() => moveSection(index, -1)}>Move up</button>
+                          <button type="button" disabled={busy || index === proposal.sections.length - 1}
+                            aria-label={`Move section ${index + 1} down`}
+                            onClick={() => moveSection(index, 1)}>Move down</button>
+                          <button type="button" disabled={busy || proposal.sections.length === 1}
+                            aria-label={`Remove section ${index + 1}`}
+                            onClick={() => removeSection(index)}>Remove</button>
+                        </div>
+                        <label>Section title<input required maxLength={160} value={section.title}
+                          onChange={event => updateSection(index, { title: event.target.value })}/></label>
+                        <label>Proposed content<textarea required maxLength={20000} rows={5} value={section.body}
+                          onChange={event => updateSection(index, { body: event.target.value })}/></label>
+                      </fieldset>)}
+                    </div>
+                  </>}
+                  <div className={styles.editorFooter}>
+                    <span>{proposal.sections.length} sections · {proposalCharacters.toLocaleString()} / 100,000 characters · Founder PDF SHA3-512: {FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512.slice(0, 16)}…</span>
+                    <div className={styles.actions}>
+                      <button type="button" disabled={busy || proposal.sections.length >= 24 || previewOpen}
+                        onClick={addSection}>Add section</button>
+                      <button type="submit" disabled={busy || !proposalValid}>
+                        {busy ? 'Verifying EOS…' : 'Save private draft to EOS'}
+                      </button>
+                      <button type="button" disabled={busy}
+                        onClick={() => { setEditorOpen(false); setPreviewOpen(false); }}>Close editor</button>
+                    </div>
+                  </div>
+                </form>}
+                {!editorOpen && <>
                 {classification === 'STRATEGY' && <section aria-label="M03 Strategy governance gates"
                   className="mb-4 rounded-xl border border-slate-500/60 bg-slate-950/30 p-4 text-slate-100">
                   <h3 className="text-base font-semibold text-white">M03 · Publication and Pillar 1 governance</h3>
@@ -1443,68 +1511,6 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   </div>}
                   <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
                 </section>
-                {editorOpen && draftPermitted && <form className={styles.form}
-                  aria-label="Company private draft editor"
-                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform(founderDraftPermitted ? 'FOUNDER_CREATE_DRAFT' : 'CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
-                  <div className={styles.editorHeading}>
-                    <div><span className={styles.eyebrow}>AUTHOR WORKSPACE · PRIVATE</span>
-                      <h2>Prepare {classification === 'MISSION' ? 'Our Mission' : 'Our Strategy'}</h2>
-                      <p>Review the Founder-approved v1.1.0 wording from the supplied PDF. Save only through authorized Python EOS; content approval does not imply EOS publication.</p>
-                    </div>
-                    <button type="button" disabled={busy} onClick={() => setPreviewOpen(value => !value)}
-                      aria-pressed={previewOpen}>{previewOpen ? 'Edit document' : 'Preview draft'}</button>
-                  </div>
-                  {previewOpen ? <div className={styles.preview} role="region" aria-label="Unpublished draft preview">
-                    <span className={styles.eyebrow}>UNPUBLISHED PREVIEW · NOT COMPANY POLICY</span>
-                    <h3>{proposal.title || 'Untitled private proposal'}</h3>
-                    <p>Version {proposal.document_version || 'not set'}</p>
-                    {proposal.sections.map(section => <section key={section.section_id}>
-                      <h4>{section.title || 'Untitled section'}</h4>
-                      <p>{section.body || 'No content yet'}</p>
-                    </section>)}
-                  </div> : <>
-                    <div className={styles.editorMeta}>
-                      <label>Document title<input required maxLength={200} value={proposal.title}
-                        onChange={event => setProposal(value => ({ ...value, title: event.target.value }))}/></label>
-                      <label>Document version<input required pattern="[0-9]+\.[0-9]+\.[0-9]+"
-                        value={proposal.document_version}
-                        onChange={event => setProposal(value => ({ ...value, document_version: event.target.value }))}/></label>
-                    </div>
-                    <div className={styles.sectionList}>
-                      {proposal.sections.map((section, index) => <fieldset key={section.section_id}>
-                        <legend>Section {index + 1}</legend>
-                        <div className={styles.sectionControls}>
-                          <span>{section.body.trim().split(/\s+/).filter(Boolean).length} words</span>
-                          <button type="button" disabled={busy || index === 0}
-                            aria-label={`Move section ${index + 1} up`}
-                            onClick={() => moveSection(index, -1)}>Move up</button>
-                          <button type="button" disabled={busy || index === proposal.sections.length - 1}
-                            aria-label={`Move section ${index + 1} down`}
-                            onClick={() => moveSection(index, 1)}>Move down</button>
-                          <button type="button" disabled={busy || proposal.sections.length === 1}
-                            aria-label={`Remove section ${index + 1}`}
-                            onClick={() => removeSection(index)}>Remove</button>
-                        </div>
-                        <label>Section title<input required maxLength={160} value={section.title}
-                          onChange={event => updateSection(index, { title: event.target.value })}/></label>
-                        <label>Proposed content<textarea required maxLength={20000} rows={5} value={section.body}
-                          onChange={event => updateSection(index, { body: event.target.value })}/></label>
-                      </fieldset>)}
-                    </div>
-                  </>}
-                  <div className={styles.editorFooter}>
-                    <span>{proposal.sections.length} sections · {proposalCharacters.toLocaleString()} / 100,000 characters · Founder PDF SHA3-512: {FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512.slice(0, 16)}…</span>
-                    <div className={styles.actions}>
-                      <button type="button" disabled={busy || proposal.sections.length >= 24 || previewOpen}
-                        onClick={addSection}>Add section</button>
-                      <button type="submit" disabled={busy || !proposalValid}>
-                        {busy ? 'Verifying EOS…' : 'Save private draft to EOS'}
-                      </button>
-                      <button type="button" disabled={busy}
-                        onClick={() => { setEditorOpen(false); setPreviewOpen(false); }}>Close editor</button>
-                    </div>
-                  </div>
-                </form>}
                 {classification === 'STRATEGY' && actions.includes('FOUNDER_RATIFY') && <form
                   className={styles.form} aria-label="Founder Strategy self-ratification"
                   onSubmit={publish}>
@@ -1519,6 +1525,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   </button>
                 </form>}
                 {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
+                </>}
               </>}
         </div>
       </div>
@@ -1528,7 +1535,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF
+// VERSION: v2.7.0-DIRECT-AUTHOR-WORKSPACE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
