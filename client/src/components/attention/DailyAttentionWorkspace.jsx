@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.16.0-FOCUSED-ATTENTION-NAVIGATION
+ * VERSION: v3.17.0-CONTEXTUAL-ATTENTION-HEADER
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,6 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.17.0-CONTEXTUAL-ATTENTION-HEADER exposes a
+ *          presentation-only navigation state to the owning panel,
+ *          allowing its header to reflect focused detail, briefing
+ *          or the full queue without changing any EOS data.
  * CHANGELOG: v3.16.0-FOCUSED-ATTENTION-NAVIGATION gives selected
  *          details and priority briefing full-width focus and native
  *          Back to work navigation. No duplicate EOS commands or
@@ -314,6 +318,7 @@ const criteriaLabel = (criteria) => {
 export default function DailyAttentionWorkspace({
   feed, calendarItems, filter, setFilter, source, setSource, query, setQuery,
   onRefresh, onOpenWork, onOpenOperations, onOpenWorkforce,
+  onSurfaceViewChange = null,
   onLoadMore, loadingMore, pageError,
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
   getCompletionReceipt = () => null, completionReadbackReady = false,
@@ -370,6 +375,14 @@ export default function DailyAttentionWorkspace({
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
   const selected = page.find((item) => item.id === selectedId) || null;
+  useEffect(() => {
+    if (typeof onSurfaceViewChange === 'function') {
+      onSurfaceViewChange(selected ? 'DETAIL'
+        : mode === 'CREATE' ? 'CREATE'
+          : mode === 'CALENDAR' ? 'CALENDAR'
+            : showBriefing ? 'BRIEFING' : 'WORK');
+    }
+  }, [selected?.id, mode, showBriefing, onSurfaceViewChange]);
   const selectedCompletionReceipt = selected ? getCompletionReceipt(selected) : null;
   const sourceCoverage = feed.sources || [];
   const canCompleteItem = (item) => Boolean(item
@@ -1254,7 +1267,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.16.0-FOCUSED-ATTENTION-NAVIGATION
+// VERSION: v3.17.0-CONTEXTUAL-ATTENTION-HEADER
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
