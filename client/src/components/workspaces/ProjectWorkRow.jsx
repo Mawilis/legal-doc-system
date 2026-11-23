@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.11.0-SINGLE-PRIMARY-WORK-ROW
+ * VERSION: v1.11.1-GOVERNED-MENU-HANDOFF
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.11.1-GOVERNED-MENU-HANDOFF delegates
+ *          detail and create-subtask entry to the caller's governed
+ *          work inspector and source-owned task-create command.
  * CHANGELOG: v1.11.0-SINGLE-PRIMARY-WORK-ROW removes
  *          duplicated Open/Clear row toolbars, makes the verified task
  *          title itself the detail entry, and always places one EOS-gated
@@ -102,13 +105,14 @@ export default function ProjectWorkRow({
   item, selected = false, density = 'comfortable', busy = false,
   priority = null,
   pendingStatus = null, todayISO, assigneeName,
-  onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
+  onToggleSelect, onOpen, onCreateSubtask, onAssign, onEdit, onTransition, onComplete,
   onAttachments, onApprovals, onActivity, capabilities = NO_ACTION_CAPABILITIES,
 }) {
   const rowCommands = <ProjectWorkRowActions item={item} busy={busy} dense
     {...(capabilities || NO_ACTION_CAPABILITIES)}
     onTransition={onTransition} onComplete={onComplete}
     onEdit={onEdit} onAssign={onAssign}
+    onOpen={onOpen} onCreateSubtask={onCreateSubtask}
     onAttachments={onAttachments} onApprovals={onApprovals}
     onActivity={onActivity}/>;
   const displayName = item.assignee_principal_id && typeof assigneeName === 'function'
@@ -233,7 +237,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.11.0-SINGLE-PRIMARY-WORK-ROW
+// VERSION: v1.11.1-GOVERNED-MENU-HANDOFF
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
