@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.7.1-FOCUSED-AUTHOR-VIEWPORT
+ * VERSION: v2.8.0-AUDITABLE-COMMAND-REJECTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.8.0-AUDITABLE-COMMAND-REJECTION separates
+ *            rejected source writes from failed document reads, preserves
+ *            unsaved author input, and displays whitelisted HTTP validation
+ *            field paths without leaking rejected content or declaring a
+ *            successful write. No IAM/document mutation behavior changes.
  * CHANGELOG: v2.7.1-FOCUSED-AUTHOR-VIEWPORT restores the
  *            modal scroll position and moves focus into the private editor
  *            when prepared, preventing hidden steps after viewing project
@@ -370,6 +375,43 @@ const sourceError = failure => {
   };
 };
 
+const COMMAND_LABELS = Object.freeze({
+  CREATE_DRAFT: 'Save private draft', FOUNDER_CREATE_DRAFT: 'Save Founder Strategy draft',
+  SUBMIT: 'Submit private revision', FOUNDER_SUBMIT: 'Submit Founder Strategy',
+  PUBLISH: 'Publish approved revision', FOUNDER_RATIFY: 'Ratify Founder Strategy',
+});
+const ALLOWED_VALIDATION_FIELDS = new Set([
+  'expected_revision', 'title', 'document_version', 'sections',
+  'section_id', 'body', 'effective_from', 'approval_reference',
+  'Idempotency-Key',
+]);
+const commandFailure = (failure, action, acknowledged) => {
+  const base = sourceError(failure);
+  const status = base.status;
+  const detail = failure?.response?.data?.detail;
+  const fields = Array.isArray(detail) ? [...new Set(detail.flatMap(entry => {
+    if (!Array.isArray(entry?.loc)) return [];
+    const allowed = entry.loc.filter(part => typeof part === 'string'
+      && ALLOWED_VALIDATION_FIELDS.has(part));
+    return allowed.length ? [allowed[allowed.length - 1]] : [];
+  }))].slice(0, 5) : [];
+  return {
+    ...base, operation: COMMAND_LABELS[action] || 'Company-document command',
+    kind: acknowledged ? 'READBACK_UNVERIFIED' : 'COMMAND_REJECTED',
+    title: acknowledged ? 'Command recorded; current readback unverified'
+      : status === 422 ? 'EOS rejected the document command (HTTP 422)'
+        : 'EOS did not verify the document command',
+    message: acknowledged
+      ? 'EOS acknowledged the command, but the updated source was not independently verified. Do not retry with a new key before refreshing the source.'
+      : status === 422
+        ? (fields.length ? 'EOS rejected these request fields: ' + fields.join(', ') + '.'
+          : 'EOS rejected the request payload or command contract. The current document remains unverified.')
+        : 'This command was not confirmed by EOS. The private editor content is preserved.',
+    next: acknowledged ? 'Refresh the source to establish whether the revision exists.'
+      : 'Review the rejected fields. Keep the draft open and retry only after resolving the source validation error.',
+  };
+};
+
 /**
  * @description Open a current company document with contents and source-owned actions.
  * @collaboration Headquarters Mission/Strategy controls and canonical EOS document APIs.
@@ -403,6 +445,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [effectiveFrom, setEffectiveFrom] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [commandIssue, setCommandIssue] = useState(null);
   const [projectState, setProjectState] = useState('IDLE');
   const [projectItems, setProjectItems] = useState([]);
   const [delivery, setDelivery] = useState({ state: 'IDLE', projectId: null, page: null, error: '' });
@@ -920,7 +963,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     const fresh = { review: false, revision: null };
     queryRef.current = fresh; setQuery(fresh); setHistory(null); setTab('document');
     setEditorOpen(false); setPreviewOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
-    setMessage(''); setBusy(false); retryKeys.current.clear(); commandLock.current = null;
+    setMessage(''); setCommandIssue(null); setBusy(false); retryKeys.current.clear(); commandLock.current = null;
     void load(fresh);
     return () => { readId.current += 1; readController.current?.abort(); epoch.current = null; };
   }, [load]);
@@ -942,7 +985,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   }, [editorOpen]);
 
   const changeQuery = next => {
-    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setPreviewOpen(false); setHistory(null);
+    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setPreviewOpen(false); setHistory(null); setCommandIssue(null);
     void load(next);
   };
   const openHistory = async () => {
@@ -964,7 +1007,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (typeof globalThis.crypto?.randomUUID !== 'function') { commandLock.current = null; setError(sourceError(null)); return; }
       retryKeys.current.set(intent, globalThis.crypto.randomUUID());
     }
-    setBusy(true); setMessage(''); setError(null);
+    setBusy(true); setMessage(''); setCommandIssue(null); setError(null);
     let acknowledged = false;
     try {
       const receipt = await commandCompanyDocument(classification, scope, action, payload, retryKeys.current.get(intent), { token: auth.token });
@@ -977,10 +1020,11 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (!active(key) || commandLock.current !== commandToken) return;
       readId.current += 1; queryRef.current = next; setQuery(next); setSource({ scope: key, classification, data: readback });
       setEditorOpen(false); setPreviewOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+      setCommandIssue(null);
       setMessage('EOS confirmed the command and its durable document readback.');
     } catch (failure) {
       if (!active(key) || commandLock.current !== commandToken) return;
-      setError(acknowledged ? { ...sourceError(failure), kind: 'READBACK_UNVERIFIED', title: 'Command recorded; current readback unverified', message: 'No updated publication is claimed. Refresh the source to verify the recorded revision before another command.' } : sourceError(failure));
+      setCommandIssue(commandFailure(failure, action, acknowledged));
     } finally { if (active(key) && commandLock.current === commandToken) { commandLock.current = null; setBusy(false); } }
   };
   const trapKeyboard = event => {
@@ -1063,6 +1107,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
         <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
         <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
+          {commandIssue && <section className={styles.notice} role="alert"
+            aria-label="Company document command failure" data-document-state={commandIssue.kind}>
+            <ShieldCheck size={22} aria-hidden="true"/>
+            <h2>{commandIssue.title}</h2>
+            <p><strong>Operation:</strong> {commandIssue.operation}</p>
+            <p>{commandIssue.message}</p>
+            <p><strong>HTTP status:</strong> {commandIssue.status ?? 'No verified response'}</p>
+            <p><strong>EOS reference:</strong> {commandIssue.code}</p>
+            <p>{commandIssue.next}</p>
+            <button type="button" onClick={() => setCommandIssue(null)}>Continue editing</button>
+            {commandIssue.kind === 'READBACK_UNVERIFIED' && <button type="button"
+              onClick={() => changeQuery({ review: true, revision: null })}>Verify recorded revision</button>}
+          </section>}
           {error && <section className={styles.notice} role="alert" data-document-state={error.kind}>
             <ShieldCheck size={28} aria-hidden="true"/><h2>{error.title}</h2><p>{error.message}</p>
             <dl className={styles.sourceStatus} aria-label="Document source status">
@@ -1073,7 +1130,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
             </dl>
             <h3>Next step</h3><p>{error.next}</p>
             <button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}>Retry source read</button>
-            <p className={styles.boundaryNote}>Company document access and publication are governed independently. Preparation requires author permission; publication requires a different authorized approver.</p>
+            <p className={styles.boundaryNote}>Company document access and publication are governed independently. The source-verified canonical Founder may ratify Strategy; other principals require separately authorized publication.</p>
           </section>}
           {loading ? <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>
             : error ? null : tab === 'history' ? <section className={styles.paper}><h2>Revision history</h2><p>Only revisions permitted for your current company capacity appear here.</p>{currentHistory?.items.length ? currentHistory.items.map(item => <button className={styles.revisionRow} key={item.revision} type="button" onClick={() => changeQuery({ review: query.review, revision: item.revision })}><FileText size={18}/><span><strong>Version {item.document_version} · revision {item.revision}</strong><small>{item.state} · {displayDate(item.recorded_at)}</small></span><ArrowUpRight size={15}/></button>) : !error && <p>No permitted revisions are available.</p>}</section>
@@ -1550,7 +1607,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.7.1-FOCUSED-AUTHOR-VIEWPORT
+// VERSION: v2.8.0-AUDITABLE-COMMAND-REJECTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
