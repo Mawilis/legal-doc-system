@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.53.0-IN-GRID-MULTI-SELECTION
+ * VERSION: v1.54.0-FOCUSED-TASK-CONTEXT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.54.0-FOCUSED-TASK-CONTEXT suppresses
+ *          project-level create/refresh while working on one task's files,
+ *          discussion or approvals. Replaces duplicate context cards with
+ *          one compact in-place task breadcrumb and preserves the existing
+ *          authorized task-action panel and return path.
  * CHANGELOG: v1.53.0-IN-GRID-MULTI-SELECTION moves the
  *          multiple-selection command strip inside the exact work grid
  *          beside its Select all checkbox, removes the disconnected
@@ -1075,7 +1080,7 @@ export default function ProjectTasksPanel({
         <h3 className="text-base font-semibold text-slate-900">Project work</h3>
         <p className="mt-1 text-xs text-slate-600">Tasks, milestones, subtask dependencies and accountable assignments from EOS.</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      {!(focusedAction && selectedActionTask) && <div className="flex flex-wrap gap-2">
         <button type="button" className="wp-button" disabled={busy} onClick={() => void load(offset)}>
           <RefreshCw size={14}/> Refresh work
         </button>
@@ -1086,7 +1091,7 @@ export default function ProjectTasksPanel({
           }}>
           <Plus size={14}/> {creating ? 'Close editor' : 'Create task'}
         </button>}
-      </div>
+      </div>}
     </div>
     {(state === 'LOADING' || state === 'REFRESHING') &&
       <p role="status" className="mt-3 flex items-center gap-2 text-sm text-slate-600">
@@ -1101,13 +1106,14 @@ export default function ProjectTasksPanel({
         {' '}Existing verified task rows remain visible, but contributor assignment and member admission are unavailable until this EOS source is verified.
       </p>}
     {(state === 'READY' || state === 'REFRESHING') && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{focusedAction.type} · selected EOS work item</p>
-          <h4 className="mt-1 break-words text-base font-bold text-slate-900">{selectedActionTask.title}</h4>
-          <p className="mt-1 text-xs text-slate-600">{label(selectedActionTask.status)} · revision {selectedActionTask.revision}</p>
+      <div className="mb-3 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
+        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+          onClick={closeFocusedAction}>← Work</button>
+        <div className="min-w-0 flex-1">
+          <h4 className="truncate text-sm font-bold text-slate-950"
+            title={selectedActionTask.title}>{selectedActionTask.title}</h4>
+          <p className="text-xs text-slate-600">{label(selectedActionTask.status)} · {focusedAction.type === 'attachments' ? 'Files & evidence' : focusedAction.type === 'approvals' ? 'Approvals' : 'Discussion'}</p>
         </div>
-        <button type="button" className="wp-button" onClick={closeFocusedAction}>Back to work queue</button>
       </div>
       {focusedAction.type === 'discussion' && <ProjectTaskCommentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
@@ -1123,7 +1129,7 @@ export default function ProjectTasksPanel({
         tenantId={tenantId} projectId={projectId} principalId={principalId}
         taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
           onManageContributors={onOpenProjectPeople}
-        onClose={closeFocusedAction}/>}
+        showClose={false} onClose={closeFocusedAction}/>}
     </div> : <>
       {!actionCapabilities?.canEdit && <p role="status" className="mt-2 text-xs font-semibold text-amber-900">
         Project work is read-only. EOS has not confirmed current task-update authority.
@@ -1784,7 +1790,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.53.0-IN-GRID-MULTI-SELECTION
+// VERSION: v1.54.0-FOCUSED-TASK-CONTEXT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
