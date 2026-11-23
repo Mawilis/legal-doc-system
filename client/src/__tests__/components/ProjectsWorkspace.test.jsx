@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT
+ * VERSION: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
+ *          verifies ten-record default views, forward/back view navigation,
+ *          page-size selection and exact-visible selection on one authorized
+ *          EOS task batch; updates scope-accurate filter result wording.
  * CHANGELOG: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT asserts failed attachment sources cannot send the user into an unverified People workflow; exact-scope project participants and eligible tenant-member directory are independently preflighted on deliberate action and 403 stays on the task surface.
  * CHANGELOG: v2.60.0-ATTACHMENT-ERROR-SCHEMA-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
  * CHANGELOG: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT certifies owner-view attachment 503 source-code diagnosis and a functional route to People for explicit contributor admission. Upload stays unavailable without independently admitted participant IAM; unverified manifests do not fabricate empty files.
@@ -1592,6 +1596,62 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByText('Source principal: ' + memberId)).not.toBeInTheDocument();
   });
 
+  it('pages an authorized 22-task EOS batch without hiding records or selecting offscreen work', async () => {
+    const persisted = project();
+    const base = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      description: '', status: 'TODO', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-18T06:00:00+00:00', updated_at: '2026-11-18T06:00:00+00:00',
+      revision: 1, fingerprint: 'a'.repeat(128),
+      kind: 'TASK', parent_task_id: null,
+    };
+    const rows = Array.from({ length: 22 }, (_, index) => ({
+      ...base, task_id: 'ptk-' + (index + 1).toString(16).padStart(48, '0'),
+      title: 'Batch task ' + String(index + 1).padStart(2, '0'),
+    }));
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 50, offset: 0,
+        items: rows, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 100, offset: 0,
+        items: [], has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected GET ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="bounded-project-work-paging-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    expect(await screen.findByText('Batch task 01', {
+      selector: '.wp-project-tasks tbody td span',
+    })).toBeVisible();
+    const grid = screen.getByRole('grid', { name: 'Project work grid' });
+    expect(within(grid).getAllByRole('row').length).toBe(11);
+    expect(within(grid).queryByText('Batch task 11')).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
+    expect(within(grid).getByText('Batch task 11')).toBeVisible();
+    expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
+    expect(screen.getByText(/10 work items selected on this verified page/)).toBeVisible();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
+    expect(within(grid).getAllByRole('row').length).toBe(3);
+    expect(within(grid).getByText('Batch task 22')).toBeVisible();
+    fireEvent.change(screen.getAllByRole('combobox', {
+      name: 'Project work rows per view',
+    })[0], { target: { value: '20' } });
+    expect(within(grid).getAllByRole('row').length).toBe(21);
+    expect(within(grid).getByText('Batch task 01')).toBeVisible();
+    expect(screen.getByText(/10 work items selected on this verified page/)).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('operates real task, subtask and milestone commands from the verified work queue', async () => {
     const persisted = project();
     const parentId = 'ptk-' + 'b'.repeat(48);
@@ -1665,7 +1725,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'SUBTASK' },
     });
-    expect(screen.getByText(/1 shown \/ 2 verified on page 1\./)).toBeVisible();
+    expect(screen.getByText(/1 matching \/ 2 verified in EOS batch 1\./)).toBeVisible();
     expect(screen.queryByText('Main delivery', {
       selector: '.wp-project-tasks tbody td span',
     })).not.toBeInTheDocument();
@@ -2499,7 +2559,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT
+ * VERSION: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
