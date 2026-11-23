@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES
+ * VERSION: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
+ *          displays independently verified task lifecycle, approval
+ *          and evidence events even if the comment source fails.
+ *          Classifies the comment read failure with safe EOS status,
+ *          offers an explicit retry, and leaves comment writing closed
+ *          until its separately verified source becomes ready.
  * CHANGELOG: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES derives mention display only from
  *          EOS-verified first and last names, never principal IDs.
  * CHANGELOG: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE adds task-scoped evidence uploads inline
@@ -158,6 +164,7 @@ function MarkdownText({ value }) {
 export default function ProjectTaskCommentsPanel({
   tenantId, projectId, principalId, taskId, participants,
   tenantHeaders, onClose, participantMode = false, onViewApprovals, onViewAttachments,
+  showClose = true,
 }) {
   const [items, setItems] = useState([]);
   const [events, setEvents] = useState([]);
@@ -327,9 +334,15 @@ export default function ProjectTaskCommentsPanel({
       setItems([]);
       setHasMore(false);
       const code = cause?.response?.status;
-      setError(code === 401 ? 'Sign in to read task comments.'
-        : code === 403 ? 'EOS denied this task discussion.'
-          : 'Comments could not be verified from EOS. Refresh to reconcile.');
+      setError(code === 401 ? 'Comments require an authenticated EOS session (HTTP 401).'
+        : code === 403 ? 'EOS denied this task comment source (HTTP 403). Check the selected operating capacity.'
+          : code === 404 ? 'Task comments endpoint is not available in this EOS runtime (HTTP 404).'
+            : code === 503 ? 'Task comment source is unavailable (HTTP 503); other independently verified activity remains readable.'
+              : code === 429 ? 'EOS rate-limited the task comments request (HTTP 429).'
+                : cause?.code === 'ECONNABORTED' ? 'Task comments timed out before EOS verification.'
+                  : cause?.message === 'PROJECT_COMMENT_SOURCE_INVALID'
+                    ? 'Task comment response did not satisfy the EOS scope or pagination contract.'
+                    : 'Task comments could not reach or be verified by EOS. Other sources are checked independently.');
       setState(code === 401 || code === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
@@ -478,8 +491,8 @@ export default function ProjectTaskCommentsPanel({
             void load(offset); void loadEvents(eventOffset);
             void loadEvidence('approvals'); void loadEvidence('attachments');
           }}><RefreshCw size={14}/> Refresh</button>
-        <button type="button" className="wp-button" disabled={busy}
-          onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>
+        {showClose && <button type="button" className="wp-button" disabled={busy}
+          onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>}
       </div>
     </div>
     {(state === 'LOADING' || state === 'REFRESHING') &&
@@ -487,25 +500,30 @@ export default function ProjectTaskCommentsPanel({
         <LoaderCircle size={14} className="animate-spin"/> Verifying conversation…
       </p>}
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
-      <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    {state === 'READY' && <>
+      <div role="alert" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+        <span className="min-w-0 flex-1">{error}</span>
+        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+          onClick={() => void load(0)}>Retry comments</button>
+      </div>}
+    {(state === 'READY' || eventState === 'READY'
+      || approvalState === 'READY' || attachmentState === 'READY') && <>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2" aria-label="Verified discussion availability">
         <p role="status" className="text-xs text-slate-600">
           {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
             : 'No comments on this page'} · task activity
         </p>
-        {contributorEligible && <button type="button" className="wp-button"
+        {state === 'READY' && contributorEligible && <button type="button" className="wp-button"
           aria-expanded={showTaskEvidence}
           onClick={() => setShowTaskEvidence(value => !value)}>
           {showTaskEvidence ? 'Close file upload' : 'Upload task evidence'}
         </button>}
-        <button type="button" className="wp-button" aria-expanded={showComposer}
+        {state === 'READY' && <button type="button" className="wp-button" aria-expanded={showComposer}
           aria-controls="task-comment-composer" onClick={() => setShowComposer(current => !current)}>
           {showComposer ? 'Close editor' : 'Write update'}
-        </button>
+        </button>}
       </div>
-      {showTaskEvidence && contributorEligible &&
+      {state === 'READY' && showTaskEvidence && contributorEligible &&
         <div aria-label="Inline task evidence upload">
           <p className="mt-2 text-xs text-slate-700">Uploaded files belong to this task, not a single comment.
             EOS quarantines files until independently verified scan clearance.</p>
@@ -585,8 +603,9 @@ export default function ProjectTaskCommentsPanel({
       </div>
       <details className="mt-3 text-sm text-slate-600" aria-label="Activity source diagnostics">
         <summary className="cursor-pointer text-xs font-semibold text-slate-700">
-          Source status {eventState === 'UNAVAILABLE' || approvalState === 'UNAVAILABLE'
-            || attachmentState === 'UNAVAILABLE' ? '· some evidence unavailable' : '· source details'}
+          Source status {state === 'UNAVAILABLE' || state === 'DENIED'
+            || eventState === 'UNAVAILABLE' || approvalState === 'UNAVAILABLE'
+            || attachmentState === 'UNAVAILABLE' ? '· some sources unavailable' : '· source details'}
         </summary>
       {(approvalState === 'UNAVAILABLE' || attachmentState === 'UNAVAILABLE') &&
         <p role="status" className="mt-2 text-sm text-amber-900">
@@ -650,7 +669,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES
+// VERSION: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
