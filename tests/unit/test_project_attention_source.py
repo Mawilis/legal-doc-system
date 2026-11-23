@@ -1,11 +1,13 @@
 """TITLE: WILSY OS Exact-Participant Project Daily Attention Certificate
-VERSION: v1.2.0-DEPENDENCY-READINESS-SOURCE-CERT
+VERSION: v1.2.1-COMPLETED-PREDECESSOR-CERT
 AUTHORITY: Synthetic authenticated-source isolation and projection tests.
 EPITOME: Verify exact principal/tenant queue, current project participation,
          blocked work, revoked visibility and denial of inherited founder IAM.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_attention_source.py
 COLLABORATION / OWNERSHIP: project_attention_source, Projects router, My Work.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.1-COMPLETED-PREDECESSOR-CERT verifies that a
+         completed predecessor exits My Work but unlocks its dependent.
 CHANGELOG: v1.2.0-DEPENDENCY-READINESS-SOURCE-CERT tests independent predecessor
          status resolution and fail-closed missing records in the project snapshot.
 CHANGELOG: v1.1.1-BATCH-ATTENTION-PURPOSE-CERT adjusts synthetic
@@ -66,7 +68,8 @@ class _Collection:
             return _Cursor([row for row in self.rows if row["task_id"] in requested])
         assert query["assignee_principal_id"] == PRINCIPAL
         assert set(query["status"]["$in"]) == {"TODO", "IN_PROGRESS", "BLOCKED"}
-        return _Cursor(self.rows)
+        return _Cursor([row for row in self.rows if row["assignee_principal_id"] == PRINCIPAL
+                        and row["status"] in {"TODO", "IN_PROGRESS", "BLOCKED"}])
 
 
 def _task(task_id, status):
@@ -154,6 +157,22 @@ def test_verified_predecessor_controls_readiness_without_exposing_identity(monke
     assert predecessor.task_id not in repr(entry)
 
 
+def test_completed_predecessor_unlocks_readiness_without_new_command(monkeypatch):
+    from dataclasses import replace
+    predecessor = _task("ptk-" + "c" * 48, "DONE")
+    dependent = _task("ptk-" + "b" * 48, "TODO")
+    dependent = replace(dependent, depends_on=(predecessor.task_id,), fingerprint="")
+    _wire(monkeypatch, [dependent.to_dict(), predecessor.to_dict()])
+    result = source.read_project_attention(
+        context=_context(), tenant_id=TENANT, principal_id=PRINCIPAL,
+    )
+    assert len(result["items"]) == 1
+    row = result["items"][0]
+    assert row["dependency_total"] == 1
+    assert row["dependency_remaining"] == 0
+    assert row["dependency_readiness"] == "READY"
+
+
 def test_missing_predecessor_fails_closed(monkeypatch):
     from dataclasses import replace
     dependent = _task("ptk-" + "b" * 48, "TODO")
@@ -210,7 +229,7 @@ def test_corrupt_task_source_denies_complete_queue(monkeypatch):
 
 
 # ARTIFACT: test_project_attention_source.py
-# VERSION: v1.2.0-DEPENDENCY-READINESS-SOURCE-CERT
+# VERSION: v1.2.1-COMPLETED-PREDECESSOR-CERT
 # AUTHORITY BOUNDARY: synthetic source admission, no live tenant IAM
 # TENANT POSTURE: exact principal and active-project record mandatory
 # FAIL-CLOSED POSTURE: stale, forged, revoked and inherited authority denied
