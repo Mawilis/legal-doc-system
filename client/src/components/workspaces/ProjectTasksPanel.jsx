@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.54.0-FOCUSED-TASK-CONTEXT
+ * VERSION: v1.55.0-SOURCE-BACKED-SUBTASK-HANDOFF
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.55.0-SOURCE-BACKED-SUBTASK-HANDOFF
+ *          wires the row's Add subtask menu item into the existing,
+ *          authenticated task-create form prefilled with a verified
+ *          source parent. Reuses exact-project permission, validation,
+ *          idempotency, audit, persisted readback and focused scrolling.
  * CHANGELOG: v1.54.0-FOCUSED-TASK-CONTEXT suppresses
  *          project-level create/refresh while working on one task's files,
  *          discussion or approvals. Replaces duplicate context cards with
@@ -416,12 +421,12 @@ export default function ProjectTasksPanel({
   const [dependencyOriginId, setDependencyOriginId] = useState(null);
   const createFormRef = useRef(null);
   useEffect(() => {
-    if (!creating || !dependencyOriginId) return;
+    if (!creating || (!dependencyOriginId && workType !== 'SUBTASK')) return;
     const form = createFormRef.current;
     if (!form) return;
     form.scrollIntoView({ block: 'start', behavior: 'smooth' });
     form.querySelector('input[required]')?.focus({ preventScroll: true });
-  }, [creating, dependencyOriginId]);
+  }, [creating, dependencyOriginId, workType]);
   const drawerReturnFocus = useRef(null);
   const drawerRef = useRef(null);
   const [editor, setEditor] = useState(null);
@@ -1584,6 +1589,16 @@ export default function ProjectTasksPanel({
                 drawerReturnFocus.current = element;
                 setDrawerTaskId(selected.task_id);
               }}
+              onCreateSubtask={selected => {
+                if (busy || state !== 'READY' || actionCapabilities?.canEdit !== true
+                  || selected.kind !== 'TASK' || selected.parent_task_id
+                  || ['DONE', 'CANCELLED'].includes(selected.status)) return;
+                setCreating(true);
+                setEditor(null);
+                setDependencyOriginId(null);
+                setWorkType('SUBTASK');
+                setDraft({ ...EMPTY, kind: 'TASK', parent_task_id: selected.task_id });
+              }}
               onAssign={selected => openTaskEditor(selected, true)}
               onEdit={openTaskEditor} onTransition={transition}
               onComplete={selected => {
@@ -1790,7 +1805,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.54.0-FOCUSED-TASK-CONTEXT
+// VERSION: v1.55.0-SOURCE-BACKED-SUBTASK-HANDOFF
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
