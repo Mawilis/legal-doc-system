@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.60.1-TRIAGE-DATE-ORDER
+ * VERSION: v1.61.0-GOVERNED-MULTI-ASSIGNMENT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,13 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.61.0-GOVERNED-MULTI-ASSIGNMENT provides
+ *          explicit multi-selection assignment to one EOS-verified
+ *          contributor. Each selected active task receives its own
+ *          revision-guarded PATCH and independent exact-scope list
+ *          readback before the next command. Ambiguous outcomes halt
+ *          without retries; no bulk permission or server endpoint is
+ *          invented. A bounded summary reports confirmed/uncertain work.
  * CHANGELOG: v1.60.1-TRIAGE-DATE-ORDER declares the
  *          browser-local comparison date before the memoized verified
  *          task filter evaluates, preventing a render-time TDZ fault.
@@ -450,6 +457,9 @@ export default function ProjectTasksPanel({
   const [workMineOnly, setWorkMineOnly] = useState(false);
   const [workAttention, setWorkAttention] = useState('ALL');
   const [selectedWorkIds, setSelectedWorkIds] = useState([]);
+  const [bulkAssignment, setBulkAssignment] = useState(null);
+  const [bulkProgress, setBulkProgress] = useState(null);
+  const bulkLock = useRef(false);
   const [workDensity, setWorkDensity] = useState('compact');
   const [workStatus, setWorkStatus] = useState('ALL');
   const [workKind, setWorkKind] = useState('ALL');
@@ -702,6 +712,9 @@ export default function ProjectTasksPanel({
     setWorkMineOnly(false);
     setWorkAttention('ALL');
     setSelectedWorkIds([]);
+    setBulkAssignment(null);
+    setBulkProgress(null);
+    bulkLock.current = false;
     setRecentWork(readRecent());
     setWorkDensity('compact');
     setWorkStatus('ALL');
@@ -1077,6 +1090,85 @@ export default function ProjectTasksPanel({
   const withoutOwnerWork = items.filter(item => !['DONE', 'CANCELLED'].includes(item.status)
     && !item.assignee_principal_id);
   const selectedReviewIndex = selectedReviewTasks.findIndex(item => item.task_id === drawerTaskId);
+  const activeSelectedWork = selectedReviewTasks.filter(item =>
+    !['DONE', 'CANCELLED'].includes(item.status));
+  const confirmBulkAssignment = async () => {
+    if (!bulkAssignment || bulkLock.current || busy || state !== 'READY'
+      || !actionCapabilities?.canAssign || !bulkAssignment.confirmed
+      || !participants.some(person => person.principal_id === bulkAssignment.assignee_principal_id)
+      || bulkAssignment.taskIds.length < 2
+      || bulkAssignment.taskIds.length > 50) return;
+    const targets = bulkAssignment.taskIds.map(id => items.find(item => item.task_id === id));
+    if (targets.some(item => !item || ['DONE', 'CANCELLED'].includes(item.status))) {
+      setBulkProgress({ done: 0, total: targets.length,
+        error: 'Selection changed. Refresh and select currently eligible work again.' });
+      return;
+    }
+    const active = scope;
+    const assignee = bulkAssignment.assignee_principal_id;
+    bulkLock.current = true;
+    setBusy(true);
+    setBulkProgress({ done: 0, total: targets.length, error: null });
+    let confirmed = 0;
+    let issue = null;
+    try {
+      for (const task of targets) {
+        if (currentScope.current !== active) return;
+        if (task.assignee_principal_id === assignee) {
+          confirmed += 1;
+          setBulkProgress({ done: confirmed, total: targets.length, error: null });
+          continue;
+        }
+        const key = globalThis.crypto?.randomUUID?.();
+        if (!key) throw new Error('EOS_COMMAND_IDEMPOTENCY_UNAVAILABLE');
+        const body = {
+          expected_revision: task.revision,
+          title: task.title,
+          description: task.description,
+          due_date: task.due_date || null,
+          assignee_principal_id: assignee,
+        };
+        const response = await api.patch(
+          root + '/tasks/' + encodeURIComponent(task.task_id), body,
+          { headers: { ...headers, 'Idempotency-Key': key } },
+        );
+        if (currentScope.current !== active) return;
+        const result = response?.data;
+        if (result?.schema !== RESULT_SCHEMA
+          || result.tenant_id !== tenantId || result.principal_id !== principalId
+          || result.project_id !== projectId
+          || !validTask(result.task, tenantId, projectId)
+          || result.task.task_id !== task.task_id) {
+          throw new Error('EOS_TASK_ASSIGNMENT_RECEIPT_INVALID');
+        }
+        const list = await api.get(root + '/tasks?limit=50&offset=0', { headers });
+        if (currentScope.current !== active) return;
+        const checked = validList(list?.data, tenantId, principalId, projectId, 0);
+        const actual = checked.items.find(item => item.task_id === task.task_id);
+        if (!actual || actual.revision <= task.revision
+          || actual.assignee_principal_id !== assignee) {
+          throw new Error('EOS_TASK_ASSIGNMENT_READBACK_UNVERIFIED');
+        }
+        confirmed += 1;
+        setBulkProgress({ done: confirmed, total: targets.length, error: null });
+      }
+    } catch {
+      issue = 'Assignment stopped after ' + confirmed + ' verified task(s). '
+        + 'A later command or its readback could not be verified. '
+        + 'Refresh and reconcile the project before any new attempt.';
+      setBulkProgress({ done: confirmed, total: targets.length, error: issue });
+    } finally {
+      if (currentScope.current === active) {
+        const refreshed = await load(0);
+        if (!refreshed && !issue) {
+          setBulkProgress({ done: confirmed, total: targets.length,
+            error: 'Per-task receipts were verified, but the final work list is unavailable. Refresh to reconcile.' });
+        }
+        setBusy(false);
+        bulkLock.current = false;
+      }
+    }
+  };
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
   const closeDrawer = () => {
     setDrawerTaskId(null);
@@ -1746,6 +1838,14 @@ export default function ProjectTasksPanel({
                       drawerReturnFocus.current = event.currentTarget;
                       setDrawerTaskId(selectedReviewTasks[0].task_id);
                     }}>Review in sequence</button>
+                  {activeSelectedWork.length >= 2 && <button type="button"
+                    className="wp-button !min-h-9 !px-3 !text-xs"
+                    disabled={busy || !actionCapabilities?.canAssign || participants.length === 0}
+                    onClick={() => {
+                      setBulkProgress(null);
+                      setBulkAssignment({ taskIds: activeSelectedWork.map(item => item.task_id),
+                        assignee_principal_id: '', confirmed: false });
+                    }}>Assign selected…</button>}
                   <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
                     onClick={() => {
                       const firstUnassigned = selectedReviewTasks.find(item => !item.assignee_principal_id
@@ -1827,6 +1927,64 @@ export default function ProjectTasksPanel({
       </div>
       {workPager}
 
+        {bulkAssignment && <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-950/55 p-3"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget && !busy) setBulkAssignment(null);
+          }}>
+          <section role="dialog" aria-modal="true" aria-label="Assign selected project tasks"
+            className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h4 className="text-base font-bold text-slate-950">Assign selected tasks</h4>
+                <p className="mt-1 text-sm text-slate-700">
+                  {bulkAssignment.taskIds.length} active tasks from this verified EOS batch
+                </p>
+              </div>
+              <button type="button" className="wp-button !min-h-9 !text-xs"
+                disabled={busy} onClick={() => setBulkAssignment(null)}>Close</button>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-slate-700">
+              Each task is updated individually with its current revision, independently
+              authorized by EOS, and checked against a fresh persisted task list.
+              Processing stops at the first unverified outcome.
+            </p>
+            <label className="mt-4 block text-sm font-semibold text-slate-900">
+              Assign to eligible contributor
+              <select aria-label="Assign selected tasks to contributor"
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm"
+                disabled={busy || Boolean(bulkProgress?.error)}
+                value={bulkAssignment.assignee_principal_id}
+                onChange={event => setBulkAssignment(previous => ({
+                  ...previous, assignee_principal_id: event.target.value, confirmed: false,
+                }))}>
+                <option value="">Choose contributor</option>
+                {participants.map(person => <option key={person.principal_id}
+                  value={person.principal_id}>{contributorName(person.principal_id)}</option>)}
+              </select>
+            </label>
+            <label className="mt-4 flex items-start gap-2 text-sm text-slate-800">
+              <input type="checkbox" className="mt-1" checked={bulkAssignment.confirmed}
+                disabled={busy || Boolean(bulkProgress)}
+                onChange={event => setBulkAssignment(previous => ({
+                  ...previous, confirmed: event.target.checked,
+                }))}/>
+              I confirm assignment to each selected task; this is not one atomic bulk transaction.
+            </label>
+            {bulkProgress && <p role="status" className={'mt-3 text-sm '
+              + (bulkProgress.error ? 'text-rose-800' : 'text-slate-800')}>
+              {bulkProgress.done} of {bulkProgress.total} independently verified.
+              {bulkProgress.error ? ' ' + bulkProgress.error : ''}
+            </p>}
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button type="button" className="wp-button !min-h-10"
+                disabled={busy} onClick={() => setBulkAssignment(null)}>Back to work</button>
+              <button type="button" className="wp-button wp-button-primary !min-h-10"
+                disabled={busy || Boolean(bulkProgress) || !bulkAssignment.confirmed
+                  || !bulkAssignment.assignee_principal_id}
+                onClick={() => void confirmBulkAssignment()}>Apply individual assignments</button>
+            </div>
+          </section>
+        </div>}
         {completingItem && <div role="dialog" aria-modal="true" aria-label="Confirm verified task completion"
           className="fixed inset-x-4 top-1/4 z-[110] mx-auto max-w-xl rounded-xl border border-blue-300 bg-white p-5 shadow-2xl">
           <h5 className="text-sm font-bold text-slate-900">Confirm completion · {completingItem.title}</h5>
@@ -2042,7 +2200,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.60.1-TRIAGE-DATE-ORDER
+// VERSION: v1.61.0-GOVERNED-MULTI-ASSIGNMENT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
