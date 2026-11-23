@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.9.0-EDGE-RESIZABLE-WORKSPACE
+ * VERSION: v3.10.0-ATTENTION-CONTEXTUAL-HEADER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.10.0-ATTENTION-CONTEXTUAL-HEADER lets the
+ *          operating panel header follow detail, briefing, calendar
+ *          and creation focus from its reusable task workspace.
+ *          Header state is presentation-only and per-session.
  * CHANGELOG: v3.9.0-EDGE-RESIZABLE-WORKSPACE adds
  *          bounded pointer/keyboard edge resizing for the operating
  *          panel; preserves float/dock, view state and EOS scope.
@@ -272,6 +276,7 @@ export default function WilsyDailyAttentionCentre({
   const dragRef = useRef(null);
   const resizeRef = useRef(null);
   const [panelSize, setPanelSize] = useState(null);
+  const [attentionSurface, setAttentionSurface] = useState('WORK');
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
   const [workError, setWorkError] = useState('');
@@ -341,6 +346,7 @@ export default function WilsyDailyAttentionCentre({
     setView('WORK');
     setFloating(null);
     setPanelSize(null);
+    setAttentionSurface('WORK');
   }, [liveScopeKey, systemServicesWorkspace]);
 
   useEffect(() => {
@@ -1239,7 +1245,11 @@ export default function WilsyDailyAttentionCentre({
             <div>
               <div className="flex items-center gap-2">
                 <Bell size={17} className="text-amber-300" />
-                <h2 className="text-base font-semibold text-white">Daily attention</h2>
+                <h2 className="text-base font-semibold text-white">{attentionSurface === 'DETAIL'
+                  ? 'Work details' : attentionSurface === 'BRIEFING'
+                    ? 'Priority briefing' : attentionSurface === 'CREATE'
+                      ? 'Create work' : attentionSurface === 'CALENDAR'
+                        ? 'Work calendar' : 'Daily attention'}</h2>
               </div>
               <p className="mt-1 text-xs leading-5 text-slate-400">
                 Your authorised EOS work across business functions.
@@ -1301,6 +1311,7 @@ export default function WilsyDailyAttentionCentre({
               key={liveScopeKey}
               feed={attentionFeed}
               calendarItems={projection.items}
+              onSurfaceViewChange={setAttentionSurface}
               verifiedCriteria={verifiedAttentionCriteria}
               requestedCriteria={requestedAttentionCriteria}
               resultsUpdating={resultsUpdating}
@@ -1602,7 +1613,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.9.0-EDGE-RESIZABLE-WORKSPACE
+ * VERSION: v3.10.0-ATTENTION-CONTEXTUAL-HEADER
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
