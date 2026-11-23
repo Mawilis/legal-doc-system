@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.71.2-SELECTION-HEADER-PAGING-CERT
+ * VERSION: v2.71.3-DOM-ROW-COUNT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.71.3-DOM-ROW-COUNT-CERT accesses the actual
+ *          rendered table element when counting task rows, not the
+ *          Testing Library scoped-query collection.
  * CHANGELOG: v2.71.2-SELECTION-HEADER-PAGING-CERT counts
  *          actual source-verified work rows independently of the
  *          contextual selected-work header in the grid.
@@ -1724,7 +1727,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
     expect(screen.getByText(/10 selected · verified current EOS batch/)).toBeVisible();
     fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
-    expect(within(grid).querySelectorAll('tbody tr[data-task-id]')).toHaveLength(2);
+    expect(grid.querySelectorAll('tbody tr[data-task-id]')).toHaveLength(2);
     expect(within(grid).getByText('Batch task 22')).toBeVisible();
     fireEvent.change(screen.getAllByRole('combobox', {
       name: 'Project work rows per view',
@@ -2693,7 +2696,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.71.2-SELECTION-HEADER-PAGING-CERT
+ * VERSION: v2.71.3-DOM-ROW-COUNT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
