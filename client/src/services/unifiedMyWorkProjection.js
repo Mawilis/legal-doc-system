@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Unified My Work Client Projection Contract
- * VERSION: v1.3.1-EXACT-AUDIENCE-VERSION-CERT
+ * VERSION: v1.4.0-VERIFIED-PROJECT-DEPENDENCY-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Validates the existing EOS My Work read shape consistently across
  *          Daily Attention, Headquarters, and My Work without creating authority.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS owns visibility, records and commands;
  *                            authenticated client views consume this validator.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.4.0-VERIFIED-PROJECT-DEPENDENCY-CONTRACT validates
+ *            exact Projects readiness and predecessor counts without
+ *            granting visibility or source command authority.
  * CHANGELOG: v1.3.1-EXACT-AUDIENCE-VERSION-CERT preserves the
  *            historical HR source-admission changelog and refines the
  *            strict purpose envelope contract without permitting inference.
@@ -158,6 +161,14 @@ export function assertUnifiedMyWorkProjection(payload, expectedScope = {}) {
           typeof item.due_date !== 'string'
           || !/^\d{4}-\d{2}-\d{2}$/.test(item.due_date)
         ))
+        || !Number.isSafeInteger(item.dependency_total)
+        || item.dependency_total < 0 || item.dependency_total > 25
+        || !Number.isSafeInteger(item.dependency_remaining)
+        || item.dependency_remaining < 0
+        || item.dependency_remaining > item.dependency_total
+        || item.dependency_readiness !== (
+          item.dependency_remaining > 0 ? 'WAITING' : 'READY'
+        )
         || item.action_authority !== 'SOURCE_SERVICE_ONLY'
         || item.completion_route != null
       ))
@@ -207,7 +218,7 @@ export function unifiedMyWorkSourceLabel(source) {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.js
- * VERSION: v1.3.1-EXACT-AUDIENCE-VERSION-CERT
+ * VERSION: v1.4.0-VERIFIED-PROJECT-DEPENDENCY-CONTRACT
  * AUTHORITY BOUNDARY: Client projection validation and source labels only.
  * TENANT POSTURE: Exact supplied scope is checked; server authorization remains canonical.
  * FAIL-CLOSED POSTURE: Malformed scope, counts, rows or source metadata are rejected.
