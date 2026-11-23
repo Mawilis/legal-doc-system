@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
+ * VERSION: v1.11.4-FILE-PICKER-READABLE-CONTRAST
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.11.4-FILE-PICKER-READABLE-CONTRAST makes the
+ *          single keyboard-operable Browse files control use an explicit
+ *          high-contrast foreground/background, protecting against
+ *          project-global button rules and retaining native input hiding.
+ *          No upload, IAM, quota, quarantine or readback behavior changes.
  * CHANGELOG: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
  *          truly hides the programmatically activated native chooser.
  *          The global file-input width rule previously overrode sr-only,
@@ -588,7 +593,8 @@ export default function ProjectTaskAttachmentsPanel({
             {dragActive ? 'Release to attach this file' : 'Drop a file here'}
           </p>
           <button type="button" disabled={busy}
-            className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+            className="inline-flex min-h-11 items-center rounded-md border border-slate-900 bg-slate-900 px-4 text-sm font-semibold !text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+            style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff', backgroundColor: '#0f172a' }}
             onClick={() => fileInputRef.current?.click()}>
             Browse files
           </button>
@@ -718,7 +724,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
+// VERSION: v1.11.4-FILE-PICKER-READABLE-CONTRAST
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
