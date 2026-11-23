@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.6.0-EOS-ACTION-AUTHORITY-BROWSER-CERT
+ * VERSION: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
+ *          verifies the new source-verified quarantine row text,
+ *          keyboard-accessible Browse affordance instead of the old
+ *          native input/Submit pair, and no unsafe download link.
  * CHANGELOG: v2.6.0-EOS-ACTION-AUTHORITY-BROWSER-CERT supplies
  *          exact-scope synthetic task capabilities to desktop/mobile task
  *          journeys without a real entitlement or IAM claim.
@@ -527,8 +531,8 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('region', { name: 'Task attachments' })).toBeVisible();
     await expect(page.getByText('verified-quarantine-sample.pdf')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Task attachments' })
-      .getByText(/Quarantined · malware scan clearance unavailable · application\/pdf/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Submit to EOS quarantine' })).toBeDisabled();
+      .getByText(/Quarantined · clearance pending/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Browse files' })).toBeEnabled();
     await expect(page.getByRole('region', { name: 'Task attachments' })
       .getByRole('link')).toHaveCount(0);
 
@@ -552,7 +556,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.6.0-EOS-ACTION-AUTHORITY-BROWSER-CERT
+// VERSION: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
