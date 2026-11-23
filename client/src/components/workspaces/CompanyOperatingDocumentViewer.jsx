@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO
+ * VERSION: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF chooses the
+ *            separately source-admitted Founder Strategy link endpoint after
+ *            effective publication, preserving exact revisions, IAM Projects
+ *            read, idempotency and independent relationship readback.
  * CHANGELOG: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO uses only
  *            EOS-admitted durable Founder command actions for Strategy
  *            creation, submission and explicit effective-date ratification.
@@ -616,7 +620,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       'Idempotency-Key': 'strategy-pillar-one-foundation-v1-' + project.project_id,
     };
     try {
-      const { data: receipt } = await api.post('/company-operating-documents/STRATEGY/project-links', {
+      const linkEndpoint = actions.includes('FOUNDER_LINK_PROJECT')
+        ? '/company-operating-documents/STRATEGY/founder-project-links'
+        : '/company-operating-documents/STRATEGY/project-links';
+      const { data: receipt } = await api.post(linkEndpoint, {
         pillar_id: 'pillar-one', project_id: project.project_id,
         expected_strategy_revision: document.revision,
         expected_project_revision: project.revision,
@@ -636,7 +643,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (active(key) && strategyLinkWriteRef.current === attempt) {
         setStrategyLink({ state: 'UNAVAILABLE', items: [],
           message: failure?.response?.status === 403
-            ? 'EOS denied Strategy author or Projects source authorization.'
+            ? 'EOS denied current Strategy author/Founder or Projects source authorization.'
             : failure?.response?.status === 409
               ? 'The published Strategy or project revision changed. Refresh both sources.'
               : 'Link command or its readback could not be verified; refresh before any retry.' });
@@ -1521,7 +1528,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO
+// VERSION: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
