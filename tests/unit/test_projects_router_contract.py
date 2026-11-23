@@ -1,14 +1,24 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
+VERSION: v1.40.1-HEADER-INSPECTION-COMPLIANCE
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_projects_router_contract.py
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
-CERTIFICATION / UPDATE DATE: 2026-11-17.
+CERTIFICATION / UPDATE DATE: 2026-11-23.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
+                            connection, tenant records or mutation.
+TENANT BOUNDARY: Test identities use non-production values and assert exact
+                 authenticated-tenant scope; no persistence is opened.
+AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
+                    claim a live role assignment, entitlement or database write.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 CHANGELOG:
+  v1.40.1-HEADER-INSPECTION-COMPLIANCE moves the existing sovereign authority
+  and privacy fields into the inspected file header; test behavior unchanged.
   v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
   extends the existing exhaustively enumerated Projects path and IAM-pair
   certificate with the three new source-owned work-purpose actions; no
@@ -115,14 +125,6 @@ CHANGELOG:
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
 CHANGELOG: v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
-                            connection, tenant records or mutation.
-TENANT BOUNDARY: Test identities use non-production values and assert exact
-                 authenticated-tenant scope; no persistence is opened.
-AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
-                    claim a live role assignment, entitlement or database write.
-FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
@@ -1560,7 +1562,7 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
+# VERSION: v1.40.1-HEADER-INSPECTION-COMPLIANCE
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
