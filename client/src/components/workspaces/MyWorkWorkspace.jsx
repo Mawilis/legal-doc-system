@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE
+ * VERSION: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST replaces former dark-
+ *          surface pale priority text with WCAG-conscious readable
+ *          values on the new light workforce blueprint rows.
  * CHANGELOG: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE replaces legacy queue rows with
  *          the shared accessible workforce blueprint. Authorized EOS
  *          actions, ordering, detail focus and projections remain intact.
@@ -178,10 +181,10 @@ const SOURCE_LABELS = Object.freeze({
 });
 const PRIORITY_ORDER = Object.freeze({ CRITICAL: 0, HIGH: 1, NORMAL: 2, LOW: 3 });
 const PRIORITY_STYLE = Object.freeze({
-  CRITICAL: 'border-rose-400/50 bg-rose-500/15 text-rose-200',
-  HIGH: 'border-orange-400/50 bg-orange-500/15 text-orange-200',
-  NORMAL: 'border-sky-400/40 bg-sky-500/10 text-sky-200',
-  LOW: 'border-slate-400/40 bg-slate-500/10 text-slate-300',
+  CRITICAL: 'border-rose-200 bg-rose-50 text-rose-800',
+  HIGH: 'border-orange-200 bg-orange-50 text-orange-900',
+  NORMAL: 'border-sky-200 bg-sky-50 text-sky-900',
+  LOW: 'border-slate-300 bg-slate-50 text-slate-800',
 });
 
 const completionPath = (item) => {
@@ -1726,7 +1729,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE
+ * VERSION: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
