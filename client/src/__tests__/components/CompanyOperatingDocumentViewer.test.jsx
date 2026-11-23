@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.12.0-FOUNDER-STRATEGY-COMMAND-CERT
+ * VERSION: v1.13.0-DIRECT-EDITOR-TRANSITION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.13.0-DIRECT-EDITOR-TRANSITION-CERT
+ *            certifies Prepare opens a focused editor in document flow,
+ *            hides the full publication and Projects panels, and Close
+ *            restores the verified source without issuing writes.
  * CHANGELOG: v1.12.0-FOUNDER-STRATEGY-COMMAND-CERT
  *            verifies exact readback, mission denial and authenticated
  *            Founder strategy draft/submit/ratification transport paths.
@@ -455,6 +459,33 @@ describe('Strategy source-owned project execution readback', () => {
     expect(api.post).toHaveBeenCalledTimes(1);
   });
 
+  it('opens author workspace immediately without scrolling through the Strategy source', async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: { ...view(null, [
+          'READ_HISTORY', 'REVIEW_DRAFTS', 'FOUNDER_CREATE_DRAFT',
+        ]), classification: 'STRATEGY' } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    const prepare = await screen.findByRole('button', { name: 'Prepare approved v1.1.0' });
+    fireEvent.click(prepare);
+    const editor = screen.getByRole('form', { name: 'Company private draft editor' });
+    const actions = screen.getByRole('navigation', { name: 'Company document actions' });
+    expect(actions.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(editor).toHaveFocus();
+    expect(screen.queryByRole('region', { name: 'M03 Strategy governance gates' })).not.toBeInTheDocument();
+    expect(document.querySelector('[data-document-state="FOUNDER_APPROVED_EOS_PENDING"]')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Projects & delivery' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+    expect(screen.queryByRole('form', { name: 'Company private draft editor' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'M03 Strategy governance gates' })).toBeInTheDocument();
+    expect(document.querySelector('[data-document-state="FOUNDER_APPROVED_EOS_PENDING"]')).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('M03 offers Founder draft creation only after explicit EOS-admitted source action', async () => {
     api.get.mockImplementation(url => {
       if (url === '/company-operating-documents/STRATEGY')
@@ -737,7 +768,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.12.0-FOUNDER-STRATEGY-COMMAND-CERT
+// VERSION: v1.13.0-DIRECT-EDITOR-TRANSITION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
