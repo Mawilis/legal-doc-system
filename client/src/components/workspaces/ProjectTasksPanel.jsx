@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.51.1-SELECTION-JSX-BOUNDARY
+ * VERSION: v1.52.0-SELECTION-IN-ROW-ROUTING
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.52.0-SELECTION-IN-ROW-ROUTING routes one
+ *          selected task to inline work-row controls and reserves the
+ *          existing small toolbar for multiple selections only. Existing
+ *          delegated EOS handlers, capability gates, task revisions,
+ *          authenticated readbacks and review navigation are preserved.
  * CHANGELOG: v1.51.1-SELECTION-JSX-BOUNDARY closes the conditional
  *          selected-work toolbar JSX expression before subsequent queue
  *          controls, restoring valid render structure without changing
@@ -1227,31 +1232,21 @@ export default function ProjectTasksPanel({
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
-      {selectedReviewTasks.length > 0 && <div role="region" aria-label="Selected work actions"
-        className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5">
-        <span role="status" className="mr-auto text-sm font-semibold text-slate-900">
-          {selectedReviewTasks.length} selected · verified current EOS batch
+      {selectedReviewTasks.length > 1 && <div role="region" aria-label="Selected work actions"
+        className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <span role="status" className="mr-auto text-xs font-semibold text-slate-800">
+          {selectedReviewTasks.length} selected · current verified EOS batch
         </span>
-        <button type="button" className="wp-button min-h-10"
+        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={event => {
             drawerReturnFocus.current = event.currentTarget;
             setDrawerTaskId(selectedReviewTasks[0].task_id);
-          }}>
-          {selectedReviewTasks.length === 1 ? 'Review selected task' : 'Review selected tasks'}
-        </button>
-        {selectedReviewTasks.length === 1
-          && !['DONE', 'CANCELLED'].includes(selectedReviewTasks[0].status)
-          && (actionCapabilities?.canEdit === true || actionCapabilities?.canAssign === true)
-          && <button type="button" className="wp-button min-h-10"
-            disabled={busy}
-            onClick={() => openTaskEditor(selectedReviewTasks[0], actionCapabilities?.canEdit !== true)}>
-            {actionCapabilities?.canEdit === true ? 'Assign & schedule' : 'Assign contributor'}
-          </button>}
-        <button type="button" className="wp-button min-h-10"
+          }}>Review selection</button>
+        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={() => setSelectedWorkIds([])}>Clear selection</button>
-        {selectedReviewTasks.length > 1 && <span className="w-full text-xs text-slate-600">
-          Review in sequence. Each change requires its own EOS authorization and verified readback; bulk commands are unavailable.
-        </span>}
+        <span className="w-full text-xs text-slate-600">
+          Review each task using its existing EOS permissions. Batch mutation is not authorized.
+        </span>
       </div>}
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
@@ -1568,6 +1563,7 @@ export default function ProjectTasksPanel({
               </tr>}
               {group.rows.map(item => <ProjectWorkRow key={item.task_id}
               item={item} selected={selectedWorkIds.includes(item.task_id)}
+              selectedCount={selectedReviewTasks.length}
               density={workDensity} busy={busy}
               pendingStatus={pendingTransition?.taskId === item.task_id ? pendingTransition.status : null}
               todayISO={todayISO} assigneeName={contributorName}
@@ -1783,7 +1779,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.51.1-SELECTION-JSX-BOUNDARY
+// VERSION: v1.52.0-SELECTION-IN-ROW-ROUTING
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
