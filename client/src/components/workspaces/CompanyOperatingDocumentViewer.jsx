@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
+ * VERSION: v2.2.3-HEADER-INSPECTION-COMPLIANCE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,17 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard accessibility.
+ * SECURITY / PRIVACY POSTURE: Plain React text only; no persisted draft, generated
+ * policy, inferred objectives, raw diagnostics or credentials in DOM/logs.
+ * TENANT BOUNDARY: Exact current tenant/principal/session and credential revision;
+ * scope changes abort reads and suppress late results, drafts and receipts.
+ * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
+ * reauthorize every command; acknowledgement alone is not verified publication.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.2.3-HEADER-INSPECTION-COMPLIANCE
+ *            moves existing mandatory governance fields into the inspected
+ *            source header boundary; no runtime behavior or IAM change.
  * CHANGELOG: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
  *            distinguishes a timed-out Projects read from a source HTTP 503,
  *            avoids falsely claiming the Strategy link schema is absent, and
@@ -102,14 +113,6 @@
  * used by authenticated Headquarters; source lifecycle and scope are unchanged.
  * CHANGELOG: v1.0.0-SOURCE-OWNED-COMPANY-DOCUMENT-VIEWER adds contents, publication
  * evidence, history, source-gated draft/submit/publish and verified readback.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard accessibility.
- * SECURITY / PRIVACY POSTURE: Plain React text only; no persisted draft, generated
- * policy, inferred objectives, raw diagnostics or credentials in DOM/logs.
- * TENANT BOUNDARY: Exact current tenant/principal/session and credential revision;
- * scope changes abort reads and suppress late results, drafts and receipts.
- * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
- * reauthorize every command; acknowledgement alone is not verified publication.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, BookOpen, CheckCircle2, Clock3, FileText, History, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
@@ -1314,7 +1317,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
+// VERSION: v2.2.3-HEADER-INSPECTION-COMPLIANCE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
