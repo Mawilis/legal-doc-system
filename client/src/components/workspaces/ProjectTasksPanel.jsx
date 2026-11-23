@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.57.2-HIERARCHY-SCOPE-AND-FOCUS-GUARD
+ * VERSION: v1.58.0-DEPENDENCY-ORDERED-REVIEW
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.58.0-DEPENDENCY-ORDERED-REVIEW applies
+ *          a bounded topological order to explicitly selected,
+ *          source-verified work, presenting known predecessors before
+ *          dependent successors in sequential review. It never changes
+ *          EOS lifecycle or declares off-page dependencies satisfied.
  * CHANGELOG: v1.57.2-HIERARCHY-SCOPE-AND-FOCUS-GUARD
  *          keeps compact/hierarchy defaults after the authenticated
  *          scope reset and makes optional visual scrolling work across
@@ -980,9 +985,32 @@ export default function ProjectTasksPanel({
     }
   }, [completionCandidate, items, state]);
 
-  const selectedReviewTasks = selectedWorkIds
-    .map(id => items.find(item => item.task_id === id))
-    .filter(Boolean);
+  const selectedReviewTasks = useMemo(() => {
+    const selected = selectedWorkIds.map(id => items.find(item => item.task_id === id))
+      .filter(Boolean);
+    const byId = new Map(selected.map(item => [item.task_id, item]));
+    const degree = new Map(selected.map(item => [item.task_id, 0]));
+    const outgoing = new Map(selected.map(item => [item.task_id, []]));
+    selected.forEach(item => item.depends_on.forEach(predecessorId => {
+      if (!byId.has(predecessorId)) return;
+      degree.set(item.task_id, degree.get(item.task_id) + 1);
+      outgoing.get(predecessorId).push(item.task_id);
+    }));
+    const ready = selected.filter(item => degree.get(item.task_id) === 0);
+    const order = [];
+    for (let index = 0; index < ready.length; index += 1) {
+      const item = ready[index];
+      order.push(item);
+      outgoing.get(item.task_id).forEach(nextId => {
+        degree.set(nextId, degree.get(nextId) - 1);
+        if (degree.get(nextId) === 0) ready.push(byId.get(nextId));
+      });
+    }
+    // Source domain prevents cycles on immutable creation. If a malformed
+    // projection reaches this UI, selection retains its explicit order;
+    // EOS remains the only status-transition and dependency authority.
+    return order.length === selected.length ? order : selected;
+  }, [selectedWorkIds, items]);
   const selectedReviewIndex = selectedReviewTasks.findIndex(item => item.task_id === drawerTaskId);
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
   const closeDrawer = () => {
@@ -1887,7 +1915,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.57.2-HIERARCHY-SCOPE-AND-FOCUS-GUARD
+// VERSION: v1.58.0-DEPENDENCY-ORDERED-REVIEW
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
