@@ -274,8 +274,15 @@ def _transaction(context: TenantAuthorizationContext, callback: Callable[..., An
     except CompanyDocumentError as error:
         code = error.code
         conflict = any(marker in code for marker in ("CONFLICT", "ALREADY_PUBLISHED"))
-        denied = any(marker in code for marker in ("TENANT_DENIED", "OWNER_REQUIRED", "SUBMISSION_DENIED", "INDEPENDENT_APPROVER_REQUIRED"))
-        integrity = any(marker in code for marker in ("INTEGRITY", "PERSISTED", "LINEAGE", "READBACK", "INDEX", "HISTORY_LIMIT", "TRANSACTION_REQUIRED"))
+        denied = any(marker in code for marker in (
+            "TENANT_DENIED", "OWNER_REQUIRED", "SUBMISSION_DENIED",
+            "INDEPENDENT_APPROVER_REQUIRED", "FOUNDER_AUTHORITY_DENIED",
+            "FOUNDER_AUTHOR_REQUIRED", "FOUNDER_STRATEGY_ONLY",
+        ))
+        integrity = any(marker in code for marker in (
+            "INTEGRITY", "PERSISTED", "LINEAGE", "READBACK", "INDEX",
+            "HISTORY_LIMIT", "TRANSACTION_REQUIRED", "FOUNDER_SOURCE_UNAVAILABLE",
+        ))
         if integrity:
             logger.error("Company document integrity/source operation failed", extra={"error_code": code})
         raise _error(code, 409 if conflict else 403 if denied else 503 if integrity else 422) from error
