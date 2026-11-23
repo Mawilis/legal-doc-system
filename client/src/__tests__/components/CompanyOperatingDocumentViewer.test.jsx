@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.15.2-FOUNDER-CONTRACT-HEADER-INTEGRITY
+ * VERSION: v1.16.0-PUBLISHED-STRATEGY-RECOVERY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.16.0-PUBLISHED-STRATEGY-RECOVERY-CERT
+ *            certifies immutable published-version 409 reconciliation from
+ *            authorized history and exact fingerprint-matched readback,
+ *            without a second write or a fabricated ratification result.
  * CHANGELOG: v1.15.2-FOUNDER-CONTRACT-HEADER-INTEGRITY
  *            keeps sovereign boundary metadata inside the certified header
  *            even as historical change records grow.
@@ -377,6 +381,77 @@ describe('governed company document experience', () => {
     expect(screen.queryByRole('alert', { name: 'Company document command failure' })).not.toBeInTheDocument();
     expect(screen.getByRole('form', { name: 'Company private draft editor' })).toBeVisible();
   });
+  it('recovers an already-published Strategy version through two verified reads without replaying save', async () => {
+    const published = { ...record('STRATEGY', 'PUBLISHED', 3),
+      document_version: '1.1.0', approved_by_principal_id: scope.principalId,
+      approval_reference: 'WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123' };
+    const { sections: _sections, ...metadata } = published;
+    api.get.mockImplementation((url, opts) => {
+      if (url === '/company-operating-documents/STRATEGY/revisions')
+        return Promise.resolve({ data: {
+          schema: 'WILSY-COMPANY-OPERATING-DOCUMENT-HISTORY/V1',
+          tenant_id: scope.tenantId, principal_id: scope.principalId,
+          classification: 'STRATEGY', view: 'review', as_of: asOf, items: [metadata],
+        } });
+      if (url === '/company-operating-documents/STRATEGY' && opts?.params?.revision === 3)
+        return Promise.resolve({ data: { ...view(published, ['READ_HISTORY'], true),
+          classification: 'STRATEGY' } });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: { ...view(null, ['READ_HISTORY', 'REVIEW_DRAFTS', 'FOUNDER_CREATE_DRAFT']),
+          classification: 'STRATEGY' } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare approved v1.1.0' }));
+    api.post.mockRejectedValue({ response: { status: 409, data: { detail: {
+      error: 'COMPANY_DOCUMENT_VERSION_ALREADY_PUBLISHED',
+    } } } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save private draft to EOS' }));
+    expect(await screen.findByText(/EOS independently verified existing published Strategy version 1.1.0, revision 3/)).toBeVisible();
+    expect(screen.getByRole('heading', { name: published.title })).toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Company private draft editor' })).not.toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.get.mock.calls.some(([url]) => url === '/company-operating-documents/STRATEGY/revisions')).toBe(true);
+    expect(api.get.mock.calls.some(([url, opts]) =>
+      url === '/company-operating-documents/STRATEGY' && opts?.params?.revision === 3)).toBe(true);
+  });
+
+  it('keeps a 409 Strategy editor intact when published-version history fingerprint cannot be verified', async () => {
+    const published = { ...record('STRATEGY', 'PUBLISHED', 3),
+      document_version: '1.1.0', approved_by_principal_id: scope.principalId,
+      approval_reference: 'WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123' };
+    const { sections: _sections, ...metadata } = published;
+    api.get.mockImplementation((url, opts) => {
+      if (url === '/company-operating-documents/STRATEGY/revisions')
+        return Promise.resolve({ data: {
+          schema: 'WILSY-COMPANY-OPERATING-DOCUMENT-HISTORY/V1',
+          tenant_id: scope.tenantId, principal_id: scope.principalId,
+          classification: 'STRATEGY', view: 'review', as_of: asOf, items: [metadata],
+        } });
+      if (url === '/company-operating-documents/STRATEGY' && opts?.params?.revision === 3)
+        return Promise.resolve({ data: { ...view({
+          ...published, fingerprint: 'c'.repeat(128),
+        }, ['READ_HISTORY'], true), classification: 'STRATEGY' } });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: { ...view(null, ['READ_HISTORY', 'REVIEW_DRAFTS', 'FOUNDER_CREATE_DRAFT']),
+          classification: 'STRATEGY' } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare approved v1.1.0' }));
+    api.post.mockRejectedValue({ response: { status: 409, data: { detail: {
+      error: 'COMPANY_DOCUMENT_VERSION_ALREADY_PUBLISHED',
+    } } } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save private draft to EOS' }));
+    const warning = await screen.findByRole('alert', { name: 'Company document command failure' });
+    expect(warning).toHaveTextContent('Strategy version already published in EOS');
+    expect(warning).toHaveTextContent('Do not create another draft or repeat ratification');
+    expect(screen.getByRole('form', { name: 'Company private draft editor' })).toBeVisible();
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
   it('does not fabricate success when acknowledgment lacks matching durable readback', async () => {
     api.get.mockResolvedValue({ data: view(null, ['CREATE_DRAFT']) }); render(wrap()); await fillDraft();
     api.post.mockResolvedValue(receipt(record('MISSION', 'DRAFT', 1)));
@@ -875,7 +950,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.15.2-FOUNDER-CONTRACT-HEADER-INTEGRITY
+// VERSION: v1.16.0-PUBLISHED-STRATEGY-RECOVERY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
