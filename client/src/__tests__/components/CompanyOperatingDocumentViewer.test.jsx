@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.13.0-DIRECT-EDITOR-TRANSITION-CERT
+ * VERSION: v1.14.0-COMMAND-422-RECOVERY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.14.0-COMMAND-422-RECOVERY-CERT
+ *            certifies HTTP 422 request rejection preserves private Strategy
+ *            content, surfaces only safe field names and command operation,
+ *            and never masquerades as a failed publication read.
  * CHANGELOG: v1.13.0-DIRECT-EDITOR-TRANSITION-CERT
  *            certifies Prepare opens a focused editor in document flow,
  *            hides the full publication and Projects panels, and Close
@@ -323,6 +327,38 @@ describe('governed company document experience', () => {
     expect(api.post.mock.calls[0][0]).toBe('/company-operating-documents/MISSION/drafts');
     expect(api.post.mock.calls[0][2].headers['Idempotency-Key']).toMatch(/^[a-f0-9-]{36}$/);
     expect(api.get.mock.calls.at(-1)[1].params.review).toBe(true);
+  });
+  it('retains Founder Strategy editor on 422 and exposes bounded validation fields, not source read failure', async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/company-operating-documents/STRATEGY') return Promise.resolve({
+        data: { ...view(null, ['READ_HISTORY', 'REVIEW_DRAFTS', 'FOUNDER_CREATE_DRAFT']),
+          classification: 'STRATEGY' },
+      });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare approved v1.1.0' }));
+    expect(screen.getByLabelText('Document title')).toHaveValue('WILSY (PTY) LTD — OFFICIAL CORPORATE STRATEGY');
+    api.post.mockRejectedValue({ response: { status: 422, data: { detail: [
+      { loc: ['body', 'sections', 0, 'body'], type: 'string_too_long', input: 'PRIVATE-SENSITIVE-TEXT' },
+      { loc: ['body', 'expected_revision'], type: 'missing' },
+    ] } } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save private draft to EOS' }));
+    const warning = await screen.findByRole('alert', { name: 'Company document command failure' });
+    expect(warning).toHaveTextContent('EOS rejected the document command (HTTP 422)');
+    expect(warning).toHaveTextContent('Operation: Save Founder Strategy draft');
+    expect(warning).toHaveTextContent('body, expected_revision');
+    expect(warning).not.toHaveTextContent('PRIVATE-SENSITIVE-TEXT');
+    expect(screen.getByRole('form', { name: 'Company private draft editor' })).toBeVisible();
+    expect(screen.getByLabelText('Document title')).toHaveValue('WILSY (PTY) LTD — OFFICIAL CORPORATE STRATEGY');
+    expect(screen.queryByText('Document source unavailable')).not.toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.post.mock.calls[0][0]).toBe('/company-operating-documents/STRATEGY/founder-drafts');
+    expect(api.post.mock.calls[0][1].expected_revision).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue editing' }));
+    expect(screen.queryByRole('alert', { name: 'Company document command failure' })).not.toBeInTheDocument();
+    expect(screen.getByRole('form', { name: 'Company private draft editor' })).toBeVisible();
   });
   it('does not fabricate success when acknowledgment lacks matching durable readback', async () => {
     api.get.mockResolvedValue({ data: view(null, ['CREATE_DRAFT']) }); render(wrap()); await fillDraft();
@@ -768,7 +804,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.13.0-DIRECT-EDITOR-TRANSITION-CERT
+// VERSION: v1.14.0-COMMAND-422-RECOVERY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
