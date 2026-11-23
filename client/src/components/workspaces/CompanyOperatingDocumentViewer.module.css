@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.8.0-CONTRASTED-EVIDENCE-RESULT-PANEL
+ * VERSION: v1.9.0-FOCUSED-DELIVERY-SURFACE
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.9.0-FOCUSED-DELIVERY-SURFACE keeps the branded navy
+ *            canvas but differentiates verified project execution with a
+ *            restrained lighter ink-blue surface and accessible source edge.
  * CHANGELOG: v1.8.0-CONTRASTED-EVIDENCE-RESULT-PANEL distinguishes the
  *            selected task's evidence from the work list using source-state
  *            borders, a success heading, readable event detail, focus and
@@ -133,7 +136,7 @@
 .execution .strategyProjectActions button,.execution .strategyDeliveryHeader button,.execution .strategyPagination button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:8px 12px;border:1px solid #91abc86b;border-radius:9px;background:#1c3554;color:#e8f1ff;font-size:11px;font-weight:650;white-space:nowrap}
 .execution .strategyProjectActions button:hover:not(:disabled),.execution .strategyDeliveryHeader button:hover:not(:disabled),.execution .strategyPagination button:hover:not(:disabled){background:#28476c;border-color:#b5ccef}
 .execution .strategyProjectActions button[aria-pressed="true"]{border-color:#f2c766;color:#ffe7a8;background:#795a213e}
-.strategyDelivery{margin-top:18px;padding:19px;border:1px solid #77b8b76b;border-radius:14px;background:#07182db0}
+.strategyDelivery{margin-top:18px;padding:19px;border:1px solid #85b7cb88;border-radius:14px;background:linear-gradient(145deg,#122c49 0%,#0c2038 58%,#0a1b30 100%);box-shadow:inset 0 1px #ffffff0b,0 8px 28px #020b172c}
 .strategyDeliveryHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .strategyDeliveryHeader h3{font-size:16px;color:#f4f8ff!important;margin:4px 0}
 .execution .strategyDeliveryHeader p{margin:0;font-size:11px;color:#b5c9e0}
@@ -222,7 +225,7 @@
 .execution .m04EvidenceBoundary p{color:#c3d8e1;font-size:12px;margin:9px 0 0}
 @media(max-width:720px){.execution .m04EvidenceResult{padding:13px 12px;scroll-margin:70px}}
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.8.0-CONTRASTED-EVIDENCE-RESULT-PANEL
+ * VERSION: v1.9.0-FOCUSED-DELIVERY-SURFACE
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
