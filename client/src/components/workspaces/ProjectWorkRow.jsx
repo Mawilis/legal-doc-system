@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.12.0-VERIFIED-HIERARCHY-INDENT
+ * VERSION: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
+ *          preserves read-only title inspection but withholds menu
+ *          entry actions when a reusable row caller has not supplied
+ *          any verified action capability, retaining source-admitted
+ *          details and failing closed on implicit menu grants.
  * CHANGELOG: v1.12.0-VERIFIED-HIERARCHY-INDENT displays
  *          a restrained first-level indentation only when the parent
  *          task appears in the same authorized source page. Milestones
@@ -116,7 +121,8 @@ export default function ProjectWorkRow({
     {...(capabilities || NO_ACTION_CAPABILITIES)}
     onTransition={onTransition} onComplete={onComplete}
     onEdit={onEdit} onAssign={onAssign}
-    onOpen={onOpen} onCreateSubtask={onCreateSubtask}
+    onOpen={Object.values(capabilities || NO_ACTION_CAPABILITIES).some(value => value === true)
+      ? onOpen : undefined} onCreateSubtask={onCreateSubtask}
     onAttachments={onAttachments} onApprovals={onApprovals}
     onActivity={onActivity}/>;
   const displayName = item.assignee_principal_id && typeof assigneeName === 'function'
@@ -242,7 +248,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.12.0-VERIFIED-HIERARCHY-INDENT
+// VERSION: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
