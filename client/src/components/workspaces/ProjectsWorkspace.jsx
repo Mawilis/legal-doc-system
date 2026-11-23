@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.40.0-PLAIN-LANGUAGE-PROJECT-RECOVERY
+ * VERSION: v2.41.0-STRATEGY-TASK-FOCUS-PROPAGATION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.41.0-STRATEGY-TASK-FOCUS-PROPAGATION
+ *            forwards exact task identity only after authorized project
+ *            detail, retaining source-owned task and IAM verification.
  * CHANGELOG: v2.40.0-PLAIN-LANGUAGE-PROJECT-RECOVERY
  *            makes unavailable and stale project states understandable and
  *            actionable without exposing backend codes; preserves user
@@ -677,7 +680,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
  * @param {Object} props Authenticated scope and optional project navigation hints.
  * @returns {React.ReactElement} Governed project registry and work surface.
  */
-export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusAssignedProjectId = null }) {
+export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusTaskId = null, focusAssignedProjectId = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
   const [sourceState, setSourceState] = useState('LOADING');
@@ -1910,6 +1913,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {projectView === 'work' && <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders}
+              focusTaskId={focusProjectId === detail.project.project_id ? focusTaskId : null}
               onFocusedTaskChange={handleFocusedTaskChange}
               onOpenProjectPeople={() => setProjectView('people')}/>}
             {projectView === 'discussions' && <ProjectTasksPanel
@@ -2010,7 +2014,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.40.0-PLAIN-LANGUAGE-PROJECT-RECOVERY
+// VERSION: v2.41.0-STRATEGY-TASK-FOCUS-PROPAGATION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
