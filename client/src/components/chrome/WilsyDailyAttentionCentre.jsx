@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.8.1-BLUEPRINT-JSX-CLOSURE
+ * VERSION: v3.9.0-EDGE-RESIZABLE-WORKSPACE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.9.0-EDGE-RESIZABLE-WORKSPACE adds
+ *          bounded pointer/keyboard edge resizing for the operating
+ *          panel; preserves float/dock, view state and EOS scope.
  * CHANGELOG: v3.8.1-BLUEPRINT-JSX-CLOSURE corrects the
  *          JSX class expression closing token in the expanded bell
  *          task action. No EOS behavior, authority or source changes.
@@ -267,6 +270,8 @@ export default function WilsyDailyAttentionCentre({
   const rootRef = useRef(null);
   const panelRef = useRef(null);
   const dragRef = useRef(null);
+  const resizeRef = useRef(null);
+  const [panelSize, setPanelSize] = useState(null);
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
   const [workError, setWorkError] = useState('');
@@ -335,6 +340,7 @@ export default function WilsyDailyAttentionCentre({
     setExpanded(null);
     setView('WORK');
     setFloating(null);
+    setPanelSize(null);
   }, [liveScopeKey, systemServicesWorkspace]);
 
   useEffect(() => {
@@ -1085,6 +1091,63 @@ export default function WilsyDailyAttentionCentre({
     setFloating(pos);
     return pos;
   };
+  // Layout is transient only; resizing must never alter authorized work.
+  const resizeEdge = (edge, event, phase) => {
+    if (phase === 'down') {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      event.stopPropagation();
+      const box = panelBounds();
+      const position = floating || floatAtPanel();
+      resizeRef.current = { id: event.pointerId, edge,
+        x: event.clientX, y: event.clientY,
+        left: position.x, top: position.y, width: box.width, height: box.height };
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      return;
+    }
+    const drag = resizeRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    if (phase === 'end') {
+      resizeRef.current = null;
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId))
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      return;
+    }
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    const west = edge.includes('left'), north = edge.includes('top');
+    const x = west ? Math.max(8, Math.min(drag.left + dx, drag.left + drag.width - 300)) : drag.left;
+    const y = north ? Math.max(8, Math.min(drag.top + dy, drag.top + drag.height - 240)) : drag.top;
+    const width = Math.max(Math.min(420, window.innerWidth - 16),
+      Math.min(drag.width + (west ? drag.left - x : edge.includes('right') ? dx : 0), window.innerWidth - x - 8));
+    const height = Math.max(Math.min(300, window.innerHeight - 16),
+      Math.min(drag.height + (north ? drag.top - y : edge.includes('bottom') ? dy : 0), window.innerHeight - y - 8));
+    setFloating(clamp(x, y, width, height));
+    setPanelSize({width, height});
+  };
+  const edgeHandle = edge => ({
+    role: 'separator', tabIndex: 0,
+    'aria-label': 'Resize daily attention ' + edge + ' edge',
+    'aria-orientation': edge === 'left' || edge === 'right' ? 'vertical' : 'horizontal',
+    style: {touchAction: 'none'},
+    onPointerDown: event => resizeEdge(edge, event, 'down'),
+    onPointerMove: event => resizeEdge(edge, event, 'move'),
+    onPointerUp: event => resizeEdge(edge, event, 'end'),
+    onPointerCancel: event => resizeEdge(edge, event, 'end'),
+    onKeyDown: event => {
+      const d = { ArrowLeft: [-16,0], ArrowRight: [16,0],
+        ArrowUp: [0,-16], ArrowDown: [0,16] }[event.key];
+      if (!d) return;
+      event.preventDefault();
+      const bounds = panelBounds();
+      const pos = floating || floatAtPanel();
+      const width = Math.max(Math.min(420, window.innerWidth - 16),
+        Math.min(bounds.width + d[0], window.innerWidth - pos.x - 8));
+      const height = Math.max(Math.min(300, window.innerHeight - 16),
+        Math.min(bounds.height + d[1], window.innerHeight - pos.y - 8));
+      setPanelSize({width, height});
+      setFloating(clamp(pos.x, pos.y, width, height));
+    },
+  });
   const handlePointerDown = (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const rect = panelBounds();
@@ -1158,12 +1221,20 @@ export default function WilsyDailyAttentionCentre({
           role="dialog"
           aria-label="Daily attention centre"
           data-floating={floating ? 'true' : 'false'}
-          style={floating
-            ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
-            : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }}
+          style={{
+            ...(floating
+              ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
+              : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }),
+            ...(panelSize ? {width: panelSize.width, height: panelSize.height,
+              maxWidth: 'calc(100vw - 16px)', maxHeight: 'calc(100dvh - 16px)'} : {}),
+          }}
           className={'fixed z-[90] flex max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60 ' +
             (workScope ? 'w-[min(920px,calc(100vw-2rem))]' : 'w-[min(460px,calc(100vw-2rem))]')}
         >
+          <div {...edgeHandle('left')} className="absolute inset-y-3 left-0 z-30 w-2 cursor-ew-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('right')} className="absolute inset-y-3 right-0 z-30 w-2 cursor-ew-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('bottom')} className="absolute inset-x-3 bottom-0 z-30 h-2 cursor-ns-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('bottom-right')} className="absolute bottom-0 right-0 z-40 size-5 cursor-nwse-resize border-l border-t border-white/15 bg-white/10"/>
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
               <div className="flex items-center gap-2">
@@ -1531,7 +1602,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.8.1-BLUEPRINT-JSX-CLOSURE
+ * VERSION: v3.9.0-EDGE-RESIZABLE-WORKSPACE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
