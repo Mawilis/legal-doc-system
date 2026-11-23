@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.17.1-M04-REMOUNT-STATE-CERT
+ * VERSION: v1.17.2-M04-EVENT-CHAIN-TRACE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.17.2-M04-EVENT-CHAIN-TRACE-CERT verifies
+ *            recorded source assignment without claiming current IAM;
+ *            the production chain validator now requires every revision.
  * CHANGELOG: v1.17.1-M04-REMOUNT-STATE-CERT verifies
  *            the live region after async refresh/remount rather than
  *            reading a detached stale DOM node; fail-closed assertions stay.
@@ -564,7 +567,7 @@ describe('Strategy source-owned project execution readback', () => {
     const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
     await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
     expect(m04).toHaveTextContent('Unassigned work17');
-    expect(m04).toHaveTextContent('Assigned work1');
+    expect(m04).toHaveTextContent('Assigned in task source1');
     expect(m04).toHaveTextContent('Waiting on predecessors1');
     expect(m04).toHaveTextContent('Past calendar due date1');
     expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
@@ -1051,7 +1054,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.17.1-M04-REMOUNT-STATE-CERT
+// VERSION: v1.17.2-M04-EVENT-CHAIN-TRACE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
