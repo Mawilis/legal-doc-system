@@ -5,19 +5,22 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF
+ * VERSION: v4.10.0-SOURCE-DEPENDENCY-READINESS-PREVIEW
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.10.0-SOURCE-DEPENDENCY-READINESS-PREVIEW surfaces
+ *            Projects source-verified predecessor counts in Headquarters
+ *            My Work preview and selected detail; no command changes.
  * CHANGELOG: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF routes a
  *            failed Strategy project-list read into the existing Projects
  *            workspace with its own current EOS IAM checks; no project
  *            is invented or selected from a failed read.
  * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ removes unauthorized speculative Overview HR workforce requests; directory reads occur only when People is opened and retain exact-session authorization/tenant validation and fail-closed UI. Existing My Work and Projects summary feeds are unchanged.
- * CHANGELOG: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
+ * CHANGELOG: v4.10.0-SOURCE-DEPENDENCY-READINESS-PREVIEW adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
  * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY adds a
  *            verified Blocked attention filter and renders project date-only
  *            deadlines without manufacturing a timezone or overdue instant.
@@ -1243,11 +1246,11 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
             {visibleItems.length === 0 ? <div className="hq-work-status hq-verified-empty" data-work-state={items.length ? 'FILTERED_EMPTY' : 'VERIFIED_EMPTY'}><span className="hq-empty-icon"><CheckCircle2 size={21}/></span><div><strong>{items.length ? 'No matching work' : 'Current source read verified'}</strong><p>{!items.length ? snapshot.sources_included.length ? 'No active work was returned by the authorized sources at the recorded time.' : 'No work source was included in this session.' : 'No work matches these filters.'}</p>{snapshot.sources_included.includes('OPERATIONS') && <button type="button" onClick={onManage}>Create or manage Operations work</button>}<span className="hq-empty-time">Verified {formatHeadquartersDeadline(snapshot.as_of)}</span></div></div>
               : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onSelect(item.source_key); setCommand({ state: 'IDLE', message: '' }); }}>
                 <span className={'hq-round ' + ({ LEGAL: 'hq-purple', OPERATIONS: 'hq-green', INTELLIGENCE: 'hq-blue', CRM: 'hq-orange' }[item.source] || 'hq-blue')}>{item.source === 'LEGAL' ? <FileText size={17}/> : item.source === 'CRM' ? <Users size={17}/> : <CheckCircle2 size={17}/>}</span>
-                <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}</small></span>
+                <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}{item.source === 'PROJECTS' ? item.dependency_readiness === 'WAITING' ? ' · Waiting on ' + item.dependency_remaining + ' predecessor(s)' : item.dependency_total ? ' · Predecessors complete' : ' · No predecessor gate' : ''}</small></span>
                 <span className="hq-priority" data-priority={item.priority}>{item.priority === 'NORMAL' ? 'Normal' : item.priority === 'HIGH' ? 'High' : item.priority === 'LOW' ? 'Low' : 'Critical'}</span><ChevronRight size={13}/>
               </button>)}
           </div>}
-      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><h3>{selected.title}</h3><button type="button" aria-label="Close work record" onClick={() => onSelect(null)}><X size={16}/></button></div>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd><dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
+      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><h3>{selected.title}</h3><button type="button" aria-label="Close work record" onClick={() => onSelect(null)}><X size={16}/></button></div>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd>{selected.source === 'PROJECTS' && <><dt>Predecessors</dt><dd>{selected.dependency_readiness === 'WAITING' ? selected.dependency_remaining + ' of ' + selected.dependency_total + ' unfinished' : selected.dependency_total ? 'All ' + selected.dependency_total + ' complete' : 'None recorded'}</dd></>}<dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
         {actions[selected.source]?.includes('COMPLETE') ? <form className="hq-command" onSubmit={performCompletion}><label>Completion note<textarea aria-label={'Completion note for ' + selected.title} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} required disabled={command.state === 'PENDING'}/></label><button type="submit" disabled={!note.trim() || command.state === 'PENDING'}>{command.state === 'PENDING' ? 'Verifying completion…' : 'Complete work'}</button><p>EOS verifies your authority and records the result.</p></form>
           : <button type="button" className="hq-text-button" onClick={() => onOpen(selected)}>Open source-governed workspace <ArrowUpRight size={12}/></button>}
       </section>}
@@ -1535,7 +1538,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF
+ * VERSION: v4.10.0-SOURCE-DEPENDENCY-READINESS-PREVIEW
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
