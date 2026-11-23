@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF
+ * VERSION: v1.3.1-PARTICIPANT-DECISION-ISOLATION
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.1-PARTICIPANT-DECISION-ISOLATION keeps
+ *          participant reviewer decisions independent of owner-only
+ *          directory reads. Reviewer discovery is for owners requesting
+ *          independent review, never an implicit contributor grant.
  * CHANGELOG: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF accepts
  *          only source-verified parent participant snapshots (including
  *          limited-page disclosure), independently reprobes when missing.
@@ -357,6 +361,14 @@ export default function ProjectTaskApprovalsPanel({
   }, [scope, projectId, tenantId, principalId, tenantHeaders]);
   useEffect(() => {
     setReviewer('');
+    // The participant decision pane is not a reviewer requester.
+    // Never issue an owner-only directory read from its operating capacity.
+    if (participantMode) {
+      setVerifiedReviewers([]);
+      setReviewerSource('READY');
+      setReviewerSourceError('');
+      return;
+    }
     if (participantAuthorityState === 'VERIFIED') {
       setVerifiedReviewers(participants.filter(person =>
         person?.state === 'ACTIVE' && person.role === 'CONTRIBUTOR'
@@ -368,7 +380,7 @@ export default function ProjectTaskApprovalsPanel({
     setVerifiedReviewers([]);
     setReviewerSource('VERIFYING');
     if (participantAuthorityState !== 'VERIFYING') void refreshReviewers();
-  }, [scope, refreshReviewers, participantAuthorityState, participantHasMore, participants, principalId]);
+  }, [scope, refreshReviewers, participantAuthorityState, participantHasMore, participants, principalId, participantMode]);
   const options = verifiedReviewers;
   const reviewerName = person => {
     const name = [person.first_name, person.last_name].filter(value =>
@@ -529,7 +541,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF
+// VERSION: v1.3.1-PARTICIPANT-DECISION-ISOLATION
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies
