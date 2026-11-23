@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.17.0-M04-LIVE-WORK-GRAPH-CERT
+ * VERSION: v1.17.1-M04-REMOUNT-STATE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.17.1-M04-REMOUNT-STATE-CERT verifies
+ *            the live region after async refresh/remount rather than
+ *            reading a detached stale DOM node; fail-closed assertions stay.
  * CHANGELOG: v1.17.0-M04-LIVE-WORK-GRAPH-CERT
  *            certifies exact published Pillar 1 relationship/current project
  *            and complete source task graph before exposing M04 accountability.
@@ -573,8 +576,11 @@ describe('Strategy source-owned project execution readback', () => {
       && options?.headers?.['X-Tenant-ID'] === scope.tenantId)).toBe(true);
     currentLink = false;
     fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
-    await waitFor(() => expect(m04).toHaveTextContent('M04 execution unavailable'));
-    expect(m04).not.toHaveTextContent('Complete authorized task snapshot');
+    await waitFor(() => expect(screen.getByRole('region', {
+      name: 'M04 governed Strategy execution',
+    })).toHaveTextContent('M04 execution unavailable'));
+    expect(screen.getByRole('region', { name: 'M04 governed Strategy execution' }))
+      .not.toHaveTextContent('Complete authorized task snapshot');
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -1045,7 +1051,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.17.0-M04-LIVE-WORK-GRAPH-CERT
+// VERSION: v1.17.1-M04-REMOUNT-STATE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
