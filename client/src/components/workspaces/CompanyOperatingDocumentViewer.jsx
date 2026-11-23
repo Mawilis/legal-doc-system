@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
+ * VERSION: v2.26.0-EXACT-SELECTED-TASK-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.26.0-EXACT-SELECTED-TASK-HANDOFF
+ *            passes the exact verified task identity with the project handoff
+ *            so existing Projects can focus the selected task after an
+ *            independently authorized read; no authority is transferred.
  * CHANGELOG: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
  *            translates task history and authority explanation into plain
  *            work language while retaining source validation and no invented
@@ -2022,7 +2026,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                       && <button type="button"
                                         className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-600 active:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
                                         aria-label={'Manage ' + task.title + ' in Projects'}
-                                        onClick={() => onOpenProject(m04Execution.project.project_id)}>
+                                        onClick={() => onOpenProject(m04Execution.project.project_id, { taskId: task.task_id })}>
                                         Manage task <ArrowUpRight size={16} aria-hidden="true"/>
                                       </button>}
                                   </div>
@@ -2297,7 +2301,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
+// VERSION: v2.26.0-EXACT-SELECTED-TASK-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
