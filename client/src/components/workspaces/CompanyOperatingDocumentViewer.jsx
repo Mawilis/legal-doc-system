@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.14.1-M04-PUBLISHED-ACTION-GUARD
+ * VERSION: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
+ *            retires repeated M03 approval gates and publication-stage
+ *            controls from already-published Strategy; retains independently
+ *            governed private revision review and gives the published view
+ *            one actionable handoff to existing Projects execution readback.
+ *            No publication, Strategy link, task or IAM writes are added.
  * CHANGELOG: v2.14.1-M04-PUBLISHED-ACTION-GUARD
  *            suppresses completed v1.1.0 preparation after EOS publication,
  *            distinguishes private revision selection from publication truth,
@@ -1420,6 +1426,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   <div className={styles.commandStatus}>
                     <strong>{ratificationOpen ? 'Founder ratification · private decision'
                       : editorOpen ? 'Private draft workspace'
+                      : query.review ? 'Private source review'
                       : document?.state === 'PUBLISHED' ? 'Official publication'
                         : authorDraft ? 'Draft under review'
                           : submittedDraft ? (actions.includes('FOUNDER_RATIFY') ? 'Founder ratification available' : 'Awaiting independent approval')
@@ -1550,7 +1557,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   </div>
                 </form>}
                 {!editorOpen && !ratificationOpen && <>
-                {classification === 'STRATEGY' && <section aria-label="M03 Strategy governance gates"
+                {classification === 'STRATEGY' && !approvedSourceAlreadyPublished && <section aria-label="M03 Strategy governance gates"
                   className="mb-4 rounded-xl border border-slate-500/60 bg-slate-950/30 p-4 text-slate-100">
                   <h3 className="text-base font-semibold text-white">M03 · Publication and Pillar 1 governance</h3>
                   <p className="mt-2 text-sm text-slate-200">
@@ -1611,8 +1618,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     Execution metrics from M02 are not certified strategic outcomes.
                   </p>
                 </section>}
-                {classification === 'STRATEGY' && <section className={styles.commandDeck}
-                  aria-label="Governed Strategy publication lifecycle">
+                {classification === 'STRATEGY' && !approvedSourceAlreadyPublished && <section className={styles.commandDeck}
+                   aria-label="Governed Strategy publication lifecycle">
                   <div className={styles.commandStatus}>
                     <strong>Strategy publication · source-owned execution</strong>
                     <span>{!document ? (query.review && approvedSourceAlreadyPublished
@@ -1655,6 +1662,23 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     && <p className={styles.permissionNotice}>Your current capacity can read the approved source but cannot inspect private revision states or create a publication. Current Strategy author/publisher authority must be established separately in tenant IAM.</p>}
                   {document?.state === 'PUBLISHED' && Date.parse(document.effective_from) <= Date.parse(data.as_of)
                     && <p className={styles.permissionNotice}>The official Strategy is published and effective. The Pillar 1 / Foundation relationship and source-owned execution require independent verification in Projects &amp; Delivery; publication does not certify outcomes.</p>}
+                </section>}
+                {classification === 'STRATEGY' && approvedSourceAlreadyPublished && !query.review && <section
+                  aria-label="Published Strategy execution handoff" className={styles.commandDeck}>
+                  <div className={styles.commandStatus}>
+                    <strong>Published Strategy · execution</strong>
+                    <span>Publication is complete. Pillar 1 delivery requires current EOS project and relationship evidence.</span>
+                  </div>
+                  <div className={styles.commandButtons}>
+                    <button type="button" onClick={() => containerRef.current
+                      ?.querySelector('[aria-label="Company operating execution"]')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                      <ArrowUpRight size={16}/> Inspect Projects &amp; Delivery
+                    </button>
+                  </div>
+                  <p className={styles.permissionNotice}>{strategyCurrentLink
+                    ? 'Pillar 1 / Foundation project link verified current; strategic outcomes remain uncertified.'
+                    : 'Pillar 1 / Foundation relationship not yet verified in this view. Inspect the existing project and independently verify its current source link.'}</p>
                 </section>}
                 <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
                 {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
@@ -2005,7 +2029,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.14.1-M04-PUBLISHED-ACTION-GUARD
+// VERSION: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
