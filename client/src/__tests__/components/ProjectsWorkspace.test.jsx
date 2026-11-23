@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
+ * VERSION: v2.69.0-COMPACT-TASK-DETAILS-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.69.0-COMPACT-TASK-DETAILS-CERT
+ *          verifies title and description remain editable inside explicit
+ *          compact disclosure; accountability controls remain immediately
+ *          visible and command/readback semantics remain unchanged.
  * CHANGELOG: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
  *          task save closes after mandatory readback even with stalled
  *          optional source reads; contributor assignment still requires
@@ -1169,6 +1173,11 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(within(screen.getByRole('menu', {
        name: 'Actions for Build milestone execution',
      })).getByRole('menuitem', { name: 'Edit' }));
+    const additional = screen.getByText('Additional task details · title and description');
+    expect(additional.closest('details').open).toBe(false);
+    expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
+    fireEvent.click(additional);
+    expect(additional.closest('details').open).toBe(true);
     const taskTitleInput = screen.getByRole('textbox', { name: 'Edit task title' });
     const assigneeInput = screen.getByRole('combobox', { name: 'Reassign task' });
     expect(Boolean(assigneeInput.compareDocumentPosition(taskTitleInput) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
@@ -2668,7 +2677,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
+ * VERSION: v2.69.0-COMPACT-TASK-DETAILS-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
