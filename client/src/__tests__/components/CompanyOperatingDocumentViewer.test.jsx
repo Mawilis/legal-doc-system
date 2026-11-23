@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.11.0-M03-AUTHORITY-PUBLICATION-GATE-CERT
+ * VERSION: v1.11.1-M03-UNVERIFIED-LINK-READBACK-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.11.1-M03-UNVERIFIED-LINK-READBACK-CERT
+ *            distinguishes the pre-project verification link state from an
+ *            EOS 409 received after explicit source readback. No synthetic
+ *            publication/link status is asserted before its request.
  * CHANGELOG: v1.11.0-M03-AUTHORITY-PUBLICATION-GATE-CERT
  *            verifies read-only Strategy publication and independent publisher
  *            gates from live admitted source actions without granting IAM or
@@ -440,7 +444,11 @@ describe('Strategy source-owned project execution readback', () => {
     expect(gates).toHaveTextContent('Current source offers read-only actions; author admission not established');
     expect(gates).toHaveTextContent('No publication action admitted in this source view');
     expect(gates).toHaveTextContent('Not verified as published and effective');
-    await waitFor(() => expect(gates).toHaveTextContent('Not linkable · effective EOS Strategy publication required'));
+    // Before the Foundation execution read, EOS project-link readback is not
+    // initiated; an unpublished 409 cannot be asserted without its request.
+    expect(gates).toHaveTextContent('Current link readback not verified');
+    expect(api.get.mock.calls.some(([url]) =>
+      url === '/company-operating-documents/STRATEGY/project-links')).toBe(false);
     expect(screen.queryByRole('button', { name: 'Link verified Foundation project to Pillar 1' })).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
   });
@@ -686,7 +694,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.11.0-M03-AUTHORITY-PUBLICATION-GATE-CERT
+// VERSION: v1.11.1-M03-UNVERIFIED-LINK-READBACK-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
