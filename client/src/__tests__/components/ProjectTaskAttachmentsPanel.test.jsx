@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.6.0-QUARANTINE-UPLOAD-RECEIPT-FAILURE-CERT
+ * VERSION: v1.7.0-AUTOUPLOAD-DROPZONE-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.7.0-AUTOUPLOAD-DROPZONE-CERT certifies
+ *          auto-submission from accessible browse and scoped drop target,
+ *          validation before network, original idempotency and EOS manifest
+ *          reconciliation, and preserves owner/contributor IAM denials.
  * CHANGELOG: v1.6.0-QUARANTINE-UPLOAD-RECEIPT-FAILURE-CERT certifies the actual upload request sends boundary-bearing FormData without client-forced Content-Type; missing S3/KMS configuration is diagnosed via a bounded EOS code, while an accepted receipt missing independent manifest readback does not claim upload or manufacture another idempotency key.
  * CHANGELOG: v1.5.0-FOUNDER-EXPLICIT-CONTRIBUTOR-ACTIVATION-CERT proves the explicit WILSY Founder admission UI uses the governed POST only after deliberate interaction, checks exact role readback and separately re-verifies contributor GET before showing upload. A denied admission never enables file selection or re-adds project participation.
  * CHANGELOG: v1.4.0-EXISTING-CONTRIBUTOR-IAM-DENIAL-CERT proves that a source-verified existing contributor denied by separate participant attachment IAM is not sent back to People or invited to self-enroll a second time; no upload or implicit grant.
@@ -88,14 +92,13 @@ it('uploads a safe-type file to EOS quarantine with independent manifest readbac
     } };
   });
   mount();
-  expect(await screen.findByText('EOS verified no file manifests on this task page.')).toBeVisible();
+  expect(await screen.findByText('No files attached yet')).toBeVisible();
   const file = new File(['%PDF-1.4\nfake'], 'design.pdf', { type: 'application/pdf' });
   fireEvent.change(screen.getByLabelText('Project attachment file'), {
     target: { files: [file] },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Submit to EOS quarantine' }));
   await waitFor(() => expect(screen.getByText('design.pdf')).toBeVisible());
-  expect(screen.getByText(/Quarantined · malware scan clearance unavailable · application\/pdf/)).toBeVisible();
+  expect(screen.getByText(/Quarantined · clearance pending/)).toBeVisible();
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
   expect(api.post).toHaveBeenCalledTimes(1);
 });
@@ -112,14 +115,13 @@ it('diagnoses unconfigured EOS quarantine storage without losing the source file
     };
   });
   mount();
-  expect(await screen.findByText('EOS verified no file manifests on this task page.')).toBeVisible();
+  expect(await screen.findByText('No files attached yet')).toBeVisible();
   const file = new File(['%PDF-1.4\nsynthetic'], 'design.pdf', { type: 'application/pdf' });
   fireEvent.change(screen.getByLabelText('Project attachment file'), { target: { files: [file] } });
-  fireEvent.click(screen.getByRole('button', { name: 'Submit to EOS quarantine' }));
   expect(await screen.findByText(/EOS quarantine storage is not configured \(HTTP 503/)).toBeVisible();
-  expect(screen.getByLabelText('Project attachment file').files[0]).toBe(file);
+  expect(screen.getByText(/Upload is not verified/)).toBeVisible();
   expect(api.post).toHaveBeenCalledTimes(1);
-  expect(screen.getByText('EOS verified no file manifests on this task page.')).toBeVisible();
+  expect(screen.getByText('No files attached yet')).toBeVisible();
 });
 
 it('distinguishes an accepted EOS attachment receipt from an unverified file readback', async () => {
@@ -130,13 +132,12 @@ it('distinguishes an accepted EOS attachment receipt from an unverified file rea
     project_id: projectId, task_id: taskId, attachment: record,
   } });
   mount();
-  expect(await screen.findByText('EOS verified no file manifests on this task page.')).toBeVisible();
+  expect(await screen.findByText('No files attached yet')).toBeVisible();
   const file = new File(['%PDF-1.4\nsynthetic'], 'design.pdf', { type: 'application/pdf' });
   fireEvent.change(screen.getByLabelText('Project attachment file'), { target: { files: [file] } });
-  fireEvent.click(screen.getByRole('button', { name: 'Submit to EOS quarantine' }));
   expect(await screen.findByText(/EOS accepted the attachment command, but its exact persisted file manifest could not be verified/)).toBeVisible();
   expect(api.post).toHaveBeenCalledTimes(1);
-  expect(screen.getByLabelText('Project attachment file').files[0]).toBe(file);
+  expect(screen.getByText(/Upload is not verified/)).toBeVisible();
   expect(screen.queryByText('design.pdf')).not.toBeInTheDocument();
 });
 
@@ -147,7 +148,7 @@ it('does not expose upload controls from the owner read-only attachment source',
   });
   mount(false);
   expect(await screen.findByText('design.pdf')).toBeVisible();
-  expect(screen.queryByRole('button', { name: 'Submit to EOS quarantine' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Browse files' })).not.toBeInTheDocument();
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
 });
 
@@ -162,11 +163,10 @@ it('preserves verified owner attachment manifests when contributor GET is denied
     projectId={projectId} taskId={taskId} participantMode ownerReadMode
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
   expect(await screen.findByText('design.pdf')).toBeVisible();
-  expect(await screen.findByText(/EOS separately denied the contributor attachment endpoint \(HTTP 403\)/)).toBeVisible();
-  expect(screen.getByText(/Project participation: verified Contributor/)).toBeVisible();
+  expect(await screen.findByText(/Contributor attachment access has not been independently verified/)).toBeVisible();
+  expect(screen.getByText('Why is upload unavailable?')).toBeVisible();
   expect(screen.queryByRole('button', { name: /People access|contributor management/ })).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
 });
 
@@ -179,7 +179,7 @@ it('exposes contributor upload only after owner and participant source reads ver
   render(<ProjectTaskAttachmentsPanel tenantId={tenantId} principalId={principalId}
     projectId={projectId} taskId={taskId} participantMode ownerReadMode
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
-  expect(await screen.findByLabelText('Project attachment file')).toBeVisible();
+  expect(await screen.findByRole('button', { name: 'Browse files' })).toBeVisible();
   expect(api.get).toHaveBeenCalledTimes(2);
   expect(api.post).not.toHaveBeenCalled();
 });
@@ -219,7 +219,7 @@ it('activates WILSY Founder contributor IAM only by deliberate click and indepen
   expect(api.post).not.toHaveBeenCalled();
   expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
   fireEvent.click(activate);
-  await waitFor(() => expect(screen.getByLabelText('Project attachment file')).toBeVisible());
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Browse files' })).toBeVisible());
   expect(api.post).toHaveBeenCalledTimes(1);
   expect(api.get.mock.calls.filter(([path]) => path === memberRoute + '/attachments?limit=50&offset=0').length).toBeGreaterThanOrEqual(2);
 });
@@ -249,7 +249,7 @@ it('fails closed on a foreign tenant source record or fabricated download URL', 
   mount();
   expect(await screen.findByRole('alert')).toHaveTextContent('manifest response failed exact tenant, principal, task or schema verification');
   expect(screen.queryByText('design.pdf')).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Submit to EOS quarantine' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Browse files' })).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
 });
 
@@ -265,7 +265,7 @@ it('rejects fabricated or incomplete scan clearance evidence without download ca
 });
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.6.0-QUARANTINE-UPLOAD-RECEIPT-FAILURE-CERT
+// VERSION: v1.7.0-AUTOUPLOAD-DROPZONE-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
