@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Exact Task Approval Client Decision Certificate
- * VERSION: v1.2.0-VERIFIED-REVIEWER-DIRECTORY-CERT
+ * VERSION: v1.2.1-NATIVE-OPTION-RENDER-CERT
  * AUTHORITY: Synthetic EOS client contract; Python EOS owns permission truth.
  * EPITOME: Certify owner request, independently authorized reviewer decision,
  *          durable readback, foreign source denial and no self-approval action.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskApprovalsPanel; mocked api.js.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.1-NATIVE-OPTION-RENDER-CERT
+ *          checks native option DOM presence independently of the
+ *          operating system's popup visibility semantics.
  * CHANGELOG: v1.2.0-VERIFIED-REVIEWER-DIRECTORY-CERT verifies the trusted participant
  *          handoff plus independently re-read reviewer source, visible
  *          human names and the no-self-approval boundary.
@@ -90,7 +93,7 @@ it('independently refreshes eligible reviewers when parent authority is not veri
     projectId={projectId} taskId={taskId} participants={[]}
     participantAuthorityState="UNAVAILABLE"
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
-  expect(await screen.findByRole('option', { name: 'Verified Reviewer' })).toBeVisible();
+  expect(await screen.findByRole('option', { name: 'Verified Reviewer' })).toBeInTheDocument();
   expect(screen.getByRole('combobox', { name: 'Review contributor' })).toBeEnabled();
   expect(api.post).not.toHaveBeenCalled();
 });
@@ -305,7 +308,7 @@ it('never selects fabricated clean scan evidence from a malformed source', async
 });
 
 // ARTIFACT: ProjectTaskApprovalsPanel.test.jsx
-// VERSION: v1.2.0-VERIFIED-REVIEWER-DIRECTORY-CERT
+// VERSION: v1.2.1-NATIVE-OPTION-RENDER-CERT
 // AUTHORITY BOUNDARY: mocked client only, no live IAM or financial approval
 // TENANT POSTURE: exact tenant/project/task/actor source readback
 // FAIL-CLOSED POSTURE: foreign, unknown and non-reviewer denied
