@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
+ * VERSION: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
+ *          truly hides the programmatically activated native chooser.
+ *          The global file-input width rule previously overrode sr-only,
+ *          causing horizontal overflow in 1440px and 390px browser runs.
+ *          Browse remains a real native file selection with no duplicate UI.
  * CHANGELOG: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
  *          keeps the contributor preflight visible but disabled when
  *          source read fails, instead of hiding all guidance; the
@@ -542,7 +547,7 @@ export default function ProjectTaskAttachmentsPanel({
         </p>
       </div>
       <input ref={fileInputRef} type="file" tabIndex={-1}
-        aria-label="Project attachment file" className="sr-only"
+        aria-label="Project attachment file" hidden style={{ display: 'none' }}
         disabled={busy}
         accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
         onChange={event => {
@@ -713,7 +718,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
+// VERSION: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
