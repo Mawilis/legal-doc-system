@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
+ * VERSION: v1.29.0-VERIFIED-PROJECT-READINESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.29.0-VERIFIED-PROJECT-READINESS exposes
+ *            source-verified predecessor readiness in queue and task detail,
+ *            not fabricated project status or new completion authority.
  * CHANGELOG: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
  *            centralizes work-purpose interpretation as a pure module helper
  *            to keep memoized source-verified counts/filter logic stable.
@@ -935,6 +938,11 @@ export default function MyWorkWorkspace(props = {}) {
                           <span className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                             <span className="rounded border border-amber-300/20 bg-amber-300/[0.06] px-1.5 py-0.5 text-amber-100">{SOURCE_LABELS[item.source] || item.source}</span>
                             <span>{kindLabel(item)}</span>
+                            {item.source === 'PROJECTS' && <span className={item.dependency_readiness === 'WAITING' ? 'font-semibold text-amber-200' : 'text-emerald-200'}>
+                              {item.dependency_readiness === 'WAITING'
+                                ? 'Waiting on ' + item.dependency_remaining + ' predecessor' + (item.dependency_remaining === 1 ? '' : 's')
+                                : item.dependency_total > 0 ? 'Predecessors complete' : 'No predecessor gate'}
+                            </span>}
                           </span>
                         </span>
                         <span className="flex items-center gap-2 text-xs sm:block">
@@ -1036,6 +1044,18 @@ export default function MyWorkWorkspace(props = {}) {
                 </p>
               </section>
 
+              {selectedItem.source === 'PROJECTS' && <section aria-label="Verified project dependency readiness"
+                className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
+                <h3 className="text-sm font-semibold text-white">Predecessor readiness · EOS verified</h3>
+                <p className="mt-2 text-sm text-slate-200">
+                  {selectedItem.dependency_readiness === 'WAITING'
+                    ? 'Waiting for ' + selectedItem.dependency_remaining + ' of ' + selectedItem.dependency_total + ' predecessors to reach Done.'
+                    : selectedItem.dependency_total
+                      ? 'All ' + selectedItem.dependency_total + ' predecessors are Done.'
+                      : 'No predecessor completion gate is recorded.'}
+                </p>
+                <p className="mt-2 text-xs text-slate-400">This is read-only Projects source evidence, not a task status transition or permission to view predecessor records.</p>
+              </section>}
               {selectedItem.source === 'CRM' && (
                 <section aria-label="Verified CRM source record"
                   className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
@@ -1672,7 +1692,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
+ * VERSION: v1.29.0-VERIFIED-PROJECT-READINESS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
