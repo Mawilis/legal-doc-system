@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Operating Document Revision Registry.
-VERSION: v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION
+VERSION: v1.1.1-FOUNDER-CURRENTNESS-UNAVAILABLE-DENIAL
 AUTHORITY: Immutable company-document persistence and durable command replay.
 EPITOME: Preserve revision lineage and independent publication evidence in
 caller-owned Mongo transactions; never turn drafts into official policy.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Pure company_operating_document domain owns lifecycle
 HTTP owns current IAM and whole-transaction retry. Explicit operators/test
 fixtures own index provisioning; ordinary reads never create indexes or data.
 CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: v1.1.1-FOUNDER-CURRENTNESS-UNAVAILABLE-DENIAL
+translates durable Founder currentness/repository errors to a fail-closed
+source-unavailable result without appending a revision or receipt.
 CHANGELOG: v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION
 adds distinct Founder-only create/submit/ratify actions, rechecking immutable
 designation and active principal/tenant/capacity/IAM within the caller's
@@ -28,6 +31,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from hmac import compare_digest
+from pymongo.errors import PyMongoError
 from typing import Any, Final, Mapping
 
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
@@ -40,7 +44,7 @@ from tools.eos.saas.domain.company_operating_document import (
     FOUNDER_RATIFICATION_REFERENCE,
 )
 
-VERSION: Final = "v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION"
+VERSION: Final = "v1.1.1-FOUNDER-CURRENTNESS-UNAVAILABLE-DENIAL"
 REVISION_COLLECTION: Final = "company_operating_document_revisions"
 COMMAND_COLLECTION: Final = "company_operating_document_commands"
 MAX_REVISIONS: Final = 1000
@@ -188,7 +192,7 @@ class CompanyOperatingDocumentRegistry:
                     principal_id=actor_id, tenant_id=tenant_id,
                     database=self.database, session=session,
                 )
-            except FounderDesignationRejected as error:
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
                 raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
             if evidence is None or evidence.get("state") != "ACTIVE":
                 raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_AUTHORITY_DENIED")
@@ -271,7 +275,7 @@ class CompanyOperatingDocumentRegistry:
 
 
 # ARTIFACT: company_operating_document_registry.py
-# VERSION: v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION
+# VERSION: v1.1.1-FOUNDER-CURRENTNESS-UNAVAILABLE-DENIAL
 # AUTHORITY BOUNDARY: Append-only persistence/replay only; caller owns IAM.
 # TENANT POSTURE: Exact canonical company tenant on every operation.
 # FAIL-CLOSED POSTURE: Missing index, transaction, lineage or receipt truth rejects.
