@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
+ * VERSION: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
+ *            reveals the exact independent M04 gate failing source
+ *            verification without relaxing currentness, IAM or evidence.
  * CHANGELOG: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
  *            retires repeated M03 approval gates and publication-stage
  *            controls from already-published Strategy; retains independently
@@ -830,6 +833,31 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     }
     return { counts, waiting, unfinishedPredecessors, pastDue,
       total: plan.length, verifiedAt: delivery.verifiedAt };
+  })();
+
+  // This diagnostic is not execution authority and cannot turn stale data into truth.
+  const m04GateMessage = (() => {
+    if (data?.state !== 'PUBLISHED') return 'Official Strategy publication was not verified.';
+    if (query.review) return 'Return to Current publication for execution verification.';
+    if (delivery.state !== 'READY' || !delivery.page) return 'Foundation project tasks were not verified.';
+    if (delivery.page.offset !== 0 || delivery.page.has_more) return 'The project work snapshot is incomplete.';
+    if (!foundationExecution) return 'The work source lacks the complete Foundation plan or valid predecessor graph.';
+    if (strategyLink.state === 'IDLE' || strategyLink.state === 'LOADING') return 'The independent Pillar 1 relationship read is still pending.';
+    if (strategyLink.state !== 'READY') return strategyLink.message || 'The independent Pillar 1 relationship source is not verified.';
+    const project = projectItems.find(item => item.project_id === delivery.projectId
+      && item.name === FOUNDATION_PROJECT_NAME);
+    if (!project) return 'Foundation project identity is not verified.';
+    const links = strategyLink.items.filter(item => item.project_id === project.project_id
+      && item.pillar_id === 'pillar-one');
+    if (links.length === 0) return 'EOS returned no Pillar 1 link for this project; project presence is not linkage.';
+    if (links.length !== 1) return 'Pillar 1 relationship evidence is ambiguous.';
+    if (links[0].state === 'SOURCE_CHANGED') return 'EOS reports SOURCE_CHANGED: the established Pillar 1 link does not match the current Strategy or project revision.';
+    if (links[0].state !== 'VERIFIED_CURRENT') return 'EOS has not certified the Pillar 1 relationship as current.';
+    if (links[0].source_project_revision !== project.revision
+      || links[0].source_strategy_revision !== document?.revision)
+      return 'Current Strategy or project revision differs from the relationship source revision.';
+    if (project.status !== 'ACTIVE') return 'The Foundation project is not active.';
+    return 'One or more task ownership, deadline, status, fingerprint or dependency records did not pass validation.';
   })();
 
   // M04 is an exact-source execution *read* with independent Pillar 1 link
@@ -1833,8 +1861,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </> : <p role="status" className="mt-3 text-sm">
                           M04 execution unavailable until the currently effective published Strategy,
                           exact current Pillar 1 link, unchanged Foundation project revision, complete task
-                          snapshot and dependencies are all independently verified. No work or outcome score inferred.
-                        </p>}
+                          snapshot and dependencies are all independently verified. No work or outcome score inferred.{' '}Reason: {m04GateMessage}
+                         </p>}
                       </section>
 
 
@@ -2029,7 +2057,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
+// VERSION: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
