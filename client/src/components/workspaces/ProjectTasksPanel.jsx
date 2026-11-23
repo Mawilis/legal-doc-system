@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.49.0-FAST-VERIFIED-SAVE-READBACK
+ * VERSION: v1.49.1-OPTIONAL-READ-FAIL-CLOSED
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.49.1-OPTIONAL-READ-FAIL-CLOSED
+ *          detached auxiliary source readbacks reject fail-closed without
+ *          unhandled promise rejection or stale capability reuse.
  * CHANGELOG: v1.49.0-FAST-VERIFIED-SAVE-READBACK
  *          releases completed task command UI after mandatory verified task
  *          list readback, never after unverified mutation success, without
@@ -525,7 +528,18 @@ export default function ProjectTasksPanel({
       // task snapshot, not by optional contributor, directory or permission
       // reads. Only contributor admission waits for separate participant proof.
       if (newlyAdmittedId) return await settleSupportingAuthorities();
-      void settleSupportingAuthorities();
+      void settleSupportingAuthorities().catch(() => {
+        // An unexpected failure in an optional read must not cause an
+        // unhandled rejection or expose previously verified capabilities.
+        if (request !== generation.current || currentScope.current !== active) return;
+        setParticipants([]);
+        setParticipantHasMore(false);
+        setProjectContributorStatus('UNAVAILABLE');
+        setProjectContributorError('Project contributor information could not be verified.');
+        setTenantMemberCandidates([]);
+        setMemberDirectoryStatus('UNAVAILABLE');
+        setActionCapabilities(null);
+      });
       return true;
     } catch (cause) {
       if (request !== generation.current || currentScope.current !== active) return false;
@@ -1710,7 +1724,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.49.0-FAST-VERIFIED-SAVE-READBACK
+// VERSION: v1.49.1-OPTIONAL-READ-FAIL-CLOSED
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
