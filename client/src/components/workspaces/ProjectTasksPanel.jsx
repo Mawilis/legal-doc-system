@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.57.1-SOVEREIGN-HEADER-RESTORE
+ * VERSION: v1.57.2-HIERARCHY-SCOPE-AND-FOCUS-GUARD
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.57.2-HIERARCHY-SCOPE-AND-FOCUS-GUARD
+ *          keeps compact/hierarchy defaults after the authenticated
+ *          scope reset and makes optional visual scrolling work across
+ *          browser/test implementations without bypassing task focus.
  * CHANGELOG: v1.57.1-SOVEREIGN-HEADER-RESTORE moves the
  *          mandatory authority and financial boundaries ahead of the
  *          historical changelog within the first-100-line integrity guard.
@@ -441,7 +445,7 @@ export default function ProjectTasksPanel({
     if (!creating || (!dependencyOriginId && workType !== 'SUBTASK')) return;
     const form = createFormRef.current;
     if (!form) return;
-    form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    form.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
     form.querySelector('input[required]')?.focus({ preventScroll: true });
   }, [creating, dependencyOriginId, workType]);
   const drawerReturnFocus = useRef(null);
@@ -642,10 +646,10 @@ export default function ProjectTasksPanel({
     setWorkQuery('');
     setWorkMineOnly(false);
     setSelectedWorkIds([]);
-    setWorkDensity('comfortable');
+    setWorkDensity('compact');
     setWorkStatus('ALL');
     setWorkKind('ALL');
-    setWorkGroup('NONE');
+    setWorkGroup('HIERARCHY');
     setWorkOrder('DUE_ASC');
     setShowContributorManagement(false);
     setCompletionCandidate(null);
@@ -1883,7 +1887,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.57.1-SOVEREIGN-HEADER-RESTORE
+// VERSION: v1.57.2-HIERARCHY-SCOPE-AND-FOCUS-GUARD
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
