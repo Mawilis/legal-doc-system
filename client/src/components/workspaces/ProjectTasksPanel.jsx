@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.45.0-SOURCE-VERIFIED-TASK-FOCUS
+ * VERSION: v1.46.0-NONBLOCKING-OPTIONAL-TASK-SOURCES
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.46.0-NONBLOCKING-OPTIONAL-TASK-SOURCES
+ *          admits the already verified task list and exact task drawer
+ *          immediately after EOS list validation, while contributor,
+ *          capability and member-directory reads settle independently.
+ *          All mutations remain disabled until exact-scope capability
+ *          readback; no inferred people, grants, task completion or retry.
  * CHANGELOG: v1.45.0-SOURCE-VERIFIED-TASK-FOCUS
  *          opens an exact task passed from Strategy only when it appears in
  *          the independently authorized project work readback. An outage
@@ -420,6 +426,22 @@ export default function ProjectTasksPanel({
         invalid.invalidEnvelope = true;
         throw invalid;
       }
+      // Do not make a source-verified task (including Strategy-selected work)
+      // wait for three independently authorized, optional directory/command
+      // reads. These can each take a full transport timeout on a degraded
+      // system; the verified task itself must remain visible and read-only.
+      setItems(verified.items);
+      setSelectedWorkIds(previous => previous.filter(id => nextOffset === offset && verified.items.some(item => item.task_id === id)));
+      setHasMore(verified.has_more);
+      setOffset(nextOffset);
+      setParticipants([]);
+      setParticipantHasMore(false);
+      setProjectContributorStatus('VERIFYING');
+      setProjectContributorError('');
+      setTenantMemberCandidates([]);
+      setMemberDirectoryStatus('VERIFYING');
+      setActionCapabilities(null);
+      setState('READY');
       const [participantResult, actionResult, optionResult] = await Promise.allSettled([
         api.get(root + '/participants?limit=100&offset=0', { headers }),
         api.get(root + '/task-action-capabilities', { headers }),
@@ -479,13 +501,8 @@ export default function ProjectTasksPanel({
         canEdit: admitted && action.can_edit,
         canAttachments: true, canActivity: true, canApprovals: true,
       });
-      setItems(verified.items);
-      setSelectedWorkIds(previous => previous.filter(id => nextOffset === offset && verified.items.some(item => item.task_id === id)));
-      setHasMore(verified.has_more);
-      setOffset(nextOffset);
       setParticipants(currentContributors);
       setParticipantHasMore(eligible?.has_more || false);
-      setState('READY');
       return !newlyAdmittedId
         || currentContributors.some(item => item.principal_id === newlyAdmittedId);
     } catch (cause) {
@@ -1639,7 +1656,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.45.0-SOURCE-VERIFIED-TASK-FOCUS
+// VERSION: v1.46.0-NONBLOCKING-OPTIONAL-TASK-SOURCES
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
