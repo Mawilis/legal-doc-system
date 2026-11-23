@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
+ * VERSION: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
+ *          proves a verified task opens while optional contributor,
+ *          member and capability requests never finish, without enabling
+ *          command buttons or weakening task or project verification.
  * CHANGELOG: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
  *          verifies Strategy-selected task details only after exact-project
  *          and exact-task readback, with no task mutation.
@@ -2115,6 +2119,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
       created_at: '2026-11-22T21:44:56+00:00', updated_at: '2026-11-22T21:44:56+00:00',
     };
+    // Optional directories and command authorization deliberately never settle.
+    // The verified task must open, but edits must remain disabled.
+    const unresolvedAuxiliary = new Promise(() => {});
     mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
       if (path === '/projects/summary') return { data: summary([persisted]) };
@@ -2131,11 +2138,19 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       };
       throw new Error('Unexpected source read ' + path);
     });
+    const projectRead = api.get.getMockImplementation();
+    api.get.mockImplementation((path, ...args) => (
+      path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`
+        || path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`
+        || path === `/projects/${PROJECT_ID}/task-action-capabilities`
+        ? unresolvedAuxiliary : projectRead(path, ...args)
+    ));
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="exact-task-handoff-cert" focusProjectId={PROJECT_ID} focusTaskId={taskId}/>);
     expect(await screen.findByRole('dialog', {
       name: 'Work details: Certify production readiness and rollback',
     })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Edit / assign' })).toBeDisabled();
     expect(api.post).not.toHaveBeenCalled();
     expect(api.patch).not.toHaveBeenCalled();
   });
@@ -2597,7 +2612,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
+ * VERSION: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
