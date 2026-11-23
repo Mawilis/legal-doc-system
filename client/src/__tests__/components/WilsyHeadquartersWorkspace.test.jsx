@@ -5,24 +5,27 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT
+ * VERSION: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT verifies
+ *            a source-owned waiting predecessor appears in Headquarters
+ *            preview and detail without granting completion authority.
  * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT prohibits speculative Overview HR 403 probes and confirms the user-entered People workspace still performs exact tenant-scoped directory readback.
- * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT verifies the
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT verifies the
  *            Founder-approved Mission and Strategy text remains readable
  *            without claiming independent EOS publication.
  * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT asserts a
  *            real owner-scoped EOS Draft count independently of the active
  *            queue, and rejects false zero when source admission fails.
- * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT proves
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT proves
  *            visible verified overdue, Open and In Progress filter
  *            counts, an owner-draft destination and filtered work rows.
- * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT accepts a single
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT accepts a single
  *            trustworthy verified active count when reads are shared across
  *            the Headquarters and Daily Attention coordinator, while still
  *            requiring the real source row and independent KPI evidence.
@@ -190,6 +193,44 @@ const renderHeadquarters = (initialEntries = ['/'], authValue = auth, tenantIdVa
 );
 
 describe('WILSY Headquarters authenticated shell', () => {
+  it('shows source-verified project predecessor waiting in the Headquarters preview', async () => {
+    const previous = api.get.getMockImplementation();
+    api.get.mockImplementation((path, config = {}) => {
+      if (path === '/my-work') {
+        const payload = workProjection();
+        const taskId = 'ptk-' + 'c'.repeat(48);
+        payload.items.push({
+          tenant_id: exactTenant, source: 'PROJECTS',
+          source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
+          project_id: 'prj-' + 'a'.repeat(48),
+          owner_principal_id: exactPrincipal,
+          title: 'Validate tenant configuration', description: '',
+          status: 'OPEN', priority: 'NORMAL', kind: 'TASK',
+          due_at: null, due_date: '2026-11-27', is_overdue: false,
+          dependency_total: 1, dependency_remaining: 1,
+          dependency_readiness: 'WAITING',
+          action_authority: 'SOURCE_SERVICE_ONLY', completion_route: null,
+        });
+        payload.summary.active_count = 4;
+        payload.summary.source_counts.PROJECTS = 1;
+        payload.sources_included.push('PROJECTS');
+        return Promise.resolve({ data: payload });
+      }
+      return previous(path, config);
+    });
+    try {
+      renderHeadquarters();
+      expect(await screen.findByText(/Waiting on 1 predecessor\(s\)/)).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', {
+        name: 'Open authorized record: Validate tenant configuration',
+      }));
+      expect(await screen.findByText('1 of 1 unfinished')).toBeTruthy();
+    } finally {
+      api.get.mockImplementation(previous);
+    }
+  });
+
+
   it('opens the EOS Projects workspace from the governed navigation with the selected tenant scope', async () => {
     const previous = api.get.getMockImplementation();
     api.get.mockImplementation((path, config = {}) => {
@@ -940,7 +981,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT
+ * VERSION: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
