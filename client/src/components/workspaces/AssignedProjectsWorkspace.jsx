@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION
+ * VERSION: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
+ *          preserves exact participant identity and work commands while
+ *          keeping the selected project in a single responsive column.
+ *          Hides the competing project registry until navigation back;
+ *          prevents inherited two-column desktop/mobile page overflow.
  * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION explains denied Contributor/Viewer discovery without treating project ownership as an implicit participant grant; no route or IAM change.
  * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION opens
  *          task-bound quarantined file evidence; no preview, download,
@@ -379,8 +384,9 @@ export default function AssignedProjectsWorkspace({
     {listState === 'LOADING' && <p role="status" className="rounded-lg bg-white p-4 text-slate-700">Verifying current project participation…</p>}
     {(listState === 'DENIED' || listState === 'UNAVAILABLE') &&
       <p role="alert" className="rounded-lg border border-rose-200 bg-white p-4 text-rose-800">{error}</p>}
-    {listState === 'READY' && <div className="wp-body" data-layout={selection ? 'detail' : 'list'}>
-      <section aria-label="Assigned project list" className="wp-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+    {listState === 'READY' && <div className="wp-body grid w-full min-w-0 !grid-cols-1 gap-3" data-layout={selection ? 'detail' : 'list'}>
+      <section aria-label="Assigned project list" className={'wp-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white '
+        + (selection ? 'hidden' : '')}>
         <ul className="divide-y divide-slate-200">
           {projects.map(row => <li key={row.project.project_id}>
             <button type="button" className="block w-full p-4 text-left hover:bg-blue-50"
@@ -404,7 +410,7 @@ export default function AssignedProjectsWorkspace({
               onClick={() => void list(projectOffset + 50)}>Next</button>
           </nav>}
       </section>
-      {selection && <aside className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-4"
+      {selection && <aside className="wp-panel wp-detail w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-4"
         aria-label="Assigned project execution">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -529,7 +535,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION
+// VERSION: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
