@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
+ * VERSION: v2.23.0-EXECUTION-ACTION-HIERARCHY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.23.0-EXECUTION-ACTION-HIERARCHY
+ *            gives verified M04 work rows a deliberate compact action rail:
+ *            icon-led evidence inspection and a prominent blue Manage task
+ *            command handoff. Accessible labels, keyboard focus, EOS boundaries
+ *            and existing action callbacks remain unchanged.
  * CHANGELOG: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
  *            exposes source-derived accountability remediation for verified
  *            M04 task rows and routes authorized users into existing exact-
@@ -1986,16 +1991,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                       {' · '}{remaining ? remaining + ' incomplete predecessor(s)' : 'Dependencies clear'}
                                     </p>
                                   </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <button type="button" className="rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                                  <div role="group" aria-label={'Actions for ' + task.title}
+                                    className="flex max-w-full flex-wrap items-center gap-2 sm:justify-end">
+                                    <button type="button"
+                                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-500/90 bg-slate-800/90 px-3.5 py-2.5 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:border-sky-300 hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
                                       onClick={() => void verifyExecutionEvidence(task.task_id)}>
-                                      Inspect lifecycle evidence
+                                      <FileText size={16} aria-hidden="true"/> Inspect lifecycle evidence
                                     </button>
                                     {typeof onOpenProject === 'function' && !['DONE', 'CANCELLED'].includes(task.status)
-                                      && <button type="button" className="rounded-lg border border-sky-500/70 bg-sky-950/50 px-3 py-2 text-sm font-semibold text-sky-100 hover:bg-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                                      && <button type="button"
+                                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-600 active:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
                                         aria-label={'Manage ' + task.title + ' in Projects'}
                                         onClick={() => onOpenProject(m04Execution.project.project_id)}>
-                                        Manage in Projects <ArrowUpRight size={14} aria-hidden="true"/>
+                                        Manage task <ArrowUpRight size={16} aria-hidden="true"/>
                                       </button>}
                                   </div>
                                 </div>
@@ -2251,7 +2259,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
+// VERSION: v2.23.0-EXECUTION-ACTION-HIERARCHY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
