@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.49.1-OPTIONAL-READ-FAIL-CLOSED
+ * VERSION: v1.49.2-PENDING-CAPABILITY-ACTION-LABEL
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.49.2-PENDING-CAPABILITY-ACTION-LABEL
+ *          keeps pending authority label consistent without implying
+ *          assignment-only permission or enabling a command prematurely.
  * CHANGELOG: v1.49.1-OPTIONAL-READ-FAIL-CLOSED
  *          detached auxiliary source readbacks reject fail-closed without
  *          unhandled promise rejection or stale capability reuse.
@@ -1613,7 +1616,7 @@ export default function ProjectTasksPanel({
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
-                  {actionCapabilities?.canEdit ? 'Assign & schedule' : 'Assign contributor'}
+                  {!actionCapabilities || actionCapabilities.canEdit ? 'Assign & schedule' : 'Assign contributor'}
                 </button>}
               <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
@@ -1724,7 +1727,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.49.1-OPTIONAL-READ-FAIL-CLOSED
+// VERSION: v1.49.2-PENDING-CAPABILITY-ACTION-LABEL
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
