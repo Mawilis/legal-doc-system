@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.72.0-INDEPENDENT-MULTI-ASSIGNMENT-CERT
+ * VERSION: v2.73.0-QUEUES-FIRST-OPTIONAL-VIEWS-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.73.0-QUEUES-FIRST-OPTIONAL-VIEWS-CERT opens the deliberately
+ *          deferred lifecycle/checklist disclosures before checking
+ *          visible evidence. The verified work grid remains first.
  * CHANGELOG: v2.72.0-INDEPENDENT-MULTI-ASSIGNMENT-CERT certifies selected-task
  *          contributor assignment issues distinct revision-guarded EOS
  *          PATCH commands, verifies each persisted source before the
@@ -1259,6 +1262,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       published.mockRestore();
     }
 
+    fireEvent.click(screen.getByText('Additional views · lifecycle and checklist'));
     fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
     expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
     expect(screen.getByRole('button', { name: /Filter work to To do: 1 of 1 verified on page/ })).toBeVisible();
@@ -1363,6 +1367,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="source-checklist-readback-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(screen.getByText('Additional views · lifecycle and checklist'));
     fireEvent.click(await screen.findByText(/Checklist mode · 0\/1 completed/));
     const checkbox = await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
