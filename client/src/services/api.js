@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY
+ * VERSION: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,6 +16,11 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
+ *            preserves exact JSON for the authenticated Founder Strategy
+ *            draft, submit, ratify and project-link POST commands. Forensic
+ *            timestamp, nonce and request seals remain in transport headers;
+ *            injecting timestamp into strict Pydantic bodies caused HTTP 422.
  * CHANGELOG: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY clears the global application/json Content-Type for native FormData uploads so Axios cannot transform the binary multipart form into JSON. The browser supplies its own boundary; existing bearer, exact tenant, forensic headers and command idempotency survive unchanged.
  * CHANGELOG: v74.16.0-STRICT-WILSY-AI-REASONING-REQUEST-BODY excludes the strict Python EOS WILSY AI reasoning command body from transport timestamp injection while retaining forensic timestamp, nonce, trace and request-seal headers; the Pydantic prompt-only contract and exact-tenant admission remain unchanged.
  * CHANGELOG: v74.15.0-ALL-STRICT-PROJECTS-MUTATION-BODIES preserves exact canonical JSON for all Python EOS Projects mutation routes (assignment, departments, task/note/comment/participant/approval commands) rather than injecting a forbidden body timestamp. Existing forensic timestamp and SHA3 request-seal headers remain unchanged.
@@ -505,7 +510,7 @@ api.interceptors.request.use(
       // x-forensic-timestamp header and request seal; it is not legal body truth.
       const preservesCanonicalRequestBody = (
         /^\/legal-acceptance\/accept$/i.test(config.url)
-        || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish))$/i.test(config.url)
+        || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish)|STRATEGY\/(?:founder-drafts|founder-submit|founder-ratify|founder-project-links|project-links))$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
         || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/(?:complete|status|cancel))?)?$/i.test(config.url)
         // C1B reasoning accepts only prompt; forensic time remains in headers.
@@ -851,7 +856,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY
+ * VERSION: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
