@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
+VERSION: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/co
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
 CERTIFICATION / UPDATE DATE: 2026-11-22
+CHANGELOG: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
+maps source-currentness/repository transport failures to HTTP 503 without
+exposing stack traces or bypassing publisher role and tenant isolation.
 CHANGELOG: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
 admits separate Strategy-only Founder commands via existing READ session
 authority and source-verified durable designation; reuses canonical registry
@@ -71,7 +74,7 @@ from tools.eos.saas.domain.company_operating_document import (
     CompanyOperatingDocumentRevision, instant,
 )
 
-VERSION: Final = "v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION"
+VERSION: Final = "v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED"
 def _require_current_company_session(identity: SovereignIdentity = Depends(get_current_identity)) -> None:
     """Reuse canonical authentication and session authority; never mint a session.
 
@@ -343,7 +346,7 @@ def read_company_document(
                     tenant_id=context.tenant_id, database=kernel_db.get_database(),
                     session=session,
                 ) is not None
-            except FounderDesignationRejected as error:
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
                 raise _error("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
         if review and not (may_review or founder):
             raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
@@ -523,7 +526,7 @@ def company_document_history(
                     tenant_id=context.tenant_id, database=kernel_db.get_database(),
                     session=session,
                 ) is not None
-            except FounderDesignationRejected as error:
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
                 raise _error("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
         if review and not (may_review or founder):
             raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
@@ -625,7 +628,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
+# VERSION: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.
