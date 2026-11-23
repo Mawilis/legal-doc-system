@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
+ * VERSION: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
+ *            routes Current publication to focused document mode, and
+ *            Inspect Projects & Delivery back to execution when document is
+ *            open; no source commands or authority changes.
  * CHANGELOG: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
  *            defaults currently published Strategy to governed Execution mode;
  *            mounts the full immutable publication only on request, retaining
@@ -1475,7 +1479,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   return createPortal(<div className={styles.backdrop} onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section ref={containerRef} className={styles.viewer} role="dialog" aria-modal="true" aria-labelledby="company-document-title" data-company-document={classification} onKeyDown={trapKeyboard}>
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
-      <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button><button type="button" aria-controls="wilsy-document-contents" aria-expanded={contentsOpen} onClick={() => setContentsOpen(open => !open)}><BookOpen size={14}/>{contentsOpen ? 'Hide contents' : 'Show contents'}</button></div>
+      <div className={styles.toolbar}><button type="button" onClick={() => { if (classification === 'STRATEGY') setStrategyMode('DOCUMENT'); changeQuery({ review: false, revision: null }); }} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button><button type="button" aria-controls="wilsy-document-contents" aria-expanded={contentsOpen} onClick={() => setContentsOpen(open => !open)}><BookOpen size={14}/>{contentsOpen ? 'Hide contents' : 'Show contents'}</button></div>
       <div className={styles.body} style={contentsOpen ? undefined : { gridTemplateColumns: 'minmax(0,1fr)' }}>
         {contentsOpen && <aside id="wilsy-document-contents" className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => {
           if (executionFirst && !showPublicationBody) {
@@ -1764,9 +1768,11 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     <span>Publication is complete. Pillar 1 delivery requires current EOS project and relationship evidence.</span>
                   </div>
                   <div className={styles.commandButtons}>
-                    <button type="button" onClick={() => containerRef.current
-                      ?.querySelector('[aria-label="Company operating execution"]')
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                    <button type="button" onClick={() => {
+                      if (executionFirst && strategyMode === 'DOCUMENT') setStrategyMode('EXECUTION');
+                      else containerRef.current?.querySelector('[aria-label="Company operating execution"]')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}>
                       <ArrowUpRight size={16}/> Inspect Projects &amp; Delivery
                     </button>
                   </div>
@@ -2173,7 +2179,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
+// VERSION: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
