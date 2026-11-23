@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
+VERSION: v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/co
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
 CERTIFICATION / UPDATE DATE: 2026-11-22
+CHANGELOG: v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION
+reuses the canonical audited project-link command for the exact durable
+Founder, requiring current project-read authority and Founder source in the
+same Mongo transaction as link creation; no author IAM grant is issued.
 CHANGELOG: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
 maps source-currentness/repository transport failures to HTTP 503 without
 exposing stack traces or bypassing publisher role and tenant isolation.
@@ -74,7 +78,7 @@ from tools.eos.saas.domain.company_operating_document import (
     CompanyOperatingDocumentRevision, instant,
 )
 
-VERSION: Final = "v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED"
+VERSION: Final = "v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION"
 def _require_current_company_session(identity: SovereignIdentity = Depends(get_current_identity)) -> None:
     """Reuse canonical authentication and session authority; never mint a session.
 
@@ -304,6 +308,8 @@ def _actions(context: TenantAuthorizationContext, latest: CompanyOperatingDocume
     can_author, can_publish = _same_actor(author, context), _same_actor(publisher, context)
     if can_author or can_publish or founder:
         actions.append("REVIEW_DRAFTS")
+    if founder:
+        actions.append("FOUNDER_LINK_PROJECT")
     if founder and (latest is None or latest.state is CompanyDocumentState.PUBLISHED):
         actions.append("FOUNDER_CREATE_DRAFT")
     if can_author and (latest is None or latest.state is CompanyDocumentState.PUBLISHED):
@@ -446,13 +452,13 @@ def read_strategy_project_links(
         raise _error(error.code) from error
 
 
-@router.post("/STRATEGY/project-links", status_code=201)
-def create_strategy_project_link(
+def _write_strategy_project_link(
     payload: StrategyProjectLinkInput, response: Response,
-    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
-    context: TenantAuthorizationContext = Depends(_AUTHOR),
-    read_context: TenantAuthorizationContext = Depends(_READ),
-    project_context: TenantAuthorizationContext = Depends(_PROJECT_READ),
+    idempotency_key: str | None,
+    context: TenantAuthorizationContext,
+    read_context: TenantAuthorizationContext,
+    project_context: TenantAuthorizationContext,
+    *, founder: bool = False,
 ) -> dict[str, Any]:
     """Create a source-owned audited relationship, never a strategy completion.
 
@@ -476,6 +482,16 @@ def create_strategy_project_link(
         raise _error(error.code) from error
 
     def persist(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        if founder:
+            try:
+                designation = read_founder_designation(
+                    principal_id=context.identity.identity_id,
+                    tenant_id=context.tenant_id, database=database, session=session,
+                )
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
+                raise _error("STRATEGY_LINK_FOUNDER_SOURCE_UNAVAILABLE") from error
+            if designation is None:
+                raise _error("STRATEGY_LINK_FOUNDER_AUTHORITY_DENIED", 403)
         publication = _strategy_publication(registry, context.tenant_id, session, now)
         if publication.revision != payload.expected_strategy_revision:
             raise _error("STRATEGY_LINK_PUBLICATION_REVISION_CONFLICT", 409)
@@ -504,6 +520,36 @@ def create_strategy_project_link(
     except StrategyProjectLinkError as error:
         conflict = "CONFLICT" in error.code or "ALREADY_EXISTS" in error.code
         raise _error(error.code, 409 if conflict else 503) from error
+
+
+@router.post("/STRATEGY/project-links", status_code=201)
+def create_strategy_project_link(
+    payload: StrategyProjectLinkInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_AUTHOR),
+    read_context: TenantAuthorizationContext = Depends(_READ),
+    project_context: TenantAuthorizationContext = Depends(_PROJECT_READ),
+) -> dict[str, Any]:
+    """Independently admitted Strategy author linking, unchanged."""
+    return _write_strategy_project_link(payload, response, idempotency_key,
+                                        context, read_context, project_context)
+
+
+@router.post("/STRATEGY/founder-project-links", status_code=201)
+def create_founder_strategy_project_link(
+    payload: StrategyProjectLinkInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+    project_context: TenantAuthorizationContext = Depends(_PROJECT_READ),
+) -> dict[str, Any]:
+    """The exact current Founder may link only effective published Strategy.
+
+    Read and project permissions are current, while the durable Founder proof
+    is independently re-read in the same source transaction as the link event.
+    No author/publisher IAM assignment is created.
+    """
+    return _write_strategy_project_link(payload, response, idempotency_key,
+                                        context, context, project_context, founder=True)
 
 
 @router.get("/{classification}/revisions")
@@ -628,7 +674,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
+# VERSION: v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.
