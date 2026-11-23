@@ -1,11 +1,14 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT
+VERSION: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
+CHANGELOG: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
+tests exact Founder source admission, self-ratification immutable lineage,
+idempotent replay, mission/ordinary publisher denials, and revoked proof.
 CHANGELOG: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT tests
 that independently admitted Strategy author and project read scopes bind
 current independently published strategy pillar and exact active project
@@ -145,6 +148,58 @@ def test_self_publication_is_denied_even_with_both_permissions(registry):
     with pytest.raises(CompanyDocumentError, match="INDEPENDENT_APPROVER_REQUIRED"):
         command(registry, "PUBLISH", 2, "author", {"approval_reference": "synthetic", "effective_from": instant(NOW)})
     assert len(registry.revisions.rows) == 2
+
+
+def test_founder_strategy_source_owned_ratification_and_revocation(registry, monkeypatch):
+    """Only current durable Founder authority admits a separate Strategy command."""
+    import tools.eos.saas.company_operating_document_registry as registry_module
+    from tools.eos.saas.domain.company_operating_document import FOUNDER_RATIFICATION_REFERENCE
+    source = {"active": False}
+    calls = []
+    def founder_evidence(*, principal_id, tenant_id, database, session):
+        calls.append((principal_id, tenant_id, session))
+        return {"state": "ACTIVE"} if source["active"] and principal_id == "founder" else None
+    monkeypatch.setattr(registry_module, "read_founder_designation", founder_evidence)
+    def founder(action, expected, actor="founder", payload=None, key=None):
+        return registry.command(
+            TENANT, Class.STRATEGY, actor_id=actor, action=action,
+            payload=deepcopy(PAYLOAD) if payload is None and action == "FOUNDER_CREATE_DRAFT" else payload or {},
+            expected_revision=expected, idempotency_key=key or "founder-" + action,
+            now=NOW, session=SESSION,
+        )
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_CREATE_DRAFT", 0)
+    assert not registry.revisions.rows and not registry.commands.rows
+    source["active"] = True
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_CREATE_DRAFT", 0, actor="other")
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_STRATEGY_ONLY"):
+        registry.command(TENANT, Class.MISSION, actor_id="founder",
+            action="FOUNDER_CREATE_DRAFT", payload=PAYLOAD,
+            expected_revision=0, idempotency_key="mission-excluded", now=NOW, session=SESSION)
+    draft = founder("FOUNDER_CREATE_DRAFT", 0)
+    assert draft.state is State.DRAFT
+    submitted = founder("FOUNDER_SUBMIT", 1)
+    assert submitted.state is State.SUBMITTED
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_RATIFICATION_INVALID"):
+        founder("PUBLISH", 2, payload={"approval_reference": FOUNDER_RATIFICATION_REFERENCE,
+                                      "effective_from": instant(NOW)}, key="spoofed-normal")
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHOR_REQUIRED"):
+        founder("FOUNDER_RATIFY", 2, actor="other", payload={"effective_from": instant(NOW)},
+                key="foreign-ratify")
+    source["active"] = False
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_RATIFY", 2, payload={"effective_from": instant(NOW)})
+    assert len(registry.revisions.rows) == 2
+    source["active"] = True
+    published = founder("FOUNDER_RATIFY", 2, payload={"effective_from": instant(NOW)})
+    assert published.state is State.PUBLISHED
+    assert published.approved_by_principal_id == published.author_principal_id == "founder"
+    assert published.approval_reference == FOUNDER_RATIFICATION_REFERENCE
+    assert registry.history(TENANT, Class.STRATEGY, session=SESSION) == (draft, submitted, published)
+    assert founder("FOUNDER_RATIFY", 2, payload={"effective_from": instant(NOW)}) == published
+    assert len(registry.revisions.rows) == len(registry.commands.rows) == 3
+    assert all(tenant == TENANT and session is SESSION for _, tenant, session in calls)
 
 
 def test_exact_replay_and_divergent_key(registry):
@@ -462,7 +517,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT
+# VERSION: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
