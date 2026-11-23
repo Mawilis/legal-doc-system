@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.7.0-AUTOUPLOAD-DROPZONE-CERT
+ * VERSION: v1.7.1-DROPZONE-VALIDATION-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.7.1-DROPZONE-VALIDATION-CERT exercises
+ *          the real scoped file-drop target and refuses multi-file or
+ *          invalid-type submissions without an EOS write. Keeps async
+ *          uncertain-upload evidence assertions race-free.
  * CHANGELOG: v1.7.0-AUTOUPLOAD-DROPZONE-CERT certifies
  *          auto-submission from accessible browse and scoped drop target,
  *          validation before network, original idempotency and EOS manifest
@@ -119,7 +123,7 @@ it('diagnoses unconfigured EOS quarantine storage without losing the source file
   const file = new File(['%PDF-1.4\nsynthetic'], 'design.pdf', { type: 'application/pdf' });
   fireEvent.change(screen.getByLabelText('Project attachment file'), { target: { files: [file] } });
   expect(await screen.findByText(/EOS quarantine storage is not configured \(HTTP 503/)).toBeVisible();
-  expect(screen.getByText(/Upload is not verified/)).toBeVisible();
+  expect(await screen.findByText(/Upload is not verified/)).toBeVisible();
   expect(api.post).toHaveBeenCalledTimes(1);
   expect(screen.getByText('No files attached yet')).toBeVisible();
 });
@@ -137,8 +141,43 @@ it('distinguishes an accepted EOS attachment receipt from an unverified file rea
   fireEvent.change(screen.getByLabelText('Project attachment file'), { target: { files: [file] } });
   expect(await screen.findByText(/EOS accepted the attachment command, but its exact persisted file manifest could not be verified/)).toBeVisible();
   expect(api.post).toHaveBeenCalledTimes(1);
-  expect(screen.getByText(/Upload is not verified/)).toBeVisible();
+  expect(await screen.findByText(/Upload is not verified/)).toBeVisible();
   expect(screen.queryByText('design.pdf')).not.toBeInTheDocument();
+});
+
+it('accepts a valid dropped file and verifies EOS readback without a second submit', async () => {
+  let records = [];
+  api.get.mockImplementation(async () => ({ data: list(records) }));
+  api.post.mockImplementationOnce(async (path, data) => {
+    expect(path).toBe(memberRoute + '/attachments');
+    expect(data.get('file').name).toBe('design.pdf');
+    records = [record];
+    return { data: {
+      schema: 'WILSY-PROJECT-ATTACHMENT-RESULT/V1',
+      tenant_id: tenantId, principal_id: principalId,
+      project_id: projectId, task_id: taskId, attachment: record,
+    } };
+  });
+  mount();
+  const browse = await screen.findByRole('button', { name: 'Browse files' });
+  const zone = browse.parentElement.parentElement;
+  const file = new File(['%PDF-1.4'], 'design.pdf', { type: 'application/pdf' });
+  fireEvent.drop(zone, { dataTransfer: { files: [file] } });
+  await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+  expect(await screen.findByText('design.pdf')).toBeVisible();
+});
+
+it('rejects invalid and multi-file drops before contacting EOS', async () => {
+  api.get.mockResolvedValue({ data: list([]) });
+  mount();
+  const browse = await screen.findByRole('button', { name: 'Browse files' });
+  const zone = browse.parentElement.parentElement;
+  const invalid = new File(['unsafe'], 'bad.txt', { type: 'text/plain' });
+  fireEvent.drop(zone, { dataTransfer: { files: [invalid] } });
+  expect(await screen.findByText(/Only non-empty PDF, PNG and JPEG files/)).toBeVisible();
+  fireEvent.drop(zone, { dataTransfer: { files: [invalid, invalid] } });
+  expect(await screen.findByText(/Select one file at a time/)).toBeVisible();
+  expect(api.post).not.toHaveBeenCalled();
 });
 
 it('does not expose upload controls from the owner read-only attachment source', async () => {
@@ -265,7 +304,7 @@ it('rejects fabricated or incomplete scan clearance evidence without download ca
 });
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.7.0-AUTOUPLOAD-DROPZONE-CERT
+// VERSION: v1.7.1-DROPZONE-VALIDATION-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
