@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Company Operating Document Client Contract
- * VERSION: v1.1.0-AUTHENTICATED-FOUNDER-EVIDENCE
+ * VERSION: v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT
  * AUTHORITY: Python EOS owns content, publication and command authorization.
  * EPITOME: Validate current Mission/Strategy source views and command receipts
  *          without treating a Founder label, draft or acknowledgement as policy.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/companyOperatingDocumentsClient.js
  * COLLABORATION / OWNERSHIP: Shared CompanyOperatingDocumentViewer; existing api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-14
- * CHANGELOG: 2026-11-14 v1.1.0-AUTHENTICATED-FOUNDER-EVIDENCE adds a scoped
+ * CHANGELOG: v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT
+ *           recognizes strict Strategy-only Founder author/submit/ratify
+ *           actions and the exact server-owned self-ratification reference.
+ *           All commands still require authenticated EOS readback.
+ * CHANGELOG: 2026-11-14 v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT adds a scoped
  *           Founder-session evidence adapter through the existing authenticated
  *           api.js instance; no raw fetch, credential store or admission bypass.
  *           v1.0.0-SCOPED-COMPANY-DOCUMENT-TRANSPORT adds exact scoped no-store
@@ -23,7 +27,9 @@ import api from './api.js';
 
 const CLASSES = new Set(['MISSION', 'STRATEGY']);
 const STATES = new Set(['DRAFT', 'SUBMITTED', 'PUBLISHED']);
-const ACTIONS = new Set(['READ_HISTORY', 'REVIEW_DRAFTS', 'CREATE_DRAFT', 'SUBMIT', 'PUBLISH']);
+const ACTIONS = new Set(['READ_HISTORY', 'REVIEW_DRAFTS', 'CREATE_DRAFT', 'SUBMIT', 'PUBLISH',
+  'FOUNDER_CREATE_DRAFT', 'FOUNDER_SUBMIT', 'FOUNDER_RATIFY']);
+const FOUNDER_RATIFICATION_REFERENCE = 'WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123';
 const fingerprint = value => typeof value === 'string' && /^[a-f0-9]{128}$/.test(value);
 const validInstant = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
 const fail = () => { throw new Error('COMPANY_DOCUMENT_RESPONSE_INVALID'); };
@@ -51,7 +57,10 @@ function recordValid(record, classification, tenantId) {
     && (record.state !== 'PUBLISHED' || (validInstant(record.effective_from)
       && typeof record.approval_reference === 'string' && record.approval_reference.trim()
       && typeof record.approved_by_principal_id === 'string' && record.approved_by_principal_id
-      && record.approved_by_principal_id !== record.author_principal_id)));
+      && (record.approved_by_principal_id !== record.author_principal_id
+        ? record.approval_reference !== FOUNDER_RATIFICATION_REFERENCE
+        : classification === 'STRATEGY'
+          && record.approval_reference === FOUNDER_RATIFICATION_REFERENCE))));
 }
 
 /**
@@ -139,7 +148,11 @@ export async function readCompanyDocumentHistory(classification, scope, config =
 
 /** @description Submit an existing source-owned draft/submit/publish command with a stable retry key. @collaboration Shared viewer and EOS source registry. @institutional Acknowledgement is validated evidence; caller must independently read back before reporting success. */
 export async function commandCompanyDocument(classification, scope, action, payload, idempotencyKey, config = {}) {
-  const endpoint = { CREATE_DRAFT: '/drafts', SUBMIT: '/submit', PUBLISH: '/publish' }[action];
+  const endpoint = { CREATE_DRAFT: '/drafts', SUBMIT: '/submit', PUBLISH: '/publish',
+    FOUNDER_CREATE_DRAFT: '/founder-drafts', FOUNDER_SUBMIT: '/founder-submit',
+    FOUNDER_RATIFY: '/founder-ratify' }[action];
+  if (action.startsWith('FOUNDER_') && classification !== 'STRATEGY')
+    throw new Error('COMPANY_DOCUMENT_FOUNDER_STRATEGY_ONLY');
   if (!endpoint || typeof idempotencyKey !== 'string' || !idempotencyKey) throw new Error('COMPANY_DOCUMENT_COMMAND_INVALID');
   const requestOptions = options(scope, config);
   const response = await api.post(pathFor(classification) + endpoint, payload, {
@@ -153,7 +166,7 @@ export async function commandCompanyDocument(classification, scope, action, payl
 }
 
 // ARTIFACT: companyOperatingDocumentsClient.js
-// VERSION: v1.1.0-AUTHENTICATED-FOUNDER-EVIDENCE
+// VERSION: v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT
 // AUTHORITY BOUNDARY: Validated transport only; EOS owns approval/publication.
 // TENANT POSTURE: Exact requested tenant/principal; no persisted content cache.
 // FAIL-CLOSED POSTURE: Draft/publication/scope mismatch never renders as official.
