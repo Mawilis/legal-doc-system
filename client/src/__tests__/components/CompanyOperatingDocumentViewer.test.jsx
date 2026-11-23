@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.17.2-M04-EVENT-CHAIN-TRACE-CERT
+ * VERSION: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT proves
+ *            DONE task requires contiguous event source readback and
+ *            separately authorized approved decision and scan-cleared
+ *            attachment pages; none creates strategic outcome certainty.
  * CHANGELOG: v1.17.2-M04-EVENT-CHAIN-TRACE-CERT verifies
  *            recorded source assignment without claiming current IAM;
  *            the production chain validator now requires every revision.
@@ -546,16 +550,45 @@ describe('Strategy source-owned project execution readback', () => {
             source_strategy_revision: published.revision,
             state: currentLink ? 'VERIFIED_CURRENT' : 'SOURCE_CHANGED' }],
         } });
-      if (url === eventUrl) return Promise.resolve({ data: {
-        schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1',
-        tenant_id: scope.tenantId, principal_id: scope.principalId,
-        project_id: projectId, task_id: work[0].task_id,
-        limit: 100, offset: 0, has_more: false, next_offset: null,
-        items: [{ schema: 'wilsy.project.task.event.v1',
-          tenant_id: scope.tenantId, project_id: projectId, task_id: work[0].task_id,
-          revision: 1, event_type: 'PROJECT_TASK_CREATED', status_after: 'TODO',
-          actor_principal_id: scope.principalId, occurred_at: asOf }],
-      } });
+      if (url === eventUrl) {
+        const event = (revision, event_type, status_after) => ({
+          schema: 'wilsy.project.task.event.v1', tenant_id: scope.tenantId,
+          project_id: projectId, task_id: work[0].task_id, revision, event_type,
+          status_after, actor_principal_id: scope.principalId, occurred_at: asOf,
+        });
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1',
+          tenant_id: scope.tenantId, principal_id: scope.principalId,
+          project_id: projectId, task_id: work[0].task_id,
+          limit: 100, offset: 0, has_more: false, next_offset: null,
+          items: work[0].status === 'DONE'
+            ? [event(2, 'PROJECT_TASK_TRANSITIONED', 'DONE'),
+              event(1, 'PROJECT_TASK_CREATED', 'TODO')]
+            : [event(1, 'PROJECT_TASK_CREATED', 'TODO')],
+        } });
+      }
+      if (url === eventUrl.replace('/events', '/approvals')) return Promise.resolve({
+        data: {
+          schema: 'WILSY-PROJECT-APPROVAL-LIST/V1', tenant_id: scope.tenantId,
+          principal_id: scope.principalId, project_id: projectId,
+          task_id: work[0].task_id, limit: 100, offset: 0,
+          has_more: false, next_offset: null,
+          items: [{ approval_id: 'par-' + '1'.padStart(48, '0'),
+            tenant_id: scope.tenantId, project_id: projectId,
+            task_id: work[0].task_id, status: 'APPROVED' }],
+        },
+      });
+      if (url === eventUrl.replace('/events', '/attachments')) return Promise.resolve({
+        data: {
+          schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1', tenant_id: scope.tenantId,
+          principal_id: scope.principalId, project_id: projectId,
+          task_id: work[0].task_id, limit: 100, offset: 0,
+          has_more: false, next_offset: null,
+          items: [{ attachment_id: 'pat-' + '1'.padStart(48, '0'),
+            tenant_id: scope.tenantId, project_id: projectId,
+            task_id: work[0].task_id, scan_clearance_status: 'SCAN_CLEAN_VERIFIED' }],
+        },
+      });
       if (url === '/company-operating-documents/STRATEGY')
         return Promise.resolve({ data: view(published) });
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
@@ -577,6 +610,19 @@ describe('Strategy source-owned project execution readback', () => {
     expect(await screen.findByText(/Verified immutable EOS lifecycle events: 1/)).toBeVisible();
     expect(api.get.mock.calls.some(([url, options]) => url === eventUrl
       && options?.headers?.['X-Tenant-ID'] === scope.tenantId)).toBe(true);
+    work[0] = { ...work[0], status: 'DONE', revision: 2 };
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
+    await waitFor(() => expect(screen.getByRole('region', {
+      name: 'M04 governed Strategy execution',
+    })).toHaveTextContent('Done · task lifecycle only1'));
+    fireEvent.click(screen.getByText('Inspect accountable work and lifecycle evidence'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
+    expect(await screen.findByText(/Verified immutable EOS lifecycle events: 2/)).toBeVisible();
+    expect(screen.getByText(/Business decisions: 1 approved/)).toBeVisible();
+    expect(screen.getByText(/Attachments: 1 scanner-cleared/)).toBeVisible();
+    expect(screen.getByRole('region', { name: 'M04 governed Strategy execution' }))
+      .toHaveTextContent('Certified strategic outcome: Not established');
+    expect(api.post).not.toHaveBeenCalled();
     currentLink = false;
     fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
     await waitFor(() => expect(screen.getByRole('region', {
@@ -1054,7 +1100,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.17.2-M04-EVENT-CHAIN-TRACE-CERT
+// VERSION: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
