@@ -1,0 +1,120 @@
+# WILSY OS sovereign engineering artifact
+# TITLE: Founder Strategy Ratification and Publication Certification
+# VERSION: v1.0.0-FOUNDER-STRATEGY-DURABLE-CERT
+# AUTHORITY: Python EOS immutable company documents and institutional Founder designation
+# EPITOME: Certify source-owned Founder exception and existing independent publisher boundary
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/strategy-founder-ratification-certification.yml
+# COLLABORATION / OWNERSHIP: Institutional Founder registry, Strategy domain, client adapter
+# CERTIFICATION / UPDATE DATE: 2026-11-23
+# CHANGELOG: v1.0.0 adds disposable Mongo and browser-contract test jobs
+# COMPLIANCE: POPIA s19; GDPR Article 32; SOC 2 CC7.2
+# SECURITY / PRIVACY POSTURE: Synthetic identities, no live database or credentials
+# TENANT BOUNDARY: Disposable UUID database only; production WILSY tenant never mutated
+# AUTHORITY BOUNDARY: Source evidence cannot be replaced by client role labels
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS only
+name: WILSY Founder Strategy Ratification Certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/eos/auth/founder_institutional_designation.py"
+      - "tools/eos/saas/domain/company_operating_document.py"
+      - "tools/eos/saas/company_operating_document_registry.py"
+      - "tools/eos/api/company_operating_document_router.py"
+      - "tests/unit/test_company_operating_documents.py"
+      - "tests/integration/test_founder_institutional_designation_real_mongo.py"
+      - "client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx"
+      - "client/src/services/companyOperatingDocumentsClient.js"
+      - "client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx"
+      - ".github/workflows/strategy-founder-ratification-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-eos-source:
+    name: Founder designation + immutable Strategy source
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TEST_GLOBAL_PRINCIPAL_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyGlobalPrincipalCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run --detach --name wilsy-founder-strategy-cert-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet wilsyGlobalPrincipalCertRS --bind_ip_all
+      - name: Initialize disposable replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://127.0.0.1:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          until = time.monotonic() + 60
+          initiated = False
+          while time.monotonic() < until:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {
+                          "_id": "wilsyGlobalPrincipalCertRS",
+                          "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                      }})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception:
+                  time.sleep(1)
+          else:
+              raise RuntimeError("FOUNDER_STRATEGY_TEST_REPLICA_UNAVAILABLE")
+          client.close()
+          PY
+      - name: Certify immutable source and durable Founder designation
+        run: |
+          python -m pytest -q \
+            tests/unit/test_company_operating_documents.py \
+            tests/integration/test_founder_institutional_designation_real_mongo.py
+      - name: Stop disposable replica set
+        if: always()
+        run: docker rm -f wilsy-founder-strategy-cert-mongo || true
+
+  client-source-contract:
+    name: Founder Strategy client readback and UI
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - name: Verify strict Founder Strategy client contract
+        run: npx vitest run src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
+      - name: Build client
+        run: npm run build
+
+# ARTIFACT: strategy-founder-ratification-certification.yml
+# VERSION: v1.0.0-FOUNDER-STRATEGY-DURABLE-CERT
+# AUTHORITY BOUNDARY: Synthetic evidence only; no live IAM or publishing
+# TENANT POSTURE: Disposable isolated Mongo, never canonical writes
+# FAIL-CLOSED POSTURE: Test and build failure block certification
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS only
+# END OF WILSY OS SOVEREIGN ARTIFACT
