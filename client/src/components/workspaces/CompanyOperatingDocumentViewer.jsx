@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
+ * VERSION: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
+ *            defaults currently published Strategy to governed Execution mode;
+ *            mounts the full immutable publication only on request, retaining
+ *            source provenance, authority, history and current-link validation.
+ *            Contents navigation opens document mode before section scrolling;
+ *            nonpublished, private-review and Mission workflows are unchanged.
  * CHANGELOG: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
  *            adds bounded searchable/paged M04 source-owned work inspection
  *            and hides repeated legacy task and plan registers until requested.
@@ -521,6 +527,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('document');
   const [contentsOpen, setContentsOpen] = useState(false);
+  const [strategyMode, setStrategyMode] = useState('EXECUTION');
+  const [pendingDocumentSection, setPendingDocumentSection] = useState(null);
   const [executionSearch, setExecutionSearch] = useState('');
   const [executionFilter, setExecutionFilter] = useState('ALL');
   const [executionPage, setExecutionPage] = useState(0);
@@ -1408,6 +1416,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   // A grant may allow new revisions, not repetition of completed v1.1.0.
   const approvedSourceAlreadyPublished = classification === 'STRATEGY'
     && data?.state === 'PUBLISHED';
+  const executionFirst = approvedSourceAlreadyPublished && !query.review && query.revision === null;
+  const showPublicationBody = !executionFirst || strategyMode === 'DOCUMENT';
+  const showExecutionSurface = !executionFirst || strategyMode === 'EXECUTION';
+  // Document Contents cannot navigate to a section until the publication has
+  // mounted. This does not issue another source read or mutate publication.
+  useEffect(() => {
+    if (showPublicationBody && pendingDocumentSection) {
+      containerRef.current?.querySelector('[data-document-section="' + pendingDocumentSection + '"]')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setPendingDocumentSection(null);
+    }
+  }, [showPublicationBody, pendingDocumentSection]);
   const strategyPublicationEffective = classification === 'STRATEGY'
     && !query.review && data?.state === 'PUBLISHED'
     && document?.state === 'PUBLISHED'
@@ -1457,7 +1477,15 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
       <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button><button type="button" aria-controls="wilsy-document-contents" aria-expanded={contentsOpen} onClick={() => setContentsOpen(open => !open)}><BookOpen size={14}/>{contentsOpen ? 'Hide contents' : 'Show contents'}</button></div>
       <div className={styles.body} style={contentsOpen ? undefined : { gridTemplateColumns: 'minmax(0,1fr)' }}>
-        {contentsOpen && <aside id="wilsy-document-contents" className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>}
+        {contentsOpen && <aside id="wilsy-document-contents" className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => {
+          if (executionFirst && !showPublicationBody) {
+            setPendingDocumentSection(section.section_id);
+            setStrategyMode('DOCUMENT');
+          } else {
+            containerRef.current?.querySelector('[data-document-section="' + section.section_id + '"]')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>}
         <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
           {commandIssue && <section ref={commandIssueRef} tabIndex={-1} className={styles.notice} role="alert"
@@ -1746,6 +1774,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     ? 'Pillar 1 / Foundation project link verified current; strategic outcomes remain uncertified.'
                     : 'Pillar 1 / Foundation relationship not yet verified in this view. Inspect the existing project and independently verify its current source link.'}</p>
                 </section>}
+                {executionFirst && <nav aria-label="Strategy workspace mode" className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-500/60 bg-slate-950/30 p-3">
+                  <button type="button" aria-pressed={strategyMode === 'EXECUTION'}
+                    className="min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm"
+                    onClick={() => setStrategyMode('EXECUTION')}>Execution workspace</button>
+                  <button type="button" aria-pressed={strategyMode === 'DOCUMENT'}
+                    className="min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm"
+                    onClick={() => setStrategyMode('DOCUMENT')}>View full document</button>
+                  <span className="text-xs text-slate-300">Published Strategy · revision {document?.revision}
+                    {' · '}Effective {displayDate(document?.effective_from)}
+                    {' · '}{strategyCurrentLink ? 'Pillar 1 link verified' : 'Pillar 1 link awaits independent readback'}
+                  </span>
+                </nav>}
+                {showPublicationBody && <>
                 <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
                 {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
                   <div className={styles.documentIdentity}>
@@ -1757,7 +1798,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   {FOUNDER_APPROVED_SOURCE[classification].sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p style={{ whiteSpace: 'pre-line' }}>{section.body}</p></section>)}
                   <footer className={styles.fingerprint}><span>Founder-approved PDF source · SHA3-512 (not an EOS revision fingerprint)</span><code>{FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512}</code></footer>
                 </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
-                <section className={styles.execution} aria-label="Company operating execution">
+                </>}
+                {showExecutionSurface && <section className={styles.execution} aria-label="Company operating execution">
                   <h2>Business execution</h2>
                   <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>
                   {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
@@ -2119,7 +2161,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </details>}
                   </div>}
                   <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
-                </section>
+                </section>}
                 {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
                 </>}
               </>}
@@ -2131,7 +2173,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
+// VERSION: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
