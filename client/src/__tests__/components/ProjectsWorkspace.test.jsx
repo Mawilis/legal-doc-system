@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
+ * VERSION: v2.70.0-DROPZONE-ATTACHMENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.70.0-DROPZONE-ATTACHMENT-CERT verifies
+ *          accessible contributor Browse and owner upload denial
+ *          alongside the EOS-verified empty file state.
  * CHANGELOG: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
  *          validates native disclosure state and source-owned assignment
  *          readback instead of presentation-only revision label checks.
@@ -426,7 +429,7 @@ describe('Project task attachment source and contributor authority boundary', ()
     expect(screen.getByText('Add an attachment')).toBeVisible();
     expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
     expect(screen.getByRole('button', {
-      name: 'Check People access before contributor management',
+      name: 'Check contributor access',
     })).toBeDisabled();
     expect(openPeople).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
@@ -462,9 +465,9 @@ describe('Project task attachment source and contributor authority boundary', ()
     render(<ProjectTaskAttachmentsPanel tenantId={TENANT} principalId={PRINCIPAL}
       projectId={PROJECT_ID} taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
       participantMode={false} onManageContributors={openPeople} onClose={vi.fn()}/>);
-    expect(await screen.findByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(await screen.findByText(/No files attached yet/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', {
-      name: 'Check People access before contributor management',
+      name: 'Check contributor access',
     }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
       'Eligible tenant member directory: denied (HTTP 403) · EOS PROJECT_PARTICIPANT_DIRECTORY_DENIED',
@@ -501,9 +504,9 @@ describe('Project task attachment source and contributor authority boundary', ()
     render(<ProjectTaskAttachmentsPanel tenantId={TENANT} principalId={PRINCIPAL}
       projectId={PROJECT_ID} taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
       participantMode={false} onManageContributors={openPeople} onClose={vi.fn()}/>);
-    expect(await screen.findByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(await screen.findByText(/No files attached yet/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', {
-      name: 'Check People access before contributor management',
+      name: 'Check contributor access',
     }));
     await waitFor(() => expect(openPeople).toHaveBeenCalledTimes(1));
     expect(api.post).not.toHaveBeenCalled();
@@ -521,8 +524,8 @@ describe('Project task attachment source and contributor authority boundary', ()
       tenantId={TENANT} principalId={PRINCIPAL} projectId={PROJECT_ID}
       taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
       participantMode={true} onClose={vi.fn()}/>);
-    expect(await screen.findByLabelText('Project attachment file')).toBeVisible();
-    expect(screen.getByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Browse files' })).toBeVisible();
+    expect(screen.getByText(/No files attached yet/)).toBeVisible();
     expect(api.post).not.toHaveBeenCalled();
   });
 });
@@ -2680,7 +2683,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
+ * VERSION: v2.70.0-DROPZONE-ATTACHMENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
