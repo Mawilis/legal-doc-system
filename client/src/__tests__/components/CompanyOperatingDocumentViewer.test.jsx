@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.18.2-M04-CANONICAL-PROJECT-STATUS-CERT
+ * VERSION: v1.19.0-ON-DEMAND-CONTENTS-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.19.0-ON-DEMAND-CONTENTS-CERT
+ *            verifies accessible collapsed-by-default Contents navigation,
+ *            on-demand expansion, keyboard-operable toggle, preserved
+ *            document visibility and no source mutations on display change.
  * CHANGELOG: v1.18.2-M04-CANONICAL-PROJECT-STATUS-CERT
  *            aligns synthetic Foundation project and link status to the
  *            exact EOS ProjectStatus.ACTIVE.value (lowercase active), proving
@@ -201,7 +205,17 @@ describe('governed company document experience', () => {
   it('renders only source-approved content with authority and accessible contents', async () => {
     api.get.mockResolvedValue({ data: view(record()) }); render(wrap());
     expect(await screen.findByRole('heading', { name: 'Synthetic approved mission' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Show contents' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('complementary', { name: 'Document contents' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Synthetic approved mission' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Show contents' }));
+    expect(screen.getByRole('button', { name: 'Hide contents' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('complementary', { name: 'Document contents' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Synthetic purpose' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide contents' }));
+    expect(screen.queryByRole('complementary', { name: 'Document contents' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Synthetic approved mission' })).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
     expect(screen.getByText('synthetic-publisher')).toBeVisible();
     expect(screen.getByText('SYNTHETIC-APPROVAL')).toBeVisible();
     expect(screen.getByText('Synthetic source content only.')).toBeVisible();
@@ -1106,7 +1120,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.18.2-M04-CANONICAL-PROJECT-STATUS-CERT
+// VERSION: v1.19.0-ON-DEMAND-CONTENTS-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
