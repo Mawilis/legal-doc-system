@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
+ * VERSION: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT aligns
+ *          participant task rows and EOS commands to common enterprise
+ *          work typography and controls; assignee IDs remain source keys
+ *          but never replace display names in operating work lists.
  * CHANGELOG: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
  *          preserves exact participant identity and work commands while
  *          keeping the selected project in a single responsive column.
@@ -42,6 +46,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 import {
   ArrowLeft, Bell, Check, CheckCircle2, ClipboardList,
   LoaderCircle, MessageSquare, RefreshCw, ShieldCheck,
@@ -439,27 +444,29 @@ export default function AssignedProjectsWorkspace({
                   <tr><th className="p-3">Task</th><th className="p-3">State</th><th className="p-3">Owner</th><th className="p-3">Action</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {work.map(task => <tr key={task.task_id}>
-                    <td className="p-3"><strong className="break-words text-slate-900">{task.title}</strong>
-                      <p className="mt-1 break-words text-xs text-slate-500">{task.description}</p></td>
-                    <td className="p-3 text-slate-700">{caption(task.status)}</td>
-                    <td className="break-all p-3 text-xs text-slate-700">
-                      {task.assignee_principal_id || 'Unassigned'}</td>
-                    <td className="p-3"><div className="flex flex-wrap gap-1.5">
+                  {work.map(task => <tr key={task.task_id}
+                    className="border-l-[3px] border-l-transparent bg-white hover:bg-slate-50">
+                    <td className="px-3 py-2"><strong className="break-words text-sm font-semibold text-slate-950">{task.title}</strong>
+                      <p className="mt-1 max-w-xl truncate text-xs text-slate-600" title={task.description}>{task.description}</p></td>
+                    <td className="px-3 py-2 text-xs font-semibold text-slate-700">{caption(task.status)}</td>
+                    <td className="px-3 py-2 text-xs text-slate-700">
+                      {!task.assignee_principal_id ? 'Unassigned'
+                        : task.assignee_principal_id === principalId ? 'You' : 'Assigned contributor'}</td>
+                    <td className="px-3 py-2"><div className="flex flex-wrap gap-1.5">
                       {selection.participation.role === 'CONTRIBUTOR'
                         && task.assignee_principal_id === principalId
                         && TRANSITIONS[task.status].map(next => <button type="button"
-                          key={next} className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                          key={next} className={workTaskBlueprint.primary + ' !min-h-8 !px-2'}
                           disabled={busy} onClick={() => transition(task, next)}>{caption(next)}</button>)}
-                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      <button type="button" className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}
                         onClick={() => setAttachmentTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <ClipboardList size={13}/> Attachments
                       </button>
-                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      <button type="button" className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}
                         onClick={() => setApprovalTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <ClipboardList size={13}/> Approvals
                       </button>
-                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      <button type="button" className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}
                         onClick={() => setDiscussionTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <MessageSquare size={13}/> Discuss
                       </button>
@@ -535,7 +542,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
+// VERSION: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
