@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.9.1-EXACT-PROJECTS-503-TRANSPORT-CERT
+ * VERSION: v1.10.0-M02-LIVE-PROJECT-SNAPSHOT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.10.0-M02-LIVE-PROJECT-SNAPSHOT-CERT verifies
+ *            18 distinct EOS records, live lifecycle transitions after
+ *            refresh, predecessor and calendar due-date counts; incomplete
+ *            coverage never produces manufactured execution totals.
  * CHANGELOG: v1.9.1-EXACT-PROJECTS-503-TRANSPORT-CERT verifies
  *            timed-out no-response Projects read distinguishes network from
  *            EOS denial while keeping the project source unavailable;
@@ -336,6 +340,85 @@ describe('Strategy source-owned project execution readback', () => {
     items: [{ tenant_id: scope.tenantId, project_id: projectId, task_id: taskId,
       kind: 'MILESTONE', title: 'Complete operating taxonomy',
       status: 'TODO', due_date: null }] });
+  it('M02 updates 18-record lifecycle and predecessor counts only after source refresh', async () => {
+    const milestones = [
+      'Operating taxonomy and strategy alignment',
+      'Governed work graph and multi-source accountability',
+      'Role-aware work execution and approval decisions',
+      'Ranked Founder operating workspace',
+      'Audited workflow automation and Intelligence Dock parity',
+      'Production readiness and strategy outcome certification',
+    ];
+    const tasks = [
+      'Inventory canonical My Work sources, capacities and IAM',
+      'Define Operating, Platform Build and Unclassified work',
+      'Implement audited source-owned work classification',
+      'Derive source-authorized work identities and accountability',
+      'Integrate independent project approvals in My Work',
+      'Deliver Founder Operating, Platform and Waiting filters',
+      'Certify role capacity packs and tenant isolation',
+      'Implement explainable ranking and source diversity',
+      'Wire source-owned task and decision commands',
+      'Build governed event-driven workflow automation',
+      'Align Intelligence Dock with the authorized work graph',
+      'Certify production readiness and rollback',
+    ];
+    const createItem = (kind, index, title) => ({
+      tenant_id: scope.tenantId, project_id: projectId,
+      task_id: 'ptk-' + (index + 1).toString(16).padStart(48, '0'),
+      kind, title: 'MW-' + (kind === 'MILESTONE' ? 'M' : 'T')
+        + String(kind === 'MILESTONE' ? index + 1 : index - 5).padStart(2, '0') + ' — ' + title,
+      status: 'TODO', due_date: null, depends_on: [],
+    });
+    let items = [...milestones.map((title, i) => createItem('MILESTONE', i, title)),
+      ...tasks.map((title, i) => createItem('TASK', i + 6, title))];
+    items[6].depends_on = [items[0].task_id];
+    items[7].status = 'IN_PROGRESS';
+    items[8].status = 'BLOCKED';
+    items[9].due_date = '2020-01-01';
+    const page = () => ({
+      schema: 'WILSY-PROJECT-TASK-LIST/V1',
+      tenant_id: scope.tenantId, principal_id: scope.principalId,
+      project_id: projectId, offset: 0, limit: 50,
+      has_more: false, next_offset: null, items: items.map(item => ({ ...item })),
+    });
+    api.get.mockImplementation(url => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === '/projects/' + projectId + '/tasks')
+        return Promise.resolve({ data: page() });
+      if (url === '/company-operating-documents/STRATEGY/project-links')
+        return Promise.reject({ response: { status: 409, data: { detail: {
+          error: 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED',
+        } } } });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: { ...view(null), classification: 'STRATEGY' } });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', {
+      name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
+    }));
+    const readback = await screen.findByRole('region', { name: 'M02 live execution readback' });
+    const values = () => Array.from(readback.querySelectorAll('dl > div')).map(el => el.textContent);
+    expect(values()).toEqual(['To do15', 'In progress1', 'Done0', 'Blocked1', 'Cancelled0']);
+    expect(readback.textContent).toContain('1 programme records waiting on 1 unfinished predecessor relationships');
+    expect(readback.textContent).toContain('1 unfinished records with calendar due dates');
+    expect(readback.textContent).toMatch(/Successful Projects read observed:/);
+    items[0] = { ...items[0], status: 'DONE' };
+    items[7] = { ...items[7], status: 'DONE' };
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
+    await waitFor(() => expect(values()).toEqual([
+      'To do15', 'In progress0', 'Done2', 'Blocked1', 'Cancelled0',
+    ]));
+    expect(readback.textContent).toContain('0 programme records waiting on 0 unfinished predecessor relationships');
+    expect(api.post).not.toHaveBeenCalled();
+    // A missing or ambiguous plan record must suppress M02 entirely.
+    items = items.slice(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
+    expect(await screen.findByText(/M02 execution summary unavailable: full/)).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'M02 live execution readback' })).not.toBeInTheDocument();
+  });
+
   it('shows independently verified project tasks, not invented Strategy progress', async () => {
     api.get.mockImplementation(url => {
       if (url === '/projects') return Promise.resolve({ data: projectList() });
@@ -577,7 +660,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.9.1-EXACT-PROJECTS-503-TRANSPORT-CERT
+// VERSION: v1.10.0-M02-LIVE-PROJECT-SNAPSHOT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
