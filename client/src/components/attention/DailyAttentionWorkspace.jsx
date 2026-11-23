@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.17.0-CONTEXTUAL-ATTENTION-HEADER
+ * VERSION: v3.17.1-FOCUSED-ATTENTION-CHROME
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,6 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.17.1-FOCUSED-ATTENTION-CHROME removes
+ *          queue-only create, help, filtering and optional source
+ *          disclosure controls from focused task and briefing
+ *          subviews while preserving independently visible error state.
  * CHANGELOG: v3.17.0-CONTEXTUAL-ATTENTION-HEADER exposes a
  *          presentation-only navigation state to the owning panel,
  *          allowing its header to reflect focused detail, briefing
@@ -634,7 +638,7 @@ export default function DailyAttentionWorkspace({
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            {creatableSources.length > 0 && typeof onCreateWork === 'function' && (
+            {!selected && !showBriefing && creatableSources.length > 0 && typeof onCreateWork === 'function' && (
               <button type="button" data-attention-create-trigger="true"
                 ref={createTriggerRef}
                 disabled={creatingWork || workUpdating}
@@ -643,9 +647,9 @@ export default function DailyAttentionWorkspace({
                 Create work
               </button>
             )}
-            <button type="button" onClick={() => setShowShortcuts((v) => !v)}
+            {!selected && !showBriefing && <button type="button" onClick={() => setShowShortcuts((v) => !v)}
               aria-label="Daily attention keyboard shortcuts" aria-expanded={showShortcuts}
-              className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:bg-white/10"><CircleHelp size={14}/></button>
+              className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:bg-white/10"><CircleHelp size={14}/></button>}
             <button type="button" onClick={onRefresh} title={'Last synced: ' + feed.syncedAt}
               className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-slate-300 hover:bg-white/10">
               <RefreshCw size={13}/>Refresh
@@ -679,7 +683,7 @@ export default function DailyAttentionWorkspace({
           Some source commands could not be verified. Verified commands remain usable.
           <button type="button" onClick={onRefresh} className="ml-2 underline">Retry command verification</button>
         </p>}
-        {showShortcuts && (
+        {showShortcuts && !selected && !showBriefing && (
           <div role="note" className="mt-1 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-[10px] leading-4 text-slate-300">
             <strong className="text-amber-100">Shortcuts:</strong> j/k select work · Enter/o open
             · / search · 1–4 filters · x select · e complete evidence when permitted
@@ -755,7 +759,7 @@ export default function DailyAttentionWorkspace({
             {bulkSelectionMode ? 'Exit selection' : 'Select work'}
           </button>}
         </div>}
-        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]">
+        {!selected && !showBriefing && <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]">
           <button type="button" onClick={() => setShowSourceDetails((value) => !value)}
             aria-expanded={showSourceDetails} aria-controls="attention-source-evidence"
             className="inline-flex items-center gap-1.5 rounded-md text-slate-400 hover:text-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
@@ -766,8 +770,8 @@ export default function DailyAttentionWorkspace({
             aria-expanded={showBriefing} className="text-slate-400 hover:text-amber-100">
             {showBriefing ? 'Hide' : 'Show'} briefing
           </button>}
-        </div>
-        {showSourceDetails && (
+        </div>}
+        {showSourceDetails && !selected && !showBriefing && (
           <section id="attention-source-evidence" aria-label="Last verified attention source details"
             className="mt-2 rounded-lg border border-white/10 bg-[#0a1628] px-3 py-2 text-[11px] leading-5">
             <p className="font-semibold text-slate-200">Last verified source evidence for this session · {sourceCoverage.length} admitted · synced {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</p>
@@ -1267,7 +1271,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.17.0-CONTEXTUAL-ATTENTION-HEADER
+// VERSION: v3.17.1-FOCUSED-ATTENTION-CHROME
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
