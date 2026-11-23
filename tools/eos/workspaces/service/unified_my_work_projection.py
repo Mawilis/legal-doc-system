@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Unified My Work Read Projection
-VERSION: v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG
+VERSION: v1.4.0-SOURCE-PREDECESSOR-READINESS
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Deterministically compose independently admitted EOS source work while
          preserving source identity, tenant scope and visibility provenance.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/worksp
 COLLABORATION / OWNERSHIP: unified_my_work_router admits Legal, Operations,
                            Intelligence, CRM and HR through their own authorities.
 CERTIFICATION / UPDATE DATE: 2026-11-23.
+CHANGELOG: v1.4.0-SOURCE-PREDECESSOR-READINESS
+         projects only source-attested Projects readiness and predecessor
+         counts; no new command permission or cross-task visibility.
 CHANGELOG: v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG
          restores the historical HR admission version and revalidates the
          sovereign source-backed audience contract without changing IAM.
@@ -50,7 +53,7 @@ from typing import Any, Iterable, Mapping
 
 from tools.eos.workspaces.service.work_audience_policy import evaluate_work_audience
 
-VERSION = "v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG"
+VERSION = "v1.4.0-SOURCE-PREDECESSOR-READINESS"
 SCHEMA = "WILSY-OS-UNIFIED-MY-WORK/V1"
 
 _SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM", "HR", "PROJECTS")
@@ -199,6 +202,14 @@ def build_unified_my_work(
                 )
             ):
                 raise UnifiedMyWorkProjectionError("PROJECTS_SOURCE_ITEM_INVALID")
+            if source == "PROJECTS":
+                total = raw.get("dependency_total")
+                remaining = raw.get("dependency_remaining")
+                readiness = raw.get("dependency_readiness")
+                if (type(total) is not int or not 0 <= total <= 25
+                    or type(remaining) is not int or not 0 <= remaining <= total
+                    or readiness != ("WAITING" if remaining else "READY")):
+                    raise UnifiedMyWorkProjectionError("PROJECTS_DEPENDENCY_EVIDENCE_INVALID")
             if status in _TERMINAL:
                 continue
             if priority not in _PRIORITY:
@@ -234,13 +245,18 @@ def build_unified_my_work(
                 "approval_authority": None,
                 "project_id": raw.get("project_id") if source == "PROJECTS" else None,
                 "due_date": raw.get("due_date") if source == "PROJECTS" else None,
+                "dependency_readiness": readiness if source == "PROJECTS" else None,
+                "dependency_total": total if source == "PROJECTS" else None,
+                "dependency_remaining": remaining if source == "PROJECTS" else None,
             }
             previous = merged.get(key)
             if previous is not None:
                 # Divergent copies from the same source are not silently merged.
                 comparable = ("title", "status", "priority", "due_at",
                               "audience", "audience_evidence_ref",
-                              "audience_source_revision", "critical_gate")
+                              "audience_source_revision", "critical_gate",
+                              "dependency_readiness", "dependency_total",
+                              "dependency_remaining")
                 if any(previous[field] != candidate[field] for field in comparable):
                     raise UnifiedMyWorkProjectionError("SOURCE_ITEM_DIVERGENCE")
             else:
@@ -295,7 +311,7 @@ def build_unified_my_work(
 __all__ = ["SCHEMA", "VERSION", "UnifiedMyWorkProjectionError", "build_unified_my_work"]
 
 # ARTIFACT: unified_my_work_projection.py
-# VERSION: v1.3.2-SOURCE-TAXONOMY-SOVEREIGN-CHANGELOG
+# VERSION: v1.4.0-SOURCE-PREDECESSOR-READINESS
 # AUTHORITY BOUNDARY: Read projection of independently admitted source work only.
 # TENANT POSTURE: Exact envelope and explicit item tenant binding; no cross-tenant lookup.
 # FAIL-CLOSED POSTURE: Malformed, foreign and divergent source evidence rejects.
