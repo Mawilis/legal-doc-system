@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL
+ * VERSION: v1.4.0-MULTI-MODULE-CALENDAR-LABELS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
  *          local instant display, accessible day/week/month navigation and
@@ -9,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v1.4.0-MULTI-MODULE-CALENDAR-LABELS names PROJECTS and HR
+ *          in the authorized calendar agenda without changing source
+ *          identity, dates, permissions or command routing.
  * CHANGELOG: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL keeps the
  *          established source-action accessible name after introducing
  *          the common task row, preserving calendar handoff contracts.
@@ -39,6 +42,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 
 const SOURCES = Object.freeze({
   LEGAL: 'Legal', OPERATIONS: 'Operations', INTELLIGENCE: 'Intelligence', CRM: 'CRM',
+  PROJECTS: 'Projects', HR: 'HR & Hiring',
 });
 const VIEWS = Object.freeze([
   ['DAY', 'Day'], ['WEEK', 'Week'], ['MONTH', 'Month'],
@@ -353,7 +357,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL
+ * VERSION: v1.4.0-MULTI-MODULE-CALENDAR-LABELS
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
  * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.
