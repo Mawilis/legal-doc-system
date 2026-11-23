@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
+ * VERSION: v2.15.2-M04-CANONICAL-PROJECT-STATUS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.15.2-M04-CANONICAL-PROJECT-STATUS
+ *            compares Strategy execution project status with Python EOS
+ *            ProjectStatus.ACTIVE.value ('active'), not IAM's 'ACTIVE'.
+ *            Keeps all link revision, task and tenant gates unchanged.
  * CHANGELOG: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
  *            reveals the exact independent M04 gate failing source
  *            verification without relaxing currentness, IAM or evidence.
@@ -856,7 +860,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     if (links[0].source_project_revision !== project.revision
       || links[0].source_strategy_revision !== document?.revision)
       return 'Current Strategy or project revision differs from the relationship source revision.';
-    if (project.status !== 'ACTIVE') return 'The Foundation project is not active.';
+    if (project.status !== 'active') return 'The Foundation project is not active.';
     return 'One or more task ownership, deadline, status, fingerprint or dependency records did not pass validation.';
   })();
 
@@ -874,7 +878,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     if (!project || links.length !== 1 || links[0].state !== 'VERIFIED_CURRENT'
       || links[0].source_project_revision !== project.revision
       || links[0].source_strategy_revision !== document?.revision
-      || project.status !== 'ACTIVE' || !Array.isArray(delivery.page.items)) return null;
+      || project.status !== 'active' || !Array.isArray(delivery.page.items)) return null;
     const tasks = delivery.page.items;
     const byId = new Map(tasks.map(task => [task.task_id, task]));
     if (tasks.length !== byId.size) return null;
@@ -2057,7 +2061,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
+// VERSION: v2.15.2-M04-CANONICAL-PROJECT-STATUS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
