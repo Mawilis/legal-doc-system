@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES
+ * VERSION: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO uses only
+ *            EOS-admitted durable Founder command actions for Strategy
+ *            creation, submission and explicit effective-date ratification.
+ *            Every write requires independent fingerprint readback.
  * CHANGELOG: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES exposes
  *            source-verified current-session author/review actions, distinct
  *            independent publisher verification, effective publication,
@@ -968,11 +972,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       setError({ kind: 'INVALID_DATE', code: 'COMPANY_DOCUMENT_EFFECTIVE_DATE_INVALID', status: null, title: 'A valid effective date is required', message: 'Choose when the independently approved document should become effective.', next: 'Refresh the source and enter a valid effective date before submitting approval.' });
       return;
     }
-    void perform('PUBLISH', { expected_revision: data?.current_revision ?? 0,
-      approval_reference: approvalReference, effective_from: effective.toISOString() });
+    if (classification === 'STRATEGY' && actions.includes('FOUNDER_RATIFY')) {
+      void perform('FOUNDER_RATIFY', {
+        expected_revision: data?.current_revision ?? 0, effective_from: effective.toISOString(),
+      });
+    } else {
+      void perform('PUBLISH', { expected_revision: data?.current_revision ?? 0,
+        approval_reference: approvalReference, effective_from: effective.toISOString() });
+    }
   };
   const expected = data?.current_revision ?? 0;
-  const draftPermitted = actions.includes('CREATE_DRAFT');
+  const founderDraftPermitted = classification === 'STRATEGY' && actions.includes('FOUNDER_CREATE_DRAFT');
+  const draftPermitted = actions.includes('CREATE_DRAFT') || founderDraftPermitted;
   const strategyPublicationEffective = classification === 'STRATEGY'
     && !query.review && data?.state === 'PUBLISHED'
     && document?.state === 'PUBLISHED'
@@ -1064,13 +1075,13 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       onClick={() => changeQuery({ review: false, revision: null })}>
                       <ArrowLeft size={16}/> Published view
                     </button>}
-                    {actions.includes('SUBMIT') && <button type="button" disabled={busy}
-                      onClick={() => void perform('SUBMIT', { expected_revision: expected })}>
-                      <ArrowUpRight size={16}/> Submit for approval
+                    {(actions.includes('SUBMIT') || actions.includes('FOUNDER_SUBMIT')) && <button type="button" disabled={busy}
+                      onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
+                      <ArrowUpRight size={16}/> {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit for approval'}
                     </button>}
                   </div>
                   {!draftPermitted && !reviewPermitted && !actions.includes('SUBMIT')
-                    && !actions.includes('PUBLISH') && <p className={styles.permissionNotice}>
+                    && !actions.includes('PUBLISH') && !actions.includes('FOUNDER_RATIFY') && <p className={styles.permissionNotice}>
                       Your current EOS permission allows reading this Founder-approved source, not creating a revision or publishing it.
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
@@ -1085,8 +1096,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-slate-600/60 p-3">
                       <dt className="text-xs font-semibold text-slate-300">Strategy author and private-review authority</dt>
-                      <dd className="mt-1 text-sm text-white">{draftPermitted
-                        ? 'Draft creation admitted by current EOS action set'
+                      <dd className="mt-1 text-sm text-white">{founderDraftPermitted
+                        ? 'Verified Founder can prepare Strategy through durable source authority'
+                        : draftPermitted ? 'Draft creation admitted by current EOS action set'
                         : actions.includes('SUBMIT')
                           ? 'Source-authorized draft submission admitted'
                           : reviewPermitted
@@ -1095,7 +1107,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                     <div className="rounded-lg border border-slate-600/60 p-3">
                       <dt className="text-xs font-semibold text-slate-300">Independent publisher authority</dt>
-                      <dd className="mt-1 text-sm text-white">{actions.includes('PUBLISH')
+                      <dd className="mt-1 text-sm text-white">{actions.includes('FOUNDER_RATIFY')
+                        ? 'Current Founder may self-ratify this submitted Strategy with audited EOS evidence'
+                        : actions.includes('PUBLISH')
                         ? 'EOS admits publication for this submitted revision under the current independent principal'
                         : 'No publication action admitted in this source view; independent publisher must be verified through EOS'}</dd>
                     </div>
@@ -1147,10 +1161,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         onClick={() => { setProposal(founderApprovedProposal('STRATEGY')); setPreviewOpen(false); setEditorOpen(true); }}>
                         Prepare Strategy draft
                       </button>}
-                    {query.review && document?.state === 'DRAFT' && actions.includes('SUBMIT')
+                    {query.review && document?.state === 'DRAFT' && (actions.includes('SUBMIT') || actions.includes('FOUNDER_SUBMIT'))
                       && <button type="button" disabled={busy}
-                        onClick={() => void perform('SUBMIT', { expected_revision: expected })}>
-                        Submit Strategy for independent approval
+                        onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
+                        {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit Strategy for independent approval'}
                       </button>}
                     {query.review && document?.state === 'SUBMITTED' && actions.includes('PUBLISH')
                       && <button type="button" disabled={busy}
@@ -1159,9 +1173,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         Open independent approval form
                       </button>}
                   </div>
-                  {query.review && document?.state === 'DRAFT' && !actions.includes('SUBMIT')
+                  {query.review && document?.state === 'DRAFT' && !actions.includes('SUBMIT') && !actions.includes('FOUNDER_SUBMIT')
                     && <p className={styles.permissionNotice}>Only the draft's source-authorized author can submit this revision.</p>}
-                  {query.review && document?.state === 'SUBMITTED' && !actions.includes('PUBLISH')
+                  {query.review && document?.state === 'SUBMITTED' && !actions.includes('PUBLISH') && !actions.includes('FOUNDER_RATIFY')
                     && <p className={styles.permissionNotice}>This submission needs a different principal with current company-document publisher authority. No Founder label or project role substitutes for independent approval.</p>}
                   {!query.review && !document && !reviewPermitted
                     && <p className={styles.permissionNotice}>Your current capacity can read the approved source but cannot inspect private revision states or create a publication. Current Strategy author/publisher authority must be established separately in tenant IAM.</p>}
@@ -1414,7 +1428,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                 </section>
                 {editorOpen && draftPermitted && <form className={styles.form}
                   aria-label="Company private draft editor"
-                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform('CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
+                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform(founderDraftPermitted ? 'FOUNDER_CREATE_DRAFT' : 'CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
                   <div className={styles.editorHeading}>
                     <div><span className={styles.eyebrow}>AUTHOR WORKSPACE · PRIVATE</span>
                       <h2>Prepare {classification === 'MISSION' ? 'Our Mission' : 'Our Strategy'}</h2>
@@ -1474,6 +1488,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </div>
                 </form>}
+                {classification === 'STRATEGY' && actions.includes('FOUNDER_RATIFY') && <form
+                  className={styles.form} aria-label="Founder Strategy self-ratification"
+                  onSubmit={publish}>
+                  <h2>Ratify and publish your Strategy</h2>
+                  <p>Your immutable Founder designation, active tenant membership and current
+                    authority are independently checked in the EOS transaction. Your signature
+                    is recorded as Founder self-ratification, not independent approval.</p>
+                  <label>Effective date and time<input required type="datetime-local"
+                    value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label>
+                  <button type="submit" disabled={busy || !effectiveFrom}>
+                    {busy ? 'Verifying EOS ratification…' : 'Ratify and publish Strategy'}
+                  </button>
+                </form>}
                 {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
               </>}
         </div>
@@ -1484,7 +1511,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES
+// VERSION: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
