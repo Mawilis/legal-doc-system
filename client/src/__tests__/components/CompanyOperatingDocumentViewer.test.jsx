@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT
+ * VERSION: v1.18.1-M04-GOVERNANCE-LANGUAGE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -11,7 +11,9 @@
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
- * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.18.1-M04-GOVERNANCE-LANGUAGE-CERT
+ *            asserts current Founder self-ratification authority language.
  * CHANGELOG: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT proves
  *            DONE task requires contiguous event source readback and
  *            separately authorized approved decision and scan-cleared
@@ -928,7 +930,7 @@ describe('Strategy source-owned project execution readback', () => {
       name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
     expect(await screen.findByText(/No currently effective EOS-published Strategy exists/)).toBeVisible();
-    expect(screen.getByText(/An authorized author must prepare and submit the Strategy/)).toBeVisible();
+    expect(screen.getByText(/An admitted Founder may submit and self-ratify Strategy/)).toBeVisible();
     expect(screen.queryByRole('button', {
       name: 'Link verified Foundation project to Pillar 1',
     })).not.toBeInTheDocument();
@@ -1100,7 +1102,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT
+// VERSION: v1.18.1-M04-GOVERNANCE-LANGUAGE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
