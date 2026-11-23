@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY
+ * VERSION: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -19,6 +19,9 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS uses clear
+ *            human-facing connection status instead of raw kernel codes or
+ *            latency telemetry; no change to session or source authority.
  * CHANGELOG: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY handles either event-listener order, focusing the exact mounted Headquarters work input when available and opening the controller fallback otherwise. Authority and route decisions are unchanged.
  * CHANGELOG: v19.2.2-HEADQUARTERS-SEARCH-FOCUS-RECOVERY focuses the mounted Headquarters authorized-work search before consuming global search; if that target is absent, the controller opens its own command search. Authority and route decisions are unchanged.
  * CHANGELOG: v19.2.1-OFFICIAL-BRAND-HEADER-ALIGNMENT aligns the existing
@@ -1432,8 +1435,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
           }}
         >
           <ShieldAlert size={14} />
-          <span>Kernel {kernelHealth.status}</span>
-          {kernelHealth.latencyMs > 0 && <span>· {kernelHealth.latencyMs}ms</span>}
+          <span>{kernelHealth.status === 'UNREACHABLE' ? 'WILSY service unavailable' : 'WILSY connection needs attention'}</span>
         </div>
       )}
 
@@ -1483,7 +1485,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY
+ * VERSION: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback
