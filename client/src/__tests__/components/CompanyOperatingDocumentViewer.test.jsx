@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.20.0-FOCUSED-EXECUTION-NAVIGATION-CERT
+ * VERSION: v1.20.1-ON-DEMAND-REGISTERS-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.20.1-ON-DEMAND-REGISTERS-CERT
+ *            opens explicitly collapsed task and implementation registers
+ *            before asserting visible records; verifies closed-by-default UX.
  * CHANGELOG: v1.20.0-FOCUSED-EXECUTION-NAVIGATION-CERT
  *            verifies bounded M04 evidence navigation, source-safe filtering
  *            and paging while retaining full task snapshot readback and
@@ -916,6 +919,9 @@ describe('Strategy source-owned project execution readback', () => {
     expect(api.post).not.toHaveBeenCalled();
     fireEvent.click(verifyButton);
     expect(await screen.findByRole('heading', { name: 'Source-verified project execution' })).toBeVisible();
+    const sourceRegister = screen.getByText('Source task register · 1 records (additional detail)');
+    expect(sourceRegister.closest('details')?.open).toBe(false);
+    fireEvent.click(sourceRegister);
     expect(screen.getByText(/Complete operating taxonomy/)).toBeVisible();
     expect(screen.getByText(/No strategic pillar linkage or Strategy completion percentage is inferred/)).toBeVisible();
     const call = api.get.mock.calls.find(([url]) => url === '/projects/' + projectId + '/tasks');
@@ -1035,6 +1041,9 @@ describe('Strategy source-owned project execution readback', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ }));
     expect(await screen.findByRole('heading', { name: 'My Work implementation programme' })).toBeVisible();
     expect(screen.getByText(/0 of 18 planned records persisted in EOS/)).toBeVisible();
+    const plannedRegister = screen.getByText('Browse all 18 planned milestones and tasks');
+    expect(plannedRegister.closest('details')?.open).toBe(false);
+    fireEvent.click(plannedRegister);
     expect(screen.getByText('MW-M01 — Operating taxonomy and strategy alignment')).toBeVisible();
     expect(screen.getByText('MW-T12 — Certify production readiness and rollback')).toBeVisible();
     expect(api.post).not.toHaveBeenCalled();
@@ -1137,7 +1146,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.20.0-FOCUSED-EXECUTION-NAVIGATION-CERT
+// VERSION: v1.20.1-ON-DEMAND-REGISTERS-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
