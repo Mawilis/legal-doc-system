@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.61.0-GOVERNED-MULTI-ASSIGNMENT
+ * VERSION: v1.62.0-FOCUSED-IN-PLACE-TASK-WORKSPACE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.62.0-FOCUSED-IN-PLACE-TASK-WORKSPACE
+ *          retains the verified work grid mounted behind a bounded
+ *          task-action workspace, rather than destroying and replacing
+ *          the queue. Activity, files, approvals and detail share the
+ *          selected task context. Escape, keyboard focus and scroll
+ *          restoration make focus reversible without a second workflow.
  * CHANGELOG: v1.61.0-GOVERNED-MULTI-ASSIGNMENT provides
  *          explicit multi-selection assignment to one EOS-verified
  *          contributor. Each selected active task receives its own
@@ -482,6 +488,7 @@ export default function ProjectTasksPanel({
   }, [creating, dependencyOriginId, workType]);
   const drawerReturnFocus = useRef(null);
   const drawerRef = useRef(null);
+  const focusedPanelRef = useRef(null);
   const [editor, setEditor] = useState(null);
   const [assignmentOnly, setAssignmentOnly] = useState(false);
   const [discussionTaskId, setDiscussionTaskId] = useState(null);
@@ -1212,6 +1219,39 @@ export default function ProjectTasksPanel({
     setApprovalTaskId(null);
     setAttachmentTaskId(null);
   };
+  useEffect(() => {
+    if (discussionOnly || !focusedAction || !selectedActionTask) return undefined;
+    const panel = focusedPanelRef.current;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    panel?.querySelector('button')?.focus();
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeFocusedAction();
+      } else if (event.key === 'Tab' && panel) {
+        const focusable = [...panel.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]')]
+          .filter(element => element.getClientRects().length > 0);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus?.();
+    };
+  }, [discussionOnly, focusedAction?.id, focusedAction?.type]);
 
   if (discussionOnly) {
     return <section className="wp-project-tasks border-t border-slate-200 pt-2"
@@ -1345,7 +1385,13 @@ export default function ProjectTasksPanel({
         {projectContributorError || 'Project contributor authority is not verified.'}
         {' '}Existing verified task rows remain visible, but contributor assignment and member admission are unavailable until this EOS source is verified.
       </p>}
-    {(state === 'READY' || state === 'REFRESHING') && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
+    {(state === 'READY' || state === 'REFRESHING') && <>
+      {focusedAction && selectedActionTask && <>
+        <div aria-hidden="true" className="fixed inset-0 z-[88] bg-slate-950/45"
+          onClick={closeFocusedAction}/>
+        <div ref={focusedPanelRef} role="dialog" aria-modal="true"
+          aria-label={'Task workspace: ' + selectedActionTask.title}
+          className="fixed inset-x-3 bottom-3 top-[5.75rem] z-[89] mx-auto w-full max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:bottom-6 sm:p-6">
       <div className="mb-2 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={closeFocusedAction}>← Work</button>
@@ -1389,7 +1435,9 @@ export default function ProjectTasksPanel({
         taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
           onManageContributors={onOpenProjectPeople}
         showClose={false} onClose={closeFocusedAction}/>}
-    </div> : <>
+        </div>
+      </>}
+      <div aria-hidden={Boolean(focusedAction && selectedActionTask)}>
       {!actionCapabilities?.canEdit && <p role="status" className="mt-2 text-xs font-semibold text-amber-900">
         Project work is read-only. EOS has not confirmed current task-update authority.
       </p>}
@@ -2189,7 +2237,8 @@ export default function ProjectTasksPanel({
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next EOS batch</button>
       </nav>}
-    </>)}
+      </div>
+    </>}
     {state === 'READY' && error && <div role="alert"
       className="fixed bottom-4 left-4 right-4 z-[120] flex max-w-md items-start justify-between gap-3 rounded-xl border border-rose-300 bg-white p-4 text-sm text-rose-900 shadow-xl sm:left-auto sm:right-6">
       <span className="min-w-0 flex-1">{error}</span>
@@ -2200,7 +2249,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.61.0-GOVERNED-MULTI-ASSIGNMENT
+// VERSION: v1.62.0-FOCUSED-IN-PLACE-TASK-WORKSPACE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
