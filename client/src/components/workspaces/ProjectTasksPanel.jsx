@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.49.2-PENDING-CAPABILITY-ACTION-LABEL
+ * VERSION: v1.50.0-COMPACT-DELIVERY-EDITOR
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.50.0-COMPACT-DELIVERY-EDITOR
+ *          makes the work editor's supporting description collapsible and
+ *          uses a restrained neutral accountability surface with clear
+ *          contrast; assignment and date remain immediately available.
  * CHANGELOG: v1.49.2-PENDING-CAPABILITY-ACTION-LABEL
  *          keeps pending authority label consistent without implying
  *          assignment-only permission or enabling a command prematurely.
@@ -1454,9 +1458,9 @@ export default function ProjectTasksPanel({
           <button type="button" disabled={busy} className="wp-button"
             onClick={() => setEditor(null)}>Cancel edit</button>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
-          <p className="text-sm font-bold text-blue-950">Delivery accountability</p>
-          <p className="mt-1 text-xs text-blue-900">Choose a responsible contributor{assignmentOnly ? '.' : ' and the completion date.'} Changes are saved only after verification.</p>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <p className="text-sm font-bold text-slate-950">Delivery accountability</p>
+          <p className="mt-1 text-xs text-slate-700">Choose a responsible contributor{assignmentOnly ? '.' : ' and the completion date.'} Changes are saved only after verification.</p>
         </div>
         <div className={assignmentOnly ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
           <label className="block text-sm font-semibold text-slate-800">Assigned contributor
@@ -1477,8 +1481,9 @@ export default function ProjectTasksPanel({
           {!assignmentOnly && <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
             onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>}
         </div>
-        {!assignmentOnly && <div className="space-y-3 border-t border-slate-200 pt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Additional task details</p>
+        {!assignmentOnly && <details className="rounded-lg border border-slate-200 px-3 py-2.5">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-900">Additional task details · title and description</summary>
+          <div className="mt-3 space-y-3">
           <label className="block text-sm font-semibold text-slate-800">Work title
           <input aria-label="Edit task title" required maxLength={180} value={editor.title}
             onChange={event => setEditor(value => ({ ...value, title: event.target.value }))}
@@ -1489,7 +1494,8 @@ export default function ProjectTasksPanel({
             onChange={event => setEditor(value => ({ ...value, description: event.target.value }))}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
         </label>
-        </div>}
+          </div>
+        </details>}
         {!assignmentOnly && <p className="text-xs text-slate-600">The project verifies eligible contributors. Parent and predecessor relationships remain unchanged.</p>}
         <button type="submit" className="wp-button wp-button-primary"
           disabled={busy || !(assignmentOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)
@@ -1727,7 +1733,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.49.2-PENDING-CAPABILITY-ACTION-LABEL
+// VERSION: v1.50.0-COMPACT-DELIVERY-EDITOR
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
