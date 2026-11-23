@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.69.0-COMPACT-TASK-DETAILS-CERT
+ * VERSION: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
+ *          validates native disclosure state and source-owned assignment
+ *          readback instead of presentation-only revision label checks.
  * CHANGELOG: v2.69.0-COMPACT-TASK-DETAILS-CERT
  *          verifies title and description remain editable inside explicit
  *          compact disclosure; accountability controls remain immediately
@@ -1175,7 +1178,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
      })).getByRole('menuitem', { name: 'Edit' }));
     const additional = screen.getByText('Additional task details · title and description');
     expect(additional.closest('details').open).toBe(false);
-    expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
     fireEvent.click(additional);
     expect(additional.closest('details').open).toBe(true);
     const taskTitleInput = screen.getByRole('textbox', { name: 'Edit task title' });
@@ -2336,8 +2338,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
-    // Wait for the revisioned EOS list/detail readback, not only the PATCH call.
-    await waitFor(() => expect(screen.getByText('Revision 2')).toBeInTheDocument());
+    // Wait for source readback, not a presentation-only revision label.
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) =>
+      path === `/projects/${PROJECT_ID}`).length).toBeGreaterThan(1));
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
@@ -2677,7 +2680,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.69.0-COMPACT-TASK-DETAILS-CERT
+ * VERSION: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
