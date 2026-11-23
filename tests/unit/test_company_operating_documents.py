@@ -1,15 +1,17 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
+VERSION: v1.5.2-FOUNDER-PILLAR-LINK-AUTHORITY-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
+CHANGELOG: v1.5.2-FOUNDER-PILLAR-LINK-AUTHORITY-CERT
+tests source-bound Founder Pillar 1 link replay and revoked-proof denial.
 CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 tests current Founder HTTP lifecycle across draft, submission, immutable
 ratification, replay, publication readback and revoked capability.
-CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
+CHANGELOG: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
 tests exact Founder source admission, self-ratification immutable lineage,
 idempotent replay, mission/ordinary publisher denials, and revoked proof.
 CHANGELOG: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT tests
@@ -412,6 +414,24 @@ def test_strategy_project_link_http_requires_exact_independent_source_and_stable
     assert client.post(endpoint, json=payload, headers={"Idempotency-Key": "strategy-first"}).json() == first.json()
     assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
 
+    # Founder source admission reuses the existing immutable project link.
+    monkeypatch.setattr(http, "read_founder_designation",
+                        lambda **kwargs: {"state": "ACTIVE"})
+    founder_link = client.post(
+        "/api/company-operating-documents/STRATEGY/founder-project-links",
+        json=payload, headers={"Idempotency-Key": "strategy-first"},
+    )
+    assert founder_link.status_code == 201, founder_link.text
+    assert founder_link.json() == first.json()
+    assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
+    monkeypatch.setattr(http, "read_founder_designation", lambda **kwargs: None)
+    denied_founder = client.post(
+        "/api/company-operating-documents/STRATEGY/founder-project-links",
+        json=payload, headers={"Idempotency-Key": "founder-source-revoked"},
+    )
+    assert denied_founder.status_code == 403
+    assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
+
     linked = client.get(endpoint)
     assert linked.status_code == 200
     assert linked.json()["items"][0]["pillar_id"] == "pillar-one"
@@ -572,7 +592,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
+# VERSION: v1.5.2-FOUNDER-PILLAR-LINK-AUTHORITY-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
