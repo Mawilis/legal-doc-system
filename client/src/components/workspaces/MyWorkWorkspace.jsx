@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.29.2-UNVERIFIED-READINESS-STATE
+ * VERSION: v1.29.3-PROJECT-CALENDAR-DEADLINE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.29.3-PROJECT-CALENDAR-DEADLINE renders Projects
+ *            source date-only deadlines without inventing a UTC instant
+ *            or changing EOS overdue calculations.
  * CHANGELOG: v1.29.2-UNVERIFIED-READINESS-STATE shows
  *            unknown dependency readiness explicitly for older source
  *            projections, never guessing zero predecessors or READY.
@@ -192,6 +195,12 @@ const safeErrorCode = (error) => {
   return typeof candidate === 'string' && /^[A-Z][A-Z0-9_]{1,95}$/.test(candidate)
     ? candidate : 'MY_WORK_REQUEST_FAILED';
 };
+
+const formatWorkDue = (item) => (
+  item.source === 'PROJECTS' && item.due_date
+    ? 'Due ' + item.due_date + ' (calendar date)'
+    : formatDue(item.due_at)
+);
 
 const formatDue = (value) => {
   if (!value) return 'No deadline';
@@ -972,7 +981,7 @@ export default function MyWorkWorkspace(props = {}) {
                           <span className={`inline-flex rounded border px-2 py-1 text-[10px] font-semibold uppercase ${PRIORITY_STYLE[item.priority] || PRIORITY_STYLE.NORMAL}`}>{item.priority}</span>
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-slate-300">
-                          <Clock3 size={13} className="shrink-0 text-slate-500" /> {formatDue(item.due_at)}
+                          <Clock3 size={13} className="shrink-0 text-slate-500" /> {formatWorkDue(item)}
                         </span>
                         <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
                           <Circle size={9} className={item.is_overdue ? 'fill-rose-300 text-rose-300' : 'text-slate-500'} /> {statusLabel(item)}
@@ -1055,7 +1064,7 @@ export default function MyWorkWorkspace(props = {}) {
                 <span className="inline-flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-xs text-slate-300"><Circle size={9} /> {statusLabel(selectedItem)}</span>
               </div>
               <dl className="flex flex-wrap gap-x-8 gap-y-3 border-y border-white/10 py-3 text-sm [&>dd]:font-medium">
-                <dt className="text-slate-400">Deadline</dt><dd className="text-slate-100">{formatDue(selectedItem.due_at)}</dd>
+                <dt className="text-slate-400">Deadline</dt><dd className="text-slate-100">{formatWorkDue(selectedItem)}</dd>
                 <dt className="text-slate-400">Work type</dt><dd className="text-slate-100">{kindLabel(selectedItem)}</dd>
               </dl>
               <section className="space-y-1 rounded-lg border border-white/10 bg-white/[0.025] p-4">
@@ -1714,7 +1723,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.29.2-UNVERIFIED-READINESS-STATE
+ * VERSION: v1.29.3-PROJECT-CALENDAR-DEADLINE
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
