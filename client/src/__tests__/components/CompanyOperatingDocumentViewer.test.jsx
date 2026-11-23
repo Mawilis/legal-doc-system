@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.10.0-M02-LIVE-PROJECT-SNAPSHOT-CERT
+ * VERSION: v1.11.0-M03-AUTHORITY-PUBLICATION-GATE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.11.0-M03-AUTHORITY-PUBLICATION-GATE-CERT
+ *            verifies read-only Strategy publication and independent publisher
+ *            gates from live admitted source actions without granting IAM or
+ *            issuing a synthetic publication/link write.
  * CHANGELOG: v1.10.0-M02-LIVE-PROJECT-SNAPSHOT-CERT verifies
  *            18 distinct EOS records, live lifecycle transitions after
  *            refresh, predecessor and calendar due-date counts; incomplete
@@ -420,6 +424,27 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.queryByRole('region', { name: 'M02 live execution readback' })).not.toBeInTheDocument();
   });
 
+  it('M03 presents unpublished read-only source authority without writing publisher or pillar links', async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: { ...view(null), classification: 'STRATEGY' } });
+      if (url === '/company-operating-documents/STRATEGY/project-links')
+        return Promise.reject({ response: { status: 409, data: {
+          detail: { error: 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED' },
+        } } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    const gates = await screen.findByRole('region', { name: 'M03 Strategy governance gates' });
+    expect(gates).toHaveTextContent('Current source offers read-only actions; author admission not established');
+    expect(gates).toHaveTextContent('No publication action admitted in this source view');
+    expect(gates).toHaveTextContent('Not verified as published and effective');
+    await waitFor(() => expect(gates).toHaveTextContent('Not linkable · effective EOS Strategy publication required'));
+    expect(screen.queryByRole('button', { name: 'Link verified Foundation project to Pillar 1' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('shows independently verified project tasks, not invented Strategy progress', async () => {
     api.get.mockImplementation(url => {
       if (url === '/projects') return Promise.resolve({ data: projectList() });
@@ -661,7 +686,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.10.0-M02-LIVE-PROJECT-SNAPSHOT-CERT
+// VERSION: v1.11.0-M03-AUTHORITY-PUBLICATION-GATE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
