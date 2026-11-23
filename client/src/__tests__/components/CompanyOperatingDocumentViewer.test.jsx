@@ -1,12 +1,20 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.15.1-FOUNDER-PRIVATE-REVIEW-TRANSITION-CERT
+ * VERSION: v1.15.2-FOUNDER-CONTRACT-HEADER-INTEGRITY
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
+ * TENANT BOUNDARY: Exact isolated tenant and principal in fixture only.
+ * AUTHORITY BOUNDARY: No test fixtures can grant a live Founder permission.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution in this suite.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.15.2-FOUNDER-CONTRACT-HEADER-INTEGRITY
+ *            keeps sovereign boundary metadata inside the certified header
+ *            even as historical change records grow.
  * CHANGELOG: v1.15.1-FOUNDER-PRIVATE-REVIEW-TRANSITION-CERT
  *            models the correct public-before-private source boundary:
  *            unpublished Strategy cannot appear on an ordinary read; only
@@ -867,7 +875,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.15.1-FOUNDER-PRIVATE-REVIEW-TRANSITION-CERT
+// VERSION: v1.15.2-FOUNDER-CONTRACT-HEADER-INTEGRITY
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
