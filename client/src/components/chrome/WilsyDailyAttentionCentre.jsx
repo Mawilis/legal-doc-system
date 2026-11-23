@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.7.0-DRAFT-CREATION-TRUTH
+ * VERSION: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION unifies
+ *          bell task rows with the reusable source-owned workforce
+ *          blueprint, preserving authenticated My Work handoff.
  * CHANGELOG: v3.7.0-DRAFT-CREATION-TRUTH differentiates a
  *            persisted CRM draft receipt from published active work,
  *            retaining source-verified creation and refreshing real feeds.
@@ -171,6 +174,7 @@ import {
   createAttentionSourceWork,
 } from '../../services/attentionFeedClient.js';
 import DailyAttentionWorkspace from '../attention/DailyAttentionWorkspace.jsx';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 
 const FILTERS = Object.freeze([
   { id: 'ALL', label: 'All work', purpose: 'Review every active item currently included by EOS.' },
@@ -1411,51 +1415,51 @@ export default function WilsyDailyAttentionCentre({
                     )}
                   </div>
                 ) : filteredItems.map((item) => (
-                  <article key={item.source_key} className="mb-1 flex flex-col gap-1 rounded-lg border border-white/10 bg-white/[0.025] px-3 py-2">
+                  <WorkTaskBlueprintRow key={item.source_key} className="mb-1 flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.08em]">
-                      <span className="font-semibold text-amber-200">{unifiedMyWorkSourceLabel(item.source)}</span>
-                      <span className={item.is_overdue ? 'font-semibold text-rose-300' : 'text-slate-400'}>
+                      <span className="font-semibold text-slate-700">{unifiedMyWorkSourceLabel(item.source)}</span>
+                      <span className={item.is_overdue ? 'font-semibold text-rose-800' : 'text-slate-600'}>
                         {item.is_overdue ? 'Overdue' : item.priority + ' priority'}
                       </span>
                     </div>
                     <button type="button" aria-expanded={expanded === item.source_key}
                       onClick={() => setExpanded((previous) => previous === item.source_key ? null : item.source_key)}
-                      className="mt-2 flex w-full items-start justify-between gap-2 text-left text-sm font-medium text-white hover:text-amber-100">
+                      className={'mt-1 flex w-full items-start justify-between gap-2 ' + workTaskBlueprint.title}>
                       <span className="min-w-0 break-words">{item.title}</span>
                       <ChevronDown size={15} className={'mt-0.5 shrink-0 transition ' +
                         (expanded === item.source_key ? 'rotate-180' : '')}/>
                     </button>
                     {item.whyRanked && (
-                      <p className="mt-1 text-[11px] text-amber-100/80">
+                      <p className="mt-1 text-xs text-slate-700">
                         Priority {item.urgencyScore}/100 · {item.whyRanked}
                       </p>
                     )}
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-600">
                       <span className="inline-flex items-center gap-1"><Clock3 size={12}/>{dueLabel(item.due_at)}</span>
                       <span>{item.status}</span>
                     </div>
                     <button type="button" onClick={() => onOpenWork(item)}
                       aria-label={'Act on ' + item.title + ' in My Work'}
-                      className="mt-1 inline-flex w-fit items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
+                      className={'mt-1 w-fit ' + workTaskBlueprint.secondary}>
                       Act in My Work <ArrowRight size={13}/>
                     </button>
                     {expanded === item.source_key && (
-                      <div className="mt-3 border-t border-white/10 pt-3">
+                      <div className="mt-2 border-t border-slate-200 pt-2">
                         {item.description && (
-                          <p className="mb-3 whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">
+                          <p className="mb-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-700">
                             {item.description}
                           </p>
                         )}
-                        <p className="text-[11px] leading-5 text-slate-400">
+                        <p className="text-xs leading-5 text-slate-600">
                           Work actions are verified and recorded by the owning EOS service.
                         </p>
                         <button type="button" onClick={() => onOpenWork(item)}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
+                          className={'mt-2 ' + workTaskBlueprint.primary}">
                           Open in My Work <ArrowRight size={14}/>
                         </button>
                       </div>
                     )}
-                  </article>
+                  </WorkTaskBlueprintRow>
                 ))}
                 {workScope && attentionFeed?.nextCursor && (
                   <button type="button" disabled={loadingMore} onClick={loadMoreAttention}
@@ -1524,7 +1528,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.7.0-DRAFT-CREATION-TRUTH
+ * VERSION: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
