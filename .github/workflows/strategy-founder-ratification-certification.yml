@@ -16,7 +16,7 @@ name: WILSY Founder Strategy Ratification Certification
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, eos/p0-daily-attention-source-parity-20261122]
     paths:
       - "tools/eos/auth/founder_institutional_designation.py"
       - "tools/eos/saas/domain/company_operating_document.py"
