@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.12.0-FOCUSED-HQ-WORK-RECORD
+ * VERSION: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS aligns
+ *          Headquarters work queue typography, spacing, selected
+ *          focus, work details and form controls with the canonical
+ *          dense accessible workforce style without changing EOS.
  * CHANGELOG: v4.12.0-FOCUSED-HQ-WORK-RECORD moves the selected
  *          Headquarters task into the same full-focus operating
  *          pattern as Daily Attention, replacing the cramped
@@ -321,6 +325,27 @@ body:has(.wilsyHqShell)::after{display:none}
   .wilsyHqShell .hq-navigation-collapse,.wilsyHqShell .hq-navigation-open{display:none}
   .wilsyHqShell .hq-layout--navigation-collapsed>.hq-sidebar{display:flex}
 }
+
+/* Canonical workforce task presentation: legible, neutral, navigable. */
+.wilsyHqShell .hq-work .hq-work-tabs{padding:8px;gap:6px}
+.wilsyHqShell .hq-work .hq-work-tabs button{font-size:11px;min-height:30px;padding:5px 10px;border-radius:7px}
+.wilsyHqShell .hq-work .hq-work-search{padding:9px 12px}
+.wilsyHqShell .hq-work .hq-work-search input{font-size:13px;height:30px;color:#182a48}
+.wilsyHqShell .hq-work .hq-work-list{padding:0;max-height:min(44dvh,460px)}
+.wilsyHqShell .hq-work .hq-work-row{min-height:57px;padding:10px 12px;border-bottom:1px solid #e0e6ef;border-left:3px solid transparent;gap:10px}
+.wilsyHqShell .hq-work .hq-work-row:hover,.wilsyHqShell .hq-work .hq-work-row[aria-pressed=true]{background:#f1f5fc;border-left-color:#175eae}
+.wilsyHqShell .hq-work .hq-work-row-main strong{font-size:13px;line-height:1.4;color:#12223d}
+.wilsyHqShell .hq-work .hq-work-row-main small{font-size:11px;line-height:1.5;color:#50627c}
+.wilsyHqShell .hq-work .hq-priority{font-size:10px;border-radius:6px;padding:3px 7px}
+.wilsyHqShell .hq-work .hq-record{padding:18px;background:#fff;border-top:1px solid #d8e1ef;max-height:min(60dvh,600px);overflow:auto;overscroll-behavior:contain}
+.wilsyHqShell .hq-work .hq-record h3{font-size:16px;line-height:1.45;color:#132746;font-weight:750}
+.wilsyHqShell .hq-work .hq-record p{font-size:13px;line-height:1.65;color:#435572}
+.wilsyHqShell .hq-work .hq-record dl{font-size:12px;grid-template-columns:minmax(84px,auto) minmax(0,1fr);gap:9px 14px}
+.wilsyHqShell .hq-work .hq-record dt{color:#526681}
+.wilsyHqShell .hq-work .hq-record dd{color:#172e4d}
+.wilsyHqShell .hq-work .hq-command label{font-size:12px;gap:8px}
+.wilsyHqShell .hq-work .hq-command textarea{font-size:13px;min-height:90px;padding:10px}
+.wilsyHqShell .hq-work .hq-command button[type=submit]{font-size:12px;min-height:36px;padding:8px 12px}
 `;
 
 
@@ -1551,7 +1576,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.12.0-FOCUSED-HQ-WORK-RECORD
+ * VERSION: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
