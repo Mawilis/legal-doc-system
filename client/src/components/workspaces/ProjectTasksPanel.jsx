@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.60.0-ACTIONABLE-VERIFIED-TRIAGE
+ * VERSION: v1.60.1-TRIAGE-DATE-ORDER
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.60.1-TRIAGE-DATE-ORDER declares the
+ *          browser-local comparison date before the memoized verified
+ *          task filter evaluates, preventing a render-time TDZ fault.
  * CHANGELOG: v1.60.0-ACTIONABLE-VERIFIED-TRIAGE adds
  *          source-scoped work attention filters for unassigned and
  *          blocked/overdue tasks; selected sets can be populated from
@@ -870,6 +873,9 @@ export default function ProjectTasksPanel({
     );
   };
 
+  const currentDay = new Date();
+  const todayISO = currentDay.getFullYear() + '-' + String(currentDay.getMonth() + 1).padStart(2, '0')
+    + '-' + String(currentDay.getDate()).padStart(2, '0');
   const counts = STATUSES.map(status => ({
     status, count: items.filter(item => item.status === status).length,
   }));
@@ -912,9 +918,6 @@ export default function ProjectTasksPanel({
   useEffect(() => { setWorkViewPage(0); }, [
     offset, workQuery, workMineOnly, workAttention, workStatus, workKind, workOrder, workViewSize,
   ]);
-  const currentDay = new Date();
-  const todayISO = currentDay.getFullYear() + '-' + String(currentDay.getMonth() + 1).padStart(2, '0')
-    + '-' + String(currentDay.getDate()).padStart(2, '0');
   const overdueOnPage = items.filter(item => item.due_date && item.due_date < todayISO
     && !['DONE', 'CANCELLED'].includes(item.status)).length;
   const selfIsContributor = participants.some(person =>
@@ -2039,7 +2042,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.60.0-ACTIONABLE-VERIFIED-TRIAGE
+// VERSION: v1.60.1-TRIAGE-DATE-ORDER
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
