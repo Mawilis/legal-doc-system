@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
+ * VERSION: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
+ *            adds bounded searchable/paged M04 source-owned work inspection
+ *            and hides repeated legacy task and plan registers until requested.
+ *            Search and filters never change EOS truth, completeness, IAM or
+ *            task evidence; source verification remains over the full page.
  * CHANGELOG: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
  *            defaults the lengthy Contents navigation to collapsed,
  *            expands it on demand via an accessible toolbar toggle, and
@@ -516,6 +521,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('document');
   const [contentsOpen, setContentsOpen] = useState(false);
+  const [executionSearch, setExecutionSearch] = useState('');
+  const [executionFilter, setExecutionFilter] = useState('ALL');
+  const [executionPage, setExecutionPage] = useState(0);
   const [history, setHistory] = useState(null);
   const [query, setQuery] = useState({ review: false, revision: null });
   const queryRef = useRef(query);
@@ -921,6 +929,26 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       pastDueCalendar: unfinishedWithDue, observedAt: delivery.verifiedAt,
       certifiedOutcome: null };
   })();
+
+  // This view is a bounded client presentation of an already-complete verified
+  // task snapshot; filters do not affect the underlying M04 verification gate.
+  const executionMatches = m04Execution ? m04Execution.rows.filter(({ task, remaining }) => {
+    const search = executionSearch.trim().toLocaleLowerCase();
+    if (search && !task.title.toLocaleLowerCase().includes(search)) return false;
+    if (executionFilter === 'UNASSIGNED') return task.assignee_principal_id === null;
+    if (executionFilter === 'WAITING') return remaining > 0;
+    if (executionFilter === 'UNDATED') return task.due_date === null;
+    if (executionFilter === 'DUE') return task.due_date !== null
+      && !['DONE', 'CANCELLED'].includes(task.status)
+      && task.due_date < m04Execution.observedAt.slice(0, 10);
+    if (executionFilter === 'DONE') return task.status === 'DONE';
+    return true;
+  }) : [];
+  const executionPageSize = 6;
+  const executionPageCount = Math.max(1, Math.ceil(executionMatches.length / executionPageSize));
+  const safeExecutionPage = Math.min(executionPage, executionPageCount - 1);
+  const visibleExecutionRows = executionMatches.slice(
+    safeExecutionPage * executionPageSize, (safeExecutionPage + 1) * executionPageSize);
 
   /** Read immutable lifecycle evidence through the existing Projects owner IAM.
    * No Strategy permission is used to grant task activity, and no write occurs.
@@ -1819,9 +1847,32 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             Due-date comparisons use a UTC calendar date, not a server-certified overdue decision.
                             Task DONE and audit history are not strategic outcome certification.</p>
                           <details className="mt-4 rounded-lg border border-slate-600/70 p-3">
-                            <summary className="cursor-pointer font-semibold">Inspect accountable work and lifecycle evidence</summary>
+                            <summary className="cursor-pointer font-semibold">Inspect accountable work and lifecycle evidence · {m04Execution.rows.length} records</summary>
+                            <div className="mt-3 flex flex-wrap items-end gap-3" aria-label="M04 work navigator">
+                              <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-slate-200">Find work by title
+                                <input type="search" value={executionSearch} placeholder="Search verified tasks…"
+                                  onChange={event => { setExecutionSearch(event.target.value); setExecutionPage(0); }}
+                                  className="min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-3 text-sm text-white" />
+                              </label>
+                              <label className="flex flex-col gap-1 text-xs text-slate-200">Show work
+                                <select value={executionFilter}
+                                  onChange={event => { setExecutionFilter(event.target.value); setExecutionPage(0); }}
+                                  className="min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-3 text-sm text-white">
+                                  <option value="ALL">All verified work</option>
+                                  <option value="UNASSIGNED">Unassigned</option>
+                                  <option value="WAITING">Waiting on dependencies</option>
+                                  <option value="UNDATED">Without due dates</option>
+                                  <option value="DUE">Past due date</option>
+                                  <option value="DONE">Done in task source</option>
+                                </select>
+                              </label>
+                              <span className="text-xs text-slate-300" role="status">
+                                {executionMatches.length} matching · page {safeExecutionPage + 1} of {executionPageCount}
+                              </span>
+                            </div>
+                            {executionMatches.length === 0 && <p className="mt-3 text-sm text-slate-300">No verified work matches this view. The source work snapshot is unchanged.</p>}
                             <ul className="mt-3 divide-y divide-slate-700/70">
-                              {m04Execution.rows.map(({ task, remaining }) => <li key={task.task_id}
+                              {visibleExecutionRows.map(({ task, remaining }) => <li key={task.task_id}
                                 className="py-3">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <div><strong className="text-sm">{task.title}</strong>
@@ -1862,6 +1913,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                 </div>}
                               </li>)}
                             </ul>
+                            {executionMatches.length > executionPageSize && <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                              <button type="button" disabled={safeExecutionPage === 0}
+                                onClick={() => setExecutionPage(page => Math.max(0, page - 1))}
+                                className="rounded-lg border border-slate-500 px-3 py-2 text-sm">Previous work</button>
+                              <button type="button" disabled={safeExecutionPage >= executionPageCount - 1}
+                                onClick={() => setExecutionPage(page => Math.min(executionPageCount - 1, page + 1))}
+                                className="rounded-lg border border-slate-500 px-3 py-2 text-sm">Next work</button>
+                            </div>}
                           </details>
                           {typeof onOpenProject === 'function' && <button type="button"
                             className="mt-3 rounded-lg border border-slate-500 px-3 py-2 text-sm"
@@ -1877,11 +1936,13 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 
 
                       {delivery.page.items.length === 0 ? <p role="status">EOS verified no tasks on this page.</p>
-                        : <ul className={styles.strategyTaskList}>{delivery.page.items.map(item =>
+                        : <details className="mt-4 rounded-lg border border-slate-600/60 p-3">
+                          <summary className="cursor-pointer font-semibold">Source task register · {delivery.page.items.length} records (additional detail)</summary>
+                          <ul className={styles.strategyTaskList}>{delivery.page.items.map(item =>
                           <li key={item.task_id}>
                             <div><strong>{item.title}</strong><span>{item.kind === 'MILESTONE' ? 'Milestone' : 'Task'}{item.due_date ? ' · Due ' + item.due_date : ''}</span></div>
                             <span className={styles.projectStatus} data-status={item.status}>{item.status.replaceAll('_', ' ')}</span>
-                          </li>)}</ul>}
+                          </li>)}</ul></details>}
                       {(delivery.page.offset > 0 || delivery.page.has_more) && <div className={styles.strategyPagination}>
                         {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
                         <span>Page {Math.floor(delivery.page.offset / 50) + 1}</span>
@@ -1948,6 +2009,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         M02 execution summary unavailable: full, unique 18-record programme coverage and predecessor readback have not both been verified. No counts are inferred.
                       </p>}
 
+                      <details className="mt-4 rounded-lg border border-slate-600/60 p-3">
+                        <summary className="cursor-pointer font-semibold">Browse all 18 planned milestones and tasks</summary>
                       <div className={styles.strategyPlanGroups}>
                         {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
                           <h4>{kind === 'MILESTONE' ? 'Milestones · 6' : 'Implementation tasks · 12'}</h4>
@@ -1968,6 +2031,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           })}</ul>
                         </div>)}
                       </div>
+                      </details>
                       {planState.state !== 'IDLE' && <p role="status" aria-live="polite">
                         {planState.message} {planState.state === 'RUNNING' ? planState.created + ' created so far.' : ''}
                       </p>}
@@ -2067,7 +2131,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
+// VERSION: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
