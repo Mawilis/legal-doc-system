@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.14.0-COMMAND-422-RECOVERY-CERT
+ * VERSION: v1.15.0-DIRECT-FOUNDER-RATIFICATION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.15.0-DIRECT-FOUNDER-RATIFICATION-CERT
+ *            verifies submitted Strategy opens a focused Founder decision
+ *            directly after the top action rail, hides document/project
+ *            material until Back, restores the reviewed source, and does
+ *            not write until explicit ratification.
  * CHANGELOG: v1.14.0-COMMAND-422-RECOVERY-CERT
  *            certifies HTTP 422 request rejection preserves private Strategy
  *            content, surfaces only safe field names and command operation,
@@ -471,6 +476,56 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.queryByRole('region', { name: 'M02 live execution readback' })).not.toBeInTheDocument();
   });
 
+  it('opens Founder ratification immediately without scrolling through submitted Strategy and Projects', async () => {
+    const submitted = record('STRATEGY', 'SUBMITTED', 2);
+    api.get.mockImplementation(url => {
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: {
+          ...view(submitted, ['READ_HISTORY', 'REVIEW_DRAFTS', 'FOUNDER_RATIFY'], true),
+          classification: 'STRATEGY',
+        } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    const action = await screen.findByRole('button', { name: 'Open Founder ratification' });
+    const navigation = screen.getByRole('navigation', { name: 'Company document actions' });
+    expect(navigation.contains(action)).toBe(true);
+    fireEvent.click(action);
+    const form = screen.getByRole('form', { name: 'Founder Strategy self-ratification' });
+    expect(form).toBeVisible();
+    expect(navigation.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByLabelText('Effective date and time')).toHaveFocus();
+    expect(screen.getByText(/Submitted revision 2/)).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'M03 Strategy governance gates' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Synthetic purpose' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Projects & delivery' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Back to submitted Strategy' })[0]);
+    expect(screen.queryByRole('form', { name: 'Founder Strategy self-ratification' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'M03 Strategy governance gates' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Synthetic purpose' })).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('does not expose Founder ratification without EOS-admitted current authority', async () => {
+    const submitted = record('STRATEGY', 'SUBMITTED', 2);
+    api.get.mockImplementation(url => {
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: {
+          ...view(submitted, ['READ_HISTORY', 'REVIEW_DRAFTS'], true),
+          classification: 'STRATEGY',
+        } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    expect(await screen.findByText(/Independent publication is required unless EOS verifies/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Open Founder ratification' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Founder Strategy self-ratification' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('M03 validates exact Founder self-ratification and rejects copied approval for other classes', async () => {
     const reference = 'WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123';
     const ratified = { ...record('STRATEGY'), approved_by_principal_id: scope.principalId,
@@ -804,7 +859,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.14.0-COMMAND-422-RECOVERY-CERT
+// VERSION: v1.15.0-DIRECT-FOUNDER-RATIFICATION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
