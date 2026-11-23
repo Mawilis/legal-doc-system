@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.9.0-INLINE-SELECTION-COMMANDS
+ * VERSION: v1.10.0-MULTI-SELECT-ROW-COMMANDS
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.10.0-MULTI-SELECT-ROW-COMMANDS makes
+ *          every selected row locally actionable even when many are
+ *          selected; each task retains its separately authorized, audited
+ *          EOS command. Avoids duplicate task-open controls and keeps
+ *          the complete existing action menu available next to its work.
  * CHANGELOG: v1.9.0-INLINE-SELECTION-COMMANDS shows the
  *          existing capability-gated lifecycle and full action menu next to
  *          one selected task, without separate command authority. Multi-
@@ -95,7 +100,7 @@ export default function ProjectWorkRow({
   onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
   onAttachments, onApprovals, onActivity, capabilities = NO_ACTION_CAPABILITIES,
 }) {
-  const inlineActions = selected && selectedCount === 1;
+  const inlineActions = selected && selectedCount > 0;
   const rowCommands = <ProjectWorkRowActions item={item} busy={busy} dense
     {...(capabilities || NO_ACTION_CAPABILITIES)}
     onTransition={onTransition} onComplete={onComplete}
@@ -185,7 +190,7 @@ export default function ProjectWorkRow({
                     Clear
                   </button>
                 </div>}
-                {density !== 'compact' && <div className="mt-1.5 flex min-w-0 items-center gap-3">
+                {density !== 'compact' && !inlineActions && <div className="mt-1.5 flex min-w-0 items-center gap-3">
                   {item.description && <p className="min-w-0 flex-1 truncate text-xs text-slate-600"
                     title={item.description}>{item.description}</p>}
                   <button type="button"
@@ -243,7 +248,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.9.0-INLINE-SELECTION-COMMANDS
+// VERSION: v1.10.0-MULTI-SELECT-ROW-COMMANDS
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
