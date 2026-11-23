@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.46.0-NONBLOCKING-OPTIONAL-TASK-SOURCES
+ * VERSION: v1.47.0-ACCOUNTABLE-TASK-EDITOR
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.47.0-ACCOUNTABLE-TASK-EDITOR
+ *          prioritizes assignment and due dates in the existing drawer,
+ *          puts accountable delivery first in edit form and collapses
+ *          secondary classification details. All source permissions,
+ *          CAS task revisions and independent readbacks remain intact.
  * CHANGELOG: v1.46.0-NONBLOCKING-OPTIONAL-TASK-SOURCES
  *          admits the already verified task list and exact task drawer
  *          immediately after EOS list validation, while contributor,
@@ -1415,17 +1420,10 @@ export default function ProjectTasksPanel({
           <button type="button" disabled={busy} className="wp-button"
             onClick={() => setEditor(null)}>Cancel edit</button>
         </div>
-        {!assignmentOnly && <><label className="block text-sm font-semibold text-slate-800">Work title
-          <input aria-label="Edit task title" required maxLength={180} value={editor.title}
-            onChange={event => setEditor(value => ({ ...value, title: event.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
-        </label>
-        <label className="block text-sm font-semibold text-slate-800">Description
-          <textarea aria-label="Edit task description" rows={3} maxLength={5000} value={editor.description}
-            onChange={event => setEditor(value => ({ ...value, description: event.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
-        </label>
-        </>}
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
+          <p className="text-sm font-bold text-blue-950">Delivery accountability</p>
+          <p className="mt-1 text-xs text-blue-900">Choose a responsible contributor${assignmentOnly ? '.' : ' and the completion date.'} Changes are saved only after verification.</p>
+        </div>
         <div className={assignmentOnly ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
           {!assignmentOnly && <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
             onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>}
@@ -1445,7 +1443,19 @@ export default function ProjectTasksPanel({
             </select>
           </label>
         </div>
-        {!assignmentOnly && <p className="text-xs text-slate-600">Parent, predecessors and milestone type remain immutable. Reassignment requires a current exact-project Contributor.</p>}
+        {!assignmentOnly && <div className="space-y-3 border-t border-slate-200 pt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Additional task details</p><label className="block text-sm font-semibold text-slate-800">Work title
+          <input aria-label="Edit task title" required maxLength={180} value={editor.title}
+            onChange={event => setEditor(value => ({ ...value, title: event.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+        </label>
+        <label className="block text-sm font-semibold text-slate-800">Description
+          <textarea aria-label="Edit task description" rows={3} maxLength={5000} value={editor.description}
+            onChange={event => setEditor(value => ({ ...value, description: event.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
+        </label>
+        </div>}
+        {!assignmentOnly && <p className="text-xs text-slate-600">The project verifies eligible contributors. Parent and predecessor relationships remain unchanged.</p>}
         <button type="submit" className="wp-button wp-button-primary"
           disabled={busy || !(assignmentOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)
             || !editor.title.trim() || Boolean(
@@ -1570,8 +1580,8 @@ export default function ProjectTasksPanel({
               {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-                  onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item); }}>
-                  Edit / assign
+                  onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
+                  Assign & schedule
                 </button>}
               <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
@@ -1588,17 +1598,43 @@ export default function ProjectTasksPanel({
             </nav>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
+            {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4" aria-label="Next steps for this task">
+              <h4 className="text-base font-bold text-blue-950">Next steps</h4>
+              <p className="mt-1 text-sm text-blue-900">Plan who is responsible and when this work is due.</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg border border-blue-200 bg-white p-3">
+                  <p className="text-xs font-semibold text-slate-600">Responsible person</p>
+                  <p className="mt-1 font-bold text-slate-950">{drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}</p>
+                  {!drawerTask.assignee_principal_id && <p className="mt-1 text-xs text-slate-700">Choose an eligible project contributor.</p>}
+                </div>
+                <div className="rounded-lg border border-blue-200 bg-white p-3">
+                  <p className="text-xs font-semibold text-slate-600">Planned completion date</p>
+                  <p className="mt-1 font-bold text-slate-950">{drawerTask.due_date || 'Not set'}</p>
+                  {!drawerTask.due_date && <p className="mt-1 text-xs text-slate-700">Choose a date from the calendar.</p>}
+                </div>
+              </div>
+              {(actionCapabilities?.canEdit || actionCapabilities?.canAssign) && <button type="button"
+                className="mt-3 min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 py-2 font-bold text-white hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
+                {actionCapabilities?.canEdit ? 'Assign contributor and set due date' : 'Assign contributor'}
+              </button>}
+              {!actionCapabilities && <p role="status" className="mt-2 text-xs text-blue-900">Checking who can update this task…</p>}
+            </section>}
             <section className="pt-5" aria-label="Task description">
               <h4 className="text-sm font-bold text-slate-950">Description</h4>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
                 {drawerTask.description || 'No description recorded'}
               </p>
             </section>
-            <ProjectWorkPurposePanel
-              key={[scope, drawerTask.task_id, drawerTask.revision].join(':')}
-              task={drawerTask} projectId={projectId}
-              tenantId={tenantId} principalId={principalId}
-              tenantHeaders={tenantHeaders} canClassify={Boolean(actionCapabilities?.canEdit)}/>
+            <details className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-bold text-slate-900">Work classification and history</summary>
+              <p className="mt-2 text-xs text-slate-700">Review the saved category or propose an authorized change. This is separate from assignment and deadlines.</p>
+              <ProjectWorkPurposePanel
+                key={[scope, drawerTask.task_id, drawerTask.revision].join(':')}
+                task={drawerTask} projectId={projectId}
+                tenantId={tenantId} principalId={principalId}
+                tenantHeaders={tenantHeaders} canClassify={Boolean(actionCapabilities?.canEdit)}/>
+            </details>
             <section className="mt-5 border-t border-slate-200 pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-sm font-bold text-slate-950">Dependencies</h4>
@@ -1656,7 +1692,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.46.0-NONBLOCKING-OPTIONAL-TASK-SOURCES
+// VERSION: v1.47.0-ACCOUNTABLE-TASK-EDITOR
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
