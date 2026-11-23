@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.15.2-M04-CANONICAL-PROJECT-STATUS
+ * VERSION: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
+ *            defaults the lengthy Contents navigation to collapsed,
+ *            expands it on demand via an accessible toolbar toggle, and
+ *            gives document/execution the reclaimed width without altering
+ *            source reads, publishing, task authority or evidence.
  * CHANGELOG: v2.15.2-M04-CANONICAL-PROJECT-STATUS
  *            compares Strategy execution project status with Python EOS
  *            ProjectStatus.ACTIVE.value ('active'), not IAM's 'ACTIVE'.
@@ -510,6 +515,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('document');
+  const [contentsOpen, setContentsOpen] = useState(false);
   const [history, setHistory] = useState(null);
   const [query, setQuery] = useState({ review: false, revision: null });
   const queryRef = useRef(query);
@@ -1421,9 +1427,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   return createPortal(<div className={styles.backdrop} onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section ref={containerRef} className={styles.viewer} role="dialog" aria-modal="true" aria-labelledby="company-document-title" data-company-document={classification} onKeyDown={trapKeyboard}>
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
-      <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button></div>
-      <div className={styles.body}>
-        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
+      <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button><button type="button" aria-controls="wilsy-document-contents" aria-expanded={contentsOpen} onClick={() => setContentsOpen(open => !open)}><BookOpen size={14}/>{contentsOpen ? 'Hide contents' : 'Show contents'}</button></div>
+      <div className={styles.body} style={contentsOpen ? undefined : { gridTemplateColumns: 'minmax(0,1fr)' }}>
+        {contentsOpen && <aside id="wilsy-document-contents" className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>}
         <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
           {commandIssue && <section ref={commandIssueRef} tabIndex={-1} className={styles.notice} role="alert"
@@ -2061,7 +2067,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.15.2-M04-CANONICAL-PROJECT-STATUS
+// VERSION: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
