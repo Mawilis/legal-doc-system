@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX
+ * VERSION: v3.16.0-FOCUSED-ATTENTION-NAVIGATION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,6 +10,10 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.16.0-FOCUSED-ATTENTION-NAVIGATION gives selected
+ *          details and priority briefing full-width focus and native
+ *          Back to work navigation. No duplicate EOS commands or
+ *          inferred authorization. The queue remains preserved.
  * CHANGELOG: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX applies the
  *          shared accessible task-row and contrast blueprint to the
  *          authorized virtual inbox; source ownership and actions stay intact.
@@ -541,12 +545,13 @@ export default function DailyAttentionWorkspace({
       || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || '')
       || target?.isContentEditable) return;
     if (event.key === 'Escape') {
-      if (showShortcuts || mode === 'CALENDAR' || selectedId) {
+      if (showShortcuts || mode === 'CALENDAR' || selectedId || showBriefing) {
         event.preventDefault();
         event.stopPropagation();
         if (showShortcuts) setShowShortcuts(false);
         else if (mode === 'CALENDAR') setMode('LIST');
-        else setSelectedId(null);
+        else if (selectedId) setSelectedId(null);
+        else setShowBriefing(false);
       }
       return;
     }
@@ -555,7 +560,7 @@ export default function DailyAttentionWorkspace({
       setShowShortcuts((value) => !value);
       return;
     }
-    if (event.key === '/') {
+    if (event.key === '/' && !selectedId && !showBriefing) {
       event.preventDefault();
       searchRef.current?.focus();
       return;
@@ -610,7 +615,7 @@ export default function DailyAttentionWorkspace({
           <>
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
           <div className="flex min-w-0 items-baseline gap-2">
-            <h2 className="shrink-0 text-sm font-bold text-white">Daily Attention</h2>
+            <h2 className="shrink-0 text-sm font-bold text-white">{selected ? 'Work details' : showBriefing ? 'Priority briefing' : 'Daily Attention'}</h2>
             <span className="truncate text-[10px] text-slate-400">
               {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'} · verified {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
             </span>
@@ -670,7 +675,7 @@ export default function DailyAttentionWorkspace({
             when their source-owned action APIs are certified.
           </div>
         )}
-        {mode === 'LIST' && <div className="mt-2 flex flex-wrap gap-2 text-[10px]" aria-label={resultsUpdating || resultsUnavailable
+        {mode === 'LIST' && !selected && !showBriefing && <div className="mt-2 flex flex-wrap gap-2 text-[10px]" aria-label={resultsUpdating || resultsUnavailable
           ? 'Last verified current-source workload' : 'Verified current-source workload'}>
           {[
             ['ALL', 'Active', feed.counts.active],
@@ -693,7 +698,7 @@ export default function DailyAttentionWorkspace({
           ))}
           {(resultsUpdating || resultsUnavailable) && <span className="self-center text-amber-100/80">Last verified</span>}
         </div>}
-        {mode === 'LIST' && <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Daily attention toolbar">
+        {mode === 'LIST' && !selected && !showBriefing && <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Daily attention toolbar">
           <label className="flex min-w-[180px] flex-1 items-center gap-2 rounded-md border border-white/15 bg-[#0a1628] px-2.5">
             <Search size={14} className="shrink-0 text-slate-400"/>
             <input ref={searchRef} type="search" aria-label="Search authorised work"
@@ -744,7 +749,7 @@ export default function DailyAttentionWorkspace({
             <ShieldCheck size={12}/> Source details
             <ChevronRight size={12} className={showSourceDetails ? 'rotate-90' : ''}/>
           </button>
-          {ranked.length > 0 && <button type="button" onClick={() => setShowBriefing((value) => !value)}
+          {ranked.length > 0 && !selected && <button type="button" onClick={() => { setSelectedId(null); setShowBriefing((value) => !value); }}
             aria-expanded={showBriefing} className="text-slate-400 hover:text-amber-100">
             {showBriefing ? 'Hide' : 'Show'} briefing
           </button>}
@@ -883,36 +888,14 @@ export default function DailyAttentionWorkspace({
           </button>
         </div>
       ) : (
-        <div data-attention-detail-layout={selected ? "split" : "list"}
-           className={selected
-             ? "relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)]"
-             : "relative flex min-h-0 min-w-0 flex-1 overflow-hidden"}>
+        <div data-attention-detail-layout={selected ? 'detail' : showBriefing ? 'briefing' : 'list'}
+           className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
            <div data-attention-work-list="true"
-             className={"relative min-h-0 min-w-0 flex-col overflow-hidden " + (selected ? "hidden md:flex" : "flex flex-1")}>
+             className={'relative min-h-0 min-w-0 flex-col overflow-hidden '
+               + (selected || showBriefing ? 'hidden' : 'flex flex-1')}>
           <div className="relative min-h-0 flex-1 overflow-y-auto" ref={listRef}
             data-attention-scroll-container="true"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
-          {ranked.length > 0 && showBriefing && filter === 'ALL' && !query.trim() && source === 'ALL' && (
-            <section aria-label="Today's attention briefing" className="border-b border-white/10 bg-amber-300/[0.035] px-4 py-3">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200">Start here</h3>
-                <button type="button" onClick={() => setShowBriefing(false)}
-                  className="text-[11px] text-slate-400 hover:text-white">Collapse briefing</button>
-              </div>
-              <div className="space-y-1">
-                {ranked.map((item, index) => (
-                  <button key={item.id} type="button" onClick={() => {
-                    setSelectedId(item.id); setSelectionIndex(page.findIndex((x) => x.id === item.id));
-                  }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-white/5">
-                    <span className="w-4 text-amber-300">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate font-medium">{item.title}</span>
-                    <span className="shrink-0 text-[10px] text-slate-400">{label(item.sourceModule)}</span>
-                    <ChevronRight size={13}/>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
           {!page.length && (resultsUpdating || resultsUnavailable) && (
             <section aria-label="Last verified attention results" className="px-6 py-8"
               data-attention-verified-results="true">
@@ -1113,17 +1096,47 @@ export default function DailyAttentionWorkspace({
             </div>
           )}
           </div>
+          {showBriefing && !selected && (
+            <section aria-label="Today's attention briefing"
+              className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-[#182842] px-4 py-4">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                <button type="button" onClick={() => setShowBriefing(false)}
+                  className="inline-flex min-h-9 items-center gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold text-white hover:bg-white/10">
+                  ← Back to work
+                </button>
+                <span className="text-xs text-slate-300">Ranked verified work · {ranked.length} priorities</span>
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-white">Start here</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-300">Choose a priority to inspect its source-owned accountability, deadline and actions.</p>
+              <div className="mt-3 divide-y divide-white/10 rounded-lg border border-white/10">
+                {ranked.map((item, index) => (
+                  <button key={item.id} type="button"
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      setSelectionIndex(page.findIndex((row) => row.id === item.id));
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                    <span className="w-6 shrink-0 font-semibold tabular-nums text-amber-300">{index + 1}</span>
+                    <span className="min-w-0 flex-1 truncate font-semibold">{item.title}</span>
+                    <span className="shrink-0 text-xs text-slate-300">{label(item.sourceModule)}</span>
+                    <ChevronRight size={15}/>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {selected && (
             <aside aria-label="Attention detail rail"
-              className="relative h-full min-h-0 min-w-0 w-full overflow-y-auto overscroll-contain border-t border-amber-300/25 bg-[#182842] px-4 py-3 md:border-l md:border-t-0 md:px-5 md:py-4">
-          <div className="flex items-center justify-between gap-2">
+              className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-[#182842] px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <button type="button" onClick={() => setSelectedId(null)}
+              aria-label="Close attention detail"
+              className="inline-flex min-h-9 items-center gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold text-white hover:bg-white/10">
+              ← Back to {showBriefing ? 'briefing' : 'work'}
+            </button>
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200">
               Work detail · {label(selected.sourceModule)}
             </h3>
-            <button type="button" onClick={() => setSelectedId(null)}
-              aria-label="Close attention detail" className="rounded-lg p-1 text-slate-300 hover:bg-white/10">
-              <X size={16}/>
-            </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span className={'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-bold ' + severityFor(selected).chip}>
@@ -1241,7 +1254,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX
+// VERSION: v3.16.0-FOCUSED-ATTENTION-NAVIGATION
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
