@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
+ * VERSION: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
+ *            keeps focused inspection visible below the fixed document bar.
  * CHANGELOG: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
  *            exposes source-backed recent-work continuation as a named region.
  * CHANGELOG: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
@@ -2054,7 +2056,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             Due-date comparisons use a UTC calendar date, not a server-certified overdue decision.
                             Task DONE and audit history are not strategic outcome certification.</p>
                           </>}
-                          <details ref={executionInspectorRef} open={executionInspectorOpen} className="mt-4 rounded-lg border border-slate-600/70 p-3">
+                          <details ref={executionInspectorRef} open={executionInspectorOpen} className="mt-4 scroll-mt-44 rounded-lg border border-slate-600/70 p-3">
                             <summary className="cursor-pointer font-semibold" onClick={event => {
                               event.preventDefault();
                               setExecutionInspectorOpen(open => !open);
@@ -2390,7 +2392,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
+// VERSION: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
