@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.8.1-FOCUSED-COMMAND-REJECTION
+ * VERSION: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
+ *            transitions submitted Strategy directly into a focused
+ *            Founder ratification form, rather than scrolling past six
+ *            pillars and Projects. Returns to verified submitted view on
+ *            cancel; resets scroll and focuses date picker on entry. EOS
+ *            still owns all publication authority, command and readback.
  * CHANGELOG: v2.8.1-FOCUSED-COMMAND-REJECTION focuses
  *            the visible, sanitized rejection immediately after a failed
  *            command, even when the author was scrolled to the Save control.
@@ -442,6 +448,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [query, setQuery] = useState({ review: false, revision: null });
   const queryRef = useRef(query);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [ratificationOpen, setRatificationOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [proposal, setProposal] = useState(emptyProposal);
   const [approvalReference, setApprovalReference] = useState('');
@@ -477,6 +484,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
   const editorRef = useRef(null);
+  const ratificationDateRef = useRef(null);
   const commandIssueRef = useRef(null);
   const closeRef = useRef(null);
   const data = source?.scope === sessionKey && source?.classification === classification ? source.data : null;
@@ -966,7 +974,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     epoch.current = sessionKey;
     const fresh = { review: false, revision: null };
     queryRef.current = fresh; setQuery(fresh); setHistory(null); setTab('document');
-    setEditorOpen(false); setPreviewOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
+    setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
     setMessage(''); setCommandIssue(null); setBusy(false); retryKeys.current.clear(); commandLock.current = null;
     void load(fresh);
     return () => { readId.current += 1; readController.current?.abort(); epoch.current = null; };
@@ -996,8 +1004,16 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     editorRef.current?.focus({ preventScroll: true });
   }, [editorOpen]);
 
+  useEffect(() => {
+    if (!ratificationOpen) return;
+    // A publication decision is a new operating context, not a scroll target
+    // at the bottom of six strategic pillars and the Projects workspace.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    ratificationDateRef.current?.focus({ preventScroll: true });
+  }, [ratificationOpen]);
+
   const changeQuery = next => {
-    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setPreviewOpen(false); setHistory(null); setCommandIssue(null);
+    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false); setHistory(null); setCommandIssue(null);
     void load(next);
   };
   const openHistory = async () => {
@@ -1031,7 +1047,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (readback.document?.revision !== receipt.revision || readback.document?.fingerprint !== receipt.fingerprint) throw new Error('COMPANY_DOCUMENT_READBACK_UNVERIFIED');
       if (!active(key) || commandLock.current !== commandToken) return;
       readId.current += 1; queryRef.current = next; setQuery(next); setSource({ scope: key, classification, data: readback });
-      setEditorOpen(false); setPreviewOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+      setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
       setCommandIssue(null);
       setMessage('EOS confirmed the command and its durable document readback.');
     } catch (failure) {
@@ -1149,29 +1165,35 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
               : data && <>
                 <nav className={styles.commandDeck} aria-label="Company document actions">
                   <div className={styles.commandStatus}>
-                    <strong>{editorOpen ? 'Private draft workspace'
+                    <strong>{ratificationOpen ? 'Founder ratification · private decision'
+                      : editorOpen ? 'Private draft workspace'
                       : document?.state === 'PUBLISHED' ? 'Official publication'
                         : authorDraft ? 'Draft under review'
                           : submittedDraft ? 'Awaiting independent approval'
                             : 'Founder-approved source · EOS publication pending'}</strong>
-                    <span>{editorOpen ? 'Unpublished · editing in your current session'
+                    <span>{ratificationOpen ? 'Submitted Strategy · publication not yet effective'
+                      : editorOpen ? 'Unpublished · editing in your current session'
                       : query.review ? 'Private authorised source view'
                         : 'Public source view · verified by EOS'}</span>
                   </div>
                   <div className={styles.commandButtons}>
-                    {draftPermitted && !editorOpen && <button type="button" disabled={busy}
+                    {ratificationOpen && <button type="button" disabled={busy}
+                      onClick={() => setRatificationOpen(false)}>
+                      <ArrowLeft size={16}/> Back to submitted Strategy
+                    </button>}
+                    {!ratificationOpen && draftPermitted && !editorOpen && <button type="button" disabled={busy}
                       onClick={() => { setProposal(founderApprovedProposal(classification)); setPreviewOpen(false); setEditorOpen(true); }}>
                       <FileText size={16}/> Prepare approved v1.1.0
                     </button>}
-                    {reviewPermitted && !query.review && <button type="button" disabled={busy}
+                    {!ratificationOpen && reviewPermitted && !query.review && <button type="button" disabled={busy}
                       onClick={() => changeQuery({ review: true, revision: null })}>
                       <BookOpen size={16}/> Review private source
                     </button>}
-                    {query.review && <button type="button" disabled={busy}
+                    {!ratificationOpen && query.review && <button type="button" disabled={busy}
                       onClick={() => changeQuery({ review: false, revision: null })}>
                       <ArrowLeft size={16}/> Published view
                     </button>}
-                    {(actions.includes('SUBMIT') || actions.includes('FOUNDER_SUBMIT')) && <button type="button" disabled={busy}
+                    {!ratificationOpen && (actions.includes('SUBMIT') || actions.includes('FOUNDER_SUBMIT')) && <button type="button" disabled={busy}
                       onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
                       <ArrowUpRight size={16}/> {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit for approval'}
                     </button>}
@@ -1244,7 +1266,31 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </div>
                 </form>}
-                {!editorOpen && <>
+                {ratificationOpen && classification === 'STRATEGY' && query.review
+                  && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY') && <form
+                  className={styles.form} aria-label="Founder Strategy self-ratification"
+                  onSubmit={publish}>
+                  <div className={styles.editorHeading}>
+                    <div><span className={styles.eyebrow}>FOUNDER DECISION · PRIVATE</span>
+                      <h2>Ratify and publish your Strategy</h2>
+                      <p>EOS will reverify your durable Founder designation, current membership and
+                        author authority within the publication transaction. Your decision is recorded
+                        as Founder self-ratification, not independent approval.</p>
+                    </div>
+                  </div>
+                  <p>Submitted revision {data.current_revision} · {document.title}</p>
+                  <label>Effective date and time<input ref={ratificationDateRef} required
+                    type="datetime-local" value={effectiveFrom}
+                    onChange={event => setEffectiveFrom(event.target.value)}/></label>
+                  <div className={styles.editorFooter}>
+                    <button type="submit" disabled={busy || !effectiveFrom}>
+                      {busy ? 'Verifying EOS ratification…' : 'Ratify and publish Strategy'}
+                    </button>
+                    <button type="button" disabled={busy}
+                      onClick={() => setRatificationOpen(false)}>Back to submitted Strategy</button>
+                  </div>
+                </form>}
+                {!editorOpen && !ratificationOpen && <>
                 {classification === 'STRATEGY' && <section aria-label="M03 Strategy governance gates"
                   className="mb-4 rounded-xl border border-slate-500/60 bg-slate-950/30 p-4 text-slate-100">
                   <h3 className="text-base font-semibold text-white">M03 · Publication and Pillar 1 governance</h3>
@@ -1331,8 +1377,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       </button>}
                     {query.review && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY')
                       && <button type="button" disabled={busy}
-                        onClick={() => containerRef.current.querySelector('[aria-label="Founder Strategy self-ratification"]')
-                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                        onClick={() => setRatificationOpen(true)}>
                         Open Founder ratification
                       </button>}
                     {query.review && document?.state === 'SUBMITTED' && actions.includes('PUBLISH')
@@ -1595,19 +1640,6 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   </div>}
                   <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
                 </section>
-                {classification === 'STRATEGY' && actions.includes('FOUNDER_RATIFY') && <form
-                  className={styles.form} aria-label="Founder Strategy self-ratification"
-                  onSubmit={publish}>
-                  <h2>Ratify and publish your Strategy</h2>
-                  <p>Your immutable Founder designation, active tenant membership and current
-                    authority are independently checked in the EOS transaction. Your signature
-                    is recorded as Founder self-ratification, not independent approval.</p>
-                  <label>Effective date and time<input required type="datetime-local"
-                    value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label>
-                  <button type="submit" disabled={busy || !effectiveFrom}>
-                    {busy ? 'Verifying EOS ratification…' : 'Ratify and publish Strategy'}
-                  </button>
-                </form>}
                 {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
                 </>}
               </>}
@@ -1619,7 +1651,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.8.1-FOCUSED-COMMAND-REJECTION
+// VERSION: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
