@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Unified My Work Source Projection Certificate
-VERSION: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
+VERSION: v1.2.0-PREDECESSOR-EVIDENCE-CERT
 AUTHORITY: Synthetic read-only EOS source composition and denial tests.
 EPITOME: Verify independently admitted Legal, Operations, Intelligence, CRM,
          HR and Projects work shapes, cross-tenant rejection and blocked work.
@@ -7,6 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: unified_my_work_projection composes only sources
          already admitted by the canonical authenticated My Work router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.0-PREDECESSOR-EVIDENCE-CERT verifies
+         exact-source predecessor readiness and denial of conflicting counts.
 CHANGELOG: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
          preserves previously admitted source rows carrying an unrelated
          zero-based source revision when no category evidence is present.
@@ -225,10 +227,14 @@ def test_project_tasks_join_daily_attention_without_inherited_authority():
         projects={"tenant_id": TENANT, "items": [
             {**item("ptk-" + "b" * 48, title="Deliver current module", status="OPEN"),
              "tenant_id": TENANT, "project_id": project_id,
-             "due_date": "2026-11-20", "owner_principal_id": PRINCIPAL},
+             "due_date": "2026-11-20", "owner_principal_id": PRINCIPAL,
+             "dependency_total": 1, "dependency_remaining": 1,
+             "dependency_readiness": "WAITING"},
             {**item("ptk-" + "c" * 48, title="Blocked dependency", status="BLOCKED"),
              "tenant_id": TENANT, "project_id": project_id,
-             "due_date": None, "owner_principal_id": PRINCIPAL},
+             "due_date": None, "owner_principal_id": PRINCIPAL,
+             "dependency_total": 0, "dependency_remaining": 0,
+             "dependency_readiness": "READY"},
         ]},
     )
     assert result["summary"]["active_count"] == 2
@@ -256,12 +262,35 @@ def test_project_attention_rejects_forged_work_source(changes):
         **item("ptk-" + "d" * 48, status="BLOCKED"),
         "tenant_id": TENANT, "project_id": "prj-" + "e" * 48,
         "owner_principal_id": PRINCIPAL, "due_date": None,
+        "dependency_total": 0, "dependency_remaining": 0,
+        "dependency_readiness": "READY",
         **changes,
     }
     with pytest.raises(UnifiedMyWorkProjectionError, match="PROJECTS_SOURCE_ITEM_INVALID"):
         build_unified_my_work(
             tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
             projects={"tenant_id": TENANT, "items": [source]},
+        )
+
+
+@pytest.mark.parametrize("bad", [
+    {"dependency_readiness": "READY", "dependency_total": 1, "dependency_remaining": 1},
+    {"dependency_total": 1, "dependency_remaining": 2},
+    {"dependency_total": True},
+])
+def test_project_dependency_readiness_rejects_forged_evidence(bad):
+    row = {
+        **item("ptk-" + "b" * 48, status="OPEN"),
+        "tenant_id": TENANT, "project_id": "prj-" + "a" * 48,
+        "owner_principal_id": PRINCIPAL,
+        "dependency_total": 1, "dependency_remaining": 1,
+        "dependency_readiness": "WAITING",
+        **bad,
+    }
+    with pytest.raises(UnifiedMyWorkProjectionError, match="PROJECTS_DEPENDENCY_EVIDENCE_INVALID"):
+        build_unified_my_work(
+            tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+            projects={"tenant_id": TENANT, "items": [row]},
         )
 
 
@@ -275,7 +304,7 @@ def test_rejects_malformed_source_item_instead_of_silently_dropping_it():
         )
 
 # ARTIFACT: test_unified_my_work_projection.py
-# VERSION: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
+# VERSION: v1.2.0-PREDECESSOR-EVIDENCE-CERT
 # AUTHORITY BOUNDARY: pure projection checks; no IAM or source mutation
 # TENANT POSTURE: exact source envelope and row validation
 # FAIL-CLOSED POSTURE: malformed, forged or foreign project work denies
