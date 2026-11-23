@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
+ * VERSION: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
+ *            makes ratification available directly in the top command rail
+ *            for a verified submitted Founder revision and replaces the
+ *            irrelevant independent-approval label without new commands.
  * CHANGELOG: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
  *            transitions submitted Strategy directly into a focused
  *            Founder ratification form, rather than scrolling past six
@@ -1132,7 +1136,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
       <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button></div>
       <div className={styles.body}>
-        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
+        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
         <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
           {commandIssue && <section ref={commandIssueRef} tabIndex={-1} className={styles.notice} role="alert"
@@ -1169,7 +1173,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       : editorOpen ? 'Private draft workspace'
                       : document?.state === 'PUBLISHED' ? 'Official publication'
                         : authorDraft ? 'Draft under review'
-                          : submittedDraft ? 'Awaiting independent approval'
+                          : submittedDraft ? (actions.includes('FOUNDER_RATIFY') ? 'Founder ratification available' : 'Awaiting independent approval')
                             : 'Founder-approved source · EOS publication pending'}</strong>
                     <span>{ratificationOpen ? 'Submitted Strategy · publication not yet effective'
                       : editorOpen ? 'Unpublished · editing in your current session'
@@ -1197,6 +1201,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
                       <ArrowUpRight size={16}/> {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit for approval'}
                     </button>}
+                    {!ratificationOpen && classification === 'STRATEGY' && query.review
+                      && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY')
+                      && <button type="button" disabled={busy}
+                        onClick={() => setRatificationOpen(true)}>
+                        <ShieldCheck size={16}/> Open Founder ratification
+                      </button>}
                   </div>
                   {!draftPermitted && !reviewPermitted && !actions.includes('SUBMIT')
                     && !actions.includes('PUBLISH') && !actions.includes('FOUNDER_RATIFY') && <p className={styles.permissionNotice}>
@@ -1374,11 +1384,6 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       && <button type="button" disabled={busy}
                         onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
                         {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit Strategy for independent approval'}
-                      </button>}
-                    {query.review && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY')
-                      && <button type="button" disabled={busy}
-                        onClick={() => setRatificationOpen(true)}>
-                        Open Founder ratification
                       </button>}
                     {query.review && document?.state === 'SUBMITTED' && actions.includes('PUBLISH')
                       && <button type="button" disabled={busy}
@@ -1651,7 +1656,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
+// VERSION: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
