@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.11.1-M04-CANONICAL-DATE-WIRE
+ * VERSION: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
+ *            exposes source-owned M04 execution directly after the selected
+ *            project heading, above long task lists. No second project,
+ *            task workflow or outcome computation is introduced.
  * CHANGELOG: v2.11.1-M04-CANONICAL-DATE-WIRE validates
  *            EOS date-only ISO fields as digits, never literal escapes.
  * CHANGELOG: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
@@ -1643,78 +1647,6 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </button>
                       </div>
                       <p className={styles.strategyDeliveryNote}>Lifecycle records only. No strategic pillar linkage or Strategy completion percentage is inferred.</p>
-                      {delivery.page.items.length === 0 ? <p role="status">EOS verified no tasks on this page.</p>
-                        : <ul className={styles.strategyTaskList}>{delivery.page.items.map(item =>
-                          <li key={item.task_id}>
-                            <div><strong>{item.title}</strong><span>{item.kind === 'MILESTONE' ? 'Milestone' : 'Task'}{item.due_date ? ' · Due ' + item.due_date : ''}</span></div>
-                            <span className={styles.projectStatus} data-status={item.status}>{item.status.replaceAll('_', ' ')}</span>
-                          </li>)}</ul>}
-                      {(delivery.page.offset > 0 || delivery.page.has_more) && <div className={styles.strategyPagination}>
-                        {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
-                        <span>Page {Math.floor(delivery.page.offset / 50) + 1}</span>
-                        {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
-                      </div>}
-                    </section>}
-                    {delivery.state === 'READY' && projectItems.some(item => item.project_id === delivery.projectId
-                      && item.name === FOUNDATION_PROJECT_NAME) && <section className={styles.strategyPlan}
-                        aria-label="Planned My Work overhaul programme">
-                      <div className={styles.strategyPlanHeader}>
-                        <div>
-                          <span className={styles.eyebrow}>EOS-SOURCE VERIFIED · IMPLEMENTATION REGISTER</span>
-                          <h3>My Work implementation programme</h3>
-                          <p role="status">{verifiedFoundationPlanCount} of 18 planned records persisted in EOS.
-                            {' '}{foundationPlanRemaining} still awaiting creation. This is not Strategy completion evidence.</p>
-                        </div>
-                        <button type="button" onClick={() => void admitFoundationPlan()}
-                          disabled={planState.state === 'RUNNING' || delivery.page.has_more || foundationPlanRemaining === 0}>
-                          {planState.state === 'RUNNING' ? 'Saving verified work…'
-                            : foundationPlanRemaining === 0 ? 'All 18 verified in EOS'
-                              : verifiedFoundationPlanCount > 0
-                                ? 'Create remaining ' + foundationPlanRemaining + ' in EOS'
-                                : 'Create missing in EOS'}
-                        </button>
-                      </div>
-                      {delivery.page.has_more && <p role="alert">Verify the full project task list before admitting the plan.</p>}
-                      {typeof onOpenProject === 'function' && <button type="button"
-                        className="mt-3 min-h-10 rounded-lg border border-amber-300/60 bg-slate-900 px-4 text-sm font-semibold text-amber-100 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
-                        onClick={() => onOpenProject(delivery.projectId)}>
-                        Open existing project execution <ArrowUpRight size={15} aria-hidden="true"/>
-                      </button>}
-                      <p className="mt-3 text-xs text-slate-300">
-                        Each record below shows current EOS lifecycle state. Persisted means the work exists, not that it is Done, approved, linked to a strategic pillar or published.
-                      </p>
-                      {foundationExecution ? <section aria-label="M02 live execution readback"
-                        className="mt-4 rounded-xl border border-slate-500/50 bg-slate-950/40 p-4 text-slate-100">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h4 className="text-base font-semibold text-white">Live implementation execution · M02</h4>
-                          <span className="text-xs text-slate-200">Successful Projects read observed: {foundationExecution.verifiedAt.replace('T', ' ').slice(0, 19)} UTC</span>
-                        </div>
-                        <p className="mt-2 text-sm text-slate-200">All {foundationExecution.total} programme records uniquely matched in the complete, authorized EOS project snapshot. These are task lifecycle counts, not strategic outcome certification.</p>
-                        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-                          {[
-                            ['To do', foundationExecution.counts.TODO],
-                            ['In progress', foundationExecution.counts.IN_PROGRESS],
-                            ['Done', foundationExecution.counts.DONE],
-                            ['Blocked', foundationExecution.counts.BLOCKED],
-                            ['Cancelled', foundationExecution.counts.CANCELLED],
-                          ].map(([label, count]) => <div key={label} className="rounded-lg border border-slate-600/70 bg-slate-900 p-3">
-                            <dt className="text-xs font-medium text-slate-300">{label}</dt>
-                            <dd className="mt-1 text-xl font-bold text-white">{count}</dd>
-                          </div>)}
-                        </dl>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
-                            <strong>{foundationExecution.waiting}</strong> programme records waiting on <strong>{foundationExecution.unfinishedPredecessors}</strong> unfinished predecessor relationships
-                          </p>
-                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
-                            <strong>{foundationExecution.pastDue}</strong> unfinished records with calendar due dates before the observed UTC read date
-                          </p>
-                        </div>
-                        <p className="mt-2 text-xs text-slate-300">Refresh execution to verify current EOS state. The timestamp is client-observed after a successful read, not a server transaction timestamp. No pillar link, publication, approval or completion is inferred.</p>
-                      </section> : <p role="status" className="mt-3 rounded-lg border border-slate-500/60 p-3 text-sm text-slate-200">
-                        M02 execution summary unavailable: full, unique 18-record programme coverage and predecessor readback have not both been verified. No counts are inferred.
-                      </p>}
-
                       <section aria-label="M04 governed Strategy execution"
                         className="mt-4 rounded-xl border border-slate-500/60 bg-slate-950/40 p-4 text-slate-100">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1799,6 +1731,79 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           snapshot and dependencies are all independently verified. No work or outcome score inferred.
                         </p>}
                       </section>
+
+
+                      {delivery.page.items.length === 0 ? <p role="status">EOS verified no tasks on this page.</p>
+                        : <ul className={styles.strategyTaskList}>{delivery.page.items.map(item =>
+                          <li key={item.task_id}>
+                            <div><strong>{item.title}</strong><span>{item.kind === 'MILESTONE' ? 'Milestone' : 'Task'}{item.due_date ? ' · Due ' + item.due_date : ''}</span></div>
+                            <span className={styles.projectStatus} data-status={item.status}>{item.status.replaceAll('_', ' ')}</span>
+                          </li>)}</ul>}
+                      {(delivery.page.offset > 0 || delivery.page.has_more) && <div className={styles.strategyPagination}>
+                        {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
+                        <span>Page {Math.floor(delivery.page.offset / 50) + 1}</span>
+                        {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
+                      </div>}
+                    </section>}
+                    {delivery.state === 'READY' && projectItems.some(item => item.project_id === delivery.projectId
+                      && item.name === FOUNDATION_PROJECT_NAME) && <section className={styles.strategyPlan}
+                        aria-label="Planned My Work overhaul programme">
+                      <div className={styles.strategyPlanHeader}>
+                        <div>
+                          <span className={styles.eyebrow}>EOS-SOURCE VERIFIED · IMPLEMENTATION REGISTER</span>
+                          <h3>My Work implementation programme</h3>
+                          <p role="status">{verifiedFoundationPlanCount} of 18 planned records persisted in EOS.
+                            {' '}{foundationPlanRemaining} still awaiting creation. This is not Strategy completion evidence.</p>
+                        </div>
+                        <button type="button" onClick={() => void admitFoundationPlan()}
+                          disabled={planState.state === 'RUNNING' || delivery.page.has_more || foundationPlanRemaining === 0}>
+                          {planState.state === 'RUNNING' ? 'Saving verified work…'
+                            : foundationPlanRemaining === 0 ? 'All 18 verified in EOS'
+                              : verifiedFoundationPlanCount > 0
+                                ? 'Create remaining ' + foundationPlanRemaining + ' in EOS'
+                                : 'Create missing in EOS'}
+                        </button>
+                      </div>
+                      {delivery.page.has_more && <p role="alert">Verify the full project task list before admitting the plan.</p>}
+                      {typeof onOpenProject === 'function' && <button type="button"
+                        className="mt-3 min-h-10 rounded-lg border border-amber-300/60 bg-slate-900 px-4 text-sm font-semibold text-amber-100 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                        onClick={() => onOpenProject(delivery.projectId)}>
+                        Open existing project execution <ArrowUpRight size={15} aria-hidden="true"/>
+                      </button>}
+                      <p className="mt-3 text-xs text-slate-300">
+                        Each record below shows current EOS lifecycle state. Persisted means the work exists, not that it is Done, approved, linked to a strategic pillar or published.
+                      </p>
+                      {foundationExecution ? <section aria-label="M02 live execution readback"
+                        className="mt-4 rounded-xl border border-slate-500/50 bg-slate-950/40 p-4 text-slate-100">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-base font-semibold text-white">Live implementation execution · M02</h4>
+                          <span className="text-xs text-slate-200">Successful Projects read observed: {foundationExecution.verifiedAt.replace('T', ' ').slice(0, 19)} UTC</span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-200">All {foundationExecution.total} programme records uniquely matched in the complete, authorized EOS project snapshot. These are task lifecycle counts, not strategic outcome certification.</p>
+                        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+                          {[
+                            ['To do', foundationExecution.counts.TODO],
+                            ['In progress', foundationExecution.counts.IN_PROGRESS],
+                            ['Done', foundationExecution.counts.DONE],
+                            ['Blocked', foundationExecution.counts.BLOCKED],
+                            ['Cancelled', foundationExecution.counts.CANCELLED],
+                          ].map(([label, count]) => <div key={label} className="rounded-lg border border-slate-600/70 bg-slate-900 p-3">
+                            <dt className="text-xs font-medium text-slate-300">{label}</dt>
+                            <dd className="mt-1 text-xl font-bold text-white">{count}</dd>
+                          </div>)}
+                        </dl>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
+                            <strong>{foundationExecution.waiting}</strong> programme records waiting on <strong>{foundationExecution.unfinishedPredecessors}</strong> unfinished predecessor relationships
+                          </p>
+                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
+                            <strong>{foundationExecution.pastDue}</strong> unfinished records with calendar due dates before the observed UTC read date
+                          </p>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-300">Refresh execution to verify current EOS state. The timestamp is client-observed after a successful read, not a server transaction timestamp. No pillar link, publication, approval or completion is inferred.</p>
+                      </section> : <p role="status" className="mt-3 rounded-lg border border-slate-500/60 p-3 text-sm text-slate-200">
+                        M02 execution summary unavailable: full, unique 18-record programme coverage and predecessor readback have not both been verified. No counts are inferred.
+                      </p>}
 
                       <div className={styles.strategyPlanGroups}>
                         {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
@@ -1919,7 +1924,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.11.1-M04-CANONICAL-DATE-WIRE
+// VERSION: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
