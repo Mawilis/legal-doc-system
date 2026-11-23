@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.62.0-FOCUSED-IN-PLACE-TASK-WORKSPACE
+ * VERSION: v1.62.1-BOUNDED-CONTEXT-PANE-WIDTH
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.62.1-BOUNDED-CONTEXT-PANE-WIDTH prevents
+ *          viewport overflow by resolving inset-constrained width
+ *          instead of combining 100%-width with left/right gutters.
  * CHANGELOG: v1.62.0-FOCUSED-IN-PLACE-TASK-WORKSPACE
  *          retains the verified work grid mounted behind a bounded
  *          task-action workspace, rather than destroying and replacing
@@ -1391,7 +1394,7 @@ export default function ProjectTasksPanel({
           onClick={closeFocusedAction}/>
         <div ref={focusedPanelRef} role="dialog" aria-modal="true"
           aria-label={'Task workspace: ' + selectedActionTask.title}
-          className="fixed inset-x-3 bottom-3 top-[5.75rem] z-[89] mx-auto w-full max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:bottom-6 sm:p-6">
+          className="fixed inset-x-3 bottom-3 top-[5.75rem] z-[89] mx-auto max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:bottom-6 sm:p-6">
       <div className="mb-2 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={closeFocusedAction}>← Work</button>
@@ -2249,7 +2252,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.62.0-FOCUSED-IN-PLACE-TASK-WORKSPACE
+// VERSION: v1.62.1-BOUNDED-CONTEXT-PANE-WIDTH
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
