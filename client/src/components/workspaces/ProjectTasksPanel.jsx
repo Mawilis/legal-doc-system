@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.42.1-CENTERED-TASK-WORKSPACE
+ * VERSION: v1.43.0-SOURCE-OWNED-DEPENDENT-TASK-HANDOFF
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.43.0-SOURCE-OWNED-DEPENDENT-TASK-HANDOFF replaces
+ *          misleading existing-predecessor editing with the canonical
+ *          audited task-creation flow preselected with one verified predecessor.
+ *          EOS preserves immutable existing graphs, task IAM and CAS.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
  *          extraction, fabricated task metrics or inferred notifications.
@@ -344,6 +348,15 @@ export default function ProjectTasksPanel({
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
   const [drawerTaskId, setDrawerTaskId] = useState(null);
+  const [dependencyOriginId, setDependencyOriginId] = useState(null);
+  const createFormRef = useRef(null);
+  useEffect(() => {
+    if (!creating || !dependencyOriginId) return;
+    const form = createFormRef.current;
+    if (!form) return;
+    form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    form.querySelector('input[required]')?.focus({ preventScroll: true });
+  }, [creating, dependencyOriginId]);
   const drawerReturnFocus = useRef(null);
   const drawerRef = useRef(null);
   const [editor, setEditor] = useState(null);
@@ -569,6 +582,7 @@ export default function ProjectTasksPanel({
       command.current = { fingerprint: '', key: '' };
       setDraft({ ...EMPTY });
       setCreating(false);
+      setDependencyOriginId(null);
       setEditor(null);
       if (showEvidenceAfterCreate && selfIsContributor) {
         setDiscussionTaskId(null);
@@ -912,7 +926,10 @@ export default function ProjectTasksPanel({
           <RefreshCw size={14}/> Refresh work
         </button>
         {state === 'READY' && actionCapabilities?.canEdit && <button type="button" className="wp-button wp-button-primary"
-          disabled={busy} onClick={() => setCreating(value => !value)}>
+          disabled={busy} onClick={() => {
+            setDependencyOriginId(null);
+            setCreating(value => !value);
+          }}>
           <Plus size={14}/> {creating ? 'Close editor' : 'Create task'}
         </button>}
       </div>
@@ -1131,8 +1148,11 @@ export default function ProjectTasksPanel({
         <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
         </div>
       </details>
-      {creating && <form onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+      {creating && <form ref={createFormRef} onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
         <h4 className="text-sm font-bold text-slate-900">Create EOS work item</h4>
+        {dependencyOriginId && <p role="status" className="rounded-md border border-blue-200 bg-white p-3 text-sm text-slate-900">
+          New dependent task: <strong>{items.find(item => item.task_id === dependencyOriginId)?.title || 'Verified predecessor'}</strong> must reach Done before the new task can be completed. This creates a new EOS task; it does not modify existing predecessors.
+        </p>}
         {workType === 'SUBTASK' && draft.parent_task_id && <p role="status" className="text-xs font-semibold text-blue-900">
           Adding an EOS subtask under {availableParents.find(item => item.task_id === draft.parent_task_id)?.title || 'selected source task'}.
         </p>}
@@ -1493,13 +1513,27 @@ export default function ProjectTasksPanel({
             <section className="mt-5 border-t border-slate-200 pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-sm font-bold text-slate-950">Dependencies</h4>
-                {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
-                  <button type="button" disabled={!actionCapabilities?.canEdit}
+                {actionCapabilities?.canEdit && drawerTask.status !== 'CANCELLED' &&
+                  <button type="button" disabled={busy || state !== 'READY'}
                     className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
-                    onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item); }}>
-                    Manage dependencies
+                    onClick={() => {
+                      if (creating) {
+                        setError('Finish or close the existing task draft before creating a dependent task.');
+                        closeDrawer();
+                        return;
+                      }
+                      const predecessor = drawerTask;
+                      setWorkType('TASK');
+                      setDraft({ ...EMPTY, kind: 'TASK', depends_on: [predecessor.task_id] });
+                      setDependencyOriginId(predecessor.task_id);
+                      setEditor(null);
+                      closeDrawer();
+                      setCreating(true);
+                    }}>
+                    Create dependent task
                   </button>}
               </div>
+              <p className="mt-2 text-xs text-slate-600">Existing predecessors are immutable in EOS. Create a dependent task to add a new source-verified relationship without rewriting the current graph.</p>
               {drawerTask.depends_on.length === 0
                 ? <p className="mt-2 text-sm text-slate-700">No predecessors</p>
                 : <ul className="mt-2 space-y-2">
@@ -1533,7 +1567,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.42.1-CENTERED-TASK-WORKSPACE
+// VERSION: v1.43.0-SOURCE-OWNED-DEPENDENT-TASK-HANDOFF
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
