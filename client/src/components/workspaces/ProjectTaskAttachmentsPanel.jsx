@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.11.0-ACCESSIBLE-AUTOUPLOAD-DROPZONE
+ * VERSION: v1.11.1-SINGLE-FOCUSED-EXIT
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.11.1-SINGLE-FOCUSED-EXIT lets the invoking
+ *          task workspace own the single Back control, while standalone
+ *          attachment consumers retain an explicit close action.
  * CHANGELOG: v1.11.0-ACCESSIBLE-AUTOUPLOAD-DROPZONE replaces
  *          the visible native file chooser and redundant selection step
  *          with keyboard-browse and scoped file drag/drop. User selection
@@ -79,6 +82,7 @@ function valid(record, tenantId, projectId, taskId) {
 export default function ProjectTaskAttachmentsPanel({
   tenantId, principalId, projectId, taskId, tenantHeaders,
   participantMode = false, ownerReadMode = false, onClose, onManageContributors = null,
+  showClose = true,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
@@ -516,8 +520,8 @@ export default function ProjectTaskAttachmentsPanel({
       <div className="flex items-center gap-2">
         <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
           onClick={() => void load(offset)}><RefreshCw size={14}/> Refresh files</button>
-        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
-          onClick={onClose} aria-label="Close task attachments"><X size={14}/> Close</button>
+        {showClose && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+          onClick={onClose} aria-label="Close task attachments"><X size={14}/> Close</button>}
       </div>
     </header>
     {state === 'LOADING' && <p role="status" className="text-sm text-slate-700">
@@ -705,7 +709,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.11.0-ACCESSIBLE-AUTOUPLOAD-DROPZONE
+// VERSION: v1.11.1-SINGLE-FOCUSED-EXIT
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
