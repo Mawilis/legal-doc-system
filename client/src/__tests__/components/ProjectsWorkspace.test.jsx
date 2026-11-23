@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.71.0-ACTIONABLE-WORK-TITLE-CERT
+ * VERSION: v2.71.1-FOCUSED-TASK-AND-PAGING-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,11 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.71.1-FOCUSED-TASK-AND-PAGING-CERT
+ *          tracks the one Back to Work control, requires independently
+ *          rendered current-page buttons rather than stale DOM references,
+ *          and awaits asynchronous assignment-modal visibility without
+ *          weakening exact EOS role/readback assertions.
  * CHANGELOG: v2.71.0-ACTIONABLE-WORK-TITLE-CERT checks the
  *          task's semantic title button instead of a former inert span,
  *          asserts actual selected-row checkbox and in-grid multi-select
@@ -763,7 +768,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="assign-not-edit-scope-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Assign: Assign independently' }));
-    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Assign work' })).toBeVisible();
     fireEvent.change(screen.getByRole('combobox', { name: 'Reassign task' }), {
       target: { value: PRINCIPAL },
     });
@@ -834,12 +839,12 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByRole('dialog', { name: 'Confirm verified task completion' }))
       .not.toBeInTheDocument();
     fireEvent.keyDown(rows[0], { key: 'a' });
-    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Assign work' })).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Reassign task' })).toBeVisible();
     expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reassign: My accountable delivery' }));
-    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Assign work' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Save assignment' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
     expect(within(work).getByText('My accountable delivery')).toBeVisible();
@@ -1450,7 +1455,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
        name: 'Actions for Current project delivery',
      })).getByRole('menuitem', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '← Work' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     const discussion = screen.getByRole('region', { name: 'Activity & discussion' });
@@ -1481,7 +1486,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(discussion.querySelector('textarea')).not.toBeInTheDocument();
     expect(discussion.querySelector('[aria-label="Verified task activity history"]'))
       .toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to work queue' }));
+    fireEvent.click(screen.getByRole('button', { name: '← Work' }));
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
 
@@ -1706,9 +1711,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="bounded-project-work-paging-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
-    expect(await screen.findByText('Batch task 01', {
-      selector: '.wp-project-tasks tbody td button',
-    })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Batch task 01' })).toBeVisible());
     const grid = screen.getByRole('grid', { name: 'Project work grid' });
     expect(within(grid).getAllByRole('row').length).toBe(11);
     expect(within(grid).queryByText('Batch task 11')).not.toBeInTheDocument();
@@ -2687,7 +2690,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.71.0-ACTIONABLE-WORK-TITLE-CERT
+ * VERSION: v2.71.1-FOCUSED-TASK-AND-PAGING-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
