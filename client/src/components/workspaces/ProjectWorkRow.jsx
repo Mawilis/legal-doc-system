@@ -1,13 +1,18 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.7.0-TRUE-COMPACT-WORK-ROW
+ * VERSION: v1.8.0-CONTEXTUAL-WORK-INSPECTOR
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkRow.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
- * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.8.0-CONTEXTUAL-WORK-INSPECTOR replaces the nested
+ *          browser disclosure with a bounded description preview and
+ *          explicit View task control leading to the existing governed
+ *          project task inspector. Exact EOS authority, commands, context
+ *          and source-verified state stay with ProjectTasksPanel.
  * CHANGELOG: v1.7.0-TRUE-COMPACT-WORK-ROW hides secondary
  *          disclosures in compact mode and bounds table cell padding
  *          to preserve a useful dense Work Row.
@@ -155,10 +160,16 @@ export default function ProjectWorkRow({
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
                   {item.depends_on.length > 0 ? ' · ' + item.depends_on.length + ' dependencies' : ''}
                 </div>
-                {density !== 'compact' && item.description && <details className="mt-1 text-xs text-slate-700">
-                  <summary className="cursor-pointer font-medium text-blue-800">Details</summary>
-                  <p className="mt-2 whitespace-pre-wrap break-words">{item.description}</p>
-                </details>}
+                {density !== 'compact' && <div className="mt-1.5 flex min-w-0 items-center gap-3">
+                  {item.description && <p className="min-w-0 flex-1 truncate text-xs text-slate-600"
+                    title={item.description}>{item.description}</p>}
+                  <button type="button"
+                    className="inline-flex min-h-8 shrink-0 items-center rounded-md border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-800 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                    aria-label={'View task: ' + item.title}
+                    onClick={event => onOpen(item, event.currentTarget)}>
+                    View task
+                  </button>
+                </div>}
               </td>
               <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-slate-800'}>
                 <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
@@ -214,7 +225,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.7.0-TRUE-COMPACT-WORK-ROW
+// VERSION: v1.8.0-CONTEXTUAL-WORK-INSPECTOR
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
