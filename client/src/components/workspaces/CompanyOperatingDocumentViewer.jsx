@@ -1091,7 +1091,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   <h3 className="text-base font-semibold text-white">M03 · Publication and Pillar 1 governance</h3>
                   <p className="mt-2 text-sm text-slate-200">
                     Permissions are source-verified for this session and selected capacity only.
-                    Founder designation, document visibility and project ownership never grant publication or linking rights.
+                    A durable, source-verified Founder designation plus current exact-tenant owner/IAM evidence
+                    can admit Strategy self-ratification. All other personnel require distinct author and publisher
+                    authority; project ownership alone grants neither.
                   </p>
                   <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-slate-600/60 p-3">
@@ -1135,8 +1137,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </dl>
                   <p className="mt-3 text-xs text-slate-300">
-                    Sequence: independently authorized draft → submission → separate publisher approval
-                    → effective published revision → authorized project link → independent EOS link readback.
+                    Sequence: authorized draft → submission → independent publisher approval
+                    (or source-verified Founder Strategy ratification) → effective published revision
+                    → authorized project link → independent EOS link readback.
                     Execution metrics from M02 are not certified strategic outcomes.
                   </p>
                 </section>}
@@ -1146,7 +1149,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     <strong>Strategy publication · source-owned execution</strong>
                     <span>{!document ? (query.review ? 'No private revision verified' : 'Official publication not yet established')
                       : document.state === 'DRAFT' ? 'Stage 1 of 3 · Author draft'
-                        : document.state === 'SUBMITTED' ? 'Stage 2 of 3 · Await independent publisher'
+                         : document.state === 'SUBMITTED' ? (actions.includes('FOUNDER_RATIFY')
+                          ? 'Stage 2 of 3 · Founder ratification available' : 'Stage 2 of 3 · Await independent publisher')
                           : Date.parse(document.effective_from) > Date.parse(data.as_of)
                             ? 'Stage 3 of 3 · Published, awaiting effective date'
                             : 'Stage 3 of 3 · Published and effective'}</span>
@@ -1166,6 +1170,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
                         {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit Strategy for independent approval'}
                       </button>}
+                    {query.review && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY')
+                      && <button type="button" disabled={busy}
+                        onClick={() => containerRef.current.querySelector('[aria-label="Founder Strategy self-ratification"]')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                        Open Founder ratification
+                      </button>}
                     {query.review && document?.state === 'SUBMITTED' && actions.includes('PUBLISH')
                       && <button type="button" disabled={busy}
                         onClick={() => containerRef.current.querySelector('[aria-label="Independent Strategy publication approval"]')
@@ -1176,7 +1186,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   {query.review && document?.state === 'DRAFT' && !actions.includes('SUBMIT') && !actions.includes('FOUNDER_SUBMIT')
                     && <p className={styles.permissionNotice}>Only the draft's source-authorized author can submit this revision.</p>}
                   {query.review && document?.state === 'SUBMITTED' && !actions.includes('PUBLISH') && !actions.includes('FOUNDER_RATIFY')
-                    && <p className={styles.permissionNotice}>This submission needs a different principal with current company-document publisher authority. No Founder label or project role substitutes for independent approval.</p>}
+                    && <p className={styles.permissionNotice}>Independent publication is required unless EOS verifies the canonical Founder's durable Strategy self-ratification authority for this submission.</p>}
                   {!query.review && !document && !reviewPermitted
                     && <p className={styles.permissionNotice}>Your current capacity can read the approved source but cannot inspect private revision states or create a publication. Current Strategy author/publisher authority must be established separately in tenant IAM.</p>}
                   {document?.state === 'PUBLISHED' && Date.parse(document.effective_from) <= Date.parse(data.as_of)
@@ -1188,7 +1198,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     <span>{classification} · FOUNDER-APPROVED SOURCE · VERSION {FOUNDER_APPROVED_SOURCE[classification].document_version}</span>
                     <h2>{FOUNDER_APPROVED_SOURCE[classification].title}</h2>
                     <p>WILSY (Pty) Ltd · Founder content approved · EOS publication pending</p>
-                    <p className={styles.boundaryNote}>This is the existing Founder-approved corporate document, not an EOS-published revision. Its wording comes from the supplied source PDF. Publication and independent publisher authority remain pending; no operational execution metrics are inferred.</p>
+                    <p className={styles.boundaryNote}>This is the existing Founder-approved corporate document, not an EOS-published revision. Its wording comes from the supplied source PDF. EOS publication remains pending; authorized Founder ratification or independent publication is required. No operational execution metrics are inferred.</p>
                   </div>
                   {FOUNDER_APPROVED_SOURCE[classification].sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p style={{ whiteSpace: 'pre-line' }}>{section.body}</p></section>)}
                   <footer className={styles.fingerprint}><span>Founder-approved PDF source · SHA3-512 (not an EOS revision fingerprint)</span><code>{FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512}</code></footer>
