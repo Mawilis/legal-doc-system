@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.29.0-FOCUSED-STRATEGY-NAVIGATION-CERT
+ * VERSION: v1.30.0-SOURCE-RECENT-CONTINUITY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.30.0-SOURCE-RECENT-CONTINUITY-CERT
+ *            last source-recorded task update resumes the exact authorized
+ *            work item without inferring usage from opening a document.
  * CHANGELOG: v1.29.0-FOCUSED-STRATEGY-NAVIGATION-CERT
  *            verifies selection focuses the source-backed work navigator,
  *            hides redundant summary and exposes recent-session shortcuts.
@@ -640,6 +643,8 @@ describe('Strategy source-owned project execution readback', () => {
       task_id: 'ptk-' + (i + 1).toString(16).padStart(48, '0'),
       kind: i < 6 ? 'MILESTONE' : 'TASK', title, revision: 1,
       status: 'TODO', fingerprint: 'c'.repeat(128),
+      updated_by_principal_id: i === 0 ? scope.principalId : null,
+      updated_at: i === 0 ? '2026-11-23T13:00:00Z' : null,
       assignee_principal_id: i === 7 ? 'synthetic-assignee' : null,
       depends_on: i === 6 ? ['ptk-' + '1'.padStart(48, '0')] : [],
       due_date: i === 7 ? '2020-01-01' : null,
@@ -721,6 +726,12 @@ describe('Strategy source-owned project execution readback', () => {
     expect(m04).toHaveTextContent('Waiting on predecessors1');
     expect(m04).toHaveTextContent('Past calendar due date1');
     expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
+    const resume = screen.getByRole('region', { name: 'Continue your last updated task' });
+    expect(within(resume).getByText('Your last recorded task update')).toBeVisible();
+    fireEvent.click(within(resume).getByRole('button', { name: 'Continue inspecting' }));
+    expect(screen.getByRole('searchbox', { name: 'Find work by title' })).toHaveValue(work[0].title);
+    expect(screen.getByRole('button', { name: 'Show execution overview' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
     expect(api.post).not.toHaveBeenCalled();
     const inspectorSummary = screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/);
     expect(inspectorSummary.closest('details')?.open).toBe(false);
