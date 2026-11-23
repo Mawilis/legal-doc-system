@@ -6,7 +6,7 @@
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/strategy-founder-ratification-certification.yml
 # COLLABORATION / OWNERSHIP: Institutional Founder registry, Strategy domain, client adapter
 # CERTIFICATION / UPDATE DATE: 2026-11-23
-# CHANGELOG: v1.0.0 adds disposable Mongo and browser-contract test jobs
+# CHANGELOG: v1.0.0-FOUNDER-STRATEGY-DURABLE-CERT adds disposable Mongo and browser-contract test jobs
 # COMPLIANCE: POPIA s19; GDPR Article 32; SOC 2 CC7.2
 # SECURITY / PRIVACY POSTURE: Synthetic identities, no live database or credentials
 # TENANT BOUNDARY: Disposable UUID database only; production WILSY tenant never mutated
