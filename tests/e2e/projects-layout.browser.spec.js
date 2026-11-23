@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
+ * VERSION: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
+ *          identifies actual DOM elements beyond the right viewport edge
+ *          in desktop/mobile Chromium to repair the source of overflow.
  * CHANGELOG: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
  *          verifies the new source-verified quarantine row text,
  *          keyboard-accessible Browse affordance instead of the old
@@ -545,18 +548,32 @@ for (const width of [1440, 390]) {
       .fill('Review requires documentary confirmation.');
     await expect(page.getByRole('button', { name: 'Approve review' })).toBeEnabled();
 
-    const assignedGeometry = await page.evaluate(() => ({
-      viewport: document.documentElement.clientWidth,
-      doc: document.documentElement.scrollWidth,
-    }));
-    expect(assignedGeometry.doc, 'participant workspace page overflow')
+    const assignedGeometry = await page.evaluate(() => {
+      const viewport = document.documentElement.clientWidth;
+      const overflowing = [...document.querySelectorAll('body *')]
+        .map(node => {
+          const rect = node.getBoundingClientRect();
+          return {
+            node: node.tagName.toLowerCase(),
+            className: typeof node.className === 'string'
+              ? node.className.slice(0, 110) : '',
+            right: Math.round(rect.right),
+            width: Math.round(rect.width),
+          };
+        })
+        .filter(node => node.right > viewport + 2 && node.width > 0)
+        .sort((a, b) => b.right - a.right).slice(0, 12);
+      return { viewport, doc: document.documentElement.scrollWidth, overflowing };
+    });
+    expect(assignedGeometry.doc,
+      'participant workspace page overflow: ' + JSON.stringify(assignedGeometry.overflowing))
       .toBeLessThanOrEqual(assignedGeometry.viewport + 1);
 
   });
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
+// VERSION: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
