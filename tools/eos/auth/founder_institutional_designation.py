@@ -1,5 +1,5 @@
 """TITLE: WILSY Founder Institutional Designation Registry
-VERSION: v1.0.1-ISOLATED-FOUNDER-READBACK
+VERSION: v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS
 AUTHORITY: Existing exact WILSY company principal, active membership,
   tenant_owner capacity and ENTERPRISE_ADMIN assignment; verified Owner factor.
 EPITOME: Persist and read one explicit non-IAM Founder title with immutable
@@ -9,8 +9,12 @@ COLLABORATION / OWNERSHIP: AuthRegistry owns legacy password and OTP;
   canonical principal, membership, business-role and authorization-role
   repositories own their independent current authorities; workspace bootstrap
   projects non-authorizing title only.
-CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.1-ISOLATED-FOUNDER-READBACK verifies existing title
+CERTIFICATION / UPDATE DATE: 2026-11-23
+CHANGELOG: v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS explicitly
+  narrows optional principal, membership, capacity, IAM, Owner, client and
+  database sources before access. Missing authorities fail closed with the
+  same rejection codes, no casts, blanket type ignores or new grants.
+  v1.0.1-ISOLATED-FOUNDER-READBACK verifies existing title
   before canonical Founder-specific source checks, so unrelated users receive
   no title and do not inherit unrelated Founder source failures.
   v1.0.0-EXPLICIT-FOUNDER-DESIGNATION registers user-ratified Founder
@@ -29,7 +33,7 @@ from datetime import datetime, timezone
 import getpass
 import hashlib
 import json
-from typing import Any, Final
+from typing import Any, Final, TypeVar
 
 from bson import ObjectId
 from pymongo.errors import DuplicateKeyError, PyMongoError
@@ -41,7 +45,7 @@ from tools.eos.auth.tenant_membership_repository import TenantMembershipReposito
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
 
-VERSION: Final[str] = "v1.0.1-ISOLATED-FOUNDER-READBACK"
+VERSION: Final[str] = "v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS"
 TENANT: Final[str] = "WILSYTENANT-4CD2FZ4O"
 EMAIL: Final[str] = "wilsonkhanyezi@gmail.com"
 BUSINESS_ROLE: Final[str] = "tenant_owner"
@@ -55,6 +59,16 @@ class FounderDesignationRejected(RuntimeError):
     """Source-owned fail-closed marker; no credentials or identity data."""
 
 
+_T = TypeVar("_T")
+
+
+def _require_present(value: _T | None, code: str) -> _T:
+    """Narrow optional source results without weakening an authority denial."""
+    if value is None:
+        raise FounderDesignationRejected(code)
+    return value
+
+
 def _require(value: bool, code: str) -> None:
     if not value:
         raise FounderDesignationRejected(code)
@@ -62,20 +76,20 @@ def _require(value: bool, code: str) -> None:
 
 def _canonical_source(database: Any, principal_id: str, session: Any = None) -> None:
     """Verify exact existing principal and unchanged founder operating role."""
-    principal = PrincipalAuthorityRepository.get(
+    principal = _require_present(PrincipalAuthorityRepository.get(
         principal_id, database["principal_authorities"], session=session,
-    )
-    membership = TenantMembershipRepository.resolve(
+    ), "FOUNDER_CURRENT_AUTHORITY_REQUIRED")
+    membership = _require_present(TenantMembershipRepository.resolve(
         principal_id, TENANT, database["tenant_memberships"], session=session,
-    )
-    capacity = TenantBusinessRoleRepository.resolve_business_role(
+    ), "FOUNDER_CURRENT_AUTHORITY_REQUIRED")
+    capacity = _require_present(TenantBusinessRoleRepository.resolve_business_role(
         principal_id, TENANT, BUSINESS_ROLE, database["tenant_business_roles"],
         session=session,
-    )
-    admin = RoleAssignmentRepository.resolve(
+    ), "FOUNDER_CURRENT_AUTHORITY_REQUIRED")
+    admin = _require_present(RoleAssignmentRepository.resolve(
         principal_id, TENANT, IAM_ROLE,
         database["role_assignments"], session=session,
-    )
+    ), "FOUNDER_CURRENT_AUTHORITY_REQUIRED")
     _require(
         principal.principal_id == principal_id
         and principal.status.value == "ACTIVE"
@@ -176,13 +190,16 @@ def issue_founder_designation(*, password: str, otp_code: str) -> dict[str, str]
              "FOUNDER_PASSWORD_REQUIRED")
     _require(isinstance(otp_code, str) and len(otp_code) == 6
              and otp_code.isdigit(), "FOUNDER_OTP_FORMAT_INVALID")
-    client, db = kernel_db.get_client(), kernel_db.get_database()
-    _require(client is not None and db is not None and db.name == "wilsy",
-             "FOUNDER_EXACT_DATABASE_REQUIRED")
+    client = _require_present(kernel_db.get_client(),
+                              "FOUNDER_EXACT_DATABASE_REQUIRED")
+    db = _require_present(kernel_db.get_database(),
+                          "FOUNDER_EXACT_DATABASE_REQUIRED")
+    _require(db.name == "wilsy", "FOUNDER_EXACT_DATABASE_REQUIRED")
     principal_id = _principal_from_source(db)
     registry = get_auth_registry(None)
-    user = registry.authenticate(EMAIL, password)
-    _require(user is not None and user.id == principal_id
+    user = _require_present(registry.authenticate(EMAIL, password),
+                            "FOUNDER_OWNER_PASSWORD_PROOF_DENIED")
+    _require(user.id == principal_id
              and user.tenantId == TENANT and user.mfaRegistered is True,
              "FOUNDER_OWNER_PASSWORD_PROOF_DENIED")
     _require(registry.verify_otp(principal_id, otp_code) is True,
@@ -290,7 +307,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: founder_institutional_designation.py
-# VERSION: v1.0.1-ISOLATED-FOUNDER-READBACK
+# VERSION: v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS
 # AUTHORITY BOUNDARY: non-IAM Founder identity title; no grant
 # TENANT POSTURE: exact principal and WILSY tenant with live role checks
 # FAIL-CLOSED POSTURE: absent proof, missing factor or authority denies
