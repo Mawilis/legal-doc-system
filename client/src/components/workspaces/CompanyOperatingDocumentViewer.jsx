@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.4.0-M02-LIVE-EXECUTION-READBACK
+ * VERSION: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES exposes
+ *            source-verified current-session author/review actions, distinct
+ *            independent publisher verification, effective publication,
+ *            and existing Pillar 1 relationship status as governed gates.
+ *            No IAM grant or write is attempted by the readiness display.
  * CHANGELOG: v2.4.0-M02-LIVE-EXECUTION-READBACK derives
  *            lifecycle, dependency and past-due calendar counts only from a
  *            complete validated live EOS project snapshot and all 18 unique
@@ -968,6 +973,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   };
   const expected = data?.current_revision ?? 0;
   const draftPermitted = actions.includes('CREATE_DRAFT');
+  const strategyPublicationEffective = classification === 'STRATEGY'
+    && !query.review && data?.state === 'PUBLISHED'
+    && document?.state === 'PUBLISHED'
+    && Number.isSafeInteger(document.revision)
+    && typeof document.effective_from === 'string'
+    && Date.parse(document.effective_from) <= Date.parse(data.as_of);
+  const strategyPillarOneSource = strategyPublicationEffective
+    && document.sections?.some(section => section.section_id === 'pillar-one');
+  const strategyCurrentLink = strategyLink.state === 'READY'
+    && strategyLink.items.some(item => item.pillar_id === 'pillar-one'
+      && item.project_id === delivery.projectId && item.state === 'VERIFIED_CURRENT');
+
   const reviewPermitted = actions.includes('REVIEW_DRAFTS');
   const submittedDraft = document?.state === 'SUBMITTED';
   const authorDraft = document?.state === 'DRAFT';
@@ -1058,6 +1075,57 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
                 </nav>
+                {classification === 'STRATEGY' && <section aria-label="M03 Strategy governance gates"
+                  className="mb-4 rounded-xl border border-slate-500/60 bg-slate-950/30 p-4 text-slate-100">
+                  <h3 className="text-base font-semibold text-white">M03 · Publication and Pillar 1 governance</h3>
+                  <p className="mt-2 text-sm text-slate-200">
+                    Permissions are source-verified for this session and selected capacity only.
+                    Founder designation, document visibility and project ownership never grant publication or linking rights.
+                  </p>
+                  <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Strategy author and private-review authority</dt>
+                      <dd className="mt-1 text-sm text-white">{draftPermitted
+                        ? 'Draft creation admitted by current EOS action set'
+                        : actions.includes('SUBMIT')
+                          ? 'Source-authorized draft submission admitted'
+                          : reviewPermitted
+                            ? 'Private revision review admitted; draft creation not currently offered'
+                            : 'Current source offers read-only actions; author admission not established'}</dd>
+                    </div>
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Independent publisher authority</dt>
+                      <dd className="mt-1 text-sm text-white">{actions.includes('PUBLISH')
+                        ? 'EOS admits publication for this submitted revision under the current independent principal'
+                        : 'No publication action admitted in this source view; independent publisher must be verified through EOS'}</dd>
+                    </div>
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Effective Strategy publication</dt>
+                      <dd className="mt-1 text-sm text-white">{strategyPublicationEffective
+                        ? 'Published and effective · revision ' + document.revision
+                        : document?.state === 'SUBMITTED' ? 'Submitted · independent approval required'
+                          : document?.state === 'DRAFT' ? 'Private draft · submission required'
+                            : 'Not verified as published and effective'}</dd>
+                    </div>
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Pillar 1 and Foundation relationship</dt>
+                      <dd className="mt-1 text-sm text-white">{strategyCurrentLink
+                        ? 'EOS link verified current · strategic outcomes not certified'
+                        : strategyLink.state === 'PUBLICATION_REQUIRED'
+                          ? 'Not linkable · effective EOS Strategy publication required'
+                          : strategyLink.state === 'READY'
+                            ? strategyPillarOneSource
+                              ? 'Publication verified; no current Pillar 1 link read back'
+                              : 'No current Pillar 1 relationship verified'
+                            : 'Current link readback not verified'}</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-3 text-xs text-slate-300">
+                    Sequence: independently authorized draft → submission → separate publisher approval
+                    → effective published revision → authorized project link → independent EOS link readback.
+                    Execution metrics from M02 are not certified strategic outcomes.
+                  </p>
+                </section>}
                 {classification === 'STRATEGY' && <section className={styles.commandDeck}
                   aria-label="Governed Strategy publication lifecycle">
                   <div className={styles.commandStatus}>
@@ -1416,7 +1484,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.4.0-M02-LIVE-EXECUTION-READBACK
+// VERSION: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
