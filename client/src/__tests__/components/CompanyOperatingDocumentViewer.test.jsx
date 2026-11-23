@@ -240,7 +240,7 @@ describe('governed company document experience', () => {
   });
   it('opens published Strategy in governed execution and reveals the exact document only on demand', async () => {
     api.get.mockImplementation(url => url === '/company-operating-documents/STRATEGY'
-      ? Promise.resolve({ data: view(record('STRATEGY')) })
+      ? Promise.resolve({ data: view(record('STRATEGY'), ['READ_HISTORY', 'REVIEW_DRAFTS']) })
       : Promise.reject(new Error('UNEXPECTED_ROUTE')));
     render(wrap({ classification: 'STRATEGY' }));
     const mode = await screen.findByRole('navigation', { name: 'Strategy workspace mode' });
