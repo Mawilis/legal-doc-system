@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.2.3-HEADER-INSPECTION-COMPLIANCE
+ * VERSION: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
+ *            shows each plan record's EOS lifecycle state independently of
+ *            persistence, and opens its existing project workspace for
+ *            source-authorized execution. No completion, IAM, strategy link,
+ *            document publication, or project/task creation is inferred.
  * CHANGELOG: v2.2.3-HEADER-INSPECTION-COMPLIANCE
  *            moves existing mandatory governance fields into the inspected
  *            source header boundary; no runtime behavior or IAM change.
@@ -1142,6 +1147,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </button>
                       </div>
                       {delivery.page.has_more && <p role="alert">Verify the full project task list before admitting the plan.</p>}
+                      {typeof onOpenProject === 'function' && <button type="button"
+                        className="mt-3 min-h-10 rounded-lg border border-amber-300/60 bg-slate-900 px-4 text-sm font-semibold text-amber-100 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                        onClick={() => onOpenProject(delivery.projectId)}>
+                        Open existing project execution <ArrowUpRight size={15} aria-hidden="true"/>
+                      </button>}
+                      <p className="mt-3 text-xs text-slate-300">
+                        Each record below shows current EOS lifecycle state. Persisted means the work exists, not that it is Done, approved, linked to a strategic pillar or published.
+                      </p>
                       <div className={styles.strategyPlanGroups}>
                         {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
                           <h4>{kind === 'MILESTONE' ? 'Milestones · 6' : 'Implementation tasks · 12'}</h4>
@@ -1149,7 +1162,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             const matches = delivery.page.items.filter(item => item.title === entry.title);
                             const verified = matches.length === 1 && matches[0].kind === entry.kind;
                             return <li key={entry.key}>
-                              <span>{entry.title}</span>
+                              <span>
+                                {entry.title}
+                                {verified && <small className="mt-1 block font-medium text-slate-300">
+                                  Current EOS status: {matches[0].status.replaceAll('_', ' ')}
+                                </small>}
+                              </span>
                               <span className={verified ? styles.planPersisted : styles.planProposed}>
                                 {verified ? 'Persisted in EOS' : 'Planned'}
                               </span>
@@ -1317,7 +1335,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.2.3-HEADER-INSPECTION-COMPLIANCE
+// VERSION: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
