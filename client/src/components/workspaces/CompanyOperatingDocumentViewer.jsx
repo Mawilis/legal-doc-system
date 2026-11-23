@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
+ * VERSION: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
+ *            offers cross-visit continuity from source-recorded last task
+ *            update by the signed-in principal, never inferred page views.
+ *            The current verified project snapshot remains authoritative.
  * CHANGELOG: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
  *            tolerates test/browser layouts without native scrollIntoView.
  * CHANGELOG: v2.27.0-FOCUSED-STRATEGY-EXECUTION
@@ -1036,6 +1040,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     focusWorkOnOpen.current = true;
     setExecutionInspectorOpen(true);
   };
+  // Genuine cross-session continuation comes from the currently verified task
+  // snapshot. It reflects recorded changes by this principal, not page views.
+  const latestSourceWork = m04Execution?.rows
+    .filter(({ task }) => task.updated_by_principal_id === scope.principalId
+      && typeof task.updated_at === 'string' && Number.isFinite(Date.parse(task.updated_at)))
+    .sort((a, b) => Date.parse(b.task.updated_at) - Date.parse(a.task.updated_at))[0]?.task;
   const accessibleVisits = sessionTaskVisits.flatMap(item => {
     const found = m04Execution?.rows.find(row => row.task.task_id === item.id);
     return found ? [{ ...item, task: found.task }] : [];
@@ -1999,6 +2009,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           </button>}
                         </div>
                         {m04Execution ? <>
+                          {latestSourceWork && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
+                              <p className="max-w-xl truncate text-sm font-semibold text-white">{latestSourceWork.title}</p>
+                            </div>
+                            <button type="button" className="rounded-md border border-sky-400/70 bg-sky-950/70 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                              onClick={() => resumeTask(latestSourceWork)}>Continue inspecting</button>
+                          </div>}
                           <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
                             Strategy revision {document.revision} and Foundation project revision {m04Execution.project.revision}.
                             {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
@@ -2370,7 +2388,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
+// VERSION: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
