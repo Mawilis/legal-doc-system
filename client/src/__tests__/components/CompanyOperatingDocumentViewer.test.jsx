@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.11.1-M03-UNVERIFIED-LINK-READBACK-CERT
+ * VERSION: v1.12.0-FOUNDER-STRATEGY-COMMAND-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * EPITOME: Exercise the real adapter/viewer across privacy, session turnover,
  * history, command/readback, honest empty state and keyboard close boundaries.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.12.0-FOUNDER-STRATEGY-COMMAND-CERT
+ *            verifies exact readback, mission denial and authenticated
+ *            Founder strategy draft/submit/ratification transport paths.
  * CHANGELOG: v1.11.1-M03-UNVERIFIED-LINK-READBACK-CERT
  *            distinguishes the pre-project verification link state from an
  *            EOS 409 received after explicit source readback. No synthetic
@@ -426,6 +429,46 @@ describe('Strategy source-owned project execution readback', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
     expect(await screen.findByText(/M02 execution summary unavailable: full/)).toBeVisible();
     expect(screen.queryByRole('region', { name: 'M02 live execution readback' })).not.toBeInTheDocument();
+  });
+
+  it('M03 validates exact Founder self-ratification and rejects copied approval for other classes', async () => {
+    const reference = 'WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123';
+    const ratified = { ...record('STRATEGY'), approved_by_principal_id: scope.principalId,
+      approval_reference: reference };
+    const accepted = { ...view(ratified), classification: 'STRATEGY' };
+    expect(assertCompanyDocumentView(accepted, 'STRATEGY', scope)).toBe(accepted);
+    expect(() => assertCompanyDocumentView({
+      ...view({ ...ratified, classification: 'MISSION', document_id: 'wilsy-company-mission' }),
+      classification: 'MISSION',
+    }, 'MISSION', scope)).toThrow('COMPANY_DOCUMENT_RESPONSE_INVALID');
+    expect(() => assertCompanyDocumentView({
+      ...accepted, document: { ...ratified, approval_reference: 'SYNTHETIC-SPOOF' },
+    }, 'STRATEGY', scope)).toThrow('COMPANY_DOCUMENT_RESPONSE_INVALID');
+    api.post.mockResolvedValue(receipt(ratified));
+    await commandCompanyDocument('STRATEGY', scope, 'FOUNDER_RATIFY',
+      { expected_revision: 2, effective_from: asOf }, 'ratify-test-key',
+      { token: auth.token });
+    expect(api.post.mock.calls[0][0]).toBe('/company-operating-documents/STRATEGY/founder-ratify');
+    expect(api.post.mock.calls[0][2].headers['Idempotency-Key']).toBe('ratify-test-key');
+    await expect(commandCompanyDocument('MISSION', scope, 'FOUNDER_RATIFY', {}, 'mission-denied',
+      { token: auth.token })).rejects.toThrow('COMPANY_DOCUMENT_FOUNDER_STRATEGY_ONLY');
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('M03 offers Founder draft creation only after explicit EOS-admitted source action', async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: { ...view(null, [
+          'READ_HISTORY', 'REVIEW_DRAFTS', 'FOUNDER_CREATE_DRAFT',
+        ]), classification: 'STRATEGY' } });
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    expect(await screen.findByText(/Verified Founder can prepare Strategy through durable source authority/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare approved v1.1.0' }));
+    expect(screen.getByRole('form', { name: 'Company private draft editor' })).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('M03 presents unpublished read-only source authority without writing publisher or pillar links', async () => {
