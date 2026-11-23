@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.24.1-PRESERVED-FILTER-SESSION-CERT
+ * VERSION: v1.24.2-REFRESH-INSPECTOR-CONTINUITY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.24.2-REFRESH-INSPECTOR-CONTINUITY-CERT
+ *            confirms refreshed EOS lifecycle results preserve the open
+ *            inspector rather than triggering an unintended close action.
  * CHANGELOG: v1.24.1-PRESERVED-FILTER-SESSION-CERT
  *            certifies intentional filter preservation across inspector
  *            collapse, with explicit full-work reset before pagination.
@@ -737,7 +740,8 @@ describe('Strategy source-owned project execution readback', () => {
     await waitFor(() => expect(screen.getByRole('region', {
       name: 'M04 governed Strategy execution',
     })).toHaveTextContent('Done · task lifecycle only1'));
-    fireEvent.click(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/));
+    expect(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/)
+      .closest('details')?.open).toBe(true);
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(await screen.findByText(/Verified immutable EOS lifecycle events: 2/)).toBeVisible();
     expect(screen.getByText(/Business decisions: 1 approved/)).toBeVisible();
@@ -1236,7 +1240,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.24.1-PRESERVED-FILTER-SESSION-CERT
+// VERSION: v1.24.2-REFRESH-INSPECTOR-CONTINUITY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
