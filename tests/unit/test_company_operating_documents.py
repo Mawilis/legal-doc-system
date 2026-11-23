@@ -1,12 +1,15 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
+VERSION: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
-CHANGELOG: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
+CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
+tests current Founder HTTP lifecycle across draft, submission, immutable
+ratification, replay, publication readback and revoked capability.
+CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 tests exact Founder source admission, self-ratification immutable lineage,
 idempotent replay, mission/ordinary publisher denials, and revoked proof.
 CHANGELOG: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT tests
@@ -302,6 +305,58 @@ def test_http_current_approved_and_privileged_review(monkeypatch, registry):
 
 
 
+def test_founder_strategy_http_lifecycle_without_author_or_publisher_grant(monkeypatch, registry):
+    """Founder read admission is separate; durable source verifies every command."""
+    import tools.eos.saas.company_operating_document_registry as registry_module
+    state = {"active": True}
+    def evidence(*, principal_id, tenant_id, database, session):
+        return {"state": "ACTIVE"} if state["active"] and principal_id == "author" and tenant_id == TENANT else None
+    monkeypatch.setattr(registry_module, "read_founder_designation", evidence)
+    monkeypatch.setattr(http, "read_founder_designation", evidence)
+    monkeypatch.setattr(http.kernel_db, "get_database", lambda: registry.database)
+    client = http_client(monkeypatch, registry, privileged=False)
+    prefix = "/api/company-operating-documents/STRATEGY"
+    initial = client.get(prefix)
+    assert initial.status_code == 200
+    assert "FOUNDER_CREATE_DRAFT" in initial.json()["available_actions"]
+    assert "CREATE_DRAFT" not in initial.json()["available_actions"]
+    proposal = {**deepcopy(PAYLOAD), "expected_revision": 0}
+    draft = client.post(prefix + "/founder-drafts", json=proposal,
+                        headers={"Idempotency-Key": "founder-http-draft"})
+    assert draft.status_code == 201, draft.text
+    assert draft.json()["document"]["state"] == "DRAFT"
+    review = client.get(prefix + "?review=true")
+    assert review.status_code == 200
+    assert "FOUNDER_SUBMIT" in review.json()["available_actions"]
+    submitted = client.post(prefix + "/founder-submit", json={"expected_revision": 1},
+                            headers={"Idempotency-Key": "founder-http-submit"})
+    assert submitted.status_code == 200, submitted.text
+    assert submitted.json()["document"]["state"] == "SUBMITTED"
+    permitted = client.get(prefix + "?review=true")
+    assert permitted.status_code == 200
+    assert "FOUNDER_RATIFY" in permitted.json()["available_actions"]
+    effective = instant(datetime.now(timezone.utc) - timedelta(minutes=1))
+    ratify_payload = {"expected_revision": 2, "effective_from": effective}
+    result = client.post(prefix + "/founder-ratify", json=ratify_payload,
+                         headers={"Idempotency-Key": "founder-http-ratify"})
+    assert result.status_code == 200, result.text
+    assert result.json()["document"]["state"] == "PUBLISHED"
+    assert result.json()["document"]["approval_reference"] == (
+        "WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123"
+    )
+    assert client.post(prefix + "/founder-ratify", json=ratify_payload,
+                       headers={"Idempotency-Key": "founder-http-ratify"}).json() == result.json()
+    official = client.get(prefix)
+    assert official.status_code == 200
+    assert official.json()["document"]["fingerprint"] == result.json()["document"]["fingerprint"]
+    assert len(registry.revisions.rows) == len(registry.commands.rows) == 3
+    state["active"] = False
+    revoked = client.get(prefix)
+    assert revoked.status_code == 200
+    assert "FOUNDER_CREATE_DRAFT" not in revoked.json()["available_actions"]
+    assert "FOUNDER_RATIFY" not in revoked.json()["available_actions"]
+
+
 def test_strategy_project_link_http_requires_exact_independent_source_and_stable_readback(monkeypatch, registry):
     """Company Strategy relationships require BOTH company and project permission."""
     from tools.eos.saas.strategy_project_relationship_registry import (
@@ -517,7 +572,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
+# VERSION: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
