@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
+ * VERSION: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
+ *          verifies Strategy-selected task details only after exact-project
+ *          and exact-task readback, with no task mutation.
  * CHANGELOG: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
  *          verifies ten-record default views, forward/back view navigation,
  *          page-size selection and exact-visible selection on one authorized
@@ -2102,6 +2105,41 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('opens a Strategy-selected task only after its authorized project and work readback', async () => {
+    const persisted = project({ name: 'WILSY OS — Unified Operating Platform Foundation' });
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null, title: 'Certify production readiness and rollback',
+      description: '', status: 'TODO', assignee_principal_id: null, due_date: null, depends_on: [],
+      revision: 1, fingerprint: 'a'.repeat(128),
+      created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-22T21:44:56+00:00', updated_at: '2026-11-22T21:44:56+00:00',
+    };
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [task], limit: 50, offset: 0, has_more: false, next_offset: null },
+      };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [], limit: 100, offset: 0, has_more: false, next_offset: null },
+      };
+      throw new Error('Unexpected source read ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="exact-task-handoff-cert" focusProjectId={PROJECT_ID} focusTaskId={taskId}/>);
+    expect(await screen.findByRole('dialog', {
+      name: 'Work details: Certify production readiness and rollback',
+    })).toBeVisible();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('refuses Strategy-handoff details when the authorized list omits that project', async () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="absent-project-handoff" focusProjectId={PROJECT_ID}/>);
@@ -2559,7 +2597,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
+ * VERSION: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
