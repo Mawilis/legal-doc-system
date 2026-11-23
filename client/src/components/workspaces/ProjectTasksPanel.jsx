@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.56.0-EXPLAINABLE-DEPENDENCY-BLOCKERS
+ * VERSION: v1.57.0-SOURCE-OWNED-TASK-HIERARCHY
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.57.0-SOURCE-OWNED-TASK-HIERARCHY defaults
+ *          to compact source-owned parent/subtask ordering, with
+ *          milestone records visible as distinct root nodes. This does
+ *          not invent absent milestone-to-task membership. Removes the
+ *          duplicate upper pagination card while retaining the lower
+ *          bounded verified-batch pager and manual grouping choices.
  * CHANGELOG: v1.56.0-EXPLAINABLE-DEPENDENCY-BLOCKERS
  *          shows source-verified incomplete predecessors and disables
  *          final completion attestation when a known current-page blocker
@@ -414,10 +420,10 @@ export default function ProjectTasksPanel({
   const [workQuery, setWorkQuery] = useState('');
   const [workMineOnly, setWorkMineOnly] = useState(false);
   const [selectedWorkIds, setSelectedWorkIds] = useState([]);
-  const [workDensity, setWorkDensity] = useState('comfortable');
+  const [workDensity, setWorkDensity] = useState('compact');
   const [workStatus, setWorkStatus] = useState('ALL');
   const [workKind, setWorkKind] = useState('ALL');
-  const [workGroup, setWorkGroup] = useState('NONE');
+  const [workGroup, setWorkGroup] = useState('HIERARCHY');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
   const [workViewSize, setWorkViewSize] = useState(10);
   const [workViewPage, setWorkViewPage] = useState(0);
@@ -862,6 +868,30 @@ export default function ProjectTasksPanel({
     return names.length ? names.join(' ') : 'Assigned contributor · name unavailable';
   };
   const groupedWorkRows = useMemo(() => {
+    if (workGroup === 'HIERARCHY') {
+      // Parent references are canonical EOS task ids. A missing parent is
+      // outside this verified page, never a fabricated milestone link.
+      const byId = new Map(visibleWorkRows.map(item => [item.task_id, item]));
+      const children = new Map();
+      visibleWorkRows.forEach(item => {
+        if (!item.parent_task_id || !byId.has(item.parent_task_id)) return;
+        if (!children.has(item.parent_task_id)) children.set(item.parent_task_id, []);
+        children.get(item.parent_task_id).push(item);
+      });
+      const ordered = [];
+      const seen = new Set();
+      const append = item => {
+        if (seen.has(item.task_id)) return;
+        seen.add(item.task_id);
+        ordered.push(item);
+        (children.get(item.task_id) || []).forEach(append);
+      };
+      visibleWorkRows.forEach(item => {
+        if (!item.parent_task_id || !byId.has(item.parent_task_id)) append(item);
+      });
+      visibleWorkRows.forEach(append);
+      return [{ key: 'hierarchy', title: null, rows: ordered }];
+    }
     if (workGroup === 'NONE') return [{ key: 'all', title: null, rows: visibleWorkRows }];
     const grouped = new Map();
     visibleWorkRows.forEach(item => {
@@ -1270,7 +1300,8 @@ export default function ProjectTasksPanel({
           <select aria-label="Group project work" value={workGroup}
             onChange={event => setWorkGroup(event.target.value)}
             className="rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900">
-            <option value="NONE">No grouping</option>
+            <option value="HIERARCHY">Task hierarchy</option>
+            <option value="NONE">Flat list</option>
             <option value="STATUS">By status</option>
             <option value="TYPE">By work type</option>
             <option value="ASSIGNEE">By contributor</option>
@@ -1550,7 +1581,6 @@ export default function ProjectTasksPanel({
         </form>
         </div>
       </div>}
-      {workPager}
       <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
         <table role="grid" aria-label="Project work grid" data-density={workDensity}
           className="w-full min-w-[580px] border-collapse text-left text-sm">
@@ -1592,6 +1622,8 @@ export default function ProjectTasksPanel({
               {group.rows.map(item => <ProjectWorkRow key={item.task_id}
               item={item} selected={selectedWorkIds.includes(item.task_id)}
               selectedCount={selectedReviewTasks.length}
+              depth={workGroup === 'HIERARCHY' && item.parent_task_id
+                && visibleWorkRows.some(parent => parent.task_id === item.parent_task_id) ? 1 : 0}
               density={workDensity} busy={busy}
               pendingStatus={pendingTransition?.taskId === item.task_id ? pendingTransition.status : null}
               todayISO={todayISO} assigneeName={contributorName}
@@ -1847,7 +1879,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.56.0-EXPLAINABLE-DEPENDENCY-BLOCKERS
+// VERSION: v1.57.0-SOURCE-OWNED-TASK-HIERARCHY
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
