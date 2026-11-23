@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
+ * VERSION: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
+ *          preserves the foreign-tenant fail-closed assertions while
+ *          verifying the current plain-language unavailable message.
  * CHANGELOG: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
  *          proves a verified task opens while optional contributor,
  *          member and capability requests never finish, without enabling
@@ -2539,7 +2542,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       ? { data: list([]) }
       : { data: summary([], 'another-tenant') });
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="foreign-response-test"/>);
-    expect(await screen.findByRole('alert')).toHaveTextContent(/source is unavailable/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Projects couldn't load/i);
     expect(screen.queryByText('No projects in this tenant')).not.toBeInTheDocument();
     expect(screen.queryByText('0 active · 0 total')).not.toBeInTheDocument();
   });
@@ -2612,7 +2615,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
+ * VERSION: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
