@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA
+ * VERSION: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
  *          local instant display, accessible day/week/month navigation and
@@ -9,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL keeps the
+ *          established source-action accessible name after introducing
+ *          the common task row, preserving calendar handoff contracts.
  * CHANGELOG: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA consumes
  *          the reusable task blueprint, with readable neutral row
  *          typography and accessible action while preserving date-only
@@ -340,7 +343,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
           <div className="mt-1 flex items-center gap-1 text-xs text-slate-600"><Clock3 size={12}/> {deadlineTime(item.due_at)}</div>
           <button type="button" onClick={() => onOpenWork(item)}
             className={'mt-2 ' + workTaskBlueprint.primary}>
-            Open in My Work <ArrowRight size={14}/>
+            Review and complete in My Work <ArrowRight size={14}/>
           </button>
         </WorkTaskBlueprintRow>
       ))}
@@ -350,7 +353,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA
+ * VERSION: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
  * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.
