@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
+ * VERSION: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,14 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
+ *            derives a fail-closed operational work graph only after the
+ *            current published Pillar 1 link, full exact-project task
+ *            source, predecessor/owner/deadline integrity and current
+ *            revision are verified. Separate on-demand Projects event
+ *            readback exposes durable lifecycle evidence; neither DONE
+ *            nor an event is a certified strategic outcome. No new task
+ *            registry, approval authority or outcome percentage is created.
  * CHANGELOG: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
  *            reconciles a refused duplicate Strategy version against
  *            independently verified, immutable EOS published history and
@@ -479,6 +487,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [projectItems, setProjectItems] = useState([]);
   const [delivery, setDelivery] = useState({ state: 'IDLE', projectId: null, page: null, error: '' });
   const deliveryReadRef = useRef({ sequence: 0, controller: null });
+  const executionEvidenceReadRef = useRef({ sequence: 0, controller: null });
+  const [executionEvidence, setExecutionEvidence] = useState({
+    state: 'IDLE', taskId: null, items: [], error: '',
+  });
   const [projectError, setProjectError] = useState('');
   const [projectPillar, setProjectPillar] = useState('pillar-one');
   const [projectName, setProjectName] = useState('');
@@ -565,6 +577,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     const controller = new AbortController();
     deliveryReadRef.current.controller = controller;
     const key = sessionKey;
+    executionEvidenceReadRef.current.sequence += 1;
+    executionEvidenceReadRef.current.controller?.abort();
+    setExecutionEvidence({ state: 'IDLE', taskId: null, items: [], error: '' });
     setDelivery({ state: 'LOADING', projectId, page: null, error: '' });
     if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
       || !/^prj-[a-f0-9]{48}$/.test(projectId) || !Number.isSafeInteger(offset) || offset < 0
@@ -610,6 +625,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     projectReadRef.current.controller?.abort();
     deliveryReadRef.current.sequence += 1;
     deliveryReadRef.current.controller?.abort();
+    executionEvidenceReadRef.current.sequence += 1;
+    executionEvidenceReadRef.current.controller?.abort();
+    setExecutionEvidence({ state: 'IDLE', taskId: null, items: [], error: '' });
     setDelivery({ state: 'IDLE', projectId: null, page: null, error: '' });
     projectMutation.current = null;
     planMutation.current = null;
@@ -781,6 +799,112 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     return { counts, waiting, unfinishedPredecessors, pastDue,
       total: plan.length, verifiedAt: delivery.verifiedAt };
   })();
+
+  // M04 is an exact-source execution *read* with independent Pillar 1 link
+  // currentness. Operational work counts and event evidence must NEVER
+  // become a strategic outcome percentage or an invented completion decision.
+  const m04Execution = (() => {
+    if (classification !== 'STRATEGY' || data?.state !== 'PUBLISHED'
+      || query.review || !foundationExecution || strategyLink.state !== 'READY'
+      || delivery.page.has_more || delivery.page.offset !== 0) return null;
+    const project = projectItems.find(item =>
+      item.project_id === delivery.projectId && item.name === FOUNDATION_PROJECT_NAME);
+    const links = strategyLink.items.filter(item => item.project_id === delivery.projectId
+      && item.pillar_id === 'pillar-one');
+    if (!project || links.length !== 1 || links[0].state !== 'VERIFIED_CURRENT'
+      || links[0].source_project_revision !== project.revision
+      || links[0].source_strategy_revision !== document?.revision
+      || project.status !== 'ACTIVE' || !Array.isArray(delivery.page.items)) return null;
+    const tasks = delivery.page.items;
+    const byId = new Map(tasks.map(task => [task.task_id, task]));
+    if (tasks.length !== byId.size) return null;
+    let assigned = 0; let unassigned = 0; let waiting = 0;
+    let missingDueDate = 0; let unfinishedWithDue = 0;
+    const states = { TODO: 0, IN_PROGRESS: 0, BLOCKED: 0, DONE: 0, CANCELLED: 0 };
+    const asOfDay = delivery.verifiedAt.slice(0, 10);
+    const rows = [];
+    for (const task of tasks) {
+      if (task.tenant_id !== scope.tenantId || task.project_id !== project.project_id
+        || !Object.hasOwn(states, task.status)
+        || !Number.isSafeInteger(task.revision) || task.revision < 1
+        || typeof task.fingerprint !== 'string' || !/^[a-f0-9]{128}$/.test(task.fingerprint)
+        || !['TASK', 'MILESTONE'].includes(task.kind)
+        || (task.assignee_principal_id !== null && (typeof task.assignee_principal_id !== 'string'
+          || !task.assignee_principal_id.trim()))
+        || !Array.isArray(task.depends_on) || task.depends_on.length > 25
+        || new Set(task.depends_on).size !== task.depends_on.length
+        || task.depends_on.some(id => !byId.has(id) || id === task.task_id)
+        || (task.due_date !== null && (typeof task.due_date !== 'string'
+          || !/^\\d{4}-\\d{2}-\\d{2}$/.test(task.due_date)
+          || Number.isNaN(Date.parse(task.due_date + 'T00:00:00Z'))))) return null;
+      states[task.status] += 1;
+      if (task.assignee_principal_id === null) unassigned += 1;
+      else assigned += 1;
+      const remaining = task.depends_on.filter(id => byId.get(id).status !== 'DONE').length;
+      if (remaining > 0) waiting += 1;
+      if (task.due_date === null) missingDueDate += 1;
+      else if (!['DONE', 'CANCELLED'].includes(task.status) && task.due_date < asOfDay)
+        unfinishedWithDue += 1;
+      rows.push({ task, remaining });
+    }
+    return { project, rows, states, assigned, unassigned, waiting, missingDueDate,
+      pastDueCalendar: unfinishedWithDue, observedAt: delivery.verifiedAt,
+      certifiedOutcome: null };
+  })();
+
+  /** Read immutable lifecycle evidence through the existing Projects owner IAM.
+   * No Strategy permission is used to grant task activity, and no write occurs.
+   */
+  const verifyExecutionEvidence = async taskId => {
+    const key = sessionKey;
+    if (!key || !m04Execution || !m04Execution.rows.some(row => row.task.task_id === taskId)
+      || !/^ptk-[a-f0-9]{48}$/.test(taskId)) return;
+    const sequence = ++executionEvidenceReadRef.current.sequence;
+    executionEvidenceReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    executionEvidenceReadRef.current.controller = controller;
+    setExecutionEvidence({ state: 'LOADING', taskId, items: [], error: '' });
+    try {
+      const { data: page } = await api.get('/projects/'
+        + encodeURIComponent(m04Execution.project.project_id) + '/tasks/'
+        + encodeURIComponent(taskId) + '/events', {
+        params: { limit: 100, offset: 0 },
+        headers: { 'X-Tenant-ID': scope.tenantId,
+          Authorization: 'Bearer ' + auth.token },
+        signal: controller.signal,
+      });
+      if (!active(key) || sequence !== executionEvidenceReadRef.current.sequence) return;
+      const task = m04Execution.rows.find(row => row.task.task_id === taskId).task;
+      const valid = page?.schema === 'WILSY-PROJECT-TASK-EVENT-LIST/V1'
+        && page.tenant_id === scope.tenantId && page.principal_id === scope.principalId
+        && page.project_id === m04Execution.project.project_id && page.task_id === taskId
+        && page.limit === 100 && page.offset === 0 && Array.isArray(page.items)
+        && page.items.length <= 100 && typeof page.has_more === 'boolean'
+        && (page.has_more ? page.next_offset === page.items.length : page.next_offset === null)
+        && page.items.every((event, index) => event.tenant_id === scope.tenantId
+          && event.project_id === page.project_id && event.task_id === taskId
+          && event.schema === 'wilsy.project.task.event.v1'
+          && Number.isSafeInteger(event.revision) && event.revision >= 1
+          && (index === 0 || event.revision < page.items[index - 1].revision)
+          && ['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED']
+            .includes(event.event_type)
+          && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED']
+            .includes(event.status_after)
+          && typeof event.occurred_at === 'string');
+      if (!valid || page.has_more || !page.items.length
+        || page.items[0].revision !== task.revision
+        || page.items[0].status_after !== task.status
+        || page.items[page.items.length - 1].revision !== 1) {
+        throw new Error('M04_LIFECYCLE_EVIDENCE_UNVERIFIED');
+      }
+      setExecutionEvidence({ state: 'READY', taskId, items: page.items, error: '' });
+    } catch (failure) {
+      if (!active(key) || sequence !== executionEvidenceReadRef.current.sequence
+        || failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      setExecutionEvidence({ state: failure?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE',
+        taskId, items: [], error: 'Projects could not independently verify the complete current task event chain. No completion evidence certified.' });
+    }
+  };
 
   const verifiedFoundationPlanCount = delivery.state === 'READY' && delivery.page
     ? FOUNDATION_EXECUTION_PLAN.filter(entry => delivery.page.items.some(item =>
@@ -1589,6 +1713,91 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         M02 execution summary unavailable: full, unique 18-record programme coverage and predecessor readback have not both been verified. No counts are inferred.
                       </p>}
 
+                      <section aria-label="M04 governed Strategy execution"
+                        className="mt-4 rounded-xl border border-slate-500/60 bg-slate-950/40 p-4 text-slate-100">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div><h4 className="text-base font-semibold text-white">M04 · Governed Strategy execution</h4>
+                            <p className="mt-1 text-sm text-slate-200">Source-owned accountability, due dates,
+                              dependencies and immutable task lifecycle evidence. No outcomes are inferred from task counts.</p>
+                          </div>
+                          {m04Execution && <button type="button" onClick={() => void loadDelivery(delivery.projectId, 0)}
+                            className="rounded-lg border border-slate-500 px-3 py-2 text-sm">
+                            <RefreshCw size={14} aria-hidden="true"/> Verify current work
+                          </button>}
+                        </div>
+                        {m04Execution ? <>
+                          <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
+                            Strategy revision {document.revision} and Foundation project revision {m04Execution.project.revision}.
+                            {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
+                          <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+                            {[
+                              ['Assigned work', m04Execution.assigned],
+                              ['Unassigned work', m04Execution.unassigned],
+                              ['Waiting on predecessors', m04Execution.waiting],
+                              ['Without due dates', m04Execution.missingDueDate],
+                              ['Past calendar due date', m04Execution.pastDueCalendar],
+                              ['Done · task lifecycle only', m04Execution.states.DONE],
+                            ].map(([label, value]) => <div key={label}
+                              className="rounded-lg border border-slate-600/70 p-3">
+                              <dt className="text-xs text-slate-300">{label}</dt>
+                              <dd className="mt-1 text-xl font-semibold">{value}</dd>
+                            </div>)}
+                          </dl>
+                          <p className="mt-3 text-sm font-semibold">Certified strategic outcome:
+                            {' '}Not established — no authorized outcome evidence or outcome score exists in this source.
+                          </p>
+                          <p className="mt-1 text-xs text-slate-300">Snapshot observed: {m04Execution.observedAt}.
+                            Due-date comparisons use a UTC calendar date, not a server-certified overdue decision.
+                            Task DONE and audit history are not strategic outcome certification.</p>
+                          <details className="mt-4 rounded-lg border border-slate-600/70 p-3">
+                            <summary className="cursor-pointer font-semibold">Inspect accountable work and lifecycle evidence</summary>
+                            <ul className="mt-3 divide-y divide-slate-700/70">
+                              {m04Execution.rows.map(({ task, remaining }) => <li key={task.task_id}
+                                className="py-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div><strong className="text-sm">{task.title}</strong>
+                                    <p className="mt-1 text-xs text-slate-300">
+                                      {task.kind} · {task.status.replaceAll('_', ' ')} · revision {task.revision}
+                                      {' · '}{task.assignee_principal_id ? 'Assigned principal verified' : 'Unassigned'}
+                                      {' · '}{task.due_date ? 'Due ' + task.due_date : 'No due date'}
+                                      {' · '}{remaining ? remaining + ' incomplete predecessor(s)' : 'Dependencies clear'}
+                                    </p>
+                                  </div>
+                                  <button type="button" className="rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                                    onClick={() => void verifyExecutionEvidence(task.task_id)}>
+                                    Inspect lifecycle evidence
+                                  </button>
+                                </div>
+                                {executionEvidence.taskId === task.task_id && <div className="mt-2 text-sm"
+                                  role={executionEvidence.state === 'UNAVAILABLE' || executionEvidence.state === 'DENIED' ? 'alert' : 'status'}>
+                                  {executionEvidence.state === 'LOADING' && 'Reading source-owned task events…'}
+                                  {executionEvidence.state === 'READY' && <>
+                                    <p>Verified immutable EOS lifecycle events: {executionEvidence.items.length}.
+                                      Most recent: {executionEvidence.items[0].event_type.replaceAll('_', ' ')}
+                                      {' · '}{executionEvidence.items[0].status_after}
+                                      {' · '}{executionEvidence.items[0].occurred_at}.
+                                    </p>
+                                    <p className="text-xs text-slate-300">An audit event is operational evidence,
+                                      not an approved strategic outcome or financial authorization.</p>
+                                  </>}
+                                  {['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state)
+                                    && executionEvidence.error}
+                                </div>}
+                              </li>)}
+                            </ul>
+                          </details>
+                          {typeof onOpenProject === 'function' && <button type="button"
+                            className="mt-3 rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                            onClick={() => onOpenProject(m04Execution.project.project_id)}>
+                            Open source-owned task commands <ArrowUpRight size={14} aria-hidden="true"/>
+                          </button>}
+                        </> : <p role="status" className="mt-3 text-sm">
+                          M04 execution unavailable until the currently effective published Strategy,
+                          exact current Pillar 1 link, unchanged Foundation project revision, complete task
+                          snapshot and dependencies are all independently verified. No work or outcome score inferred.
+                        </p>}
+                      </section>
+
                       <div className={styles.strategyPlanGroups}>
                         {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
                           <h4>{kind === 'MILESTONE' ? 'Milestones · 6' : 'Implementation tasks · 12'}</h4>
@@ -1708,7 +1917,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
+// VERSION: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
