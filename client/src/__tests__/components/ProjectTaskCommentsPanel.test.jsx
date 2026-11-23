@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT
+ * VERSION: v1.3.1-ISOLATED-SOURCE-ALERT-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.1-ISOLATED-SOURCE-ALERT-CERT allows
+ *          multiple independent error alerts while asserting the precise
+ *          failed comment source, without erasing lifecycle evidence.
  * CHANGELOG: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT verifies lifecycle evidence
  *          remains visible when exact EOS comments return HTTP 503;
  *          comment publishing remains blocked until the source recovers.
@@ -153,7 +156,7 @@ it('keeps source-verified task lifecycle visible when comment EOS is unavailable
   });
   mount();
   expect(await screen.findByText('Lifecycle transition')).toBeVisible();
-  expect(screen.getByRole('alert')).toHaveTextContent('HTTP 503');
+  expect(screen.getAllByRole('alert').some(node => node.textContent.includes('HTTP 503'))).toBe(true);
   expect(screen.getByRole('button', { name: 'Retry comments' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Write update' })).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
@@ -174,7 +177,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT
+// VERSION: v1.3.1-ISOLATED-SOURCE-ALERT-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
