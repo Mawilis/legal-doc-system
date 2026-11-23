@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.55.0-SOURCE-BACKED-SUBTASK-HANDOFF
+ * VERSION: v1.56.0-EXPLAINABLE-DEPENDENCY-BLOCKERS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,13 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.56.0-EXPLAINABLE-DEPENDENCY-BLOCKERS
+ *          shows source-verified incomplete predecessors and disables
+ *          final completion attestation when a known current-page blocker
+ *          remains. Unknown off-page predecessors are never assumed done;
+ *          Python EOS independently enforces all dependency gates.
+ *          The task inspector also distinguishes downstream tasks in
+ *          the exact currently verified project batch.
  * CHANGELOG: v1.55.0-SOURCE-BACKED-SUBTASK-HANDOFF
  *          wires the row's Add subtask menu item into the existing,
  *          authenticated task-create form prefilled with a verified
@@ -919,6 +926,11 @@ export default function ProjectTasksPanel({
   };
   const completingItem = items.find(item => item.task_id === completionCandidate
     && item.status === 'IN_PROGRESS');
+  const knownCompletionBlockers = completingItem
+    ? items.filter(item => completingItem.depends_on.includes(item.task_id)
+      && item.status !== 'DONE') : [];
+  const offPageCompletionDependencies = completingItem
+    ? completingItem.depends_on.filter(id => !items.some(item => item.task_id === id)).length : 0;
   useEffect(() => {
     // Completion confirmation closes only when a fresh EOS page reports DONE,
     // or when the selected record disappears from the authorized source page.
@@ -1624,13 +1636,29 @@ export default function ProjectTasksPanel({
           className="fixed inset-x-4 top-1/4 z-[110] mx-auto max-w-xl rounded-xl border border-blue-300 bg-white p-5 shadow-2xl">
           <h5 className="text-sm font-bold text-slate-900">Confirm completion · {completingItem.title}</h5>
           <p className="mt-2 text-xs text-slate-700">This is a terminal EOS lifecycle command. Verify acceptance and supporting evidence first; a checkbox alone does not certify evidence, an approval or a milestone.</p>
+          {knownCompletionBlockers.length > 0 && <div role="alert"
+            className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+            Completion is blocked by {knownCompletionBlockers.length} unfinished predecessor
+            {knownCompletionBlockers.length === 1 ? '' : 's'}:
+            <ul className="mt-1 list-inside list-disc">
+              {knownCompletionBlockers.map(item => <li key={item.task_id}>
+                {item.title} · {label(item.status)}
+              </li>)}
+            </ul>
+            Refresh work after these predecessors reach Done.
+          </div>}
+          {offPageCompletionDependencies > 0 && <p className="mt-3 text-xs text-slate-700">
+            {offPageCompletionDependencies} predecessor record(s) are outside this verified page.
+            EOS independently checks their live status before completion.
+          </p>}
           <label className="mt-3 flex items-start gap-2 text-sm text-slate-900">
             <input type="checkbox" className="mt-1 size-4" checked={completionAttested}
               onChange={event => setCompletionAttested(event.target.checked)}/>
             <span>I reviewed this task's acceptance and supporting evidence.</span>
           </label>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="wp-button wp-button-primary" disabled={busy || !actionCapabilities?.canComplete || !completionAttested}
+            <button type="button" className="wp-button wp-button-primary" disabled={busy || !actionCapabilities?.canComplete || !completionAttested
+                || knownCompletionBlockers.length > 0}
               onClick={() => transition(completingItem, 'DONE')}>Confirm Done in EOS</button>
             <button type="button" className="wp-button" disabled={busy} onClick={() => {
               setCompletionCandidate(null);
@@ -1772,6 +1800,7 @@ export default function ProjectTasksPanel({
                   </button>}
               </div>
               <p className="mt-2 text-xs text-slate-600">Existing predecessors are immutable in EOS. Create a dependent task to add a new source-verified relationship without rewriting the current graph.</p>
+              <h5 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600">Blocked by</h5>
               {drawerTask.depends_on.length === 0
                 ? <p className="mt-2 text-sm text-slate-700">No predecessors</p>
                 : <ul className="mt-2 space-y-2">
@@ -1782,6 +1811,19 @@ export default function ProjectTasksPanel({
                         : 'Predecessor outside the current verified page'}
                     </li>;
                   })}
+                </ul>}
+              <h5 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Blocks · current verified EOS batch
+              </h5>
+              {items.filter(item => item.depends_on.includes(drawerTask.task_id)).length === 0
+                ? <p className="mt-2 text-sm text-slate-700">
+                  No successors are visible on this verified page. Other pages are not inferred.
+                </p>
+                : <ul className="mt-2 space-y-2">
+                  {items.filter(item => item.depends_on.includes(drawerTask.task_id))
+                    .map(item => <li key={item.task_id} className="rounded-md bg-slate-50 p-2 text-sm text-slate-800">
+                      {item.title} · {label(item.status)}
+                    </li>)}
                 </ul>}
             </section>
           </div>
@@ -1805,7 +1847,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.55.0-SOURCE-BACKED-SUBTASK-HANDOFF
+// VERSION: v1.56.0-EXPLAINABLE-DEPENDENCY-BLOCKERS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
