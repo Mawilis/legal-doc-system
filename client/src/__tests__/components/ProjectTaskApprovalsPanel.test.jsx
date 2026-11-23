@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Exact Task Approval Client Decision Certificate
- * VERSION: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT
+ * VERSION: v1.2.0-VERIFIED-REVIEWER-DIRECTORY-CERT
  * AUTHORITY: Synthetic EOS client contract; Python EOS owns permission truth.
  * EPITOME: Certify owner request, independently authorized reviewer decision,
  *          durable readback, foreign source denial and no self-approval action.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskApprovalsPanel; mocked api.js.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-VERIFIED-REVIEWER-DIRECTORY-CERT verifies the trusted participant
+ *          handoff plus independently re-read reviewer source, visible
+ *          human names and the no-self-approval boundary.
  * CHANGELOG: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT verifies explicit clean-source file selection, immutable attachment IDs on request and independently confirmed approval readback; forged clearance cannot be selected.
  * CHANGELOG: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT tests both separated
  *          user journeys without granting financial or task status authority.
@@ -57,11 +60,40 @@ afterEach(() => {
 const mount = (principalId, participantMode = false) =>
   render(<ProjectTaskApprovalsPanel tenantId={tenantId} principalId={principalId}
     projectId={projectId} taskId={taskId} participantMode={participantMode}
+    participantAuthorityState="VERIFIED"
     tenantHeaders={{ 'X-Tenant-ID': tenantId }}
     participants={[{
       tenant_id: tenantId, project_id: projectId,
       principal_id: reviewer, state: 'ACTIVE', role: 'CONTRIBUTOR',
     }]} onClose={() => {}}/>);
+
+it('independently refreshes eligible reviewers when parent authority is not verified', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === '/projects/' + projectId + '/participants?limit=100&offset=0') {
+      return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: tenantId,
+        principal_id: requester, project_id: projectId, limit: 100, offset: 0,
+        has_more: false, next_offset: null,
+        items: [{ tenant_id: tenantId, project_id: projectId,
+          principal_id: reviewer, state: 'ACTIVE', role: 'CONTRIBUTOR',
+          first_name: 'Verified', last_name: 'Reviewer' }],
+      } };
+    }
+    if (path === prefix + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-APPROVAL-LIST/V1', tenant_id: tenantId,
+      principal_id: requester, project_id: projectId, task_id: taskId,
+      items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Unexpected source ' + path);
+  });
+  render(<ProjectTaskApprovalsPanel tenantId={tenantId} principalId={requester}
+    projectId={projectId} taskId={taskId} participants={[]}
+    participantAuthorityState="UNAVAILABLE"
+    tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
+  expect(await screen.findByRole('option', { name: 'Verified Reviewer' })).toBeVisible();
+  expect(screen.getByRole('combobox', { name: 'Review contributor' })).toBeEnabled();
+  expect(api.post).not.toHaveBeenCalled();
+});
 
 it('requests a separately reviewed task decision and checks canonical source readback', async () => {
   let current = [];
@@ -273,7 +305,7 @@ it('never selects fabricated clean scan evidence from a malformed source', async
 });
 
 // ARTIFACT: ProjectTaskApprovalsPanel.test.jsx
-// VERSION: v1.1.0-SCAN-CLEARED-REVIEW-EVIDENCE-CLIENT-CERT
+// VERSION: v1.2.0-VERIFIED-REVIEWER-DIRECTORY-CERT
 // AUTHORITY BOUNDARY: mocked client only, no live IAM or financial approval
 // TENANT POSTURE: exact tenant/project/task/actor source readback
 // FAIL-CLOSED POSTURE: foreign, unknown and non-reviewer denied
