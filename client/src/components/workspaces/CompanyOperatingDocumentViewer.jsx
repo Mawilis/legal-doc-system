@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
+ * VERSION: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
+ *            highlights selected Strategy modes; keeps governance context
+ *            in an on-demand disclosure; filters tenant project display
+ *            locally while retaining exact EOS source and linkage evidence.
  * CHANGELOG: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
  *            consolidates redundant publication, handoff and mode panels
  *            into one accessible execution-first status/navigation surface.
@@ -537,6 +541,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [tab, setTab] = useState('document');
   const [contentsOpen, setContentsOpen] = useState(false);
   const [strategyMode, setStrategyMode] = useState('EXECUTION');
+  const [projectSearch, setProjectSearch] = useState('');
   const [pendingDocumentSection, setPendingDocumentSection] = useState(null);
   const [executionSearch, setExecutionSearch] = useState('');
   const [executionFilter, setExecutionFilter] = useState('ALL');
@@ -1428,6 +1433,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const executionFirst = approvedSourceAlreadyPublished && !query.review && query.revision === null;
   const showPublicationBody = !executionFirst || strategyMode === 'DOCUMENT';
   const showExecutionSurface = !executionFirst || strategyMode === 'EXECUTION';
+  // Filtering is view-only; EOS project authority and linked source snapshots
+  // are validated against unfiltered projectItems, never rendered search rows.
+  const visibleStrategyProjects = projectItems.filter(item => item.name.toLocaleLowerCase()
+    .includes(projectSearch.trim().toLocaleLowerCase()));
   // Document Contents cannot navigate to a section until the publication has
   // mounted. This does not issue another source read or mutate publication.
   useEffect(() => {
@@ -1787,10 +1796,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                 </section>}
                 {executionFirst && <nav aria-label="Strategy workspace mode" className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-500/60 bg-slate-950/30 p-3">
                   <button type="button" aria-pressed={strategyMode === 'EXECUTION'}
-                    className="min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm"
+                    className={strategyMode === 'EXECUTION'
+                      ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-2 ring-sky-300/60'
+                      : 'min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm text-slate-200 hover:border-sky-400 hover:bg-slate-800'}
                     onClick={() => setStrategyMode('EXECUTION')}>Execution workspace</button>
                   <button type="button" aria-pressed={strategyMode === 'DOCUMENT'}
-                    className="min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm"
+                    className={strategyMode === 'DOCUMENT'
+                      ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-2 ring-sky-300/60'
+                      : 'min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm text-slate-200 hover:border-sky-400 hover:bg-slate-800'}
                     onClick={() => setStrategyMode('DOCUMENT')}>View full document</button>
                   {reviewPermitted && <button type="button" disabled={busy}
                     className="min-h-10 rounded-lg border border-slate-500 px-3 py-2 text-sm"
@@ -1815,21 +1828,29 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                 </>}
                 {showExecutionSurface && <section className={styles.execution} aria-label="Company operating execution">
                   <h2>Business execution</h2>
-                  <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>
+                  {classification === 'STRATEGY' ? <details className="mb-4 rounded-lg border border-slate-600/60 bg-slate-900/40 px-4 py-3">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-200">How Strategy links to projects</summary>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-300">Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred. Tenant projects are not automatically linked to strategic pillars.</p>
+                  </details> : <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>}
                   {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
                     <div className={styles.editorHeading}><div>
                       <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
                       <h3>Projects &amp; delivery</h3>
-                      <p>Projects listed here belong to this tenant; they are not automatically linked to the six strategic pillars.</p>
+                      <p>Current tenant projects · verified through Python EOS</p>
                     </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
                       <RefreshCw size={15}/> Refresh projects</button></div>
                     {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
+                    {projectState === 'READY' && projectItems.length > 0 && <label className="mb-3 flex flex-col gap-1 text-sm text-slate-200">Find a project
+                      <input type="search" value={projectSearch} onChange={event => setProjectSearch(event.target.value)}
+                        placeholder="Search projects by name…" className="min-h-11 w-full rounded-lg border border-slate-500 bg-slate-950 px-3 text-sm text-white placeholder:text-slate-400"/>
+                    </label>}
                     {projectState === 'READY' && <div className={styles.projectListSummary} role="status">
-                      <span>{projectItems.length === 0 ? 'No projects returned by EOS on this page.' : projectItems.length + ' verified projects on this page'}</span>
+                      <span>{projectItems.length === 0 ? 'No projects returned by EOS on this page.' : projectSearch.trim() ? visibleStrategyProjects.length + ' matching · ' + projectItems.length + ' source-verified projects' : projectItems.length + ' verified projects on this page'}</span>
                       <span className={styles.sourceVerified}>Source verified · EOS</span>
                     </div>}
-                    {projectState === 'READY' && projectItems.length > 0 && <ul className={styles.strategyProjectList} aria-label="EOS project list">
-                      {projectItems.map(item => <li className={styles.strategyProjectRow} key={item.project_id}>
+                    {projectState === 'READY' && projectItems.length > 0 && visibleStrategyProjects.length === 0 && <p role="status" className="text-sm text-slate-300">No verified projects match this search. The source project list is unchanged.</p>}
+                    {projectState === 'READY' && visibleStrategyProjects.length > 0 && <ul className={styles.strategyProjectList} aria-label="EOS project list">
+                      {visibleStrategyProjects.map(item => <li className={styles.strategyProjectRow} key={item.project_id}>
                         <div className={styles.strategyProjectIdentity}>
                           <strong>{item.name}</strong>
                           <div className={styles.strategyProjectMeta}>
@@ -2187,7 +2208,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
+// VERSION: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
