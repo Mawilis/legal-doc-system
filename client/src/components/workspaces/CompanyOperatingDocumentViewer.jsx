@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
+ * VERSION: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
+ *            consolidates redundant publication, handoff and mode panels
+ *            into one accessible execution-first status/navigation surface.
+ *            Retains source-admitted private review and independent link
+ *            verification without inventing a relationship or outcome.
  * CHANGELOG: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
  *            routes Current publication to focused document mode, and
  *            Inspect Projects & Delivery back to execution when document is
@@ -1520,7 +1525,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
           {loading ? <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>
             : error ? null : tab === 'history' ? <section className={styles.paper}><h2>Revision history</h2><p>Only revisions permitted for your current company capacity appear here.</p>{currentHistory?.items.length ? currentHistory.items.map(item => <button className={styles.revisionRow} key={item.revision} type="button" onClick={() => changeQuery({ review: query.review, revision: item.revision })}><FileText size={18}/><span><strong>Version {item.document_version} · revision {item.revision}</strong><small>{item.state} · {displayDate(item.recorded_at)}</small></span><ArrowUpRight size={15}/></button>) : !error && <p>No permitted revisions are available.</p>}</section>
               : data && <>
-                <nav className={styles.commandDeck} aria-label="Company document actions">
+                {!executionFirst && <nav className={styles.commandDeck} aria-label="Company document actions">
                   <div className={styles.commandStatus}>
                     <strong>{ratificationOpen ? 'Founder ratification · private decision'
                       : editorOpen ? 'Private draft workspace'
@@ -1567,7 +1572,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       Your current EOS permission allows reading this Founder-approved source, not creating a revision or publishing it.
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
-                </nav>
+                </nav>}
                 {editorOpen && draftPermitted && <form ref={editorRef} tabIndex={-1} className={styles.form}
                   aria-label="Company private draft editor"
                   onSubmit={event => { event.preventDefault(); if (proposalValid) void perform(founderDraftPermitted ? 'FOUNDER_CREATE_DRAFT' : 'CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
@@ -1761,7 +1766,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   {document?.state === 'PUBLISHED' && Date.parse(document.effective_from) <= Date.parse(data.as_of)
                     && <p className={styles.permissionNotice}>The official Strategy is published and effective. The Pillar 1 / Foundation relationship and source-owned execution require independent verification in Projects &amp; Delivery; publication does not certify outcomes.</p>}
                 </section>}
-                {classification === 'STRATEGY' && approvedSourceAlreadyPublished && !query.review && <section
+                {classification === 'STRATEGY' && approvedSourceAlreadyPublished && !query.review && !executionFirst && <section
                   aria-label="Published Strategy execution handoff" className={styles.commandDeck}>
                   <div className={styles.commandStatus}>
                     <strong>Published Strategy · execution</strong>
@@ -1787,6 +1792,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   <button type="button" aria-pressed={strategyMode === 'DOCUMENT'}
                     className="min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm"
                     onClick={() => setStrategyMode('DOCUMENT')}>View full document</button>
+                  {reviewPermitted && <button type="button" disabled={busy}
+                    className="min-h-10 rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                    onClick={() => changeQuery({ review: true, revision: null })}>Review private source</button>}
                   <span className="text-xs text-slate-300">Published Strategy · revision {document?.revision}
                     {' · '}Effective {displayDate(document?.effective_from)}
                     {' · '}{strategyCurrentLink ? 'Pillar 1 link verified' : 'Pillar 1 link awaits independent readback'}
@@ -2179,7 +2187,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
+// VERSION: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
