@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.6.0-VERIFIED-STRATEGY-PILLAR-LINK-PANEL
+ * VERSION: v1.7.0-M04-NATIVE-TASK-ACTION-SURFACES
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.7.0-M04-NATIVE-TASK-ACTION-SURFACES makes verified M04
+ *            task evidence and project handoff controls actual navy/blue
+ *            buttons despite the inherited .execution button reset.
+ *            Preserves mobile layout, focus, reduced-motion and EOS authority.
  * CHANGELOG: v1.6.0-VERIFIED-STRATEGY-PILLAR-LINK-PANEL separates
  *            source-verified Strategy pillar/project relationships from
  *            unverified progress, with explicit authoritative link action.
@@ -185,8 +189,20 @@
 .strategyLinkPanel>p{flex-basis:100%}
 @media(max-width:650px){.strategyLinkPanel>button{width:100%;flex:1 1 100%}}
 
+/* M04 task action styling: override inherited .execution button reset only
+ * within the labelled source-work action group. All source/IAM logic unchanged. */
+.execution [role="group"][aria-label^="Actions for"]{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:9px;max-width:100%;flex-shrink:0}
+.execution [role="group"][aria-label^="Actions for"] button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:11px 15px;border:1px solid #7892b2;border-radius:10px;background:#1d344f;color:#f1f6ff;font-size:13px;font-weight:650;line-height:1.25;text-align:center;white-space:nowrap;box-shadow:0 2px 9px #00000024;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease}
+.execution [role="group"][aria-label^="Actions for"] button:hover:not(:disabled){background:#294967;border-color:#a9c5e7;box-shadow:0 4px 14px #0000003a}
+.execution [role="group"][aria-label^="Actions for"] button[aria-label^="Manage "]{background:#0870b7;border-color:#77c9ff;color:#fff;font-weight:750;box-shadow:0 2px 12px #0065b34d}
+.execution [role="group"][aria-label^="Actions for"] button[aria-label^="Manage "]:hover:not(:disabled){background:#1683ce;border-color:#b5e3ff;box-shadow:0 4px 16px #0065b366}
+.execution [role="group"][aria-label^="Actions for"] button:focus-visible{outline:3px solid #f0c96b;outline-offset:3px}
+.execution [role="group"][aria-label^="Actions for"] button svg{flex:none}
+@media(max-width:720px){.execution [role="group"][aria-label^="Actions for"]{justify-content:stretch;width:100%}.execution [role="group"][aria-label^="Actions for"] button{flex:1 1 180px;white-space:normal}}
+@media(prefers-reduced-motion:reduce){.execution [role="group"][aria-label^="Actions for"] button{transition:none}}
+
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.6.0-VERIFIED-STRATEGY-PILLAR-LINK-PANEL
+ * VERSION: v1.7.0-M04-NATIVE-TASK-ACTION-SURFACES
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
