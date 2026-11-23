@@ -557,15 +557,20 @@ def founder_strategy_submit(
                     {}, payload.expected_revision, idempotency_key, response)
 
 
+class FounderRatifyInput(RevisionInput):
+    """Explicit date chosen by the Founder; decision basis remains server-owned."""
+    effective_from: str = Field(min_length=1, max_length=50)
+
+
 @router.post("/STRATEGY/founder-ratify")
 def founder_strategy_ratify(
-    payload: RevisionInput, response: Response,
+    payload: FounderRatifyInput, response: Response,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     context: TenantAuthorizationContext = Depends(_READ),
 ) -> dict[str, Any]:
     """Ratify a submitted Founder-authored Strategy; reference is server owned."""
     return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_RATIFY",
-                    {"effective_from": instant(datetime.now(timezone.utc))},
+                    {"effective_from": payload.effective_from},
                     payload.expected_revision, idempotency_key, response)
 
 
