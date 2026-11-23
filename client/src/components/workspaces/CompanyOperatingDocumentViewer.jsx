@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.13.1-M04-APPROVAL-ID-CONTRACT
+ * VERSION: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard accessibility.
  * SECURITY / PRIVACY POSTURE: Plain React text only; no persisted draft, generated
  * policy, inferred objectives, raw diagnostics or credentials in DOM/logs.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
+ *            aligns source help text with already-ratified Founder
+ *            publication, current Strategy link and separate Projects IAM.
+ *            This revision makes no additional authority or task writes.
  * CHANGELOG: v2.13.1-M04-APPROVAL-ID-CONTRACT
  *            honors ProjectApprovalRegistry's canonical par- identifier.
  * CHANGELOG: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
@@ -205,9 +209,9 @@ import { commandCompanyDocument, readCompanyDocumentHistory, readCompanyOperatin
 import styles from './CompanyOperatingDocumentViewer.module.css';
 import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
 
-// Projects are a separate EOS authority; no Strategy-to-Project relationship
-// exists in the current Projects domain. A descriptive project summary cannot
-// be interpreted as a durable strategic linkage or a verified owner assignment.
+// Projects own task, deadline, evidence and assignment truth. Strategy owns the
+// independently read-back Pillar 1 relationship; project title and presence
+// never establish linkage, IAM capacity or outcome certification.
 const validProjectList = (value, tenantId, principalId) => Boolean(
   value?.schema === 'WILSY-PROJECT-LIST/V1'
   && value.tenant_id === tenantId && value.principal_id === principalId
@@ -706,7 +710,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (failure?.response?.status === 409
         && reason === 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED') {
         setStrategyLink({ state: 'PUBLICATION_REQUIRED', items: [],
-          message: 'No currently effective EOS-published Strategy exists. The approved source text and 22 project records do not substitute for independent publication. An authorized author must prepare and submit the Strategy, and a different authorized publisher must approve it with an effective date before Pillar 1 can be linked.' });
+          message: 'No currently effective EOS-published Strategy exists. Approved source content and project records are not publication evidence. An admitted Founder may submit and self-ratify Strategy; other principals require separately authorized author and independent publisher capacity before Pillar 1 linking.' });
         return;
       }
       setStrategyLink({ state: 'UNAVAILABLE', items: [],
@@ -1652,7 +1656,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                 </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
                 <section className={styles.execution} aria-label="Company operating execution">
                   <h2>Business execution</h2>
-                  <p>Pillar-to-project relationships require an effective, independently published Strategy and an explicit EOS link. Project ownership and completion percentages are not inferred.</p>
+                  <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>
                   {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
                     <div className={styles.editorHeading}><div>
                       <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
@@ -1988,7 +1992,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.13.1-M04-APPROVAL-ID-CONTRACT
+// VERSION: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
