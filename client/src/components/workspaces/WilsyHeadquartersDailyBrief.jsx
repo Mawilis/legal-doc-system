@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Headquarters Daily Execution Brief
- * VERSION: v1.1.0-EXACT-SESSION-BRIEF-REVALIDATION
+ * VERSION: v1.2.0-SHARED-WORK-BLUEPRINT-DAILY-BRIEF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Source-verified daily operating overview for the current authenticated
  *          tenant, with projection coverage derived from EOS source metadata.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: EOS /api/my-work owns source admission and item
  *                            visibility; MyWorkWorkspace owns source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.2.0-SHARED-WORK-BLUEPRINT-DAILY-BRIEF presents
+ *          the verified priority work preview in the same accessible
+ *          task blueprint used in Projects, My Work, Calendar and
+ *          Daily Attention. My Work owns all commands and navigation.
  * CHANGELOG: v1.1.0-EXACT-SESSION-BRIEF-REVALIDATION requires current
  *            AuthProvider tenant/principal/capacity and reuses the same EOS
  *            My Work coordinator as the global badge and Daily Attention.
@@ -33,6 +37,7 @@
  */
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 import {
   AlertTriangle, ArrowRight, CheckCircle2, Clock3, RefreshCw,
   Search, ShieldCheck, Target,
@@ -277,26 +282,26 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
               </div>
             )}
             {filtered.slice(0, 6).map((item) => (
-              <div key={item.source_key}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-amber-300/25">
+              <WorkTaskBlueprintRow key={item.source_key}
+                className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wide">
-                    <span className="text-amber-200">{unifiedMyWorkSourceLabel(item.source)}</span>
-                    {item.is_overdue && <span className="rounded-full bg-rose-400/10 px-2 py-0.5 text-rose-200">Overdue</span>}
+                    <span className="text-slate-700">{unifiedMyWorkSourceLabel(item.source)}</span>
+                    {item.is_overdue && <span className="rounded-md bg-rose-50 px-2 py-0.5 text-rose-800">Overdue</span>}
                     {['HIGH','CRITICAL'].includes(item.priority) &&
-                      <span className="rounded-full bg-amber-300/10 px-2 py-0.5 text-amber-200">{item.priority}</span>}
+                      <span className="rounded-md bg-amber-50 px-2 py-0.5 text-amber-900">{item.priority}</span>}
                   </div>
-                  <h3 className="mt-1.5 break-words text-sm font-semibold text-white">{item.title}</h3>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+                  <h3 className="mt-1 break-words text-sm font-semibold text-slate-950">{item.title}</h3>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
                     <Clock3 size={12}/> {formatDeadline(item.due_at)} · {item.status}
                   </p>
                 </div>
                 <button type="button" onClick={() => onOpenWork(item)}
                   aria-label={'Open authorised work action for ' + item.title}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/30 px-3 py-2 text-xs font-medium text-amber-100 hover:bg-amber-300/10">
+                  className={workTaskBlueprint.secondary}>
                   Review action <ArrowRight size={14}/>
                 </button>
-              </div>
+              </WorkTaskBlueprintRow>
             ))}
             {filtered.length > 6 && <p className="px-2 py-2 text-xs text-slate-400">
               Showing the first six of {filtered.length} matching items. The full queue is available in My Work.
@@ -332,7 +337,7 @@ function Metric({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyHeadquartersDailyBrief.jsx
- * VERSION: v1.1.0-EXACT-SESSION-BRIEF-REVALIDATION
+ * VERSION: v1.2.0-SHARED-WORK-BLUEPRINT-DAILY-BRIEF
  * AUTHORITY BOUNDARY: Read-only EOS work projection; source commands only.
  * TENANT POSTURE: Current exact tenant; stale and foreign data suppressed.
  * FAIL-CLOSED POSTURE: Shared contract rejects malformed rows and source coverage.
