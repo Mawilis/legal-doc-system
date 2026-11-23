@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
+ * VERSION: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
+ *            translates task history and authority explanation into plain
+ *            work language while retaining source validation and no invented
+ *            completion, approval or payment assertion.
  * CHANGELOG: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
  *            gives verified task-event responses a distinct source-backed
  *            result panel, explicit loaded state, accessible announcement and
@@ -2044,31 +2048,30 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                     {executionEvidence.state === 'READY' ? <CheckCircle2 size={20} aria-hidden="true"/>
                                       : <FileText size={20} aria-hidden="true"/>}
                                     <div>
-                                      <strong>{executionEvidence.state === 'READY' ? 'Lifecycle evidence verified'
-                                        : executionEvidence.state === 'LOADING' ? 'Verifying lifecycle evidence…'
-                                          : 'Lifecycle evidence unavailable'}</strong>
-                                      <span>EOS task evidence · {task.title}</span>
+                                      <strong>{executionEvidence.state === 'READY' ? 'Task history checked'
+                                        : executionEvidence.state === 'LOADING' ? 'Checking task history…'
+                                          : 'Task history could not be loaded'}</strong>
+                                      <span>{task.title}</span>
                                     </div>
                                   </div>
-                                  {executionEvidence.state === 'LOADING' && <p>Reading source-owned task events…</p>}
+                                  {executionEvidence.state === 'LOADING' && <p>Checking the saved task history…</p>}
                                   {executionEvidence.state === 'READY' && <>
                                     <p className={styles.m04EvidenceResultDetail}>
-                                      Verified immutable EOS lifecycle events: {executionEvidence.items.length}.
-                                      {' '}Most recent: {executionEvidence.items[0].event_type.replaceAll('_', ' ')}
-                                      {' · '}{executionEvidence.items[0].status_after}
-                                      {' · '}{executionEvidence.items[0].occurred_at}.
+                                      {executionEvidence.items.length} recorded {executionEvidence.items.length === 1 ? 'change' : 'changes'}.
+                                      {' '}Latest: {{ PROJECT_TASK_CREATED: 'Task created', PROJECT_TASK_REVISED: 'Task details updated', PROJECT_TASK_TRANSITIONED: 'Task status changed' }[executionEvidence.items[0].event_type]}
+                                      {' · '}{{ TODO: 'To do', IN_PROGRESS: 'In progress', BLOCKED: 'Blocked', DONE: 'Done', CANCELLED: 'Cancelled' }[executionEvidence.items[0].status_after]}
+                                      {' · '}{new Date(executionEvidence.items[0].occurred_at).toLocaleString()}. 
                                     </p>
                                     {task.status === 'DONE' && executionEvidence.decisions
                                       && executionEvidence.attachments && <p className={styles.m04EvidenceResultDetail}>
-                                        Business decisions: {executionEvidence.decisions.approved} approved
-                                        {' / '}{executionEvidence.decisions.total} recorded.
-                                        {' '}Attachments: {executionEvidence.attachments.cleared} scanner-cleared
-                                        {' / '}{executionEvidence.attachments.total} recorded.
+                                        Approvals: {executionEvidence.decisions.approved} approved
+                                        {' of '}{executionEvidence.decisions.total} recorded.
+                                        {' '}Files checked: {executionEvidence.attachments.cleared}
+                                        {' of '}{executionEvidence.attachments.total}.
                                       </p>}
                                     <details className={styles.m04EvidenceBoundary}>
-                                      <summary>What this verification does and does not establish</summary>
-                                      <p>Task lifecycle, independent business decisions and attachment scanner-clearance are different EOS authorities.
-                                        None independently certifies strategic outcome attainment or payment.</p>
+                                      <summary>What does this check confirm?</summary>
+                                      <p>This confirms the recorded history of this task. It does not mean the work is complete, independently approved or paid. Any approvals and files must be checked separately.</p>
                                     </details>
                                   </>}
                                   {['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state)
@@ -2294,7 +2297,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
+// VERSION: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
