@@ -5,13 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS
+ * VERSION: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD preserves a
+ *          genuinely compact verified-empty queue without forcing
+ *          the populated-list maximum height on empty source states.
  * CHANGELOG: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS aligns
  *          Headquarters work queue typography, spacing, selected
  *          focus, work details and form controls with the canonical
@@ -332,6 +335,7 @@ body:has(.wilsyHqShell)::after{display:none}
 .wilsyHqShell .hq-work .hq-work-search{padding:9px 12px}
 .wilsyHqShell .hq-work .hq-work-search input{font-size:13px;height:30px;color:#182a48}
 .wilsyHqShell .hq-work .hq-work-list{padding:0;max-height:min(44dvh,460px)}
+.wilsyHqShell .hq-work .hq-work-list--empty{max-height:none;min-height:0}
 .wilsyHqShell .hq-work .hq-work-row{min-height:57px;padding:10px 12px;border-bottom:1px solid #e0e6ef;border-left:3px solid transparent;gap:10px}
 .wilsyHqShell .hq-work .hq-work-row:hover,.wilsyHqShell .hq-work .hq-work-row[aria-pressed=true]{background:#f1f5fc;border-left-color:#175eae}
 .wilsyHqShell .hq-work .hq-work-row-main strong{font-size:13px;line-height:1.4;color:#12223d}
@@ -1576,7 +1580,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS
+ * VERSION: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
