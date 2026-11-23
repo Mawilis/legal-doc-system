@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.22.0-COMPACT-PUBLISHED-STRATEGY-CERT
+ * VERSION: v1.23.0-SELECTED-MODES-CLEAN-EXECUTION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.23.0-SELECTED-MODES-CLEAN-EXECUTION-CERT
+ *            certifies visible blue active-mode indication and compact
+ *            governance disclosure, plus source-preserving project search
+ *            including no-match recovery and unchanged source readback.
  * CHANGELOG: v1.22.0-COMPACT-PUBLISHED-STRATEGY-CERT
  *            verifies duplicate publication decks are hidden in execution
  *            and the authorized private review remains accessible from the
@@ -249,10 +253,18 @@ describe('governed company document experience', () => {
     expect(screen.queryByRole('region', { name: 'Published Strategy execution handoff' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Review private source' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Execution workspace' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Execution workspace' })).toHaveClass('bg-sky-700');
+    expect(screen.getByRole('button', { name: 'View full document' })).not.toHaveClass('bg-sky-700');
+    const governance = screen.getByText('How Strategy links to projects');
+    expect(governance.closest('details')?.open).toBe(false);
+    fireEvent.click(governance);
+    expect(governance.closest('details')?.open).toBe(true);
     expect(screen.getByRole('heading', { name: 'Business execution' })).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Synthetic approved strategy' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'View full document' }));
     expect(screen.getByRole('button', { name: 'View full document' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'View full document' })).toHaveClass('bg-sky-700');
+    expect(screen.getByRole('button', { name: 'Execution workspace' })).not.toHaveClass('bg-sky-700');
     expect(screen.getByRole('heading', { name: 'Synthetic approved strategy' })).toBeVisible();
     expect(screen.getByText('Synthetic source content only.')).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Business execution' })).not.toBeInTheDocument();
@@ -953,6 +965,14 @@ describe('Strategy source-owned project execution readback', () => {
     });
     const onOpenProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject }));
+    const findProject = await screen.findByRole('searchbox', { name: 'Find a project' });
+    fireEvent.change(findProject, { target: { value: 'never-a-real-project' } });
+    expect(screen.getByText(/No verified projects match this search/)).toBeVisible();
+    expect(screen.getByText('0 matching · 1 source-verified projects')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ })).not.toBeInTheDocument();
+    fireEvent.change(findProject, { target: { value: 'foundation' } });
+    expect(screen.getByText('1 matching · 1 source-verified projects')).toBeVisible();
+    fireEvent.change(findProject, { target: { value: '' } });
     const verifyButton = await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ });
     expect(screen.getByRole('button', { name: /Open project delivery for WILSY OS — Unified Operating Platform Foundation/ })).toBeVisible();
     expect(onOpenProject).not.toHaveBeenCalled();
@@ -1189,7 +1209,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.22.0-COMPACT-PUBLISHED-STRATEGY-CERT
+// VERSION: v1.23.0-SELECTED-MODES-CLEAN-EXECUTION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
