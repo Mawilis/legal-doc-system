@@ -1,11 +1,21 @@
 # WILSY OS — Role-projected My Work and Governed Automation Programme
 
-VERSION: v1.1.0-STRATEGY-PROJECT-EXECUTION-REGISTER
+VERSION: v1.1.1-SOVEREIGN-DOCUMENT-HEADER
+TITLE: WILSY OS Role-Projected My Work and Governed Automation Programme
+EPITOME: Source-owned work classification, exact-tenant role projections and audited execution programme.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/my-work-role-graph-operating-programme.md
+COLLABORATION / OWNERSHIP: WILSY OS architecture and Python EOS Projects/My Work source owners.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No invented IAM grants, task truth, credentials or cross-tenant work disclosures.
+TENANT BOUNDARY: Exact-current-tenant source authority and explicit contributor admission.
+AUTHORITY BOUNDARY: Architecture only; commands and source audit remain in Python EOS.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 AUTHORITY: WILSY OS Core Governance / AGENTS.md
 ARTIFACT: docs/architecture/my-work-role-graph-operating-programme.md
 UPDATE DATE: 2026-11-22
 STATUS: DISCOVERED AND MAPPED; IMPLEMENTATION / CERTIFICATION GATES OPEN
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+CHANGELOG: v1.1.1-SOVEREIGN-DOCUMENT-HEADER moves complete institutional metadata into the inspected governance range, without altering the architectural decisions or source authority.
 CHANGELOG: v1.1.0-STRATEGY-PROJECT-EXECUTION-REGISTER adds an existing-project milestone and task execution register, non-duplicate source-create protocol and evidence-bound My Strategy update steps; navigation alone is never synchronization.
 CHANGELOG: v1.0.0 establishes a source-grounded current-state inventory, permission-first target graph, migration sequence, role/ranking/automation contracts and executable production-readiness gates. No runtime or IAM authority is changed by this document.
 
@@ -218,7 +228,7 @@ Operate in order **DISCOVER → MAP → WIRE → CLEAN → CERTIFY → OBSERVE �
 
 ---
 ARTIFACT: docs/architecture/my-work-role-graph-operating-programme.md
-VERSION: v1.1.0-STRATEGY-PROJECT-EXECUTION-REGISTER
+VERSION: v1.1.1-SOVEREIGN-DOCUMENT-HEADER
 TENANT POSTURE: exact-current-tenant policy, authorization before ranking, no Founder bypass.
 AUTHORITY BOUNDARY: architecture and delivery acceptance only; grants, approval and source commands remain EOS owned.
 FAIL-CLOSED POSTURE: unknown sources/classifications are not silently treated as authorized or verified empty.
