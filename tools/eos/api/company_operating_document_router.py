@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.3.0-GOVERNED-STRATEGY-PROJECT-LINK
+VERSION: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/co
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
 CERTIFICATION / UPDATE DATE: 2026-11-22
+CHANGELOG: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
+admits separate Strategy-only Founder commands via existing READ session
+authority and source-verified durable designation; reuses canonical registry
+transactions and fingerprints. No staff/owner inherited publisher grant.
 CHANGELOG: v1.3.0-GOVERNED-STRATEGY-PROJECT-LINK composes an explicit
 read-only current exact-tenant Strategy project-link projection and an audited
 link command requiring *both* canonical Strategy author and Projects read IAM,
@@ -49,6 +53,9 @@ from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.auth.company_document_reader_grant import CompanyDocumentReaderGrant, CompanyReaderGrantError
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
+from tools.eos.auth.founder_institutional_designation import (
+    read_founder_designation, FounderDesignationRejected,
+)
 from tools.eos.kernel import db as kernel_db
 from tools.eos.saas.company_operating_document_registry import CompanyOperatingDocumentRegistry
 from tools.eos.saas.strategy_project_relationship_registry import (
@@ -64,7 +71,7 @@ from tools.eos.saas.domain.company_operating_document import (
     CompanyOperatingDocumentRevision, instant,
 )
 
-VERSION: Final = "v1.3.0-GOVERNED-STRATEGY-PROJECT-LINK"
+VERSION: Final = "v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION"
 def _require_current_company_session(identity: SovereignIdentity = Depends(get_current_identity)) -> None:
     """Reuse canonical authentication and session authority; never mint a session.
 
@@ -282,11 +289,13 @@ def _transaction(context: TenantAuthorizationContext, callback: Callable[..., An
 
 def _actions(context: TenantAuthorizationContext, latest: CompanyOperatingDocumentRevision | None,
              author: TenantAuthorizationContext | None, publisher: TenantAuthorizationContext | None,
-             *, review: bool) -> list[str]:
+             *, review: bool, founder: bool = False) -> list[str]:
     actions = ["READ_HISTORY"]
     can_author, can_publish = _same_actor(author, context), _same_actor(publisher, context)
-    if can_author or can_publish:
+    if can_author or can_publish or founder:
         actions.append("REVIEW_DRAFTS")
+    if founder and (latest is None or latest.state is CompanyDocumentState.PUBLISHED):
+        actions.append("FOUNDER_CREATE_DRAFT")
     if can_author and (latest is None or latest.state is CompanyDocumentState.PUBLISHED):
         actions.append("CREATE_DRAFT")
     if review and latest is not None:
@@ -294,6 +303,11 @@ def _actions(context: TenantAuthorizationContext, latest: CompanyOperatingDocume
             actions.append("SUBMIT")
         if can_publish and latest.state is CompanyDocumentState.SUBMITTED and latest.author_principal_id != context.identity.identity_id:
             actions.append("PUBLISH")
+        if founder and latest.author_principal_id == context.identity.identity_id:
+            if latest.state is CompanyDocumentState.DRAFT:
+                actions.append("FOUNDER_SUBMIT")
+            elif latest.state is CompanyDocumentState.SUBMITTED:
+                actions.append("FOUNDER_RATIFY")
     return actions
 
 
@@ -312,10 +326,20 @@ def read_company_document(
     """
     response.headers["Cache-Control"] = "no-store"
     may_review = _same_actor(author, context) or _same_actor(publisher, context)
-    if review and not may_review:
-        raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
     now = datetime.now(timezone.utc)
     def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        founder = False
+        if classification is CompanyDocumentClass.STRATEGY:
+            try:
+                founder = read_founder_designation(
+                    principal_id=context.identity.identity_id,
+                    tenant_id=context.tenant_id, database=kernel_db.get_database(),
+                    session=session,
+                ) is not None
+            except FounderDesignationRejected as error:
+                raise _error("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
+        if review and not (may_review or founder):
+            raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
         history = registry.history(context.tenant_id, classification, session=session)
         latest = history[-1] if history else None
         permitted = history if review else tuple(item for item in history if item.state is CompanyDocumentState.PUBLISHED
@@ -329,8 +353,8 @@ def read_company_document(
             "classification": classification.value, "view": "review" if review else "published",
             "state": selected.state.value if selected else "NOT_YET_PUBLISHED",
             "document": selected.to_dict() if selected else None,
-            "current_revision": latest.revision if may_review and latest else selected.revision if selected else 0,
-            "available_actions": _actions(context, latest, author, publisher, review=review) if revision is None else ["READ_HISTORY"],
+            "current_revision": latest.revision if (may_review or founder) and latest else selected.revision if selected else 0,
+            "available_actions": _actions(context, latest, author, publisher, review=review, founder=founder) if revision is None else ["READ_HISTORY"],
             "relationships": {"state": "NOT_GOVERNED"}, "as_of": instant(now),
             "authority": {"publication_owned_by": "PYTHON_EOS", "financial_execution": False},
         }
@@ -509,6 +533,42 @@ def _command(classification: CompanyDocumentClass, context: TenantAuthorizationC
             "principal_id": context.identity.identity_id, "classification": classification.value, "document": record.to_dict()}
 
 
+@router.post("/STRATEGY/founder-drafts", status_code=201)
+def founder_strategy_draft(
+    payload: DraftInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Founder-specific author command; registry rechecks the durable designation."""
+    body = payload.model_dump()
+    expected = body.pop("expected_revision")
+    return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_CREATE_DRAFT",
+                    body, expected, idempotency_key, response)
+
+
+@router.post("/STRATEGY/founder-submit")
+def founder_strategy_submit(
+    payload: RevisionInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Submit only the same Founder's private Strategy revision."""
+    return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_SUBMIT",
+                    {}, payload.expected_revision, idempotency_key, response)
+
+
+@router.post("/STRATEGY/founder-ratify")
+def founder_strategy_ratify(
+    payload: RevisionInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Ratify a submitted Founder-authored Strategy; reference is server owned."""
+    return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_RATIFY",
+                    {"effective_from": instant(datetime.now(timezone.utc))},
+                    payload.expected_revision, idempotency_key, response)
+
+
 @router.post("/{classification}/drafts", status_code=201)
 def create_company_document_draft(classification: CompanyDocumentClass, payload: DraftInput, response: Response,
                                   idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -542,7 +602,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.3.0-GOVERNED-STRATEGY-PROJECT-LINK
+# VERSION: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.
