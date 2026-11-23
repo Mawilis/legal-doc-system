@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.57.0-SOURCE-OWNED-TASK-HIERARCHY
+ * VERSION: v1.57.1-SOVEREIGN-HEADER-RESTORE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,18 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
+ * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
+ *          extraction, fabricated task metrics or inferred notifications.
+ * TENANT BOUNDARY: Exact tenant, principal and project validated on every
+ *          response; stale session results are ignored and discarded.
+ * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
+ *          rights; EOS checks each mutation and recorded assignment.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.57.1-SOVEREIGN-HEADER-RESTORE moves the
+ *          mandatory authority and financial boundaries ahead of the
+ *          historical changelog within the first-100-line integrity guard.
+ *          No runtime business or command behavior changes.
  * CHANGELOG: v1.57.0-SOURCE-OWNED-TASK-HIERARCHY defaults
  *          to compact source-owned parent/subtask ordering, with
  *          milestone records visible as distinct root nodes. This does
@@ -92,14 +104,6 @@
  *          misleading existing-predecessor editing with the canonical
  *          audited task-creation flow preselected with one verified predecessor.
  *          EOS preserves immutable existing graphs, task IAM and CAS.
- * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
- * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
- *          extraction, fabricated task metrics or inferred notifications.
- * TENANT BOUNDARY: Exact tenant, principal and project validated on every
- *          response; stale session results are ignored and discarded.
- * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
- *          rights; EOS checks each mutation and recorded assignment.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
  * CHANGELOG: v1.42.1-CENTERED-TASK-WORKSPACE replaces the narrow right-anchored
  *          sheet with a centered viewport-bounded responsive task workspace.
  *          No change to EOS commands, authorizations, task data or readback.
@@ -1879,7 +1883,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.57.0-SOURCE-OWNED-TASK-HIERARCHY
+// VERSION: v1.57.1-SOVEREIGN-HEADER-RESTORE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
