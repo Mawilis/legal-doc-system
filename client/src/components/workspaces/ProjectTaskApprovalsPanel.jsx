@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.2.0-VERIFIED-REVIEWER-DISCOVERY
+ * VERSION: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD avoids
+ *          shadowing the scope-ref while validating independently
+ *          refreshed contributor responses against the active task.
  * CHANGELOG: v1.2.0-VERIFIED-REVIEWER-DISCOVERY validates
  *          a fresh independently authorized project participant list
  *          before showing eligible distinct reviewers; displays
@@ -310,7 +313,7 @@ export default function ProjectTaskApprovalsPanel({
   // Independent project participant GET makes the reviewer selector accurate
   // without assuming that a tenant member is a project contributor.
   const refreshReviewers = useCallback(async () => {
-    const active = scope;
+    const requestScope = scope;
     setReviewerSource('VERIFYING');
     setReviewerSourceError('');
     try {
@@ -318,7 +321,7 @@ export default function ProjectTaskApprovalsPanel({
         '/projects/' + encodeURIComponent(projectId) + '/participants?limit=100&offset=0',
         { headers },
       );
-      if (active.current !== active) return;
+      if (active.current !== requestScope) return;
       const data = response?.data;
       if (data?.schema !== 'WILSY-PROJECT-PARTICIPANT-LIST/V1'
         || data.tenant_id !== tenantId || data.principal_id !== principalId
@@ -336,7 +339,7 @@ export default function ProjectTaskApprovalsPanel({
         person.role === 'CONTRIBUTOR' && person.principal_id !== principalId));
       setReviewerSource(data.has_more ? 'PARTIAL' : 'READY');
     } catch (cause) {
-      if (active.current !== active) return;
+      if (active.current !== requestScope) return;
       setVerifiedReviewers([]);
       const status = cause?.response?.status;
       setReviewerSource(status === 403 || status === 401 ? 'DENIED' : 'UNAVAILABLE');
@@ -513,7 +516,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.2.0-VERIFIED-REVIEWER-DISCOVERY
+// VERSION: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies
