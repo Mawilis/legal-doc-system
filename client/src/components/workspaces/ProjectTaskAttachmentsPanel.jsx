@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.11.1-SINGLE-FOCUSED-EXIT
+ * VERSION: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
+ *          keeps the contributor preflight visible but disabled when
+ *          source read fails, instead of hiding all guidance; the
+ *          server still independently requires exact task IAM.
  * CHANGELOG: v1.11.1-SINGLE-FOCUSED-EXIT lets the invoking
  *          task workspace own the single Back control, while standalone
  *          attachment consumers retain an explicit close action.
@@ -610,7 +614,7 @@ export default function ProjectTaskAttachmentsPanel({
         Upload is not verified. Refresh the file list to reconcile before attempting the same command again.
       </p>}
     </section>}
-    {state === 'READY' && !uploadReadVerified && <section aria-label="Attachment upload authority"
+    {state !== 'LOADING' && !uploadReadVerified && <section aria-label="Attachment upload authority"
       className="rounded-lg border border-slate-200 bg-slate-50 p-3">
       <h5 className="text-sm font-semibold text-slate-900">Upload not available</h5>
       <p className="mt-1 text-sm text-slate-700">
@@ -620,14 +624,14 @@ export default function ProjectTaskAttachmentsPanel({
       </p>
       {!participantMode && typeof onManageContributors === 'function' &&
         <button type="button" className="wp-button mt-3 !min-h-9 !text-xs"
-          disabled={checkingPeople || busy}
+          disabled={checkingPeople || busy || state !== 'READY'}
           onClick={() => { void navigateToPeople(); }}>
           {checkingPeople ? 'Verifying People access…' : 'Check contributor access'}
         </button>}
       {peoplePreflight && <p role="alert" className="mt-2 text-xs text-rose-800">{peoplePreflight}</p>}
       {participantMode && tenantId === 'WILSYTENANT-4CD2FZ4O' &&
         <button type="button" className="wp-button mt-3 !min-h-9 !text-xs"
-          disabled={activatingContributorIAM || busy}
+          disabled={activatingContributorIAM || busy || state !== 'READY'}
           onClick={() => { void activateContributorIAM(); }}>
           {activatingContributorIAM ? 'Verifying contributor IAM…' : 'Activate my contributor attachment access'}
         </button>}
@@ -709,7 +713,7 @@ export default function ProjectTaskAttachmentsPanel({
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.11.1-SINGLE-FOCUSED-EXIT
+// VERSION: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented
