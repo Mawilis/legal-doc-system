@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS
+ * VERSION: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
  *          local instant display, accessible day/week/month navigation and
@@ -9,6 +9,10 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA consumes
+ *          the reusable task blueprint, with readable neutral row
+ *          typography and accessible action while preserving date-only
+ *          source semantics and the existing My Work command handoff.
  * CHANGELOG: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS adds one-day and Monday-first
  *            seven-day views with matching agenda dates and period navigation;
  *            the month view remains the default and existing source handoff
@@ -27,6 +31,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  */
 import React, { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 import { ArrowRight, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 
 const SOURCES = Object.freeze({
@@ -323,21 +328,21 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
           )}
         </div>
       ) : agenda.map((item) => (
-        <article key={item.source_key} className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
-          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide">
-            <span className="font-semibold text-amber-200">{SOURCES[item.source]}</span>
-            <span className={item.is_overdue ? 'text-rose-300' : 'text-slate-400'}>
+        <WorkTaskBlueprintRow key={item.source_key}>
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-slate-700">{SOURCES[item.source]}</span>
+            <span className={item.is_overdue ? 'font-semibold text-rose-800' : 'text-slate-600'}>
               {item.is_overdue ? 'Overdue' : item.priority + ' priority'}
             </span>
           </div>
-          <h5 className="mt-2 text-sm font-semibold text-white">{item.title}</h5>
-          {item.description && <p className="mt-1 break-words text-xs text-slate-400">{item.description}</p>}
-          <div className="mt-2 flex items-center gap-1 text-xs text-slate-400"><Clock3 size={12}/> {deadlineTime(item.due_at)}</div>
+          <h5 className="mt-1 text-sm font-semibold leading-5 text-slate-950">{item.title}</h5>
+          {item.description && <p className="mt-1 break-words text-xs text-slate-600">{item.description}</p>}
+          <div className="mt-1 flex items-center gap-1 text-xs text-slate-600"><Clock3 size={12}/> {deadlineTime(item.due_at)}</div>
           <button type="button" onClick={() => onOpenWork(item)}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
-            Review and complete in My Work <ArrowRight size={14}/>
+            className={'mt-2 ' + workTaskBlueprint.primary}>
+            Open in My Work <ArrowRight size={14}/>
           </button>
-        </article>
+        </WorkTaskBlueprintRow>
       ))}
     </div>
   );
@@ -345,7 +350,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS
+ * VERSION: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
  * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.
