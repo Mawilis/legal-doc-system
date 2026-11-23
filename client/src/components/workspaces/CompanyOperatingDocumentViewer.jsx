@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
+ * VERSION: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
+ *            reconciles a refused duplicate Strategy version against
+ *            independently verified, immutable EOS published history and
+ *            fingerprint before changing views. Unknown status stays
+ *            unknown; no command is replayed automatically.
  * CHANGELOG: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
  *            makes ratification available directly in the top command rail
  *            for a verified submitted Founder revision and replaces the
@@ -408,6 +413,16 @@ const commandFailure = (failure, action, acknowledged) => {
       && ALLOWED_VALIDATION_FIELDS.has(part));
     return allowed.length ? [allowed[allowed.length - 1]] : [];
   }))].slice(0, 5) : [];
+  if (!acknowledged && action === 'FOUNDER_CREATE_DRAFT'
+    && status === 409 && base.code === 'COMPANY_DOCUMENT_VERSION_ALREADY_PUBLISHED') {
+    return {
+      ...base, operation: COMMAND_LABELS[action],
+      kind: 'PUBLISHED_VERSION_CONFLICT',
+      title: 'Strategy version already published in EOS',
+      message: 'EOS refused another draft for a version already recorded as published. This is not a rejected content field. Earlier ratification may have succeeded.',
+      next: 'Verify the existing published revision and fingerprint. Do not create another draft or repeat ratification while source status is uncertain.',
+    };
+  }
   return {
     ...base, operation: COMMAND_LABELS[action] || 'Company-document command',
     kind: acknowledged ? 'READBACK_UNVERIFIED' : 'COMMAND_REJECTED',
@@ -1056,7 +1071,44 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       setMessage('EOS confirmed the command and its durable document readback.');
     } catch (failure) {
       if (!active(key) || commandLock.current !== commandToken) return;
-      setCommandIssue(commandFailure(failure, action, acknowledged));
+      const issue = commandFailure(failure, action, acknowledged);
+      if (issue.kind === 'PUBLISHED_VERSION_CONFLICT') {
+        // Reconcile the immutable published-version conflict, never repeat a
+        // failed or timed-out command or assume a previous ratification succeeded.
+        try {
+          const history = await readCompanyDocumentHistory(classification, scope, {
+            token: auth.token, review: true,
+          });
+          const published = history.items.find(item =>
+            item.state === 'PUBLISHED' && item.document_version === payload.document_version);
+          if (!published) throw new Error('COMPANY_DOCUMENT_PUBLICATION_READBACK_UNVERIFIED');
+          const next = { review: true, revision: published.revision };
+          const verified = await readCompanyOperatingDocument(classification, scope, {
+            token: auth.token, ...next,
+          });
+          if (verified.document?.revision !== published.revision
+            || verified.document.fingerprint !== published.fingerprint
+            || verified.document.state !== 'PUBLISHED'
+            || verified.document.document_version !== payload.document_version) {
+            throw new Error('COMPANY_DOCUMENT_PUBLICATION_READBACK_UNVERIFIED');
+          }
+          if (!active(key) || commandLock.current !== commandToken) return;
+          readId.current += 1; readController.current?.abort();
+          queryRef.current = next; setQuery(next); setSource({ scope: key, classification, data: verified });
+          setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false);
+          setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+          setCommandIssue(null);
+          setMessage('EOS independently verified existing published Strategy version '
+            + published.document_version + ', revision ' + published.revision
+            + '. This draft command created no new revision. Effectiveness must be verified separately.');
+          return;
+        } catch {
+          if (!active(key) || commandLock.current !== commandToken) return;
+          setCommandIssue(issue);
+          return;
+        }
+      }
+      setCommandIssue(issue);
     } finally { if (active(key) && commandLock.current === commandToken) { commandLock.current = null; setBusy(false); } }
   };
   const trapKeyboard = event => {
@@ -1656,7 +1708,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
+// VERSION: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
