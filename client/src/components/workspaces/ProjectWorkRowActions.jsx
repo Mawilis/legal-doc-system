@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.7.0-COMPACT-ACTION-HIT-TARGETS
+ * VERSION: v1.8.0-COMPLETE-SOURCE-OWNED-MENU
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns EOS commands, permissions,
  *          selection, immutable readback and completion attestation.
  * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CHANGELOG: v1.8.0-COMPLETE-SOURCE-OWNED-MENU adds
+ *          Open work, inspect existing dependencies and authorized Add
+ *          subtask to the established menu. Uses caller-owned, existing
+ *          EOS task detail/create flows; never invents move-milestone,
+ *          copy-link, graph mutations or independent backend grants.
  * CHANGELOG: v1.7.0-COMPACT-ACTION-HIT-TARGETS keeps
  *          primary/overflow controls within a compact 44px row without
  *          reducing the comfortable-mode or mobile-sheet hit targets.
@@ -58,6 +63,7 @@ const nextAction = {
 
 export default function ProjectWorkRowActions({
   item, busy, dense = false, onTransition, onComplete, onEdit, onAssign,
+  onOpen, onCreateSubtask,
   onAttachments, onApprovals, onActivity,
   canStart = false, canComplete = false, canBlock = false, canCancel = false,
   canAssign = false, canEdit = false, canAttachments = false,
@@ -122,6 +128,14 @@ export default function ProjectWorkRowActions({
   }, [open]);
 
   const actions = [
+    ...(typeof onOpen === 'function'
+      ? [{ id: 'open', name: 'Open work', onClick: () => onOpen(item, trigger.current) }] : []),
+    ...(typeof onOpen === 'function' && item.depends_on?.length > 0
+      ? [{ id: 'dependencies', name: 'Inspect dependencies',
+        onClick: () => onOpen(item, trigger.current) }] : []),
+    ...(canEdit && canChange && item.kind === 'TASK' && !item.parent_task_id
+      && typeof onCreateSubtask === 'function'
+      ? [{ id: 'subtask', name: 'Add subtask', onClick: () => onCreateSubtask(item) }] : []),
     ...(canChange && item.status !== 'BLOCKED' && canBlock && typeof onTransition === 'function'
       ? [{ id: 'block', name: 'Mark blocked', onClick: () => onTransition(item, 'BLOCKED') }] : []),
     ...(canChange && canAssign && typeof onAssign === 'function'
@@ -253,7 +267,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.7.0-COMPACT-ACTION-HIT-TARGETS
+// VERSION: v1.8.0-COMPLETE-SOURCE-OWNED-MENU
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
