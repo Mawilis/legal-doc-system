@@ -5,13 +5,18 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
+ * VERSION: v4.12.0-FOCUSED-HQ-WORK-RECORD
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.12.0-FOCUSED-HQ-WORK-RECORD moves the selected
+ *          Headquarters task into the same full-focus operating
+ *          pattern as Daily Attention, replacing the cramped
+ *          in-list detail pane with one clear Back to work action.
+ *          Source reads and individual completion commands unchanged.
  * CHANGELOG: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
  *            forwards selected Strategy task to the canonical project view
  *            as a verified navigation hint; EOS retains all IAM checks.
@@ -1222,8 +1227,8 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
   };
   return (
     <section className={selected ? 'hq-panel hq-work hq-work--selected' : 'hq-panel hq-work'} aria-labelledby="my-work-snapshot-heading" data-hq-work="true">
-      <header className="hq-work-heading"><h2 id="my-work-snapshot-heading">My Work — What needs your attention</h2><button type="button" onClick={onOpen}>View all <ArrowUpRight size={12}/></button></header>
-      <div className="hq-work-tabs" role="group" aria-label="Filter Headquarters work by source">
+      <header className="hq-work-heading"><h2 id="my-work-snapshot-heading">{selected ? 'Work details' : 'My Work — What needs your attention'}</h2><button type="button" onClick={onOpen}>View all <ArrowUpRight size={12}/></button></header>
+      {!selected && <div className="hq-work-tabs" role="group" aria-label="Filter Headquarters work by source">
         <button type="button" aria-pressed={source === 'ALL' && view === 'ALL'} onClick={() => { setSource('ALL'); onViewChange('ALL'); }}>All{snapshot ? ` (${snapshot.summary.active_count})` : ''}</button>
         {(snapshot?.sources_included || []).map((id) => <button key={id} type="button" aria-pressed={source === id} onClick={() => { setSource(id); onViewChange('ALL'); }}>{unifiedMyWorkSourceLabel(id)} ({snapshot.summary.source_counts[id]})</button>)}
         <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue {snapshot ? '(' + overdueCount + ')' : ''}</button>
@@ -1239,8 +1244,8 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
           Saved drafts {draftEvidence.state === 'VERIFIED' && draftEvidence.scope === scopeKey
             ? '(' + draftEvidence.count + ')' : draftEvidence.state === 'VERIFYING' ? '(verifying)' : '(unavailable)'}
         </button>}
-      </div>
-      <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>
+      </div>}
+      {!selected && <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>}
       {snapshot && (loading || error) && (
         <div className="hq-work-status" role={error ? 'alert' : 'status'} data-work-state="LAST_VERIFIED">
           <strong>Last verified source snapshot · revalidation {loading ? 'in progress' : 'unavailable'}</strong>
@@ -1250,15 +1255,15 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
       )}
       {loading && !snapshot ? <div className="hq-work-status" role="status">Loading the authorized My Work projection…</div>
         : !snapshot ? <div className="hq-work-status" role="alert"><strong>{error === 'MY_WORK_ACCESS_DENIED' ? 'My Work authorization required' : 'My Work snapshot unavailable'}</strong><p>Current work could not be verified. Retry the source read.</p><button type="button" onClick={onRefresh}>Retry source read</button></div>
-          : <div className={visibleItems.length ? 'hq-work-list' : 'hq-work-list hq-work-list--empty'} aria-label="Authorized Headquarters work queue">
+          : !selected ? <div className={visibleItems.length ? 'hq-work-list' : 'hq-work-list hq-work-list--empty'} aria-label="Authorized Headquarters work queue">
             {visibleItems.length === 0 ? <div className="hq-work-status hq-verified-empty" data-work-state={items.length ? 'FILTERED_EMPTY' : 'VERIFIED_EMPTY'}><span className="hq-empty-icon"><CheckCircle2 size={21}/></span><div><strong>{items.length ? 'No matching work' : 'Current source read verified'}</strong><p>{!items.length ? snapshot.sources_included.length ? 'No active work was returned by the authorized sources at the recorded time.' : 'No work source was included in this session.' : 'No work matches these filters.'}</p>{snapshot.sources_included.includes('OPERATIONS') && <button type="button" onClick={onManage}>Create or manage Operations work</button>}<span className="hq-empty-time">Verified {formatHeadquartersDeadline(snapshot.as_of)}</span></div></div>
               : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onSelect(item.source_key); setCommand({ state: 'IDLE', message: '' }); }}>
                 <span className={'hq-round ' + ({ LEGAL: 'hq-purple', OPERATIONS: 'hq-green', INTELLIGENCE: 'hq-blue', CRM: 'hq-orange' }[item.source] || 'hq-blue')}>{item.source === 'LEGAL' ? <FileText size={17}/> : item.source === 'CRM' ? <Users size={17}/> : <CheckCircle2 size={17}/>}</span>
                 <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}{item.source === 'PROJECTS' ? item.dependency_readiness === 'WAITING' ? ' · Waiting on ' + item.dependency_remaining + ' predecessor(s)' : item.dependency_readiness === 'READY' ? item.dependency_total ? ' · Predecessors complete' : ' · No predecessor gate' : ' · Readiness unverified' : ''}</small></span>
                 <span className="hq-priority" data-priority={item.priority}>{item.priority === 'NORMAL' ? 'Normal' : item.priority === 'HIGH' ? 'High' : item.priority === 'LOW' ? 'Low' : 'Critical'}</span><ChevronRight size={13}/>
               </button>)}
-          </div>}
-      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><h3>{selected.title}</h3><button type="button" aria-label="Close work record" onClick={() => onSelect(null)}><X size={16}/></button></div>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd>{selected.source === 'PROJECTS' && <><dt>Predecessors</dt><dd>{selected.dependency_readiness === 'WAITING' ? selected.dependency_remaining + ' of ' + selected.dependency_total + ' unfinished' : selected.dependency_readiness === 'READY' ? selected.dependency_total ? 'All ' + selected.dependency_total + ' complete' : 'None recorded' : 'Readiness unverified — restart current EOS and refresh'}</dd></>}<dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
+          </div> : null}
+      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><button type="button" aria-label="Close work record" onClick={() => onSelect(null)} className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100">← Back to work</button></div><h3 className="mt-3">{selected.title}</h3>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd>{selected.source === 'PROJECTS' && <><dt>Predecessors</dt><dd>{selected.dependency_readiness === 'WAITING' ? selected.dependency_remaining + ' of ' + selected.dependency_total + ' unfinished' : selected.dependency_readiness === 'READY' ? selected.dependency_total ? 'All ' + selected.dependency_total + ' complete' : 'None recorded' : 'Readiness unverified — restart current EOS and refresh'}</dd></>}<dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
         {actions[selected.source]?.includes('COMPLETE') ? <form className="hq-command" onSubmit={performCompletion}><label>Completion note<textarea aria-label={'Completion note for ' + selected.title} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} required disabled={command.state === 'PENDING'}/></label><button type="submit" disabled={!note.trim() || command.state === 'PENDING'}>{command.state === 'PENDING' ? 'Verifying completion…' : 'Complete work'}</button><p>EOS verifies your authority and records the result.</p></form>
           : <button type="button" className="hq-text-button" onClick={() => onOpen(selected)}>Open source-governed workspace <ArrowUpRight size={12}/></button>}
       </section>}
@@ -1546,7 +1551,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
+ * VERSION: v4.12.0-FOCUSED-HQ-WORK-RECORD
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
