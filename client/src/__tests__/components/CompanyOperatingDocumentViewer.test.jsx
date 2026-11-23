@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.18.1-M04-GOVERNANCE-LANGUAGE-CERT
+ * VERSION: v1.18.2-M04-CANONICAL-PROJECT-STATUS-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.18.2-M04-CANONICAL-PROJECT-STATUS-CERT
+ *            aligns synthetic Foundation project and link status to the
+ *            exact EOS ProjectStatus.ACTIVE.value (lowercase active), proving
+ *            the live M04 graph can pass without bypassing source gates.
  * CHANGELOG: v1.18.1-M04-GOVERNANCE-LANGUAGE-CERT
  *            asserts current Founder self-ratification authority language.
  * CHANGELOG: v1.18.0-M04-INDEPENDENT-EVIDENCE-CERT proves
@@ -490,7 +494,7 @@ describe('Strategy source-owned project execution readback', () => {
   const projectId = 'prj-' + 'a'.repeat(48);
   const taskId = 'ptk-' + 'b'.repeat(48);
   const project = { project_id: projectId, tenant_id: scope.tenantId,
-    name: 'WILSY OS — Unified Operating Platform Foundation', status: 'ACTIVE', revision: 2 };
+    name: 'WILSY OS — Unified Operating Platform Foundation', status: 'active', revision: 2 };
   const projectList = () => ({ schema: 'WILSY-PROJECT-LIST/V1',
     tenant_id: scope.tenantId, principal_id: scope.principalId,
     limit: 100, offset: 0, has_more: false, next_offset: null, items: [project] });
@@ -547,7 +551,7 @@ describe('Strategy source-owned project execution readback', () => {
           classification: 'STRATEGY', strategy_revision: published.revision,
           source_verified: true, strategy_progress: null,
           items: [{ pillar_id: 'pillar-one', project_id: projectId,
-            project_name: project.name, project_status: 'ACTIVE',
+            project_name: project.name, project_status: 'active',
             source_project_revision: currentLink ? project.revision : project.revision - 1,
             source_strategy_revision: published.revision,
             state: currentLink ? 'VERIFIED_CURRENT' : 'SOURCE_CHANGED' }],
@@ -1102,7 +1106,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.18.1-M04-GOVERNANCE-LANGUAGE-CERT
+// VERSION: v1.18.2-M04-CANONICAL-PROJECT-STATUS-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
