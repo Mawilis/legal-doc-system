@@ -399,7 +399,8 @@ describe('Strategy source-owned project execution readback', () => {
       name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
     const readback = await screen.findByRole('region', { name: 'M02 live execution readback' });
-    const values = () => Array.from(readback.querySelectorAll('dl > div')).map(el => el.textContent);
+    const currentReadback = () => screen.getByRole('region', { name: 'M02 live execution readback' });
+    const values = () => Array.from(currentReadback().querySelectorAll('dl > div')).map(el => el.textContent);
     expect(values()).toEqual(['To do16', 'In progress1', 'Done0', 'Blocked1', 'Cancelled0']);
     expect(readback.textContent).toContain('1 programme records waiting on 1 unfinished predecessor relationships');
     expect(readback.textContent).toContain('1 unfinished records with calendar due dates');
@@ -410,7 +411,7 @@ describe('Strategy source-owned project execution readback', () => {
     await waitFor(() => expect(values()).toEqual([
       'To do15', 'In progress0', 'Done2', 'Blocked1', 'Cancelled0',
     ]));
-    expect(readback.textContent).toContain('0 programme records waiting on 0 unfinished predecessor relationships');
+    expect(currentReadback().textContent).toContain('0 programme records waiting on 0 unfinished predecessor relationships');
     expect(api.post).not.toHaveBeenCalled();
     // A missing or ambiguous plan record must suppress M02 entirely.
     items = items.slice(1);
