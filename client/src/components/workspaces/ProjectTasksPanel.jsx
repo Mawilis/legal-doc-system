@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.58.0-DEPENDENCY-ORDERED-REVIEW
+ * VERSION: v1.59.0-UNIFIED-EXECUTION-CONTINUITY
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,13 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.59.0-UNIFIED-EXECUTION-CONTINUITY brings
+ *          task files, discussion, approvals and details into one
+ *          compact task-local navigation. A session-scoped recent-work
+ *          index stores only task ids and visit counts, never task
+ *          content or authority; every Resume action first requires an
+ *          exact current EOS task readback. Derived work-risk counts
+ *          explicitly cover the current verified batch only.
  * CHANGELOG: v1.58.0-DEPENDENCY-ORDERED-REVIEW applies
  *          a bounded topological order to explicitly selected,
  *          source-verified work, presenting known predecessors before
@@ -473,6 +480,39 @@ export default function ProjectTasksPanel({
   currentScope.current = scope;
   const root = '/projects/' + encodeURIComponent(projectId);
   const headers = tenantHeaders || {};
+  const historyStorageKey = 'wilsy:project-work:recent:' + encodeURIComponent(scope);
+  const readRecent = () => {
+    try {
+      const raw = window.sessionStorage.getItem(historyStorageKey);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (!parsed || !Array.isArray(parsed.ids) || typeof parsed.counts !== 'object'
+        || parsed.counts === null) return { scope, ids: [], counts: {} };
+      const ids = parsed.ids.filter(id => typeof id === 'string' && id.length <= 96)
+        .slice(0, 12);
+      const counts = Object.fromEntries(ids.map(id => [
+        id, Number.isSafeInteger(parsed.counts[id]) && parsed.counts[id] > 0
+          ? Math.min(999, parsed.counts[id]) : 1,
+      ]));
+      return { scope, ids, counts };
+    } catch {
+      return { scope, ids: [], counts: {} };
+    }
+  };
+  const [recentWork, setRecentWork] = useState(() => readRecent());
+  const recordWorkVisit = task => {
+    if (!task || !items.some(item => item.task_id === task.task_id)) return;
+    const current = recentWork.scope === scope ? recentWork : { scope, ids: [], counts: {} };
+    const ids = [task.task_id, ...current.ids.filter(id => id !== task.task_id)].slice(0, 12);
+    const counts = { ...current.counts, [task.task_id]:
+      Math.min(999, (current.counts[task.task_id] || 0) + 1) };
+    const next = { scope, ids, counts };
+    setRecentWork(next);
+    try {
+      window.sessionStorage.setItem(historyStorageKey, JSON.stringify({ ids, counts }));
+    } catch {
+      // Storage denial affects only the personal navigation shortcut.
+    }
+  };
 
   const load = useCallback(async (nextOffset = 0, newlyAdmittedId = null) => {
     const request = ++generation.current;
@@ -651,6 +691,7 @@ export default function ProjectTasksPanel({
     setWorkQuery('');
     setWorkMineOnly(false);
     setSelectedWorkIds([]);
+    setRecentWork(readRecent());
     setWorkDensity('compact');
     setWorkStatus('ALL');
     setWorkKind('ALL');
@@ -1011,6 +1052,14 @@ export default function ProjectTasksPanel({
     // EOS remains the only status-transition and dependency authority.
     return order.length === selected.length ? order : selected;
   }, [selectedWorkIds, items]);
+  const visibleRecentWork = recentWork.scope === scope
+    ? recentWork.ids.map(id => items.find(item => item.task_id === id)).filter(Boolean) : [];
+  const frequentWork = visibleRecentWork.filter(item => recentWork.counts[item.task_id] >= 2)
+    .sort((a, b) => recentWork.counts[b.task_id] - recentWork.counts[a.task_id]).slice(0, 2);
+  const atRiskWork = items.filter(item => !['DONE', 'CANCELLED'].includes(item.status)
+    && (item.status === 'BLOCKED' || Boolean(item.due_date && item.due_date < todayISO)));
+  const withoutOwnerWork = items.filter(item => !['DONE', 'CANCELLED'].includes(item.status)
+    && !item.assignee_principal_id);
   const selectedReviewIndex = selectedReviewTasks.findIndex(item => item.task_id === drawerTaskId);
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
   const closeDrawer = () => {
@@ -1189,7 +1238,7 @@ export default function ProjectTasksPanel({
         {' '}Existing verified task rows remain visible, but contributor assignment and member admission are unavailable until this EOS source is verified.
       </p>}
     {(state === 'READY' || state === 'REFRESHING') && (focusedAction && selectedActionTask ? <div className="mt-4" aria-label="Focused project task action">
-      <div className="mb-3 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
+      <div className="mb-2 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={closeFocusedAction}>← Work</button>
         <div className="min-w-0 flex-1">
@@ -1198,6 +1247,25 @@ export default function ProjectTasksPanel({
           <p className="text-xs text-slate-600">{label(selectedActionTask.status)} · {focusedAction.type === 'attachments' ? 'Files & evidence' : focusedAction.type === 'approvals' ? 'Approvals' : 'Discussion'}</p>
         </div>
       </div>
+      <nav aria-label="Selected task workspace" className="mb-3 flex flex-wrap gap-1 border-b border-slate-200 pb-2">
+        {[['discussion', 'Activity'], ['attachments', 'Files'], ['approvals', 'Approvals'], ['details', 'Details']]
+          .map(([type, title]) => <button key={type} type="button"
+            aria-current={focusedAction.type === type ? 'page' : undefined}
+            className={'min-h-9 rounded-md px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+              + (focusedAction.type === type ? 'bg-slate-900 text-white'
+                : 'text-slate-700 hover:bg-slate-100')}
+            onClick={() => {
+              if (type === 'details') {
+                const task = selectedActionTask;
+                closeFocusedAction();
+                setDrawerTaskId(task.task_id);
+                return;
+              }
+              setDiscussionTaskId(type === 'discussion' ? focusedAction.id : null);
+              setAttachmentTaskId(type === 'attachments' ? focusedAction.id : null);
+              setApprovalTaskId(type === 'approvals' ? focusedAction.id : null);
+            }}>{title}</button>)}
+      </nav>
       {focusedAction.type === 'discussion' && <ProjectTaskCommentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
         taskId={focusedAction.id} participants={participants} tenantHeaders={tenantHeaders}
@@ -1221,6 +1289,22 @@ export default function ProjectTasksPanel({
         {items.length} verified work items · {counts.find(item => item.status === 'IN_PROGRESS')?.count || 0} in progress
         {overdueOnPage > 0 ? ' · ' + overdueOnPage + ' overdue' : ''}
       </p>
+      {state === 'READY' && <div aria-label="Work continuity and execution signals"
+        className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-slate-200 pb-3 text-xs">
+        <span className="font-semibold text-slate-700">
+          This verified EOS batch: {withoutOwnerWork.length} unassigned · {atRiskWork.length} blocked or overdue
+        </span>
+        {visibleRecentWork.length > 0 && <button type="button"
+          className="min-h-9 rounded-md border border-slate-300 bg-white px-3 font-semibold text-slate-800 hover:bg-slate-100"
+          onClick={event => {
+            drawerReturnFocus.current = event.currentTarget;
+            recordWorkVisit(visibleRecentWork[0]);
+            setDrawerTaskId(visibleRecentWork[0].task_id);
+          }}>Resume: {visibleRecentWork[0].title}</button>}
+        {frequentWork.length > 0 && <span className="text-slate-600">
+          Often opened this session: {frequentWork.map(item => item.title).join(' · ')}
+        </span>}
+      </div>}
       <details className="mt-2 border-b border-slate-200 pb-2" aria-label="Verified task lifecycle chart">
         <summary className="cursor-pointer py-2 text-xs font-semibold text-slate-700">View lifecycle breakdown · {chartTotal} work items on this page</summary>
         <section className="rounded-lg bg-slate-50 p-3">
@@ -1667,6 +1751,7 @@ export default function ProjectTasksPanel({
                 ? [...previous, id] : previous.filter(value => value !== id))}
               onOpen={(selected, element) => {
                 drawerReturnFocus.current = element;
+                recordWorkVisit(selected);
                 setDrawerTaskId(selected.task_id);
               }}
               onCreateSubtask={selected => {
@@ -1785,22 +1870,22 @@ export default function ProjectTasksPanel({
                   ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
               </span>
             </div>
-            <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Task execution actions">
+            <nav className="mt-3 flex flex-wrap gap-2" aria-label="Task execution actions">
               {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
                   {!actionCapabilities || actionCapabilities.canEdit ? 'Assign & schedule' : 'Assign contributor'}
                 </button>}
-              <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+              <button type="button" className="min-h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
                 Activity
               </button>
-              <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+              <button type="button" className="min-h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={() => { const item = drawerTask; closeDrawer(); setAttachmentTaskId(item.task_id); }}>
                 Attachments
               </button>
-              <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+              <button type="button" className="min-h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={() => { const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id); }}>
                 Approvals
               </button>
@@ -1915,7 +2000,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.58.0-DEPENDENCY-ORDERED-REVIEW
+// VERSION: v1.59.0-UNIFIED-EXECUTION-CONTINUITY
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
