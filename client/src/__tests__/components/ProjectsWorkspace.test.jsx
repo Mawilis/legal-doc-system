@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.66.0-ACCOUNTABILITY-DATE-PERSISTENCE-CERT
+ * VERSION: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,9 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
+ *          proves source-owned contributor assignment through authorized
+ *          PATCH, fresh list readback and reopened task owner display.
  * CHANGELOG: v2.66.0-ACCOUNTABILITY-DATE-PERSISTENCE-CERT
  *          asserts due-date changes are CAS-saved and independently
  *          read back on reopening the same authorized task.
@@ -703,7 +706,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
   it('uses exact EOS assignment capability rather than edit capability in the assignment sheet', async () => {
     const source = project();
-    const task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT,
+    let task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT,
       project_id: PROJECT_ID, task_id: 'ptk-' + 'a'.repeat(48),
       kind: 'TASK', parent_task_id: null, title: 'Assign independently',
       description: '', status: 'TODO', assignee_principal_id: null,
@@ -749,6 +752,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Save assignment' })).toBeEnabled();
     expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
     expect(api.patch).not.toHaveBeenCalled();
+    api.patch.mockImplementationOnce(async (path, body) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/tasks/${task.task_id}`);
+      expect(body).toEqual({ expected_revision: 1, title: 'Assign independently',
+        description: '', due_date: null, assignee_principal_id: PRINCIPAL });
+      task = { ...task, assignee_principal_id: PRINCIPAL, revision: 2,
+        fingerprint: 'b'.repeat(128) };
+      return { data: { schema: 'WILSY-PROJECT-TASK-RESULT/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, task } };
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save assignment' }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    const assignedRow = await screen.findByRole('row', { name: /Assign independently/ });
+    assignedRow.focus();
+    fireEvent.keyDown(assignedRow, { key: 'Enter' });
+    const verifiedDrawer = await screen.findByRole('dialog', { name: 'Work details: Assign independently' });
+    expect(within(verifiedDrawer).getAllByText('Verified Contributor').length).toBeGreaterThan(0);
   });
 
   it('filters current-page project work to the exact current assignee without a write', async () => {
@@ -2633,7 +2652,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.66.0-ACCOUNTABILITY-DATE-PERSISTENCE-CERT
+ * VERSION: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
