@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.27.0-PLAIN-LANGUAGE-TASK-HISTORY-CERT
+ * VERSION: v1.28.0-EXACT-TASK-HANDOFF-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.28.0-EXACT-TASK-HANDOFF-CERT
+ *            confirms Manage task forwards its verified source identity
+ *            without making a task command or overriding authorization.
  * CHANGELOG: v1.27.0-PLAIN-LANGUAGE-TASK-HISTORY-CERT
  *            certifies human-readable task history and verifies that the
  *            source identity and task state remain evidence-driven.
@@ -721,7 +724,7 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('UNASSIGNED');
     expect(screen.getAllByText(/Needs attention: assign an eligible project contributor/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Manage MW-M01 — Operating taxonomy and strategy alignment in Projects/ }));
-    expect(openCanonicalProject).toHaveBeenCalledWith(projectId);
+    expect(openCanonicalProject).toHaveBeenCalledWith(projectId, { taskId: work[0].task_id });
     expect(api.post).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect assigned in task source' }));
     expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
@@ -1262,7 +1265,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.27.0-PLAIN-LANGUAGE-TASK-HISTORY-CERT
+// VERSION: v1.28.0-EXACT-TASK-HANDOFF-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
