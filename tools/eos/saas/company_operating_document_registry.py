@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Operating Document Revision Registry.
-VERSION: v1.0.0-IMMUTABLE-COMPANY-DOCUMENT-REGISTRY
+VERSION: v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION
 AUTHORITY: Immutable company-document persistence and durable command replay.
 EPITOME: Preserve revision lineage and independent publication evidence in
 caller-owned Mongo transactions; never turn drafts into official policy.
@@ -8,6 +8,10 @@ COLLABORATION / OWNERSHIP: Pure company_operating_document domain owns lifecycle
 HTTP owns current IAM and whole-transaction retry. Explicit operators/test
 fixtures own index provisioning; ordinary reads never create indexes or data.
 CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION
+adds distinct Founder-only create/submit/ratify actions, rechecking immutable
+designation and active principal/tenant/capacity/IAM within the caller's
+source transaction. Normal publication still denies self-approval.
 CHANGELOG: v1.0.0-IMMUTABLE-COMPANY-DOCUMENT-REGISTRY adds bounded immutable
 history, SHA3-512 lineage, exact command receipts and explicit index assurance.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -27,12 +31,16 @@ from hmac import compare_digest
 from typing import Any, Final, Mapping
 
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
+from tools.eos.auth.founder_institutional_designation import (
+    read_founder_designation, FounderDesignationRejected,
+)
 from tools.eos.saas.domain.company_operating_document import (
     CompanyDocumentClass, CompanyDocumentError, CompanyDocumentSection,
     CompanyDocumentState, CompanyOperatingDocumentRevision, instant, semantic_fingerprint,
+    FOUNDER_RATIFICATION_REFERENCE,
 )
 
-VERSION: Final = "v1.0.0-IMMUTABLE-COMPANY-DOCUMENT-REGISTRY"
+VERSION: Final = "v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION"
 REVISION_COLLECTION: Final = "company_operating_document_revisions"
 COMMAND_COLLECTION: Final = "company_operating_document_commands"
 MAX_REVISIONS: Final = 1000
@@ -50,6 +58,7 @@ class CompanyOperatingDocumentRegistry:
     """
 
     def __init__(self, database: Any) -> None:
+        self.database = database
         self.revisions = database[REVISION_COLLECTION]
         self.commands = database[COMMAND_COLLECTION]
 
@@ -170,13 +179,30 @@ class CompanyOperatingDocumentRegistry:
             raise CompanyDocumentError("COMPANY_DOCUMENT_IDEMPOTENCY_REQUIRED")
         if type(expected_revision) is not int or expected_revision < 0:
             raise CompanyDocumentError("COMPANY_DOCUMENT_EXPECTED_REVISION_INVALID")
+        founder_actions = frozenset({"FOUNDER_CREATE_DRAFT", "FOUNDER_SUBMIT", "FOUNDER_RATIFY"})
+        if action in founder_actions:
+            if classification is not CompanyDocumentClass.STRATEGY:
+                raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_STRATEGY_ONLY")
+            try:
+                evidence = read_founder_designation(
+                    principal_id=actor_id, tenant_id=tenant_id,
+                    database=self.database, session=session,
+                )
+            except FounderDesignationRejected as error:
+                raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
+            if evidence is None or evidence.get("state") != "ACTIVE":
+                raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_AUTHORITY_DENIED")
         expected_fields = {"CREATE_DRAFT": {"title", "document_version", "sections"},
-                           "SUBMIT": set(), "PUBLISH": {"approval_reference", "effective_from"}}
+                           "SUBMIT": set(), "PUBLISH": {"approval_reference", "effective_from"},
+                           "FOUNDER_CREATE_DRAFT": {"title", "document_version", "sections"},
+                           "FOUNDER_SUBMIT": set(), "FOUNDER_RATIFY": {"effective_from"}}
         if action not in expected_fields or set(payload) != expected_fields[action]:
             raise CompanyDocumentError("COMPANY_DOCUMENT_COMMAND_INVALID")
         canonical_payload = dict(payload)
-        if action == "PUBLISH":
+        if action in {"PUBLISH", "FOUNDER_RATIFY"}:
             canonical_payload["effective_from"] = instant(canonical_payload["effective_from"])
+        if action == "PUBLISH" and canonical_payload["approval_reference"] == FOUNDER_RATIFICATION_REFERENCE:
+            raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_RATIFICATION_INVALID")
         request_fingerprint = semantic_fingerprint({
             "tenant_id": tenant_id, "classification": classification.value,
             "actor_id": actor_id, "action": action, "payload": canonical_payload,
@@ -202,7 +228,7 @@ class CompanyOperatingDocumentRegistry:
             raise CompanyDocumentError("COMPANY_DOCUMENT_REVISION_CONFLICT")
         if len(history) >= MAX_REVISIONS:
             raise CompanyDocumentError("COMPANY_DOCUMENT_HISTORY_LIMIT_REACHED")
-        if action == "CREATE_DRAFT":
+        if action in {"CREATE_DRAFT", "FOUNDER_CREATE_DRAFT"}:
             if latest is not None and latest.state is not CompanyDocumentState.PUBLISHED and latest.author_principal_id != actor_id:
                 raise CompanyDocumentError("COMPANY_DOCUMENT_DRAFT_OWNER_REQUIRED")
             if any(item.state is CompanyDocumentState.PUBLISHED and item.document_version == payload["document_version"] for item in history):
@@ -219,10 +245,18 @@ class CompanyOperatingDocumentRegistry:
             )
         elif latest is None:
             raise CompanyDocumentError("COMPANY_DOCUMENT_REVISION_CONFLICT")
-        elif action == "SUBMIT":
+        elif action in {"SUBMIT", "FOUNDER_SUBMIT"}:
             record = latest.submit(actor_id, now)
+        elif action == "FOUNDER_RATIFY":
+            if latest.author_principal_id != actor_id:
+                raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_AUTHOR_REQUIRED")
+            record = latest.publish(actor_id, FOUNDER_RATIFICATION_REFERENCE,
+                                    canonical_payload["effective_from"], now)
         else:
-            record = latest.publish(actor_id, canonical_payload["approval_reference"], canonical_payload["effective_from"], now)
+            if latest.author_principal_id == actor_id:
+                raise CompanyDocumentError("COMPANY_DOCUMENT_INDEPENDENT_APPROVER_REQUIRED")
+            record = latest.publish(actor_id, canonical_payload["approval_reference"],
+                                    canonical_payload["effective_from"], now)
         if latest is not None and record.recorded_at < latest.recorded_at:
             raise CompanyDocumentError("COMPANY_DOCUMENT_TIME_INVALID")
         self.revisions.insert_one(record.to_dict(), session=session)
@@ -237,7 +271,7 @@ class CompanyOperatingDocumentRegistry:
 
 
 # ARTIFACT: company_operating_document_registry.py
-# VERSION: v1.0.0-IMMUTABLE-COMPANY-DOCUMENT-REGISTRY
+# VERSION: v1.1.0-FOUNDER-STRATEGY-SOURCE-VERIFIED-RATIFICATION
 # AUTHORITY BOUNDARY: Append-only persistence/replay only; caller owns IAM.
 # TENANT POSTURE: Exact canonical company tenant on every operation.
 # FAIL-CLOSED POSTURE: Missing index, transaction, lineage or receipt truth rejects.
