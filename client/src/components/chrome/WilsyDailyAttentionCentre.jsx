@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION
+ * VERSION: v3.8.1-BLUEPRINT-JSX-CLOSURE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.8.1-BLUEPRINT-JSX-CLOSURE corrects the
+ *          JSX class expression closing token in the expanded bell
+ *          task action. No EOS behavior, authority or source changes.
  * CHANGELOG: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION unifies
  *          bell task rows with the reusable source-owned workforce
  *          blueprint, preserving authenticated My Work handoff.
@@ -1454,7 +1457,7 @@ export default function WilsyDailyAttentionCentre({
                           Work actions are verified and recorded by the owning EOS service.
                         </p>
                         <button type="button" onClick={() => onOpenWork(item)}
-                          className={'mt-2 ' + workTaskBlueprint.primary}">
+                          className={'mt-2 ' + workTaskBlueprint.primary}>
                           Open in My Work <ArrowRight size={14}/>
                         </button>
                       </div>
@@ -1528,7 +1531,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION
+ * VERSION: v3.8.1-BLUEPRINT-JSX-CLOSURE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
