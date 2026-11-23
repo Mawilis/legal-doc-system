@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
+ * VERSION: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
+ *            turns verified M04 accountability counts into accessible
+ *            source-safe work filters; activating any count opens the existing
+ *            bounded task/evidence inspector, never mutates an EOS record.
  * CHANGELOG: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
  *            highlights selected Strategy modes; keeps governance context
  *            in an on-demand disclosure; filters tenant project display
@@ -546,6 +550,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [executionSearch, setExecutionSearch] = useState('');
   const [executionFilter, setExecutionFilter] = useState('ALL');
   const [executionPage, setExecutionPage] = useState(0);
+  const [executionInspectorOpen, setExecutionInspectorOpen] = useState(false);
   const [history, setHistory] = useState(null);
   const [query, setQuery] = useState({ review: false, revision: null });
   const queryRef = useRef(query);
@@ -957,6 +962,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const executionMatches = m04Execution ? m04Execution.rows.filter(({ task, remaining }) => {
     const search = executionSearch.trim().toLocaleLowerCase();
     if (search && !task.title.toLocaleLowerCase().includes(search)) return false;
+    if (executionFilter === 'ASSIGNED') return task.assignee_principal_id !== null;
     if (executionFilter === 'UNASSIGNED') return task.assignee_principal_id === null;
     if (executionFilter === 'WAITING') return remaining > 0;
     if (executionFilter === 'UNDATED') return task.due_date === null;
@@ -966,6 +972,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     if (executionFilter === 'DONE') return task.status === 'DONE';
     return true;
   }) : [];
+  const focusExecutionWork = filter => {
+    setExecutionSearch('');
+    setExecutionFilter(filter);
+    setExecutionPage(0);
+    setExecutionInspectorOpen(true);
+  };
   const executionPageSize = 6;
   const executionPageCount = Math.max(1, Math.ceil(executionMatches.length / executionPageSize));
   const safeExecutionPage = Math.min(executionPage, executionPageCount - 1);
@@ -1905,16 +1917,21 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
                           <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                             {[
-                              ['Assigned in task source', m04Execution.assigned],
-                              ['Unassigned work', m04Execution.unassigned],
-                              ['Waiting on predecessors', m04Execution.waiting],
-                              ['Without due dates', m04Execution.missingDueDate],
-                              ['Past calendar due date', m04Execution.pastDueCalendar],
-                              ['Done · task lifecycle only', m04Execution.states.DONE],
-                            ].map(([label, value]) => <div key={label}
-                              className="rounded-lg border border-slate-600/70 p-3">
-                              <dt className="text-xs text-slate-300">{label}</dt>
-                              <dd className="mt-1 text-xl font-semibold">{value}</dd>
+                              ['Assigned in task source', m04Execution.assigned, 'ASSIGNED'],
+                              ['Unassigned work', m04Execution.unassigned, 'UNASSIGNED'],
+                              ['Waiting on predecessors', m04Execution.waiting, 'WAITING'],
+                              ['Without due dates', m04Execution.missingDueDate, 'UNDATED'],
+                              ['Past calendar due date', m04Execution.pastDueCalendar, 'DUE'],
+                              ['Done · task lifecycle only', m04Execution.states.DONE, 'DONE'],
+                            ].map(([label, value, filter]) => <div key={label}
+                              className="rounded-lg border border-slate-600/70 p-1">
+                              <dt><button type="button" aria-label={'Inspect ' + label.toLowerCase()}
+                                onClick={() => focusExecutionWork(filter)}
+                                className="w-full rounded-lg px-2 py-2 text-left text-slate-100 hover:bg-sky-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300">
+                                <span className="block text-xs text-slate-300">{label}</span>
+                                <span className="mt-1 block text-xl font-semibold">{value}</span>
+                                <span className="block text-xs text-sky-300">Inspect work</span>
+                              </button></dt>
                             </div>)}
                           </dl>
                           <p className="mt-3 text-sm font-semibold">Certified strategic outcome:
@@ -1923,8 +1940,11 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           <p className="mt-1 text-xs text-slate-300">Snapshot observed: {m04Execution.observedAt}.
                             Due-date comparisons use a UTC calendar date, not a server-certified overdue decision.
                             Task DONE and audit history are not strategic outcome certification.</p>
-                          <details className="mt-4 rounded-lg border border-slate-600/70 p-3">
-                            <summary className="cursor-pointer font-semibold">Inspect accountable work and lifecycle evidence · {m04Execution.rows.length} records</summary>
+                          <details open={executionInspectorOpen} className="mt-4 rounded-lg border border-slate-600/70 p-3">
+                            <summary className="cursor-pointer font-semibold" onClick={event => {
+                              event.preventDefault();
+                              setExecutionInspectorOpen(open => !open);
+                            }}>Inspect accountable work and lifecycle evidence · {m04Execution.rows.length} records</summary>
                             <div className="mt-3 flex flex-wrap items-end gap-3" aria-label="M04 work navigator">
                               <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-slate-200">Find work by title
                                 <input type="search" value={executionSearch} placeholder="Search verified tasks…"
@@ -1936,6 +1956,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                   onChange={event => { setExecutionFilter(event.target.value); setExecutionPage(0); }}
                                   className="min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-3 text-sm text-white">
                                   <option value="ALL">All verified work</option>
+                                  <option value="ASSIGNED">Assigned work</option>
                                   <option value="UNASSIGNED">Unassigned</option>
                                   <option value="WAITING">Waiting on dependencies</option>
                                   <option value="UNDATED">Without due dates</option>
@@ -2208,7 +2229,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
+// VERSION: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
