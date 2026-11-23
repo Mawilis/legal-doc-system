@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.59.0-UNIFIED-EXECUTION-CONTINUITY
+ * VERSION: v1.60.0-ACTIONABLE-VERIFIED-TRIAGE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.60.0-ACTIONABLE-VERIFIED-TRIAGE adds
+ *          source-scoped work attention filters for unassigned and
+ *          blocked/overdue tasks; selected sets can be populated from
+ *          only visible verified records. A selected-work review remains
+ *          independently EOS authorized; no aggregate mutation, AI
+ *          invented ranking, or unsupported critical-path claim.
  * CHANGELOG: v1.59.0-UNIFIED-EXECUTION-CONTINUITY brings
  *          task files, discussion, approvals and details into one
  *          compact task-local navigation. A session-scoped recent-work
@@ -439,6 +445,7 @@ export default function ProjectTasksPanel({
   const [workType, setWorkType] = useState('TASK');
   const [workQuery, setWorkQuery] = useState('');
   const [workMineOnly, setWorkMineOnly] = useState(false);
+  const [workAttention, setWorkAttention] = useState('ALL');
   const [selectedWorkIds, setSelectedWorkIds] = useState([]);
   const [workDensity, setWorkDensity] = useState('compact');
   const [workStatus, setWorkStatus] = useState('ALL');
@@ -690,6 +697,7 @@ export default function ProjectTasksPanel({
     setWorkType('TASK');
     setWorkQuery('');
     setWorkMineOnly(false);
+    setWorkAttention('ALL');
     setSelectedWorkIds([]);
     setRecentWork(readRecent());
     setWorkDensity('compact');
@@ -874,6 +882,11 @@ export default function ProjectTasksPanel({
       const kind = item.kind === 'MILESTONE' ? 'MILESTONE'
         : item.parent_task_id ? 'SUBTASK' : 'TASK';
       return (!workMineOnly || item.assignee_principal_id === principalId)
+        && (workAttention === 'ALL'
+          || (workAttention === 'UNASSIGNED' && !item.assignee_principal_id
+            && !['DONE', 'CANCELLED'].includes(item.status))
+          || (workAttention === 'RISK' && !['DONE', 'CANCELLED'].includes(item.status)
+            && (item.status === 'BLOCKED' || Boolean(item.due_date && item.due_date < todayISO))))
         && (workStatus === 'ALL' || item.status === workStatus)
         && (workKind === 'ALL' || kind === workKind)
         && (!term || [item.title, item.description, item.task_id]
@@ -889,7 +902,7 @@ export default function ProjectTasksPanel({
         || a.task_id.localeCompare(b.task_id);
     });
     return result;
-  }, [items, workQuery, workMineOnly, principalId, workStatus, workKind, workOrder]);
+  }, [items, workQuery, workMineOnly, workAttention, principalId, workStatus, workKind, workOrder]);
   // Presentation-only paging. Never fabricate EOS totals or silently search
   // records outside the currently authenticated, verified 50-item batch.
   const workViewCount = Math.max(1, Math.ceil(workRows.length / workViewSize));
@@ -897,7 +910,7 @@ export default function ProjectTasksPanel({
   const workViewStart = workViewIndex * workViewSize;
   const visibleWorkRows = workRows.slice(workViewStart, workViewStart + workViewSize);
   useEffect(() => { setWorkViewPage(0); }, [
-    offset, workQuery, workMineOnly, workStatus, workKind, workOrder, workViewSize,
+    offset, workQuery, workMineOnly, workAttention, workStatus, workKind, workOrder, workViewSize,
   ]);
   const currentDay = new Date();
   const todayISO = currentDay.getFullYear() + '-' + String(currentDay.getMonth() + 1).padStart(2, '0')
@@ -1291,9 +1304,23 @@ export default function ProjectTasksPanel({
       </p>
       {state === 'READY' && <div aria-label="Work continuity and execution signals"
         className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-slate-200 pb-3 text-xs">
-        <span className="font-semibold text-slate-700">
-          This verified EOS batch: {withoutOwnerWork.length} unassigned · {atRiskWork.length} blocked or overdue
-        </span>
+        <span className="font-semibold text-slate-700">This EOS batch</span>
+        <button type="button" aria-pressed={workAttention === 'UNASSIGNED'}
+          className={'min-h-9 rounded-md border px-3 font-semibold '
+            + (workAttention === 'UNASSIGNED'
+              ? 'border-slate-800 bg-slate-900 text-white'
+              : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100')}
+          onClick={() => setWorkAttention(value => value === 'UNASSIGNED' ? 'ALL' : 'UNASSIGNED')}>
+          {withoutOwnerWork.length} unassigned
+        </button>
+        <button type="button" aria-pressed={workAttention === 'RISK'}
+          className={'min-h-9 rounded-md border px-3 font-semibold '
+            + (workAttention === 'RISK'
+              ? 'border-slate-800 bg-slate-900 text-white'
+              : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100')}
+          onClick={() => setWorkAttention(value => value === 'RISK' ? 'ALL' : 'RISK')}>
+          {atRiskWork.length} blocked or overdue
+        </button>
         {visibleRecentWork.length > 0 && <button type="button"
           className="min-h-9 rounded-md border border-slate-300 bg-white px-3 font-semibold text-slate-800 hover:bg-slate-100"
           onClick={event => {
@@ -1717,6 +1744,18 @@ export default function ProjectTasksPanel({
                       setDrawerTaskId(selectedReviewTasks[0].task_id);
                     }}>Review in sequence</button>
                   <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                    onClick={() => {
+                      const firstUnassigned = selectedReviewTasks.find(item => !item.assignee_principal_id
+                        && !['DONE', 'CANCELLED'].includes(item.status));
+                      if (firstUnassigned && actionCapabilities?.canAssign) {
+                        openTaskEditor(firstUnassigned, true);
+                      }
+                    }}
+                    disabled={!actionCapabilities?.canAssign || !selectedReviewTasks.some(item =>
+                      !item.assignee_principal_id && !['DONE', 'CANCELLED'].includes(item.status))}>
+                    Assign next unassigned
+                  </button>
+                  <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
                     onClick={() => setSelectedWorkIds([])}>Clear selection</button>
                 </div>
               </th>
@@ -2000,7 +2039,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.59.0-UNIFIED-EXECUTION-CONTINUITY
+// VERSION: v1.60.0-ACTIONABLE-VERIFIED-TRIAGE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
