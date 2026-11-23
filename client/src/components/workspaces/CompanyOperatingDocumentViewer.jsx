@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
+ * VERSION: v2.12.1-M04-EVIDENCE-CONTIGUITY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.12.1-M04-EVIDENCE-CONTIGUITY checks
+ *            contiguous task revision-event chains, preventing an omitted
+ *            middle lifecycle transition from being described as complete;
+ *            recorded assignee ID does not claim live IAM eligibility.
  * CHANGELOG: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
  *            exposes source-owned M04 execution directly after the selected
  *            project heading, above long task lists. No second project,
@@ -891,14 +895,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
           && event.project_id === page.project_id && event.task_id === taskId
           && event.schema === 'wilsy.project.task.event.v1'
           && Number.isSafeInteger(event.revision) && event.revision >= 1
-          && (index === 0 || event.revision < page.items[index - 1].revision)
+          && event.revision === task.revision - index
           && ['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED']
             .includes(event.event_type)
           && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED']
             .includes(event.status_after)
           && typeof event.occurred_at === 'string');
-      if (!valid || page.has_more || !page.items.length
-        || page.items[0].revision !== task.revision
+      if (!valid || page.has_more || page.items.length !== task.revision
+        || !page.items.length || page.items[0].revision !== task.revision
         || page.items[0].status_after !== task.status
         || page.items[page.items.length - 1].revision !== 1) {
         throw new Error('M04_LIFECYCLE_EVIDENCE_UNVERIFIED');
@@ -1665,7 +1669,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
                           <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                             {[
-                              ['Assigned work', m04Execution.assigned],
+                              ['Assigned in task source', m04Execution.assigned],
                               ['Unassigned work', m04Execution.unassigned],
                               ['Waiting on predecessors', m04Execution.waiting],
                               ['Without due dates', m04Execution.missingDueDate],
@@ -1692,7 +1696,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                   <div><strong className="text-sm">{task.title}</strong>
                                     <p className="mt-1 text-xs text-slate-300">
                                       {task.kind} · {task.status.replaceAll('_', ' ')} · revision {task.revision}
-                                      {' · '}{task.assignee_principal_id ? 'Assigned principal verified' : 'Unassigned'}
+                                      {' · '}{task.assignee_principal_id ? 'Assignment recorded in EOS' : 'Unassigned'}
                                       {' · '}{task.due_date ? 'Due ' + task.due_date : 'No due date'}
                                       {' · '}{remaining ? remaining + ' incomplete predecessor(s)' : 'Dependencies clear'}
                                     </p>
@@ -1924,7 +1928,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
+// VERSION: v2.12.1-M04-EVIDENCE-CONTIGUITY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
