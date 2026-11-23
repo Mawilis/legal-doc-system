@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
+ * VERSION: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
+ *          task save closes after mandatory readback even with stalled
+ *          optional source reads; contributor assignment still requires
+ *          authorization and verified fresh task data.
  * CHANGELOG: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
  *          proves source-owned contributor assignment through authorized
  *          PATCH, fresh list readback and reopened task owner display.
@@ -763,11 +767,12 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save assignment' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Assign work' })).not.toBeInTheDocument());
     const assignedRow = await screen.findByRole('row', { name: /Assign independently/ });
     assignedRow.focus();
     fireEvent.keyDown(assignedRow, { key: 'Enter' });
     const verifiedDrawer = await screen.findByRole('dialog', { name: 'Work details: Assign independently' });
-    expect(within(verifiedDrawer).getAllByText('Verified Contributor').length).toBeGreaterThan(0);
+    await waitFor(() => expect(within(verifiedDrawer).getAllByText('Verified Contributor').length).toBeGreaterThan(0));
   });
 
   it('filters current-page project work to the exact current assignee without a write', async () => {
@@ -1078,6 +1083,16 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
         ...work[0], title: 'Updated task handoff', due_date: '2026-12-11', revision: 3,
         fingerprint: 'c'.repeat(128),
       }];
+      // The task update must finish after verified task readback even when
+      // ancillary contributor/member/capability requests never respond.
+      const previouslyVerifiedGet = api.get.getMockImplementation();
+      const stalledSupportingRead = new Promise(() => {});
+      api.get.mockImplementation((sourcePath, ...args) => (
+        sourcePath === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`
+        || sourcePath === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`
+        || sourcePath === `/projects/${PROJECT_ID}/task-action-capabilities`
+          ? stalledSupportingRead : previouslyVerifiedGet(sourcePath, ...args)
+      ));
       return { data: {
         schema: 'WILSY-PROJECT-TASK-RESULT/V1',
         tenant_id: TENANT, principal_id: PRINCIPAL,
@@ -1164,6 +1179,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       selector: '.wp-project-tasks tbody td span',
     })).toBeVisible());
     expect(api.patch).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit work' })).not.toBeInTheDocument());
     const revisedRow = screen.getByRole('row', { name: /Updated task handoff/ });
     revisedRow.focus();
     fireEvent.keyDown(revisedRow, { key: 'Enter' });
@@ -2652,7 +2668,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
+ * VERSION: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
