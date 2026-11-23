@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
+ * VERSION: v2.65.0-ACCOUNTABLE-TASK-EDITOR-FIRST-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.65.0-ACCOUNTABLE-TASK-EDITOR-FIRST-CERT
+ *          verifies accountability precedes secondary classification,
+ *          due date and contributor controls lead task editing, and
+ *          source authority still blocks unauthorized task changes.
  * CHANGELOG: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
  *          preserves the foreign-tenant fail-closed assertions while
  *          verifying the current plain-language unavailable message.
@@ -1128,9 +1132,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(within(screen.getByRole('menu', {
        name: 'Actions for Build milestone execution',
      })).getByRole('menuitem', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
-      target: { value: 'Updated task handoff' },
-    });
+    const taskTitleInput = screen.getByRole('textbox', { name: 'Edit task title' });
+    const assigneeInput = screen.getByRole('combobox', { name: 'Reassign task' });
+    expect(Boolean(assigneeInput.compareDocumentPosition(taskTitleInput) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    fireEvent.change(taskTitleInput, { target: { value: 'Updated task handoff' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes to EOS' }));
     await waitFor(() => expect(screen.getByText('Updated task handoff', {
       selector: '.wp-project-tasks tbody td span',
@@ -2153,7 +2158,11 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(await screen.findByRole('dialog', {
       name: 'Work details: Certify production readiness and rollback',
     })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Edit / assign' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Assign & schedule' })).toBeDisabled();
+    const nextSteps = screen.getByRole('region', { name: 'Next steps for this task' });
+    expect(within(nextSteps).getByText('Not assigned')).toBeVisible();
+    expect(within(nextSteps).getByText('Not set')).toBeVisible();
+    expect(screen.getByText('Work classification and history').closest('details').open).toBe(false);
     expect(api.post).not.toHaveBeenCalled();
     expect(api.patch).not.toHaveBeenCalled();
   });
@@ -2615,7 +2624,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
+ * VERSION: v2.65.0-ACCOUNTABLE-TASK-EDITOR-FIRST-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
