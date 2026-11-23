@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
+ * VERSION: v3.16.0-FOCUSED-ATTENTION-VIEW-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -14,6 +14,9 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.16.0-FOCUSED-ATTENTION-VIEW-CERT verifies full-focus
+ *          task inspection replaces the queue and restores exactly
+ *          the same verified list on Back to work.
  * CHANGELOG: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT proves the
  *          explicit CRM Save Draft intent goes through the real source
  *          callback with its own stable idempotency key, not an active
@@ -295,7 +298,7 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getAllByText('Not supplied by source').length).toBeGreaterThan(0);
   });
 
-  it('opens majority-width source detail and restores the full work list', () => {
+  it('replaces the queue with focused source detail and restores it through Back to work', () => {
     render(
       <DailyAttentionWorkspace feed={fixtureFeed(3)} calendarItems={[]}
         filter="ALL" setFilter={vi.fn()}
@@ -309,12 +312,13 @@ describe('Daily Attention bounded inbox', () => {
     expect(layout).toHaveAttribute('data-attention-detail-layout', 'list');
     expect(list.className).toContain('flex flex-1');
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
-    expect(layout).toHaveAttribute('data-attention-detail-layout', 'split');
-    expect(layout.className).toContain('md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)]');
-    expect(list.className).toContain('hidden md:flex');
+    expect(layout).toHaveAttribute('data-attention-detail-layout', 'detail');
+    expect(layout.className).toContain('flex');
+    expect(list.className).toContain('hidden');
     const detail = screen.getByRole('complementary', { name: 'Attention detail rail' });
-    expect(detail.className).toContain('w-full');
+    expect(detail.className).toContain('flex-1');
     expect(detail.className).toContain('overflow-y-auto');
+    expect(screen.getByRole('button', { name: 'Close attention detail' })).toHaveTextContent('Back to work');
     fireEvent.click(screen.getByRole('button', { name: 'Close attention detail' }));
     expect(layout).toHaveAttribute('data-attention-detail-layout', 'list');
     expect(list.className).toContain('flex flex-1');
@@ -565,7 +569,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
+// VERSION: v3.16.0-FOCUSED-ATTENTION-VIEW-CERT
 // AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.
