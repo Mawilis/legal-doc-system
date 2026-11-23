@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.23.1-EXECUTION-NAVIGATION-ROUTING-CERT
+ * VERSION: v1.23.2-PRIVATE-REVIEW-VIEW-PARITY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.23.2-PRIVATE-REVIEW-VIEW-PARITY-CERT
+ *            returns the requested authorized review-view contract in
+ *            mode-switch regression rather than an invalid public payload.
  * CHANGELOG: v1.23.1-EXECUTION-NAVIGATION-ROUTING-CERT
  *            replaces an obsolete removed-banner navigation assertion
  *            with the actual selected Execution workspace mode action.
@@ -246,8 +249,8 @@ describe('governed company document experience', () => {
     expect(screen.getByText('Synthetic source content only.')).toBeVisible();
   });
   it('opens published Strategy in governed execution and reveals the exact document only on demand', async () => {
-    api.get.mockImplementation(url => url === '/company-operating-documents/STRATEGY'
-      ? Promise.resolve({ data: view(record('STRATEGY'), ['READ_HISTORY', 'REVIEW_DRAFTS']) })
+    api.get.mockImplementation((url, options) => url === '/company-operating-documents/STRATEGY'
+      ? Promise.resolve({ data: view(record('STRATEGY'), ['READ_HISTORY', 'REVIEW_DRAFTS'], options?.params?.review === true) })
       : Promise.reject(new Error('UNEXPECTED_ROUTE')));
     render(wrap({ classification: 'STRATEGY' }));
     const mode = await screen.findByRole('navigation', { name: 'Strategy workspace mode' });
@@ -1212,7 +1215,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.23.1-EXECUTION-NAVIGATION-ROUTING-CERT
+// VERSION: v1.23.2-PRIVATE-REVIEW-VIEW-PARITY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
