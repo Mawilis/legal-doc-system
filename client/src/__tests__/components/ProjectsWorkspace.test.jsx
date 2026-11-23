@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.71.4-BATCH-PAGINATION-ROW-CERT
+ * VERSION: v2.72.0-INDEPENDENT-MULTI-ASSIGNMENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.72.0-INDEPENDENT-MULTI-ASSIGNMENT-CERT certifies selected-task
+ *          contributor assignment issues distinct revision-guarded EOS
+ *          PATCH commands, verifies each persisted source before the
+ *          next, and never rewrites work status or uses a bulk endpoint.
  * CHANGELOG: v2.71.4-BATCH-PAGINATION-ROW-CERT verifies
  *          twenty source work records regardless of selection header.
  * CHANGELOG: v2.71.3-DOM-ROW-COUNT-CERT accesses the actual
@@ -604,6 +608,93 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
   });
 
 
+
+  it('assigns multiple selected tasks only through independently verified EOS commands', async () => {
+    const storedProject = project();
+    const base = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      kind: 'TASK', parent_task_id: null, description: '', status: 'TODO',
+      assignee_principal_id: null, due_date: null, depends_on: [],
+      created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-23T08:00:00+00:00',
+      updated_at: '2026-11-23T08:00:00+00:00',
+      revision: 1, fingerprint: 'a'.repeat(128),
+    };
+    let tasks = [
+      { ...base, task_id: 'ptk-' + 'a'.repeat(48), title: 'First accountable task' },
+      { ...base, task_id: 'ptk-' + 'b'.repeat(48), title: 'Second accountable task' },
+    ];
+    let taskListReads = 0;
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([storedProject]) };
+      if (path === '/projects/summary') return { data: summary([storedProject]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(storedProject) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) {
+        taskListReads += 1;
+        return { data: {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: tasks, limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      }
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) {
+        return { data: {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [{
+            principal_id: PRINCIPAL, tenant_id: TENANT, project_id: PROJECT_ID,
+            first_name: 'Verified', last_name: 'Contributor',
+            state: 'ACTIVE', role: 'CONTRIBUTOR',
+          }],
+          limit: 100, offset: 0, has_more: false, next_offset: null,
+        } };
+      }
+      throw new Error('Unexpected source ' + path);
+    });
+    api.patch.mockImplementation(async (path, body, options) => {
+      expect(path).toMatch(new RegExp('^/projects/.+/tasks/ptk-'));
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      const id = path.split('/').at(-1);
+      const original = tasks.find(task => task.task_id === id);
+      expect(original).toBeDefined();
+      expect(body.expected_revision).toBe(original.revision);
+      expect(body.assignee_principal_id).toBe(PRINCIPAL);
+      expect(body.title).toBe(original.title);
+      expect(body.due_date).toBe(original.due_date);
+      const updated = { ...original, revision: original.revision + 1,
+        fingerprint: 'b'.repeat(128), assignee_principal_id: PRINCIPAL };
+      tasks = tasks.map(task => task.task_id === id ? updated : task);
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        project_id: PROJECT_ID, task: updated,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="governed-batch-assign-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Select First accountable task' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Second accountable task' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Assign selected…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Assign selected project tasks' });
+    expect(api.patch).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByRole('combobox', {
+      name: 'Assign selected tasks to contributor',
+    }), { target: { value: PRINCIPAL } });
+    fireEvent.click(within(dialog).getByRole('checkbox', {
+      name: /I confirm assignment to each selected task/,
+    }));
+    fireEvent.click(within(dialog).getByRole('button', {
+      name: 'Apply individual assignments',
+    }));
+    await waitFor(() => expect(within(dialog).getByText(/2 of 2 independently verified/)).toBeVisible());
+    expect(api.patch).toHaveBeenCalledTimes(2);
+    expect(taskListReads).toBeGreaterThanOrEqual(4);
+    expect(tasks.map(task => task.assignee_principal_id)).toEqual([PRINCIPAL, PRINCIPAL]);
+    expect(tasks.every(task => task.status === 'TODO')).toBe(true);
+    expect(api.post).not.toHaveBeenCalled();
+  });
 
   it('uses compact work row structure without expanding secondary content', () => {
     const item = { task_id: 'ptk-' + 'f'.repeat(48),
@@ -2698,7 +2789,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.71.4-BATCH-PAGINATION-ROW-CERT
+ * VERSION: v2.72.0-INDEPENDENT-MULTI-ASSIGNMENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
