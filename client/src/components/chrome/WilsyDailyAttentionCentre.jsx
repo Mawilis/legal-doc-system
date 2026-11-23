@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.10.0-ATTENTION-CONTEXTUAL-HEADER
+ * VERSION: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE enables the
+ *          top resize edge and makes keyboard arrow controls match
+ *          the moving boundary. Full pointer resize stays bounded
+ *          by viewport and minimum readable dimensions.
  * CHANGELOG: v3.10.0-ATTENTION-CONTEXTUAL-HEADER lets the
  *          operating panel header follow detail, briefing, calendar
  *          and creation focus from its reusable task workspace.
@@ -1146,12 +1150,16 @@ export default function WilsyDailyAttentionCentre({
       event.preventDefault();
       const bounds = panelBounds();
       const pos = floating || floatAtPanel();
+      const west = edge.includes('left'), north = edge.includes('top');
+      const east = edge.includes('right'), south = edge.includes('bottom');
+      const x = west ? Math.max(8, Math.min(pos.x + d[0], pos.x + bounds.width - 300)) : pos.x;
+      const y = north ? Math.max(8, Math.min(pos.y + d[1], pos.y + bounds.height - 240)) : pos.y;
       const width = Math.max(Math.min(420, window.innerWidth - 16),
-        Math.min(bounds.width + d[0], window.innerWidth - pos.x - 8));
+        Math.min(bounds.width + (west ? pos.x - x : east ? d[0] : 0), window.innerWidth - x - 8));
       const height = Math.max(Math.min(300, window.innerHeight - 16),
-        Math.min(bounds.height + d[1], window.innerHeight - pos.y - 8));
+        Math.min(bounds.height + (north ? pos.y - y : south ? d[1] : 0), window.innerHeight - y - 8));
       setPanelSize({width, height});
-      setFloating(clamp(pos.x, pos.y, width, height));
+      setFloating(clamp(x, y, width, height));
     },
   });
   const handlePointerDown = (event) => {
@@ -1238,6 +1246,7 @@ export default function WilsyDailyAttentionCentre({
             (workScope ? 'w-[min(920px,calc(100vw-2rem))]' : 'w-[min(460px,calc(100vw-2rem))]')}
         >
           <div {...edgeHandle('left')} className="absolute inset-y-3 left-0 z-30 w-2 cursor-ew-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('top')} className="absolute inset-x-3 top-0 z-30 h-2 cursor-ns-resize focus-visible:bg-amber-300/30"/>
           <div {...edgeHandle('right')} className="absolute inset-y-3 right-0 z-30 w-2 cursor-ew-resize focus-visible:bg-amber-300/30"/>
           <div {...edgeHandle('bottom')} className="absolute inset-x-3 bottom-0 z-30 h-2 cursor-ns-resize focus-visible:bg-amber-300/30"/>
           <div {...edgeHandle('bottom-right')} className="absolute bottom-0 right-0 z-40 size-5 cursor-nwse-resize border-l border-t border-white/15 bg-white/10"/>
@@ -1613,7 +1622,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.10.0-ATTENTION-CONTEXTUAL-HEADER
+ * VERSION: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
