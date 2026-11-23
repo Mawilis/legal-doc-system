@@ -1,17 +1,20 @@
 /**
  * TITLE: WILSY OS Company Operating Document Client Contract
- * VERSION: v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT
+ * VERSION: v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION
  * AUTHORITY: Python EOS owns content, publication and command authorization.
  * EPITOME: Validate current Mission/Strategy source views and command receipts
  *          without treating a Founder label, draft or acknowledgement as policy.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/companyOperatingDocumentsClient.js
  * COLLABORATION / OWNERSHIP: Shared CompanyOperatingDocumentViewer; existing api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-14
+ * CHANGELOG: v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION
+ *           admits EOS's exact Founder project-link action token; the
+ *           project relationship itself remains a separate source API.
  * CHANGELOG: v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT
  *           recognizes strict Strategy-only Founder author/submit/ratify
  *           actions and the exact server-owned self-ratification reference.
  *           All commands still require authenticated EOS readback.
- * CHANGELOG: 2026-11-14 v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT adds a scoped
+ * CHANGELOG: 2026-11-14 v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION adds a scoped
  *           Founder-session evidence adapter through the existing authenticated
  *           api.js instance; no raw fetch, credential store or admission bypass.
  *           v1.0.0-SCOPED-COMPANY-DOCUMENT-TRANSPORT adds exact scoped no-store
@@ -28,7 +31,7 @@ import api from './api.js';
 const CLASSES = new Set(['MISSION', 'STRATEGY']);
 const STATES = new Set(['DRAFT', 'SUBMITTED', 'PUBLISHED']);
 const ACTIONS = new Set(['READ_HISTORY', 'REVIEW_DRAFTS', 'CREATE_DRAFT', 'SUBMIT', 'PUBLISH',
-  'FOUNDER_CREATE_DRAFT', 'FOUNDER_SUBMIT', 'FOUNDER_RATIFY']);
+  'FOUNDER_CREATE_DRAFT', 'FOUNDER_SUBMIT', 'FOUNDER_RATIFY', 'FOUNDER_LINK_PROJECT']);
 const FOUNDER_RATIFICATION_REFERENCE = 'WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123';
 const fingerprint = value => typeof value === 'string' && /^[a-f0-9]{128}$/.test(value);
 const validInstant = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -166,7 +169,7 @@ export async function commandCompanyDocument(classification, scope, action, payl
 }
 
 // ARTIFACT: companyOperatingDocumentsClient.js
-// VERSION: v1.2.0-FOUNDER-STRATEGY-RATIFICATION-TRANSPORT
+// VERSION: v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION
 // AUTHORITY BOUNDARY: Validated transport only; EOS owns approval/publication.
 // TENANT POSTURE: Exact requested tenant/principal; no persisted content cache.
 // FAIL-CLOSED POSTURE: Draft/publication/scope mismatch never renders as official.
