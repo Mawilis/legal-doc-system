@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.63.0-WORK-LIST-FIRST-LAYOUT
+ * VERSION: v1.64.0-CONTEXTUAL-ACTIVITY-REVIEWER-UX
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
+ * CHANGELOG: v1.64.0-CONTEXTUAL-ACTIVITY-REVIEWER-UX
+ *          bounds the task workspace to its content instead of
+ *          stretching empty activity to viewport height; avoids duplicate
+ *          close actions and passes the separately source-verified
+ *          participant authority to approvals for reviewer discovery.
  * CHANGELOG: v1.63.0-WORK-LIST-FIRST-LAYOUT puts the source-
  *          verified work grid immediately after the compact filters
  *          and context strip, moving lifecycle and checklist into one
@@ -1276,7 +1281,7 @@ export default function ProjectTasksPanel({
           key={[scope, focusedAction.id].join(':')}
           tenantId={tenantId} projectId={projectId} principalId={principalId}
           taskId={focusedAction.id} participants={participants} tenantHeaders={tenantHeaders}
-          onClose={closeFocusedAction}
+          onClose={closeFocusedAction} showClose={false}
           onViewApprovals={() => { setDiscussionTaskId(null); setApprovalTaskId(focusedAction.id); }}
           onViewAttachments={() => { setDiscussionTaskId(null); setAttachmentTaskId(focusedAction.id); }}/>}
         {focusedAction.type === 'approvals' && <ProjectTaskApprovalsPanel
@@ -1399,7 +1404,7 @@ export default function ProjectTasksPanel({
           onClick={closeFocusedAction}/>
         <div ref={focusedPanelRef} role="dialog" aria-modal="true"
           aria-label={'Task workspace: ' + selectedActionTask.title}
-          className="fixed inset-x-3 bottom-3 top-[5.75rem] z-[89] mx-auto max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:bottom-6 sm:p-6">
+          className="fixed right-3 top-[5.75rem] z-[89] max-h-[calc(100dvh-7rem)] w-[calc(100%-1.5rem)] max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:right-6 sm:p-5">
       <div className="mb-2 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={closeFocusedAction}>← Work</button>
@@ -1437,7 +1442,11 @@ export default function ProjectTasksPanel({
       {focusedAction.type === 'approvals' && <ProjectTaskApprovalsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
         taskId={focusedAction.id} participants={participants} tenantHeaders={tenantHeaders}
-        onClose={closeFocusedAction}/>}
+        participantAuthorityState={projectContributorStatus} participantHasMore={participantHasMore}
+        showClose={false} onManageContributors={() => {
+          closeFocusedAction();
+          onOpenProjectPeople?.();
+        }} onClose={closeFocusedAction}/>}
       {focusedAction.type === 'attachments' && <ProjectTaskAttachmentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
         taskId={focusedAction.id} participantMode={selfIsContributor} ownerReadMode tenantHeaders={tenantHeaders}
@@ -2264,7 +2273,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.63.0-WORK-LIST-FIRST-LAYOUT
+// VERSION: v1.64.0-CONTEXTUAL-ACTIVITY-REVIEWER-UX
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
