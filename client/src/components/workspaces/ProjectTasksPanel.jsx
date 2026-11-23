@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION
+ * VERSION: v1.42.0-EXECUTION-FIRST-TASK-DRAWER
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
- * CHANGELOG: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION mounts
+ * CHANGELOG: v1.42.0-EXECUTION-FIRST-TASK-DRAWER reorganizes the existing\n *          verified detail drawer around always-visible, capability-gated\n *          execution actions, overdue dates, source context and dependencies;\n *          existing EOS commands and authority remain unchanged.\n * CHANGELOG: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION mounts
  *          the independently authorized source classification command
  *          directly inside selected task details with fresh EOS audit readback,
  *          no inferred purpose, task mutation or simulated IAM.
@@ -1418,66 +1418,94 @@ export default function ProjectTasksPanel({
               onClick={() => setAttachmentTaskId(completingItem.task_id)}>Review attachments</button>
           </div>
         </div>}
-      {drawerTask && <div className="fixed inset-0 z-[85] bg-slate-950/35"
+      {drawerTask && <div className="fixed inset-0 z-[85] bg-slate-950/55"
         onClick={event => { if (event.target === event.currentTarget) closeDrawer(); }}>
         <aside role="dialog" aria-modal="true"
           aria-label={'Work details: ' + drawerTask.title} ref={drawerRef}
-          className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col overflow-auto border-l border-slate-200 bg-white p-5 shadow-2xl md:p-6">
-          <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
-            <p className="text-xs font-semibold text-slate-600">
-              {drawerTask.kind === 'MILESTONE' ? 'Milestone'
-                : drawerTask.parent_task_id ? 'Subtask' : 'Task'}
-            </p>
-            <button type="button" onClick={closeDrawer}
-              className="wp-button" aria-label="Close work details">Close</button>
-          </div>
-          <h3 className="text-xl font-bold text-slate-950">{drawerTask.title}</h3>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-800">
-            <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold">{label(drawerTask.status)}</span>
-            <span>{drawerTask.due_date ? 'Due ' + drawerTask.due_date : 'No due date'}</span>
-            {drawerTask.assignee_principal_id
-              ? <span>{contributorName(drawerTask.assignee_principal_id)}</span>
-              : <span>Not assigned</span>}
-          </div>
-          <section className="mt-6 border-t border-slate-200 pt-4">
-            <h4 className="text-sm font-bold text-slate-900">Description</h4>
-            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
-              {drawerTask.description || 'No description recorded'}
-            </p>
-          </section>
-          <ProjectWorkPurposePanel
-            key={[scope, drawerTask.task_id, drawerTask.revision].join(':')}
-            task={drawerTask} projectId={projectId}
-            tenantId={tenantId} principalId={principalId}
-            tenantHeaders={tenantHeaders} canClassify={Boolean(actionCapabilities?.canEdit)}/>
-          <section className="mt-5 border-t border-slate-200 pt-4">
-            <h4 className="text-sm font-bold text-slate-900">Dependencies</h4>
-            {drawerTask.depends_on.length === 0
-              ? <p className="mt-2 text-sm text-slate-600">No predecessors</p>
-              : <ul className="mt-2 space-y-2">
-                {drawerTask.depends_on.map(id => {
-                  const predecessor = items.find(value => value.task_id === id);
-                  return <li key={id} className="text-sm text-slate-800">
-                    {predecessor ? predecessor.title + ' · ' + label(predecessor.status)
-                      : 'Predecessor outside the current verified page'}
-                  </li>;
-                })}
-              </ul>}
-          </section>
-          <div className="mt-auto flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-            {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
-              <button type="button" className="wp-button" onClick={() => {
-                const item = drawerTask; closeDrawer(); openTaskEditor(item);
-              }}>Edit / assign</button>}
-            <button type="button" className="wp-button" onClick={() => {
-              const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id);
-            }}>Activity &amp; discussion</button>
-            <button type="button" className="wp-button" onClick={() => {
-              const item = drawerTask; closeDrawer(); setAttachmentTaskId(item.task_id);
-            }}>Attachments</button>
-            <button type="button" className="wp-button" onClick={() => {
-              const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id);
-            }}>Approvals</button>
+          className="absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-slate-200 bg-white shadow-2xl">
+          <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
+                {drawerTask.kind === 'MILESTONE' ? 'Milestone'
+                  : drawerTask.parent_task_id ? 'Subtask' : 'Task'} · Project work
+              </p>
+              <button type="button" onClick={closeDrawer}
+                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                aria-label="Close work details">Close</button>
+            </div>
+            <h3 className="mt-3 break-words text-2xl font-bold leading-tight text-slate-950">{drawerTask.title}</h3>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="rounded-md bg-slate-100 px-3 py-1.5 font-bold text-slate-900">
+                {label(drawerTask.status)}
+              </span>
+              {drawerTask.due_date && drawerTask.status !== 'DONE' && drawerTask.status !== 'CANCELLED'
+                && drawerTask.due_date < todayISO
+                ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 font-semibold text-rose-900">
+                  Overdue · {drawerTask.due_date}
+                </span>
+                : <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">
+                  {drawerTask.due_date ? 'Due ' + drawerTask.due_date : 'No due date'}
+                </span>}
+              <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">
+                {drawerTask.assignee_principal_id
+                  ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
+              </span>
+            </div>
+            <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Task execution actions">
+              {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
+                <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
+                  className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                  onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item); }}>
+                  Edit / assign
+                </button>}
+              <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
+                Activity
+              </button>
+              <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => { const item = drawerTask; closeDrawer(); setAttachmentTaskId(item.task_id); }}>
+                Attachments
+              </button>
+              <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => { const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id); }}>
+                Approvals
+              </button>
+            </nav>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
+            <section className="pt-5" aria-label="Task description">
+              <h4 className="text-sm font-bold text-slate-950">Description</h4>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
+                {drawerTask.description || 'No description recorded'}
+              </p>
+            </section>
+            <ProjectWorkPurposePanel
+              key={[scope, drawerTask.task_id, drawerTask.revision].join(':')}
+              task={drawerTask} projectId={projectId}
+              tenantId={tenantId} principalId={principalId}
+              tenantHeaders={tenantHeaders} canClassify={Boolean(actionCapabilities?.canEdit)}/>
+            <section className="mt-5 border-t border-slate-200 pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-slate-950">Dependencies</h4>
+                {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
+                  <button type="button" disabled={!actionCapabilities?.canEdit}
+                    className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                    onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item); }}>
+                    Manage dependencies
+                  </button>}
+              </div>
+              {drawerTask.depends_on.length === 0
+                ? <p className="mt-2 text-sm text-slate-700">No predecessors</p>
+                : <ul className="mt-2 space-y-2">
+                  {drawerTask.depends_on.map(id => {
+                    const predecessor = items.find(value => value.task_id === id);
+                    return <li key={id} className="rounded-lg bg-slate-50 p-3 text-sm text-slate-800">
+                      {predecessor ? predecessor.title + ' · ' + label(predecessor.status)
+                        : 'Predecessor outside the current verified page'}
+                    </li>;
+                  })}
+                </ul>}
+            </section>
           </div>
         </aside>
       </div>}
@@ -1499,7 +1527,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION
+// VERSION: v1.42.0-EXECUTION-FIRST-TASK-DRAWER
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
