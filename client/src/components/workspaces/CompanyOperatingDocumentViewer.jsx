@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.27.0-FOCUSED-STRATEGY-EXECUTION
+ * VERSION: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
+ *            tolerates test/browser layouts without native scrollIntoView.
  * CHANGELOG: v2.27.0-FOCUSED-STRATEGY-EXECUTION
  *            collapses redundant execution summaries during task inspection,
  *            focuses filtered work, and reduces the project list to the selected
@@ -1043,7 +1045,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   useEffect(() => {
     if (!executionInspectorOpen || !focusWorkOnOpen.current) return;
     focusWorkOnOpen.current = false;
-    executionInspectorRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    executionInspectorRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
     executionSearchRef.current?.focus({ preventScroll: true });
   }, [executionInspectorOpen, executionFilter, executionSearch]);
   const executionPageSize = 6;
@@ -2368,7 +2370,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.27.0-FOCUSED-STRATEGY-EXECUTION
+// VERSION: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
