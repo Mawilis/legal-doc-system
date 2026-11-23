@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.44.0-BOUNDED-WORK-QUEUE-PAGING
+ * VERSION: v1.45.0-SOURCE-VERIFIED-TASK-FOCUS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.45.0-SOURCE-VERIFIED-TASK-FOCUS
+ *          opens an exact task passed from Strategy only when it appears in
+ *          the independently authorized project work readback. An outage
+ *          never fabricates the task or bypasses permissions. This remains
+ *          an existing task drawer, not a new editing authority.
  * CHANGELOG: v1.44.0-BOUNDED-WORK-QUEUE-PAGING introduces
  *          ten-row default client paging inside each independently verified
  *          50-record EOS batch, with 10/20/50 page sizes and bidirectional
@@ -323,9 +328,10 @@ function validParticipants(data, tenantId, principalId, projectId) {
 /** @description Display one exact-project task/participant workflow, never local truth. */
 export default function ProjectTasksPanel({
   projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
-  onFocusedTaskChange = null, onOpenProjectPeople = null,
+  onFocusedTaskChange = null, onOpenProjectPeople = null, focusTaskId = null,
 }) {
   const [items, setItems] = useState([]);
+  const handledExternalTaskFocus = useRef(null);
   const [participants, setParticipants] = useState([]);
   const [participantHasMore, setParticipantHasMore] = useState(false);
   const [tenantMemberCandidates, setTenantMemberCandidates] = useState([]);
@@ -555,6 +561,23 @@ export default function ProjectTasksPanel({
     void load(0);
     return () => { generation.current += 1; };
   }, [scope, load]);
+
+  useEffect(() => {
+    // A verified Strategy locator may select existing work only after the
+    // exact-project, exact-tenant and principal work page passes validation.
+    if (discussionOnly || state !== 'READY' || !TASK_ID.test(focusTaskId || '')) return;
+    const token = scope + ':' + focusTaskId;
+    if (handledExternalTaskFocus.current === token) return;
+    const verified = items.find(item => item.task_id === focusTaskId);
+    if (!verified) return; // Never invent a task outside this current page.
+    handledExternalTaskFocus.current = token;
+    setWorkQuery('');
+    setWorkStatus('ALL');
+    setWorkKind('ALL');
+    setWorkGroup('NONE');
+    setWorkViewPage(0);
+    setDrawerTaskId(verified.task_id);
+  }, [discussionOnly, state, focusTaskId, items, scope]);
 
   const retainKey = fingerprint => {
     if (command.current.fingerprint !== fingerprint || !command.current.key) {
@@ -1616,7 +1639,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.44.0-BOUNDED-WORK-QUEUE-PAGING
+// VERSION: v1.45.0-SOURCE-VERIFIED-TASK-FOCUS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
