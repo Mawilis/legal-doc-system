@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.29.0-VERIFIED-PROJECT-READINESS
+ * VERSION: v1.29.1-DEPENDENCY-READINESS-FILTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.29.1-DEPENDENCY-READINESS-FILTER adds a
+ *            source-verified Projects waiting/ready filter without changing
+ *            other module visibility or task status semantics.
  * CHANGELOG: v1.29.0-VERIFIED-PROJECT-READINESS exposes
  *            source-verified predecessor readiness in queue and task detail,
  *            not fabricated project status or new completion authority.
@@ -372,6 +375,7 @@ export default function MyWorkWorkspace(props = {}) {
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [audienceFilter, setAudienceFilter] = useState('ALL');
+  const [dependencyFilter, setDependencyFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState('due');
   const [notes, setNotes] = useState({});
@@ -456,6 +460,7 @@ export default function MyWorkWorkspace(props = {}) {
     setSourceFilter('ALL');
     setStatusFilter('ALL');
     setAudienceFilter('ALL');
+    setDependencyFilter('ALL');
     setSearch('');
     pendingRef.current.clear();
   }, [scopeKey]);
@@ -558,6 +563,8 @@ export default function MyWorkWorkspace(props = {}) {
     const query = search.trim().toLocaleLowerCase();
     return items
       .filter((item) => audienceFilter === 'ALL' || sourceVerifiedAudience(item) === audienceFilter)
+      .filter((item) => dependencyFilter === 'ALL'
+        || (item.source === 'PROJECTS' && item.dependency_readiness === dependencyFilter))
       .filter((item) => sourceFilter === 'ALL' || item.source === sourceFilter)
       .filter((item) => statusFilter === 'ALL' || (statusFilter === 'OVERDUE' ? item.is_overdue : item.status === statusFilter))
       .filter((item) => !query || [item.title, item.description, item.source,
@@ -565,7 +572,7 @@ export default function MyWorkWorkspace(props = {}) {
         typeof value === 'string' && value.toLocaleLowerCase().includes(query)
       )))
       .sort((left, right) => compareItems(left, right, sortMode));
-  }, [items, search, sortMode, sourceFilter, statusFilter, audienceFilter]);
+  }, [items, search, sortMode, sourceFilter, statusFilter, audienceFilter, dependencyFilter]);
 
   useEffect(() => {
     // Exact current-session CRM source read; never a client authorization grant.
@@ -883,6 +890,16 @@ export default function MyWorkWorkspace(props = {}) {
                   <option value="UNCLASSIFIED">Needs classification ({audienceCounts.UNCLASSIFIED})</option>
                 </select>
               </label>
+              <label className="flex items-center gap-2 text-xs text-slate-300">
+                <span>Project readiness</span>
+                <select aria-label="Filter by verified project predecessor readiness"
+                  value={dependencyFilter} onChange={(event) => setDependencyFilter(event.target.value)}
+                  className="min-h-9 rounded-lg border border-white/20 bg-[#0b1421] px-3 text-sm text-white">
+                  <option value="ALL">All work</option>
+                  <option value="WAITING">Waiting on predecessors</option>
+                  <option value="READY">Predecessors ready</option>
+                </select>
+              </label>
               <label className="flex items-center gap-2 text-xs text-slate-400">
                 <span className="sr-only sm:not-sr-only">Sort</span>
                 <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}
@@ -975,7 +992,7 @@ export default function MyWorkWorkspace(props = {}) {
             ) : (
               <div className="px-4 py-8 text-center text-sm text-slate-400" role="status">
                 No work matches the current authorized work filters.
-                <button type="button" className="ml-2 text-slate-100 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); setAudienceFilter('ALL'); }}>Clear filters</button>
+                <button type="button" className="ml-2 text-slate-100 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); setAudienceFilter('ALL'); setDependencyFilter('ALL'); }}>Clear filters</button>
               </div>
             )}
           </section>
@@ -1692,7 +1709,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.29.0-VERIFIED-PROJECT-READINESS
+ * VERSION: v1.29.1-DEPENDENCY-READINESS-FILTER
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
