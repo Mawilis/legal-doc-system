@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.14.0-CRM-DIRECT-SAVED-DRAFT
+ * VERSION: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,6 +10,9 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX applies the
+ *          shared accessible task-row and contrast blueprint to the
+ *          authorized virtual inbox; source ownership and actions stay intact.
  * CHANGELOG: v3.14.0-CRM-DIRECT-SAVED-DRAFT adds an explicit
  *          Save Draft action for CRM source creation, with distinct
  *          same-intent idempotency keys and source-owned persisted status.
@@ -165,6 +168,7 @@
  *          keyboard navigation; unavailable source commands are never faked.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 import {
   AlertTriangle, ArrowRight, CheckCircle2, ChevronRight,
   CircleHelp, Clock3, ExternalLink, FilterX, RefreshCw, Search,
@@ -275,6 +279,13 @@ const SEVERITY = Object.freeze({
   HIGH: { label: 'High', chip: 'border-orange-400/65 bg-orange-500/15 text-orange-100', rail: 'border-orange-400', row: 'border-l-orange-400 bg-orange-500/[0.035]', dot: 'bg-orange-400' },
   NORMAL: { label: 'Normal', chip: 'border-sky-400/55 bg-sky-500/15 text-sky-100', rail: 'border-sky-400', row: 'border-l-sky-500', dot: 'bg-sky-400' },
   LOW: { label: 'Low', chip: 'border-slate-400/50 bg-slate-400/10 text-slate-200', rail: 'border-slate-400', row: 'border-l-slate-500', dot: 'bg-slate-400' },
+});
+const severityRowLabel = Object.freeze({
+  CRITICAL: 'border-rose-200 bg-rose-50 text-rose-800',
+  HIGH: 'border-orange-200 bg-orange-50 text-orange-800',
+  NORMAL: 'border-sky-200 bg-sky-50 text-sky-900',
+  LOW: 'border-slate-200 bg-slate-50 text-slate-700',
+  OVERDUE: 'border-red-200 bg-red-50 text-red-800',
 });
 const severityFor = (item) => item.isOverdue
   ? { label: 'Overdue', chip: 'border-red-400/70 bg-red-500/20 text-red-100', rail: 'border-red-400', row: 'border-l-red-500 bg-red-500/[0.06]', dot: 'bg-red-400' }
@@ -993,41 +1004,39 @@ export default function DailyAttentionWorkspace({
               <div ref={inboxRef} role="list" data-attention-inbox-window="true"
                 style={{height: page.length * ATTENTION_ROW_HEIGHT, position: 'relative'}}>
                 {visibleItems.map(({item, index}) => (
-                  <article key={item.id} role="listitem" data-attention-row
+                  <WorkTaskBlueprintRow key={item.id} data-attention-row selected={selectedId === item.id}
                     aria-setsize={page.length} aria-posinset={index + 1}
                     style={{position: 'absolute', top: index * ATTENTION_ROW_HEIGHT,
                       left: 0, right: 0, height: ATTENTION_ROW_HEIGHT}}
-                    className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-0.5 transition-colors ' +
-                      severityFor(item).row + (selectedId === item.id
-                        ? ' ring-1 ring-inset ring-amber-300/60' : ' hover:bg-white/[0.06]')}>
+                    className="box-border flex items-center gap-2 !rounded-none !border-b !border-slate-200 !px-3 !py-0.5">
                     {bulkSelectionMode && <input type="checkbox" aria-label={'Select ' + item.title}
                       checked={checkedSet.has(item.id)}
                       onChange={(event) => setCheckedIds((before) => event.target.checked
                         ? [...before.filter((id) => id !== item.id), item.id]
                         : before.filter((id) => id !== item.id))}
-                      className="h-4 w-4 shrink-0 accent-amber-300"/>}
-                    <span className="hidden w-14 shrink-0 rounded-md border border-white/10 bg-white/[0.035] px-1.5 py-1 text-center text-[10px] font-semibold text-slate-300 sm:block">
+                      className="h-4 w-4 shrink-0 accent-blue-700"/>}
+                    <span className="hidden w-14 shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-1 text-center text-[10px] font-semibold text-slate-700 sm:block">
                       {label(item.sourceModule)}
                     </span>
                     <span aria-label={'Severity ' + severityFor(item).label + '; priority ' + item.priority}
-                      className={'inline-flex w-[76px] shrink-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-[10px] font-bold ' + severityFor(item).chip}>
+                      className={'inline-flex w-[76px] shrink-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-[10px] font-bold ' + severityRowLabel[severityFor(item).label.toUpperCase()]}>
                       <span aria-hidden="true" className={'h-1.5 w-1.5 rounded-full ' + severityFor(item).dot}/>
                       {severityFor(item).label}
                     </span>
                     <button type="button" aria-label={'Inspect ' + item.title}
                       aria-pressed={selectedId === item.id}
                       onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
-                      className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                      <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
+                      className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+                      <span className="block truncate text-xs font-semibold text-slate-950">{item.title}</span>
                       <span className={'mt-0.5 block truncate text-[10px] leading-4 ' +
-                        (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}>
+                        (item.isOverdue ? 'text-rose-800' : 'text-slate-600')}>
                         <span>{label(item.sourceModule)} · {sourceStatus(item)}</span>{' · '}
                         <span>{item.summary || label(item.sourceModule)}</span>
                       </span>
                     </button>
                     <span className={'hidden w-[112px] shrink-0 truncate text-right text-[10px] ' +
                       (selected ? '2xl:block ' : 'sm:block ') +
-                      (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}
+                      (item.isOverdue ? 'text-rose-800' : 'text-slate-600')}
                       title={dueLabel(item.dueAt)}>
                       {dueLabel(item.dueAt)}
                     </span>
@@ -1036,17 +1045,17 @@ export default function DailyAttentionWorkspace({
                         aria-label={'Complete ' + item.title}
                         onClick={() => prepareCompletion(item, index)}
                         disabled={Boolean(completingId) || workUpdating}
-                        className="rounded-md bg-amber-300 px-2 py-1.5 text-[10px] font-bold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50">
+                        className={workTaskBlueprint.primary + ' !min-h-8 !px-2'}>
                         Complete
                       </button>}
                       <button type="button" aria-label={'Open details for ' + item.title}
                         aria-pressed={selectedId === item.id}
                         onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
-                        className="rounded-md border border-white/20 px-2 py-1.5 text-[10px] font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                        className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}>
                         Details
                       </button>
                     </div>
-                  </article>
+                  </WorkTaskBlueprintRow>
                 ))}
               </div>
             </section>
@@ -1232,7 +1241,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.14.0-CRM-DIRECT-SAVED-DRAFT
+// VERSION: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
