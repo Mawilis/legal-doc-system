@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.73.0-QUEUES-FIRST-OPTIONAL-VIEWS-CERT
+ * VERSION: v2.74.0-ASYNC-SOURCE-READY-CLIENT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -14,6 +14,10 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.74.0-ASYNC-SOURCE-READY-CLIENT-CERT
+ *          waits for the optional views to mount after project reads
+ *          and for contributor admission to become enabled only after
+ *          its independent participant/option sources verify.
  * CHANGELOG: v2.73.0-QUEUES-FIRST-OPTIONAL-VIEWS-CERT opens the deliberately
  *          deferred lifecycle/checklist disclosures before checking
  *          visible evidence. The verified work grid remains first.
@@ -1262,7 +1266,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       published.mockRestore();
     }
 
-    fireEvent.click(screen.getByText('Additional views · lifecycle and checklist'));
+    fireEvent.click(await screen.findByText('Additional views · lifecycle and checklist'));
     fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
     expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
     expect(screen.getByRole('button', { name: /Filter work to To do: 1 of 1 verified on page/ })).toBeVisible();
@@ -1367,7 +1371,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="source-checklist-readback-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
-    fireEvent.click(screen.getByText('Additional views · lifecycle and checklist'));
+    fireEvent.click(await screen.findByText('Additional views · lifecycle and checklist'));
     fireEvent.click(await screen.findByText(/Checklist mode · 0\/1 completed/));
     const checkbox = await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
@@ -1734,7 +1738,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(management).getByRole('button', { name: 'Close' })).toHaveFocus();
     const eligible = await within(management).findByRole('combobox', { name: 'Eligible participant' });
     expect(eligible).toHaveValue(memberId);
-    fireEvent.click(within(management).getByRole('button', { name: /Add participant/ }));
+    const addContributor = within(management).getByRole('button', { name: /Add participant/ });
+    await waitFor(() => expect(addContributor).toBeEnabled());
+    fireEvent.click(addContributor);
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(within(screen.getByRole('combobox', { name: 'Task assignee' }))
       .getByRole('option', { name: 'Alex Mokoena' })).toHaveValue(memberId));
     expect(screen.getByPlaceholderText('Deliverable and action')).toHaveValue('Preserved governance draft');
@@ -2794,7 +2801,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.73.0-QUEUES-FIRST-OPTIONAL-VIEWS-CERT
+ * VERSION: v2.74.0-ASYNC-SOURCE-READY-CLIENT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
