@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
+ * VERSION: v2.13.1-M04-APPROVAL-ID-CONTRACT
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.13.1-M04-APPROVAL-ID-CONTRACT
+ *            honors ProjectApprovalRegistry's canonical par- identifier.
  * CHANGELOG: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
  *            verifies DONE task activity together with independently
  *            current project approval and attachment pages, distinguishing
@@ -939,7 +941,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
         if (!verifyPage(approvalPage, 'WILSY-PROJECT-APPROVAL-LIST/V1', item =>
           item?.tenant_id === scope.tenantId
           && item.project_id === m04Execution.project.project_id && item.task_id === taskId
-          && /^pap-[a-f0-9]{48}$/.test(item.approval_id || '')
+          && /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
           && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status))
           || new Set(approvalPage.items.map(item => item.approval_id)).size !== approvalPage.items.length
           || !verifyPage(attachmentPage, 'WILSY-PROJECT-ATTACHMENT-LIST/V1', item =>
@@ -1986,7 +1988,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
+// VERSION: v2.13.1-M04-APPROVAL-ID-CONTRACT
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
