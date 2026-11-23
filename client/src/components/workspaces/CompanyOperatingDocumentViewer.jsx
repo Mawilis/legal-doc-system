@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.8.0-AUDITABLE-COMMAND-REJECTION
+ * VERSION: v2.8.1-FOCUSED-COMMAND-REJECTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,9 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.8.1-FOCUSED-COMMAND-REJECTION focuses
+ *            the visible, sanitized rejection immediately after a failed
+ *            command, even when the author was scrolled to the Save control.
  * CHANGELOG: v2.8.0-AUDITABLE-COMMAND-REJECTION separates
  *            rejected source writes from failed document reads, preserves
  *            unsaved author input, and displays whitelisted HTTP validation
@@ -474,6 +477,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
   const editorRef = useRef(null);
+  const commandIssueRef = useRef(null);
   const closeRef = useRef(null);
   const data = source?.scope === sessionKey && source?.classification === classification ? source.data : null;
   const currentHistory = history?.scope === sessionKey && history?.classification === classification ? history.data : null;
@@ -976,6 +980,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   }, []);
 
   useEffect(() => {
+    if (!commandIssue) return;
+    // A rejected Save may occur after scrolling through every Strategy section.
+    // Bring the bounded EOS operation evidence into view without clearing work.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    commandIssueRef.current?.focus({ preventScroll: true });
+  }, [commandIssue]);
+
+  useEffect(() => {
     if (!editorOpen) return;
     // The author workspace replaces the long source view. Always bring its
     // first control into the visible dialog viewport, including after a
@@ -1107,7 +1119,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
         <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
         <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
-          {commandIssue && <section className={styles.notice} role="alert"
+          {commandIssue && <section ref={commandIssueRef} tabIndex={-1} className={styles.notice} role="alert"
             aria-label="Company document command failure" data-document-state={commandIssue.kind}>
             <ShieldCheck size={22} aria-hidden="true"/>
             <h2>{commandIssue.title}</h2>
@@ -1607,7 +1619,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.8.0-AUDITABLE-COMMAND-REJECTION
+// VERSION: v2.8.1-FOCUSED-COMMAND-REJECTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
