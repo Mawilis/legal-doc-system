@@ -5,13 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.10.1-UNVERIFIED-READINESS-COMPATIBILITY
+ * VERSION: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
+ *            forwards selected Strategy task to the canonical project view
+ *            as a verified navigation hint; EOS retains all IAM checks.
  * CHANGELOG: v4.10.1-UNVERIFIED-READINESS-COMPATIBILITY
  *            keeps old EOS dependency projections explicitly unverified
  *            without inventing ready work or predecessor counts.
@@ -345,6 +348,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const operatingCapacity = authUser.businessRole || (authUser.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION' ? authUser.role : null);
   const [operatingDocumentClass, setOperatingDocumentClass] = useState(null);
   const [projectDeliveryFocus, setProjectDeliveryFocus] = useState(null);
+  const [projectTaskFocus, setProjectTaskFocus] = useState(null);
   const [attentionProjectFocus, setAttentionProjectFocus] = useState(null);
   useEffect(() => {
     const focusAuthorizedSearch = (event) => {
@@ -1029,7 +1033,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
               onRefresh={() => setRequisitionsRefresh((value) => value + 1)}
             />
           ) : section === 'projects' ? (
-            <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusAssignedProjectId={attentionProjectFocus}/>
+            <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}/>
           ) : section === 'onboarding' ? (
             <>
               <PageHeading eyebrow="People lifecycle" title="Employee onboarding" subtitle="Employment record, then separately governed identity and access admission."/>
@@ -1063,9 +1067,10 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
         </div>
       </div>
       {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={() => setOperatingDocumentClass(null)} onOpenWork={() => { setOperatingDocumentClass(null); openMyWork(); }}
-        onOpenProjects={() => { setProjectDeliveryFocus(null); setOperatingDocumentClass(null); navigateSection('projects'); }}
-        onOpenProject={(projectId) => {
+        onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects'); }}
+        onOpenProject={(projectId, focus = null) => {
           if (!/^prj-[0-9a-f]{48}$/.test(projectId)) return;
+          setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(focus?.taskId || '') ? focus.taskId : null);
           setProjectDeliveryFocus(projectId);
           setOperatingDocumentClass(null);
           navigateSection('projects');
@@ -1541,7 +1546,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.10.1-UNVERIFIED-READINESS-COMPATIBILITY
+ * VERSION: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
