@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.48.0-ASSIGNEE-FIRST-DELIVERY-COMMANDS
+ * VERSION: v1.49.0-FAST-VERIFIED-SAVE-READBACK
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.49.0-FAST-VERIFIED-SAVE-READBACK
+ *          releases completed task command UI after mandatory verified task
+ *          list readback, never after unverified mutation success, without
+ *          awaiting unrelated contributor/member/capability transport.
+ *          Separate contributor admission still waits for fresh proof.
  * CHANGELOG: v1.48.0-ASSIGNEE-FIRST-DELIVERY-COMMANDS
  *          makes contributor selection first, keeps date selection adjacent,
  *          labels the action by exact granted capability and replaces user-
@@ -451,7 +456,8 @@ export default function ProjectTasksPanel({
       setMemberDirectoryStatus('VERIFYING');
       setActionCapabilities(null);
       setState('READY');
-      const [participantResult, actionResult, optionResult] = await Promise.allSettled([
+      const settleSupportingAuthorities = async () => {
+        const [participantResult, actionResult, optionResult] = await Promise.allSettled([
         api.get(root + '/participants?limit=100&offset=0', { headers }),
         api.get(root + '/task-action-capabilities', { headers }),
         api.get(root + '/participant-options?limit=50&offset=0', { headers }),
@@ -512,8 +518,15 @@ export default function ProjectTasksPanel({
       });
       setParticipants(currentContributors);
       setParticipantHasMore(eligible?.has_more || false);
-      return !newlyAdmittedId
-        || currentContributors.some(item => item.principal_id === newlyAdmittedId);
+        return !newlyAdmittedId
+          || currentContributors.some(item => item.principal_id === newlyAdmittedId);
+      };
+      // An exact-project task CAS command is confirmed by the mandatory fresh
+      // task snapshot, not by optional contributor, directory or permission
+      // reads. Only contributor admission waits for separate participant proof.
+      if (newlyAdmittedId) return await settleSupportingAuthorities();
+      void settleSupportingAuthorities();
+      return true;
     } catch (cause) {
       if (request !== generation.current || currentScope.current !== active) return false;
       setItems([]);
@@ -1697,7 +1710,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.48.0-ASSIGNEE-FIRST-DELIVERY-COMMANDS
+// VERSION: v1.49.0-FAST-VERIFIED-SAVE-READBACK
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
