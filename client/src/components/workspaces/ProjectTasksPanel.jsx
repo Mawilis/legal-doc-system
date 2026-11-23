@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.43.0-SOURCE-OWNED-DEPENDENT-TASK-HANDOFF
+ * VERSION: v1.44.0-BOUNDED-WORK-QUEUE-PAGING
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.44.0-BOUNDED-WORK-QUEUE-PAGING introduces
+ *          ten-row default client paging inside each independently verified
+ *          50-record EOS batch, with 10/20/50 page sizes and bidirectional
+ *          controls. Search, sort and selection remain exact-batch only.
  * CHANGELOG: v1.43.0-SOURCE-OWNED-DEPENDENT-TASK-HANDOFF replaces
  *          misleading existing-predecessor editing with the canonical
  *          audited task-creation flow preselected with one verified predecessor.
@@ -344,6 +348,8 @@ export default function ProjectTasksPanel({
   const [workKind, setWorkKind] = useState('ALL');
   const [workGroup, setWorkGroup] = useState('NONE');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
+  const [workViewSize, setWorkViewSize] = useState(10);
+  const [workViewPage, setWorkViewPage] = useState(0);
   const [showContributorManagement, setShowContributorManagement] = useState(false);
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
@@ -706,6 +712,15 @@ export default function ProjectTasksPanel({
     });
     return result;
   }, [items, workQuery, workMineOnly, principalId, workStatus, workKind, workOrder]);
+  // Presentation-only paging. Never fabricate EOS totals or silently search
+  // records outside the currently authenticated, verified 50-item batch.
+  const workViewCount = Math.max(1, Math.ceil(workRows.length / workViewSize));
+  const workViewIndex = Math.min(workViewPage, workViewCount - 1);
+  const workViewStart = workViewIndex * workViewSize;
+  const visibleWorkRows = workRows.slice(workViewStart, workViewStart + workViewSize);
+  useEffect(() => { setWorkViewPage(0); }, [
+    offset, workQuery, workMineOnly, workStatus, workKind, workOrder, workViewSize,
+  ]);
   const currentDay = new Date();
   const todayISO = currentDay.getFullYear() + '-' + String(currentDay.getMonth() + 1).padStart(2, '0')
     + '-' + String(currentDay.getDate()).padStart(2, '0');
@@ -729,9 +744,9 @@ export default function ProjectTasksPanel({
     return names.length ? names.join(' ') : 'Assigned contributor · name unavailable';
   };
   const groupedWorkRows = useMemo(() => {
-    if (workGroup === 'NONE') return [{ key: 'all', title: null, rows: workRows }];
+    if (workGroup === 'NONE') return [{ key: 'all', title: null, rows: visibleWorkRows }];
     const grouped = new Map();
-    workRows.forEach(item => {
+    visibleWorkRows.forEach(item => {
       const key = workGroup === 'STATUS' ? item.status
         : workGroup === 'TYPE' ? (item.kind === 'MILESTONE' ? 'MILESTONE'
           : item.parent_task_id ? 'SUBTASK' : 'TASK')
@@ -744,7 +759,41 @@ export default function ProjectTasksPanel({
       grouped.get(key).rows.push(item);
     });
     return [...grouped.values()].sort((a, b) => a.title.localeCompare(b.title));
-  }, [workRows, workGroup, participants]);
+  }, [visibleWorkRows, workGroup, participants]);
+
+  const workPager = <nav aria-label="Verified project work view pages"
+    className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+    <div className="flex flex-wrap items-center gap-2">
+      <label className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+        Rows per view
+        <select aria-label="Project work rows per view" value={workViewSize}
+          onChange={event => setWorkViewSize(Number(event.target.value))}
+          className="min-h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-900">
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
+        </select>
+      </label>
+      <span role="status" className="text-xs text-slate-700">
+        {workRows.length === 0 ? 'No matching work in this EOS batch'
+          : (workViewStart + 1) + '–' + (workViewStart + visibleWorkRows.length)
+            + ' of ' + workRows.length + ' matching in verified batch'}
+        {' · '}View {workViewIndex + 1} of {workViewCount}
+      </span>
+    </div>
+    <div className="flex items-center gap-2">
+      <button type="button" className="wp-button min-h-10"
+        disabled={busy || state !== 'READY' || workViewIndex === 0}
+        onClick={() => setWorkViewPage(page => Math.max(0, page - 1))}>
+        Previous view
+      </button>
+      <button type="button" className="wp-button min-h-10"
+        disabled={busy || state !== 'READY' || workViewIndex >= workViewCount - 1}
+        onClick={() => setWorkViewPage(page => Math.min(workViewCount - 1, page + 1))}>
+        Next view
+      </button>
+    </div>
+  </nav>;
 
   const openTaskEditor = (selected, assignOnly = false) => {
     if (!(assignOnly ? actionCapabilities?.canAssign : actionCapabilities?.canEdit)) return;
@@ -1089,7 +1138,7 @@ export default function ProjectTasksPanel({
       </p>}
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
-          Work filters, grouping and sorting · {workRows.length} shown on this verified page
+          Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
         </summary>
         <div className="flex flex-wrap items-end gap-3 border-t border-slate-200 p-3">
         <label className="flex min-w-[145px] flex-col gap-1 text-xs font-semibold text-slate-800">
@@ -1145,7 +1194,7 @@ export default function ProjectTasksPanel({
             <option value="TITLE_ASC">Title A–Z</option>
           </select>
         </label>
-        <span role="status" className="w-full text-xs text-slate-600">{workRows.length} shown / {items.length} verified on page {Math.floor(offset / 50) + 1}. Search and sorting apply only to this page.</span>
+        <span role="status" className="w-full text-xs text-slate-600">{workRows.length} matching / {items.length} verified in EOS batch {Math.floor(offset / 50) + 1}. Search and sorting apply only to this batch.</span>
         </div>
       </details>
       {creating && <form ref={createFormRef} onSubmit={create} className="mt-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
@@ -1369,17 +1418,18 @@ export default function ProjectTasksPanel({
         </form>
         </div>
       </div>}
-      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
+      {workPager}
+      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Verified project tasks" tabIndex={0}>
         <table role="grid" aria-label="Project work grid" data-density={workDensity}
           className="w-full min-w-[580px] border-collapse text-left text-sm">
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
             <tr><th scope="col" className="w-10 p-2">
               <input type="checkbox" aria-label="Select all visible work"
-                checked={workRows.length > 0 && workRows.every(item => selectedWorkIds.includes(item.task_id))}
-                disabled={workRows.length === 0}
+                checked={visibleWorkRows.length > 0 && visibleWorkRows.every(item => selectedWorkIds.includes(item.task_id))}
+                disabled={visibleWorkRows.length === 0}
                 onChange={event => setSelectedWorkIds(previous => event.target.checked
-                  ? [...new Set([...previous, ...workRows.map(item => item.task_id)])]
-                  : previous.filter(id => !workRows.some(item => item.task_id === id)))}/>
+                  ? [...new Set([...previous, ...visibleWorkRows.map(item => item.task_id)])]
+                  : previous.filter(id => !visibleWorkRows.some(item => item.task_id === id)))}/>
             </th><th scope="col" className="p-3">Work item</th><th scope="col" className="p-3">Status</th>
               <th scope="col" className="p-3">Assignee</th><th scope="col" className="p-3">Due</th>
               <th scope="col" className="p-3">Next action</th></tr>
@@ -1414,15 +1464,14 @@ export default function ProjectTasksPanel({
               capabilities={actionCapabilities || { canStart: false, canComplete: false,
                 canBlock: false, canCancel: false, canEdit: false, canAssign: false }}/>)}
             </React.Fragment>)}
-            {workRows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-sm text-slate-600">
+            {visibleWorkRows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-sm text-slate-600">
               {items.length === 0 ? 'EOS verified no tasks on this page. Create work to begin execution.'
                 : 'No work items on this verified page match the selected search and filters.'}
             </td></tr>}
           </tbody>
         </table>
       </div>
-
-
+      {workPager}
 
         {completingItem && <div role="dialog" aria-modal="true" aria-label="Confirm verified task completion"
           className="fixed inset-x-4 top-1/4 z-[110] mx-auto max-w-xl rounded-xl border border-blue-300 bg-white p-5 shadow-2xl">
@@ -1549,12 +1598,12 @@ export default function ProjectTasksPanel({
           </div>
         </aside>
       </div>}
-      {(hasMore || offset > 0) && <nav className="mt-3 flex items-center justify-between gap-2" aria-label="Task pages">
+      {(hasMore || offset > 0) && <nav className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3" aria-label="EOS task batches">
         <button type="button" className="wp-button" disabled={busy || offset === 0}
-          onClick={() => void load(Math.max(0, offset - 50))}>Previous work</button>
-        <span className="text-xs text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
+          onClick={() => void load(Math.max(0, offset - 50))}>Previous EOS batch</button>
+        <span className="text-xs text-slate-600">Verified EOS batch {Math.floor(offset / 50) + 1} · up to 50 source records per batch</span>
         <button type="button" className="wp-button" disabled={busy || !hasMore}
-          onClick={() => void load(offset + 50)}>Next work</button>
+          onClick={() => void load(offset + 50)}>Next EOS batch</button>
       </nav>}
     </>)}
     {state === 'READY' && error && <div role="alert"
@@ -1567,7 +1616,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.43.0-SOURCE-OWNED-DEPENDENT-TASK-HANDOFF
+// VERSION: v1.44.0-BOUNDED-WORK-QUEUE-PAGING
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
