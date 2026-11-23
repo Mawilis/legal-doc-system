@@ -505,10 +505,21 @@ def company_document_history(
 ) -> dict[str, Any]:
     """Read permitted revision metadata; draft content/counts stay private."""
     response.headers["Cache-Control"] = "no-store"
-    if review and not (_same_actor(author, context) or _same_actor(publisher, context)):
-        raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
+    may_review = _same_actor(author, context) or _same_actor(publisher, context)
     now = datetime.now(timezone.utc)
     def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        founder = False
+        if review and classification is CompanyDocumentClass.STRATEGY:
+            try:
+                founder = read_founder_designation(
+                    principal_id=context.identity.identity_id,
+                    tenant_id=context.tenant_id, database=kernel_db.get_database(),
+                    session=session,
+                ) is not None
+            except FounderDesignationRejected as error:
+                raise _error("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
+        if review and not (may_review or founder):
+            raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
         history = registry.history(context.tenant_id, classification, session=session)
         visible = [item for item in history if review or (item.state is CompanyDocumentState.PUBLISHED
                    and item.effective_from is not None and item.effective_from <= instant(now))]
