@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.20.1-ON-DEMAND-REGISTERS-CERT
+ * VERSION: v1.21.0-EXECUTION-FIRST-PUBLICATION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.21.0-EXECUTION-FIRST-PUBLICATION-CERT
+ *            confirms published Strategy starts in execution, switches to
+ *            the exact source-backed full publication on explicit request,
+ *            and returns without issuing commands or duplicating records.
  * CHANGELOG: v1.20.1-ON-DEMAND-REGISTERS-CERT
  *            opens explicitly collapsed task and implementation registers
  *            before asserting visible records; verifies closed-by-default UX.
@@ -226,6 +230,26 @@ describe('governed company document experience', () => {
     expect(screen.getByText('synthetic-publisher')).toBeVisible();
     expect(screen.getByText('SYNTHETIC-APPROVAL')).toBeVisible();
     expect(screen.getByText('Synthetic source content only.')).toBeVisible();
+  });
+  it('opens published Strategy in governed execution and reveals the exact document only on demand', async () => {
+    api.get.mockImplementation(url => url === '/company-operating-documents/STRATEGY'
+      ? Promise.resolve({ data: view(record('STRATEGY')) })
+      : Promise.reject(new Error('UNEXPECTED_ROUTE')));
+    render(wrap({ classification: 'STRATEGY' }));
+    const mode = await screen.findByRole('navigation', { name: 'Strategy workspace mode' });
+    expect(mode).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Execution workspace' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: 'Business execution' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Synthetic approved strategy' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'View full document' }));
+    expect(screen.getByRole('button', { name: 'View full document' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: 'Synthetic approved strategy' })).toBeVisible();
+    expect(screen.getByText('Synthetic source content only.')).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Business execution' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Execution workspace' }));
+    expect(screen.getByRole('heading', { name: 'Business execution' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Synthetic approved strategy' })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
   it('shows denied source and permits an explicit retry without fabricated content', async () => {
     api.get.mockRejectedValue({ response: { status: 403 } }); render(wrap());
@@ -1146,7 +1170,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.20.1-ON-DEMAND-REGISTERS-CERT
+// VERSION: v1.21.0-EXECUTION-FIRST-PUBLICATION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
