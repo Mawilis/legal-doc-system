@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.51.0-ACTIONABLE-SELECTION-REVIEW
+ * VERSION: v1.51.1-SELECTION-JSX-BOUNDARY
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.51.1-SELECTION-JSX-BOUNDARY closes the conditional
+ *          selected-work toolbar JSX expression before subsequent queue
+ *          controls, restoring valid render structure without changing
+ *          EOS permissions, actions, task state, or source readback.
  * CHANGELOG: v1.51.0-ACTIONABLE-SELECTION-REVIEW adds a
  *          source-backed sequence for reviewing selected tasks and a single
  *          task assign/schedule command entry. Batch lifecycle commands
@@ -1248,7 +1252,7 @@ export default function ProjectTasksPanel({
         {selectedReviewTasks.length > 1 && <span className="w-full text-xs text-slate-600">
           Review in sequence. Each change requires its own EOS authorization and verified readback; bulk commands are unavailable.
         </span>}
-      </div>
+      </div>}
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
@@ -1779,7 +1783,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.51.0-ACTIONABLE-SELECTION-REVIEW
+// VERSION: v1.51.1-SELECTION-JSX-BOUNDARY
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
