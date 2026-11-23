@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD
+ * VERSION: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF accepts
+ *          only source-verified parent participant snapshots (including
+ *          limited-page disclosure), independently reprobes when missing.
+ *          Reuses EOS-only contribution instead of multiplying reads.
  * CHANGELOG: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD avoids
  *          shadowing the scope-ref while validating independently
  *          refreshed contributor responses against the active task.
@@ -97,6 +101,7 @@ function verifiedAttachment(item, tenantId, projectId, taskId) {
 export default function ProjectTaskApprovalsPanel({
   tenantId, projectId, principalId, taskId, participants = [],
   tenantHeaders, participantMode = false, onClose, showClose = true, onManageContributors = null,
+  participantAuthorityState = 'UNVERIFIED', participantHasMore = false,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
@@ -351,11 +356,19 @@ export default function ProjectTaskApprovalsPanel({
     }
   }, [scope, projectId, tenantId, principalId, tenantHeaders]);
   useEffect(() => {
+    setReviewer('');
+    if (participantAuthorityState === 'VERIFIED') {
+      setVerifiedReviewers(participants.filter(person =>
+        person?.state === 'ACTIVE' && person.role === 'CONTRIBUTOR'
+          && person.principal_id !== principalId));
+      setReviewerSource(participantHasMore ? 'PARTIAL' : 'READY');
+      setReviewerSourceError('');
+      return;
+    }
     setVerifiedReviewers([]);
     setReviewerSource('VERIFYING');
-    setReviewer('');
-    void refreshReviewers();
-  }, [scope, refreshReviewers]);
+    if (participantAuthorityState !== 'VERIFYING') void refreshReviewers();
+  }, [scope, refreshReviewers, participantAuthorityState, participantHasMore, participants, principalId]);
   const options = verifiedReviewers;
   const reviewerName = person => {
     const name = [person.first_name, person.last_name].filter(value =>
@@ -516,7 +529,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD
+// VERSION: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies
