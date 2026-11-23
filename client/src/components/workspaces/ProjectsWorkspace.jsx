@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.41.0-STRATEGY-TASK-FOCUS-PROPAGATION
+ * VERSION: v2.42.0-COMPACT-PROJECT-WORKSPACE-CHROME
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.42.0-COMPACT-PROJECT-WORKSPACE-CHROME
+ *            gives task work priority over project header furniture:
+ *            breadcrumb, project title and source status share a compact
+ *            wrapped row; project views are one horizontally scrollable
+ *            navigation strip. All existing routes and authorities remain.
  * CHANGELOG: v2.41.0-STRATEGY-TASK-FOCUS-PROPAGATION
  *            forwards exact task identity only after authorized project
  *            detail, retaining source-owned task and IAM verification.
@@ -1831,15 +1836,15 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
         {selectedId && mode !== 'CREATE' && <section aria-label="Project detail" aria-busy={detailState === 'LOADING'}
           className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
           style={{ width: '100%', height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
-          <div className="wp-detail-top mb-2 flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
+          <div className="wp-detail-top mb-1 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
               <button type="button" onClick={closeDetail}
-                className="wp-button mb-2" aria-label="Back to projects table">
+                className="wp-button !min-h-9 !px-3 !text-xs" aria-label="Back to projects table">
                 <X size={15}/> Back to all projects
               </button>
               <p className="sr-only">Projects &amp; delivery / Current project</p>
-              <h2 className="wp-detail-title">{detail?.project?.name || 'Loading project…'}</h2>
-              {detail?.project && <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-700">
+              <h2 className="wp-detail-title !text-xl !leading-tight">{detail?.project?.name || 'Loading project…'}</h2>
+              {detail?.project && <div className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
                 <span className="wp-status" data-status={detail.project.status}>
                   {statusLabel(detail.project.status)}
                 </span>
@@ -1849,11 +1854,11 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               </div>}
             </div>
             <button type="button" onClick={() => void openProject(selectedId)}
-              disabled={detailState === 'LOADING'} className="wp-button">
+              disabled={detailState === 'LOADING'} className="wp-button !min-h-9 !px-3 !text-xs">
               <RefreshCw size={15}/> Refresh project
             </button>
           </div>
-          <nav className="mb-2 flex flex-wrap gap-1 border-b border-slate-200 pb-2"
+          <nav className="mb-1 flex min-w-0 gap-1 overflow-x-auto border-b border-slate-200 pb-1"
             aria-label="Project workspace views">
             {[
               ['work', 'Work & milestones'],
@@ -1867,7 +1872,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               <button key={value} type="button"
                 aria-current={projectView === value ? 'page' : undefined}
                 onClick={() => setProjectView(value)}
-                className="wp-button"
+                className="wp-button !min-h-9 !shrink-0 !px-3 !text-xs"
                 style={projectView === value
                   ? { background: '#e8f2ff', borderColor: '#2b67ad', color: '#163f76' }
                   : undefined}>
@@ -2014,7 +2019,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.41.0-STRATEGY-TASK-FOCUS-PROPAGATION
+// VERSION: v2.42.0-COMPACT-PROJECT-WORKSPACE-CHROME
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
