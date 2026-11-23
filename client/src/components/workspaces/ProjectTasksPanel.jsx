@@ -1422,7 +1422,7 @@ export default function ProjectTasksPanel({
         </div>
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
           <p className="text-sm font-bold text-blue-950">Delivery accountability</p>
-          <p className="mt-1 text-xs text-blue-900">Choose a responsible contributor${assignmentOnly ? '.' : ' and the completion date.'} Changes are saved only after verification.</p>
+          <p className="mt-1 text-xs text-blue-900">Choose a responsible contributor{assignmentOnly ? '.' : ' and the completion date.'} Changes are saved only after verification.</p>
         </div>
         <div className={assignmentOnly ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
           {!assignmentOnly && <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
@@ -1444,7 +1444,8 @@ export default function ProjectTasksPanel({
           </label>
         </div>
         {!assignmentOnly && <div className="space-y-3 border-t border-slate-200 pt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Additional task details</p><label className="block text-sm font-semibold text-slate-800">Work title
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Additional task details</p>
+          <label className="block text-sm font-semibold text-slate-800">Work title
           <input aria-label="Edit task title" required maxLength={180} value={editor.title}
             onChange={event => setEditor(value => ({ ...value, title: event.target.value }))}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm font-normal text-slate-900"/>
