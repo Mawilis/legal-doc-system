@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.28.1-PLAIN-TASK-DECISION-WORDING-CERT
+ * VERSION: v1.29.0-FOCUSED-STRATEGY-NAVIGATION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.29.0-FOCUSED-STRATEGY-NAVIGATION-CERT
+ *            verifies selection focuses the source-backed work navigator,
+ *            hides redundant summary and exposes recent-session shortcuts.
  * CHANGELOG: v1.28.1-PLAIN-TASK-DECISION-WORDING-CERT
  *            checks the new human-readable decision and file counts while
  *            keeping the independent source-evidence validation unchanged.
@@ -723,12 +726,16 @@ describe('Strategy source-owned project execution readback', () => {
     expect(inspectorSummary.closest('details')?.open).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Inspect unassigned work' }));
     expect(inspectorSummary.closest('details')?.open).toBe(true);
+    expect(screen.getByRole('searchbox', { name: 'Find work by title' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Show execution overview' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Inspect assigned in task source' })).not.toBeInTheDocument();
     expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('UNASSIGNED');
     expect(screen.getAllByText(/Needs attention: assign an eligible project contributor/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Manage MW-M01 — Operating taxonomy and strategy alignment in Projects/ }));
     expect(openCanonicalProject).toHaveBeenCalledWith(projectId, { taskId: work[0].task_id });
     expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
     fireEvent.click(screen.getByRole('button', { name: 'Inspect assigned in task source' }));
     expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('ASSIGNED');
@@ -753,6 +760,8 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
     fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'ALL' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
+    expect(screen.getByLabelText('Current session task shortcuts')).toBeVisible();
+    expect(screen.getByText('Recently inspected this session')).toBeVisible();
     expect(await screen.findByText(/1 recorded change/)).toBeVisible();
     const evidencePanel = screen.getByRole('status', { name: /Lifecycle evidence result for/ });
     expect(evidencePanel).toHaveAttribute('data-evidence-state', 'READY');
@@ -767,13 +776,14 @@ describe('Strategy source-owned project execution readback', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
     await waitFor(() => expect(screen.getByRole('region', {
       name: 'M04 governed Strategy execution',
-    })).toHaveTextContent('Done · task lifecycle only1'));
+    })).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
     expect(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/)
       .closest('details')?.open).toBe(true);
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(await screen.findByText(/2 recorded changes/)).toBeVisible();
     expect(screen.getByText(/Approvals: 1 approved/)).toBeVisible();
     expect(screen.getByText(/Files checked: 1/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
     expect(screen.getByRole('region', { name: 'M04 governed Strategy execution' }))
       .toHaveTextContent('Certified strategic outcome: Not established');
     expect(api.post).not.toHaveBeenCalled();
