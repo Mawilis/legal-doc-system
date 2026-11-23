@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.2.0-CONTRIBUTOR-EVIDENCE-COMPOSER-CERT
+ * VERSION: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT verifies lifecycle evidence
+ *          remains visible when exact EOS comments return HTTP 503;
+ *          comment publishing remains blocked until the source recovers.
  * CHANGELOG: v1.2.0-CONTRIBUTOR-EVIDENCE-COMPOSER-CERT confirms that task evidence upload is
  *          available only after verified active contributor participation
  *          and uses the independently authorised task evidence service.
@@ -127,6 +130,35 @@ it('offers contributor-only in-place evidence upload with no owner-route privile
   expect(api.post).not.toHaveBeenCalled();
 });
 
+it('keeps source-verified task lifecycle visible when comment EOS is unavailable', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') {
+      const failure = new Error('Comment transport unavailable');
+      failure.response = { status: 503 };
+      throw failure;
+    }
+    if (path === '/projects/' + projectId + '/tasks/' + taskId + '/events?limit=50&offset=0') {
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1',
+        tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+        task_id: taskId, limit: 50, offset: 0,
+        has_more: false, next_offset: null,
+        items: [{ schema: 'wilsy.project.task.event.v1', tenant_id: tenantId,
+          project_id: projectId, task_id: taskId, event_type: 'PROJECT_TASK_TRANSITIONED',
+          revision: 2, status_after: 'BLOCKED', actor_principal_id: principalId,
+          occurred_at: '2026-11-23T18:00:00+00:00' }],
+      } };
+    }
+    throw new Error('Optional activity source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Lifecycle transition')).toBeVisible();
+  expect(screen.getByRole('alert')).toHaveTextContent('HTTP 503');
+  expect(screen.getByRole('button', { name: 'Retry comments' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Write update' })).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 it('fails closed on a foreign tenant thread and prevents publishing', async () => {
   api.get.mockResolvedValue({ data: {
     schema: 'WILSY-PROJECT-COMMENT-LIST/V1',
@@ -136,13 +168,13 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
     has_more: false, next_offset: null,
   } });
   mount();
-  expect(await screen.findByRole('alert')).toHaveTextContent('could not be verified');
+  expect(await screen.findByRole('alert')).toHaveTextContent('did not satisfy the EOS scope');
   expect(screen.queryByRole('button', { name: 'Publish to EOS' })).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.2.0-CONTRIBUTOR-EVIDENCE-COMPOSER-CERT
+// VERSION: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
