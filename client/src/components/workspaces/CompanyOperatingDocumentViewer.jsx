@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.12.1-M04-EVIDENCE-CONTIGUITY
+ * VERSION: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
+ *            verifies DONE task activity together with independently
+ *            current project approval and attachment pages, distinguishing
+ *            source-audited status, business decisions and scanner clearance
+ *            from approved Strategy outcomes. Missing or paged source fails
+ *            closed, and no attachment byte/capability is exposed.
  * CHANGELOG: v2.12.1-M04-EVIDENCE-CONTIGUITY checks
  *            contiguous task revision-event chains, preventing an omitted
  *            middle lifecycle transition from being described as complete;
@@ -875,16 +881,27 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     executionEvidenceReadRef.current.controller = controller;
     setExecutionEvidence({ state: 'LOADING', taskId, items: [], error: '' });
     try {
-      const { data: page } = await api.get('/projects/'
-        + encodeURIComponent(m04Execution.project.project_id) + '/tasks/'
-        + encodeURIComponent(taskId) + '/events', {
+      const task = m04Execution.rows.find(row => row.task.task_id === taskId).task;
+      const baseUrl = '/projects/' + encodeURIComponent(m04Execution.project.project_id)
+        + '/tasks/' + encodeURIComponent(taskId);
+      const requestOptions = {
         params: { limit: 100, offset: 0 },
         headers: { 'X-Tenant-ID': scope.tenantId,
           Authorization: 'Bearer ' + auth.token },
         signal: controller.signal,
-      });
+      };
+      // DONE is a task lifecycle state, not independently approved work
+      // evidence. Read separate source registries without automatic approval.
+      const [eventReply, otherReplies] = await Promise.all([
+        api.get(baseUrl + '/events', requestOptions),
+        task.status === 'DONE'
+          ? Promise.all([
+            api.get(baseUrl + '/approvals', requestOptions),
+            api.get(baseUrl + '/attachments', requestOptions),
+          ]) : Promise.resolve(null),
+      ]);
       if (!active(key) || sequence !== executionEvidenceReadRef.current.sequence) return;
-      const task = m04Execution.rows.find(row => row.task.task_id === taskId).task;
+      const page = eventReply.data;
       const valid = page?.schema === 'WILSY-PROJECT-TASK-EVENT-LIST/V1'
         && page.tenant_id === scope.tenantId && page.principal_id === scope.principalId
         && page.project_id === m04Execution.project.project_id && page.task_id === taskId
@@ -907,7 +924,40 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
         || page.items[page.items.length - 1].revision !== 1) {
         throw new Error('M04_LIFECYCLE_EVIDENCE_UNVERIFIED');
       }
-      setExecutionEvidence({ state: 'READY', taskId, items: page.items, error: '' });
+      const verifyPage = (payload, schema, predicate) => payload?.schema === schema
+        && payload.tenant_id === scope.tenantId && payload.principal_id === scope.principalId
+        && payload.project_id === m04Execution.project.project_id && payload.task_id === taskId
+        && payload.offset === 0 && payload.limit === 100 && payload.has_more === false
+        && payload.next_offset === null && Array.isArray(payload.items)
+        && payload.items.length <= 100 && payload.items.every(predicate);
+      let decisions = null;
+      let attachments = null;
+      if (otherReplies) {
+        const [approvalReply, attachmentReply] = otherReplies;
+        const approvalPage = approvalReply.data;
+        const attachmentPage = attachmentReply.data;
+        if (!verifyPage(approvalPage, 'WILSY-PROJECT-APPROVAL-LIST/V1', item =>
+          item?.tenant_id === scope.tenantId
+          && item.project_id === m04Execution.project.project_id && item.task_id === taskId
+          && /^pap-[a-f0-9]{48}$/.test(item.approval_id || '')
+          && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status))
+          || new Set(approvalPage.items.map(item => item.approval_id)).size !== approvalPage.items.length
+          || !verifyPage(attachmentPage, 'WILSY-PROJECT-ATTACHMENT-LIST/V1', item =>
+            item?.tenant_id === scope.tenantId
+            && item.project_id === m04Execution.project.project_id && item.task_id === taskId
+            && /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
+            && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status))
+          || new Set(attachmentPage.items.map(item => item.attachment_id)).size !== attachmentPage.items.length) {
+          throw new Error('M04_TASK_EVIDENCE_SOURCE_UNVERIFIED');
+        }
+        decisions = { total: approvalPage.items.length,
+          approved: approvalPage.items.filter(item => item.status === 'APPROVED').length };
+        attachments = { total: attachmentPage.items.length,
+          cleared: attachmentPage.items.filter(item =>
+            item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length };
+      }
+      setExecutionEvidence({ state: 'READY', taskId, items: page.items,
+        decisions, attachments, error: '' });
     } catch (failure) {
       if (!active(key) || sequence !== executionEvidenceReadRef.current.sequence
         || failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
@@ -1715,8 +1765,16 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                       {' · '}{executionEvidence.items[0].status_after}
                                       {' · '}{executionEvidence.items[0].occurred_at}.
                                     </p>
-                                    <p className="text-xs text-slate-300">An audit event is operational evidence,
-                                      not an approved strategic outcome or financial authorization.</p>
+                                    {task.status === 'DONE' && executionEvidence.decisions
+                                      && executionEvidence.attachments && <p className="mt-1">
+                                        Business decisions: {executionEvidence.decisions.approved} approved
+                                        {' / '}{executionEvidence.decisions.total} recorded.
+                                        {' '}Attachments: {executionEvidence.attachments.cleared} scanner-cleared
+                                        {' / '}{executionEvidence.attachments.total} recorded.
+                                      </p>}
+                                    <p className="text-xs text-slate-300">Task lifecycle, independent business
+                                      decisions and attachment scanner-clearance are different EOS authorities.
+                                      None independently certifies strategic outcome attainment or payment.</p>
                                   </>}
                                   {['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state)
                                     && executionEvidence.error}
@@ -1928,7 +1986,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.12.1-M04-EVIDENCE-CONTIGUITY
+// VERSION: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
