@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.16.0-PUBLISHED-STRATEGY-RECOVERY-CERT
+ * VERSION: v1.17.0-M04-LIVE-WORK-GRAPH-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,11 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v1.17.0-M04-LIVE-WORK-GRAPH-CERT
+ *            certifies exact published Pillar 1 relationship/current project
+ *            and complete source task graph before exposing M04 accountability.
+ *            Authenticated event readback is strict, read-only and never
+ *            authorizes task changes or a strategic outcome score.
  * CHANGELOG: v1.16.0-PUBLISHED-STRATEGY-RECOVERY-CERT
  *            certifies immutable published-version 409 reconciliation from
  *            authorized history and exact fingerprint-matched readback,
@@ -483,6 +488,96 @@ describe('Strategy source-owned project execution readback', () => {
     items: [{ tenant_id: scope.tenantId, project_id: projectId, task_id: taskId,
       kind: 'MILESTONE', title: 'Complete operating taxonomy',
       status: 'TODO', due_date: null }] });
+  it('M04 admits only a current published Pillar 1 work graph and verifies existing task events', async () => {
+    const names = [
+      "MW-M01 — Operating taxonomy and strategy alignment",
+      "MW-M02 — Governed work graph and multi-source accountability",
+      "MW-M03 — Role-aware work execution and approval decisions",
+      "MW-M04 — Ranked Founder operating workspace",
+      "MW-M05 — Audited workflow automation and Intelligence Dock parity",
+      "MW-M06 — Production readiness and strategy outcome certification",
+      "MW-T01 — Inventory canonical My Work sources, capacities and IAM",
+      "MW-T02 — Define Operating, Platform Build and Unclassified work",
+      "MW-T03 — Implement audited source-owned work classification",
+      "MW-T04 — Derive source-authorized work identities and accountability",
+      "MW-T05 — Integrate independent project approvals in My Work",
+      "MW-T06 — Deliver Founder Operating, Platform and Waiting filters",
+      "MW-T07 — Certify role capacity packs and tenant isolation",
+      "MW-T08 — Implement explainable ranking and source diversity",
+      "MW-T09 — Wire source-owned task and decision commands",
+      "MW-T10 — Build governed event-driven workflow automation",
+      "MW-T11 — Align Intelligence Dock with the authorized work graph",
+      "MW-T12 — Certify production readiness and rollback",
+    ];
+    const work = names.map((title, i) => ({
+      tenant_id: scope.tenantId, project_id: projectId,
+      task_id: 'ptk-' + (i + 1).toString(16).padStart(48, '0'),
+      kind: i < 6 ? 'MILESTONE' : 'TASK', title, revision: 1,
+      status: 'TODO', fingerprint: 'c'.repeat(128),
+      assignee_principal_id: i === 7 ? 'synthetic-assignee' : null,
+      depends_on: i === 6 ? ['ptk-' + '1'.padStart(48, '0')] : [],
+      due_date: i === 7 ? '2020-01-01' : null,
+    }));
+    const published = { ...record('STRATEGY'), sections: [
+      { section_id: 'pillar-one', title: 'One Unified Operating System', body: 'Synthetic.' },
+    ] };
+    let currentLink = true;
+    const eventUrl = '/projects/' + projectId + '/tasks/' + work[0].task_id + '/events';
+    api.get.mockImplementation((url, options) => {
+      if (url === '/projects') return Promise.resolve({ data: projectList() });
+      if (url === '/projects/' + projectId + '/tasks') return Promise.resolve({ data: {
+        ...taskList(), items: work.map(item => ({ ...item })),
+      } });
+      if (url === '/company-operating-documents/STRATEGY/project-links')
+        return Promise.resolve({ data: {
+          schema: 'WILSY-STRATEGY-PROJECT-LINK-LIST/V1',
+          tenant_id: scope.tenantId, principal_id: scope.principalId,
+          classification: 'STRATEGY', strategy_revision: published.revision,
+          source_verified: true, strategy_progress: null,
+          items: [{ pillar_id: 'pillar-one', project_id: projectId,
+            project_name: project.name, project_status: 'ACTIVE',
+            source_project_revision: currentLink ? project.revision : project.revision - 1,
+            source_strategy_revision: published.revision,
+            state: currentLink ? 'VERIFIED_CURRENT' : 'SOURCE_CHANGED' }],
+        } });
+      if (url === eventUrl) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1',
+        tenant_id: scope.tenantId, principal_id: scope.principalId,
+        project_id: projectId, task_id: work[0].task_id,
+        limit: 100, offset: 0, has_more: false, next_offset: null,
+        items: [{ schema: 'wilsy.project.task.event.v1',
+          tenant_id: scope.tenantId, project_id: projectId, task_id: work[0].task_id,
+          revision: 1, event_type: 'PROJECT_TASK_CREATED', status_after: 'TODO',
+          actor_principal_id: scope.principalId, occurred_at: asOf }],
+      } });
+      if (url === '/company-operating-documents/STRATEGY')
+        return Promise.resolve({ data: view(published) });
+      return Promise.reject(new Error('UNEXPECTED_ROUTE'));
+    });
+    render(wrap({ classification: 'STRATEGY' }));
+    fireEvent.click(await screen.findByRole('button', {
+      name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
+    }));
+    const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
+    await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
+    expect(m04).toHaveTextContent('Unassigned work17');
+    expect(m04).toHaveTextContent('Assigned work1');
+    expect(m04).toHaveTextContent('Waiting on predecessors1');
+    expect(m04).toHaveTextContent('Past calendar due date1');
+    expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
+    expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Inspect accountable work and lifecycle evidence'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
+    expect(await screen.findByText(/Verified immutable EOS lifecycle events: 1/)).toBeVisible();
+    expect(api.get.mock.calls.some(([url, options]) => url === eventUrl
+      && options?.headers?.['X-Tenant-ID'] === scope.tenantId)).toBe(true);
+    currentLink = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
+    await waitFor(() => expect(m04).toHaveTextContent('M04 execution unavailable'));
+    expect(m04).not.toHaveTextContent('Complete authorized task snapshot');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('M02 updates 18-record lifecycle and predecessor counts only after source refresh', async () => {
     const milestones = [
       'Operating taxonomy and strategy alignment',
@@ -950,7 +1045,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.16.0-PUBLISHED-STRATEGY-RECOVERY-CERT
+// VERSION: v1.17.0-M04-LIVE-WORK-GRAPH-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
