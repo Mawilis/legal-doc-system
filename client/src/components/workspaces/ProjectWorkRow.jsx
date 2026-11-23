@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.11.1-GOVERNED-MENU-HANDOFF
+ * VERSION: v1.12.0-VERIFIED-HIERARCHY-INDENT
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.12.0-VERIFIED-HIERARCHY-INDENT displays
+ *          a restrained first-level indentation only when the parent
+ *          task appears in the same authorized source page. Milestones
+ *          remain separately typed records; no membership is inferred.
  * CHANGELOG: v1.11.1-GOVERNED-MENU-HANDOFF delegates
  *          detail and create-subtask entry to the caller's governed
  *          work inspector and source-owned task-create command.
@@ -102,7 +106,7 @@ const duePhrase = (dueDate, todayISO) => {
  * @param {object} props Data, actions and availability supplied by an authorized caller.
  */
 export default function ProjectWorkRow({
-  item, selected = false, density = 'comfortable', busy = false,
+  item, selected = false, depth = 0, density = 'comfortable', busy = false,
   priority = null,
   pendingStatus = null, todayISO, assigneeName,
   onToggleSelect, onOpen, onCreateSubtask, onAssign, onEdit, onTransition, onComplete,
@@ -169,7 +173,8 @@ export default function ProjectWorkRow({
                   onChange={event => onToggleSelect(item.task_id, event.target.checked)}/>
               </td>
               <td className={density === 'compact' ? 'p-2' : 'p-3'}>
-                <div className="flex items-center gap-2 font-semibold text-slate-900">
+                <div className={'flex items-center gap-2 font-semibold text-slate-900 '
+                  + (depth === 1 ? 'pl-4 border-l-2 border-slate-200' : '')}>
                   {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
                   {['critical', 'high'].includes(priority) && <span
                     aria-label={priority === 'critical' ? 'Critical priority' : 'High priority'}
@@ -237,7 +242,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.11.1-GOVERNED-MENU-HANDOFF
+// VERSION: v1.12.0-VERIFIED-HIERARCHY-INDENT
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
