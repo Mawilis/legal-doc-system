@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.39.0-EXACT-SELECTED-TASK-INTELLIGENCE-LOCATORS
+ * VERSION: v2.40.0-PLAIN-LANGUAGE-PROJECT-RECOVERY
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.40.0-PLAIN-LANGUAGE-PROJECT-RECOVERY
+ *            makes unavailable and stale project states understandable and
+ *            actionable without exposing backend codes; preserves user
+ *            intent, source-denial boundaries, empty-state truth and retries.
  * CHANGELOG: v2.39.0-EXACT-SELECTED-TASK-INTELLIGENCE-LOCATORS publishes the
  *          EOS-hydrated task id/revision only while that task is actively
  *          viewed inside the current project. Leaving the task removes it.
@@ -1573,8 +1577,17 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       </div>}
       {sourceState === 'LOADING' && <div role="status" className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><LoaderCircle className="mr-2 inline animate-spin" size={15}/>Loading authorized Projects from EOS…</div>}
       {sourceState === 'DENIED' && <div role="alert" data-project-state="DENIED" className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"><ShieldCheck className="mr-2 inline" size={16}/>{error === 'AUTHENTICATION_REQUIRED' ? 'Your session needs reauthentication before Projects can be read.' : error === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects product entitlement is required for this tenant.' : 'EOS denied Projects access for this principal and selected tenant. No project records or counts are shown.'}</div>}
-      {sourceState === 'UNAVAILABLE' && <div role="alert" data-project-state="UNAVAILABLE" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><span><CircleAlert className="mr-2 inline" size={16}/>{error === 'AUTHENTICATED_TENANT_REQUIRED' ? 'A verified tenant session is required.' : 'The EOS Projects source is unavailable. No empty result is inferred.'}</span><button type="button" onClick={() => void refresh()} className="rounded-md border border-amber-400 px-3 py-2 font-semibold">Retry</button></div>}
-      {sourceState === 'STALE' && <div role="status" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">The latest EOS read failed. Previously verified records remain marked stale. <button type="button" onClick={() => void refresh()} className="font-bold underline">Retry</button></div>}
+      {sourceState === 'UNAVAILABLE' && <div role="alert" data-project-state="UNAVAILABLE" className="mb-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+        <div className="flex min-w-0 items-start gap-3"><CircleAlert className="mt-0.5 shrink-0" size={21}/>
+          <div><h2 className="font-bold">Projects couldn't load</h2>
+            <p className="mt-1 text-sm">{error === 'AUTHENTICATED_TENANT_REQUIRED'
+              ? 'Sign in to your organisation again to continue.'
+              : 'WILSY OS is having trouble connecting to your projects. Your task has not been changed. Try again after the connection is restored.'}</p>
+          </div>
+        </div>
+        <button type="button" onClick={() => void refresh()} className="min-h-11 shrink-0 rounded-lg border border-amber-500 bg-white px-4 py-2 font-bold text-amber-950 hover:bg-amber-100">Try again</button>
+      </div>}
+      {sourceState === 'STALE' && <div role="status" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">We couldn't refresh your projects. The items shown may be out of date. No task was changed. <button type="button" onClick={() => void refresh()} className="font-bold underline">Try again</button></div>}
       {sourceState === 'REFRESHING' && <div role="status" className="mb-3 text-xs text-slate-500">Refreshing from EOS…</div>}
 
       <div className="wp-body grid min-w-0 grid-cols-1 items-start gap-4"
@@ -1798,7 +1811,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               </ul>
             </div>}
             <footer className="wp-footer border-t border-slate-200 px-4 py-2 text-xs text-slate-500">
-              <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified${ownerOnly ? " · EOS owner-filtered page" : ""}` : 'Source state shown above'}</span>
+              <span>{sourceState === 'READY' ? `${visibleItems.length} shown · ${items.length} verified${ownerOnly ? " · EOS owner-filtered page" : ""}` : 'Projects could not be loaded'}</span>
               {sourceState === 'READY' && (pageOffset > 0 || hasNextPage) && (
                 <nav className="wp-pagination" aria-label="Project pages">
                   <span>Page {Math.floor(pageOffset / 100) + 1} · Search applies to this page</span>
@@ -1997,7 +2010,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.39.0-EXACT-SELECTED-TASK-INTELLIGENCE-LOCATORS
+// VERSION: v2.40.0-PLAIN-LANGUAGE-PROJECT-RECOVERY
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
