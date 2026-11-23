@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.10.0-MULTI-SELECT-ROW-COMMANDS
+ * VERSION: v1.11.0-SINGLE-PRIMARY-WORK-ROW
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.11.0-SINGLE-PRIMARY-WORK-ROW removes
+ *          duplicated Open/Clear row toolbars, makes the verified task
+ *          title itself the detail entry, and always places one EOS-gated
+ *          primary action plus existing secondary overflow at row end.
+ *          Selection remains quiet and never changes business status.
  * CHANGELOG: v1.10.0-MULTI-SELECT-ROW-COMMANDS makes
  *          every selected row locally actionable even when many are
  *          selected; each task retains its separately authorized, audited
@@ -94,13 +99,12 @@ const duePhrase = (dueDate, todayISO) => {
  * @param {object} props Data, actions and availability supplied by an authorized caller.
  */
 export default function ProjectWorkRow({
-  item, selected = false, selectedCount = 0, density = 'comfortable', busy = false,
+  item, selected = false, density = 'comfortable', busy = false,
   priority = null,
   pendingStatus = null, todayISO, assigneeName,
   onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
   onAttachments, onApprovals, onActivity, capabilities = NO_ACTION_CAPABILITIES,
 }) {
-  const inlineActions = selected && selectedCount > 0;
   const rowCommands = <ProjectWorkRowActions item={item} busy={busy} dense
     {...(capabilities || NO_ACTION_CAPABILITIES)}
     onTransition={onTransition} onComplete={onComplete}
@@ -168,38 +172,19 @@ export default function ProjectWorkRow({
                     title={priority === 'critical' ? 'Critical priority' : 'High priority'}
                     className={'inline-block h-2 w-2 shrink-0 rounded-full '
                       + (priority === 'critical' ? 'bg-rose-700' : 'bg-amber-600')}/>}
-                  <span className={'block min-w-0 truncate '
-                    + (['DONE', 'CANCELLED'].includes(item.status)
-                      ? 'text-slate-500 line-through' : '')}
-                    title={item.title}>{item.title}</span>
+                  <button type="button" title={item.title}
+                    className={'block min-w-0 truncate text-left font-semibold hover:text-blue-800 hover:underline focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 '
+                      + (['DONE', 'CANCELLED'].includes(item.status)
+                        ? 'text-slate-500 line-through' : 'text-slate-950')}
+                    onClick={event => onOpen(item, event.currentTarget)}>{item.title}</button>
                 </div>
                 <div className={density === 'compact' ? 'hidden' : 'mt-1 text-xs text-slate-600'}>
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
                   {item.depends_on.length > 0 ? ' · ' + item.depends_on.length + ' dependencies' : ''}
                 </div>
-                {inlineActions && <div className="mt-2 flex flex-wrap items-center gap-2" aria-label={'Selected task actions: ' + item.title}>
-                  <button type="button" disabled={busy}
-                    className="inline-flex min-h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-                    onClick={event => onOpen(item, event.currentTarget)}>
-                    Open task
-                  </button>
-                  {rowCommands}
-                  <button type="button" aria-label={'Deselect ' + item.title}
-                    className="inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
-                    onClick={() => onToggleSelect(item.task_id, false)}>
-                    Clear
-                  </button>
-                </div>}
-                {density !== 'compact' && !inlineActions && <div className="mt-1.5 flex min-w-0 items-center gap-3">
-                  {item.description && <p className="min-w-0 flex-1 truncate text-xs text-slate-600"
-                    title={item.description}>{item.description}</p>}
-                  <button type="button"
-                    className="inline-flex min-h-8 shrink-0 items-center rounded-md border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-800 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-                    aria-label={'View task: ' + item.title}
-                    onClick={event => onOpen(item, event.currentTarget)}>
-                    View task
-                  </button>
-                </div>}
+                {density !== 'compact' && item.description && <p
+                  className="mt-1 max-w-[44rem] truncate text-xs text-slate-600"
+                  title={item.description}>{item.description}</p>}
               </td>
               <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-slate-800'}>
                 <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
@@ -243,12 +228,12 @@ export default function ProjectWorkRow({
                 </span>
               </td>
               <td className={density === 'compact' ? 'px-2 py-1' : 'p-3'}>
-                {!inlineActions && rowCommands}
+                {rowCommands}
               </td></tr>;
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.10.0-MULTI-SELECT-ROW-COMMANDS
+// VERSION: v1.11.0-SINGLE-PRIMARY-WORK-ROW
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
