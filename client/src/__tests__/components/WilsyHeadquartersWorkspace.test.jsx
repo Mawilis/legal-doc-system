@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT
+ * VERSION: v1.26.0-FOCUSED-WORK-RECOVERY-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.26.0-FOCUSED-WORK-RECOVERY-CERT verifies
+ *          unconfirmed completion stays visible in the focused
+ *          source record and the verified work queue returns only
+ *          after the user explicitly navigates Back to work.
  * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT verifies
  *            a source-owned waiting predecessor appears in Headquarters
  *            preview and detail without granting completion authority.
@@ -957,6 +961,8 @@ describe('WILSY Headquarters authenticated shell', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Complete work' }));
       expect(await screen.findByText(/EOS acknowledged completion; current readback is unavailable/)).toBeTruthy();
       expect(screen.queryByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeNull();
+      expect(screen.getByRole('region', { name: 'Selected work record' })).toHaveTextContent('Repair source workflow');
+      fireEvent.click(screen.getByRole('button', { name: 'Close work record' }));
       expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
     } finally { api.get.mockImplementation(originalGet); api.post.mockReset(); }
   });
@@ -981,7 +987,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT
+ * VERSION: v1.26.0-FOCUSED-WORK-RECOVERY-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
