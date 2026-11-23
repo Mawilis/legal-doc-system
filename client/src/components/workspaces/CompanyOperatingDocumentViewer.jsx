@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.7.0-DIRECT-AUTHOR-WORKSPACE
+ * VERSION: v2.7.1-FOCUSED-AUTHOR-VIEWPORT
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.7.1-FOCUSED-AUTHOR-VIEWPORT restores the
+ *            modal scroll position and moves focus into the private editor
+ *            when prepared, preventing hidden steps after viewing project
+ *            details. No backend mutations or permission changes.
  * CHANGELOG: v2.7.0-DIRECT-AUTHOR-WORKSPACE renders the private
  *            draft editor immediately below the active command rail and
  *            replaces the long publication/Projects read-only content while
@@ -425,6 +429,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const commandLock = useRef(null);
   const retryKeys = useRef(new Map());
   const containerRef = useRef(null);
+  const scrollRef = useRef(null);
+  const editorRef = useRef(null);
   const closeRef = useRef(null);
   const data = source?.scope === sessionKey && source?.classification === classification ? source.data : null;
   const currentHistory = history?.scope === sessionKey && history?.classification === classification ? history.data : null;
@@ -926,6 +932,15 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     return () => { window.document.body.style.overflow = formerOverflow; trigger?.focus?.(); };
   }, []);
 
+  useEffect(() => {
+    if (!editorOpen) return;
+    // The author workspace replaces the long source view. Always bring its
+    // first control into the visible dialog viewport, including after a
+    // return from a previously scrolled document or project readback.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    editorRef.current?.focus({ preventScroll: true });
+  }, [editorOpen]);
+
   const changeQuery = next => {
     queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setPreviewOpen(false); setHistory(null);
     void load(next);
@@ -1046,7 +1061,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button></div>
       <div className={styles.body}>
         <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
-        <div className={styles.scroll}>
+        <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
           {error && <section className={styles.notice} role="alert" data-document-state={error.kind}>
             <ShieldCheck size={28} aria-hidden="true"/><h2>{error.title}</h2><p>{error.message}</p>
@@ -1098,7 +1113,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
                 </nav>
-                {editorOpen && draftPermitted && <form className={styles.form}
+                {editorOpen && draftPermitted && <form ref={editorRef} tabIndex={-1} className={styles.form}
                   aria-label="Company private draft editor"
                   onSubmit={event => { event.preventDefault(); if (proposalValid) void perform(founderDraftPermitted ? 'FOUNDER_CREATE_DRAFT' : 'CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
                   <div className={styles.editorHeading}>
@@ -1535,7 +1550,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.7.0-DIRECT-AUTHOR-WORKSPACE
+// VERSION: v2.7.1-FOCUSED-AUTHOR-VIEWPORT
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
