@@ -672,7 +672,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (remaining) { waiting += 1; unfinishedPredecessors += remaining; }
       if (!['DONE', 'CANCELLED'].includes(task.status) && task.due_date != null) {
         if (typeof task.due_date !== 'string'
-          || !/^\\d{4}-\\d{2}-\\d{2}$/.test(task.due_date)
+          || !/^\d{4}-\d{2}-\d{2}$/.test(task.due_date)
           || Number.isNaN(Date.parse(task.due_date + 'T00:00:00Z'))) return null;
         if (task.due_date < asOfDay) pastDue += 1;
       }
