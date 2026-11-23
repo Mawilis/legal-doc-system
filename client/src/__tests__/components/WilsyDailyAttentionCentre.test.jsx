@@ -5,13 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT
+ * VERSION: v1.11.0-EDGE-RESIZE-FOCUSED-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CHANGELOG: v1.11.0-EDGE-RESIZE-FOCUSED-CERT verifies
+ *          the accessible edge resize controls and transient dimension
+ *          changes independently from the float/dock move command.
  * CHANGELOG: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT proves explicit rejection preservation and accepted-but-unverified readback recovery without issuing a second command.
  *            v1.9.0-COMPLETION-READBACK-GATE-CERT proves source receipt, fresh exact-scope reads, projection removal and stale-readback preservation.
  *            v1.8.0-SINGLE-SOURCE-ROW-PRESENTATION-CERT proves an active work
@@ -560,6 +563,23 @@ describe('WILSY daily attention centre', () => {
     expect(panel.getAttribute('data-floating')).toBe('false');
   });
 
+  it('resizes daily attention through accessible edge controls', async () => {
+    renderCentre();
+    await screen.findByText('Review governed contract');
+    const panel = screen.getByRole('dialog', { name: 'Daily attention centre' });
+    fireEvent.keyDown(screen.getByRole('separator', {
+      name: 'Resize daily attention right edge',
+    }), { key: 'ArrowRight' });
+    expect(Number.parseFloat(panel.style.width)).toBeGreaterThan(0);
+    fireEvent.keyDown(screen.getByRole('separator', {
+      name: 'Resize daily attention bottom edge',
+    }), { key: 'ArrowDown' });
+    expect(Number.parseFloat(panel.style.height)).toBeGreaterThan(0);
+    expect(screen.getByRole('separator', {
+      name: 'Resize daily attention top edge',
+    })).toBeTruthy();
+  });
+
   it('turns the footer calendar into an actionable EOS deadline view', async () => {
     renderCentre();
     await screen.findByText('Review governed contract');
@@ -661,7 +681,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT
+ * VERSION: v1.11.0-EDGE-RESIZE-FOCUSED-CERT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.
