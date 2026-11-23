@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.25.0-SOURCE-TASK-REMEDIATION-HANDOFF-CERT
+ * VERSION: v1.26.0-VISIBLE-LIFECYCLE-EVIDENCE-RESULT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.26.0-VISIBLE-LIFECYCLE-EVIDENCE-RESULT-CERT
+ *            ensures evidence disclosure announces verification, marks the
+ *            selected task action expanded, focuses the result, and retains
+ *            source event and institutional authority boundaries.
  * CHANGELOG: v1.25.0-SOURCE-TASK-REMEDIATION-HANDOFF-CERT
  *            confirms source-owned assignment and deadline notices link to
  *            the canonical project task commands without issuing any write.
@@ -741,6 +745,13 @@ describe('Strategy source-owned project execution readback', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'ALL' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(await screen.findByText(/Verified immutable EOS lifecycle events: 1/)).toBeVisible();
+    const evidencePanel = screen.getByRole('status', { name: /Lifecycle evidence result for/ });
+    expect(evidencePanel).toHaveAttribute('data-evidence-state', 'READY');
+    expect(evidencePanel).toHaveFocus();
+    expect(screen.getByText('Lifecycle evidence verified')).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]).toHaveAttribute('aria-expanded', 'true');
+    const governanceSummary = screen.getByText('What this verification does and does not establish');
+    expect(governanceSummary.closest('details')?.open).toBe(false);
     expect(api.get.mock.calls.some(([url, options]) => url === eventUrl
       && options?.headers?.['X-Tenant-ID'] === scope.tenantId)).toBe(true);
     work[0] = { ...work[0], status: 'DONE', revision: 2 };
@@ -1248,7 +1259,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.25.0-SOURCE-TASK-REMEDIATION-HANDOFF-CERT
+// VERSION: v1.26.0-VISIBLE-LIFECYCLE-EVIDENCE-RESULT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
