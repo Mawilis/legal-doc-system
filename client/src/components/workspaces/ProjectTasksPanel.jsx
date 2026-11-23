@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.52.0-SELECTION-IN-ROW-ROUTING
+ * VERSION: v1.53.0-IN-GRID-MULTI-SELECTION
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.53.0-IN-GRID-MULTI-SELECTION moves the
+ *          multiple-selection command strip inside the exact work grid
+ *          beside its Select all checkbox, removes the disconnected
+ *          toolbar and keeps per-task actions in each selected work row.
+ *          Review is sequential; EOS owns each task command and readback.
  * CHANGELOG: v1.52.0-SELECTION-IN-ROW-ROUTING routes one
  *          selected task to inline work-row controls and reserves the
  *          existing small toolbar for multiple selections only. Existing
@@ -1232,22 +1237,6 @@ export default function ProjectTasksPanel({
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
-      {selectedReviewTasks.length > 1 && <div role="region" aria-label="Selected work actions"
-        className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <span role="status" className="mr-auto text-xs font-semibold text-slate-800">
-          {selectedReviewTasks.length} selected · current verified EOS batch
-        </span>
-        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
-          onClick={event => {
-            drawerReturnFocus.current = event.currentTarget;
-            setDrawerTaskId(selectedReviewTasks[0].task_id);
-          }}>Review selection</button>
-        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
-          onClick={() => setSelectedWorkIds([])}>Clear selection</button>
-        <span className="w-full text-xs text-slate-600">
-          Review each task using its existing EOS permissions. Batch mutation is not authorized.
-        </span>
-      </div>}
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
@@ -1543,6 +1532,22 @@ export default function ProjectTasksPanel({
         <table role="grid" aria-label="Project work grid" data-density={workDensity}
           className="w-full min-w-[580px] border-collapse text-left text-sm">
           <thead className="bg-slate-100 text-xs font-bold text-slate-700">
+            {selectedReviewTasks.length > 1 && <tr className="bg-slate-50">
+              <th colSpan={6} scope="colgroup" className="px-3 py-2">
+                <div aria-label="Selected work actions" className="flex flex-wrap items-center gap-2">
+                  <span role="status" className="mr-auto text-xs font-semibold text-slate-900">
+                    {selectedReviewTasks.length} selected · verified current EOS batch
+                  </span>
+                  <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                    onClick={event => {
+                      drawerReturnFocus.current = event.currentTarget;
+                      setDrawerTaskId(selectedReviewTasks[0].task_id);
+                    }}>Review in sequence</button>
+                  <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+                    onClick={() => setSelectedWorkIds([])}>Clear selection</button>
+                </div>
+              </th>
+            </tr>}
             <tr><th scope="col" className="w-10 p-2">
               <input type="checkbox" aria-label="Select all visible work"
                 checked={visibleWorkRows.length > 0 && visibleWorkRows.every(item => selectedWorkIds.includes(item.task_id))}
@@ -1779,7 +1784,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.52.0-SELECTION-IN-ROW-ROUTING
+// VERSION: v1.53.0-IN-GRID-MULTI-SELECTION
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
