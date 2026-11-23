@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
+ * VERSION: v2.14.1-M04-PUBLISHED-ACTION-GUARD
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,10 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.14.1-M04-PUBLISHED-ACTION-GUARD
+ *            suppresses completed v1.1.0 preparation after EOS publication,
+ *            distinguishes private revision selection from publication truth,
+ *            and retains independent project-link and evidence checks.
  * CHANGELOG: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
  *            aligns source help text with already-ratified Founder
  *            publication, current Strategy link and separate Projects IAM.
@@ -1329,6 +1333,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const expected = data?.current_revision ?? 0;
   const founderDraftPermitted = classification === 'STRATEGY' && actions.includes('FOUNDER_CREATE_DRAFT');
   const draftPermitted = actions.includes('CREATE_DRAFT') || founderDraftPermitted;
+  // A grant may allow new revisions, not repetition of completed v1.1.0.
+  const approvedSourceAlreadyPublished = classification === 'STRATEGY'
+    && data?.state === 'PUBLISHED';
   const strategyPublicationEffective = classification === 'STRATEGY'
     && !query.review && data?.state === 'PUBLISHED'
     && document?.state === 'PUBLISHED'
@@ -1427,7 +1434,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       onClick={() => setRatificationOpen(false)}>
                       <ArrowLeft size={16}/> Back to submitted Strategy
                     </button>}
-                    {!ratificationOpen && draftPermitted && !editorOpen && <button type="button" disabled={busy}
+                    {!ratificationOpen && draftPermitted && !editorOpen && !approvedSourceAlreadyPublished && <button type="button" disabled={busy}
                       onClick={() => { setProposal(founderApprovedProposal(classification)); setPreviewOpen(false); setEditorOpen(true); }}>
                       <FileText size={16}/> Prepare approved v1.1.0
                     </button>}
@@ -1555,8 +1562,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-slate-600/60 p-3">
                       <dt className="text-xs font-semibold text-slate-300">Strategy author and private-review authority</dt>
-                      <dd className="mt-1 text-sm text-white">{founderDraftPermitted
-                        ? 'Verified Founder can prepare Strategy through durable source authority'
+                      <dd className="mt-1 text-sm text-white">{approvedSourceAlreadyPublished
+                         ? 'Published Strategy exists; prior v1.1.0 preparation is complete. New revisions need separate source authorization.'
+                         : founderDraftPermitted
+                         ? 'Verified Founder can prepare Strategy through durable source authority'
                         : draftPermitted ? 'Draft creation admitted by current EOS action set'
                         : actions.includes('SUBMIT')
                           ? 'Source-authorized draft submission admitted'
@@ -1575,7 +1584,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     <div className="rounded-lg border border-slate-600/60 p-3">
                       <dt className="text-xs font-semibold text-slate-300">Effective Strategy publication</dt>
                       <dd className="mt-1 text-sm text-white">{strategyPublicationEffective
-                        ? 'Published and effective · revision ' + document.revision
+                         ? 'Published and effective · revision ' + document.revision
+                         : query.review && approvedSourceAlreadyPublished
+                           ? 'Official publication exists; see Current publication for effective date and revision'
                         : document?.state === 'SUBMITTED' ? 'Submitted · independent approval required'
                           : document?.state === 'DRAFT' ? 'Private draft · submission required'
                             : 'Not verified as published and effective'}</dd>
@@ -1604,7 +1615,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   aria-label="Governed Strategy publication lifecycle">
                   <div className={styles.commandStatus}>
                     <strong>Strategy publication · source-owned execution</strong>
-                    <span>{!document ? (query.review ? 'No private revision verified' : 'Official publication not yet established')
+                    <span>{!document ? (query.review && approvedSourceAlreadyPublished
+                        ? 'Official publication exists · no private revision selected'
+                        : query.review ? 'No private revision selected' : 'Official publication not yet established')
                       : document.state === 'DRAFT' ? 'Stage 1 of 3 · Author draft'
                          : document.state === 'SUBMITTED' ? (actions.includes('FOUNDER_RATIFY')
                           ? 'Stage 2 of 3 · Founder ratification available' : 'Stage 2 of 3 · Await independent publisher')
@@ -1617,7 +1630,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       onClick={() => changeQuery({ review: true, revision: null })}>
                       Review authorized publication state
                     </button>}
-                    {query.review && !document && draftPermitted && !editorOpen
+                    {query.review && !document && draftPermitted && !approvedSourceAlreadyPublished && !editorOpen
                       && <button type="button" disabled={busy}
                         onClick={() => { setProposal(founderApprovedProposal('STRATEGY')); setPreviewOpen(false); setEditorOpen(true); }}>
                         Prepare Strategy draft
@@ -1641,7 +1654,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                   {!query.review && !document && !reviewPermitted
                     && <p className={styles.permissionNotice}>Your current capacity can read the approved source but cannot inspect private revision states or create a publication. Current Strategy author/publisher authority must be established separately in tenant IAM.</p>}
                   {document?.state === 'PUBLISHED' && Date.parse(document.effective_from) <= Date.parse(data.as_of)
-                    && <p className={styles.permissionNotice}>The official Strategy publication is effective. Return to Projects &amp; Delivery to verify the independent project relationship.</p>}
+                    && <p className={styles.permissionNotice}>The official Strategy is published and effective. The Pillar 1 / Foundation relationship and source-owned execution require independent verification in Projects &amp; Delivery; publication does not certify outcomes.</p>}
                 </section>}
                 <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
                 {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
@@ -1992,7 +2005,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
+// VERSION: v2.14.1-M04-PUBLISHED-ACTION-GUARD
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
