@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.7.0-M04-NATIVE-TASK-ACTION-SURFACES
+ * VERSION: v1.8.0-CONTRASTED-EVIDENCE-RESULT-PANEL
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
  * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CHANGELOG: v1.8.0-CONTRASTED-EVIDENCE-RESULT-PANEL distinguishes the
+ *            selected task's evidence from the work list using source-state
+ *            borders, a success heading, readable event detail, focus and
+ *            optional governance explanation with responsive contrast.
  * CHANGELOG: v1.7.0-M04-NATIVE-TASK-ACTION-SURFACES makes verified M04
  *            task evidence and project handoff controls actual navy/blue
  *            buttons despite the inherited .execution button reset.
@@ -201,8 +205,24 @@
 @media(max-width:720px){.execution [role="group"][aria-label^="Actions for"]{justify-content:stretch;width:100%}.execution [role="group"][aria-label^="Actions for"] button{flex:1 1 180px;white-space:normal}}
 @media(prefers-reduced-motion:reduce){.execution [role="group"][aria-label^="Actions for"] button{transition:none}}
 
+/* M04 evidence response is not task metadata. It must remain visibly distinct
+ * even under the global .execution p / button reset. Source-owned data only. */
+.execution .m04EvidenceResult{margin:16px 0 5px;padding:17px 18px;border:1px solid #3db69e;border-left:5px solid #4ed5b3;border-radius:12px;background:linear-gradient(120deg,#0d3242,#0b2438);color:#edfafa;box-shadow:0 10px 28px #00000035;scroll-margin:105px}
+.execution .m04EvidenceResult[data-evidence-state="LOADING"]{border-color:#79a9d2;border-left-color:#79a9d2;background:#112a43}
+.execution .m04EvidenceResult[data-evidence-state="UNAVAILABLE"],.execution .m04EvidenceResult[data-evidence-state="DENIED"]{border-color:#f0a17b;border-left-color:#f0a17b;background:#392824}
+.execution .m04EvidenceResult:focus{outline:3px solid #f0c96b;outline-offset:3px}
+.m04EvidenceHeading{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.m04EvidenceHeading>svg{flex:none;color:#78e7c9;margin-top:2px}
+.m04EvidenceHeading strong{display:block;color:#f3fffa!important;font-size:15px;font-weight:750}
+.m04EvidenceHeading span{display:block;margin-top:3px;color:#b8d7de;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.execution .m04EvidenceResult p{color:#e0f4f3;font-size:13px;line-height:1.65;margin:8px 0}
+.execution .m04EvidenceResult .m04EvidenceResultDetail{padding:10px 12px;border:1px solid #83c6c353;border-radius:8px;background:#071b2cb8;overflow-wrap:anywhere}
+.m04EvidenceBoundary{margin-top:10px;border-top:1px solid #83c6c345;padding-top:9px}
+.m04EvidenceBoundary summary{cursor:pointer;color:#c2e4e7;font-size:12px;font-weight:650}
+.execution .m04EvidenceBoundary p{color:#c3d8e1;font-size:12px;margin:9px 0 0}
+@media(max-width:720px){.execution .m04EvidenceResult{padding:13px 12px;scroll-margin:70px}}
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.7.0-M04-NATIVE-TASK-ACTION-SURFACES
+ * VERSION: v1.8.0-CONTRASTED-EVIDENCE-RESULT-PANEL
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
