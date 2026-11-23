@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.23.2-PRIVATE-REVIEW-VIEW-PARITY-CERT
+ * VERSION: v1.24.0-ACTIONABLE-M04-ACCOUNTABILITY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.24.0-ACTIONABLE-M04-ACCOUNTABILITY-CERT
+ *            proves source-backed M04 count actions reveal filtered task
+ *            evidence and return to the existing full register without a write.
  * CHANGELOG: v1.23.2-PRIVATE-REVIEW-VIEW-PARITY-CERT
  *            returns the requested authorized review-view contract in
  *            mode-switch regression rather than an invalid public payload.
@@ -693,6 +696,18 @@ describe('Strategy source-owned project execution readback', () => {
     expect(m04).toHaveTextContent('Past calendar due date1');
     expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
     expect(api.post).not.toHaveBeenCalled();
+    const inspectorSummary = screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/);
+    expect(inspectorSummary.closest('details')?.open).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect unassigned work' }));
+    expect(inspectorSummary.closest('details')?.open).toBe(true);
+    expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('UNASSIGNED');
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect assigned in task source' }));
+    expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('ASSIGNED');
+    fireEvent.click(inspectorSummary);
+    expect(inspectorSummary.closest('details')?.open).toBe(false);
+    expect(api.post).not.toHaveBeenCalled();
     expect(screen.getByText('Browse all 18 planned milestones and tasks').closest('details')?.open).toBe(false);
     expect(screen.getByText('Source task register · 18 records (additional detail)').closest('details')?.open).toBe(false);
     fireEvent.click(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/));
@@ -1215,7 +1230,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.23.2-PRIVATE-REVIEW-VIEW-PARITY-CERT
+// VERSION: v1.24.0-ACTIONABLE-M04-ACCOUNTABILITY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
