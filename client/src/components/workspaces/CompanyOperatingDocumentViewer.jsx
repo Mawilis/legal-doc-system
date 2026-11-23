@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
+ * VERSION: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
+ *            exposes source-backed recent-work continuation as a named region.
  * CHANGELOG: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
  *            offers cross-visit continuity from source-recorded last task
  *            update by the signed-in principal, never inferred page views.
@@ -2009,7 +2011,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           </button>}
                         </div>
                         {m04Execution ? <>
-                          {latestSourceWork && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
+                          {latestSourceWork && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
                               <p className="max-w-xl truncate text-sm font-semibold text-white">{latestSourceWork.title}</p>
@@ -2388,7 +2390,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
+// VERSION: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
