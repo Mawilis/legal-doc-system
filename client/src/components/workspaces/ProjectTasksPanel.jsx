@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.42.0-EXECUTION-FIRST-TASK-DRAWER
+ * VERSION: v1.42.1-CENTERED-TASK-WORKSPACE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTasksPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
  *          extraction, fabricated task metrics or inferred notifications.
@@ -16,7 +16,13 @@
  * AUTHORITY BOUNDARY: UI actions do not grant contributor, employee or owner
  *          rights; EOS checks each mutation and recorded assignment.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS is the sole financial executor.
- * CHANGELOG: v1.42.0-EXECUTION-FIRST-TASK-DRAWER reorganizes the existing\n *          verified detail drawer around always-visible, capability-gated\n *          execution actions, overdue dates, source context and dependencies;\n *          existing EOS commands and authority remain unchanged.\n * CHANGELOG: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION mounts
+ * CHANGELOG: v1.42.1-CENTERED-TASK-WORKSPACE replaces the narrow right-anchored
+ *          sheet with a centered viewport-bounded responsive task workspace.
+ *          No change to EOS commands, authorizations, task data or readback.
+ * CHANGELOG: v1.42.0-EXECUTION-FIRST-TASK-DRAWER reorganizes the existing
+ *          verified task details around visible execution actions, overdue
+ *          dates, source context and dependencies; EOS commands unchanged.
+ * CHANGELOG: v1.41.0-SOURCE-AUDITED-WORK-PURPOSE-ACTION mounts
  *          the independently authorized source classification command
  *          directly inside selected task details with fresh EOS audit readback,
  *          no inferred purpose, task mutation or simulated IAM.
@@ -1418,11 +1424,11 @@ export default function ProjectTasksPanel({
               onClick={() => setAttachmentTaskId(completingItem.task_id)}>Review attachments</button>
           </div>
         </div>}
-      {drawerTask && <div className="fixed inset-0 z-[85] bg-slate-950/55"
+      {drawerTask && <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/55 p-3 sm:p-6"
         onClick={event => { if (event.target === event.currentTarget) closeDrawer(); }}>
         <aside role="dialog" aria-modal="true"
           aria-label={'Work details: ' + drawerTask.title} ref={drawerRef}
-          className="absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-slate-200 bg-white shadow-2xl">
+          className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
           <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -1527,7 +1533,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.42.0-EXECUTION-FIRST-TASK-DRAWER
+// VERSION: v1.42.1-CENTERED-TASK-WORKSPACE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
