@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Reusable Source-Owned Work Row Blueprint
- * VERSION: v1.0.0-CROSS-SURFACE-EXECUTION-ROW
+ * VERSION: v1.0.1-SELECTED-WORK-VISIBLE-FOCUS
  * AUTHORITY: WILSY OS UI composition; Python EOS retains all task authority.
  * EPITOME: One readable, compact, keyboard-operable task row shell for
  *          Projects, Work Calendar, My Work and Daily Attention.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WorkTaskBlueprint.jsx
  * COLLABORATION / OWNERSHIP: WILSY OS UI platform and individual EOS work sources.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.0.1-SELECTED-WORK-VISIBLE-FOCUS preserves a visible,
+ *          restrained selected-work ring for keyboard and route-focus
+ *          acceptance without reverting the oversized blue surfaces.
  * CHANGELOG: v1.0.0-CROSS-SURFACE-EXECUTION-ROW centralizes accessible
  *          row, title, metadata and action styling without introducing
  *          duplicate business commands or new data ownership.
@@ -23,7 +26,7 @@ import React from 'react';
 export const workTaskBlueprint = Object.freeze({
   list: 'overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-950 divide-y divide-slate-200',
   row: 'group min-w-0 border-l-[3px] border-l-transparent bg-white px-3 py-2.5 text-slate-950 transition-colors hover:bg-slate-50',
-  selected: 'border-l-blue-700 bg-slate-50',
+  selected: 'border-l-blue-700 bg-slate-50 ring-2 ring-inset ring-slate-300',
   title: 'min-w-0 break-words text-left text-sm font-semibold leading-5 text-slate-950 hover:text-blue-800 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700',
   meta: 'text-xs leading-5 text-slate-600',
   primary: 'inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-amber-600 bg-amber-400 px-3 text-xs font-semibold text-slate-950 hover:bg-amber-300 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700',
@@ -44,7 +47,7 @@ export function WorkTaskBlueprintRow({ children, selected = false, className = '
 }
 
 // ARTIFACT: WorkTaskBlueprint.jsx
-// VERSION: v1.0.0-CROSS-SURFACE-EXECUTION-ROW
+// VERSION: v1.0.1-SELECTED-WORK-VISIBLE-FOCUS
 // AUTHORITY BOUNDARY: Presentation-only; caller-owned EOS action and readback.
 // TENANT POSTURE: Only admitted caller-supplied source records.
 // FAIL-CLOSED POSTURE: No implied permissions, work state or execution.
