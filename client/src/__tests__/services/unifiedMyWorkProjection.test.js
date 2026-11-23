@@ -1,12 +1,14 @@
 /**
  * TITLE: WILSY OS Unified My Work Projection Contract Tests
- * VERSION: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT
+ * VERSION: v1.4.0-PROJECT-READINESS-CLIENT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies one shared fail-closed client contract for EOS aggregate
  *          scope, source coverage, row identity and summary reconciliation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/unifiedMyWorkProjection.test.js
  * COLLABORATION / OWNERSHIP: unifiedMyWorkProjection.js and EOS /api/my-work.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.4.0-PROJECT-READINESS-CLIENT-CERT verifies
+ *            strict readiness/count reconciliation for Projects rows.
  * CHANGELOG: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT checks
  *            that only evidenced Operating/Platform labels pass and that
  *            absent categories, unsupported claims and fabricated critical
@@ -157,6 +159,7 @@ describe('unified My Work projection contract', () => {
       title: 'Resolve external blocker', status: 'BLOCKED',
       priority: 'NORMAL', due_at: null, due_date: '2026-12-01',
       project_id: projectId, owner_principal_id: 'principal-a',
+      dependency_total: 1, dependency_remaining: 1, dependency_readiness: 'WAITING',
       is_overdue: false, action_authority: 'SOURCE_SERVICE_ONLY',
       completion_route: null,
     }];
@@ -168,6 +171,13 @@ describe('unified My Work projection contract', () => {
       tenantId: 'tenant-a', principalId: 'principal-a',
     })).toBe(payload);
     expect(unifiedMyWorkSourceLabel('PROJECTS')).toBe('Projects & Delivery');
+
+    const tampered = structuredClone(payload);
+    tampered.items[0].dependency_readiness = 'READY';
+    expect(() => assertUnifiedMyWorkProjection(tampered)).toThrow('ATTENTION_ITEM_INVALID');
+    const invalidCount = structuredClone(payload);
+    invalidCount.items[0].dependency_remaining = 2;
+    expect(() => assertUnifiedMyWorkProjection(invalidCount)).toThrow('ATTENTION_ITEM_INVALID');
 
     const forged = structuredClone(payload);
     forged.items[0].owner_principal_id = 'other-principal';
@@ -189,7 +199,7 @@ describe('unified My Work projection contract', () => {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.test.js
- * VERSION: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT
+ * VERSION: v1.4.0-PROJECT-READINESS-CLIENT-CERT
  * AUTHORITY BOUNDARY: Deterministic projection contract evidence only.
  * TENANT POSTURE: Synthetic exact-scope and mismatch tests.
  * FAIL-CLOSED POSTURE: Unknown or divergent source metadata is rejected.
