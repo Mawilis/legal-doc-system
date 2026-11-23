@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
+ * VERSION: v1.13.0-SHARED-WORK-BLUEPRINT-ROW
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
+ *          selected task focus and titles with the same accessible
+ *          task blueprint used by Calendar, My Work and Daily Attention.
  * CHANGELOG: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
  *          preserves read-only title inspection but withholds menu
  *          entry actions when a reusable row caller has not supplied
@@ -75,6 +78,7 @@
 import React from 'react';
 import { Waypoints, ClipboardList, UserRound } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
+import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 
 const NO_ACTION_CAPABILITIES = Object.freeze({
   canStart: false, canComplete: false, canBlock: false, canCancel: false,
@@ -170,8 +174,8 @@ export default function ProjectWorkRow({
                 }
               }}
               aria-selected={selected}
-              className={'cursor-pointer align-middle hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
-                + (selected ? 'bg-slate-50 ' : 'bg-white ')
+              className={'cursor-pointer align-middle border-l-[3px] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+                + (selected ? 'border-l-blue-700 bg-slate-50 ' : 'border-l-transparent bg-white ')
                 + (density === 'compact' ? 'h-11' : 'h-14')}>
               <td className={density === 'compact' ? 'p-1.5' : 'p-2'}>
                 <input type="checkbox" aria-label={'Select ' + item.title}
@@ -188,9 +192,8 @@ export default function ProjectWorkRow({
                     className={'inline-block h-2 w-2 shrink-0 rounded-full '
                       + (priority === 'critical' ? 'bg-rose-700' : 'bg-amber-600')}/>}
                   <button type="button" title={item.title}
-                    className={'block min-w-0 truncate text-left font-semibold hover:text-blue-800 hover:underline focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 '
-                      + (['DONE', 'CANCELLED'].includes(item.status)
-                        ? 'text-slate-500 line-through' : 'text-slate-950')}
+                    className={workTaskBlueprint.title
+                      + (['DONE', 'CANCELLED'].includes(item.status) ? ' text-slate-500 line-through' : '')}
                     onClick={event => onOpen(item, event.currentTarget)}>{item.title}</button>
                 </div>
                 <div className={density === 'compact' ? 'hidden' : 'mt-1 text-xs text-slate-600'}>
@@ -248,7 +251,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
+// VERSION: v1.13.0-SHARED-WORK-BLUEPRINT-ROW
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
