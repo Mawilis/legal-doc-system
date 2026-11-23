@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.29.3-PROJECT-CALENDAR-DEADLINE
+ * VERSION: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE replaces legacy queue rows with
+ *          the shared accessible workforce blueprint. Authorized EOS
+ *          actions, ordering, detail focus and projections remain intact.
  * CHANGELOG: v1.29.3-PROJECT-CALENDAR-DEADLINE renders Projects
  *            source date-only deadlines without inventing a UTC instant
  *            or changing EOS overdue calculations.
@@ -150,6 +153,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 import {
   AlertTriangle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw,
   ShieldCheck, X,
@@ -940,17 +944,16 @@ export default function MyWorkWorkspace(props = {}) {
             </div>}
           </section>
 
-          <section aria-label="Authorized work queue" className="overflow-hidden rounded-xl border border-white/10 bg-[#0c1420]">
-            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] gap-3 border-b border-white/10 bg-white/[0.025] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:grid">
+          <section aria-label="Authorized work queue" className={workTaskBlueprint.list}>
+            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 sm:grid">
               <span>Work</span><span>Priority</span><span>Deadline</span><span>Status</span>
             </div>
             {filteredItems.length ? (
-              <div role="list" aria-label="Authorized work items" className="divide-y divide-white/[0.07]">
+              <div role="list" aria-label="Authorized work items" className="divide-y divide-slate-200">
                 {filteredItems.map((item) => {
                   const selected = selectedKey === item.source_key;
                   return (
-                    <article key={item.source_key} role="listitem"
-                      className={`border-l-2 ${selected ? 'border-l-amber-300 bg-amber-300/[0.07] ring-2 ring-inset ring-amber-300/60' : 'border-l-transparent'}`}>
+                    <WorkTaskBlueprintRow key={item.source_key} selected={selected} className="!px-0 !py-0">
                       <button type="button" aria-pressed={selected}
                         aria-label={`${item.title}, ${SOURCE_LABELS[item.source]}, ${item.priority}, ${statusLabel(item)}${item.is_overdue ? ', overdue' : ''}`}
                         ref={(element) => {
@@ -958,16 +961,16 @@ export default function MyWorkWorkspace(props = {}) {
                           else rowRefs.current.delete(item.source_key);
                         }}
                         onClick={() => { setActionError(''); setCrmEditNotice(null); setCloseGuard(false); setSelectedKey(item.source_key); }}
-                        className="grid min-h-[4.25rem] w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-white/[0.035] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
+                        className="grid min-h-14 w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
                         <span className="min-w-0">
                           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                            <span className="truncate text-sm font-medium text-white">{item.title}</span>
+                            <span className="truncate text-sm font-semibold text-slate-950">{item.title}</span>
                             {item.is_overdue && <span className="rounded border border-rose-400/30 bg-rose-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-200">Overdue</span>}
                           </span>
-                          <span className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                            <span className="rounded border border-amber-300/20 bg-amber-300/[0.06] px-1.5 py-0.5 text-amber-100">{SOURCE_LABELS[item.source] || item.source}</span>
+                          <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                            <span className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-slate-700">{SOURCE_LABELS[item.source] || item.source}</span>
                             <span>{kindLabel(item)}</span>
-                            {item.source === 'PROJECTS' && <span className={item.dependency_readiness === 'WAITING' ? 'font-semibold text-amber-200' : item.dependency_readiness === 'READY' ? 'text-emerald-200' : 'text-slate-300'}>
+                            {item.source === 'PROJECTS' && <span className={item.dependency_readiness === 'WAITING' ? 'font-semibold text-amber-800' : item.dependency_readiness === 'READY' ? 'text-emerald-800' : 'text-slate-600'}>
                               {item.dependency_readiness === 'WAITING'
                                 ? 'Waiting on ' + item.dependency_remaining + ' predecessor' + (item.dependency_remaining === 1 ? '' : 's')
                                 : item.dependency_readiness === 'READY'
@@ -980,14 +983,14 @@ export default function MyWorkWorkspace(props = {}) {
                           <span className="text-slate-500 sm:hidden">Priority</span>
                           <span className={`inline-flex rounded border px-2 py-1 text-[10px] font-semibold uppercase ${PRIORITY_STYLE[item.priority] || PRIORITY_STYLE.NORMAL}`}>{item.priority}</span>
                         </span>
-                        <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                        <span className="flex items-center gap-1.5 text-xs text-slate-700">
                           <Clock3 size={13} className="shrink-0 text-slate-500" /> {formatWorkDue(item)}
                         </span>
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-700">
                           <Circle size={9} className={item.is_overdue ? 'fill-rose-300 text-rose-300' : 'text-slate-500'} /> {statusLabel(item)}
                         </span>
                       </button>
-                    </article>
+                    </WorkTaskBlueprintRow>
                   );
                 })}
               </div>
@@ -1723,7 +1726,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.29.3-PROJECT-CALENDAR-DEADLINE
+ * VERSION: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
