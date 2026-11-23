@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
+ * VERSION: v2.11.1-M04-CANONICAL-DATE-WIRE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,8 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.11.1-M04-CANONICAL-DATE-WIRE validates
+ *            EOS date-only ISO fields as digits, never literal escapes.
  * CHANGELOG: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
  *            derives a fail-closed operational work graph only after the
  *            current published Pillar 1 link, full exact-project task
@@ -835,7 +837,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
         || new Set(task.depends_on).size !== task.depends_on.length
         || task.depends_on.some(id => !byId.has(id) || id === task.task_id)
         || (task.due_date !== null && (typeof task.due_date !== 'string'
-          || !/^\\d{4}-\\d{2}-\\d{2}$/.test(task.due_date)
+          || !/^\d{4}-\d{2}-\d{2}$/.test(task.due_date)
           || Number.isNaN(Date.parse(task.due_date + 'T00:00:00Z'))))) return null;
       states[task.status] += 1;
       if (task.assignee_principal_id === null) unassigned += 1;
@@ -1917,7 +1919,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
+// VERSION: v2.11.1-M04-CANONICAL-DATE-WIRE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
