@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Unified My Work Projection Contract Tests
- * VERSION: v1.4.0-PROJECT-READINESS-CLIENT-CERT
+ * VERSION: v1.4.1-MIXED-EOS-READINESS-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies one shared fail-closed client contract for EOS aggregate
  *          scope, source coverage, row identity and summary reconciliation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/unifiedMyWorkProjection.test.js
  * COLLABORATION / OWNERSHIP: unifiedMyWorkProjection.js and EOS /api/my-work.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.4.1-MIXED-EOS-READINESS-CERT confirms
+ *            absent legacy readiness keeps the queue available with unknown
+ *            readiness, while incomplete/forged evidence is rejected.
  * CHANGELOG: v1.4.0-PROJECT-READINESS-CLIENT-CERT verifies
  *            strict readiness/count reconciliation for Projects rows.
  * CHANGELOG: v1.3.0-SOURCE-AUDIENCE-CLIENT-DENIAL-CERT checks
@@ -172,6 +175,19 @@ describe('unified My Work projection contract', () => {
     })).toBe(payload);
     expect(unifiedMyWorkSourceLabel('PROJECTS')).toBe('Projects & Delivery');
 
+    // Rolling client/backend versions must not hide otherwise authorized work.
+    // Missing source evidence remains unknown rather than claiming READY.
+    const legacy = structuredClone(payload);
+    delete legacy.items[0].dependency_total;
+    delete legacy.items[0].dependency_remaining;
+    delete legacy.items[0].dependency_readiness;
+    expect(assertUnifiedMyWorkProjection(legacy)).toBe(legacy);
+    expect(legacy.items[0].dependency_readiness).toBeUndefined();
+
+    const partial = structuredClone(legacy);
+    partial.items[0].dependency_total = 1;
+    expect(() => assertUnifiedMyWorkProjection(partial)).toThrow('ATTENTION_ITEM_INVALID');
+
     const tampered = structuredClone(payload);
     tampered.items[0].dependency_readiness = 'READY';
     expect(() => assertUnifiedMyWorkProjection(tampered)).toThrow('ATTENTION_ITEM_INVALID');
@@ -199,7 +215,7 @@ describe('unified My Work projection contract', () => {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.test.js
- * VERSION: v1.4.0-PROJECT-READINESS-CLIENT-CERT
+ * VERSION: v1.4.1-MIXED-EOS-READINESS-CERT
  * AUTHORITY BOUNDARY: Deterministic projection contract evidence only.
  * TENANT POSTURE: Synthetic exact-scope and mismatch tests.
  * FAIL-CLOSED POSTURE: Unknown or divergent source metadata is rejected.
