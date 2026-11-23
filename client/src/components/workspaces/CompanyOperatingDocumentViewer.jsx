@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.23.0-EXECUTION-ACTION-HIERARCHY
+ * VERSION: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
+ *            gives verified task-event responses a distinct source-backed
+ *            result panel, explicit loaded state, accessible announcement and
+ *            focus handoff so users recognize where the evidence appeared.
+ *            Separates verification from task governance; no source writes.
  * CHANGELOG: v2.23.0-EXECUTION-ACTION-HIERARCHY
  *            gives verified M04 work rows a deliberate compact action rail:
  *            icon-led evidence inspection and a prominent blue Manage task
@@ -578,6 +583,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [delivery, setDelivery] = useState({ state: 'IDLE', projectId: null, page: null, error: '' });
   const deliveryReadRef = useRef({ sequence: 0, controller: null });
   const executionEvidenceReadRef = useRef({ sequence: 0, controller: null });
+  const evidenceResultRef = useRef(null);
   const [executionEvidence, setExecutionEvidence] = useState({
     state: 'IDLE', taskId: null, items: [], error: '',
   });
@@ -1317,6 +1323,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   }, []);
 
   useEffect(() => {
+    // After an explicit evidence read, move keyboard and visual focus to the
+    // bounded result for the selected task, not to unrelated work rows.
+    if (['READY', 'DENIED', 'UNAVAILABLE'].includes(executionEvidence.state)) {
+      evidenceResultRef.current?.focus();
+    }
+  }, [executionEvidence.state, executionEvidence.taskId]);
+
+  useEffect(() => {
     if (!commandIssue) return;
     // A rejected Save may occur after scrolling through every Strategy section.
     // Bring the bounded EOS operation evidence into view without clearing work.
@@ -1995,6 +2009,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                     className="flex max-w-full flex-wrap items-center gap-2 sm:justify-end">
                                     <button type="button"
                                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-500/90 bg-slate-800/90 px-3.5 py-2.5 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:border-sky-300 hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+                                      aria-expanded={executionEvidence.taskId === task.task_id && executionEvidence.state !== 'IDLE'}
+                                      aria-controls={'m04-evidence-' + task.task_id}
                                       onClick={() => void verifyExecutionEvidence(task.task_id)}>
                                       <FileText size={16} aria-hidden="true"/> Inspect lifecycle evidence
                                     </button>
@@ -2016,29 +2032,48 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                     ].filter(Boolean).join(' · ')}.
                                     {' '}Use the existing Projects task actions; EOS verifies every change.
                                   </p>}
-                                {executionEvidence.taskId === task.task_id && <div className="mt-2 text-sm"
-                                  role={executionEvidence.state === 'UNAVAILABLE' || executionEvidence.state === 'DENIED' ? 'alert' : 'status'}>
-                                  {executionEvidence.state === 'LOADING' && 'Reading source-owned task events…'}
+                                {executionEvidence.taskId === task.task_id && <section
+                                  id={'m04-evidence-' + task.task_id}
+                                  ref={evidenceResultRef}
+                                  tabIndex={-1}
+                                  aria-label={'Lifecycle evidence result for ' + task.title}
+                                  className={styles.m04EvidenceResult}
+                                  data-evidence-state={executionEvidence.state}
+                                  role={['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state) ? 'alert' : 'status'}>
+                                  <div className={styles.m04EvidenceHeading}>
+                                    {executionEvidence.state === 'READY' ? <CheckCircle2 size={20} aria-hidden="true"/>
+                                      : <FileText size={20} aria-hidden="true"/>}
+                                    <div>
+                                      <strong>{executionEvidence.state === 'READY' ? 'Lifecycle evidence verified'
+                                        : executionEvidence.state === 'LOADING' ? 'Verifying lifecycle evidence…'
+                                          : 'Lifecycle evidence unavailable'}</strong>
+                                      <span>EOS task evidence · {task.title}</span>
+                                    </div>
+                                  </div>
+                                  {executionEvidence.state === 'LOADING' && <p>Reading source-owned task events…</p>}
                                   {executionEvidence.state === 'READY' && <>
-                                    <p>Verified immutable EOS lifecycle events: {executionEvidence.items.length}.
-                                      Most recent: {executionEvidence.items[0].event_type.replaceAll('_', ' ')}
+                                    <p className={styles.m04EvidenceResultDetail}>
+                                      Verified immutable EOS lifecycle events: {executionEvidence.items.length}.
+                                      {' '}Most recent: {executionEvidence.items[0].event_type.replaceAll('_', ' ')}
                                       {' · '}{executionEvidence.items[0].status_after}
                                       {' · '}{executionEvidence.items[0].occurred_at}.
                                     </p>
                                     {task.status === 'DONE' && executionEvidence.decisions
-                                      && executionEvidence.attachments && <p className="mt-1">
+                                      && executionEvidence.attachments && <p className={styles.m04EvidenceResultDetail}>
                                         Business decisions: {executionEvidence.decisions.approved} approved
                                         {' / '}{executionEvidence.decisions.total} recorded.
                                         {' '}Attachments: {executionEvidence.attachments.cleared} scanner-cleared
                                         {' / '}{executionEvidence.attachments.total} recorded.
                                       </p>}
-                                    <p className="text-xs text-slate-300">Task lifecycle, independent business
-                                      decisions and attachment scanner-clearance are different EOS authorities.
-                                      None independently certifies strategic outcome attainment or payment.</p>
+                                    <details className={styles.m04EvidenceBoundary}>
+                                      <summary>What this verification does and does not establish</summary>
+                                      <p>Task lifecycle, independent business decisions and attachment scanner-clearance are different EOS authorities.
+                                        None independently certifies strategic outcome attainment or payment.</p>
+                                    </details>
                                   </>}
                                   {['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state)
-                                    && executionEvidence.error}
-                                </div>}
+                                    && <p>{executionEvidence.error}</p>}
+                                </section>}
                               </li>)}
                             </ul>
                             {executionMatches.length > executionPageSize && <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
@@ -2259,7 +2294,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.23.0-EXECUTION-ACTION-HIERARCHY
+// VERSION: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
