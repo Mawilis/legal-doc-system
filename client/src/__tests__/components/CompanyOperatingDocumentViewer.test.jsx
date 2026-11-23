@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.19.0-ON-DEMAND-CONTENTS-CERT
+ * VERSION: v1.20.0-FOCUSED-EXECUTION-NAVIGATION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.20.0-FOCUSED-EXECUTION-NAVIGATION-CERT
+ *            verifies bounded M04 evidence navigation, source-safe filtering
+ *            and paging while retaining full task snapshot readback and
+ *            immutable event checks; legacy registers remain on demand.
  * CHANGELOG: v1.19.0-ON-DEMAND-CONTENTS-CERT
  *            verifies accessible collapsed-by-default Contents navigation,
  *            on-demand expansion, keyboard-operable toggle, preserved
@@ -625,7 +629,20 @@ describe('Strategy source-owned project execution readback', () => {
     expect(m04).toHaveTextContent('Past calendar due date1');
     expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
     expect(api.post).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText('Inspect accountable work and lifecycle evidence'));
+    expect(screen.getByText('Browse all 18 planned milestones and tasks').closest('details')?.open).toBe(false);
+    expect(screen.getByText('Source task register · 18 records (additional detail)').closest('details')?.open).toBe(false);
+    fireEvent.click(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/));
+    expect(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })).toHaveLength(6);
+    expect(screen.getByText('18 matching · page 1 of 3')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Next work' }));
+    expect(screen.getByText('18 matching · page 2 of 3')).toBeVisible();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Find work by title' }), { target: { value: 'Operating taxonomy' } });
+    expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Find work by title' }), { target: { value: '' } });
+    expect(screen.getByText('18 matching · page 1 of 3')).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'UNASSIGNED' } });
+    expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'ALL' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(await screen.findByText(/Verified immutable EOS lifecycle events: 1/)).toBeVisible();
     expect(api.get.mock.calls.some(([url, options]) => url === eventUrl
@@ -635,7 +652,7 @@ describe('Strategy source-owned project execution readback', () => {
     await waitFor(() => expect(screen.getByRole('region', {
       name: 'M04 governed Strategy execution',
     })).toHaveTextContent('Done · task lifecycle only1'));
-    fireEvent.click(screen.getByText('Inspect accountable work and lifecycle evidence'));
+    fireEvent.click(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/));
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(await screen.findByText(/Verified immutable EOS lifecycle events: 2/)).toBeVisible();
     expect(screen.getByText(/Business decisions: 1 approved/)).toBeVisible();
@@ -1120,7 +1137,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.19.0-ON-DEMAND-CONTENTS-CERT
+// VERSION: v1.20.0-FOCUSED-EXECUTION-NAVIGATION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
