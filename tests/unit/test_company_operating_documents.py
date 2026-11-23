@@ -184,7 +184,7 @@ def test_founder_strategy_source_owned_ratification_and_revocation(registry, mon
     with pytest.raises(CompanyDocumentError, match="FOUNDER_RATIFICATION_INVALID"):
         founder("PUBLISH", 2, payload={"approval_reference": FOUNDER_RATIFICATION_REFERENCE,
                                       "effective_from": instant(NOW)}, key="spoofed-normal")
-    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHOR_REQUIRED"):
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
         founder("FOUNDER_RATIFY", 2, actor="other", payload={"effective_from": instant(NOW)},
                 key="foreign-ratify")
     source["active"] = False
