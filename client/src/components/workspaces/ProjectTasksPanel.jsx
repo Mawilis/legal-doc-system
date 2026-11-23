@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.50.0-COMPACT-DELIVERY-EDITOR
+ * VERSION: v1.51.0-ACTIONABLE-SELECTION-REVIEW
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.51.0-ACTIONABLE-SELECTION-REVIEW adds a
+ *          source-backed sequence for reviewing selected tasks and a single
+ *          task assign/schedule command entry. Batch lifecycle commands
+ *          remain prohibited without separately verified EOS authority.
  * CHANGELOG: v1.50.0-COMPACT-DELIVERY-EDITOR
  *          makes the work editor's supporting description collapsible and
  *          uses a restrained neutral accountability surface with clear
@@ -902,6 +906,10 @@ export default function ProjectTasksPanel({
     }
   }, [completionCandidate, items, state]);
 
+  const selectedReviewTasks = selectedWorkIds
+    .map(id => items.find(item => item.task_id === id))
+    .filter(Boolean);
+  const selectedReviewIndex = selectedReviewTasks.findIndex(item => item.task_id === drawerTaskId);
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
   const closeDrawer = () => {
     setDrawerTaskId(null);
@@ -1215,10 +1223,32 @@ export default function ProjectTasksPanel({
         {hasMore && <p className="mt-3 text-xs font-semibold text-amber-900">More EOS task pages exist. The completion fraction above covers this page only.</p>}
       </section>
       </details>
-      {selectedWorkIds.length > 0 && <p role="status" className="mt-3 text-xs font-semibold text-blue-800">
-        {selectedWorkIds.length} work item{selectedWorkIds.length === 1 ? '' : 's'} selected on this verified page
-        · Actions remain individual until EOS authorizes bulk commands
-      </p>}
+      {selectedReviewTasks.length > 0 && <div role="region" aria-label="Selected work actions"
+        className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5">
+        <span role="status" className="mr-auto text-sm font-semibold text-slate-900">
+          {selectedReviewTasks.length} selected · verified current EOS batch
+        </span>
+        <button type="button" className="wp-button min-h-10"
+          onClick={event => {
+            drawerReturnFocus.current = event.currentTarget;
+            setDrawerTaskId(selectedReviewTasks[0].task_id);
+          }}>
+          {selectedReviewTasks.length === 1 ? 'Review selected task' : 'Review selected tasks'}
+        </button>
+        {selectedReviewTasks.length === 1
+          && !['DONE', 'CANCELLED'].includes(selectedReviewTasks[0].status)
+          && (actionCapabilities?.canEdit === true || actionCapabilities?.canAssign === true)
+          && <button type="button" className="wp-button min-h-10"
+            disabled={busy}
+            onClick={() => openTaskEditor(selectedReviewTasks[0], actionCapabilities?.canEdit !== true)}>
+            {actionCapabilities?.canEdit === true ? 'Assign & schedule' : 'Assign contributor'}
+          </button>}
+        <button type="button" className="wp-button min-h-10"
+          onClick={() => setSelectedWorkIds([])}>Clear selection</button>
+        {selectedReviewTasks.length > 1 && <span className="w-full text-xs text-slate-600">
+          Review in sequence. Each change requires its own EOS authorization and verified readback; bulk commands are unavailable.
+        </span>}
+      </div>
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
@@ -1599,6 +1629,22 @@ export default function ProjectTasksPanel({
                 className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 aria-label="Close work details">Close</button>
             </div>
+            {selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
+              aria-label="Selected work review navigation" className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="mr-auto text-xs font-semibold text-slate-700">
+                Reviewing {selectedReviewIndex + 1} of {selectedReviewTasks.length} selected tasks
+              </span>
+              <button type="button" className="wp-button min-h-9"
+                disabled={selectedReviewIndex === 0}
+                onClick={() => setDrawerTaskId(selectedReviewTasks[selectedReviewIndex - 1].task_id)}>
+                Previous task
+              </button>
+              <button type="button" className="wp-button min-h-9"
+                disabled={selectedReviewIndex === selectedReviewTasks.length - 1}
+                onClick={() => setDrawerTaskId(selectedReviewTasks[selectedReviewIndex + 1].task_id)}>
+                Next task
+              </button>
+            </nav>}
             <h3 className="mt-3 break-words text-2xl font-bold leading-tight text-slate-950">{drawerTask.title}</h3>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
               <span className="rounded-md bg-slate-100 px-3 py-1.5 font-bold text-slate-900">
@@ -1733,7 +1779,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.50.0-COMPACT-DELIVERY-EDITOR
+// VERSION: v1.51.0-ACTIONABLE-SELECTION-REVIEW
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
