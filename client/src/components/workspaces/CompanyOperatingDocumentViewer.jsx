@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
+ * VERSION: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
+ *            exposes source-derived accountability remediation for verified
+ *            M04 task rows and routes authorized users into existing exact-
+ *            project task commands; no new task mutation, IAM, outcome score,
+ *            deadline authority or project link is introduced.
  * CHANGELOG: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
  *            turns verified M04 accountability counts into accessible
  *            source-safe work filters; activating any count opens the existing
@@ -1981,11 +1986,28 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                       {' · '}{remaining ? remaining + ' incomplete predecessor(s)' : 'Dependencies clear'}
                                     </p>
                                   </div>
-                                  <button type="button" className="rounded-lg border border-slate-500 px-3 py-2 text-sm"
-                                    onClick={() => void verifyExecutionEvidence(task.task_id)}>
-                                    Inspect lifecycle evidence
-                                  </button>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <button type="button" className="rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                                      onClick={() => void verifyExecutionEvidence(task.task_id)}>
+                                      Inspect lifecycle evidence
+                                    </button>
+                                    {typeof onOpenProject === 'function' && !['DONE', 'CANCELLED'].includes(task.status)
+                                      && <button type="button" className="rounded-lg border border-sky-500/70 bg-sky-950/50 px-3 py-2 text-sm font-semibold text-sky-100 hover:bg-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                                        aria-label={'Manage ' + task.title + ' in Projects'}
+                                        onClick={() => onOpenProject(m04Execution.project.project_id)}>
+                                        Manage in Projects <ArrowUpRight size={14} aria-hidden="true"/>
+                                      </button>}
+                                  </div>
                                 </div>
+                                {(!task.assignee_principal_id || !task.due_date || remaining > 0)
+                                  && !['DONE', 'CANCELLED'].includes(task.status) && <p className="mt-1 text-xs text-slate-300">
+                                    Needs attention: {[
+                                      !task.assignee_principal_id ? 'assign an eligible project contributor' : null,
+                                      !task.due_date ? 'set an authorized due date' : null,
+                                      remaining > 0 ? 'resolve ' + remaining + ' source-owned predecessor(s)' : null,
+                                    ].filter(Boolean).join(' · ')}.
+                                    {' '}Use the existing Projects task actions; EOS verifies every change.
+                                  </p>}
                                 {executionEvidence.taskId === task.task_id && <div className="mt-2 text-sm"
                                   role={executionEvidence.state === 'UNAVAILABLE' || executionEvidence.state === 'DENIED' ? 'alert' : 'status'}>
                                   {executionEvidence.state === 'LOADING' && 'Reading source-owned task events…'}
@@ -2229,7 +2251,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
+// VERSION: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
