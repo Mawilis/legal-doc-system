@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.24.2-REFRESH-INSPECTOR-CONTINUITY-CERT
+ * VERSION: v1.25.0-SOURCE-TASK-REMEDIATION-HANDOFF-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.25.0-SOURCE-TASK-REMEDIATION-HANDOFF-CERT
+ *            confirms source-owned assignment and deadline notices link to
+ *            the canonical project task commands without issuing any write.
  * CHANGELOG: v1.24.2-REFRESH-INSPECTOR-CONTINUITY-CERT
  *            confirms refreshed EOS lifecycle results preserve the open
  *            inspector rather than triggering an unintended close action.
@@ -690,7 +693,8 @@ describe('Strategy source-owned project execution readback', () => {
         return Promise.resolve({ data: view(published) });
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
     });
-    render(wrap({ classification: 'STRATEGY' }));
+    const openCanonicalProject = vi.fn();
+    render(wrap({ classification: 'STRATEGY', onOpenProject: openCanonicalProject }));
     fireEvent.click(await screen.findByRole('button', {
       name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
@@ -708,6 +712,10 @@ describe('Strategy source-owned project execution readback', () => {
     expect(inspectorSummary.closest('details')?.open).toBe(true);
     expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('UNASSIGNED');
+    expect(screen.getAllByText(/Needs attention: assign an eligible project contributor/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Manage MW-M01 — Operating taxonomy and strategy alignment in Projects/ }));
+    expect(openCanonicalProject).toHaveBeenCalledWith(projectId);
+    expect(api.post).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect assigned in task source' }));
     expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('ASSIGNED');
@@ -1240,7 +1248,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.24.2-REFRESH-INSPECTOR-CONTINUITY-CERT
+// VERSION: v1.25.0-SOURCE-TASK-REMEDIATION-HANDOFF-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
