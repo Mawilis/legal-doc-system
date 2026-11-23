@@ -1,5 +1,5 @@
 """TITLE: WILSY Founder Institutional Designation Registry
-VERSION: v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS
+VERSION: v1.0.3-FOUNDER-READBACK-DATABASE-NARROWING
 AUTHORITY: Existing exact WILSY company principal, active membership,
   tenant_owner capacity and ENTERPRISE_ADMIN assignment; verified Owner factor.
 EPITOME: Persist and read one explicit non-IAM Founder title with immutable
@@ -10,7 +10,11 @@ COLLABORATION / OWNERSHIP: AuthRegistry owns legacy password and OTP;
   repositories own their independent current authorities; workspace bootstrap
   projects non-authorizing title only.
 CERTIFICATION / UPDATE DATE: 2026-11-23
-CHANGELOG: v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS explicitly
+CHANGELOG: v1.0.3-FOUNDER-READBACK-DATABASE-NARROWING narrows
+  optional database source at the durable readback boundary before both
+  designation and audit queries; missing sources retain their existing
+  fail-closed rejection code, without changing auth or persistence.
+  v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS explicitly
   narrows optional principal, membership, capacity, IAM, Owner, client and
   database sources before access. Missing authorities fail closed with the
   same rejection codes, no casts, blanket type ignores or new grants.
@@ -45,7 +49,7 @@ from tools.eos.auth.tenant_membership_repository import TenantMembershipReposito
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
 
-VERSION: Final[str] = "v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS"
+VERSION: Final[str] = "v1.0.3-FOUNDER-READBACK-DATABASE-NARROWING"
 TENANT: Final[str] = "WILSYTENANT-4CD2FZ4O"
 EMAIL: Final[str] = "wilsonkhanyezi@gmail.com"
 BUSINESS_ROLE: Final[str] = "tenant_owner"
@@ -145,8 +149,10 @@ def read_founder_designation(
     """
     if tenant_id != TENANT or not isinstance(principal_id, str) or not principal_id:
         return None
-    db = database if database is not None else kernel_db.get_database()
-    _require(db is not None, "FOUNDER_DESIGNATION_DATABASE_UNAVAILABLE")
+    db = _require_present(
+        database if database is not None else kernel_db.get_database(),
+        "FOUNDER_DESIGNATION_DATABASE_UNAVAILABLE",
+    )
     rows = list(db[COLLECTION].find(
         {"tenant_id": TENANT, "principal_id": principal_id},
         {"_id": 0}, session=session,
@@ -307,7 +313,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: founder_institutional_designation.py
-# VERSION: v1.0.2-TYPED-FOUNDER-CURRENTNESS-GUARDS
+# VERSION: v1.0.3-FOUNDER-READBACK-DATABASE-NARROWING
 # AUTHORITY BOUNDARY: non-IAM Founder identity title; no grant
 # TENANT POSTURE: exact principal and WILSY tenant with live role checks
 # FAIL-CLOSED POSTURE: absent proof, missing factor or authority denies
