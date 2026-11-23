@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
+ * VERSION: v2.4.0-M02-LIVE-EXECUTION-READBACK
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.4.0-M02-LIVE-EXECUTION-READBACK derives
+ *            lifecycle, dependency and past-due calendar counts only from a
+ *            complete validated live EOS project snapshot and all 18 unique
+ *            plan identities; captures client-observed successful-read time.
+ *            Incomplete coverage suppresses metrics, not just a badge.
  * CHANGELOG: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
  *            shows each plan record's EOS lifecycle state independently of
  *            persistence, and opens its existing project workspace for
@@ -491,7 +496,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
           ? !Number.isSafeInteger(page.next_offset)
             || page.next_offset !== offset + page.items.length || page.items.length === 0
           : page.next_offset !== null)) throw new Error('STRATEGY_PROJECT_TASK_READBACK_INVALID');
-      setDelivery({ state: 'READY', projectId, page, error: '' });
+      setDelivery({ state: 'READY', projectId, page, verifiedAt: new Date().toISOString(), error: '' });
       if (projectItems.some(item => item.project_id === projectId && item.name === FOUNDATION_PROJECT_NAME)) void loadStrategyLinks();
     } catch (failure) {
       if (!active(key) || request !== deliveryReadRef.current.sequence) return;
@@ -631,6 +636,50 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (strategyLinkWriteRef.current === attempt) strategyLinkWriteRef.current = null;
     }
   };
+
+  // M02 is a read-only projection, never Strategy outcome certification.
+  // Only the full exact-project response can attest the plan's full graph;
+  // a paged or missing predecessor snapshot cannot produce zero blockers.
+  const foundationExecution = (() => {
+    const page = delivery.page;
+    if (delivery.state !== 'READY' || !page || page.offset !== 0
+      || page.has_more || !delivery.verifiedAt
+      || !projectItems.some(project => project.project_id === delivery.projectId
+        && project.name === FOUNDATION_PROJECT_NAME)) return null;
+    const byId = new Map(page.items.map(item => [item.task_id, item]));
+    const plan = [];
+    for (const entry of FOUNDATION_EXECUTION_PLAN) {
+      const matches = page.items.filter(item => item.title === entry.title
+        && item.kind === entry.kind);
+      if (matches.length !== 1) return null;
+      plan.push(matches[0]);
+    }
+    const counts = { TODO: 0, IN_PROGRESS: 0, BLOCKED: 0, DONE: 0, CANCELLED: 0 };
+    let waiting = 0;
+    let unfinishedPredecessors = 0;
+    let pastDue = 0;
+    // This is a client-calendar comparison at the instant of successful
+    // readback, not an EOS-computed overdue flag or Strategy deadline.
+    const asOfDay = delivery.verifiedAt.slice(0, 10);
+    for (const task of plan) {
+      if (!Object.hasOwn(counts, task.status) || !Array.isArray(task.depends_on)
+        || task.depends_on.length > 25
+        || new Set(task.depends_on).size !== task.depends_on.length) return null;
+      counts[task.status] += 1;
+      const predecessors = task.depends_on.map(id => byId.get(id));
+      if (predecessors.some(item => !item)) return null;
+      const remaining = predecessors.filter(item => item.status !== 'DONE').length;
+      if (remaining) { waiting += 1; unfinishedPredecessors += remaining; }
+      if (!['DONE', 'CANCELLED'].includes(task.status) && task.due_date != null) {
+        if (typeof task.due_date !== 'string'
+          || !/^\\d{4}-\\d{2}-\\d{2}$/.test(task.due_date)
+          || Number.isNaN(Date.parse(task.due_date + 'T00:00:00Z'))) return null;
+        if (task.due_date < asOfDay) pastDue += 1;
+      }
+    }
+    return { counts, waiting, unfinishedPredecessors, pastDue,
+      total: plan.length, verifiedAt: delivery.verifiedAt };
+  })();
 
   const verifiedFoundationPlanCount = delivery.state === 'READY' && delivery.page
     ? FOUNDATION_EXECUTION_PLAN.filter(entry => delivery.page.items.some(item =>
@@ -1155,6 +1204,38 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       <p className="mt-3 text-xs text-slate-300">
                         Each record below shows current EOS lifecycle state. Persisted means the work exists, not that it is Done, approved, linked to a strategic pillar or published.
                       </p>
+                      {foundationExecution ? <section aria-label="M02 live execution readback"
+                        className="mt-4 rounded-xl border border-slate-500/50 bg-slate-950/40 p-4 text-slate-100">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-base font-semibold text-white">Live implementation execution · M02</h4>
+                          <span className="text-xs text-slate-200">Successful Projects read observed: {foundationExecution.verifiedAt.replace('T', ' ').slice(0, 19)} UTC</span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-200">All {foundationExecution.total} programme records uniquely matched in the complete, authorized EOS project snapshot. These are task lifecycle counts, not strategic outcome certification.</p>
+                        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+                          {[
+                            ['To do', foundationExecution.counts.TODO],
+                            ['In progress', foundationExecution.counts.IN_PROGRESS],
+                            ['Done', foundationExecution.counts.DONE],
+                            ['Blocked', foundationExecution.counts.BLOCKED],
+                            ['Cancelled', foundationExecution.counts.CANCELLED],
+                          ].map(([label, count]) => <div key={label} className="rounded-lg border border-slate-600/70 bg-slate-900 p-3">
+                            <dt className="text-xs font-medium text-slate-300">{label}</dt>
+                            <dd className="mt-1 text-xl font-bold text-white">{count}</dd>
+                          </div>)}
+                        </dl>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
+                            <strong>{foundationExecution.waiting}</strong> programme records waiting on <strong>{foundationExecution.unfinishedPredecessors}</strong> unfinished predecessor relationships
+                          </p>
+                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
+                            <strong>{foundationExecution.pastDue}</strong> unfinished records with calendar due dates before the observed UTC read date
+                          </p>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-300">Refresh execution to verify current EOS state. The timestamp is client-observed after a successful read, not a server transaction timestamp. No pillar link, publication, approval or completion is inferred.</p>
+                      </section> : <p role="status" className="mt-3 rounded-lg border border-slate-500/60 p-3 text-sm text-slate-200">
+                        M02 execution summary unavailable: full, unique 18-record programme coverage and predecessor readback have not both been verified. No counts are inferred.
+                      </p>}
+
                       <div className={styles.strategyPlanGroups}>
                         {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
                           <h4>{kind === 'MILESTONE' ? 'Milestones · 6' : 'Implementation tasks · 12'}</h4>
@@ -1335,7 +1416,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
+// VERSION: v2.4.0-M02-LIVE-EXECUTION-READBACK
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
