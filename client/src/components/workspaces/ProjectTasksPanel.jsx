@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.47.0-ACCOUNTABLE-TASK-EDITOR
+ * VERSION: v1.48.0-ASSIGNEE-FIRST-DELIVERY-COMMANDS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.48.0-ASSIGNEE-FIRST-DELIVERY-COMMANDS
+ *          makes contributor selection first, keeps date selection adjacent,
+ *          labels the action by exact granted capability and replaces user-
+ *          facing backend wording without changing command authorization.
  * CHANGELOG: v1.47.0-ACCOUNTABLE-TASK-EDITOR
  *          prioritizes assignment and due dates in the existing drawer,
  *          puts accountable delivery first in edit form and collapses
@@ -1425,8 +1429,6 @@ export default function ProjectTasksPanel({
           <p className="mt-1 text-xs text-blue-900">Choose a responsible contributor{assignmentOnly ? '.' : ' and the completion date.'} Changes are saved only after verification.</p>
         </div>
         <div className={assignmentOnly ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
-          {!assignmentOnly && <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
-            onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>}
           <label className="block text-sm font-semibold text-slate-800">Assigned contributor
             <select aria-label="Reassign task" value={editor.assignee_principal_id}
               onChange={event => setEditor(value => ({ ...value, assignee_principal_id: event.target.value }))}
@@ -1442,6 +1444,8 @@ export default function ProjectTasksPanel({
                 </option>}
             </select>
           </label>
+          {!assignmentOnly && <ProjectWorkDateField label="Edit task due date" value={editor.due_date}
+            onChange={date => setEditor(previous => ({ ...previous, due_date: date }))}/>}
         </div>
         {!assignmentOnly && <div className="space-y-3 border-t border-slate-200 pt-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Additional task details</p>
@@ -1464,7 +1468,7 @@ export default function ProjectTasksPanel({
               person.principal_id === editor.assignee_principal_id))
             || (assignmentOnly && (editor.assignee_principal_id || null)
               === (items.find(item => item.task_id === editor.task_id)?.assignee_principal_id || null))}>
-          {assignmentOnly ? 'Save assignment' : 'Save changes to EOS'}
+          {assignmentOnly ? 'Save assignment' : 'Save task changes'}
         </button>
         </form>
         </div>
@@ -1582,7 +1586,7 @@ export default function ProjectTasksPanel({
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
-                  Assign & schedule
+                  {actionCapabilities?.canEdit ? 'Assign & schedule' : 'Assign contributor'}
                 </button>}
               <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
@@ -1693,7 +1697,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.47.0-ACCOUNTABLE-TASK-EDITOR
+// VERSION: v1.48.0-ASSIGNEE-FIRST-DELIVERY-COMMANDS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
