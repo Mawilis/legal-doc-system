@@ -1,12 +1,16 @@
 """
 TITLE: WILSY OS MongoDB Transport Development Certificate
-VERSION: v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON
+VERSION: v1.4.1-SAFE-LEGACY-PLAN-REASON
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compare local Mongo read-only command timings to Atlas execution time.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/mongo_transport_certificate.py
 COLLABORATION / OWNERSHIP: Kernel owns the sole Mongo lifecycle; this explicit
                            operator command observes it without creating authority.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.4.1-SAFE-LEGACY-PLAN-REASON distinguishes a true
+collection scan or missing usable index from MongoDB selecting a different
+installed index for the exact tenant-scoped $or. Emits only fixed diagnostic
+reason codes and installed index names, never query values or records.
 CHANGELOG: v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON records the
 actual ObjectId-shaped tenant-scoped legacy users query plan (not the
 tenant-neutral principal_credentials collection), plus synthetic timing of
@@ -37,7 +41,7 @@ from bson import ObjectId
 from pymongo.errors import PyMongoError
 from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
 
-VERSION: Final[str] = "v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON"
+VERSION: Final[str] = "v1.4.1-SAFE-LEGACY-PLAN-REASON"
 _INDEX: Final[str] = "wilsy_auth_users_tenant_identity_lookup"
 _ABSENT: Final[str] = "__WILSY_TRANSPORT_CERT_NEVER_A_REAL_ID__"
 
@@ -111,15 +115,27 @@ def _certify_legacy_user_query_plan(db: Any) -> bool:
     winning = plan.get("queryPlanner", {}).get("winningPlan", {})
     indexes = _indexes(winning)
     stages = _plan_stages(winning)
+    # MongoDB may legitimately select another provisioned index for this
+    # tenant-scoped OR. It need not pick both expected branch indexes.
+    # Only an actual collection scan, uninstalled index, or unexpected
+    # record/examination is a diagnostic failure.
+    if "COLLSCAN" in stages:
+        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED reason=COLLECTION_SCAN")
+        return False
+    if not indexes:
+        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED reason=NO_INDEXED_WINNING_STAGE")
+        return False
+    if not indexes.issubset(installed):
+        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED reason=UNKNOWN_INDEX")
+        return False
+    if stats.get("nReturned") != 0 or stats.get("totalDocsExamined") != 0:
+        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED reason=UNEXPECTED_RECORD_EXAMINATION")
+        return False
     if (
-        "COLLSCAN" in stages
-        or not indexes
-        or not indexes.issubset(required)
-        or stats.get("nReturned") != 0
-        or stats.get("totalDocsExamined") != 0
-        or not isinstance(stats.get("totalKeysExamined"), int)
+        not isinstance(stats.get("totalKeysExamined"), int)
+        or isinstance(stats.get("totalKeysExamined"), bool)
     ):
-        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED")
+        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED reason=MISSING_EXECUTION_STATS")
         return False
     print(
         "EOS_LEGACY_CREDENTIAL_PLAN=INDEXED "
@@ -355,7 +371,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: mongo_transport_certificate.py
-# VERSION: v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON
+# VERSION: v1.4.1-SAFE-LEGACY-PLAN-REASON
 # AUTHORITY BOUNDARY: Explicit read-only Kernel Mongo timing observation.
 # TENANT POSTURE: Synthetic absent scope and identity; no record access.
 # FAIL-CLOSED POSTURE: Unavailable index, query plan, or Mongo connection is failure.
