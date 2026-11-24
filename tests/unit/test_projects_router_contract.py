@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT
+VERSION: v1.43.0-DRIVER-CORRELATED-PROJECT-READ-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -17,6 +17,10 @@ AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
                     claim a live role assignment, entitlement or database write.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 CHANGELOG:
+  v1.43.0-DRIVER-CORRELATED-PROJECT-READ-CERT asserts
+  that the authorized Projects GET transaction is wrapped exactly once
+  in an opt-in driver timing scope, with the same sanitized trace label,
+  while the original list transaction interface and no-write promise remain.
   v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT confirms safe opaque
   correlation with existing pre-handler authorization timing; unknown
   or untrusted trace values cannot enter Projects source logs.
@@ -138,6 +142,7 @@ CHANGELOG: v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies only matching-tenant verifie
 from __future__ import annotations
 
 import inspect
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -1649,6 +1654,35 @@ def test_project_latency_trace_rejects_untrusted_values(monkeypatch: pytest.Monk
     assert projects_router._safe_projects_read_trace() == "TRC-SERVER-ABCDEF123456"
 
 
+def test_project_read_mongo_scope_uses_only_validated_trace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No actual Mongo command is executed by driver timing instrumentation."""
+    observed = []
+    context = SimpleNamespace(tenant_id="synthetic-tenant",
+                              identity=SimpleNamespace(identity_id="synthetic-reader"))
+
+    @contextmanager
+    def scoped(*, stage, correlation):
+        observed.append((stage, correlation))
+        yield
+
+    def transaction(actual, callback, **kwargs):
+        assert actual is context
+        assert kwargs == {}
+        return callback("registry", "session")
+
+    monkeypatch.setattr(projects_router.kernel_db, "mongo_timing_scope", scoped)
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "TRC-ABCDEFGH-ABC123")
+    assert projects_router._profiled_projects_get(
+        context, "PROJECT_LIST", lambda registry, session: {"ok": True},
+    ) == {"ok": True}
+    assert observed == [("PROJECTS_READ", "TRC-ABCDEFGH-ABC123")]
+    assert projects_router._project_list_read_timings.get() is None
+
+
 def test_profiled_projects_get_preserves_entitlement_denial(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -1673,7 +1707,7 @@ def test_profiled_projects_get_preserves_entitlement_denial(
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT
+# VERSION: v1.43.0-DRIVER-CORRELATED-PROJECT-READ-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
