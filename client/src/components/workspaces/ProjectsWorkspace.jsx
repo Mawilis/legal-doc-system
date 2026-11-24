@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.42.0-COMPACT-PROJECT-WORKSPACE-CHROME
+ * VERSION: v2.43.0-ONE-NETWORK-MOUNT-PER-SCOPE
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.43.0-ONE-NETWORK-MOUNT-PER-SCOPE defers
+ *            initial Projects list and summary reads to the post-effect
+ *            microtask, preventing the discarded development StrictMode
+ *            mount from sending duplicate authenticated MongoDB traffic.
+ *            Explicit refresh and source-authorized reads are unchanged.
  * CHANGELOG: v2.42.0-COMPACT-PROJECT-WORKSPACE-CHROME
  *            gives task work priority over project header furniture:
  *            breadcrumb, project title and source status share a compact
@@ -915,12 +920,18 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     pageOffsetRef.current = 0;
     setPageOffset(0);
     setHasNextPage(false);
+    let active = true;
     if (focusAssignedProjectId && /^prj-[0-9a-f]{48}$/.test(focusAssignedProjectId)) {
       setShowAssignedProjects(true);
     } else {
-      void refresh({ preserveSelection: false });
+      // React development StrictMode replays effects in the same turn;
+      // discarded setup must not launch a second EOS list/summary fanout.
+      queueMicrotask(() => {
+        if (active) void refresh({ preserveSelection: false });
+      });
     }
     return () => {
+      active = false;
       listSequence.current += 1;
       detailSequence.current += 1;
     };
@@ -2019,7 +2030,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.42.0-COMPACT-PROJECT-WORKSPACE-CHROME
+// VERSION: v2.43.0-ONE-NETWORK-MOUNT-PER-SCOPE
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
