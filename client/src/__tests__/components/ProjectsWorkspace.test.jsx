@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT
+ * VERSION: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT treats an EOS-sourced
+ *          immutable comment displayed after held readback as the actual
+ *          milestone certificate, independently of composer clearing UX.
  * CHANGELOG: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT waits for the actual
  *          post-command source read rather than assuming a fixed GET
  *          sequence; periodic component reads cannot satisfy the gate.
@@ -1697,10 +1700,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(editor).toHaveValue(milestone);
     expect(api.patch).not.toHaveBeenCalled();
     await act(async () => { releaseReadback(); });
-    await waitFor(() => expect(editor).toHaveValue(''));
     const history = document.querySelector('[aria-label="Verified task activity history"]');
     await waitFor(() => expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed'));
     expect(history).toHaveTextContent(sha);
+    // Durable source content, not local draft clearing, is the certification gate.
     expect(history).toHaveTextContent('NOT CERTIFIED');
     expect(history).toHaveTextContent('READBACK REQUIRED');
     expect(history).toHaveTextContent('production release remains BLOCKED');
@@ -2916,7 +2919,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT
+ * VERSION: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
