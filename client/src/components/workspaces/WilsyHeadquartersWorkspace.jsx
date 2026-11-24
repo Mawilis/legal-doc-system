@@ -5,14 +5,19 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD
+ * VERSION: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD preserves a
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES routes
+ *          right-rail calendar to a dedicated Headquarters work surface,
+ *          and expands selected My Work records to the full operating canvas
+ *          instead of squeezing them into the dashboard column. Return actions
+ *          restore the preserved queue and overview without changing EOS.
+ * CHANGELOG: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES preserves a
  *          genuinely compact verified-empty queue without forcing
  *          the populated-list maximum height on empty source states.
  * CHANGELOG: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS aligns
@@ -277,6 +282,29 @@ body:has(.wilsyHqShell)::after{display:none}
 .wilsyHqShell .hq-work-list--empty{max-height:none;min-height:0;overflow:visible}
 .wilsyHqShell .hq-work-status{padding:12px}
 .wilsyHqShell .hq-calendar-expanded{border-top:1px solid #e8edf7;margin-top:8px;padding-top:8px;overflow-x:auto}
+/* Work focus replaces overview content rather than expanding a side card. */
+.wilsyHqShell .hq-overview.hq-record-active>.hq-hero,
+.wilsyHqShell .hq-overview.hq-record-active>.hq-glance,
+.wilsyHqShell .hq-overview.hq-record-active>.hq-kpis,
+.wilsyHqShell .hq-overview.hq-record-active .hq-organisation-column,
+.wilsyHqShell .hq-overview.hq-record-active .hq-reporting-column,
+.wilsyHqShell .hq-overview.hq-record-active .hq-performance{display:none}
+.wilsyHqShell .hq-overview.hq-record-active .hq-work-column{grid-column:1/-1}
+.wilsyHqShell .hq-overview.hq-record-active .hq-work{width:100%;max-width:none;min-height:min(70dvh,740px)}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record{border-top:0;padding:clamp(16px,2vw,32px);max-width:none}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record h3{font-size:clamp(18px,1.7vw,25px);line-height:1.3}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record dl{font-size:13px;grid-template-columns:minmax(100px,160px) minmax(0,1fr);gap:12px;max-width:900px}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record p{font-size:13px;line-height:1.65;max-width:900px}
+.wilsyHqShell .hq-overview.hq-record-active .hq-command{max-width:900px}
+.wilsyHqShell .hq-overview.hq-record-active .hq-command textarea{min-height:100px;font-size:13px}
+.wilsyHqShell .hq-focused-calendar{min-width:0;background:#0b1930;color:#e2e8f0;border:1px solid #274469;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px #101c3420}
+.wilsyHqShell .hq-focused-calendar-header{background:linear-gradient(110deg,#0d2549,#153a69);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(14px,2vw,24px)}
+.wilsyHqShell .hq-focused-calendar-header h2{font-size:16px;font-weight:700;color:#fff}
+.wilsyHqShell .hq-focused-calendar-header button{background:#ffffff12;border:1px solid #ffffff45;color:#fff;border-radius:9px;padding:9px 14px;font-weight:650;font-size:12px}
+.wilsyHqShell .hq-focused-calendar-content{padding:clamp(12px,2vw,24px);max-height:calc(100dvh - 200px);min-height:320px;overflow:auto;overscroll-behavior:contain}
+.wilsyHqShell .hq-focused-calendar-content>div{max-width:1100px;margin:auto}
+@media(max-width:767px){.wilsyHqShell .hq-focused-calendar-header{align-items:flex-start}.wilsyHqShell .hq-focused-calendar-content{max-height:calc(100dvh - 220px);min-height:280px}}
+
 .wilsyHqShell .hq-unavailable-title{font-size:11px;font-weight:650;color:#465776;margin:0}
 .wilsyHqShell .hq-performance>.hq-panel-heading>svg{color:#71809a;flex-shrink:0}
 .wilsyHqShell .hq-department-pending{display:grid;place-items:center;gap:4px;min-height:62px;border:1px dashed #d7dfec;border-radius:8px;padding:5px;text-align:center;opacity:.72}
@@ -806,12 +834,15 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     const sourceKey = typeof item?.source_key === 'string' && item.source_key.trim()
       ? item.source_key
       : null;
+    setCalendarOpen(false);
     setMyWorkFocusItem(sourceKey);
     setShowMyWork(true);
   };
   const navigateSection = (nextSection) => {
     setSection(nextSection);
     setShowMyWork(false);
+    setCalendarOpen(false);
+    setMyWorkFocusItem(null);
   };
   const toggleNavigationGroup = (groupId) => {
     setExpandedNavigation((current) => ({
@@ -872,6 +903,38 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           <div className={section === 'overview' && !showMyWork ? '' : 'hq-subworkspace'}>
           {showMyWork ? (
             <MyWorkWorkspace focusWorkItem={myWorkFocusItem} />
+          ) : section === 'overview' && calendarOpen ? (
+            <section className="hq-focused-calendar" aria-label="Headquarters work calendar" data-hq-focus="CALENDAR">
+              <header className="hq-focused-calendar-header">
+                <div>
+                  <h2>Work calendar</h2>
+                  <p className="mt-1 text-xs text-slate-300">Your verified EOS work deadlines, across authorised sources.</p>
+                </div>
+                <button type="button" onClick={() => setCalendarOpen(false)}
+                  aria-label="Back to Headquarters overview">← Back to Headquarters</button>
+              </header>
+              <div className="hq-focused-calendar-content">
+                <div>
+                  {currentSnapshot ? (
+                    <WilsyWorkDeadlineCalendar items={currentSnapshot.items}
+                      onOpenWork={(item) => {
+                        setMyWorkFocusItem(item.source_key);
+                        setCalendarOpen(false);
+                      }}/>
+                  ) : (
+                    <div role="status" className="p-5 text-sm">
+                      <p>Work calendar is awaiting a verified current-session EOS projection.</p>
+                      <button type="button" onClick={() => {
+                        myWorkRetryRef.current = { scope: workScope, attempts: 0 };
+                        invalidateUnifiedMyWork(workScope);
+                      }} className="mt-3 rounded-lg border border-white/25 px-3 py-2">
+                        Refresh authorised work
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           ) : section === 'overview' ? (
             <>
               <div className={currentSnapshot?.items.some((item) => item.source_key === myWorkFocusItem) ? 'hq-overview hq-record-active' : 'hq-overview'}>
@@ -960,9 +1023,9 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   <div className="hq-operating-column hq-reporting-column" data-hq-column="reporting">
                 <div className="hq-main-reporting" aria-label="Work calendar and reports">
                   <section className="hq-panel hq-calendar-panel" aria-labelledby="hq-calendar-title">
-                    <div className="hq-panel-heading"><h2 id="hq-calendar-title"><CalendarDays size={17}/> Work calendar</h2><button type="button" onClick={() => setCalendarOpen((value) => !value)} aria-expanded={calendarOpen}>{calendarOpen ? 'Close' : 'View calendar'} <ArrowUpRight size={12}/></button></div>
+                    <div className="hq-panel-heading"><h2 id="hq-calendar-title"><CalendarDays size={17}/> Work calendar</h2><button type="button" onClick={() => setCalendarOpen(true)} aria-label="Open Headquarters work calendar">View calendar <ArrowUpRight size={12}/></button></div>
                     <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => setMyWorkFocusItem(item.source_key)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
-                    {calendarOpen && <div className="hq-calendar-expanded" aria-label="Expanded work calendar"><WilsyWorkDeadlineCalendar items={currentSnapshot?.items || []} onOpenWork={(item) => { setMyWorkFocusItem(item.source_key); setCalendarOpen(false); }}/></div>}
+                    
                   </section>
                   <section className="hq-panel hq-reports" aria-labelledby="hq-reports-title">
                     <div className="hq-panel-heading"><h2 id="hq-reports-title">Reports & analytics</h2></div>
@@ -1580,7 +1643,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD
+ * VERSION: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
