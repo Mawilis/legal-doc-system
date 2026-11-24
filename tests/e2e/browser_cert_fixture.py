@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.7.0-SEEDED-ONLY-SOURCE-READBACK
+VERSION: v1.8.0-ACTUAL-SEED-EVIDENCE-CONTINUITY
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -11,6 +11,13 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_fixture.py
 COLLABORATION / OWNERSHIP: L8-8M-R3 browser certificate; no production authority.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.8.0-ACTUAL-SEED-EVIDENCE-CONTINUITY separates
+           screening-only seed evidence from conflict reviews created by
+           subsequent authenticated browser actions. The seed verifier
+           and immutable baseline fingerprint require only records
+           persisted during seed; the existing full post-browser verify
+           still requires the independent human-review record. No record
+           is fabricated, seeded retroactively or ignored after creation.
 CHANGELOG: v1.7.0-SEEDED-ONLY-SOURCE-READBACK adds a read-only
            verify-seed command for the same-data rollback gate. It verifies
            exact UUID tenant, seeded Legal screening and review, entitlement
@@ -1687,7 +1694,6 @@ def verify_seed(state_path: Path) -> None:
             try:
                 for name, identifier_key, identifier_field in (
                     ("legal_conflict_screenings", "screening_id", "screening_id"),
-                    ("legal_conflict_reviews", "screening_id", "screening_id"),
                     (SYSTEM_INCIDENT_COLLECTION, "system_incident_id", "incident_id"),
                     (SYSTEM_INCIDENT_ASSIGNMENT_COLLECTION, "system_assignment_id", "assignment_id"),
                 ):
@@ -1695,7 +1701,7 @@ def verify_seed(state_path: Path) -> None:
                     if not isinstance(expected, str) or not expected:
                         raise RuntimeError("BROWSER_CERT_SEED_IDENTIFIER_INVALID")
                     selector = {identifier_field: expected}
-                    if name in ("legal_conflict_screenings", "legal_conflict_reviews"):
+                    if name == "legal_conflict_screenings":
                         selector["tenant_id"] = tenant_id
                     if database[name].count_documents(selector, session=session) != 1:
                         raise RuntimeError("BROWSER_CERT_SEEDED_SOURCE_RECORD_MISSING")
@@ -1736,9 +1742,11 @@ def fingerprint(state_path: Path) -> None:
             or not str(state.get("tenant_id", "")).startswith("browser-tenant-")
         ):
             raise RuntimeError("BROWSER_CERT_FINGERPRINT_SCOPE_INVALID")
+        # Conflict review is created only by later authenticated browser
+        # actions, not the seed. Its absence during this source-only
+        # continuity rehearsal is mandatory, not a missing seed record.
         names = (
             "legal_conflict_screenings",
-            "legal_conflict_reviews",
             "tenant_product_entitlement_history",
             LEGAL_WORKFLOW_TRANSITION_COLLECTION,
         )
@@ -1794,7 +1802,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.7.0-SEEDED-ONLY-SOURCE-READBACK
+# VERSION: v1.8.0-ACTUAL-SEED-EVIDENCE-CONTINUITY
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: authenticated tenant and unjoined foreign tenant in a runner-owned disposable database
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop
