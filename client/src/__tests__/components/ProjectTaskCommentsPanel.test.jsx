@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
+ * VERSION: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT verifies that
+ *          the existing read, refresh and authoring actions share the
+ *          compact 36px Projects control class, preserve accessible names
+ *          and never enlarge source comment buttons as standalone cards.
  * CHANGELOG: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
  *          checks safe self-labeling and prevents raw actor principal IDs
  *          appearing in visible activity metadata.
@@ -119,6 +123,27 @@ it('does not refetch four activity sources on equivalent parent rerenders', asyn
       tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Test-Scope': 'changed' }} />);
   });
   await waitFor(() => expect(api.get).toHaveBeenCalledTimes(8));
+});
+
+it('uses consistent compact OS actions without changing authorized commands', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  const refresh = await screen.findByRole('button', { name: 'Refresh' });
+  const compose = await screen.findByRole('button', { name: 'Write update' });
+  for (const button of [refresh, compose]) {
+    expect(button).toHaveClass('wp-button', '!min-h-9', '!px-3', '!text-xs');
+  }
+  fireEvent.click(compose);
+  expect(screen.getByRole('button', { name: 'Close editor' }))
+    .toHaveClass('!min-h-9', '!px-3', '!text-xs');
+  expect(api.post).not.toHaveBeenCalled();
 });
 
 it('presents long persisted engineering updates as expandable safe activity evidence', async () => {
@@ -275,7 +300,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
+// VERSION: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
