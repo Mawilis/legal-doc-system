@@ -5,13 +5,18 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.14.2-EXACT-ROW-DIRECT-HANDOFF
+ * VERSION: v4.15.0-DEFER-REPLAYED-SUMMARY-READ
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v4.15.0-DEFER-REPLAYED-SUMMARY-READ schedules
+ *          the Headquarters overview summary GET after the effect setup
+ *          turn. Development-mode discarded mounts therefore send no
+ *          request, without altering exact tenant scope, envelope validation,
+ *          retries, timeouts, privileges, or verified currentness.
  * CHANGELOG: v4.14.2-EXACT-ROW-DIRECT-HANDOFF sends the selected
  *          validated EOS row directly to its governed source workspace,
  *          rather than re-looking up a possibly stale parent snapshot.
@@ -740,11 +745,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     let current = true;
     setProjectsSummaryState('LOADING');
     setProjectsSummaryError('');
-    api.get('/projects/summary', {
-      forceNetworkRetry: true,
-      signal: controller.signal,
-      headers: { 'X-Tenant-ID': workTenantId },
-    })
+    // In React's development StrictMode, first effect setup is immediately
+    // cleaned up and replayed. Defer the GET to a microtask so the discarded
+    // setup never consumes EOS authorization and MongoDB resources.
+    queueMicrotask(() => {
+      if (!current) return;
+      void api.get('/projects/summary', {
+        forceNetworkRetry: true,
+        signal: controller.signal,
+        headers: { 'X-Tenant-ID': workTenantId },
+      })
       .then((response) => {
         const payload = response?.data;
         const counts = payload?.counts;
@@ -786,6 +796,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
         setProjectsSummaryError(code);
         setProjectsSummaryState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       });
+    });
     return () => { current = false; controller.abort(); };
   }, [auth.sessionGeneration, authUser.id, projectsSummaryRefresh, section, showMyWork, workScope, workTenantId]);
   useEffect(() => {
