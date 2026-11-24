@@ -2335,9 +2335,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       name: 'Work details: Certify production readiness and rollback',
     })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Assign & schedule' })).toBeDisabled();
-    const nextSteps = screen.getByRole('region', { name: 'Next steps for this task' });
-    expect(within(nextSteps).getByText('Not assigned')).toBeVisible();
-    expect(within(nextSteps).getByText('Not set')).toBeVisible();
+    const readiness = screen.getByRole('region', { name: 'Source-verified task execution readiness' });
+    expect(within(readiness).getByText('Assignment required')).toBeVisible();
+    expect(within(readiness).getByText('Due date required')).toBeVisible();
     expect(screen.getByText('Work classification and history').closest('details').open).toBe(false);
     expect(api.post).not.toHaveBeenCalled();
     expect(api.patch).not.toHaveBeenCalled();
