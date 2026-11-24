@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS
+ * VERSION: v19.3.1-PROBE-SCOPED-HEALTH-MESSAGE
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -19,6 +19,10 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v19.3.1-PROBE-SCOPED-HEALTH-MESSAGE describes
+ *            transient /api/kernel read failures as health-probe status,
+ *            not a proved outage of independently verified EOS services.
+ *            Existing degraded state remains visible; no authority altered.
  * CHANGELOG: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS uses clear
  *            human-facing connection status instead of raw kernel codes or
  *            latency telemetry; no change to session or source authority.
@@ -1435,7 +1439,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
           }}
         >
           <ShieldAlert size={14} />
-          <span>{kernelHealth.status === 'UNREACHABLE' ? 'WILSY service unavailable' : 'WILSY connection needs attention'}</span>
+          <span>{kernelHealth.status === 'UNREACHABLE' ? 'Kernel health probe unavailable' : 'Kernel health check needs attention'}</span>
         </div>
       )}
 
@@ -1485,7 +1489,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS
+ * VERSION: v19.3.1-PROBE-SCOPED-HEALTH-MESSAGE
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback
