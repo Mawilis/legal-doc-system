@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP
+VERSION: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -17,7 +17,12 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-11-20
+CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING adds bounded,
+  opt-in request boundary duration logging for four exact GET routes. This
+  includes FastAPI dependency/authentication time that handler-only telemetry
+  omits. Diagnostic labels and outcomes are fixed; no query strings, tokens,
+  principal or tenant identifiers, IAM behavior, caching or timeout changes.
 CHANGELOG: v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP provisions source-owned work-purpose
   snapshot/replay/audit uniqueness only at startup before Projects readiness;
   no task category, grant, evidence or project record is created.
@@ -583,7 +588,34 @@ class WilsyAPIServer:
             start_time = time.perf_counter()
             if not hasattr(request.state, "execution_id"):
                 request.state.execution_id = f"EXEC-{uuid.uuid4().hex[:8].upper()}"
-            response = await call_next(request)
+            # This timer includes authentication, authorization dependencies
+            # and endpoint execution. Never log raw URL, query or credentials.
+            # The existing X-Process-Time-Ms response header enables a direct
+            # comparison with Chrome's overall request time.
+            diagnostic_routes = {
+                "/api/auth/workspace-bootstrap": "WORKSPACE_BOOTSTRAP",
+                "/api/my-work": "MY_WORK",
+                "/api/projects": "PROJECTS_LIST",
+                "/api/projects/summary": "PROJECTS_SUMMARY",
+            }
+            diagnostic_route = (
+                diagnostic_routes.get(request.url.path)
+                if request.method == "GET"
+                and os.getenv("WILSY_MY_WORK_TIMING", "").strip() == "1"
+                else None
+            )
+            outcome = "ERROR"
+            try:
+                response = await call_next(request)
+                outcome = str(response.status_code)
+            finally:
+                if diagnostic_route is not None:
+                    logger.info(
+                        "WILSY_HTTP_END_TO_END route=%s outcome=%s duration_ms=%.3f",
+                        diagnostic_route,
+                        outcome,
+                        (time.perf_counter() - start_time) * 1000,
+                    )
             process_time = (time.perf_counter() - start_time) * 1000
             response.headers["X-Process-Time-Ms"] = f"{process_time:.3f}"
             response.headers["X-Wilsy-OS-Kernel"] = "FG169-Active"
@@ -1319,7 +1351,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP
+# VERSION: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
