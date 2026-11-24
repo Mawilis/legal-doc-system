@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # TITLE: WILSY OS Kennel EOS Local Development Stack Launcher
-# VERSION: v1.1.0-KENNEL-EOS-LOCAL-ENVIRONMENT
+# VERSION: v1.2.0-BOUNDED-EOS-STARTUP-READINESS
 # AUTHORITY: Local development process orchestration only; Kennel EOS owns API and business authority.
 # EPITOME: Starts the Python EOS API and Vite presentation client while loading local non-committed environment configuration through python-dotenv.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/scripts/start-dev-stack.sh
 # COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
-# CERTIFICATION / UPDATE DATE: 2026-11-08.
+# CERTIFICATION / UPDATE DATE: 2026-11-24.
+# CHANGELOG: v1.2.0-BOUNDED-EOS-STARTUP-READINESS allows up to 90 seconds
+# for the Python EOS startup's independently governed index and service readiness,
+# reports the 30-second mark as a slow-start observation, and still rejects an
+# exited process or unhealthy listener; no HTTP client deadline is changed.
 # CHANGELOG: v1.1.0-KENNEL-EOS-LOCAL-ENVIRONMENT loads repository .env for newly started EOS; previous v1.0.0-KENNEL-EOS-LOCAL-STACK started the same checkout-safe Python API and Vite processes without loading local .env.
 # COMPLIANCE: WILSY OS AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 # SECURITY / PRIVACY POSTURE: .env values are not printed; AWS credentials remain in the SDK credential chain.
@@ -20,7 +24,8 @@ cd "$ROOT_DIR"
 LOOPBACK="127.0.0.1"
 EOS_URL="http://${LOOPBACK}:9095/kernel"
 VITE_URL="http://${LOOPBACK}:5173/"
-READY_TIMEOUT_SECONDS=30
+READY_TIMEOUT_SECONDS=90
+SLOW_START_OBSERVATION_SECONDS=30
 EOS_PID=""
 VITE_PID=""
 
@@ -87,6 +92,9 @@ else
       echo "[WILSY] EOS exited before readiness. Inspect the Python startup output above." >&2
       exit 1
     fi
+    if (( second == SLOW_START_OBSERVATION_SECONDS * 3 )); then
+      echo "[WILSY] EOS startup exceeded 30s; continuing bounded readiness checks while Python startup completes." >&2
+    fi
     sleep 0.333
   done
   if [[ "$ready" -ne 1 ]]; then
@@ -120,7 +128,7 @@ else
   wait "$VITE_PID"
 fi
 # ARTIFACT: start-dev-stack.sh
-# VERSION: v1.1.0-KENNEL-EOS-LOCAL-ENVIRONMENT
+# VERSION: v1.2.0-BOUNDED-EOS-STARTUP-READINESS
 # AUTHORITY BOUNDARY: Local process orchestration only; Python EOS remains API authority.
 # TENANT POSTURE: No tenant-scoped persistence or authorization is performed.
 # FAIL-CLOSED POSTURE: No cryptographic fallback is created.
