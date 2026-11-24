@@ -1,5 +1,5 @@
 """TITLE: MW-T12 same-data reversible Python EOS rollback rehearsal.
-VERSION: v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK
+VERSION: v1.3.0-SEEDED-LIFECYCLE-VERIFICATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Reuse a single UUID-owned replica database across current, historical,
          and restored-current Python EOS binaries with authenticated readback.
@@ -8,6 +8,12 @@ COLLABORATION / OWNERSHIP: Existing MW-T12 source staging and owned Mongo
          utilities; existing browser-cert fixture owns seeding, record
          verification, and database cleanup. No extra DB client introduced.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.0-SEEDED-LIFECYCLE-VERIFICATION uses
+           the fixture's new read-only verify-seed command before and after
+           each staged EOS source switch. The full post-browser verifier
+           requires decision and execution events that this rehearsal does
+           not create and therefore cannot be claimed here. Existing
+           immutable fingerprint, exact-ID HTTP and cleanup gates remain.
 CHANGELOG: v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK
            binds the HTTP SYSTEM incident and responder assignment to the
            same seeded exact IDs after each rollback phase. Nonmatching,
@@ -64,7 +70,7 @@ from tools.eos.ops.mw_t12_versioned_rehearsal import (
     _stage_revision,
 )
 
-VERSION = "v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK"
+VERSION = "v1.3.0-SEEDED-LIFECYCLE-VERIFICATION"
 FIXTURE = "tests/e2e/browser_cert_fixture.py"
 READ_TIMEOUT = 12
 
@@ -229,7 +235,7 @@ def _certify_running_version(
         if state.get("database_name") != env["BROWSER_CERT_MONGO_DATABASE"]:
             raise MWRecoveryError("SAME_DATA_DATABASE_IDENTITY_MISMATCH")
         _authenticate_unchanged(base, state)
-        _run_fixture(fixture, "verify", state_file, env, Path.cwd())
+        _run_fixture(fixture, "verify-seed", state_file, env, Path.cwd())
         if _fingerprint_fixture(fixture, state_file, env, Path.cwd()) != fingerprint:
             raise MWRecoveryError("SAME_DATA_AUDIT_EVIDENCE_MUTATED")
         print("MW_T12_SAME_DATA_VERSION_" + revision[:12] + "=PASS", flush=True)
@@ -287,7 +293,7 @@ def rehearse_same_data(target: str) -> int:
             # unchanged while the active Python EOS source is rolled back.
             seeded = True
             _run_fixture(fixture, "seed", state_path, env, checkout)
-            _run_fixture(fixture, "verify", state_path, env, checkout)
+            _run_fixture(fixture, "verify-seed", state_path, env, checkout)
             baseline = _fingerprint_fixture(fixture, state_path, env, checkout)
             for label, sha in (("current", current), ("historical", older),
                                ("restored", current)):
@@ -343,7 +349,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_same_data_rehearsal.py
-# VERSION: v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK
+# VERSION: v1.3.0-SEEDED-LIFECYCLE-VERIFICATION
 # AUTHORITY BOUNDARY: Only disposable single-database three-phase source test.
 # TENANT POSTURE: UUID synthetic local replica; never canonical wilsy or Atlas.
 # FAIL-CLOSED POSTURE: Auth, durable fixture or cleanup failure denies success.
