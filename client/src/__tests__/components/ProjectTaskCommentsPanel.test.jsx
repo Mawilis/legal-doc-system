@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT
+ * VERSION: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT proves
+ *          React StrictMode discarded effects cannot issue duplicated
+ *          four-source discussion reads. Real changes still reverify EOS.
  * CHANGELOG: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT verifies
  *          equivalent parent header objects do not restart the four
  *          EOS activity sources, while a real header change does.
@@ -72,6 +75,19 @@ function mount(contributor = false) {
         first_name: 'Task', last_name: 'Owner' }] : [])]}
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
 }
+
+it('mounts one four-source discussion fanout under React StrictMode', async () => {
+  api.get.mockImplementation(async () => {
+    throw new Error('Synthetic source unavailable');
+  });
+  const props = {
+    tenantId, principalId, projectId, taskId, participants: [],
+    tenantHeaders: { 'X-Tenant-ID': tenantId }, onClose: () => {},
+  };
+  render(<React.StrictMode><ProjectTaskCommentsPanel {...props}/></React.StrictMode>);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(4));
+  expect(new Set(api.get.mock.calls.map(call => call[0])).size).toBe(4);
+});
 
 it('does not refetch four activity sources on equivalent parent rerenders', async () => {
   api.get.mockImplementation(async () => {
