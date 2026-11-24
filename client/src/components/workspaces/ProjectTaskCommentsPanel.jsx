@@ -696,7 +696,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE
+// VERSION: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
