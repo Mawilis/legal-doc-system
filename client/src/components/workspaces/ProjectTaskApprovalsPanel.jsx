@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.3.1-PARTICIPANT-DECISION-ISOLATION
+ * VERSION: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTaskApprovalsPanel.jsx
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY explains the
+ *          source-verified independent-reviewer gate beside the selector,
+ *          provides project People and retry actions at the decision point,
+ *          and does not enable selection without eligible EOS contributors.
  * CHANGELOG: v1.3.1-PARTICIPANT-DECISION-ISOLATION keeps
  *          participant reviewer decisions independent of owner-only
  *          directory reads. Reviewer discovery is for owners requesting
@@ -467,7 +471,20 @@ export default function ProjectTaskApprovalsPanel({
               {reviewerName(person)}
             </option>)}
           </select>
+          {reviewerSource === 'VERIFYING' && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
+            EOS is verifying project contributors before independent review can be requested.
+          </span>}
+          {reviewerSource !== 'VERIFYING' && options.length === 0 && <span role="status" className="mt-2 block text-xs font-normal text-amber-900">
+            {reviewerSourceError || 'No other active project contributor is verified. You cannot nominate yourself as the independent reviewer.'}
+          </span>}
         </label>
+        {reviewerSource !== 'VERIFYING' && options.length === 0 && <div className="flex flex-wrap gap-2">
+          <button type="button" className="wp-button !min-h-10 !px-3 !text-xs" disabled={busy}
+            onClick={() => void refreshReviewers()}>Verify eligible contributors</button>
+          {typeof onManageContributors === 'function' && <button type="button"
+            className="wp-button !min-h-10 !px-3 !text-xs" disabled={busy}
+            onClick={onManageContributors}>Open project People</button>}
+        </div>}
         <label className="block text-sm font-semibold text-slate-800">Review request rationale
           <textarea aria-label="Review request rationale" required rows={3} maxLength={3000}
             value={rationale} onChange={event => setRationale(event.target.value)}
@@ -541,7 +558,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.3.1-PARTICIPANT-DECISION-ISOLATION
+// VERSION: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies
