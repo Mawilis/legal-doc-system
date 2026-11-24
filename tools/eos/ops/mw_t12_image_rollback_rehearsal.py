@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback rehearsal.
-VERSION: v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS
+VERSION: v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify two provenance-labelled Python EOS Docker image identities
          against one owned persistent MongoDB volume across forward/reverse
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Extends the existing MW-T12 Git staging, immutable
          artifact admission, synthetic browser fixture, source read/deny and
          audit snapshot verification. Docker owns only names created here.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS
+           verifies immutable Dockerfile, requirements and runtime source
+           blobs against Git before each build and enables non-root EOS
+           writable paths only as owned ephemeral tmpfs mounts. The local
+           Docker image ID and source labels remain independently checked.
 CHANGELOG: v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS
            retries owned Mongo replica initialization within a bounded
            deadline rather than racing mongosh startup; rejects any
@@ -35,6 +40,7 @@ FINANCIAL AUTHORITY BOUNDARY: No cloud spend, payment, or grant authority.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -55,7 +61,7 @@ from tools.eos.ops.mw_t12_same_data_rehearsal import (
     FIXTURE, _authenticate_unchanged, _fingerprint_fixture, _run_fixture,
 )
 
-VERSION = "v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS"
+VERSION = "v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS"
 MONGO_IMAGE = "mongo:7"
 SOURCE_LABEL = "wilsy.mwt12.source_sha"
 DRILL_LABEL = "wilsy.mwt12.disposable"
@@ -102,6 +108,28 @@ def _image_identity(tag: str, revision: str, drill: str) -> str:
     if not IMAGE_ID.fullmatch(image_id) or source != revision or owner != drill:
         raise MWRecoveryError("IMAGE_SOURCE_ATTESTATION_INVALID")
     return image_id
+
+
+def _verify_context(checkout: Path, source: Path, revision: str) -> None:
+    """Correlate the Docker build inputs with immutable Git object blobs."""
+    for relative in (
+        "Dockerfile.eos", "requirements.txt",
+        "tools/eos/api/server.py", "tools/eos/kernel/db.py",
+    ):
+        path = source / relative
+        if not path.is_file() or path.is_symlink():
+            raise MWRecoveryError("IMAGE_GIT_CONTEXT_SOURCE_MISSING")
+        try:
+            result = subprocess.run(
+                ["git", "show", revision + ":" + relative],
+                cwd=checkout, capture_output=True, check=True, timeout=20,
+            )
+        except (OSError, subprocess.SubprocessError) as error:
+            raise MWRecoveryError("IMAGE_GIT_CONTEXT_PROOF_UNAVAILABLE") from error
+        if hashlib.sha256(path.read_bytes()).digest() != hashlib.sha256(
+            result.stdout
+        ).digest():
+            raise MWRecoveryError("IMAGE_GIT_CONTEXT_PROVENANCE_MISMATCH")
 
 
 def _build_image(source: Path, tag: str, revision: str, drill: str) -> str:
@@ -215,10 +243,10 @@ def _verify_phase(name: str, image: str, network: str, database: str,
         "--env", "ENV=development", "--env", "WILSY_ENV=development",
         "--env", "WILSY_KENNEL_DB_TLS=0",
         "--read-only",
-        "--tmpfs", "/tmp",
-        "--tmpfs", "/app/data",
-        "--tmpfs", "/app/reports",
-        "--tmpfs", "/var/log/wilsy-os",
+        "--tmpfs", "/tmp:rw,mode=1777",
+        "--tmpfs", "/app/data:rw,mode=1777",
+        "--tmpfs", "/app/reports:rw,mode=1777",
+        "--tmpfs", "/var/log/wilsy-os:rw,mode=1777",
         image,
     ]
     _docker("run", "-d", "--name", name, *args)
@@ -288,6 +316,7 @@ def rehearse_image(target: str) -> int:
                 stage = root / (label + "-source")
                 stage.mkdir(mode=0o700)
                 _stage_revision(sha, checkout, stage)
+                _verify_context(checkout, stage, sha)
                 tags.append(tag)
                 identities[label] = _build_image(stage, tag, sha, drill)
                 if _certified_source_revision() != current:
@@ -394,7 +423,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS
+# VERSION: v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS
 # AUTHORITY BOUNDARY: Local immutable Docker image and synthetic data only.
 # TENANT POSTURE: UUID-scoped local fixture, no canonical Founder tenant.
 # FAIL-CLOSED POSTURE: Provenance, exact HTTP, audit and cleanup are required.
