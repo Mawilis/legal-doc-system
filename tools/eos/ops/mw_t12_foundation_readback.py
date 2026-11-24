@@ -1,6 +1,6 @@
 """ 
 TITLE: MW-T12 live Foundation project independent source readback.
-VERSION: v1.1.0-EXACT-HTTP-DENIAL-CLASSIFICATION
+VERSION: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify, never mutate, an existing tenant-authorized Foundation
          project task and its previously posted engineering activity.
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing Python EOS Projects router and read-only
                            Projects task, comment and event registries.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT authenticates the
+           supplied bearer on canonical GET /api/auth/verify-token before
+           Projects reads; HTTP 401 is distinguished from Projects authority
+           or entitlement denial without printing any identity or token.
 CHANGELOG: v1.1.0-EXACT-HTTP-DENIAL-CLASSIFICATION distinguishes
            HTTP 401 (session authentication) from HTTP 403 (source IAM/
            selected capacity or entitlement), records only a bounded route
@@ -252,9 +256,46 @@ def _snapshot(client, base: str, token: str) -> dict:
             "events_count": len(events)}
 
 
+def _verify_identity(client, base: str, token: str) -> None:
+    """Verify bearer on canonical EOS auth, without disclosing private values."""
+    request = Request(
+        base + "/api/auth/verify-token", method="GET",
+        headers={"Authorization": "Bearer " + token, "X-Tenant-ID": "wilsy",
+                 "Accept": "application/json", "Cache-Control": "no-store"},
+    )
+    try:
+        with client.open(request, timeout=18) as response:
+            if response.status != 200:
+                raise SourceReadbackDenied("EOS_IDENTITY_VERIFY_RESPONSE_INVALID")
+            body = response.read(16385)
+            if len(body) > 16384:
+                raise SourceReadbackDenied("EOS_IDENTITY_VERIFY_RESPONSE_INVALID")
+    except HTTPError as error:
+        codes = {
+            401: "EOS_BEARER_REJECTED_BY_CANONICAL_AUTH",
+            403: "EOS_IDENTITY_VERIFY_DENIED",
+            404: "EOS_AUTH_VERIFY_ROUTE_NOT_MOUNTED",
+            503: "EOS_IDENTITY_VERIFY_SOURCE_UNAVAILABLE",
+        }
+        raise SourceReadbackDenied(codes.get(error.code, "EOS_IDENTITY_VERIFY_HTTP_FAILURE")) from None
+    except (TimeoutError, URLError):
+        raise SourceReadbackDenied("EOS_IDENTITY_VERIFY_TRANSPORT_FAILURE") from None
+    try:
+        payload = json.loads(body)
+    except (ValueError, UnicodeDecodeError):
+        raise SourceReadbackDenied("EOS_IDENTITY_VERIFY_RESPONSE_INVALID") from None
+    if (not isinstance(payload, dict) or payload.get("success") is not True
+            or payload.get("status") != "VERIFIED"
+            or not isinstance(payload.get("user"), dict)
+            or not isinstance(payload["user"].get("id"), str)
+            or not payload["user"]["id"]):
+        raise SourceReadbackDenied("EOS_IDENTITY_VERIFY_RESPONSE_INVALID")
+
+
 def verify(base: str, token: str) -> dict:
-    """Repeat authoritative readback from fresh HTTP requests, with no writes."""
+    """Preflight canonical bearer identity and re-GET current source evidence."""
     opener = build_opener(_NoRedirect)
+    _verify_identity(opener, base, token)
     first = _snapshot(opener, base, token)
     second = _snapshot(opener, base, token)
     if first != second:
@@ -282,6 +323,12 @@ def main() -> int:
             print("MW_T12_GATE0_READBACK_EXECUTED=FALSE")
             return 0
         token = getpass("Existing authenticated EOS access token (hidden): ").strip()
+        if token.lower().startswith("bearer "):
+            token = token[7:].strip()
+        if len(token) >= 2 and token[0] == token[-1] and token[0] in {"'", '"'}:
+            token = token[1:-1]
+        if any(char.isspace() for char in token):
+            raise SourceReadbackDenied("BEARER_TOKEN_FORMAT_INVALID")
         if not token or len(token) > 8192 or "\n" in token:
             raise SourceReadbackDenied("AUTHENTICATED_SESSION_TOKEN_REQUIRED")
         result = verify(base, token)
@@ -307,7 +354,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_foundation_readback.py
-# VERSION: v1.1.0-EXACT-HTTP-DENIAL-CLASSIFICATION
+# VERSION: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT
 # AUTHORITY BOUNDARY: Strictly GET-only existing Python EOS Projects source.
 # TENANT POSTURE: Canonical wilsy only, exact current authorized principal.
 # FAIL-CLOSED POSTURE: No unique project, task, checkpoint or independent
