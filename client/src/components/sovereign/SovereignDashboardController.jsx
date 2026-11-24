@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.4.0-SINGLE-LIVE-KERNEL-PROBE
+ * VERSION: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -18,7 +18,14 @@
  *                            TenantContext owns selected tenant projection;
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ defers the
+ *            initial independently authorized module-manifest GET by one
+ *            microtask, so development effect replay does not send and discard
+ *            an extra server-side authority and entitlement transaction.
+ *            Cleanup prevents stale tenant/session results from being
+ *            published. Each real mount/scope change still revalidates with
+ *            Python EOS; no persistence, cache, permission or timeout change.
  * CHANGELOG: v19.4.0-SINGLE-LIVE-KERNEL-PROBE schedules the initial
  *            kernel health probe after React's effect replay turn so the
  *            discarded development mount cannot issue an unnecessary GET.
@@ -893,14 +900,20 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
       return () => { current = false; };
     }
     setModuleManifest({ status: 'loading', tenantId: moduleManifestTenantId, modules: [] });
-    api.get('/auth/module-manifest')
-      .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
-      .then((modules) => {
-        if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
-      })
-      .catch(() => {
-        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
-      });
+    // StrictMode replays the effect and its cleanup before the microtask turn.
+    // Avoid sending a second authenticated, source-transactional read that
+    // would be discarded. Real scope changes still perform a fresh EOS read.
+    queueMicrotask(() => {
+      if (!current) return;
+      api.get('/auth/module-manifest')
+        .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
+        .then((modules) => {
+          if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
+        })
+        .catch(() => {
+          if (current) setModuleManifest({ status: 'unavailable', tenantId: moduleManifestTenantId, modules: [] });
+        });
+    });
     return () => { current = false; };
   }, [user?.id, user?.email, moduleManifestTenantId]);
 
@@ -1495,7 +1508,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.4.0-SINGLE-LIVE-KERNEL-PROBE
+ * VERSION: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback
