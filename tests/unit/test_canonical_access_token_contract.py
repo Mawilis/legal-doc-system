@@ -1,14 +1,15 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT
+VERSION: v1.6.0-ISOLATED-FOUNDER-ABSENCE-WORKSPACE-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_canonical_access_token_contract.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
-CERTIFICATION / UPDATE DATE: 2026-11-11
+CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.6.0-ISOLATED-FOUNDER-ABSENCE-WORKSPACE-CERT makes the legacy synthetic principal's lawful no-Founder-designation state explicit in its isolated workspace dependency harness; real Founder authority and evidence remain unchanged, and dedicated Founder tests verify persisted proof independently.
 CHANGELOG: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT supplies the required discovered tenant to MFA verification and canonical workspace_id to synthetic workspace projections, preserving server-owned authentication and workspace contracts.
            v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
            v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
@@ -343,6 +344,14 @@ def _override_workspace_dependencies(
         auth_router,
         "_workspace_branding_projection",
         lambda _tenant_id: None,
+    )
+    # Synthetic principal is deliberately not the persisted Founder. Its
+    # expected response has no designation; never query a developer's live
+    # institutional MongoDB from this isolated token-contract certificate.
+    monkeypatch.setattr(
+        auth_router,
+        "read_founder_designation",
+        lambda *, principal_id, tenant_id: None,
     )
     return registry
 
