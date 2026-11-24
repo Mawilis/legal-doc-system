@@ -221,7 +221,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT
+// VERSION: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
