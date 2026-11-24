@@ -1,15 +1,19 @@
 """Unit certification for fail-closed authentication authority projection.
 
 TITLE: Authentication Principal Authority Certificate
-VERSION: v1.1.1-TYPED-TEST-DOUBLE-CERT
+VERSION: v1.2.0-NONBLOCKING-AUTHENTICATION-WORKER-CERT
 AUTHORITY: Test-only evidence for canonical principal and durable revision gates.
 EPITOME: Certifies that protected authentication reaches canonical principal
     authority and exact durable credential-revision comparison.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authentication_principal_authority.py
 COLLABORATION / OWNERSHIP: Test-only certificate; authentication.py and its
     canonical AuthRegistry dependency remain read-only in this gate.
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-24
 CHANGELOG:
+    2026-11-24 v1.2.0-NONBLOCKING-AUTHENTICATION-WORKER-CERT verifies
+    synchronous principal and credential currentness occur outside the event
+    loop while request-local opaque timing correlation reaches both worker
+    operations unchanged. Every existing fail-closed assertion remains intact.
     2026-11-17 v1.1.1-TYPED-TEST-DOUBLE-CERT explicitly types the
     synthetic repository at the authentication test seam for Pyright;
     runtime assertions and production authority are unchanged.
@@ -28,6 +32,7 @@ FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execut
 """
 import asyncio
 import logging
+import threading
 from typing import Any, cast
 from types import SimpleNamespace
 from fastapi import HTTPException
@@ -80,6 +85,59 @@ def run(monkeypatch, repository, payload=None, api_key=None, registry_calls=None
     )
     request = Request({"type": "http", "method": "GET", "path": "/", "headers": []})
     return asyncio.run(authentication.get_current_identity(request, credentials(), api_key, cast(PrincipalAuthorityRepository, repository)))
+
+
+
+def test_durable_identity_reads_run_off_event_loop_with_same_request_trace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A slow PyMongo read must not monopolize asyncio or lose trace scope."""
+
+    expected_trace = "TRC-MWHCMCDJ-HR4HXJ"
+    caller_thread = threading.get_ident()
+    observed: list[tuple[str, int, str]] = []
+
+    class WorkerRepository(Repository):
+        def get(self, principal_id: str) -> PrincipalAuthority:
+            observed.append((
+                "principal", threading.get_ident(),
+                authentication.current_request_timing_correlation(),
+            ))
+            return super().get(principal_id)
+
+    class WorkerRegistry(CredentialRegistry):
+        def get_credential_revision(self, tenant_id: str, principal_id: str) -> int:
+            observed.append((
+                "credential", threading.get_ident(),
+                authentication.current_request_timing_correlation(),
+            ))
+            return super().get_credential_revision(tenant_id, principal_id)
+
+    monkeypatch.setattr(
+        authentication, "verify_access_token",
+        lambda _token: access_payload(identity_id="p", tenant_id="t"),
+    )
+    revision_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        authentication, "AuthRegistry",
+        lambda: WorkerRegistry(revision_calls),
+    )
+    request = Request({
+        "type": "http", "method": "GET", "path": "/api/my-work",
+        "headers": [(b"x-trace-id", expected_trace.encode("ascii"))],
+    })
+    identity = asyncio.run(authentication.get_current_identity(
+        request, credentials(), None,
+        cast(PrincipalAuthorityRepository, WorkerRepository(PrincipalStatus.ACTIVE)),
+    ))
+    assert identity.identity_id == "p"
+    assert revision_calls == [("t", "p")]
+    assert [stage for stage, _thread_id, _trace in observed] == [
+        "principal", "credential",
+    ]
+    assert all(thread_id != caller_thread for _, thread_id, _ in observed)
+    assert all(trace == expected_trace for _, _, trace in observed)
+
 
 def test_active_requires_durable_authority_and_projects_status(monkeypatch):
     authority_calls = []
@@ -317,7 +375,7 @@ def test_system_session_rejection_remains_401_and_aborts(monkeypatch):
     assert not session.committed
 
 # ARTIFACT: test_authentication_principal_authority.py
-# VERSION: v1.1.1-TYPED-TEST-DOUBLE-CERT
+# VERSION: v1.2.0-NONBLOCKING-AUTHENTICATION-WORKER-CERT
 # AUTHORITY BOUNDARY: principal authority and durable credential-revision evidence only
 # TENANT POSTURE: synthetic tenant context; no persistence or cross-tenant access
 # FAIL-CLOSED POSTURE: invalid, non-ACCESS, non-active, absent, and bypass attempts deny
