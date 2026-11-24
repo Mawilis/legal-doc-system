@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.4.0-MULTI-MODULE-CALENDAR-LABELS
+ * VERSION: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
  *          local instant display, accessible day/week/month navigation and
@@ -8,8 +8,12 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyWorkDeadlineCalendar.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
- * CHANGELOG: v1.4.0-MULTI-MODULE-CALENDAR-LABELS names PROJECTS and HR
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR adopts the
+ *          established Projects light task surface for all authorised
+ *          calendar entry points while preserving civil-date navigation,
+ *          source filtering and EOS-owned task handoffs.
+ * CHANGELOG: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR names PROJECTS and HR
  *          in the authorized calendar agenda without changing source
  *          identity, dates, permissions or command routing.
  * CHANGELOG: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL keeps the
@@ -39,6 +43,22 @@
 import React, { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 import { ArrowRight, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
+
+const PROJECTS_CALENDAR_STYLE = `
+[data-wilsy-calendar-standard=PROJECTS]{color:#172e52;background:#fff}
+[data-wilsy-calendar-standard=PROJECTS] :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-amber-100,.text-amber-200){color:#172e52!important}
+[data-wilsy-calendar-standard=PROJECTS] :is(.text-slate-400,.text-slate-500,.text-slate-600){color:#516783!important}
+[data-wilsy-calendar-standard=PROJECTS] .bg-\\[\\#0a1628\\]{background:#eef4ff!important}
+[data-wilsy-calendar-standard=PROJECTS] button{border-color:#d2deee!important;background:#f8faff;color:#172e52!important}
+[data-wilsy-calendar-standard=PROJECTS] button:hover{background:#edf5ff!important}
+[data-wilsy-calendar-standard=PROJECTS] button[aria-pressed=true]{background:#dce9ff!important;border-color:#2563eb!important;color:#173f8e!important}
+[data-wilsy-calendar-standard=PROJECTS] button:focus-visible{outline:3px solid #2563eb!important;outline-offset:2px}
+[data-wilsy-calendar-standard=PROJECTS] .bg-amber-300{background:#1648cc!important;color:#fff!important}
+[data-wilsy-calendar-standard=PROJECTS] .text-amber-300{color:#1648cc!important}
+[data-wilsy-calendar-standard=PROJECTS] .border-white\\/10,[data-wilsy-calendar-standard=PROJECTS] .border-white\\/15{border-color:#d5dfef!important}
+[data-wilsy-calendar-standard=PROJECTS] .text-rose-200{color:#b42318!important}
+[data-wilsy-calendar-standard=PROJECTS] .text-rose-800{color:#b42318!important}
+`;
 
 const SOURCES = Object.freeze({
   LEGAL: 'Legal', OPERATIONS: 'Operations', INTELLIGENCE: 'Intelligence', CRM: 'CRM',
@@ -240,7 +260,8 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
   const periodLabel = view.toLowerCase();
 
   return (
-    <div aria-label="EOS work deadline calendar" className="space-y-3">
+    <div aria-label="EOS work deadline calendar" data-wilsy-calendar-standard="PROJECTS" className="space-y-3 rounded-xl border border-[#d5dfef] bg-white p-3 text-[#172e52] sm:p-5">
+      <style>{PROJECTS_CALENDAR_STYLE}</style>
       <p className="text-xs leading-5 text-slate-400">
         Select a day to review and act on your authorised work deadlines.
       </p>
@@ -357,7 +378,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.4.0-MULTI-MODULE-CALENDAR-LABELS
+ * VERSION: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
  * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.
