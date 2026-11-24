@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authenticated HTTP Read Surface
-VERSION: v1.5.0-EXACT-CRM-CAPABILITY-SOURCE-READ
+VERSION: v1.6.0-ENTITLEMENT-ONLY-CRM-ACTION-ADMISSION
 AUTHORITY: WILSY OS Core Governance; canonical source EOS service authority.
 EPITOME: Serve cursor-bounded attention feeds, counts, source coverage and
          deadline calendar from the existing independently authorised My Work.
@@ -10,6 +10,11 @@ COLLABORATION / OWNERSHIP: unified_my_work_router.read_my_work authorizes
          attention_feed_projection
          normalizes read-only items; no second source/task registry is created.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.6.0-ENTITLEMENT-ONLY-CRM-ACTION-ADMISSION performs
+           the existing CRM service entitlement verification in its existing
+           source-owned transaction without fetching or projecting daily queue
+           records solely to advertise commands. Exact CRM read and separate
+           create/update/complete IAM remain current and fail closed.
 CHANGELOG: v1.5.0-EXACT-CRM-CAPABILITY-SOURCE-READ replaces only the
            CRM command-availability endpoint's expensive full My Work
            dependency with the existing exact-tenant CRM read IAM, source
@@ -58,8 +63,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from starlette.concurrency import run_in_threadpool
 
 from tools.eos.api.unified_my_work_router import (
-    _CRM_READ, _assert_context, _read_crm, read_my_work,
+    _CRM_READ, _assert_context, read_my_work,
 )
+from tools.eos.api import owner_commercial_workspace_router as crm_source
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.api.tenant_authorization_http import (
     OptionalTenantAuthorization, TenantAuthorizationContext,
@@ -277,6 +283,20 @@ def _source_actions(
     }
 
 
+def _verify_crm_action_entitlement(*, tenant_id: str) -> None:
+    """Verify current CRM entitlement in its canonical source transaction.
+
+    Uses the same service check that daily_queue performs before reading work,
+    without requiring task-row enumeration for a command-availability GET.
+    The source owns session, index assurance, exception mapping and fail-closed
+    handling; no new MongoDB client, IAM grant, or persistent state is created.
+    """
+    def verify(service: Any, session: Any) -> None:
+        service._require_entitlement(tenant_id, session)
+
+    crm_source._transaction(verify)
+
+
 async def _read_exact_crm_action_scope(
     tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
     identity: Any = Depends(get_current_identity),
@@ -298,13 +318,10 @@ async def _read_exact_crm_action_scope(
     _assert_context(crm_read, tenant_id=tenant_id, principal_id=principal_id)
     if crm_read is None:
         raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED")
-    # The canonical CRM source transaction verifies its real product
-    # entitlement. Omitted entitlement is a denial here, not an empty queue.
-    source = await run_in_threadpool(_read_crm, tenant_id=tenant_id)
-    if source is None:
-        raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED")
-    if source.get("tenant_id") != tenant_id:
-        raise HTTPException(status_code=503, detail="ATTENTION_SOURCE_SCOPE_INCONSISTENT")
+    # The canonical CRM source transaction independently verifies the exact
+    # current entitlement. No work queue or source records are needed to
+    # advertise capabilities; source commands still reauthorize mutations.
+    await run_in_threadpool(_verify_crm_action_entitlement, tenant_id=tenant_id)
     return {
         "tenant_id": tenant_id,
         "principal_id": principal_id,
@@ -370,7 +387,7 @@ __all__ = ["router", "attention_feed", "attention_counts",
            "_read_exact_crm_action_scope"]
 
 # ARTIFACT: tools/eos/api/attention_router.py
-# VERSION: v1.5.0-EXACT-CRM-CAPABILITY-SOURCE-READ
+# VERSION: v1.6.0-ENTITLEMENT-ONLY-CRM-ACTION-ADMISSION
 # AUTHORITY BOUNDARY: Authenticated source-owned reads; no attention commands.
 # TENANT POSTURE: Full feeds use read_my_work; CRM action scope independently revalidates exact tenant IAM and entitlement.
 # FAIL-CLOSED POSTURE: No inferred health, entitlement, access or cleared queue.
