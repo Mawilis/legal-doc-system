@@ -880,7 +880,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
+ * VERSION: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
