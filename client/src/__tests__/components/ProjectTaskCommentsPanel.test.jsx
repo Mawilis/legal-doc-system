@@ -1,12 +1,18 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.8.0-ACTION-GROUP-GUTTERS-CERT
+ * VERSION: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT proves
+ *          Write update makes the textarea the immediate focused task,
+ *          hides the long source history while composing, restores it with
+ *          the same source content when closed, and returns to verified
+ *          source readback only after EOS has accepted the command.
+ *          No draft loss on close or read authority changes.
  * CHANGELOG: v1.8.0-ACTION-GROUP-GUTTERS-CERT proves the
  *          visible action rows have 16px horizontal and 12px vertical
  *          wrap gutters plus real divider padding at the activity heading,
@@ -154,6 +160,34 @@ it('uses consistent compact OS actions without changing authorized commands', as
   fireEvent.click(compose);
   expect(screen.getByRole('button', { name: 'Close editor' }))
     .toHaveClass('!min-h-9', '!px-3', '!text-xs');
+  const input = screen.getByRole('textbox', { name: 'New task comment' });
+  expect(input).toHaveFocus();
+  expect(screen.getByRole('region', { name: 'Write a progress update' })).toBeVisible();
+  expect(screen.queryByLabelText('Verified task activity history')).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('restores authorized history on editor close while retaining an unpublished draft', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+  const input = screen.getByRole('textbox', { name: 'New task comment' });
+  expect(input).toHaveFocus();
+  fireEvent.change(input, { target: { value: 'Unpublished recovery note' } });
+  expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+  expect(screen.getByText('Please verify this dependency.')).toBeVisible();
+  expect(screen.queryByRole('textbox', { name: 'New task comment' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+  expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue('Unpublished recovery note');
   expect(api.post).not.toHaveBeenCalled();
 });
 
@@ -233,12 +267,14 @@ it('publishes a comment and mention only after verified source list readback', a
   const message = await screen.findByRole('textbox', { name: 'New task comment' });
   const mention = screen.getByRole('checkbox', { name: 'Verified Member' });
   fireEvent.click(mention);
+  expect(screen.getByText(/not a delivered notification/)).toBeVisible();
   fireEvent.change(message, { target: { value: 'Please verify this dependency.' } });
   fireEvent.click(screen.getByRole('button', { name: 'Publish to EOS' }));
   await waitFor(() => expect(screen.getByText('Please verify this dependency.')).toBeVisible());
   expect(api.post).toHaveBeenCalledTimes(1);
   expect(screen.getByText('Mentions: 1 source references')).toBeVisible();
-  expect(screen.getByText(/not a delivered notification/)).toBeVisible();
+  expect(screen.queryByRole('textbox', { name: 'New task comment' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Write update' })).toBeVisible();
 });
 
 it('offers contributor-only in-place evidence upload with no owner-route privilege fallback', async () => {
@@ -311,7 +347,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.8.0-ACTION-GROUP-GUTTERS-CERT
+// VERSION: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
