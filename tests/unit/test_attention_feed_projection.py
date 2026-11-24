@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.6.0-CRM-CAPABILITY-ISOLATED-READ-CERT
+VERSION: v1.6.1-PROJECTS-DEPENDENCY-EVIDENCE-FIXTURE
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.6.1-PROJECTS-DEPENDENCY-EVIDENCE-FIXTURE
+           supplies the required zero-dependency total, remaining and READY
+           proof for the synthetic assigned Projects work item; the production
+           validator still rejects absent, inconsistent and invented evidence.
 CHANGELOG: v1.6.0-CRM-CAPABILITY-ISOLATED-READ-CERT verifies
            CRM-only capability admission uses existing CRM read IAM and a
            worker-thread source-owned entitlement transaction, rejects
@@ -133,6 +137,9 @@ def test_hr_and_projects_are_verified_attention_sources_without_new_authority():
             "priority": "NORMAL",
             "project_id": project_id,
             "owner_principal_id": PRINCIPAL,
+            "dependency_total": 0,
+            "dependency_remaining": 0,
+            "dependency_readiness": "READY",
             "due_at": None,
             "due_date": None,
         }]},
@@ -411,7 +418,7 @@ def test_isolated_unadmitted_module_never_reports_command_capabilities():
     assert allowed["sourceActions"] == {"OPERATIONS": ["CREATE"]}
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.6.0-CRM-CAPABILITY-ISOLATED-READ-CERT
+# VERSION: v1.6.1-PROJECTS-DEPENDENCY-EVIDENCE-FIXTURE
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
