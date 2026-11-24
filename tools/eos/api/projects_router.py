@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY
+VERSION: v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -12,7 +12,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/pr
 COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            tenant authorization and entitlement registries own
                            independent admission; server.py mounts this router.
-CERTIFICATION / UPDATE DATE: 2026-11-23.
+CERTIFICATION / UPDATE DATE: 2026-11-24.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No client-provided actor or tenant authority; IDs,
                             idempotency and revision are bounded; no-store
@@ -30,6 +30,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
+   v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES profiles slow/failing
+   read-only Projects list/task/task activity/evidence transactions;
+   times Mongo session, entitlement and source phases with safe labels.
+   No IAM, session, retry, query, mutation or timeout changes.
   v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY exposes only a
   read-authorized exact-project/task bounded audit timeline with verified
   decisions and rationale; never returns actor principal IDs, replay keys,
@@ -1148,6 +1152,58 @@ def admit_founder_project_contributor_iam(
     }
 
 
+def _profiled_projects_get(
+    context: TenantAuthorizationContext,
+    operation: str,
+    callback: Callable[[ProjectRegistry, Any], dict[str, object]],
+) -> dict[str, object]:
+    """Profile an authorized GET without additional queries or identity logging.
+
+    Timing begins after FastAPI authorization dependencies. Thus handler_ms
+    does not measure authentication or prehandler permission evaluation.
+    """
+    if operation not in {
+        "PROJECT_LIST", "TASK_LIST", "TASK_COMMENTS",
+        "TASK_EVENTS", "TASK_APPROVALS", "TASK_ATTACHMENTS",
+    }:
+        raise RuntimeError("PROJECT_READ_PROFILE_OPERATION_INVALID")
+    started = perf_counter()
+    timings: dict[str, float] = {}
+    outcome = "OK"
+
+    def measured(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        source_started = perf_counter()
+        try:
+            return callback(registry, session)
+        finally:
+            timings["source_ms"] = round(
+                timings.get("source_ms", 0.0)
+                + (perf_counter() - source_started) * 1000, 2,
+            )
+
+    try:
+        return _transaction(context, measured, phase_timings=timings)
+    except Exception:
+        outcome = "FAILED"
+        raise
+    finally:
+        handler_ms = round((perf_counter() - started) * 1000, 2)
+        if outcome == "FAILED" or handler_ms >= 1000:
+            logger.warning(
+                "PROJECTS_GET_LATENCY operation=%s outcome=%s handler_ms=%.2f "
+                "session_open_ms=%s transaction_ms=%s entitlement_ms=%s "
+                "source_ms=%s pointer_ms=%s history_ms=%s attempts=%s",
+                operation, "SLOW" if outcome == "OK" else outcome, handler_ms,
+                timings.get("session_open_ms", "NOT_REACHED"),
+                timings.get("transaction_ms", "NOT_REACHED"),
+                timings.get("entitlement_ms", "NOT_REACHED"),
+                timings.get("source_ms", "NOT_REACHED"),
+                timings.get("entitlement_pointer_ms", "NOT_REACHED"),
+                timings.get("entitlement_history_ms", "NOT_REACHED"),
+                int(timings.get("attempts", 0)),
+            )
+
+
 @router.get("")
 def list_projects(
     response: Response,
@@ -1189,7 +1245,7 @@ def list_projects(
     # denials, missing indexes, source corruption or unrelated 503s.
     for attempt in range(2):
         try:
-            return _transaction(context, load)
+            return _profiled_projects_get(context, "PROJECT_LIST", load)
         except HTTPException as error:
             if (attempt != 0 or error.status_code != 503
                     or error.detail != "PROJECT_LIST_UNAVAILABLE"):
@@ -2388,7 +2444,7 @@ def list_owner_project_task_attachments(
 ) -> dict[str, object]:
     """Expose redacted exact-task metadata only to authorized project owner."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _attachment_page(
+    return _profiled_projects_get(context, "TASK_ATTACHMENTS", lambda registry, session: _attachment_page(
         context, project_id, task_id, registry, session, limit, offset,
     ))
 
@@ -2832,7 +2888,7 @@ def list_project_task_approvals(
 ) -> dict[str, object]:
     """List task decisions only through separately admitted owner read IAM."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _approval_page(
+    return _profiled_projects_get(context, "TASK_APPROVALS", lambda registry, session: _approval_page(
         context, project_id, task_id, registry, session, limit, offset,
     ))
 
@@ -3045,7 +3101,7 @@ def list_owner_task_events(
 ) -> dict[str, object]:
     """Read immutable exact-task events through owner Projects detail IAM."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _task_activity_page(
+    return _profiled_projects_get(context, "TASK_EVENTS", lambda registry, session: _task_activity_page(
         context, registry, project_id, task_id, session, limit, offset,
     ))
 
@@ -3080,7 +3136,7 @@ def list_owner_task_comments(
 ) -> dict[str, object]:
     """Read task comments through current tenant owner IAM and entitlement."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _list_project_comments(
+    return _profiled_projects_get(context, "TASK_COMMENTS", lambda registry, session: _list_project_comments(
         context, registry, project_id, task_id, session, limit, offset,
     ))
 
@@ -3305,7 +3361,7 @@ def list_project_tasks(
 ) -> dict[str, object]:
     """Return exact-project task page through tenant-owner Projects IAM."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _list_project_tasks(
+    return _profiled_projects_get(context, "TASK_LIST", lambda registry, session: _list_project_tasks(
         context, project_id, registry, session, limit, offset,
     ))
 
@@ -4212,7 +4268,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY
+# VERSION: v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
