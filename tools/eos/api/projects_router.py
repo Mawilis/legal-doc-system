@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.48.0-TRACE-CORRELATED-PROJECT-READS
+VERSION: v1.48.1-MONGO-DRIVER-PHASE-CORRELATION
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,11 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-   v1.48.0-TRACE-CORRELATED-PROJECT-READS joins the existing EOS
+   v1.48.1-MONGO-DRIVER-PHASE-CORRELATION wraps authorized
+  GET transaction execution in the existing opt-in Mongo driver scope,
+  exposing command/pool/pre-command waits to the same safe trace as IAM.
+  No new Mongo call, changed transaction interface, timeout or retry.
+  v1.48.0-TRACE-CORRELATED-PROJECT-READS joins the existing EOS
   authentication and tenant authorization opt-in timing stages to Projects
   slow GET and summary phases by an allowlisted opaque trace reference;
   no user/tenant/session IDs, token material, query data, new DB I/O,
@@ -370,7 +374,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.48.0-TRACE-CORRELATED-PROJECT-READS"
+VERSION: Final[str] = "v1.48.1-MONGO-DRIVER-PHASE-CORRELATION"
 logger = logging.getLogger("WilsyOS.API.Projects")
 
 def _safe_projects_read_trace() -> str:
@@ -1210,15 +1214,19 @@ def _profiled_projects_get(
             )
 
     try:
-        if operation == "PROJECT_LIST":
-            token = _project_list_read_timings.set(timings)
-            try:
-                # Preserve the original no-keyword transaction interface and
-                # whole-read retry semantics pinned by institutional tests.
-                return _transaction(context, measured)
-            finally:
-                _project_list_read_timings.reset(token)
-        return _transaction(context, measured, phase_timings=timings)
+        # Instrument the existing exact-snapshot transaction, not its query
+        # data. When diagnostics are disabled, this scope is a no-op.
+        with kernel_db.mongo_timing_scope(
+            stage="PROJECTS_READ", correlation=_safe_projects_read_trace(),
+        ):
+            if operation == "PROJECT_LIST":
+                token = _project_list_read_timings.set(timings)
+                try:
+                    # Preserve the no-keyword call and exact bounded retry.
+                    return _transaction(context, measured)
+                finally:
+                    _project_list_read_timings.reset(token)
+            return _transaction(context, measured, phase_timings=timings)
     except Exception:
         outcome = "FAILED"
         raise
@@ -4304,7 +4312,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.48.0-TRACE-CORRELATED-PROJECT-READS
+# VERSION: v1.48.1-MONGO-DRIVER-PHASE-CORRELATION
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
