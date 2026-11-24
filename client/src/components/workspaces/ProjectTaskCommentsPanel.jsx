@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.13.0-FOCUSED-ACTIVITY-TIMELINE
+ * VERSION: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS displays
+ *          self as You, source-verified participant names when available,
+ *          and a neutral recorded-actor fallback instead of truncated
+ *          internal principal identifiers or implementation labels.
+ *          Stored author IDs and EOS audit identity remain unchanged.
  * CHANGELOG: v1.13.0-FOCUSED-ACTIVITY-TIMELINE projects a compact
  *          newest-first source-owned activity stream with a readable
  *          author/date hierarchy. Long immutable EOS comments begin with
@@ -475,8 +480,14 @@ export default function ProjectTaskCommentsPanel({
     || a.id.localeCompare(b.id));
   const displayTime = value => Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString() : 'Timestamp not verified';
-  const displayActor = id => id === principalId ? 'You (authenticated author)'
-    : 'Verified principal · ' + String(id).slice(0, 12) + '…';
+  const displayActor = id => {
+    if (id === principalId) return 'You';
+    const member = Array.isArray(participants)
+      ? participants.find(item => item?.principal_id === id) : null;
+    const first = typeof member?.first_name === 'string' ? member.first_name.trim() : '';
+    const last = typeof member?.last_name === 'string' ? member.last_name.trim() : '';
+    return [first, last].filter(Boolean).join(' ') || 'Recorded actor';
+  };
 
   const submit = async event => {
     event.preventDefault();
@@ -619,8 +630,8 @@ export default function ProjectTaskCommentsPanel({
             </strong>
             <time className="shrink-0 text-xs tabular-nums text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
           </div>
-          <p className="mt-1 text-xs text-slate-600" title={entry.actor}>
-            By {displayActor(entry.actor)}
+          <p className="mt-1 text-xs text-slate-600">
+            {displayActor(entry.actor)}
             {entry.type === 'event' ? ' · revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase() : ''}
           </p>
           {entry.type === 'approval-request' && <p className="mt-2 break-words text-sm text-slate-800">
@@ -732,7 +743,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.13.0-FOCUSED-ACTIVITY-TIMELINE
+// VERSION: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
