@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT
+ * VERSION: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT uses
+ *          the accessible ordered source activity timeline for positional
+ *          assertions, and explicitly expands the immutable long MW-T12
+ *          comment before asserting its exact committed EOS readback.
+ *          Short entries and response/command proof remain unchanged.
  * CHANGELOG: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT confirms that the
  *          actionable Projects list is independently source-verified
  *          before optional portfolio summary starts a second transaction.
@@ -1631,7 +1636,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(preview.querySelector('script')).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
     expect(discussion.querySelector('textarea').compareDocumentPosition(
-      discussion.querySelector('[aria-label="Verified task activity history"] ul'),
+      discussion.querySelector('[aria-label="Verified task activity history"] ol'),
     ) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
     expect(discussion.querySelector('textarea')).not.toBeInTheDocument();
@@ -1735,6 +1740,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(api.patch).not.toHaveBeenCalled();
     await act(async () => { releaseReadback(); });
     const history = document.querySelector('[aria-label="Verified task activity history"]');
+    await waitFor(() => expect(within(history).getByRole('button', { name: 'Read full update' })).toBeVisible());
+    expect(history).not.toHaveTextContent('23/23 exact-head GitHub workflows passed');
+    fireEvent.click(within(history).getByRole('button', { name: 'Read full update' }));
     await waitFor(() => expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed'));
     expect(history).toHaveTextContent(sha);
     // Durable source content, not local draft clearing, is the certification gate.
@@ -1743,6 +1751,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(history).toHaveTextContent('production release remains BLOCKED');
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     await waitFor(() => expect(commentReads).toBeGreaterThanOrEqual(3));
+    if (within(history).queryByRole('button', { name: 'Read full update' })) {
+      fireEvent.click(within(history).getByRole('button', { name: 'Read full update' }));
+    }
     expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed');
     expect(task.status).toBe('IN_PROGRESS');
     expect(storedProject.status).toBe('active');
@@ -2953,7 +2964,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT
+ * VERSION: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
