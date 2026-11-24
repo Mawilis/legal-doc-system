@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Participant Projects and Inbox Client Certificate
- * VERSION: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT
+ * VERSION: v1.2.0-SINGLE-PARTICIPANT-LIST-SCOPE-CERT
  * AUTHORITY: Mocked EOS client presentation only; server retains all IAM.
  * EPITOME: Certify participant-only assigned project selection, own-assignee
  *          lifecycle, mention notification acknowledgement and tenant isolation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/AssignedProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: AssignedProjectsWorkspace, api.js mock.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-SINGLE-PARTICIPANT-LIST-SCOPE-CERT
+ *          proves one initial participant project GET under StrictMode,
+ *          no duplicate on equal parent headers, and fresh validation on
+ *          changed header scope. Original project admission tests retained.
  * CHANGELOG: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT models an
  *            actual 50-item source page and a target beyond that page,
  *            preserving nonempty cursor evidence and source containment.
@@ -22,7 +26,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -72,6 +76,32 @@ afterEach(() => {
 });
 
 const response = data => ({ data });
+
+it('reads assigned projects once per StrictMode scope and revalidates changed headers', async () => {
+  api.get.mockResolvedValue({ data: {
+    schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
+    tenant_id: tenantId, principal_id: principalId,
+    items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+  } });
+  const props = {
+    tenantId, principalId, sessionScope: 'participant-test-scope',
+    tenantHeaders: { 'X-Tenant-ID': tenantId }, onBack: () => {},
+  };
+  const { rerender } = render(<React.StrictMode>
+    <AssignedProjectsWorkspace {...props}/>
+  </React.StrictMode>);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    rerender(<React.StrictMode><AssignedProjectsWorkspace {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId }}/></React.StrictMode>);
+  });
+  expect(api.get).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    rerender(<React.StrictMode><AssignedProjectsWorkspace {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Test-Scope': 'changed' }}/></React.StrictMode>);
+  });
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+});
 
 it('lists only assigned projects, acts on own task and marks own mention read', async () => {
   let task = work;
