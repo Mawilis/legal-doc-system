@@ -1,13 +1,20 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ
+ * VERSION: v1.13.0-FOCUSED-ACTIVITY-TIMELINE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTaskCommentsPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.13.0-FOCUSED-ACTIVITY-TIMELINE projects a compact
+ *          newest-first source-owned activity stream with a readable
+ *          author/date hierarchy. Long immutable EOS comments begin with
+ *          a bounded text-only preview and disclose the complete safe
+ *          Markdown on explicit request, without changing comment bodies,
+ *          authenticated pagination, event visibility, source authority
+ *          or publishing. No AI summarization or unsourced task status.
  * CHANGELOG: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ defers the
  *          four independent initial activity/evidence GETs beyond
  *          discarded React StrictMode mount effects. Explicit retries
@@ -168,6 +175,35 @@ function MarkdownText({ value }) {
   }
   return <div className="min-w-0" data-testid="safe-markdown-discussion">{elements}</div>;
 }
+
+/**
+ * The saved comment is immutable EOS evidence. Only its *presentation* is
+ * shortened for the read-first timeline; full text remains accessible in
+ * place without a second request or rewriting authoritative content.
+ */
+function ActivityCommentBody({ value }) {
+  const [expanded, setExpanded] = useState(false);
+  const source = String(value || '').replace(/\r\n?/g, '\n');
+  const lines = source.split('\n').map(line => line.trim()).filter(Boolean);
+  const long = source.length > 360 || lines.length > 7;
+  if (!long) return <MarkdownText value={source}/>;
+  const first = (lines[0] || '').replace(/^(?:#{1,3}\s+|[-*]\s+|\d+\.\s+)/, '')
+    .replace(/\*\*/g, '').trim();
+  const introduction = first.length > 160 ? first.slice(0, 157).trimEnd() + '…' : first;
+  return <div className="min-w-0" data-testid="compact-project-activity-comment">
+    {expanded ? <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <MarkdownText value={source}/>
+    </div> : <div className="mt-2 max-w-full space-y-1">
+      <p className="break-words text-sm font-medium leading-6 text-slate-900">{introduction}</p>
+      <p className="text-xs leading-5 text-slate-600">Long update · {lines.length} populated lines · Full source text retained</p>
+    </div>}
+    <button type="button" className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      aria-expanded={expanded} onClick={() => setExpanded(open => !open)}>
+      {expanded ? 'Collapse update' : 'Read full update'}
+    </button>
+  </div>;
+}
+
 
 /** @description Source-owned comments with explicit bounded mentions. */
 export default function ProjectTaskCommentsPanel({
@@ -569,10 +605,10 @@ export default function ProjectTaskCommentsPanel({
             <button type="button" className="wp-button" onClick={onViewAttachments}>Attachments &amp; evidence</button>}
         </div>
       </div>
-      <ul className="mt-2 divide-y divide-slate-200 border-t border-slate-200">
-        {activity.map(entry => <li className="p-3 text-sm" key={entry.id}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <strong className="break-words text-slate-900">
+      <ol className="mt-3 space-y-2" aria-label="Source-verified task activity newest first">
+        {activity.map(entry => <li className="relative min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm" key={entry.id}>
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+            <strong className="min-w-0 break-words text-sm font-semibold text-slate-900">
               {entry.type === 'comment' ? 'Progress update / comment'
                 : entry.type === 'approval-request' ? 'Approval requested'
                   : entry.type === 'approval-decision' ? 'Decision · ' + entry.item.status.toLowerCase()
@@ -581,7 +617,7 @@ export default function ProjectTaskCommentsPanel({
                   : entry.item.event_type === 'PROJECT_TASK_REVISED' ? 'Work revised'
                     : 'Lifecycle transition'}
             </strong>
-            <time className="text-xs text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
+            <time className="shrink-0 text-xs tabular-nums text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
           </div>
           <p className="mt-1 text-xs text-slate-600" title={entry.actor}>
             By {displayActor(entry.actor)}
@@ -602,14 +638,14 @@ export default function ProjectTaskCommentsPanel({
           {entry.type === 'attachment' && typeof onViewAttachments === 'function' &&
             <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
               onClick={onViewAttachments}>Open governed attachment</button>}
-          {entry.type === 'comment' && <div className="mt-2"><MarkdownText value={entry.item.body}/></div>}
+          {entry.type === 'comment' && <ActivityCommentBody value={entry.item.body}/>}
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
         </li>)}
         {activity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
           No EOS-verified activity is available on these pages.
         </li>}
-      </ul>
+      </ol>
       {(eventOffset > 0 || eventHasMore) &&
         <nav aria-label="Task event pages" className="mt-3 flex items-center justify-between gap-2">
           <button type="button" className="wp-button" disabled={eventOffset === 0 || eventState === 'LOADING'}
@@ -696,7 +732,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ
+// VERSION: v1.13.0-FOCUSED-ACTIVITY-TIMELINE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
