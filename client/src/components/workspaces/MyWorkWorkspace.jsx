@@ -17,7 +17,7 @@
  *          movable dark task modal, showing a Projects-style light focused
  *          record in the work area; source CRM editor, command readback,
  *          audit history and completion evidence remain authoritative.
- * CHANGELOG: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS replaces former dark-
+ * CHANGELOG: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST replaces former dark-
  *          surface pale priority text with WCAG-conscious readable
  *          values on the new light workforce blueprint rows.
  * CHANGELOG: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE replaces legacy queue rows with
