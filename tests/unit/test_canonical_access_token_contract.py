@@ -1,7 +1,7 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.6.0-ISOLATED-FOUNDER-ABSENCE-WORKSPACE-CERT
+VERSION: v1.6.1-EXPLICIT-FOUNDER-ABSENCE-WIRE-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
@@ -9,6 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.6.1-EXPLICIT-FOUNDER-ABSENCE-WIRE-CERT requires the
+explicit institutionalDesignation null in the synthetic non-Founder bootstrap
+wire response. The source-owned Founder read is still separately tested.
 CHANGELOG: v1.6.0-ISOLATED-FOUNDER-ABSENCE-WORKSPACE-CERT makes the legacy synthetic principal's lawful no-Founder-designation state explicit in its isolated workspace dependency harness; real Founder authority and evidence remain unchanged, and dedicated Founder tests verify persisted proof independently.
 CHANGELOG: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT supplies the required discovered tenant to MFA verification and canonical workspace_id to synthetic workspace projections, preserving server-owned authentication and workspace contracts.
            v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
@@ -676,6 +679,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             "email": "principal@example.com",
             "firstName": "Canonical",
             "lastName": "Principal",
+            "institutionalDesignation": None,
         },
         "workspace": {
             "tenantId": TENANT,
@@ -1054,7 +1058,7 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT
+# VERSION: v1.6.1-EXPLICIT-FOUNDER-ABSENCE-WIRE-CERT
 # AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, D21B7 branding presence/absence transport, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
 # FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile/branding-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model/branding authority deny or remain excluded
