@@ -1,13 +1,18 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.64.0-CONTEXTUAL-ACTIVITY-REVIEWER-UX
+ * VERSION: v1.65.0-SOURCE-VERIFIED-EXECUTION-READINESS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTasksPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.65.0-SOURCE-VERIFIED-EXECUTION-READINESS makes task execution
+ *          readiness reflect the current EOS source facts, exposes direct
+ *          evidence/approval/activity actions, and does not infer production
+ *          certification from task status. The approved Projects UI remains.
+
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
  * SECURITY / PRIVACY POSTURE: Text only, no HTML parsing, AI execution, bearer
  *          extraction, fabricated task metrics or inferred notifications.
@@ -2164,28 +2169,83 @@ export default function ProjectTasksPanel({
             </nav>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
-            {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4" aria-label="Next steps for this task">
-              <h4 className="text-base font-bold text-blue-950">Next steps</h4>
-              <p className="mt-1 text-sm text-blue-900">Plan who is responsible and when this work is due.</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <p className="text-xs font-semibold text-slate-600">Responsible person</p>
-                  <p className="mt-1 font-bold text-slate-950">{drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}</p>
-                  {!drawerTask.assignee_principal_id && <p className="mt-1 text-xs text-slate-700">Choose an eligible project contributor.</p>}
+            {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section
+              className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4"
+              aria-label="Source-verified task execution readiness">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h4 className="text-base font-bold text-blue-950">Execution readiness</h4>
+                  <p className="mt-1 text-sm text-blue-900">
+                    Current EOS task facts. Evidence, approvals and production release remain independently governed.
+                  </p>
                 </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <p className="text-xs font-semibold text-slate-600">Planned completion date</p>
-                  <p className="mt-1 font-bold text-slate-950">{drawerTask.due_date || 'Not set'}</p>
-                  {!drawerTask.due_date && <p className="mt-1 text-xs text-slate-700">Choose a date from the calendar.</p>}
-                </div>
+                <span className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-950">
+                  Revision {drawerTask.revision}
+                </span>
               </div>
-              {(actionCapabilities?.canEdit || actionCapabilities?.canAssign) && <button type="button"
-                className="mt-3 min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 py-2 font-bold text-white hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
-                onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
-                {actionCapabilities?.canEdit ? 'Assign contributor and set due date' : 'Assign contributor'}
-              </button>}
-              {!actionCapabilities && <p role="status" className="mt-2 text-xs text-blue-900">Checking who can update this task…</p>}
-            </section>}
+              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg border border-blue-200 bg-white p-3">
+                  <dt className="text-xs font-semibold text-slate-600">Accountable contributor</dt>
+                  <dd className="mt-1 font-bold text-slate-950">
+                    {drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Assignment required'}
+                  </dd>
+                </div>
+                <div className="rounded-lg border border-blue-200 bg-white p-3">
+                  <dt className="text-xs font-semibold text-slate-600">Delivery deadline</dt>
+                  <dd className="mt-1 font-bold text-slate-950">
+                    {drawerTask.due_date
+                      ? drawerTask.due_date < todayISO ? 'Overdue · ' + drawerTask.due_date : drawerTask.due_date
+                      : 'Due date required'}
+                  </dd>
+                </div>
+                <div className="rounded-lg border border-blue-200 bg-white p-3">
+                  <dt className="text-xs font-semibold text-slate-600">Source lifecycle</dt>
+                  <dd className="mt-1 font-bold text-slate-950">{label(drawerTask.status)}</dd>
+                </div>
+                <div className="rounded-lg border border-blue-200 bg-white p-3">
+                  <dt className="text-xs font-semibold text-slate-600">Predecessor gate · current verified page</dt>
+                  <dd className="mt-1 font-bold text-slate-950">
+                    {drawerTask.depends_on.some(id => !items.some(item => item.task_id === id))
+                      ? 'Some predecessors outside verified page'
+                      : drawerTask.depends_on.filter(id => items.some(item =>
+                        item.task_id === id && item.status !== 'DONE')).length > 0
+                        ? 'Waiting on '
+                          + drawerTask.depends_on.filter(id => items.some(item =>
+                            item.task_id === id && item.status !== 'DONE')).length
+                          + ' predecessor(s)'
+                        : 'No unfinished predecessors visible on this page'}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-3 flex flex-wrap gap-2" aria-label="Task execution evidence actions">
+                {(actionCapabilities?.canEdit || actionCapabilities?.canAssign) && <button type="button"
+                  className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 py-2 text-sm font-bold text-white hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                  onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
+                  {drawerTask.assignee_principal_id && drawerTask.due_date
+                    ? 'Revise assignment or deadline'
+                    : 'Assign contributor and schedule'}
+                </button>}
+                <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                  onClick={() => { const item = drawerTask; closeDrawer(); setAttachmentTaskId(item.task_id); }}>
+                  Review supporting evidence
+                </button>
+                <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                  onClick={() => { const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id); }}>
+                  Review approvals
+                </button>
+                <button type="button" className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                  onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
+                  Record activity
+                </button>
+              </div>
+              {!actionCapabilities && <p role="status" className="mt-2 text-xs text-blue-900">
+                Checking EOS task-edit authority…
+              </p>}
+              <p className="mt-3 text-xs leading-relaxed text-blue-950">
+                Task status does not certify deployment readiness, rollback capability, evidence clearance
+                or strategic outcome attainment. Review the independently authorized source records before completion.
+              </p>
+            </section>
             <section className="pt-5" aria-label="Task description">
               <h4 className="text-sm font-bold text-slate-950">Description</h4>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
@@ -2273,7 +2333,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.64.0-CONTEXTUAL-ACTIVITY-REVIEWER-UX
+// VERSION: v1.65.0-SOURCE-VERIFIED-EXECUTION-READINESS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
