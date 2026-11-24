@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT
+ * VERSION: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT proves a long
+ *          source-owned engineering update begins as a compact text-only
+ *          preview, expands to the complete unchanged safe Markdown, and
+ *          collapses again without any EOS write or new authority. Short
+ *          comments remain fully visible and source pages stay immutable.
  * CHANGELOG: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT proves
  *          React StrictMode discarded effects cannot issue duplicated
  *          four-source discussion reads. Real changes still reverify EOS.
@@ -111,6 +116,50 @@ it('does not refetch four activity sources on equivalent parent rerenders', asyn
       tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Test-Scope': 'changed' }} />);
   });
   await waitFor(() => expect(api.get).toHaveBeenCalledTimes(8));
+});
+
+it('presents long persisted engineering updates as expandable safe activity evidence', async () => {
+  const original = '**MW-T12 — Nonproduction Python EOS recovery**\n'
+    + Array.from({ length: 10 }, (_, index) => '- Verified source gate ' + index
+      + ': local EOS restart and authenticated readback retained').join('\n')
+    + '\n<iframe src="https://untrusted.example"></iframe>';
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId,
+      project_id: projectId, task_id: taskId,
+      items: [{ ...source, body: original }],
+      limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Independent optional source not available');
+  });
+  mount();
+  expect(await screen.findByText('MW-T12 — Nonproduction Python EOS recovery')).toBeVisible();
+  expect(screen.getByRole('list', { name: 'Source-verified task activity newest first' })).toBeVisible();
+  const expand = screen.getByRole('button', { name: 'Read full update' });
+  expect(expand).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByText(/Verified source gate 9/)).not.toBeInTheDocument();
+  fireEvent.click(expand);
+  expect(screen.getByText(/Verified source gate 9/)).toBeVisible();
+  expect(screen.getByText(/<iframe src=/)).toBeVisible();
+  expect(document.querySelector('iframe')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse update' }));
+  expect(screen.queryByText(/Verified source gate 9/)).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('does not hide ordinary source comments behind disclosure', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional evidence unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Read full update' })).not.toBeInTheDocument();
 });
 
 it('publishes a comment and mention only after verified source list readback', async () => {
@@ -221,7 +270,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT
+// VERSION: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
