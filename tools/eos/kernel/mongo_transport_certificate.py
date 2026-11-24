@@ -1,12 +1,17 @@
 """
 TITLE: WILSY OS MongoDB Transport Development Certificate
-VERSION: v1.3.0-READONLY-CREDENTIAL-PROJECT-PLANS
+VERSION: v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compare local Mongo read-only command timings to Atlas execution time.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/mongo_transport_certificate.py
 COLLABORATION / OWNERSHIP: Kernel owns the sole Mongo lifecycle; this explicit
                            operator command observes it without creating authority.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON records the
+actual ObjectId-shaped tenant-scoped legacy users query plan (not the
+tenant-neutral principal_credentials collection), plus synthetic timing of
+the combined $or path versus two separately indexed exact reads. This is an
+explicit read-only developer certificate, never an authentication decision.
 CHANGELOG: v1.3.0-READONLY-CREDENTIAL-PROJECT-PLANS adds an explicit --plans
 mode to inspect synthetic absent-key credential and exact-tenant Projects
 query shapes with executionStats. Rejects collection scans, missing expected
@@ -32,7 +37,7 @@ from bson import ObjectId
 from pymongo.errors import PyMongoError
 from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
 
-VERSION: Final[str] = "v1.3.0-READONLY-CREDENTIAL-PROJECT-PLANS"
+VERSION: Final[str] = "v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON"
 _INDEX: Final[str] = "wilsy_auth_users_tenant_identity_lookup"
 _ABSENT: Final[str] = "__WILSY_TRANSPORT_CERT_NEVER_A_REAL_ID__"
 
@@ -71,6 +76,92 @@ def _plan_stages(node: Any) -> set[str]:
         for child in node:
             stages.update(_plan_stages(child))
     return stages
+
+
+def _certify_legacy_user_query_plan(db: Any) -> bool:
+    """Verify the actual ObjectId-shaped credential read query structure.
+
+    Uses an impossible synthetic tenant, so no real identity, credential or
+    tenant records are returned. Names only known index metadata and counts.
+    A successful synthetic plan does not certify real-session latency.
+    """
+    absent = "__WILSY_LEGACY_CERT_ABSENT_" + secrets.token_hex(20)
+    legacy_id = ObjectId()
+    combined = {
+        "tenantId": absent,
+        "$or": [{"user_id": str(legacy_id)}, {"_id": legacy_id}],
+    }
+    required = {_INDEX, "_id_"}
+    installed = db["users"].index_information()
+    if not required.issubset(installed):
+        print("EOS_LEGACY_CREDENTIAL_PLAN=INDEX_NOT_READY")
+        return False
+    plan = db.command({
+        "explain": {
+            "find": "users",
+            "filter": combined,
+            "projection": {"_id": 1},
+            "limit": 3,
+            "maxTimeMS": 3000,
+        },
+        "verbosity": "executionStats",
+        "maxTimeMS": 3000,
+    })
+    stats = plan.get("executionStats", {})
+    winning = plan.get("queryPlanner", {}).get("winningPlan", {})
+    indexes = _indexes(winning)
+    stages = _plan_stages(winning)
+    if (
+        "COLLSCAN" in stages
+        or not indexes
+        or not indexes.issubset(required)
+        or stats.get("nReturned") != 0
+        or stats.get("totalDocsExamined") != 0
+        or not isinstance(stats.get("totalKeysExamined"), int)
+    ):
+        print("EOS_LEGACY_CREDENTIAL_PLAN=NOT_CERTIFIED")
+        return False
+    print(
+        "EOS_LEGACY_CREDENTIAL_PLAN=INDEXED "
+        + "indexes=" + ",".join(sorted(indexes))
+        + " keys_examined=" + str(stats["totalKeysExamined"])
+        + " docs_examined=0 returned=0"
+    )
+    return True
+
+
+def _legacy_query_comparison(db: Any, *, samples: int) -> bool:
+    """Time absent-tenant equivalent queries using the same canonical client.
+
+    Both variants preserve exact tenant restrictions and return no rows.
+    The two-read benchmark is diagnostic only, never runtime authorization.
+    """
+    absent = "__WILSY_LEGACY_COMPARE_ABSENT_" + secrets.token_hex(20)
+    legacy_id = ObjectId()
+    canonical = {"tenantId": absent, "user_id": str(legacy_id)}
+    legacy = {"tenantId": absent, "_id": legacy_id}
+    combined = {"tenantId": absent, "$or": [
+        {"user_id": str(legacy_id)}, {"_id": legacy_id},
+    ]}
+    timings: dict[str, list[float]] = {"COMBINED": [], "TWO_EXACT": []}
+    for _sample in range(samples):
+        started = time.perf_counter_ns()
+        if list(db["users"].find(combined, {"_id": 1}, limit=3, max_time_ms=3000)):
+            return False
+        timings["COMBINED"].append((time.perf_counter_ns() - started) / 1_000_000)
+        started = time.perf_counter_ns()
+        if db["users"].find_one(canonical, {"_id": 1}, max_time_ms=3000):
+            return False
+        if db["users"].find_one(legacy, {"_id": 1}, max_time_ms=3000):
+            return False
+        timings["TWO_EXACT"].append((time.perf_counter_ns() - started) / 1_000_000)
+    for label, values in timings.items():
+        print(
+            f"EOS_LEGACY_CREDENTIAL_{label}_CLIENT_MS "
+            f"median={statistics.median(values):.3f} "
+            f"p95={_p95(values):.3f} max={max(values):.3f}"
+        )
+    return True
 
 
 def _certify_source_plans(db: Any) -> bool:
@@ -223,9 +314,16 @@ def run_certificate(*, samples: int, plans: bool = False) -> int:
         ):
             print("EOS_MONGO_TRANSPORT_CERT=INCOMPLETE_SAMPLES")
             return 4
-        if plans and not _certify_source_plans(db):
-            print("EOS_MONGO_TRANSPORT_CERT=SOURCE_PLANS_NOT_CERTIFIED")
-            return 4
+        if plans:
+            if not _certify_legacy_user_query_plan(db):
+                print("EOS_MONGO_TRANSPORT_CERT=LEGACY_PLAN_NOT_CERTIFIED")
+                return 4
+            if not _certify_source_plans(db):
+                print("EOS_MONGO_TRANSPORT_CERT=SOURCE_PLANS_NOT_CERTIFIED")
+                return 4
+            if not _legacy_query_comparison(db, samples=samples):
+                print("EOS_MONGO_TRANSPORT_CERT=LEGACY_COMPARISON_NOT_CERTIFIED")
+                return 4
         print(f"EOS_MONGO_TRANSPORT_CERT=READ_ONLY_COMPLETED samples={samples}")
         for name, data in (
             ("PING_CLIENT", pings),
@@ -257,7 +355,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: mongo_transport_certificate.py
-# VERSION: v1.3.0-READONLY-CREDENTIAL-PROJECT-PLANS
+# VERSION: v1.4.0-LEGACY-CREDENTIAL-QUERY-PLAN-COMPARISON
 # AUTHORITY BOUNDARY: Explicit read-only Kernel Mongo timing observation.
 # TENANT POSTURE: Synthetic absent scope and identity; no record access.
 # FAIL-CLOSED POSTURE: Unavailable index, query plan, or Mongo connection is failure.
