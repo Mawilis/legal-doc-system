@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT
+ * VERSION: v1.8.0-ACTION-GROUP-GUTTERS-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.8.0-ACTION-GROUP-GUTTERS-CERT proves the
+ *          visible action rows have 16px horizontal and 12px vertical
+ *          wrap gutters plus real divider padding at the activity heading,
+ *          availability controls and EOS-verified history; this preserves
+ *          compact button size and authenticated source semantics.
  * CHANGELOG: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT verifies that
  *          the existing read, refresh and authoring actions share the
  *          compact 36px Projects control class, preserve accessible names
@@ -140,6 +145,12 @@ it('uses consistent compact OS actions without changing authorized commands', as
   for (const button of [refresh, compose]) {
     expect(button).toHaveClass('wp-button', '!min-h-9', '!px-3', '!text-xs');
   }
+  expect(refresh.parentElement).toHaveClass('gap-x-4', 'gap-y-3');
+  const availability = screen.getByLabelText('Verified discussion availability');
+  expect(availability).toHaveClass('gap-x-4', 'gap-y-3', 'py-4');
+  const history = screen.getByLabelText('Verified task activity history');
+  expect(history).toHaveClass('pt-4');
+  expect(history.firstElementChild).toHaveClass('gap-x-4', 'gap-y-3', 'pb-4');
   fireEvent.click(compose);
   expect(screen.getByRole('button', { name: 'Close editor' }))
     .toHaveClass('!min-h-9', '!px-3', '!text-xs');
@@ -300,7 +311,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT
+// VERSION: v1.8.0-ACTION-GROUP-GUTTERS-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
