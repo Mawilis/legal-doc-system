@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS credential-revision direct certificate.
 
 TITLE: WILSY OS AuthRegistry Credential Revision Direct Certificate
-VERSION: v1.8.0-COMBINED-LEGACY-IDENTITY-CERTIFICATE
+VERSION: v1.9.0-INDEXED-DUAL-IDENTITY-CERTIFICATE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Independently certifies the AuthRegistry credential-revision
          persistence primitives plus caller-owned transactional registration
@@ -18,6 +18,10 @@ COLLABORATION / OWNERSHIP: Test-only evidence; production AuthRegistry,
                            read-only and caller-owned.
 CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
+  v1.9.0-INDEXED-DUAL-IDENTITY-CERTIFICATE certifies separate exact
+  canonical (bounded to 2) and _id lookups, same ClientSession, no $or,
+  duplicate/collision refusal, legacy missing-user_id compatibility and
+  original credential-currentness/revision behavior.
   v1.8.0-COMBINED-LEGACY-IDENTITY-CERTIFICATE proves ObjectId-shaped
     currentness uses one tenant-scoped bounded $or read, detects identity
     collisions, and propagates the exact caller ClientSession.
@@ -282,7 +286,7 @@ def _user_calls(collection: _RecordingCollection, operation: str) -> list[dict[s
 
 
 def test_public_api_signatures_and_certificate_version() -> None:
-    assert auth_registry_module.VERSION == 'v1.17.0-COMBINED-LEGACY-IDENTITY-READ'
+    assert auth_registry_module.VERSION == 'v1.18.0-INDEXED-DUAL-IDENTITY-CURRENTNESS'
     assert list(inspect.signature(AuthRegistry.register_user).parameters) == [
         "self", "email", "password", "firstName", "lastName", "role", "tenantId", "session"
     ]
@@ -604,10 +608,13 @@ def test_legacy_id_revision_read_is_exact_tenant_bound_and_session_propagated(
     reads = _user_calls(_users(database), "find")
     assert len(reads) == 1
     assert reads[0]["query"] == {
-        "tenantId": "TENANT-ONE",
-        "$or": [{"user_id": str(legacy_id)}, {"_id": legacy_id}],
+        "user_id": str(legacy_id), "tenantId": "TENANT-ONE",
     }
     assert reads[0]["kwargs"]["session"] is session
+    legacy_reads = _user_calls(_users(database), "find_one")
+    assert len(legacy_reads) == 1
+    assert legacy_reads[0]["query"] == {"_id": legacy_id, "tenantId": "TENANT-ONE"}
+    assert legacy_reads[0]["kwargs"]["session"] is session
     assert tenant_reads == [
         {"value": "TENANT-ONE", "allow_alias": False, "session": session}
     ]
@@ -634,12 +641,14 @@ def test_legacy_object_id_revision_read_preserves_missing_or_null_user_id(
 
     reads = _user_calls(_users(database), "find")
     assert [call["query"] for call in reads] == [
-        {
-            "tenantId": "TENANT-ONE",
-            "$or": [{"user_id": str(legacy_id)}, {"_id": legacy_id}],
-        }
+        {"user_id": str(legacy_id), "tenantId": "TENANT-ONE"}
     ]
     assert reads[0]["kwargs"]["session"] is session
+    legacy_reads = _user_calls(_users(database), "find_one")
+    assert [call["query"] for call in legacy_reads] == [
+        {"_id": legacy_id, "tenantId": "TENANT-ONE"}
+    ]
+    assert legacy_reads[0]["kwargs"]["session"] is session
 
 
 def test_tenant_mismatch_and_missing_user_fail_closed(
@@ -672,11 +681,12 @@ def test_identity_collision_fails_closed() -> None:
         reads = _user_calls(_users(database), "find")
         assert len(reads) == 1
         assert reads[0]["query"] == {
-            "tenantId": "TENANT-ONE",
-            "$or": [
-                {"user_id": collision_text},
-                {"_id": ObjectId(collision_text)},
-            ],
+            "user_id": collision_text, "tenantId": "TENANT-ONE",
+        }
+        legacy_reads = _user_calls(_users(database), "find_one")
+        assert len(legacy_reads) == 1
+        assert legacy_reads[0]["query"] == {
+            "_id": ObjectId(collision_text), "tenantId": "TENANT-ONE",
         }
     finally:
         auth_registry_module.kernel_db.get_database = original
