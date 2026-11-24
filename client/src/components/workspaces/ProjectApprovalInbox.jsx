@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS My Pending Project Decision Inbox
- * VERSION: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX
+ * VERSION: v1.2.0-ONE-APPROVAL-INBOX-READ-PER-SCOPE
  * AUTHORITY: Python EOS recipient/project participant IAM and approval source.
  * EPITOME: One searchable-by-authority pending review queue with exact-person
  *          decisions and source-confirmed readback, independent of task pages.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: AssignedProjectsWorkspace mounts this reviewer
  *          feed; Python EOS owns project records, decisions, IAM and replay.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-ONE-APPROVAL-INBOX-READ-PER-SCOPE
+ *          stabilizes equal parent-provided tenant selectors and defers
+ *          initial inbox GET beyond the discarded StrictMode effect.
+ *          Changes in tenant scope and explicit refresh reverify EOS.
  * CHANGELOG: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX shows immutable source evidence references and embeds the existing participant-authorized task attachment viewer before a decision, verifying evidence identity on decision acknowledgement.
  * CHANGELOG: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX adds current designated
  *          participant's PENDING decisions with CAS, no owner-list authority.
@@ -72,7 +76,16 @@ export default function ProjectApprovalInbox({
   active.current = scope;
   const generation = useRef(0);
   const replay = useRef(new Map());
-  const headers = tenantHeaders || {};
+  const headersRef = useRef(null);
+  const incomingHeaders = tenantHeaders && typeof tenantHeaders === 'object'
+    ? tenantHeaders : {};
+  const previousHeaders = headersRef.current;
+  const headerKeys = Object.keys(incomingHeaders);
+  if (!previousHeaders || headerKeys.length !== Object.keys(previousHeaders).length
+      || headerKeys.some(key => previousHeaders[key] !== incomingHeaders[key])) {
+    headersRef.current = { ...incomingHeaders };
+  }
+  const headers = headersRef.current;
 
   const load = useCallback(async (nextOffset = 0) => {
     const request = ++generation.current, current = scope;
@@ -105,7 +118,7 @@ export default function ProjectApprovalInbox({
       setError('EOS could not verify your current project approval inbox.');
       return false;
     }
-  }, [scope, tenantId, principalId, tenantHeaders]);
+  }, [scope, tenantId, principalId, headers]);
 
   useEffect(() => {
     generation.current += 1;
@@ -114,8 +127,9 @@ export default function ProjectApprovalInbox({
     setOpenEvidenceId(null);
     setOffset(0);
     replay.current.clear();
-    void load(0);
-    return () => { generation.current += 1; };
+    let active = true;
+    queueMicrotask(() => { if (active) void load(0); });
+    return () => { active = false; generation.current += 1; };
   }, [scope, load]);
 
   const decide = async (item, decision) => {
