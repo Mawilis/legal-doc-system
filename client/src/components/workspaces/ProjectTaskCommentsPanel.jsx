@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS
+ * VERSION: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,18 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
+ * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
+ *          participant IDs can be explicitly selected as mentions.
+ * TENANT BOUNDARY: Every list/result is checked against active exact tenant,
+ *          project, task and principal; late prior session replies are ignored.
+ * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
+ *          approvals; EOS rechecks every mentioned principal on creation.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT moves
+ *          mandatory institutional authority and privacy declarations ahead
+ *          of the long history, satisfying the first-100-line integrity
+ *          contract without any runtime/UI behavior change.
  * CHANGELOG: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS displays
  *          self as You, source-verified participant names when available,
  *          and a neutral recorded-actor fallback instead of truncated
@@ -91,14 +103,6 @@
  *          presentation never upgrades a participant to owner IAM.
  * CHANGELOG: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
- * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
- * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
- *          participant IDs can be explicitly selected as mentions.
- * TENANT BOUNDARY: Every list/result is checked against active exact tenant,
- *          project, task and principal; late prior session replies are ignored.
- * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
- *          approvals; EOS rechecks every mentioned principal on creation.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle, MessageSquare, RefreshCw, Send, X } from 'lucide-react';
@@ -743,7 +747,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS
+// VERSION: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
