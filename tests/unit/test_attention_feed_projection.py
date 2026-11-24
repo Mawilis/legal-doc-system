@@ -1,12 +1,17 @@
 """TITLE: WILSY OS Daily Attention Authorised Feed Unit Certificate
-VERSION: v1.5.1-EXPLICIT-FASTAPI-DEPENDENCY-FIXTURES
+VERSION: v1.6.0-CRM-CAPABILITY-ISOLATED-READ-CERT
 AUTHORITY: WILSY OS Core Engineering disposable test authority only.
 EPITOME: Prove source ownership, tenant scope, counts, urgency, filters,
          stable cursor paging and strict fail-closed AttentionItem contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_attention_feed_projection.py
 COLLABORATION / OWNERSHIP: UnifiedMyWorkProjection owns tested source
          contract; attention_feed_projection is only a read-only adapter.
-CERTIFICATION / UPDATE DATE: 2026-11-11
+CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.6.0-CRM-CAPABILITY-ISOLATED-READ-CERT verifies
+           CRM-only capability admission uses existing CRM read IAM and a
+           worker-thread source-owned entitlement transaction, rejects
+           unadmitted, mismatched and omitted sources, and never fabricates
+           source command authority. Other feed and command tests unchanged.
 CHANGELOG: v1.5.1-EXPLICIT-FASTAPI-DEPENDENCY-FIXTURES explicitly supplies
            optional FastAPI dependencies as None when calling async routes
            directly; the framework resolves Depends only for HTTP dispatch.
@@ -40,8 +45,10 @@ FAIL-CLOSED POSTURE: Invalid source, cursor, count and tenant fail tests.
 from datetime import datetime, timedelta, timezone
 from copy import deepcopy
 import asyncio
+import threading
 from types import SimpleNamespace
 from fastapi import HTTPException
+from tools.eos.api import attention_router as attention_api
 from tools.eos.api.attention_router import (
     attention_authorised_actions, attention_crm_actions,
     attention_operations_actions, attention_intelligence_actions,
@@ -303,6 +310,76 @@ def test_attention_actions_reject_foreign_command_context_without_disclosing_rec
     assert exc.value.detail == "ATTENTION_ACTION_CONTEXT_INCONSISTENT"
 
 
+def test_crm_capability_scope_uses_one_independent_source_read_on_worker(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """CRM authorization cannot incur Projects/HR/Operations aggregate reads."""
+    caller = threading.get_ident()
+    observed = []
+
+    def crm_source(*, tenant_id):
+        observed.append((tenant_id, threading.get_ident()))
+        return {"tenant_id": tenant_id, "items": []}
+
+    monkeypatch.setattr(attention_api, "_read_crm", crm_source)
+    identity = SimpleNamespace(identity_id=PRINCIPAL)
+    allowed = SimpleNamespace(tenant_id=TENANT, identity=identity)
+    result = asyncio.run(attention_api._read_exact_crm_action_scope(
+        TENANT, identity, allowed,
+    ))
+    assert result == {
+        "tenant_id": TENANT,
+        "principal_id": PRINCIPAL,
+        "sources_included": ["CRM"],
+    }
+    assert len(observed) == 1
+    assert observed[0][0] == TENANT
+    assert observed[0][1] != caller
+
+
+@pytest.mark.parametrize("read_context, expected_code", [
+    (None, 403),
+    ("FOREIGN", 503),
+])
+def test_crm_capability_scope_rejects_denied_or_cross_tenant_source(
+    monkeypatch: pytest.MonkeyPatch,
+    read_context,
+    expected_code,
+):
+    """Neither denied nor mismatched source IAM reaches CRM persistence."""
+    calls = []
+    monkeypatch.setattr(
+        attention_api, "_read_crm",
+        lambda *, tenant_id: calls.append(tenant_id),
+    )
+    identity = SimpleNamespace(identity_id=PRINCIPAL)
+    context = None if read_context is None else SimpleNamespace(
+        tenant_id=read_context, identity=identity,
+    )
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(attention_api._read_exact_crm_action_scope(
+            TENANT, identity, context,
+        ))
+    assert exc.value.status_code == expected_code
+    assert calls == []
+
+
+@pytest.mark.parametrize("source", [None, {"tenant_id": "FOREIGN", "items": []}])
+def test_crm_capability_scope_requires_verified_crm_entitlement_and_scope(
+    monkeypatch: pytest.MonkeyPatch,
+    source,
+):
+    """Omitted CRM entitlement and mismatched source evidence fail closed."""
+    identity = SimpleNamespace(identity_id=PRINCIPAL)
+    context = SimpleNamespace(tenant_id=TENANT, identity=identity)
+    monkeypatch.setattr(attention_api, "_read_crm", lambda *, tenant_id: source)
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(attention_api._read_exact_crm_action_scope(
+            TENANT, identity, context,
+        ))
+    assert exc.value.status_code == (403 if source is None else 503)
+
+
 def test_isolated_crm_commands_do_not_depend_on_other_module_authorization():
     source = snapshot()
     good = SimpleNamespace(
@@ -334,7 +411,7 @@ def test_isolated_unadmitted_module_never_reports_command_capabilities():
     assert allowed["sourceActions"] == {"OPERATIONS": ["CREATE"]}
 
 # ARTIFACT: tests/unit/test_attention_feed_projection.py
-# VERSION: v1.5.1-EXPLICIT-FASTAPI-DEPENDENCY-FIXTURES
+# VERSION: v1.6.0-CRM-CAPABILITY-ISOLATED-READ-CERT
 # AUTHORITY BOUNDARY: Disposable pure-projection evidence; source commands absent.
 # TENANT POSTURE: Synthetic tenant/principal only; cross-scope cursor invalid.
 # FAIL-CLOSED POSTURE: Invalid coverage, totals and source scope throw.
