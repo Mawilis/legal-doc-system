@@ -5,13 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.27.1-PROJECTS-ROUTE-FIXTURE-CERT
+ * VERSION: v1.27.2-EXACT-PROJECT-LIST-FOCUS-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.27.2-EXACT-PROJECT-LIST-FOCUS-CERT supplies the
+ *          source-admitted project identity required for the governed
+ *          focusProjectId transition; unverified projects stay inaccessible.
  * CHANGELOG: v1.27.1-PROJECTS-ROUTE-FIXTURE-CERT supplies the
  *          authorized project list response when testing Headquarters' task
  *          handoff into the canonical Projects workspace, as in the
@@ -209,7 +212,17 @@ describe('WILSY Headquarters authenticated shell', () => {
     api.get.mockImplementation((path, config = {}) => {
       if (path === '/projects') return Promise.resolve({ data: {
         schema: 'WILSY-PROJECT-LIST/V1',
-        tenant_id: exactTenant, principal_id: exactPrincipal, items: [],
+        tenant_id: exactTenant, principal_id: exactPrincipal,
+        limit: 100, offset: 0,
+        items: [{
+          project_id: 'prj-' + 'a'.repeat(48),
+          tenant_id: exactTenant, name: 'Verified dependency project',
+          code: 'SOURCE-GATED', summary: 'Current EOS-owned project',
+          status: 'active', created_by_principal_id: exactPrincipal,
+          revision: 1, created_at: '2026-11-16T12:00:00+00:00',
+          updated_at: '2026-11-16T12:00:00+00:00',
+          archived_at: null, target_date: null,
+        }],
       } });
       if (path === '/my-work') {
         const payload = workProjection();
@@ -960,7 +973,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.27.1-PROJECTS-ROUTE-FIXTURE-CERT
+ * VERSION: v1.27.2-EXACT-PROJECT-LIST-FOCUS-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
