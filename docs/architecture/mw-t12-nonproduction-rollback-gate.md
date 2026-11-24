@@ -1,11 +1,12 @@
 # WILSY OS — MW-T12 Controlled Nonproduction Rollback Gate
 
-VERSION: v1.0.0-FAIL-CLOSED-DRILL-ADMISSION  
+VERSION: v1.1.0-LOCAL-AUTHENTICATED-EOS-RECOVERY-VERIFIED  
 TITLE: MW-T12 Nonproduction Rollback and Independent Recovery Certification  
 EPITOME: Operational admission criteria, evidence chain and release-denial policy for the existing Foundation MW-T12 task.  
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/mw-t12-nonproduction-rollback-gate.md  
 COLLABORATION / OWNERSHIP: WILSY OS Engineering; Python EOS source owners; independent recovery verifier.  
 CERTIFICATION / UPDATE DATE: 2026-11-24  
+CHANGELOG: v1.1.0-LOCAL-AUTHENTICATED-EOS-RECOVERY-VERIFIED records 2026-11-24 Mac execution evidence of isolated host Mongo PRIMARY, authenticated Python EOS shutdown/relaunch, 5/5 browser journeys, independent durable Headquarters source readback and cleanup. This is NOT production rollback or infrastructure restore certification.  
 CHANGELOG: v1.0.0-FAIL-CLOSED-DRILL-ADMISSION records the verified project update, maps real infrastructure boundaries and defines a non-destructive admission gate before any rollback.  
 AUTHORITY: WILSY OS Core Governance / AGENTS.md  
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.  
@@ -22,6 +23,27 @@ STATUS: EXECUTION GATE OPEN; ROLLBACK NOT CERTIFIED; PRODUCTION RELEASE BLOCKED.
 - PR #419 simulation head `f4c6bde8faead62b981c7f78dbe32da0ad3e5056` proves synthetic client comment POST/readback behavior only. It does not prove a real database restore or independent, post-refresh EOS readback.
 - Canonical EOS database selector is `MONGODB_URI` in `tools/eos/kernel/db.py`; `scripts/start-eos-local-mfa.sh` is a LOCAL development launcher with an AWS KMS probe. Neither proves a given database is a safe rollback target. A loopback URI can tunnel to remote production. The existence of rollback-named legacy Node code is not endorsement for Python EOS recovery.
 - No certified isolated deployment inventory, approved rollback mechanism, independently tested backup or recovery measurement was found in the bounded source inspection. Never infer these facts from project status or GitHub workflow success.
+
+## Gate 1A — local isolated Python EOS service recovery (completed at synthetic scope)
+
+On **2026-11-24**, the Founder supplied the complete terminal output from the Mac run on branch `eos/p0-my-work-operating-graph-programme-20261122`, commit `4b01c7f5ac35c9bcfc6581c3a030624aac849fe4`. The observed results are:
+
+| Evidence | Verified output | Scope limit |
+| --- | --- | --- |
+| Local isolated persistence | `MW_T12_OWNED_REPLICA_PRIMARY=PASS` | Temporary operator-owned host `mongod`; not Atlas or target deployment |
+| Python EOS authenticated recovery | `[MW-T12-SERVICE-RECOVERY] status=PASS scope=RUNNER_OWNED_EOS_AUTHENTICATED_READBACK` | Controlled restart of runner-owned EOS on test port; not deployment rollback |
+| Authorization readback | Legal commercial-context and productive-work HTTP 200; unauthorized productive-work HTTP 403, System Services reads HTTP 200 and nonresponder HTTP 403, independently repeated after restart | Synthetic fixture principals, not Founder MFA or real tenant entitlement readback |
+| Browser acceptance | `5 passed (49.7s)` | Headquarters work journeys at 1440px, 1760px, 1024px and 390px; Legal capacity preservation |
+| Independent durable source readback | `[BROWSER-CERT-DURABLE] scope=headquarters status=verified` | Four distinct synthetic Operations tasks, idempotency identifiers, authenticated completion persistence, owner/tenant boundary and foreign-copy denial |
+| Owned resource cleanup | `[BROWSER-CERT-CLEANUP] fixture_database=removed`, `MW_T12_OWNED_MONGO_STOPPED=TRUE` | Test-owned resources only |
+| Operator completion | `MW_T12_LOCAL_AUTHENTICATED_EOS_RESTART=RUNNER_PASSED` | Local synthetic service recovery certificate ONLY |
+| Release denial | `MW_T12_FULL_INFRASTRUCTURE_RECOVERY_CERTIFIED=FALSE` | Production release remains blocked |
+
+**Attestation:** `LOCAL_AUTHENTICATED_PYTHON_EOS_RESTART=CERTIFIED`, `HEADQUARTERS_SYNTHETIC_BROWSER_AND_DURABLE_READBACK=CERTIFIED`. No claim is made of actual Foundation MW-T12 project comment recovery, an independently isolated infrastructure deployment, deployed image rollback, backup restoration of the Python EOS service, production RTO/RPO measurement, live tenant IAM admission, or Strategy outcome attainment.
+
+The browser output was supplied directly by the operator. It is not an independent infrastructure assessor's approval. The suite's durable verifier did independently query the disposable MongoDB source and verify the source-owned work record outcomes rather than accepting UI state as evidence.
+
+**Remaining MW-T12 blockers:** Gate 0 exact Foundation project task/comment readback; Gate 1 isolated nonproduction deployment and backup/rollback mechanism admission; Gates 2–3 actual authorized nonproduction deployment rollback and independently observed recovery; Gate 4 release adjudication. PR #419 remains draft and MW-T12 remains in progress.
 
 ## Connection and blast-radius matrix
 
@@ -104,7 +126,7 @@ Return the isolated target to the intended tested release. A separate verifier m
 ---
 
 ARTIFACT: docs/architecture/mw-t12-nonproduction-rollback-gate.md  
-VERSION: v1.0.0-FAIL-CLOSED-DRILL-ADMISSION  
+VERSION: v1.1.0-LOCAL-AUTHENTICATED-EOS-RECOVERY-VERIFIED  
 AUTHORITY BOUNDARY: Non-executable engineering admission contract; Python EOS remains source owner.  
 TENANT POSTURE: Canonical Founder tenant and all shared/production targets remain untouched.  
 FAIL-CLOSED POSTURE: Any unknown environment identity, recovery capability, backup, permission or verification prevents certification.  
