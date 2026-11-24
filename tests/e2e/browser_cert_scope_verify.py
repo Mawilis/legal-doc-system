@@ -189,9 +189,9 @@ def verify_daily(database, state):
         return parsed.version == 4 and str(parsed) == value.lower()
 
     if (
-        len(work_ids) != 4
+        len(work_ids) != 2
         or not all(isinstance(value, str) and value for value in work_ids)
-        or len(request_keys) != 4
+        or len(request_keys) != 2
         or not all(is_v4_uuid(value) for value in request_keys)
     ):
         raise RuntimeError("BROWSER_CERT_DAILY_WORK_IDENTITY_INVALID")
