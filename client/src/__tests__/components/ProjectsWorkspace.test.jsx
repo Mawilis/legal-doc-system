@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.78.1-SINGLE-MODAL-EXIT-CERT
+ * VERSION: v2.79.0-FOCUS-FIRST-TASK-ACTIVITY-EDITOR-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.79.0-FOCUS-FIRST-TASK-ACTIVITY-EDITOR-CERT
+ *          verifies the focused Projects task replaces the source activity
+ *          history with an immediately focused comment editor on command.
+ *          Closing restores the original EOS timeline and preserves the
+ *          draft; verified publication still gates durable readback.
  * CHANGELOG: v2.78.1-SINGLE-MODAL-EXIT-CERT checks
  *          Activity in the focused Projects task workspace has one
  *          visible parent Back to Work action and no redundant nested
@@ -1630,6 +1635,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Close editor' }))
       .toHaveAttribute('aria-expanded', 'true');
     expect(discussion.querySelector('textarea[aria-label="New task comment"]')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveFocus();
+    expect(discussion.querySelector('[aria-label="Verified task activity history"]'))
+      .not.toBeInTheDocument();
     const draft = '**Development progress — 19 November 2026**\\n\\n- Source readback verified\\n- Pending mobile acceptance\\n\\n<script>alert(1)</script>'.replaceAll('\\n','\n');
     fireEvent.change(screen.getByRole('textbox', { name: 'New task comment' }), {
       target: { value: draft },
@@ -1640,13 +1648,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(preview).toHaveTextContent('<script>alert(1)</script>');
     expect(preview.querySelector('script')).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
-    expect(discussion.querySelector('textarea').compareDocumentPosition(
-      discussion.querySelector('[aria-label="Verified task activity history"] ol'),
-    ) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(discussion.querySelector('textarea[aria-label="New task comment"]'))
+      .toHaveValue(draft);
     fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
     expect(discussion.querySelector('textarea')).not.toBeInTheDocument();
     expect(discussion.querySelector('[aria-label="Verified task activity history"]'))
       .toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+    expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
+    fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
     fireEvent.click(screen.getByRole('button', { name: '← Work' }));
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
@@ -2969,7 +2979,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.78.1-SINGLE-MODAL-EXIT-CERT
+ * VERSION: v2.79.0-FOCUS-FIRST-TASK-ACTIVITY-EDITOR-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
