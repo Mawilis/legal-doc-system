@@ -1,7 +1,8 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
 VERSION: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION
-CHANGELOG: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION classifies three explicitly guarded index-provisioning CLI tools separately from runtime Mongo clients and asserts their main guards.\nCHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
+CHANGELOG: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION classifies three explicitly guarded index-provisioning CLI tools separately from runtime Mongo clients and asserts their main guards.
+CHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
  existing _main() guarded operator entrypoint rather than incorrectly
  requiring an unimplemented main() function; classification remains strict.
 CHANGELOG: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION categorizes
@@ -292,7 +293,7 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     )
 
 # ARTIFACT: EOS Runtime Database Ownership Certificate
-# VERSION: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT
+# VERSION: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION
 # AUTHORITY BOUNDARY: Offline repository ownership evidence.
 # TENANT POSTURE: No data access or mutation.
 # FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.
