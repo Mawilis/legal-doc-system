@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT
+ * VERSION: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
+ *          checks safe self-labeling and prevents raw actor principal IDs
+ *          appearing in visible activity metadata.
  * CHANGELOG: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT proves a long
  *          source-owned engineering update begins as a compact text-only
  *          preview, expands to the complete unchanged safe Markdown, and
@@ -135,6 +138,8 @@ it('presents long persisted engineering updates as expandable safe activity evid
   });
   mount();
   expect(await screen.findByText('MW-T12 — Nonproduction Python EOS recovery')).toBeVisible();
+  expect(screen.getByText('You')).toBeVisible();
+  expect(screen.queryByText(principalId)).not.toBeInTheDocument();
   expect(screen.getByRole('list', { name: 'Source-verified task activity newest first' })).toBeVisible();
   const expand = screen.getByRole('button', { name: 'Read full update' });
   expect(expand).toHaveAttribute('aria-expanded', 'false');
@@ -270,7 +275,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT
+// VERSION: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
