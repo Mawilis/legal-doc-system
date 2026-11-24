@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
+ * VERSION: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE anchors the
+ *          exact synthetic project tenant within the isolated layout
+ *          harness before rendering. New fail-closed shared transport
+ *          interlock remains enforced in production and ordinary tests;
+ *          this fixture is never an authenticated browser certification.
  * CHANGELOG: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
  *          identifies actual DOM elements beyond the right viewport edge
  *          in desktop/mobile Chromium to repair the source of overflow.
@@ -357,9 +362,14 @@ for (const width of [1440, 390]) {
       if (!reactMatch) throw new Error('PROJECTS_BROWSER_REACT_DEPENDENCY_UNRESOLVED');
       const reactUrl = reactMatch[1];
       const domUrl = reactUrl.replace('/react.js?', '/react-dom.js?');
-      const [ReactModule, ReactDomModule, WorkspaceModule] = await Promise.all([
+      const [ReactModule, ReactDomModule, WorkspaceModule, ApiModule] = await Promise.all([
         import(reactUrl), import(domUrl), import(componentUrl),
+        import('/src/services/api.js'),
       ]);
+      // Visual-only mock: no real login/bootstrap is executed by this harness.
+      // Explicitly simulate the already-verified synthetic tenant selector
+      // that the real AuthProvider supplies after authenticated EOS bootstrap.
+      ApiModule.setActiveTenantTransportId(tenantId);
       const React = ReactModule.default;
       const root = ReactDomModule.default.createRoot(document.getElementById('project-visual-cert-root'));
       root.render(React.createElement(WorkspaceModule.default, {
@@ -573,7 +583,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
+// VERSION: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
