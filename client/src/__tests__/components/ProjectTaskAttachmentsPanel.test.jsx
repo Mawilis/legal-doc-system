@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Project Task Quarantine Attachment Client Certificate
- * VERSION: v1.7.1-DROPZONE-VALIDATION-CERT
+ * VERSION: v1.8.0-SINGLE-SCOPE-ATTACHMENT-READ-CERT
  * AUTHORITY: Synthetic authenticated source envelope and upload readback.
  * EPITOME: Prove source-backed file list, contributor upload, no unsafe
  *          download, foreign source denial and owner read-only boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskAttachmentsPanel and mocked API.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.8.0-SINGLE-SCOPE-ATTACHMENT-READ-CERT verifies
+ *          one GET on React StrictMode mount and no reload on
+ *          equivalent parent-provided tenant headers. A real selector
+ *          change causes a new EOS read; upload semantics are unchanged.
  * CHANGELOG: v1.7.1-DROPZONE-VALIDATION-CERT exercises
  *          the real scoped file-drop target and refuses multi-file or
  *          invalid-type submissions without an EOS write. Keeps async
@@ -30,7 +34,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -75,6 +79,30 @@ const mount = (participantMode = true) => render(<ProjectTaskAttachmentsPanel
   participantMode={participantMode}
   tenantHeaders={{ 'X-Tenant-ID': tenantId }}
   onClose={() => {}}/>);
+
+it('reads attachments once in StrictMode and only revalidates changed tenant headers', async () => {
+  api.get.mockResolvedValue({ data: list([]) });
+  const props = {
+    tenantId, principalId, projectId, taskId,
+    tenantHeaders: { 'X-Tenant-ID': tenantId }, onClose: () => {},
+  };
+  const { rerender } = render(<React.StrictMode>
+    <ProjectTaskAttachmentsPanel {...props} />
+  </React.StrictMode>);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+
+  await act(async () => {
+    rerender(<React.StrictMode><ProjectTaskAttachmentsPanel {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId }} /></React.StrictMode>);
+  });
+  expect(api.get).toHaveBeenCalledTimes(1);
+
+  await act(async () => {
+    rerender(<React.StrictMode><ProjectTaskAttachmentsPanel {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Request-Scope': 'changed' }} /></React.StrictMode>);
+  });
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+});
 
 it('uploads a safe-type file to EOS quarantine with independent manifest readback', async () => {
   let contents = [];
