@@ -1994,7 +1994,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           </tr>)}
                         </tbody>
                       </table>
-                    </div>
+                    </div>}
                     {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
                     {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
                     {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution">
