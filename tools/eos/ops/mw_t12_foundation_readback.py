@@ -1,6 +1,6 @@
 """ 
 TITLE: MW-T12 live Foundation project independent source readback.
-VERSION: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT
+VERSION: v1.3.0-CANONICAL-SESSION-TENANT-BINDING
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify, never mutate, an existing tenant-authorized Foundation
          project task and its previously posted engineering activity.
@@ -8,7 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing Python EOS Projects router and read-only
                            Projects task, comment and event registries.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
-CHANGELOG: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT authenticates the
+CHANGELOG: v1.3.0-CANONICAL-SESSION-TENANT-BINDING uses the verified
+           persisted Founder tenant ID, not the public wilsy alias,
+           for Projects and asserts bootstrap tenant and Owner capacity.
+CHANGELOG: v1.3.0-CANONICAL-SESSION-TENANT-BINDING authenticates the
            supplied bearer on canonical GET /api/auth/verify-token before
            Projects reads; HTTP 401 is distinguished from Projects authority
            or entitlement denial without printing any identity or token.
@@ -22,7 +25,7 @@ COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bearer token entered locally with getpass,
                            never printed or persisted. No raw response or
                            principal, comment body or database URI is logged.
-TENANT BOUNDARY: Canonical wilsy only; exact tenant assertions on every
+TENANT BOUNDARY: Canonical wilsy persisted Founder tenant only; exact tenant assertions on every
                  page and every matched project/task/comment.
 AUTHORITY BOUNDARY: Authenticated existing Owner's current Projects read IAM;
                     no credentials, membership, role or entitlement issued.
@@ -41,7 +44,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-VERSION = "v1.2.0-IDENTITY-VERIFIER-PREFLIGHT"
+VERSION = "v1.3.0-CANONICAL-SESSION-TENANT-BINDING"
+CANONICAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
 PROJECT_NAME = "WILSY OS — Unified Operating Platform Foundation"
 TASK_NAME = "MW-T12 — Certify production readiness and rollback"
 CHECKPOINT = "840b294865a102ede84f77e3fc83ce4dcaabec19"
@@ -97,7 +101,7 @@ def _page(client, base: str, token: str, path: str) -> dict:
         method="GET",
         headers={
             "Authorization": "Bearer " + token,
-            "X-Tenant-ID": "wilsy",
+            "X-Tenant-ID": CANONICAL_TENANT_ID,
             "Accept": "application/json",
             "Cache-Control": "no-store, no-cache",
             "Pragma": "no-cache",
@@ -141,7 +145,7 @@ def _list_all(client, base: str, token: str, route: str, schema: str,
         response = _page(client, base, token, route + "?" + urlencode({
             "limit": limit, "offset": offset,
         }))
-        if response.get("schema") != schema or response.get("tenant_id") != "wilsy":
+        if response.get("schema") != schema or response.get("tenant_id") != CANONICAL_TENANT_ID:
             raise SourceReadbackDenied("SOURCE_ENVELOPE_INVALID")
         if not isinstance(response.get("principal_id"), str) or not response["principal_id"]:
             raise SourceReadbackDenied("SOURCE_PRINCIPAL_INVALID")
@@ -186,7 +190,7 @@ def _snapshot(client, base: str, token: str) -> dict:
     )
     project_id = project.get("project_id")
     if (not isinstance(project_id, str) or not PROJECT_ID.fullmatch(project_id)
-            or project.get("tenant_id") != "wilsy"):
+            or project.get("tenant_id") != CANONICAL_TENANT_ID):
         raise SourceReadbackDenied("FOUNDATION_PROJECT_BINDING_INVALID")
 
     route = "/api/projects/" + project_id
@@ -198,7 +202,7 @@ def _snapshot(client, base: str, token: str) -> dict:
     task_id = task.get("task_id")
     if (not isinstance(task_id, str) or not TASK_ID.fullmatch(task_id)
             or task.get("project_id") != project_id
-            or task.get("tenant_id") != "wilsy"
+            or task.get("tenant_id") != CANONICAL_TENANT_ID
             or task.get("status") != "IN_PROGRESS"
             or type(task.get("revision")) is not int
             or task["revision"] < 1):
@@ -224,7 +228,7 @@ def _snapshot(client, base: str, token: str) -> dict:
     if len(matches) != 1:
         raise SourceReadbackDenied("MW_T12_CHECKPOINT_COMMENT_NOT_UNIQUE_OR_MISSING")
     comment = matches[0]
-    if (comment.get("tenant_id") != "wilsy"
+    if (comment.get("tenant_id") != CANONICAL_TENANT_ID
             or comment.get("project_id") != project_id
             or comment.get("task_id") != task_id
             or not isinstance(comment.get("comment_id"), str)
@@ -241,7 +245,7 @@ def _snapshot(client, base: str, token: str) -> dict:
         raise SourceReadbackDenied("MW_T12_ROLLBACK_STATE_NOT_RECORDED")
     # Digest protects the cross-request comparison without exposing source text.
     semantic = {
-        "schema": comment.get("schema"), "tenant_id": "wilsy",
+        "schema": comment.get("schema"), "tenant_id": CANONICAL_TENANT_ID,
         "project_id": project_id, "task_id": task_id,
         "comment_id": comment["comment_id"],
         "fingerprint": comment["fingerprint"],
@@ -260,7 +264,7 @@ def _verify_identity(client, base: str, token: str) -> None:
     """Verify bearer on canonical EOS auth, without disclosing private values."""
     request = Request(
         base + "/api/auth/verify-token", method="GET",
-        headers={"Authorization": "Bearer " + token, "X-Tenant-ID": "wilsy",
+        headers={"Authorization": "Bearer " + token, "X-Tenant-ID": CANONICAL_TENANT_ID,
                  "Accept": "application/json", "Cache-Control": "no-store"},
     )
     try:
@@ -292,10 +296,48 @@ def _verify_identity(client, base: str, token: str) -> None:
         raise SourceReadbackDenied("EOS_IDENTITY_VERIFY_RESPONSE_INVALID")
 
 
+def _verify_workspace_scope(client, base: str, token: str) -> None:
+    """Verify that EOS selected the existing Founder tenant and Owner capacity."""
+    request = Request(
+        base + "/api/auth/workspace-bootstrap", method="GET",
+        headers={"Authorization": "Bearer " + token,
+                 "X-Tenant-ID": CANONICAL_TENANT_ID,
+                 "Accept": "application/json", "Cache-Control": "no-store"},
+    )
+    try:
+        with client.open(request, timeout=18) as response:
+            if response.status != 200:
+                raise SourceReadbackDenied("EOS_WORKSPACE_BOOTSTRAP_RESPONSE_INVALID")
+            body = response.read(65537)
+            if len(body) > 65536:
+                raise SourceReadbackDenied("EOS_WORKSPACE_BOOTSTRAP_RESPONSE_INVALID")
+    except HTTPError as error:
+        codes = {
+            401: "EOS_WORKSPACE_SESSION_AUTHENTICATION_REQUIRED",
+            403: "EOS_WORKSPACE_BOOTSTRAP_DENIED",
+            503: "EOS_WORKSPACE_BOOTSTRAP_SOURCE_UNAVAILABLE",
+        }
+        raise SourceReadbackDenied(codes.get(error.code, "EOS_WORKSPACE_BOOTSTRAP_HTTP_FAILURE")) from None
+    except (TimeoutError, URLError):
+        raise SourceReadbackDenied("EOS_WORKSPACE_BOOTSTRAP_TRANSPORT_FAILURE") from None
+    try:
+        payload = json.loads(body)
+    except (ValueError, UnicodeDecodeError):
+        raise SourceReadbackDenied("EOS_WORKSPACE_BOOTSTRAP_RESPONSE_INVALID") from None
+    workspace = payload.get("workspace") if isinstance(payload, dict) else None
+    if (not isinstance(payload, dict) or payload.get("status") != "READY"
+            or not isinstance(workspace, dict)
+            or workspace.get("tenantId") != CANONICAL_TENANT_ID):
+        raise SourceReadbackDenied("EOS_WORKSPACE_SELECTED_TENANT_MISMATCH")
+    if workspace.get("businessRole") != "tenant_owner":
+        raise SourceReadbackDenied("EOS_WORKSPACE_OWNER_CAPACITY_NOT_SELECTED")
+
+
 def verify(base: str, token: str) -> dict:
     """Preflight canonical bearer identity and re-GET current source evidence."""
     opener = build_opener(_NoRedirect)
     _verify_identity(opener, base, token)
+    _verify_workspace_scope(opener, base, token)
     first = _snapshot(opener, base, token)
     second = _snapshot(opener, base, token)
     if first != second:
@@ -354,9 +396,9 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_foundation_readback.py
-# VERSION: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT
+# VERSION: v1.3.0-CANONICAL-SESSION-TENANT-BINDING
 # AUTHORITY BOUNDARY: Strictly GET-only existing Python EOS Projects source.
-# TENANT POSTURE: Canonical wilsy only, exact current authorized principal.
+# TENANT POSTURE: Canonical wilsy Founder persisted tenant ID, exact principal.
 # FAIL-CLOSED POSTURE: No unique project, task, checkpoint or independent
 #                      matching EOS readback means NO certification.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
