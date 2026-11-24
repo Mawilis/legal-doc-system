@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.47.1-PRESERVED-READ-RETRY-INTERFACE
+VERSION: v1.48.0-TRACE-CORRELATED-PROJECT-READS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,12 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-   v1.47.1-PRESERVED-READ-RETRY-INTERFACE retains the original
+   v1.48.0-TRACE-CORRELATED-PROJECT-READS joins the existing EOS
+  authentication and tenant authorization opt-in timing stages to Projects
+  slow GET and summary phases by an allowlisted opaque trace reference;
+  no user/tenant/session IDs, token material, query data, new DB I/O,
+  altered privilege or timeout semantics are recorded.
+  v1.47.1-PRESERVED-READ-RETRY-INTERFACE retains the original
   zero-keyword Projects list transaction call and exact bounded retry
   contract, while a request-local ContextVar carries timing state into
   the unmodified transaction/entitlement path. No global mutable scope,
@@ -235,7 +240,9 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
-from tools.eos.auth.authentication import get_current_identity
+from tools.eos.auth.authentication import (
+    get_current_identity, current_request_timing_correlation,
+)
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
@@ -363,8 +370,16 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.47.1-PRESERVED-READ-RETRY-INTERFACE"
+VERSION: Final[str] = "v1.48.0-TRACE-CORRELATED-PROJECT-READS"
 logger = logging.getLogger("WilsyOS.API.Projects")
+
+def _safe_projects_read_trace() -> str:
+    """Expose only an EOS-issued or strictly validated request trace label."""
+    value = current_request_timing_correlation()
+    return value if isinstance(value, str) and re.fullmatch(
+        r"TRC-(?:[A-Z0-9]{8}-[A-Z0-9]{6}|SERVER-[A-F0-9]{12})", value,
+    ) else "TRACE_UNAVAILABLE"
+
 # Projects list keeps its established _transaction(context, callback) call
 # contract; profiling metadata lives only within the current request context.
 _project_list_read_timings: ContextVar[dict[str, float] | None] = ContextVar(
@@ -1211,10 +1226,10 @@ def _profiled_projects_get(
         handler_ms = round((perf_counter() - started) * 1000, 2)
         if outcome == "FAILED" or handler_ms >= 1000:
             logger.warning(
-                "PROJECTS_GET_LATENCY operation=%s outcome=%s handler_ms=%.2f "
+                "PROJECTS_GET_LATENCY trace_id=%s operation=%s outcome=%s handler_ms=%.2f "
                 "session_open_ms=%s transaction_ms=%s entitlement_ms=%s "
                 "source_ms=%s pointer_ms=%s history_ms=%s attempts=%s",
-                operation, "SLOW" if outcome == "OK" else outcome, handler_ms,
+                _safe_projects_read_trace(), operation, "SLOW" if outcome == "OK" else outcome, handler_ms,
                 timings.get("session_open_ms", "NOT_REACHED"),
                 timings.get("transaction_ms", "NOT_REACHED"),
                 timings.get("entitlement_ms", "NOT_REACHED"),
@@ -1307,11 +1322,11 @@ def project_summary(
     except Exception:
         elapsed_ms = round((perf_counter() - started) * 1000, 2)
         logger.warning(
-            "PROJECTS_SUMMARY_READ outcome=FAILED total_ms=%.2f count_ms=%s "
+            "PROJECTS_SUMMARY_READ trace_id=%s outcome=FAILED total_ms=%.2f count_ms=%s "
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
             "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
             "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
-            elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            _safe_projects_read_trace(), _safe_projects_read_trace(), elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
@@ -1326,7 +1341,7 @@ def project_summary(
     elapsed_ms = round((perf_counter() - started) * 1000, 2)
     if elapsed_ms >= 1000:
         logger.warning(
-            "PROJECTS_SUMMARY_READ outcome=SLOW total_ms=%.2f count_ms=%s "
+            "PROJECTS_SUMMARY_READ trace_id=%s outcome=SLOW total_ms=%.2f count_ms=%s "
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
             "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
             "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
@@ -4289,7 +4304,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.47.1-PRESERVED-READ-RETRY-INTERFACE
+# VERSION: v1.48.0-TRACE-CORRELATED-PROJECT-READS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
