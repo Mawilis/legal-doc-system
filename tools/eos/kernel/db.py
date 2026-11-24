@@ -4,15 +4,20 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS canonical Kennel database lifecycle and opt-in timing boundary.
 
 TITLE: WILSY OS Sovereign Kennel Database Anchor
-VERSION: v2.7.1-POOL-OPTION-RESTORATION
+VERSION: v2.8.0-OPT-IN-PROJECTS-MONGO-PHASE-SCOPE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns the sole EOS MongoClient lifecycle and canonical database binding;
          optionally observes request-scoped pool and command timings.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/db.py
 COLLABORATION / OWNERSHIP: EOS runtime owns connection startup and shutdown;
                            AuthRegistry supplies validated timing context only.
-CERTIFICATION / UPDATE DATE: 2026-11-19
+CERTIFICATION / UPDATE DATE: 2026-11-24
 CHANGELOG:
+  v2.8.0-OPT-IN-PROJECTS-MONGO-PHASE-SCOPE admits one fixed,
+    request-scoped PROJECTS_READ timing category to the preexisting Mongo
+    pool checkout, pre-command wait and command RTT observer when
+    WILSY_MY_WORK_TIMING=1; no other telemetry field, Mongo option,
+    TLS, retry, tenant, credential or query behavior is changed.
   v2.7.1-POOL-OPTION-RESTORATION — Restores actual source line breaks so
     minPoolSize is passed to MongoClient: zero outside production and ten in
     production. This is a configuration delivery fix only; no changes to TLS,
@@ -151,6 +156,7 @@ _MONGO_TIMING_STAGES = frozenset(
         "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
         "AUTH_CREDENTIAL_COLLISION_VERIFICATION",
         "AUTH_CREDENTIAL_RECORD_HYDRATION_VALIDATION",
+        "PROJECTS_READ",
     }
 )
 _MONGO_TRACE_PATTERN = re.compile(
@@ -226,7 +232,7 @@ def mongo_timing_scope(*, stage: str, correlation: str | None) -> Iterator[None]
 
     @description Correlates pool and command timing for the exact synchronous
     Mongo operation performed inside this scope.
-    @collaboration AuthRegistry credential-currentness diagnostics only.
+    @collaboration AuthRegistry credential-currentness and Projects authorized-read diagnostics only.
     @institutional Observation has no connection, query, transaction, tenant,
     credential, or authorization authority. Invalid context remains unobserved.
     """
@@ -742,11 +748,11 @@ def disconnect_db():
 __all__ = [
     'connect_db', 'disconnect_db', 'get_database', 'get_client',
     'is_db_ready', 'get_db_status', 'start_background_reanchor',
-    'stop_background_reanchor', 'resolve_mongo_uri',
+    'stop_background_reanchor', 'resolve_mongo_uri', 'mongo_timing_scope',
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.7.1-POOL-OPTION-RESTORATION
+# VERSION: v2.8.0-OPT-IN-PROJECTS-MONGO-PHASE-SCOPE
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.
