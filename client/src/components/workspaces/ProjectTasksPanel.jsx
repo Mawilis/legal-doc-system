@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.69.0-SINGLE-TASK-SCOPE-READ
+ * VERSION: v1.69.1-SINGLE-TASK-MODAL-EXIT
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.69.1-SINGLE-TASK-MODAL-EXIT keeps the
+ *          parent's accessible Back to Work action as the sole modal exit
+ *          for discussion, aligning with existing Files and Approvals
+ *          controls; removes the nested duplicate Close button without
+ *          altering focus restoration, permissions or task selection.
  * CHANGELOG: v1.69.0-SINGLE-TASK-SCOPE-READ defers the initial
  *          task-list and optional authority requests beyond discarded
  *          React StrictMode effect setup. Source-driven refresh, exact
@@ -1625,7 +1630,7 @@ export default function ProjectTasksPanel({
       {focusedAction.type === 'discussion' && <ProjectTaskCommentsPanel key={[scope, focusedAction.id].join(':')}
         tenantId={tenantId} projectId={projectId} principalId={principalId}
         taskId={focusedAction.id} participants={participants} tenantHeaders={tenantHeaders}
-        onClose={closeFocusedAction}
+        onClose={closeFocusedAction} showClose={false}
         onViewApprovals={() => { setDiscussionTaskId(null); setApprovalTaskId(focusedAction.id); }}
         onViewAttachments={() => { setDiscussionTaskId(null); setAttachmentTaskId(focusedAction.id); }}/>}
       {focusedAction.type === 'approvals' && <ProjectTaskApprovalsPanel key={[scope, focusedAction.id].join(':')}
@@ -2525,7 +2530,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.69.0-SINGLE-TASK-SCOPE-READ
+// VERSION: v1.69.1-SINGLE-TASK-MODAL-EXIT
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
