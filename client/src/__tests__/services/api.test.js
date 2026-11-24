@@ -698,7 +698,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.6.0-STRICT-FOUNDER-STRATEGY-BODY-CERT
+ * VERSION: v1.7.0-VERIFIED-TENANT-NAVIGATION-CERT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.
