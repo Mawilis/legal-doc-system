@@ -1,5 +1,5 @@
 """TITLE: MW-T12 versioned source executable rehearsal failure-path certificate.
-VERSION: v1.0.1-OWNED-RUNTIME-DIRECTORY-FIX
+VERSION: v1.1.0-ROOT-BOUNDED-GIT-SYMLINK-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Validate isolated source provenance, non-mutating version switching,
          authenticated readback and mandatory temporary resource cleanup.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 recovery owns Mongo lifecycle,
          browser verifier owns synthetic actors, HTTP and durable readback.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-ROOT-BOUNDED-GIT-SYMLINK-CERT proves
+           tracked relative symlinks inside an immutable Git archive remain
+           intact while parent-traversal and absolute links are rejected.
+           Required EOS/browser blob hashes remain exact and unchanged.
 CHANGELOG: v1.0.1-OWNED-RUNTIME-DIRECTORY-FIX creates the
            same owner-scoped runtime directory the real rehearsal creates
            before invoking the unit-isolated Mongo/browser runner.
@@ -146,6 +150,62 @@ def test_archive_refuses_untrusted_links(
     assert not (stage / "unsafe-link").exists()
 
 
+def test_archive_allows_only_root_contained_tracked_symlink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    """A genuine relative Git symlink must not invalidate a safe archive."""
+    content = b"source-owned-immutable-blob"
+
+    def fake_git(args: list[str], **kwargs: object) -> SimpleNamespace:
+        if args[1] == "archive":
+            with tarfile.open(fileobj=kwargs["stdout"], mode="w") as tar:
+                for file in operator.ROLLBACK_REQUIRED_PATHS:
+                    member = tarfile.TarInfo(file)
+                    member.size = len(content)
+                    tar.addfile(member, io.BytesIO(content))
+                target = tarfile.TarInfo("assets/verified.txt")
+                target.size = len(content)
+                tar.addfile(target, io.BytesIO(content))
+                link = tarfile.TarInfo("assets/alias.txt")
+                link.type = tarfile.SYMTYPE
+                link.linkname = "verified.txt"
+                tar.addfile(link)
+            return SimpleNamespace(returncode=0)
+        assert args[1] == "show"
+        return SimpleNamespace(stdout=content)
+
+    monkeypatch.setattr(subprocess, "run", fake_git)
+    stage = tmp_path / "source"
+    stage.mkdir()
+    operator._stage_revision(OLDER, tmp_path, stage)
+    assert (stage / "assets/alias.txt").is_symlink()
+    assert (stage / "assets/alias.txt").read_bytes() == content
+    for file in operator.ROLLBACK_REQUIRED_PATHS:
+        assert (stage / file).read_bytes() == content
+
+
+@pytest.mark.parametrize("link", ["../../outside", "/etc/passwd"])
+def test_archive_rejects_escaping_symlink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, link: str,
+) -> None:
+    """Neither relative escape nor absolute target may be materialized."""
+    def fake_git(args: list[str], **kwargs: object) -> SimpleNamespace:
+        assert args[1] == "archive"
+        with tarfile.open(fileobj=kwargs["stdout"], mode="w") as tar:
+            member = tarfile.TarInfo("assets/unsafe")
+            member.type = tarfile.SYMTYPE
+            member.linkname = link
+            tar.addfile(member)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(subprocess, "run", fake_git)
+    stage = tmp_path / "source"
+    stage.mkdir()
+    with pytest.raises(MWRecoveryError, match="VERSION_ARCHIVE_UNSAFE_MEMBER"):
+        operator._stage_revision(OLDER, tmp_path, stage)
+    assert not (stage / "assets/unsafe").is_symlink()
+
+
 def test_archive_blob_provenance_is_required(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:
@@ -195,7 +255,7 @@ def test_authenticated_runner_failure_stops_only_owned_mongo(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_versioned_rehearsal.py
-# VERSION: v1.0.1-OWNED-RUNTIME-DIRECTORY-FIX
+# VERSION: v1.1.0-ROOT-BOUNDED-GIT-SYMLINK-CERT
 # AUTHORITY BOUNDARY: Synthetic failure-path tests, no live system mutation.
 # TENANT POSTURE: No canonical or authenticated production principal.
 # FAIL-CLOSED POSTURE: Historical proof or auth failure denies certificate.
