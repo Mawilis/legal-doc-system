@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.44.0-SINGLE-PROJECT-TASK-PANEL-ACROSS-TABS
+ * VERSION: v2.45.0-LIST-FIRST-PROJECTS-ADMISSION
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.45.0-LIST-FIRST-PROJECTS-ADMISSION prioritizes the project
+ *            registry list before the optional portfolio summary
+ *            read. Avoids initial simultaneous authenticated database
+ *            transactions under Free-tier load while preserving independent
+ *            summary errors, source scope and authorization checks.
  * CHANGELOG: v2.44.0-SINGLE-PROJECT-TASK-PANEL-ACROSS-TABS keeps a single task source
  *            panel and verified page mounted when switching between Work
  *            & milestones and Activity & discussion. Both are views of the
@@ -796,39 +801,6 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       // A healthy /projects response must not wait on a slower /summary.
       // Both results retain their own exact session scope checks.
       let summaryAuthorityDenied = false;
-      void api.get('/projects/summary', { headers: tenantHeaders }).then(response => {
-        if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope
-          || summaryAuthorityDenied) return;
-        setSummary(assertProjectSummary(response?.data, tenantId, principalId));
-      }).catch(cause => {
-        if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
-        const code = classifyFailure(cause);
-        setSummary(null);
-        // Invalid cross-scope or malformed envelopes are security failures, not
-        // an ordinary unavailable counter. Do not retain project visibility.
-        if (cause?.message === 'PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID') {
-          summaryAuthorityDenied = true;
-          itemsRef.current = [];
-          setItems([]);
-          setDetail(null);
-          changeSelection(null);
-          setError('PROJECT_SOURCE_UNAVAILABLE');
-          setSourceState('UNAVAILABLE');
-          return;
-        }
-        // A transient summary outage is not proof that the independently
-        // verified authorized project page has failed.
-        if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED'
-          || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
-          summaryAuthorityDenied = true;
-          itemsRef.current = [];
-          setItems([]);
-          setDetail(null);
-          changeSelection(null);
-          setError(code);
-          setSourceState('DENIED');
-        }
-      });
       const listResponse = await api.get(
         statusFilterRef.current === 'all' && pageOffsetRef.current === 0 && !ownerOnlyRef.current
           ? '/projects'
@@ -856,6 +828,44 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       setItems(nextItems);
       setHasNextPage(verifiedNextPage);
       if (!summaryAuthorityDenied) setSourceState('READY');
+      // The listing is the actionable workspace; portfolio totals are
+      // independent but optional. On bandwidth-limited MongoDB, launching
+      // both authenticated transactions together can make both hit the
+      // client deadline. Admit the summary only after verified list readback.
+      // Keep its original exact-source and authorization checks below.
+        void api.get('/projects/summary', { headers: tenantHeaders }).then(response => {
+          if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope
+            || summaryAuthorityDenied) return;
+          setSummary(assertProjectSummary(response?.data, tenantId, principalId));
+        }).catch(cause => {
+          if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
+          const code = classifyFailure(cause);
+          setSummary(null);
+          // Invalid cross-scope or malformed envelopes are security failures, not
+          // an ordinary unavailable counter. Do not retain project visibility.
+          if (cause?.message === 'PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID') {
+            summaryAuthorityDenied = true;
+            itemsRef.current = [];
+            setItems([]);
+            setDetail(null);
+            changeSelection(null);
+            setError('PROJECT_SOURCE_UNAVAILABLE');
+            setSourceState('UNAVAILABLE');
+            return;
+          }
+          // A transient summary outage is not proof that the independently
+          // verified authorized project page has failed.
+          if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED'
+            || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
+            summaryAuthorityDenied = true;
+            itemsRef.current = [];
+            setItems([]);
+            setDetail(null);
+            changeSelection(null);
+            setError(code);
+            setSourceState('DENIED');
+          }
+        });
       const currentSelection = selectedRef.current;
       if (!preserveSelection || (currentSelection && !nextItems.some((item) => item.project_id === currentSelection))) {
         changeSelection(null);
@@ -2031,7 +2041,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.44.0-SINGLE-PROJECT-TASK-PANEL-ACROSS-TABS
+// VERSION: v2.45.0-LIST-FIRST-PROJECTS-ADMISSION
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
