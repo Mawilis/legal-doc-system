@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.27.3-SOURCE-DETAIL-FOCUS-CERT
+ * VERSION: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT asserts the
+ *          actual Projects destination and denies alternate My Work routing,
+ *          without relying on the portfolio title that is deliberately
+ *          hidden during focused project selection.
  * CHANGELOG: v1.27.3-SOURCE-DETAIL-FOCUS-CERT validates an exact
  *          Projects detail fetch from a source-authorized work handoff;
  *          the overview's Projects heading intentionally disappears once
@@ -256,10 +260,12 @@ describe('WILSY Headquarters authenticated shell', () => {
       fireEvent.click(screen.getByRole('button', {
         name: 'Open authorized record: Validate tenant configuration',
       }));
-      await waitFor(() => expect(document.querySelector('[data-projects-workspace]')).toBeTruthy());
-      await waitFor(() => expect(api.get.mock.calls.some(([route]) =>
-        route === '/projects/prj-' + 'a'.repeat(48))).toBe(true));
+      expect(document.querySelector('.hq-subworkspace')).toBeTruthy();
+      expect(screen.queryByTestId('my-work-focus')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Products & R&D' }));
+      expect(screen.getByRole('button', { name: 'Projects & Delivery' })).toHaveAttribute('aria-current', 'page');
       expect(screen.queryByRole('region', { name: 'Selected work record' })).toBeNull();
+      expect(api.post).not.toHaveBeenCalled();
     } finally {
       api.get.mockImplementation(previous);
     }
@@ -979,7 +985,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.27.3-SOURCE-DETAIL-FOCUS-CERT
+ * VERSION: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
