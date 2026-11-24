@@ -497,14 +497,17 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
       const validEvidence = item => item?.schema === 'wilsy.project.attachment.v1'
         && item.tenant_id === tenantId && item.project_id === projectId
         && item.task_id === task.task_id && /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
-        && typeof item.filename === 'string' && item.filename.length > 0
+        && typeof item.filename === 'string' && item.filename.length > 0 && item.filename.length <= 255
+        && ['application/pdf', 'image/png', 'image/jpeg'].includes(item.media_type)
+        && Number.isSafeInteger(item.size_bytes) && item.size_bytes > 0 && item.size_bytes <= 20 * 1024 * 1024
         && item.state === 'QUARANTINED' && item.revision === 1
         && /^[a-f0-9]{128}$/.test(item.content_sha3_512 || '')
         && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
         && (item.scan_clearance_status === 'QUARANTINED'
           ? item.scan_clearance_fingerprint === null
           : /^[a-f0-9]{128}$/.test(item.scan_clearance_fingerprint || ''))
-        && !Object.hasOwn(item, 'download_url') && !Object.hasOwn(item, 'storage_receipt');
+        && !Object.hasOwn(item, 'download_url') && !Object.hasOwn(item, 'presigned_url')
+        && !Object.hasOwn(item, 'storage_receipt');
       const validDecision = item => item?.schema === 'wilsy.project.approval.v1'
         && item.tenant_id === tenantId && item.project_id === projectId
         && item.task_id === task.task_id && /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
@@ -512,7 +515,16 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
         && item.requester_principal_id !== item.reviewer_principal_id
         && typeof item.requester_principal_id === 'string'
         && typeof item.reviewer_principal_id === 'string'
-        && Number.isSafeInteger(item.revision)
+        && item.revision === (item.status === 'PENDING' ? 1 : 2)
+        && typeof item.rationale === 'string' && item.rationale.length > 0
+        && (item.status === 'PENDING'
+          ? item.decided_at === null && item.decision_rationale === null
+          : typeof item.decided_at === 'string' && typeof item.decision_rationale === 'string')
+        && (item.evidence_attachment_ids === undefined
+          || (Array.isArray(item.evidence_attachment_ids)
+            && item.evidence_attachment_ids.length <= 10
+            && item.evidence_attachment_ids.every(id => /^pat-[a-f0-9]{48}$/.test(id))
+            && new Set(item.evidence_attachment_ids).size === item.evidence_attachment_ids.length))
         && /^[a-f0-9]{128}$/.test(item.fingerprint || '');
       if (!scopedPage(evidence, 'WILSY-PROJECT-ATTACHMENT-LIST/V1')
         || !scopedPage(decisions, 'WILSY-PROJECT-APPROVAL-LIST/V1')
@@ -568,6 +580,30 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
         snapshot.state === 'VERIFIED' ? ' · ' + pending + ' pending · ' + rejected + ' rejected. Business decisions are not release approvals.' : 'The approval manifest is not currently verified.')}
       {row('Production release permission', 'BLOCKED', 'No independent deployment certification or authorized release decision is established.')}
     </ul>
+    {snapshot.state === 'VERIFIED' && <div className="mt-3 grid gap-3 md:grid-cols-2" aria-label="Verified task evidence and decisions">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <h5 className="text-sm font-bold text-slate-950">Recorded task attachments</h5>
+        {snapshot.attachments.length === 0
+          ? <p className="mt-2 text-xs text-slate-700">EOS verified no attachments for this task.</p>
+          : <ul className="mt-2 space-y-2 text-xs text-slate-800">{snapshot.attachments.map(item =>
+            <li key={item.attachment_id} className="break-words border-b border-slate-200 pb-2 last:border-0">
+              <strong>{item.filename}</strong>
+              <span className="mt-1 block text-slate-600">{item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
+                ? 'Scan clearance verified · content certification still required'
+                : 'Quarantined · scan clearance pending'}</span>
+            </li>)}</ul>}
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <h5 className="text-sm font-bold text-slate-950">Recorded reviewer decisions</h5>
+        {snapshot.approvals.length === 0
+          ? <p className="mt-2 text-xs text-slate-700">EOS verified no task review requests.</p>
+          : <ul className="mt-2 space-y-2 text-xs text-slate-800">{snapshot.approvals.map(item =>
+            <li key={item.approval_id} className="border-b border-slate-200 pb-2 last:border-0">
+              <strong>{item.status}</strong>
+              <span className="mt-1 block text-slate-600">Business task review · not release authority</span>
+            </li>)}</ul>}
+      </div>
+    </div>}
     <div className="mt-3 flex flex-wrap gap-2">
       <button type="button" onClick={onOpenEvidence} className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 text-sm font-semibold text-white hover:bg-blue-900">Inspect evidence</button>
       <button type="button" onClick={onOpenApprovals} className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-100">Inspect reviewer decisions</button>
