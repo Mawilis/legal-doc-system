@@ -41,7 +41,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-VERSION = "v1.0.0-EXACT-TASK-COMMENT-READBACK"
+VERSION = "v1.2.0-IDENTITY-VERIFIER-PREFLIGHT"
 PROJECT_NAME = "WILSY OS — Unified Operating Platform Foundation"
 TASK_NAME = "MW-T12 — Certify production readiness and rollback"
 CHECKPOINT = "840b294865a102ede84f77e3fc83ce4dcaabec19"
