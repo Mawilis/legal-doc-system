@@ -5,19 +5,23 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES
+ * VERSION: v4.14.0-SOURCE-OWNED-TASK-ENTRY
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
- * CHANGELOG: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES routes
+ * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY routes Headquarters
+ *          task and calendar selections to the existing governed My Work
+ *          source editor or exact-project task lifecycle instead of the
+ *          summary-only completion shortcut. No duplicate commands or grants.
+ * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY routes
  *          right-rail calendar to a dedicated Headquarters work surface,
  *          and expands selected My Work records to the full operating canvas
  *          instead of squeezing them into the dashboard column. Return actions
  *          restore the preserved queue and overview without changing EOS.
- * CHANGELOG: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES preserves a
+ * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY preserves a
  *          genuinely compact verified-empty queue without forcing
  *          the populated-list maximum height on empty source states.
  * CHANGELOG: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS aligns
@@ -838,6 +842,19 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     setMyWorkFocusItem(sourceKey);
     setShowMyWork(true);
   };
+  const openGovernedWork = (item) => {
+    if (!item || typeof item.source_key !== 'string') return;
+    if (item.source === 'PROJECTS'
+      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
+      setAttentionProjectFocus(item.project_id);
+      setProjectDeliveryFocus(item.project_id);
+      setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(item.task_id || '')
+        ? item.task_id : null);
+      navigateSection('projects');
+      return;
+    }
+    openMyWork(item);
+  };
   const navigateSection = (nextSection) => {
     setSection(nextSection);
     setShowMyWork(false);
@@ -917,10 +934,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                 <div>
                   {currentSnapshot ? (
                     <WilsyWorkDeadlineCalendar items={currentSnapshot.items}
-                      onOpenWork={(item) => {
-                        setMyWorkFocusItem(item.source_key);
-                        setCalendarOpen(false);
-                      }}/>
+                      onOpenWork={openGovernedWork}/>
                   ) : (
                     <div role="status" className="p-5 text-sm">
                       <p>Work calendar is awaiting a verified current-session EOS projection.</p>
@@ -967,16 +981,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   loading={myWorkLoading} error={myWorkError} snapshot={currentSnapshot}
                   scopeKey={workScope} principalId={authUser.id} tenantId={workTenantId}
                   view={workView} onViewChange={setWorkView}
-                  selectedKey={myWorkFocusItem} onSelect={setMyWorkFocusItem}
-                  onOpen={(item) => {
-                    if (item?.source === 'PROJECTS'
-                      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
-                      setAttentionProjectFocus(item.project_id);
-                      navigateSection('projects');
-                    } else {
-                      openMyWork(item);
-                    }
+                  selectedKey={myWorkFocusItem} onSelect={(sourceKey) => {
+                    if (!sourceKey) { setMyWorkFocusItem(null); return; }
+                    const item = currentSnapshot?.items.find((row) => row.source_key === sourceKey);
+                    if (item) openGovernedWork(item);
                   }}
+                  onOpen={openGovernedWork}
                   onRefresh={() => {
                     myWorkRetryRef.current = { scope: workScope, attempts: 0 };
                     invalidateUnifiedMyWork(workScope);
@@ -1024,7 +1034,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                 <div className="hq-main-reporting" aria-label="Work calendar and reports">
                   <section className="hq-panel hq-calendar-panel" aria-labelledby="hq-calendar-title">
                     <div className="hq-panel-heading"><h2 id="hq-calendar-title"><CalendarDays size={17}/> Work calendar</h2><button type="button" onClick={() => setCalendarOpen(true)} aria-label="Open Headquarters work calendar">View calendar <ArrowUpRight size={12}/></button></div>
-                    <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => setMyWorkFocusItem(item.source_key)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
+                    <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => openGovernedWork(item)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
                     
                   </section>
                   <section className="hq-panel hq-reports" aria-labelledby="hq-reports-title">
@@ -1643,7 +1653,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES
+ * VERSION: v4.14.0-SOURCE-OWNED-TASK-ENTRY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
