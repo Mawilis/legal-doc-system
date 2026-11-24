@@ -332,7 +332,7 @@ it('rejects fabricated or incomplete scan clearance evidence without download ca
 });
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.test.jsx
-// VERSION: v1.7.1-DROPZONE-VALIDATION-CERT
+// VERSION: v1.8.0-SINGLE-SCOPE-ATTACHMENT-READ-CERT
 // AUTHORITY BOUNDARY: mocked UI, no real bytes/scan/financial authority
 // TENANT POSTURE: exact source task and participant envelope
 // FAIL-CLOSED POSTURE: unverified and downloadable records never rendered
