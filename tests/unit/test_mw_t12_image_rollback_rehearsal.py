@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback certificate.
-VERSION: v1.1.0-EXACT-GIT-DOCKER-CONTEXT-PROVENANCE-TEST
+VERSION: v1.2.0-STRUCTURED-IMAGE-STATE-DENIAL-TEST
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify image labels and config hashes, precise three-phase image
          identity, one durable synthetic volume, fail-closed reads and
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 source archive and synthetic
          fixture contracts, no second tenant/session authority.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-STRUCTURED-IMAGE-STATE-DENIAL-TEST
+           verifies malformed or missing fixture JSON fails with a safe
+           fixed error, removes the owned EOS container and never emits
+           an image execution PASS or leaks synthetic actor records.
 CHANGELOG: v1.1.0-EXACT-GIT-DOCKER-CONTEXT-PROVENANCE-TEST
            refuses a differing Dockerfile, dependency lock or runtime
            source blob rather than merely trusting a labelled local image;
@@ -231,6 +235,35 @@ def test_missing_sha_denied_before_any_docker_call(
         operator.rehearse_image("not-a-full-sha")
 
 
+def test_corrupt_image_phase_fixture_state_rejects_before_auth_and_cleans(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_file = tmp_path / "state.json"
+    state_file.write_text("{malformed-synthetic-state", encoding="utf-8")
+    calls: list[str] = []
+    monkeypatch.setattr(operator, "_free_port", lambda: 19096)
+    monkeypatch.setattr(operator, "_image_identity", lambda *args: CURRENT_ID)
+    monkeypatch.setattr(operator, "_verify_container_image", lambda *args: None)
+    monkeypatch.setattr(operator, "_wait_eos", lambda *args: "http://127.0.0.1:19096")
+    monkeypatch.setattr(
+        operator, "_authenticate_unchanged",
+        lambda *args: pytest.fail("authentication attempted with invalid state"),
+    )
+    monkeypatch.setattr(
+        operator, "_docker",
+        lambda *args, **kwargs: calls.append(args[0]),
+    )
+    with pytest.raises(MWRecoveryError, match="IMAGE_FIXTURE_STATE_UNAVAILABLE"):
+        operator._verify_phase(
+            "owned-name", "synthetic:local", "owned-network", "synthetic-data",
+            "synthetic-secret", state_file, tmp_path / "fixture.py",
+            {"MW_T12_IMAGE_DRILL": "owned"}, "f" * 64, CURRENT,
+        )
+    assert calls == ["run", "rm"]
+    assert "MW_T12_IMAGE_VERSION_" not in capsys.readouterr().out
+
+
 def test_live_image_phase_requires_expected_digest_auth_audit_and_owned_stop(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -261,7 +294,7 @@ def test_live_image_phase_requires_expected_digest_auth_audit_and_owned_stop(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.1.0-EXACT-GIT-DOCKER-CONTEXT-PROVENANCE-TEST
+# VERSION: v1.2.0-STRUCTURED-IMAGE-STATE-DENIAL-TEST
 # AUTHORITY BOUNDARY: Synthetic Docker command proof only.
 # TENANT POSTURE: No live Docker or production persistence.
 # FAIL-CLOSED POSTURE: Failures, wrong provenance and cleanup deny PASS.
