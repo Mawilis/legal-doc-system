@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.67.0-CENTERED-TASK-ACTION-WORKSPACE
+ * VERSION: v1.68.0-STABLE-PROJECT-AUTHORITY-READS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.68.0-STABLE-PROJECT-AUTHORITY-READS stabilizes
+ *          semantically identical tenant selector headers so parent rerenders
+ *          cannot restart task list and three optional authority GETs.
+ *          A changed header still revalidates all sources, without extending
+ *          timeouts, caching IAM, or changing EOS admission.
  * CHANGELOG: v1.67.0-CENTERED-TASK-ACTION-WORKSPACE returns Files,
  *          Approvals and Activity to the centered Projects task work surface;
  *          a bounded resizable dialog replaces the pinned right-side panel.
@@ -684,7 +689,19 @@ export default function ProjectTasksPanel({
   const currentScope = useRef(scope);
   currentScope.current = scope;
   const root = '/projects/' + encodeURIComponent(projectId);
-  const headers = tenantHeaders || {};
+  // The owner workspace may supply a fresh, equivalent headers object during
+  // state changes. Keep the transport selector stable by value so the task
+  // loader's effect is not restarted; changed headers still revalidate EOS.
+  const headersRef = useRef(null);
+  const incomingHeaders = tenantHeaders && typeof tenantHeaders === 'object'
+    ? tenantHeaders : {};
+  const previousHeaders = headersRef.current;
+  const incomingKeys = Object.keys(incomingHeaders);
+  if (!previousHeaders || incomingKeys.length !== Object.keys(previousHeaders).length
+      || incomingKeys.some(key => previousHeaders[key] !== incomingHeaders[key])) {
+    headersRef.current = { ...incomingHeaders };
+  }
+  const headers = headersRef.current;
   const historyStorageKey = 'wilsy:project-work:recent:' + encodeURIComponent(scope);
   const readRecent = () => {
     try {
@@ -877,7 +894,7 @@ export default function ProjectTasksPanel({
       setState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
-  }, [scope, root, tenantId, principalId, projectId, tenantHeaders]);
+  }, [scope, root, tenantId, principalId, projectId, headers]);
 
   useEffect(() => {
     generation.current += 1;
@@ -2501,7 +2518,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.67.0-CENTERED-TASK-ACTION-WORKSPACE
+// VERSION: v1.68.0-STABLE-PROJECT-AUTHORITY-READS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
