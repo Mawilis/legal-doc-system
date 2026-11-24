@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.17.2-SOURCE-PROVENANCE-FIXTURE-CERT
+ * VERSION: v1.18.0-INPLACE-WORK-FOCUS-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.18.0-INPLACE-WORK-FOCUS-CERT verifies the approved
+ *            Projects-style in-place record region and Back-to-work focus
+ *            restoration without requiring the retired floating dialog.
  * CHANGELOG: v1.17.2-SOURCE-PROVENANCE-FIXTURE-CERT repairs
  *            the new Operating work fixture to carry exact source evidence
  *            and revision while keeping an explicitly unclassified row
@@ -193,21 +196,12 @@ describe('authenticated My Work execution queue', () => {
     );
     await openRow('Prepare CRM launch plan');
     expect(await screen.findByText('Persisted source record verified for this tenant')).toBeTruthy();
-    const resize = screen.getByRole('separator', { name: 'Resize work details' });
-    const dialog = screen.getByRole('dialog', { name: 'Prepare CRM launch plan' });
-    expect(resize).toBeTruthy();
-    expect(dialog).toBeTruthy();
-    expect(dialog.getAttribute('aria-modal')).toBe('false');
-    expect(document.querySelector('main')?.getAttribute('aria-hidden')).toBeNull();
-    await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(500));
-    const originalWidth = parseFloat(dialog.style.width);
-    fireEvent.mouseDown(resize, { button: 0, clientX: 600, clientY: 170 });
-    fireEvent.mouseMove(window, { clientX: 680, clientY: 170 });
-    fireEvent.mouseUp(window);
-    await waitFor(() => expect(parseFloat(dialog.style.width)).toBeGreaterThan(originalWidth));
-    const expandedWidth = parseFloat(dialog.style.width);
-    fireEvent.keyDown(resize, { key: 'ArrowLeft' });
-    await waitFor(() => expect(parseFloat(dialog.style.width)).toBeLessThan(expandedWidth));
+    const focus = screen.getByRole('region', { name: 'Prepare CRM launch plan' });
+    expect(focus).toBeTruthy();
+    expect(focus.closest('.wilsy-source-task-focus')).toBeTruthy();
+    expect(document.querySelector('main')?.hidden).toBe(true);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize work details' })).toBeNull();
     expect(screen.getByText('Principal recorded; human-readable name unavailable from this source')).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith(
       '/crm/owner-workspace/work-items/crm-1',
@@ -677,13 +671,13 @@ describe('authenticated My Work execution queue', () => {
   it('opens a source-backed detail drawer and restores focus to the selected row on close', async () => {
     renderWorkspace();
     const row = await openRow('Prepare daily operations report');
-    expect(screen.getByRole('dialog', { name: 'Prepare daily operations report' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Prepare daily operations report' })).toBeTruthy();
     expect(screen.getByText('Review the verified operating figures.')).toBeTruthy();
     expect(screen.getByLabelText('Completion note')).toBeTruthy();
     expect(row.isConnected).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to work' }));
     await waitFor(() => expect(document.activeElement).toBe(row));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Prepare daily operations report' })).toBeNull();
   });
 
   it('protects a dirty completion note when Escape requests close', async () => {
@@ -697,7 +691,7 @@ describe('authenticated My Work execution queue', () => {
     expect(screen.getByLabelText('Completion note').value).toBe('Draft note retained until explicit discard.');
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Discard and close' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Prepare daily operations report' })).toBeNull());
   });
 
   it('submits one source command, confirms the receipt, refreshes and reflects authoritative readback', async () => {
@@ -742,7 +736,7 @@ describe('authenticated My Work execution queue', () => {
     fireEvent.change(screen.getByLabelText('Completion note'), { target: { value: 'Source reports completed.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete through Operations' }));
     expect((await screen.findAllByText(/WORK_ITEM_COMPLETION_NOT_REFLECTED/)).length).toBeGreaterThan(0);
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Prepare daily operations report' })).toBeTruthy();
     expect(screen.getAllByText('Prepare daily operations report').length).toBeGreaterThan(0);
   });
 
@@ -796,7 +790,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.17.2-SOURCE-PROVENANCE-FIXTURE-CERT
+ * VERSION: v1.18.0-INPLACE-WORK-FOCUS-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
