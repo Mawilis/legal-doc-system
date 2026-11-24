@@ -5,14 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT
+ * VERSION: v3.13.0-REPLACEMENT-BRIEFING-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v3.13.0-REPLACEMENT-BRIEFING-CERT verifies that priority
+ *          briefing replaces the inbox and Back to work restores the
+ *          verified source list on desktop and mobile.
  * CHANGELOG: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT remeasures the
  *          mobile inbox/footer geometry during asynchronous source refresh
  *          using bounded polling; the same no-overlap invariant remains.
@@ -394,6 +397,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(showBriefing).toBeVisible();
       await showBriefing.click();
       await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toBeVisible();
+      await expect(triage.getByRole('region', {name: 'Attention inbox'})).toHaveCount(0);
+      await triage.getByRole('button', {name: /Back to work/}).click();
+      await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toHaveCount(0);
       await expect(triage.getByRole('region', {name: 'Attention inbox'})).toBeVisible();
       const row = triage.getByRole('button', {name: 'Inspect ' + title});
       await expect(row).toBeVisible();
@@ -988,7 +994,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT
+// VERSION: v3.13.0-REPLACEMENT-BRIEFING-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
