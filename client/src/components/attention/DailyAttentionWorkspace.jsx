@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.17.1-FOCUSED-ATTENTION-CHROME
+ * VERSION: v3.18.0-FOCUSED-CALENDAR-WORKSPACE
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -9,8 +9,12 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre owns current-session
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v3.17.1-FOCUSED-ATTENTION-CHROME removes
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v3.18.0-FOCUSED-CALENDAR-WORKSPACE gives the calendar
+ *          exclusive use of the bounded work area with a compact return
+ *          toolbar; hides list-only header, disclosures and footer in this
+ *          mode. Verified work scope and source action handoffs stay intact.
+ * CHANGELOG: v3.18.0-FOCUSED-CALENDAR-WORKSPACE removes
  *          queue-only create, help, filtering and optional source
  *          disclosure controls from focused task and briefing
  *          subviews while preserving independently visible error state.
@@ -621,7 +625,19 @@ export default function DailyAttentionWorkspace({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden text-slate-100"
       data-attention-production-ui="true" data-attention-mode={mode} onKeyDown={handleKey}>
       <div className="shrink-0 border-b border-white/10 bg-[#14243d] px-3 py-2 sm:px-4">
-        {mode === 'CREATE' ? (
+        {mode === 'CALENDAR' ? (
+          <div className="flex min-h-10 min-w-0 items-center justify-between gap-3" aria-label="Calendar mode toolbar">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-white">Work calendar</h2>
+              <p className="truncate text-[10px] text-slate-400">Authorised deadlines · {rows.length} verified work items</p>
+            </div>
+            <button type="button" onClick={() => setMode('LIST')}
+              aria-label="Close calendar and return to work list"
+              className="shrink-0 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+              Back to work
+            </button>
+          </div>
+        ) : mode === 'CREATE' ? (
           <div className="flex min-h-12 items-center justify-between gap-3" aria-label="Create mode toolbar">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">Create work in {label(chosenCreateSource)}</p>
@@ -895,15 +911,13 @@ export default function DailyAttentionWorkspace({
           </form>
         </div>
       ) : mode === 'CALENDAR' ? (
-        <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
-          <WilsyWorkDeadlineCalendar items={rows} onOpenWork={onOpenWork}
-            onOpenWorkforce={onOpenWorkforce}/>
-          <button type="button" onClick={() => setMode('LIST')}
-            aria-label="Close calendar and return to work list"
-            className="mt-2 rounded-lg border border-amber-300/30 px-3 py-2 text-xs text-amber-100">
-            Return to work list
-          </button>
-        </div>
+        <section aria-label="Authorised work calendar" data-attention-calendar-workspace="true"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5">
+          <div className="mx-auto w-full max-w-5xl">
+            <WilsyWorkDeadlineCalendar items={rows} onOpenWork={onOpenWork}
+              onOpenWorkforce={onOpenWorkforce}/>
+          </div>
+        </section>
       ) : (
         <div data-attention-detail-layout={selected ? 'detail' : showBriefing ? 'briefing' : 'list'}
            className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -1246,7 +1260,7 @@ export default function DailyAttentionWorkspace({
         </div>
       )}
       {mode === 'LIST' && completionNotice && <p role="status" className="shrink-0 border-t border-emerald-300/20 bg-[#12302d] px-4 py-2 text-xs text-emerald-100">{completionNotice}</p>}
-      {mode !== 'CREATE' && (
+      {mode !== 'CREATE' && mode !== 'CALENDAR' && (
       <footer className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
           <span>{page.length} loaded · {feed.filteredTotal} matching in last verified view · {feed.counts.active} active in verified sources</span>
@@ -1271,7 +1285,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.17.1-FOCUSED-ATTENTION-CHROME
+// VERSION: v3.18.0-FOCUSED-CALENDAR-WORKSPACE
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
