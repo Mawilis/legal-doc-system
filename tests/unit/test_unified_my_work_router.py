@@ -1,11 +1,17 @@
 """TITLE: WILSY OS Unified My Work router authorization certification.
-VERSION: v1.2.1-SAFE-SOURCE-FAILURE-LOG-CERT
+VERSION: v1.3.0-PROJECT-IAM-FASTAPI-TEST-FIXTURES
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certifies independently admitted, source-owned My Work aggregation,
          including privacy-minimal HR action projection handoff.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_unified_my_work_router.py
 COLLABORATION / OWNERSHIP: unified_my_work_router and existing source routers.
-CERTIFICATION / UPDATE DATE: 2026-11-17.
+CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.0-PROJECT-IAM-FASTAPI-TEST-FIXTURES explicitly
+           supplies the current Projects read dependency in every direct
+           route test and overrides it for isolated HTTP tests. Synthetic
+           authenticated identity declares its tenant-token scope so canonical
+           authorization never receives an incomplete fixture. Production IAM,
+           route defaults and fail-closed source checks remain unchanged.
 CHANGELOG: v1.2.1-SAFE-SOURCE-FAILURE-LOG-CERT verifies stable
            error-only diagnostics never contain arbitrary private HTTP detail.
            v1.2.0-CRM-CORE-OPTIONAL-SOURCE-CERT omits CRM only on
@@ -62,7 +68,7 @@ def _context(tenant="tenant-a", principal="principal-a"):
 
 
 def _identity(principal="principal-a"):
-    return SimpleNamespace(identity_id=principal)
+    return SimpleNamespace(identity_id=principal, principal_scope="TENANT")
 
 
 def _hr_contexts():
@@ -118,6 +124,7 @@ def test_route_omits_denied_sources_and_reads_only_independently_admitted_source
         operations_context=_context(),
         intelligence_context=None,
         crm_context=None,
+        projects_context=None,
         **_hr_contexts(),
     ))
 
@@ -142,6 +149,7 @@ def test_route_fails_closed_when_an_authorized_source_reader_is_unavailable(monk
             operations_context=_context(),
             intelligence_context=None,
             crm_context=None,
+        projects_context=None,
             **_hr_contexts(),
         ))
     assert error.value.status_code == 503
@@ -156,6 +164,7 @@ def test_route_rejects_context_from_a_different_tenant_or_principal():
             operations_context=_context(tenant="tenant-b"),
             intelligence_context=None,
             crm_context=None,
+        projects_context=None,
             **_hr_contexts(),
         ))
     assert error.value.status_code == 503
@@ -191,6 +200,7 @@ def test_route_rejects_whitespace_tenant_scope_before_source_reads():
             operations_context=None,
             intelligence_context=None,
             crm_context=None,
+        projects_context=None,
             **_hr_contexts(),
         ))
     assert error.value.status_code == 403
@@ -206,6 +216,7 @@ def test_route_rejects_tenant_scope_when_no_source_is_authorized():
             operations_context=None,
             intelligence_context=None,
             crm_context=None,
+        projects_context=None,
             **_hr_contexts(),
         ))
     assert error.value.status_code == 403
@@ -225,6 +236,7 @@ def test_http_route_does_not_return_empty_success_for_unjoined_foreign_tenant():
     app.dependency_overrides[route._OPERATIONS_READ] = lambda: None
     app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
     app.dependency_overrides[route._CRM_READ] = lambda: None
+    app.dependency_overrides[route._PROJECTS_READ] = lambda: None
     _omit_hr_dependencies(app)
 
     with TestClient(app) as client:
@@ -251,6 +263,7 @@ def test_http_route_omits_denied_source_and_returns_only_authorized_projection(m
     app.dependency_overrides[route._OPERATIONS_READ] = lambda: _context()
     app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
     app.dependency_overrides[route._CRM_READ] = lambda: None
+    app.dependency_overrides[route._PROJECTS_READ] = lambda: None
     _omit_hr_dependencies(app)
     monkeypatch.setattr(
         route,
@@ -288,6 +301,7 @@ def test_http_route_does_not_turn_authorized_source_outage_into_empty_success(mo
     app.dependency_overrides[route._OPERATIONS_READ] = lambda: _context()
     app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
     app.dependency_overrides[route._CRM_READ] = lambda: None
+    app.dependency_overrides[route._PROJECTS_READ] = lambda: None
     _omit_hr_dependencies(app)
 
     def unavailable(*_args, **_kwargs):
@@ -362,6 +376,7 @@ def test_route_includes_only_safe_hr_actions_after_source_specific_read_admissio
         operations_context=None,
         intelligence_context=None,
         crm_context=None,
+        projects_context=None,
         headcount_read_context=None,
         headcount_submit_context=None,
         headcount_decide_context=None,
@@ -444,7 +459,7 @@ def test_hr_source_owners_emit_only_action_metadata_not_administrative_records(m
 
 
 # ARTIFACT: test_unified_my_work_router.py
-# VERSION: v1.2.1-SAFE-SOURCE-FAILURE-LOG-CERT
+# VERSION: v1.3.0-PROJECT-IAM-FASTAPI-TEST-FIXTURES
 # AUTHORITY BOUNDARY: Source read admission and metadata projection only.
 # TENANT POSTURE: Exact tenant and principal contexts are mandatory in each case.
 # FAIL-CLOSED POSTURE: Denial and source errors never become an empty success.
