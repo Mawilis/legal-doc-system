@@ -5,13 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.14.0-SOURCE-OWNED-TASK-ENTRY
+ * VERSION: v4.14.1-PROJECT-WORK-KEY-FOCUS
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v4.14.1-PROJECT-WORK-KEY-FOCUS preserves the source
+ *          work_item_id when opening exact project tasks through Headquarters
+ *          without granting authority or inventing task records.
  * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY routes Headquarters
  *          task and calendar selections to the existing governed My Work
  *          source editor or exact-project task lifecycle instead of the
@@ -848,8 +851,9 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
       setAttentionProjectFocus(item.project_id);
       setProjectDeliveryFocus(item.project_id);
-      setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(item.task_id || '')
-        ? item.task_id : null);
+      const verifiedTaskId = item.task_id || item.work_item_id;
+      setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(verifiedTaskId || '')
+        ? verifiedTaskId : null);
       navigateSection('projects');
       return;
     }
