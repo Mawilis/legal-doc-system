@@ -290,7 +290,7 @@ export default function ProjectApprovalInbox({
 }
 
 // ARTIFACT: ProjectApprovalInbox.jsx
-// VERSION: v1.1.0-EVIDENCE-VISIBLE-REVIEWER-INBOX
+// VERSION: v1.2.0-ONE-APPROVAL-INBOX-READ-PER-SCOPE
 // AUTHORITY BOUNDARY: source-owned review only; no task/financial/IAM action
 // TENANT POSTURE: exact tenant/principal on every list and decision readback
 // FAIL-CLOSED POSTURE: stale, foreign, malformed, unverifiable decision denied
