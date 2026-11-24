@@ -1,13 +1,29 @@
 """TITLE: WILSY OS Tenant Authorization HTTP Certification.
-VERSION: v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT
+VERSION: v1.6.0-REQUEST-SCOPED-EVIDENCE-CERT
 AUTHORITY: Test-local ASGI certification of the reusable tenant dependency.
 EPITOME: Proves HTTP translation without production route wiring or persistence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_tenant_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-09-21.
-CHANGELOG: 2026-10-19 v1.2.0 aligns the shared-boundary certificate with bounded denial/outage observability and the existing workforce-unavailable classification; v1.1.0 directly certified separate durable business-role and authorization-role store routing; v1.0.0 certified positive, denied, unavailable, scope, and transport boundaries.
+CERTIFICATION / UPDATE DATE: 2026-11-15.
+CHANGELOG:
+2026-11-15 v1.6.0-REQUEST-SCOPED-EVIDENCE-CERT proves successful, exact-key
+authority evidence can be reused only inside one request, while a new request
+re-reads current membership after revocation. It does not cache a decision.
+2026-11-15 v1.5.0-OPTIONAL-HR-PREFLIGHT-CERT pins the source-admission
+version after optional HR role-ineligibility preflight. Existing required
+authorization behavior remains covered by the workforce certificate.
+2026-11-14 v1.4.0-SAFE-IAM-CORRELATION-CERT aligns the current adapter version
+contract after safe message-format visibility. All scope/outcome tests remain.
+2026-11-12 v1.3.0-HR-ENTITLEMENT-PFE-SCOPE-CERT pins the exact current
+HTTP adapter Git blob and certifies its version while retaining read-only IAM
+translation; HR entitlement and WILSY employer selection are exercised in the
+companion unit certificate.
+2026-10-19 v1.2.0 aligns bounded denial/outage observability and workforce
+unavailability classification; v1.1.0 certifies separate business-role and
+authorization-role store routing; v1.0.0 certifies HTTP scope and outcomes.
+
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY/PRIVACY POSTURE: Test-local identities only; projected roles and tenants never grant authority.
+SECURITY / PRIVACY POSTURE: Test-local identities only; projected roles and tenants never grant authority.
 TENANT BOUNDARY: X-Tenant-ID is explicit scope and durable membership remains authoritative.
 AUTHORITY BOUNDARY: Certifies HTTP translation only; no production route wiring or persistence mutation.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
@@ -22,9 +38,11 @@ from typing import cast
 import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 
 import tools.eos.api.tenant_authorization_http as boundary
 from tools.eos.api.errors import register_error_handlers
+from tools.eos.api.exceptions import ForbiddenOperationException
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import (
@@ -57,8 +75,8 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT"
-EXPECTED_PRIMARY_BLOB = "5439fde9e0bb7f98dff517bbff995770695e4d35"
+VERSION = "v1.6.0-REQUEST-SCOPED-EVIDENCE-CERT"
+EXPECTED_PRIMARY_BLOB = "dcc2dcfdf34fee78479d4f8604d95794537c32e5"
 _PID = "p"
 _TENANT = "tenant-a"
 _AUDIT_PERMISSION = "audit:read"
@@ -135,6 +153,7 @@ def _identity(
         username="u",
         email="u@example.test",
         auth_method="test",
+        session_reference=None,
         status=PrincipalStatus.ACTIVE,
         roles=roles or [],
         permissions=permissions or [],
@@ -768,14 +787,109 @@ def test_exact_authorization_wiring_uses_same_role_repository(
     assert captured["tenant_id"] == _TENANT
     assert captured["permission_id"] == _AUDIT_PERMISSION
     assert captured["operation"] == _AUDIT_OPERATION
-    assert captured["principal_repository"] is principal_repository
-    assert captured["membership_repository"] is membership_repository
-    assert captured["business_role_repository"] is role_repository
-    assert captured["role_assignment_repository"] is role_repository
+    assert captured["principal_repository"]._repository is principal_repository
+    assert captured["membership_repository"]._repository is membership_repository
+    assert captured["business_role_repository"]._repository is role_repository
+    assert captured["role_assignment_repository"]._repository is role_repository
     assert (
         captured["business_role_repository"]
         is captured["role_assignment_repository"]
     )
+
+
+@pytest.mark.anyio
+async def test_successful_evidence_reuses_within_one_request_and_revalidates_next_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A source decision is never cached beyond its ASGI request boundary."""
+
+    class BusinessAndAuthorizationReader(_RecordingReader):
+        def __init__(self) -> None:
+            role_values = {
+                (_PID, _TENANT, role_id): _role(role_id)
+                for role_id in _AUDIT_GRANTING_ROLES
+            }
+            super().__init__(role_values)
+            self.business_reads: list[tuple[str, str]] = []
+
+        def resolve_all_business_roles(
+            self,
+            principal_id: str,
+            tenant_id: str,
+            *,
+            session: object = None,
+        ) -> tuple[object, ...]:
+            assert session is None
+            self.business_reads.append((principal_id, tenant_id))
+            return (
+                type(
+                    "BusinessCapacity",
+                    (),
+                    {
+                        "principal_id": principal_id,
+                        "tenant_id": tenant_id,
+                        "business_role": "tenant_auditor",
+                        "status": RoleAssignmentStatus.ACTIVE,
+                    },
+                )(),
+            )
+
+    principal_reader = _RecordingReader({(_PID,): _active_principal()})
+    membership_reader = _RecordingReader({(_PID, _TENANT): _membership()})
+    role_reader = BusinessAndAuthorizationReader()
+    canonical_compose = boundary.authorize_tenant_operation
+    compose_calls = 0
+
+    def observe_composition(**kwargs: object) -> TenantAuthorizationDecision:
+        nonlocal compose_calls
+        compose_calls += 1
+        return canonical_compose(**kwargs)
+
+    monkeypatch.setattr(boundary, "authorize_tenant_operation", observe_composition)
+    dependency = boundary.RequireTenantAuthorization(_AUDIT_PERMISSION, _AUDIT_OPERATION)
+    first_request = Request({"type": "http"})
+    first = await dependency(
+        request=first_request,
+        identity=_identity(tenant_id=_TENANT),
+        tenant_id=_TENANT,
+        principal_repository=principal_reader,
+        membership_repository=membership_reader,
+        role_assignment_repository=role_reader,
+    )
+    second_same_request = await dependency(
+        request=first_request,
+        identity=_identity(tenant_id=_TENANT),
+        tenant_id=_TENANT,
+        principal_repository=principal_reader,
+        membership_repository=membership_reader,
+        role_assignment_repository=role_reader,
+    )
+
+    assert first.decision.authorized is True
+    assert second_same_request.decision.authorized is True
+    assert compose_calls == 2
+    assert principal_reader.read_calls == [(_PID,)]
+    assert membership_reader.read_calls == [(_PID, _TENANT)]
+    assert role_reader.business_reads == [(_PID, _TENANT)]
+    assert role_reader.read_calls == [
+        (_PID, _TENANT, role_id) for role_id in _AUDIT_GRANTING_ROLES
+    ]
+
+    membership_reader.values[(_PID, _TENANT)] = _membership(
+        status=TenantMembershipStatus.SUSPENDED
+    )
+    with pytest.raises(ForbiddenOperationException):
+        await dependency(
+            request=Request({"type": "http"}),
+            identity=_identity(tenant_id=_TENANT),
+            tenant_id=_TENANT,
+            principal_repository=principal_reader,
+            membership_repository=membership_reader,
+            role_assignment_repository=role_reader,
+        )
+
+    assert compose_calls == 3
+    assert membership_reader.read_calls == [(_PID, _TENANT), (_PID, _TENANT)]
 
 
 def test_canonical_dependency_contract_and_no_transport_authority() -> None:
@@ -933,18 +1047,11 @@ def test_authorization_is_read_only_for_success_denial_and_financial() -> None:
 
 
 def test_primary_contract_version_and_expected_blob_constant() -> None:
-    assert VERSION == "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT"
-    assert EXPECTED_PRIMARY_BLOB == "5439fde9e0bb7f98dff517bbff995770695e4d35"
-    assert boundary.VERSION == "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY"
+    assert VERSION == "v1.6.0-REQUEST-SCOPED-EVIDENCE-CERT"
+    assert EXPECTED_PRIMARY_BLOB == "dcc2dcfdf34fee78479d4f8604d95794537c32e5"
+    assert boundary.VERSION == "v1.10.0-REQUEST-SCOPED-EVIDENCE-READS"
 
 
-# ARTIFACT: test_tenant_authorization_http.py
-# VERSION: v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT
-# AUTHORITY BOUNDARY: test-local HTTP dependency translation only
-# TENANT POSTURE: explicit X-Tenant-ID scope; no projection authority
-# FAIL-CLOSED POSTURE: only AUTHORIZED succeeds; unavailable maps to 503
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 def test_http_role_reader_separates_business_and_authorization_stores(
     monkeypatch: pytest.MonkeyPatch,
@@ -998,6 +1105,7 @@ def test_http_role_reader_separates_business_and_authorization_stores(
         _TENANT,
         "tenant_owner",
     )
+    assert isinstance(business, BusinessValue)
     assert business.business_role == "tenant_owner"
     assert business_repository.calls == [(_PID, _TENANT)]
     assert authorization_reader.read_calls == []
@@ -1007,7 +1115,16 @@ def test_http_role_reader_separates_business_and_authorization_stores(
         _TENANT,
         "ENTERPRISE_ADMIN",
     )
+    assert isinstance(authorization, RoleAssignmentAuthority)
     assert authorization.role_id == "ENTERPRISE_ADMIN"
     assert authorization_reader.read_calls == [
         (_PID, _TENANT, "ENTERPRISE_ADMIN")
     ]
+
+# ARTIFACT: test_tenant_authorization_http.py
+# VERSION: v1.6.0-REQUEST-SCOPED-EVIDENCE-CERT
+# AUTHORITY BOUNDARY: test-local HTTP dependency translation only
+# TENANT POSTURE: explicit X-Tenant-ID scope; no projection authority
+# FAIL-CLOSED POSTURE: only AUTHORIZED succeeds; unavailable maps to 503
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT

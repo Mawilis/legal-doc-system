@@ -1,21 +1,47 @@
-/* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN HR OPERATING SUITE [V2.2.0-OS-CHROME]                                                                       ║
- * ║ [WORKFORCE COMMAND | HIRING PIPELINE | PAYROLL CONTROL | BENEFITS | PERFORMANCE | ABSENCE COMMAND | LIVE LEDGER]                    ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.2.0-OS-CHROME | PRODUCTION READY | PEOPLE OPERATING SYSTEM                                                           ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.jsx                                        ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                    ║
- * ║ • Wilson Khanyezi (Founder/CEO) - Rejected table-only HR prototypes and mandated a real HR operating cockpit for daily leadership.  ║
- * ║ • AI Engineering (Codex) - REBUILT: Connected HR to a live backend ledger, added workforce KPIs, hiring/payroll/performance/absence ║
- * ║   workflows, source feedback, mutation forms, exports and telemetry without fake placeholder records.                                ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  * AUTHORITY BOUNDARY: HR work-log, employee-relations, payroll-record, candidate full-update, artifact client transport, and payslip operations fail closed until executable backend contracts are certified.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+ * TITLE: WILSY OS Authenticated HR Workspace Projection
+ * VERSION: v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
+ *          employee, hiring, authorization, persistence, evidence and payroll truth.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.jsx
+ * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
+ *                            server-projected principal and exact active tenant.
+ * CERTIFICATION / UPDATE DATE: 2026-11-12
+ * CHANGELOG:
+ *   v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE — States that institutional offer signing does not prove candidate identity, removes the misleading candidate-signature claim, and explains why source ACCEPTED status is not verified candidate consent or employment.
+ *   v2.6.0-EOS-CANDIDATE-EVIDENCE-LOOP — Streams candidate evidence through existing EOS custody, verifies exact-version binary readback and SHA3-512 before enabling a stage transition, and clears candidate bytes on scope invalidation.
+ *   v2.5.0-EOS-HIRING-COMMAND-LOOP — Wires candidate intake, evidence-backed transitions, offer preparation and governed offer decisions/sending to existing EOS commands with exact-scope readback.
+ *   v2.4.9-CANONICAL-HIRING-READS — Routes candidate and offer views to the tenant-scoped Python EOS lifecycle, removes legacy PII mutations, and withholds unverified hiring counts.
+ *   v2.4.8-HEADQUARTERS-CHROME-ACTIONS — Aligns both top-bar actions with the shared Chrome contract and maps the EOS workforce projection into the table row vocabulary.
+ *   v2.4.7-STRICT-WORKFORCE-PAGE-CONTRACT — Requires complete EOS page metadata before data or empty status can be verified; missing totals can no longer become empty success.
+ *   v2.4.6-NO-MISSING-METRIC-ZERO — Formats absent or malformed snapshot money/count values as Unavailable instead of fabricated zero.
+ *   v2.4.5-RUNTIME-VERIFIED-TELEMETRY-KPI — Restores the live telemetry KPI input and withholds its count while telemetry is syncing or unavailable, preventing a dashboard mount exception and false zero.
+ *   v2.4.4-SESSION-WIDE-HR-INVALIDATION — Invalidates every in-flight HR read and clears all retained HR data when any source rejects the current session with 401.
+ *   v2.4.3-TRUTHFUL-HR-READ-STATES — Uses the exact-tenant Python EOS workforce directory, keeps verified/empty/denied/unavailable/authentication states distinct, clears invalid scopes, and labels retained same-scope data as last verified.
+ *   v2.4.2-AUTHENTICATED-TENANT-FAIL-CLOSED — Removes MASTER tenant fallback,
+ *     binds displayed and requested HR state to the matching authenticated
+ *     principal/tenant/session scope, and ignores late responses from old scopes.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No HR request is issued without a current AuthContext
+ *                             principal and matching server-projected tenant;
+ *                             tenant/principal/session changes clear retained HR state
+ *                             and release candidate evidence file references. Evidence
+ *                             bytes are streamed to existing EOS custody and never stored
+ *                             in browser persistence.
+ * TENANT BOUNDARY: Exact authenticated tenant only. No MASTER, GLOBAL_ROOT,
+ *                  display-name or persisted browser tenant fallback is used.
+ * AUTHORITY BOUNDARY: Presentation and transport only. Python EOS authenticates,
+ *                     authorizes, verifies evidence custody and owns hiring truth.
+ * FINANCIAL AUTHORITY BOUNDARY: This component grants no compensation or payment
+ *                               execution authority; Kennel EOS remains exclusive.
  */
-
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+/* eslint-disable */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { sha3_512 } from 'js-sha3';
 import {
   Activity,
   Briefcase,
@@ -54,12 +80,12 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import styles from './HrDashboard.module.css';
 
-const DEFAULT_TENANT_ID = 'MASTER';
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
 
 const HR_TABS = Object.freeze([
   { id: 'employees', label: 'Workforce', icon: Users, modalType: 'employee' },
   { id: 'candidates', label: 'Hiring Pipeline', icon: UserPlus, modalType: 'candidate' },
+  { id: 'offers', label: 'Employment Offers', icon: FileText, modalType: 'offer' },
   { id: 'jobOpenings', label: 'Open Roles', icon: Briefcase, modalType: 'jobOpening' },
   { id: 'payroll', label: 'Payroll', icon: CreditCard, modalType: 'payroll' },
   { id: 'benefits', label: 'Benefits', icon: Heart, modalType: 'benefit' },
@@ -75,6 +101,7 @@ const EMPTY_DATASET = Object.freeze({ items: [], total: 0, limit: DEFAULT_PAGE.l
 const DATASET_DEFAULTS = Object.freeze({
   employees: EMPTY_DATASET,
   candidates: EMPTY_DATASET,
+  offers: EMPTY_DATASET,
   jobOpenings: EMPTY_DATASET,
   payroll: EMPTY_DATASET,
   benefits: EMPTY_DATASET,
@@ -83,6 +110,58 @@ const DATASET_DEFAULTS = Object.freeze({
   relations: EMPTY_DATASET,
   timeoff: EMPTY_DATASET,
   artifacts: EMPTY_DATASET
+});
+
+const createEmptyCandidateEvidenceState = () => ({
+  status: 'NONE', scopeKey: null, candidateId: null, evidenceId: null,
+  evidenceVersionId: null, file: null, expectedDigest: null,
+  contentDigestSha3_512: null, reference: null, detail: '',
+});
+
+const CANDIDATE_EVIDENCE_MEDIA_TYPES = Object.freeze({
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+});
+
+const HR_READ_STATE = Object.freeze({
+  PENDING: 'VERIFICATION_PENDING',
+  VERIFIED_DATA: 'VERIFIED_DATA',
+  VERIFIED_EMPTY: 'VERIFIED_EMPTY',
+  ACCESS_DENIED: 'ACCESS_DENIED',
+  SOURCE_UNAVAILABLE: 'SOURCE_UNAVAILABLE',
+  AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED'
+});
+
+const createInitialDatasetReadStates = (status = HR_READ_STATE.PENDING) => (
+  Object.fromEntries(Object.keys(DATASET_DEFAULTS).map((key) => [key, {
+    status, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null,
+    errorCode: null, revalidating: false
+  }]))
+);
+
+const isVerifiedReadState = (state) => [HR_READ_STATE.VERIFIED_DATA, HR_READ_STATE.VERIFIED_EMPTY].includes(state?.status);
+const classifyHrReadFailure = (error) => {
+  const status = error?.response?.status || error?.status;
+  if (status === 401) return HR_READ_STATE.AUTHENTICATION_REQUIRED;
+  if (status === 403) return HR_READ_STATE.ACCESS_DENIED;
+  return HR_READ_STATE.SOURCE_UNAVAILABLE;
+};
+const hrReadErrorCode = (error) => {
+  const candidate = error?.code || error?.response?.data?.detail || error?.response?.data?.code;
+  if (typeof candidate === 'string' && /^[A-Z0-9_.:-]{1,100}$/.test(candidate)) return candidate;
+  const status = error?.response?.status || error?.status;
+  return Number.isInteger(status) ? `HTTP_${status}` : 'HR_SOURCE_UNAVAILABLE';
+};
+const unavailableReadState = (previous, errorCode) => ({
+  status: HR_READ_STATE.SOURCE_UNAVAILABLE,
+  verifiedAt: previous?.verifiedAt || null,
+  lastVerifiedAt: previous?.verifiedAt || previous?.lastVerifiedAt || null,
+  lastVerifiedStatus: isVerifiedReadState(previous) ? previous.status : previous?.lastVerifiedStatus || null,
+  errorCode,
+  revalidating: false
 });
 
 const HR_ARTIFACT_TYPES = Object.freeze([
@@ -1914,18 +1993,26 @@ const createEmptySnapshot = () => ({
  * @returns {Object} Normalized dataset.
  * @collaboration HR views need consistent pagination even when a source returns a lean payload.
  */
-const normalizeDataset = (payload = {}, page = DEFAULT_PAGE) => {
-  const items = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.data) ? payload.data : [];
-  const total = Number(payload?.total ?? items.length);
-  const limit = Number(payload?.limit ?? page.limit);
-  const offset = Number(payload?.offset ?? page.offset);
-  return {
-    items,
-    total: Number.isFinite(total) ? total : items.length,
-    limit: Number.isFinite(limit) ? limit : page.limit,
-    offset: Number.isFinite(offset) ? offset : page.offset,
-    hasMore: Boolean(payload?.hasMore ?? (offset + limit < total))
-  };
+const normalizeDataset = (payload) => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw Object.assign(new Error('HR_SOURCE_RESPONSE_INVALID'), { code: 'HR_SOURCE_RESPONSE_INVALID' });
+  }
+  const items = Array.isArray(payload.items) ? payload.items : Array.isArray(payload.data) ? payload.data : null;
+  const total = payload.total;
+  const limit = payload.limit;
+  const offset = payload.offset;
+  const hasMore = payload.hasMore;
+  if (!items || !Number.isSafeInteger(total) || total < items.length || !Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(offset) || offset < 0 || typeof hasMore !== 'boolean') {
+    throw Object.assign(new Error('HR_SOURCE_RESPONSE_INVALID'), { code: 'HR_SOURCE_RESPONSE_INVALID' });
+  }
+  return { items, total, limit, offset, hasMore };
+};
+
+const normalizeSnapshot = (payload) => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) || !payload.summary || typeof payload.summary !== 'object' || Array.isArray(payload.summary)) {
+    throw Object.assign(new Error('HR_SNAPSHOT_RESPONSE_INVALID'), { code: 'HR_SNAPSHOT_RESPONSE_INVALID' });
+  }
+  return { ...payload, summary: payload.summary, sourceStatus: typeof payload.sourceStatus === 'string' ? payload.sourceStatus : 'SOURCE_VERIFIED', timestamp: typeof payload.timestamp === 'string' ? payload.timestamp : null };
 };
 
 /**
@@ -1936,21 +2023,22 @@ const normalizeDataset = (payload = {}, page = DEFAULT_PAGE) => {
  * @returns {Object} Feedback packet.
  * @collaboration Expired identity must read as a session problem, not as a fake HR ledger outage.
  */
-const resolveHrErrorFeedback = (error = {}, fallbackTitle = 'HR source pending') => {
-  const detail = error?.response?.data?.message || error?.message || 'HR source failed.';
-  if (/jwt expired|token expired|expired token|session expired/i.test(detail)) {
-    return {
-      tone: 'risk',
-      title: 'Session expired',
-      detail: 'Wilsy OS identity expired. Sign in again so HR can reopen the live ledger.'
-    };
-  }
+const resolveHrErrorFeedback = (error = {}, fallbackTitle = 'HR source unavailable') => {
+  const state = classifyHrReadFailure(error);
+  if (state === HR_READ_STATE.AUTHENTICATION_REQUIRED) return {
+    tone: 'risk', title: 'Authentication required',
+    detail: 'The current EOS session could not be verified. Sign in again to reopen HR data.'
+  };
+  if (state === HR_READ_STATE.ACCESS_DENIED) return {
+    tone: 'risk', title: 'HR access denied',
+    detail: 'Python EOS denied this source for the current principal and tenant. No rows or counts are displayed.'
+  };
   return {
-    tone: 'warning',
-    title: fallbackTitle,
-    detail
+    tone: 'warning', title: fallbackTitle,
+    detail: `The HR source could not verify this view (${hrReadErrorCode(error)}). Retry when the authorized source is available.`
   };
 };
+
 
 /**
  * @function formatMoney
@@ -1960,8 +2048,9 @@ const resolveHrErrorFeedback = (error = {}, fallbackTitle = 'HR source pending')
  * @collaboration Compensation surfaces must be readable without pretending absent values are live.
  */
 const formatMoney = (value) => {
+  if (value === null || value === undefined) return 'Unavailable';
   const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return 'R 0';
+  if (!Number.isFinite(numeric)) return 'Unavailable';
   return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(numeric);
 };
 
@@ -1973,8 +2062,9 @@ const formatMoney = (value) => {
  * @collaboration KPI values should stay stable and scannable across all HR lanes.
  */
 const formatCount = (value) => {
+  if (value === null || value === undefined || value === '') return 'Unavailable';
   const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric.toLocaleString('en-ZA') : '0';
+  return Number.isFinite(numeric) ? numeric.toLocaleString('en-ZA') : 'Unavailable';
 };
 
 /**
@@ -1986,7 +2076,10 @@ const formatCount = (value) => {
  * @returns {number} Numeric metric.
  * @collaboration Snapshot summary keeps top-level KPIs synchronized with backend truth.
  */
-const getSummaryMetric = (snapshot = {}, type = '', key = 'total') => Number(snapshot.summary?.[type]?.[key] || 0);
+const getSummaryMetric = (snapshot = {}, type = '', key = 'total') => {
+  const value = snapshot.summary?.[type]?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+};
 
 /**
  * @function getTabConfig
@@ -2007,6 +2100,7 @@ const getTabConfig = (activeTab = 'employees') => HR_TABS.find(tab => tab.id ===
 const formatModalTypeLabel = (type = 'employee') => ({
   employee: 'Employee',
   candidate: 'Candidate',
+  offer: 'Employment Offer',
   jobOpening: 'Job Opening',
   payroll: 'Payroll Run',
   benefit: 'Benefit Plan',
@@ -2023,13 +2117,16 @@ const formatModalTypeLabel = (type = 'employee') => ({
  * @returns {Object} Workspace model.
  * @collaboration Every HR nav item must change the process and business value, not repaint the same table.
  */
-const buildHrWorkspace = ({ activeTab, snapshot, datasets, telemetryCount }) => {
-  const employees = Math.max(
-    getSummaryMetric(snapshot, 'employee'),
-    Number(datasets.employees.total || 0),
-    datasets.employees.items.length
-  );
-  const candidates = getSummaryMetric(snapshot, 'candidate');
+const buildHrWorkspace = ({ activeTab, snapshot, datasets, datasetReadStates, snapshotReadState, telemetryCount }) => {
+  const employees = isVerifiedReadState(datasetReadStates?.employees)
+    ? datasets.employees.total
+    : 'Unavailable';
+  const candidates = isVerifiedReadState(datasetReadStates?.candidates)
+    ? datasets.candidates.total
+    : 'Unavailable';
+  const offers = isVerifiedReadState(datasetReadStates?.offers)
+    ? datasets.offers.total
+    : 'Unavailable';
   const openings = getSummaryMetric(snapshot, 'jobOpening');
   const payrollNet = getSummaryMetric(snapshot, 'payroll', 'netPay');
   const benefits = getSummaryMetric(snapshot, 'benefit');
@@ -2053,16 +2150,28 @@ const buildHrWorkspace = ({ activeTab, snapshot, datasets, telemetryCount }) => 
       process: ['Verify headcount', 'Assign missing departments', 'Review manager coverage', 'Export workforce roster']
     },
     candidates: {
-      kicker: 'Hiring Pipeline',
-      title: 'Candidate Command',
-      description: 'Move candidates through screening, interview, offer and rejection without losing stage accountability.',
-      primary: 'Add Candidate',
+      kicker: 'EOS Hiring Lifecycle',
+      title: 'Candidate Pipeline',
+      description: 'Review source-owned candidate stages and approved requisition references. Identity and evidence remain in their governed EOS sources.',
+      primary: 'Hiring commands use EOS authority',
       kpis: [
-        ['Candidates', candidates, 'People in recruiting pipeline'],
-        ['Interviews', datasets.candidates.items.filter(item => /interview/i.test(item.stage || item.status || '')).length, 'Interview-stage candidates'],
-        ['Open Roles', openings, 'Roles requiring capacity']
+        ['Candidates', candidates, 'Tenant-scoped EOS candidate total'],
+        ['Interview stage', isVerifiedReadState(datasetReadStates?.candidates) ? datasets.candidates.items.filter(item => /interview/i.test(item.stage || '')).length : 'Unavailable', 'Candidates on this verified page'],
+        ['Open Roles', openings, 'Separately sourced HR opening summary']
       ],
-      process: ['Screen new candidates', 'Schedule interviews', 'Prepare offers', 'Close rejected candidates']
+      process: ['Review source-verified candidates', 'Check approved requisition references', 'Review stage evidence in EOS', 'Employee admission remains separate']
+    },
+    offers: {
+      kicker: 'EOS Offer Lifecycle',
+      title: 'Employment Offers',
+      description: 'Review tenant-authorized offer lifecycle state. Institutional offer signing does not prove candidate identity. Candidate acceptance is unavailable until a governed identity-binding source exists; employee admission remains separate.',
+      primary: 'Offer commands use EOS authority',
+      kpis: [
+        ['Offers', offers, 'Tenant-scoped EOS offer total'],
+        ['Visible page', isVerifiedReadState(datasetReadStates?.offers) ? datasets.offers.items.length : 'Unavailable', 'Rows in this verified page'],
+        ['EOS ACCEPTED status', isVerifiedReadState(datasetReadStates?.offers) ? datasets.offers.items.filter(item => item.status === 'ACCEPTED').length : 'Unavailable', 'Source status only; candidate identity binding is not certified']
+      ],
+      process: ['Review source-verified offers', 'Confirm independent decision state', 'Candidate acceptance is disabled pending governed identity proofing', 'Employee admission remains unavailable and separate']
     },
     jobOpenings: {
       kicker: 'Capacity Planning',
@@ -2162,7 +2271,11 @@ const buildHrWorkspace = ({ activeTab, snapshot, datasets, telemetryCount }) => 
       process: ['Generate employment contract', 'Generate appointment letter', 'Review remuneration addendum', 'Export artifact ledger']
     }
   };
-  return models[activeTab] || models.employees;
+  const model = models[activeTab] || models.employees;
+  if (!isVerifiedReadState(datasetReadStates?.[activeTab]) && !isVerifiedReadState(snapshotReadState)) {
+    model.kpis = model.kpis.map(([label, value, detail]) => label === 'Templates' ? [label, value, detail] : [label, 'Unavailable', detail]);
+  }
+  return model;
 };
 
 /**
@@ -2172,11 +2285,37 @@ const buildHrWorkspace = ({ activeTab, snapshot, datasets, telemetryCount }) => 
  * @collaboration Wilson mandated HR must become a usable business operating surface, not a static data table.
  */
 const HrDashboard = () => {
-  const { activeTenant } = useTenants();
+  const { activeTenant, authorityMismatch } = useTenants();
   const auth = useAuth() || {};
   const { user: authUser, logout } = auth;
-  const user = authUser || readBrowserUser();
-  const tenantId = activeTenant?.tenantId || activeTenant?.id || DEFAULT_TENANT_ID;
+  const authenticatedTenantId = typeof auth.tenantId === 'string'
+    && auth.tenantId.trim() === auth.tenantId
+    && auth.tenantId.length > 0
+    ? auth.tenantId
+    : null;
+  const activeTenantId = activeTenant?.tenantId
+    || activeTenant?.tenant_id
+    || activeTenant?.id
+    || null;
+  const principalId = typeof authUser?.id === 'string'
+    && authUser.id.trim() === authUser.id
+    && authUser.id.length > 0
+    ? authUser.id
+    : null;
+  const tenantId = auth.isAuthenticated === true
+    && !authorityMismatch
+    && authenticatedTenantId
+    && activeTenantId === authenticatedTenantId
+    && principalId
+    ? authenticatedTenantId
+    : null;
+  const tenantScopeKey = tenantId
+    ? `${tenantId}\u001f${principalId}\u001f${String(auth.sessionGeneration ?? '')}`
+    : null;
+  const tenantScopeKeyRef = useRef(tenantScopeKey);
+  tenantScopeKeyRef.current = tenantScopeKey;
+  const previousTenantScopeKeyRef = useRef(tenantScopeKey);
+  const user = authUser || {};
   const [activeTab, setActiveTab] = useState('employees');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -2203,6 +2342,7 @@ const HrDashboard = () => {
   const [pageStates, setPageStates] = useState({
     employees: { ...DEFAULT_PAGE },
     candidates: { ...DEFAULT_PAGE },
+    offers: { ...DEFAULT_PAGE },
     jobOpenings: { ...DEFAULT_PAGE },
     payroll: { ...DEFAULT_PAGE },
     benefits: { ...DEFAULT_PAGE },
@@ -2213,13 +2353,102 @@ const HrDashboard = () => {
     artifacts: { ...DEFAULT_PAGE }
   });
   const [showModal, setShowModal] = useState(false);
+  const [showHiringCommand, setShowHiringCommand] = useState(false);
+  const [hiringCommand, setHiringCommand] = useState({ kind: '', item: null, scopeKey: null });
+  const [hiringForm, setHiringForm] = useState({});
+  const [hiringCommandState, setHiringCommandState] = useState({ status: 'IDLE', detail: '' });
+  const [candidateEvidenceState, setCandidateEvidenceState] = useState(createEmptyCandidateEvidenceState);
+  const candidateEvidenceOperationRef = useRef(null);
+  const hiringCommandKeysRef = useRef(new Map());
+  const hiringCommandInFlightRef = useRef(null);
   const [editingItem, setEditingItem] = useState(null);
   const [modalType, setModalType] = useState('employee');
   const [formState, setFormState] = useState({});
-  const { events: telemetryEvents = [] } = useTelemetryFeed(tenantId);
+  const [dataScopeKey, setDataScopeKey] = useState(null);
+  const [datasetReadStates, setDatasetReadStates] = useState(() => createInitialDatasetReadStates());
+  const [snapshotReadState, setSnapshotReadState] = useState({ status: HR_READ_STATE.PENDING, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode: null, revalidating: false });
+  const snapshotRequestSequenceRef = useRef(0);
+  const datasetRequestSequencesRef = useRef({});
+  const invalidatedSessionScopeKeyRef = useRef(null);
+  const {
+    events: telemetryEvents = [],
+    isSyncing: telemetrySyncing,
+    error: telemetryError
+  } = useTelemetryFeed(tenantId);
+
+  /**
+   * @function invalidateHrSessionScope
+   * @description Clears all HR state and rejects pending reads after EOS rejects the session.
+   * @param {string} scopeKey - Exact authenticated principal, tenant, and session generation.
+   * @param {string} errorCode - Sanitized source error code for the authentication state.
+   * @returns {boolean} Whether the current HR scope was invalidated.
+   * @collaboration A 401 from any HR source invalidates all parallel requests for this scope.
+   */
+  const invalidateHrSessionScope = useCallback((scopeKey, errorCode) => {
+    if (!scopeKey || tenantScopeKeyRef.current !== scopeKey) return false;
+    invalidatedSessionScopeKeyRef.current = scopeKey;
+    snapshotRequestSequenceRef.current += 1;
+    for (const datasetName of Object.keys(DATASET_DEFAULTS)) {
+      datasetRequestSequencesRef.current[datasetName] = (datasetRequestSequencesRef.current[datasetName] || 0) + 1;
+    }
+    setSnapshot(createEmptySnapshot());
+    setSnapshotReadState({ status: HR_READ_STATE.AUTHENTICATION_REQUIRED, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode, revalidating: false });
+    setDatasets(DATASET_DEFAULTS);
+    setDatasetReadStates(createInitialDatasetReadStates(HR_READ_STATE.AUTHENTICATION_REQUIRED));
+    hiringCommandKeysRef.current.clear();
+    hiringCommandInFlightRef.current = null;
+    setShowHiringCommand(false);
+    setHiringCommand({ kind: '', item: null, scopeKey: null });
+    setHiringForm({});
+    candidateEvidenceOperationRef.current = null;
+    setCandidateEvidenceState(createEmptyCandidateEvidenceState());
+    setHiringCommandState({ status: 'IDLE', detail: '' });
+    setDataScopeKey(null);
+    setIsRefreshing(false);
+    setLoading(false);
+    setFeedback({ tone: 'risk', title: 'Authentication required', detail: 'The current EOS session could not be verified. Sign in again to reopen HR data.' });
+    return true;
+  }, []);
+
+  useEffect(() => {
+    if (previousTenantScopeKeyRef.current === tenantScopeKey) return;
+    previousTenantScopeKeyRef.current = tenantScopeKey;
+    setDataScopeKey(null);
+    hiringCommandKeysRef.current.clear();
+    hiringCommandInFlightRef.current = null;
+    setShowHiringCommand(false);
+    setHiringCommand({ kind: '', item: null, scopeKey: null });
+    setHiringForm({});
+    candidateEvidenceOperationRef.current = null;
+    setCandidateEvidenceState(createEmptyCandidateEvidenceState());
+    setHiringCommandState({ status: 'IDLE', detail: '' });
+    snapshotRequestSequenceRef.current += 1;
+    datasetRequestSequencesRef.current = {};
+    setSnapshot(createEmptySnapshot());
+    setSnapshotReadState({ status: tenantScopeKey ? HR_READ_STATE.PENDING : HR_READ_STATE.AUTHENTICATION_REQUIRED, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode: null, revalidating: false });
+    setDatasets(DATASET_DEFAULTS);
+    setDatasetReadStates(createInitialDatasetReadStates(tenantScopeKey ? HR_READ_STATE.PENDING : HR_READ_STATE.AUTHENTICATION_REQUIRED));
+    setArtifactCatalog(HR_ARTIFACT_TYPES);
+    setArtifactForm(ARTIFACT_FORM_DEFAULTS);
+    setFormState({});
+    setEditingItem(null);
+    setShowModal(false);
+    setShowArtifactModal(false);
+    setShowProfilePanel(false);
+    setLoading(Boolean(tenantScopeKey));
+    setIsRefreshing(false);
+    if (!tenantScopeKey) {
+      setFeedback({
+        tone: 'warning',
+        title: 'Authenticated tenant required',
+        detail: 'HR data and commands are unavailable until Python EOS provides a current principal and matching tenant workspace.'
+      });
+    }
+  }, [tenantScopeKey]);
   const hrActivities = useMemo(() => telemetryEvents.filter(event => String(event.eventType || '').toUpperCase().includes('HR')).slice(0, 8), [telemetryEvents]);
+  const telemetryCount = telemetryError || telemetrySyncing ? 'Unavailable' : hrActivities.length;
   const activeConfig = getTabConfig(activeTab);
-  const workspace = useMemo(() => buildHrWorkspace({ activeTab, snapshot, datasets, telemetryCount: hrActivities.length }), [activeTab, datasets, hrActivities.length, snapshot]);
+  const workspace = useMemo(() => buildHrWorkspace({ activeTab, snapshot, datasets, datasetReadStates, snapshotReadState, telemetryCount }), [activeTab, datasetReadStates, datasets, snapshot, snapshotReadState, telemetryCount]);
   const operatorName = resolveOperatorName(user);
   const activeArtifactTemplate = ARTIFACT_TEMPLATE_GUIDANCE[artifactForm.artifactType] || ARTIFACT_TEMPLATE_GUIDANCE.employment_contract;
   const artifactRequiresRelations = isEmployeeRelationsArtifact(artifactForm.artifactType);
@@ -2410,14 +2639,35 @@ const HrDashboard = () => {
    * @collaboration First viewport KPIs should come from one backend summary instead of client-side guessing.
    */
   const fetchSnapshot = useCallback(async () => {
+    const requestedScopeKey = tenantScopeKey;
+    if (!tenantId || !requestedScopeKey || invalidatedSessionScopeKeyRef.current === requestedScopeKey) return { status: HR_READ_STATE.AUTHENTICATION_REQUIRED };
+    const requestSequence = snapshotRequestSequenceRef.current + 1;
+    snapshotRequestSequenceRef.current = requestSequence;
+    setSnapshotReadState((previous) => ({ ...previous, revalidating: true, errorCode: null }));
     try {
-      const response = await api.get('/hr/snapshot', { params: { tenantId }, headers: { 'X-Tenant-ID': tenantId }, skipAuthRedirect: true });
-      setSnapshot(response.data || createEmptySnapshot());
+      const response = await api.get('/hr/snapshot', { params: { tenantId }, headers: { 'X-Tenant-ID': tenantId } });
+      const verifiedSnapshot = normalizeSnapshot(response?.data);
+      if (tenantScopeKeyRef.current !== requestedScopeKey || snapshotRequestSequenceRef.current !== requestSequence) return { status: 'SUPERSEDED' };
+      const verifiedAt = new Date().toISOString();
+      setSnapshot(verifiedSnapshot);
+      setSnapshotReadState({ status: HR_READ_STATE.VERIFIED_DATA, verifiedAt, lastVerifiedAt: verifiedAt, lastVerifiedStatus: HR_READ_STATE.VERIFIED_DATA, errorCode: null, revalidating: false });
+      return { status: HR_READ_STATE.VERIFIED_DATA };
     } catch (error) {
-      setSnapshot(createEmptySnapshot());
-      pushFeedback(resolveHrErrorFeedback(error, 'HR snapshot pending'));
+      if (tenantScopeKeyRef.current !== requestedScopeKey || snapshotRequestSequenceRef.current !== requestSequence) return { status: 'SUPERSEDED' };
+      const failureState = classifyHrReadFailure(error);
+      const errorCode = hrReadErrorCode(error);
+      if (failureState === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(requestedScopeKey, errorCode);
+      } else if (failureState === HR_READ_STATE.ACCESS_DENIED) {
+        setSnapshot(createEmptySnapshot());
+        setSnapshotReadState({ status: failureState, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode, revalidating: false });
+      } else {
+        setSnapshotReadState((previous) => unavailableReadState(previous, errorCode));
+      }
+      pushFeedback(resolveHrErrorFeedback(error, 'HR summary unavailable'));
+      return { status: failureState };
     }
-  }, [pushFeedback, tenantId]);
+  }, [invalidateHrSessionScope, pushFeedback, tenantId, tenantScopeKey]);
 
   /**
    * @function fetchTabData
@@ -2429,46 +2679,92 @@ const HrDashboard = () => {
    * @collaboration Fetching by active process keeps HR responsive with large workforce ledgers.
    */
   const fetchTabData = useCallback(async (tabName, targetPage = DEFAULT_PAGE, currentSearch = '') => {
-    const search = currentSearch;
-    const params = { limit: targetPage.limit, offset: targetPage.offset, search };
+    const requestedScopeKey = tenantScopeKey;
+    if (!tenantId || !requestedScopeKey || invalidatedSessionScopeKeyRef.current === requestedScopeKey) return { status: HR_READ_STATE.AUTHENTICATION_REQUIRED };
+    const requestSequence = (datasetRequestSequencesRef.current[tabName] || 0) + 1;
+    datasetRequestSequencesRef.current[tabName] = requestSequence;
+    setDatasetReadStates((previous) => ({ ...previous, [tabName]: { ...(previous[tabName] || {}), revalidating: true, errorCode: null } }));
+    const params = { limit: targetPage.limit, offset: targetPage.offset, search: currentSearch };
     const readers = {
-      employees: () => hrService.getEmployees(tenantId, params),
-      candidates: () => hrService.getRecruitmentCandidates(tenantId, params),
+      employees: async () => {
+        const query = typeof currentSearch === 'string' ? currentSearch.trim() : '';
+        const response = await api.get('/hr/workforce', {
+          params: {
+            limit: params.limit,
+            offset: params.offset,
+            ...(query.length >= 2 ? { q: query } : {})
+          },
+          headers: { 'X-Tenant-ID': tenantId }
+        });
+        const sourcePage = response?.data;
+        if (!sourcePage || !Array.isArray(sourcePage.items)) return sourcePage;
+        return {
+          ...sourcePage,
+          items: sourcePage.items.map((employee) => ({
+            ...employee,
+            id: employee.employeeId,
+            name: employee.displayName || employee.preferredName,
+            email: employee.workEmail,
+            position: employee.jobTitle,
+            status: employee.employmentStatus
+          }))
+        };
+      },
+      candidates: () => hrService.getHiringCandidates(tenantId, params),
+      offers: () => hrService.getHiringOffers(tenantId, params),
       jobOpenings: () => hrService.getJobOpenings(tenantId, params),
       payroll: () => hrService.getPayrollSummary(tenantId, params),
       benefits: () => hrService.getBenefits(tenantId, params),
       performance: () => hrService.getPerformanceReviews(tenantId, params),
-      activity: () => Promise.resolve({
-        ...EMPTY_DATASET,
-        limit: params.limit,
-        offset: params.offset,
-        authorityUnavailable: 'HR_WORK_LOG_AUTHORITY_NOT_CERTIFIED'
-      }),
-      relations: () => Promise.resolve({
-        ...EMPTY_DATASET,
-        limit: params.limit,
-        offset: params.offset,
-        authorityUnavailable: 'HR_EMPLOYEE_RELATION_ROUTE_NOT_CERTIFIED'
-      }),
+      activity: () => Promise.resolve({ authorityUnavailable: 'HR_WORK_LOG_AUTHORITY_NOT_CERTIFIED' }),
+      relations: () => Promise.resolve({ authorityUnavailable: 'HR_EMPLOYEE_RELATION_ROUTE_NOT_CERTIFIED' }),
       timeoff: () => hrService.getTimeOffRequests(tenantId, params),
-      artifacts: () => Promise.resolve({
-        ...EMPTY_DATASET,
-        limit: params.limit,
-        offset: params.offset,
-        authorityUnavailable: 'HR_ARTIFACT_CLIENT_CONTRACT_NOT_CERTIFIED'
-      })
+      artifacts: () => Promise.resolve({ authorityUnavailable: 'HR_ARTIFACT_CLIENT_CONTRACT_NOT_CERTIFIED' })
     };
     try {
       const payload = await readers[tabName]();
-      if (tabName === 'artifacts' && Array.isArray(payload.catalog) && payload.catalog.length) {
-        setArtifactCatalog(payload.catalog);
+      if (tenantScopeKeyRef.current !== requestedScopeKey || datasetRequestSequencesRef.current[tabName] !== requestSequence) return { status: 'SUPERSEDED' };
+      if (payload?.authorityUnavailable) {
+        setDatasetReadStates((previous) => ({ ...previous, [tabName]: unavailableReadState(previous[tabName], payload.authorityUnavailable) }));
+        return { status: HR_READ_STATE.SOURCE_UNAVAILABLE };
       }
-      setDatasets(previous => ({ ...previous, [tabName]: normalizeDataset(payload, targetPage) }));
+      if (tabName === 'candidates' && (!Array.isArray(payload?.items) || payload.items.some((item) => (
+        !item || item.tenant_id !== tenantId || typeof item.candidate_id !== 'string'
+        || typeof item.requisition_id !== 'string'
+        || !['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK', 'SELECTED', 'DECLINED', 'WITHDRAWN'].includes(item.stage)
+        || !Number.isSafeInteger(item.revision) || item.revision < 1
+        || typeof item.fingerprint !== 'string' || !/^[0-9a-f]{128}$/.test(item.fingerprint)
+      )))) throw Object.assign(new Error('HR_HIRING_CANDIDATE_PAGE_INVALID'), { code: 'HR_HIRING_CANDIDATE_PAGE_INVALID' });
+      if (tabName === 'offers' && (!Array.isArray(payload?.items) || payload.items.some((item) => (
+        !item || item.tenant_id !== tenantId || typeof item.offer_id !== 'string'
+        || typeof item.candidate_id !== 'string' || typeof item.requisition_id !== 'string'
+        || !['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'SENT', 'ACCEPTED', 'DECLINED', 'WITHDRAWN', 'EXPIRED'].includes(item.status)
+        || !Number.isSafeInteger(item.revision) || item.revision < 1
+        || typeof item.fingerprint !== 'string' || !/^[0-9a-f]{128}$/.test(item.fingerprint)
+      )))) throw Object.assign(new Error('HR_HIRING_OFFER_PAGE_INVALID'), { code: 'HR_HIRING_OFFER_PAGE_INVALID' });
+      const verifiedDataset = normalizeDataset(payload);
+      const verifiedAt = new Date().toISOString();
+      const state = verifiedDataset.total === 0 && verifiedDataset.items.length === 0 ? HR_READ_STATE.VERIFIED_EMPTY : HR_READ_STATE.VERIFIED_DATA;
+      setDatasets((previous) => ({ ...previous, [tabName]: verifiedDataset }));
+      setDatasetReadStates((previous) => ({ ...previous, [tabName]: { status: state, verifiedAt, lastVerifiedAt: verifiedAt, lastVerifiedStatus: state, errorCode: null, revalidating: false } }));
+      if (tabName === 'artifacts' && Array.isArray(payload.catalog) && payload.catalog.length) setArtifactCatalog(payload.catalog);
+      return { status: state, dataset: verifiedDataset };
     } catch (error) {
-      setDatasets(previous => ({ ...previous, [tabName]: { ...EMPTY_DATASET, limit: targetPage.limit, offset: targetPage.offset } }));
-      pushFeedback(resolveHrErrorFeedback(error, `${getTabConfig(tabName).label} pending`));
+      if (tenantScopeKeyRef.current !== requestedScopeKey || datasetRequestSequencesRef.current[tabName] !== requestSequence) return { status: 'SUPERSEDED' };
+      const failureState = classifyHrReadFailure(error);
+      const errorCode = hrReadErrorCode(error);
+      if (failureState === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(requestedScopeKey, errorCode);
+      } else if (failureState === HR_READ_STATE.ACCESS_DENIED) {
+        setDatasets((previous) => ({ ...previous, [tabName]: { ...EMPTY_DATASET, limit: targetPage.limit, offset: targetPage.offset } }));
+        setDatasetReadStates((previous) => ({ ...previous, [tabName]: { status: failureState, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode, revalidating: false } }));
+      } else {
+        setDatasetReadStates((previous) => ({ ...previous, [tabName]: unavailableReadState(previous[tabName], errorCode) }));
+      }
+      pushFeedback(resolveHrErrorFeedback(error, `${getTabConfig(tabName).label} unavailable`));
+      return { status: failureState };
     }
-  }, [pushFeedback, tenantId]);
+  }, [invalidateHrSessionScope, pushFeedback, tenantId, tenantScopeKey]);
 
   /**
    * @function loadDashboard
@@ -2477,17 +2773,33 @@ const HrDashboard = () => {
    * @collaboration Refresh should be useful and bounded, not a full-page freeze.
    */
   const loadDashboard = useCallback(async () => {
+    if (!tenantId || !tenantScopeKey) {
+      setDataScopeKey(null);
+      setSnapshot(createEmptySnapshot());
+      setSnapshotReadState({ status: HR_READ_STATE.AUTHENTICATION_REQUIRED, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode: null, revalidating: false });
+      setDatasets(DATASET_DEFAULTS);
+      setDatasetReadStates(createInitialDatasetReadStates(HR_READ_STATE.AUTHENTICATION_REQUIRED));
+      setIsRefreshing(false);
+      setLoading(false);
+      return;
+    }
+    const requestedScopeKey = tenantScopeKey;
     setIsRefreshing(true);
-    const reads = [
-      fetchSnapshot(),
-      fetchTabData(activeTab, pageStates[activeTab], searchTerm)
-    ];
+    const reads = [fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)];
     if (activeTab !== 'employees') reads.push(fetchTabData('employees', pageStates.employees, ''));
     if (!['jobOpenings', 'employees'].includes(activeTab)) reads.push(fetchTabData('jobOpenings', pageStates.jobOpenings, ''));
-    await Promise.allSettled(reads);
+    const outcomes = await Promise.all(reads);
+    if (tenantScopeKeyRef.current !== requestedScopeKey) return;
+    if (outcomes.some((outcome) => outcome.status === HR_READ_STATE.AUTHENTICATION_REQUIRED)) {
+      setDataScopeKey(null);
+      setIsRefreshing(false);
+      setLoading(false);
+      return;
+    }
+    setDataScopeKey(requestedScopeKey);
     setIsRefreshing(false);
     setLoading(false);
-  }, [activeTab, fetchSnapshot, fetchTabData, pageStates, searchTerm]);
+  }, [activeTab, fetchSnapshot, fetchTabData, pageStates, searchTerm, tenantId, tenantScopeKey]);
 
   useEffect(() => {
     loadDashboard();
@@ -2513,7 +2825,380 @@ const HrDashboard = () => {
    * @returns {void}
    * @collaboration HR mutations need real fields, not an empty placeholder commit.
    */
+  const beginHiringCommand = (kind, item = null) => {
+    if (!tenantScopeKey || !tenantId || hiringCommandInFlightRef.current) return;
+    const nextCandidateStages = {
+      APPLIED: ['SCREENING', 'DECLINED', 'WITHDRAWN'],
+      SCREENING: ['INTERVIEW', 'DECLINED', 'WITHDRAWN'],
+      INTERVIEW: ['REFERENCE_CHECK', 'DECLINED', 'WITHDRAWN'],
+      REFERENCE_CHECK: ['SELECTED', 'DECLINED', 'WITHDRAWN'],
+    };
+    const defaults = {
+      candidateCreate: { candidate_id: '', requisition_id: '', candidate_profile_reference: '', source: '' },
+      candidateTransition: {
+        expected_revision: item?.revision || 0,
+        target_stage: nextCandidateStages[item?.stage]?.[0] || '',
+        reason: '', evidence_reference: '', evidence_fingerprint: '',
+      },
+      offerCreate: {
+        offer_id: '', candidate_id: item?.candidate_id || '', requisition_id: item?.requisition_id || '',
+        position_title: '', employment_type: '', work_location: '', currency: 'ZAR',
+        gross_compensation_minor: '', pay_frequency: 'MONTHLY', start_date: '', expires_at: '',
+      },
+      offerSubmit: { expected_revision: item?.revision || 0 },
+      offerDecision: { expected_revision: item?.revision || 0, approved: true, reason: '' },
+      offerSend: { expected_revision: item?.revision || 0 },
+    };
+    setHiringCommand({ kind, item, scopeKey: tenantScopeKey });
+    setHiringForm(defaults[kind] || {});
+    candidateEvidenceOperationRef.current = null;
+    setCandidateEvidenceState(createEmptyCandidateEvidenceState());
+    setHiringCommandState({ status: 'IDLE', detail: '' });
+    setShowHiringCommand(true);
+  };
+
+  /**
+   * @description Admits one in-memory file selection for exact-tenant candidate evidence custody.
+   * @param {Event} event - Browser file-input change event.
+   * @returns {void} Updates only the current candidate-transition draft.
+   */
+  const selectCandidateEvidenceFile = (event) => {
+    const file = event.target.files?.[0] || null;
+    if (!file) {
+      setCandidateEvidenceState(createEmptyCandidateEvidenceState());
+      setHiringForm((previous) => ({ ...previous, evidence_reference: '', evidence_fingerprint: '' }));
+      return;
+    }
+    if (
+      !tenantScopeKey || hiringCommand.scopeKey !== tenantScopeKey
+      || hiringCommand.kind !== 'candidateTransition'
+    ) return;
+    if (
+      !Object.prototype.hasOwnProperty.call(CANDIDATE_EVIDENCE_MEDIA_TYPES, file.type)
+      || file.size < 1 || file.size > 100 * 1024 * 1024
+    ) {
+      setCandidateEvidenceState({
+        ...createEmptyCandidateEvidenceState(), status: 'UNAVAILABLE', scopeKey: tenantScopeKey,
+        detail: 'Choose a nonempty PDF, DOC, DOCX, JPEG or PNG under the EOS 100 MB limit.',
+      });
+      return;
+    }
+    const uuid = globalThis.crypto?.randomUUID?.();
+    if (typeof uuid !== 'string' || !uuid) {
+      setCandidateEvidenceState({
+        ...createEmptyCandidateEvidenceState(), status: 'UNAVAILABLE', scopeKey: tenantScopeKey,
+        detail: 'A secure evidence identity could not be generated. No upload was sent.',
+      });
+      return;
+    }
+    setHiringForm((previous) => ({ ...previous, evidence_reference: '', evidence_fingerprint: '' }));
+    setCandidateEvidenceState({
+      ...createEmptyCandidateEvidenceState(), status: 'SELECTED', scopeKey: tenantScopeKey,
+      candidateId: hiringCommand.item?.candidate_id || null,
+      evidenceId: `EVD-${uuid}`, evidenceVersionId: `VER-${uuid}`, file,
+      detail: `${file.size.toLocaleString('en-ZA')} bytes selected. EOS custody and exact-version readback are required before the stage can advance.`,
+    });
+  };
+
+  /**
+   * @description Uploads or re-reads one fixed evidence identity, verifies the binary digest and size, and binds it to this candidate draft.
+   * @param {{upload?:boolean}} [options] - Upload once when true; otherwise re-read the existing exact object after an uncertain acknowledgement.
+   * @returns {Promise<void>} Explicit verified or unavailable evidence state.
+   */
+  const verifyCandidateEvidence = async ({ upload = false } = {}) => {
+    if (
+      !tenantId || !tenantScopeKey || hiringCommand.scopeKey !== tenantScopeKey
+      || hiringCommand.kind !== 'candidateTransition' || candidateEvidenceOperationRef.current
+    ) return;
+    const selection = candidateEvidenceState;
+    const requestedScope = tenantScopeKey;
+    if (
+      selection.scopeKey !== requestedScope || selection.candidateId !== hiringCommand.item?.candidate_id
+      || !selection.evidenceId || !selection.evidenceVersionId
+      || (upload && !selection.file)
+    ) {
+      setCandidateEvidenceState((previous) => ({
+        ...previous, status: 'UNAVAILABLE',
+        detail: 'Select an evidence file for the current candidate before using EOS custody.',
+      }));
+      return;
+    }
+    const operationToken = Symbol('candidate-evidence');
+    candidateEvidenceOperationRef.current = operationToken;
+    setCandidateEvidenceState((previous) => ({
+      ...previous, status: upload ? 'UPLOADING' : 'VERIFYING', detail: upload
+        ? 'Streaming the selected file to Python EOS; no hiring stage changes in this step.'
+        : 'Reading this exact evidence version from Python EOS.',
+    }));
+    let expectedDigest = selection.expectedDigest;
+    let uploadReceipt = null;
+    try {
+      if (selection.file && !expectedDigest) {
+        expectedDigest = sha3_512(new Uint8Array(await selection.file.arrayBuffer()));
+      }
+      if (tenantScopeKeyRef.current !== requestedScope || candidateEvidenceOperationRef.current !== operationToken) return;
+      if (upload) {
+        const mediaType = selection.file.type;
+        const extension = CANDIDATE_EVIDENCE_MEDIA_TYPES[mediaType];
+        try {
+          uploadReceipt = await hrService.uploadHiringCandidateEvidence(
+            selection.candidateId, selection.evidenceId, selection.evidenceVersionId,
+            selection.file,
+            { mediaType, originalFilename: `candidate-profile${extension}`, evidenceKind: 'CANDIDATE_PROFILE' },
+            tenantId,
+          );
+        } catch (uploadError) {
+          if (classifyHrReadFailure(uploadError) === HR_READ_STATE.AUTHENTICATION_REQUIRED) throw uploadError;
+          setCandidateEvidenceState((previous) => ({
+            ...previous, expectedDigest, status: 'VERIFYING',
+            detail: 'Upload acknowledgement was unavailable. Checking the same exact evidence version before reporting an outcome.',
+          }));
+        }
+      }
+      if (tenantScopeKeyRef.current !== requestedScope || candidateEvidenceOperationRef.current !== operationToken) return;
+      setCandidateEvidenceState((previous) => ({
+        ...previous, expectedDigest, status: 'VERIFYING',
+        detail: 'Verifying the exact candidate evidence version and SHA3-512 readback from Python EOS.',
+      }));
+      const readback = await hrService.readHiringCandidateEvidence(
+        selection.candidateId, selection.evidenceId, selection.evidenceVersionId, tenantId,
+      );
+      const readbackDigest = sha3_512(new Uint8Array(await readback.blob.arrayBuffer()));
+      if (
+        !expectedDigest || readbackDigest !== expectedDigest
+        || readback.contentDigestSha3_512 !== readbackDigest
+        || readback.contentLength !== selection.file?.size
+        || (uploadReceipt && (
+          uploadReceipt.content_digest_sha3_512 !== readbackDigest
+          || uploadReceipt.byte_length !== readback.contentLength
+        ))
+      ) {
+        throw Object.assign(new Error('HR_EVIDENCE_SOURCE_READBACK_MISMATCH'), {
+          code: 'HR_EVIDENCE_SOURCE_READBACK_MISMATCH', status: 502,
+        });
+      }
+      if (tenantScopeKeyRef.current !== requestedScope || candidateEvidenceOperationRef.current !== operationToken) return;
+      const reference = `candidate-evidence://${selection.evidenceId}/${selection.evidenceVersionId}`;
+      setCandidateEvidenceState((previous) => ({
+        ...previous, status: 'VERIFIED', file: null, expectedDigest: readbackDigest,
+        contentDigestSha3_512: readbackDigest, reference,
+        detail: `EOS custody and exact-version readback verified · ${readback.contentLength.toLocaleString('en-ZA')} bytes · SHA3-512 matched.`,
+      }));
+      setHiringForm((previous) => ({
+        ...previous, evidence_reference: reference, evidence_fingerprint: readbackDigest,
+      }));
+    } catch (error) {
+      if (tenantScopeKeyRef.current !== requestedScope || candidateEvidenceOperationRef.current !== operationToken) return;
+      const errorCode = hrReadErrorCode(error);
+      if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(requestedScope, errorCode);
+        return;
+      }
+      setHiringForm((previous) => ({ ...previous, evidence_reference: '', evidence_fingerprint: '' }));
+      setCandidateEvidenceState((previous) => ({
+        ...previous, expectedDigest, status: 'UNVERIFIED',
+        detail: `Candidate evidence is not verified (${errorCode}). No stage command is enabled. Use “Check existing evidence” for this same version or discard the draft.`,
+      }));
+    } finally {
+      if (candidateEvidenceOperationRef.current === operationToken) candidateEvidenceOperationRef.current = null;
+    }
+  };
+
+  /**
+   * @description Executes one existing Python EOS hiring command and verifies its exact current-tenant readback.
+   * @collaboration Candidate and offer table controls in the authenticated HR workspace.
+   * @institutional Acknowledgement is never presented as completion; source readback must match identity, fingerprint, revision and lifecycle state.
+   * @returns {Promise<void>} Settled command attempt; failures remain explicit and retry keys are retained for exact replay.
+   */
+  const saveHiringCommand = async () => {
+    if (!tenantScopeKey || !tenantId || hiringCommandInFlightRef.current) return;
+    const requestedScope = tenantScopeKey;
+    const { kind, item } = hiringCommand;
+    const form = { ...hiringForm };
+    const isCandidate = kind.startsWith('candidate');
+    const tabName = isCandidate ? 'candidates' : 'offers';
+    let payload;
+    let aggregateId;
+    let action;
+    try {
+      if (kind === 'candidateCreate') {
+        payload = {
+          candidate_id: String(form.candidate_id || '').trim(),
+          requisition_id: String(form.requisition_id || '').trim(),
+          candidate_profile_reference: String(form.candidate_profile_reference || '').trim(),
+          source: String(form.source || '').trim(),
+        };
+        aggregateId = payload.candidate_id;
+        action = 'create candidate';
+      } else if (kind === 'candidateTransition') {
+        payload = {
+          expected_revision: item?.revision,
+          target_stage: form.target_stage,
+          reason: String(form.reason || '').trim(),
+          evidence_reference: String(form.evidence_reference || '').trim(),
+          evidence_fingerprint: String(form.evidence_fingerprint || '').trim(),
+        };
+        aggregateId = item?.candidate_id;
+        action = 'advance candidate';
+      } else if (kind === 'offerCreate') {
+        payload = {
+          offer_id: String(form.offer_id || '').trim(),
+          candidate_id: String(form.candidate_id || '').trim(),
+          requisition_id: String(form.requisition_id || '').trim(),
+          position_title: String(form.position_title || '').trim(),
+          employment_type: String(form.employment_type || '').trim(),
+          work_location: String(form.work_location || '').trim(),
+          currency: String(form.currency || '').trim().toUpperCase(),
+          gross_compensation_minor: Number(form.gross_compensation_minor),
+          pay_frequency: String(form.pay_frequency || '').trim().toUpperCase(),
+          start_date: String(form.start_date || '').trim(),
+          expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : '',
+        };
+        aggregateId = payload.offer_id;
+        action = 'prepare offer';
+      } else if (kind === 'offerSubmit') {
+        payload = { expected_revision: item?.revision };
+        aggregateId = item?.offer_id;
+        action = 'submit offer';
+      } else if (kind === 'offerDecision') {
+        payload = {
+          expected_revision: item?.revision,
+          approved: form.approved === true,
+          reason: String(form.reason || '').trim(),
+        };
+        aggregateId = item?.offer_id;
+        action = payload.approved ? 'approve offer' : 'reject offer';
+      } else if (kind === 'offerSend') {
+        payload = { expected_revision: item?.revision };
+        aggregateId = item?.offer_id;
+        action = 'send offer';
+      } else {
+        throw Object.assign(new Error('HR_HIRING_COMMAND_UNAVAILABLE'), { code: 'HR_HIRING_COMMAND_UNAVAILABLE' });
+      }
+      if (kind === 'candidateTransition' && (
+        candidateEvidenceState.status !== 'VERIFIED'
+        || candidateEvidenceState.scopeKey !== requestedScope
+        || candidateEvidenceState.candidateId !== item?.candidate_id
+        || candidateEvidenceState.reference !== payload.evidence_reference
+        || candidateEvidenceState.contentDigestSha3_512 !== payload.evidence_fingerprint
+      )) {
+        throw Object.assign(new Error('HR_CANDIDATE_EVIDENCE_NOT_VERIFIED'), { code: 'HR_CANDIDATE_EVIDENCE_NOT_VERIFIED' });
+      }
+      if (kind === 'offerCreate' && form.expires_at && !Number.isFinite(Date.parse(form.expires_at))) {
+        throw Object.assign(new Error('HR_OFFER_EXPIRY_INVALID'), { code: 'HR_OFFER_EXPIRY_INVALID' });
+      }
+    } catch (error) {
+      setHiringCommandState({ status: 'SOURCE_UNAVAILABLE', detail: 'Command input is incomplete or invalid (' + hrReadErrorCode(error) + '). No request was sent.' });
+      return;
+    }
+
+    const intent = requestedScope + ':' + kind + ':' + JSON.stringify(payload);
+    let idempotencyKey = hiringCommandKeysRef.current.get(intent);
+    if (!idempotencyKey) {
+      if (typeof globalThis.crypto?.randomUUID !== 'function') {
+        setHiringCommandState({ status: 'SOURCE_UNAVAILABLE', detail: 'A secure command idempotency key could not be generated. No request was sent.' });
+        return;
+      }
+      idempotencyKey = globalThis.crypto.randomUUID();
+      hiringCommandKeysRef.current.set(intent, idempotencyKey);
+    }
+
+    const token = Symbol(kind);
+    hiringCommandInFlightRef.current = token;
+    setHiringCommandState({ status: 'PENDING', detail: 'Python EOS is authorizing and recording ' + action + '.' });
+    setIsRefreshing(true);
+    try {
+      let acknowledgement;
+      if (kind === 'candidateCreate') acknowledgement = await hrService.createHiringCandidate(payload, tenantId, idempotencyKey);
+      if (kind === 'candidateTransition') acknowledgement = await hrService.transitionHiringCandidate(aggregateId, payload, tenantId, idempotencyKey);
+      if (kind === 'offerCreate') acknowledgement = await hrService.createHiringOffer(payload, tenantId, idempotencyKey);
+      if (kind === 'offerSubmit') acknowledgement = await hrService.submitHiringOffer(aggregateId, item.revision, tenantId, idempotencyKey);
+      if (kind === 'offerDecision') acknowledgement = await hrService.decideHiringOffer(aggregateId, payload, tenantId, idempotencyKey);
+      if (kind === 'offerSend') acknowledgement = await hrService.sendHiringOffer(aggregateId, item.revision, tenantId, idempotencyKey);
+      if (tenantScopeKeyRef.current !== requestedScope || hiringCommandInFlightRef.current !== token) return;
+
+      const identityField = isCandidate ? 'candidate_id' : 'offer_id';
+      const lifecycleField = isCandidate ? 'stage' : 'status';
+      if (
+        !acknowledgement || acknowledgement.tenant_id !== tenantId
+        || acknowledgement[identityField] !== aggregateId
+        || !Number.isSafeInteger(acknowledgement.revision) || acknowledgement.revision < 1
+        || typeof acknowledgement.fingerprint !== 'string'
+        || !/^[0-9a-f]{128}$/.test(acknowledgement.fingerprint)
+        || typeof acknowledgement[lifecycleField] !== 'string'
+      ) {
+        throw Object.assign(new Error('HR_HIRING_COMMAND_ACK_INVALID'), { code: 'HR_HIRING_COMMAND_ACK_INVALID' });
+      }
+
+      const readbackPage = ['candidateCreate', 'offerCreate'].includes(kind)
+        ? { ...pageStates[tabName], offset: 0 }
+        : pageStates[tabName];
+      const readback = await fetchTabData(tabName, readbackPage, '');
+      if (tenantScopeKeyRef.current !== requestedScope || hiringCommandInFlightRef.current !== token) return;
+      if (!isVerifiedReadState({ status: readback.status }) || !readback.dataset) {
+        setHiringCommandState({ status: 'ACKNOWLEDGED_READBACK_UNAVAILABLE', detail: 'EOS acknowledged the command, but tenant-scoped durable readback is unavailable. No updated hiring state is claimed; retry the exact command to reuse its idempotency key.' });
+        return;
+      }
+      const persisted = readback.dataset.items.find((entry) => entry[identityField] === aggregateId);
+      if (
+        !persisted || persisted.tenant_id !== tenantId
+        || persisted.fingerprint !== acknowledgement.fingerprint
+        || persisted.revision !== acknowledgement.revision
+        || persisted[lifecycleField] !== acknowledgement[lifecycleField]
+      ) {
+        setHiringCommandState({ status: 'ACKNOWLEDGED_READBACK_UNAVAILABLE', detail: 'EOS acknowledged the command, but the current source page does not prove the exact identity, revision, fingerprint and lifecycle state. No success is claimed.' });
+        return;
+      }
+      hiringCommandKeysRef.current.delete(intent);
+      setHiringCommandState({ status: 'VERIFIED', detail: action + ' is confirmed by the current tenant-scoped EOS readback.' });
+      setShowHiringCommand(false);
+      setHiringCommand({ kind: '', item: null, scopeKey: null });
+      setHiringForm({});
+      candidateEvidenceOperationRef.current = null;
+      setCandidateEvidenceState(createEmptyCandidateEvidenceState());
+      pushFeedback({ tone: 'ready', title: 'Hiring command verified', detail: action + ' was confirmed by the current Python EOS source readback.' });
+    } catch (error) {
+      if (tenantScopeKeyRef.current !== requestedScope || hiringCommandInFlightRef.current !== token) return;
+      const failureState = classifyHrReadFailure(error);
+      if (failureState === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(requestedScope, hrReadErrorCode(error));
+        return;
+      }
+      const errorCode = hrReadErrorCode(error);
+      const denied = failureState === HR_READ_STATE.ACCESS_DENIED;
+      setHiringCommandState({
+        status: denied ? 'ACCESS_DENIED' : 'SOURCE_UNAVAILABLE',
+        detail: denied
+          ? 'Python EOS denied ' + action + ' for this principal and tenant. No change is claimed.'
+          : error?.response?.status === 409 && errorCode === 'HIRING_APPROVED_REQUISITION_REQUIRED'
+            ? 'Candidate intake requires an approved headcount requisition in this tenant. No candidate was created.'
+            : 'Hiring source rejected or could not verify ' + action + ' (' + errorCode + '). No success is claimed; retry only after checking current source state.',
+      });
+      pushFeedback(resolveHrErrorFeedback(error, action + ' unavailable'));
+    } finally {
+      if (hiringCommandInFlightRef.current === token) hiringCommandInFlightRef.current = null;
+      if (tenantScopeKeyRef.current === requestedScope) setIsRefreshing(false);
+    }
+  };
+
   const openMutationModal = (type = activeConfig.modalType, item = null) => {
+    if (!tenantScopeKey) return;
+    if (type === 'candidate') {
+      beginHiringCommand('candidateCreate');
+      return;
+    }
+    if (type === 'offer') {
+      beginHiringCommand('offerCreate', item);
+      return;
+    }
+    if (type === 'employee') {
+      pushFeedback({
+        tone: 'warning',
+        title: 'Employee admission unavailable',
+        detail: 'Python EOS has no governed employee-admission command. A directory read cannot create employment, principal, membership, capacity or IAM state.'
+      });
+      return;
+    }
     if (type === 'hrArtifact') {
       openArtifactGenerator(item);
       return;
@@ -2753,20 +3438,16 @@ const HrDashboard = () => {
    * @collaboration Save operations must write to backend HR APIs and refresh the active process.
    */
   const saveMutation = async () => {
+    if (!tenantScopeKey) return;
     const type = modalType;
     try {
       setIsRefreshing(true);
       if (type === 'employee') {
         const payload = normalizeMutationPayload(type, formState);
-        if (editingItem) await hrService.updateEmployee(editingItem.id, payload, tenantId);
-        else await hrService.createEmployee(payload, tenantId);
+        throw new Error('HR_EMPLOYEE_ADMISSION_COMMAND_NOT_ESTABLISHED');
       }
-      if (type === 'candidate') {
-        const payload = normalizeMutationPayload(type, formState);
-        if (editingItem) {
-          throw new Error('HR_CANDIDATE_FULL_UPDATE_AUTHORITY_NOT_CERTIFIED');
-        }
-        await hrService.createCandidate(payload, tenantId);
+      if (type === 'candidate' || type === 'offer') {
+        throw Object.assign(new Error('HIRING_COMMAND_SURFACE_NOT_WIRED'), { code: 'HIRING_COMMAND_SURFACE_NOT_WIRED' });
       }
       if (type === 'jobOpening') {
         const payload = normalizeMutationPayload(type, formState);
@@ -2799,10 +3480,11 @@ const HrDashboard = () => {
       }
       setShowModal(false);
       setEditingItem(null);
-      await Promise.all([fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)]);
-      pushFeedback({ tone: 'ready', title: 'HR record saved', detail: `${type} ledger updated.` });
+      const readback = await Promise.all([fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)]);
+      const verified = readback.every((result) => isVerifiedReadState({ status: result.status }));
+      pushFeedback(verified ? { tone: 'ready', title: 'HR command accepted and verified', detail: `${type} source readback completed.` } : { tone: 'warning', title: 'HR command accepted; readback unavailable', detail: 'The source acknowledged the command, but current readback could not be verified. No updated state is claimed.' });
     } catch (error) {
-      pushFeedback({ tone: 'risk', title: 'HR save failed', detail: error?.response?.data?.message || error?.message || 'Mutation failed.' });
+      pushFeedback(resolveHrErrorFeedback(error, 'HR command failed'));
     } finally {
       setIsRefreshing(false);
     }
@@ -2831,10 +3513,15 @@ const HrDashboard = () => {
   };
 
   const deleteRecord = async (item) => {
+    if (['candidates', 'offers'].includes(activeTab)) {
+      pushFeedback({ tone: 'warning', title: 'EOS lifecycle records are not deleted here', detail: 'The canonical hiring lifecycle exposes no local delete command. No write was sent.' });
+      return;
+    }
+    if (!tenantScopeKey) return;
     if (!window.confirm('Delete this HR ledger record?')) return;
     try {
       setIsRefreshing(true);
-      if (activeTab === 'employees') await hrService.deleteEmployee(item.id, tenantId);
+      if (activeTab === 'employees') throw new Error('HR_EMPLOYEE_ADMISSION_COMMAND_NOT_ESTABLISHED');
       if (activeTab === 'candidates') await hrService.deleteCandidate(item.id, tenantId);
       if (activeTab === 'jobOpenings') await hrService.deleteJobOpening(item.id, tenantId);
       if (activeTab === 'benefits') await hrService.deleteBenefit(item.id, tenantId);
@@ -2846,10 +3533,11 @@ const HrDashboard = () => {
         throw new Error('HR_EMPLOYEE_RELATION_DELETE_ROUTE_NOT_CERTIFIED');
       }
       if (activeTab === 'timeoff') await hrService.deleteTimeOffRequest(item.id, tenantId);
-      await Promise.all([fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)]);
-      pushFeedback({ tone: 'ready', title: 'HR record deleted', detail: 'Ledger row removed.' });
+      const readback = await Promise.all([fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)]);
+      const verified = readback.every((result) => isVerifiedReadState({ status: result.status }));
+      pushFeedback(verified ? { tone: 'ready', title: 'HR delete accepted and verified', detail: 'The source readback confirms the current view.' } : { tone: 'warning', title: 'HR delete accepted; readback unavailable', detail: 'The source acknowledged the command, but current readback could not be verified. No updated state is claimed.' });
     } catch (error) {
-      pushFeedback({ tone: 'risk', title: 'Delete failed', detail: error?.response?.data?.message || error?.message || 'Delete failed.' });
+      pushFeedback(resolveHrErrorFeedback(error, 'HR delete failed'));
     } finally {
       setIsRefreshing(false);
     }
@@ -2862,13 +3550,15 @@ const HrDashboard = () => {
    * @collaboration Payroll has its own command because compensation sync is not a generic row creation.
    */
   async function syncPayroll() {
+    if (!tenantScopeKey) return;
     try {
       setIsRefreshing(true);
       await hrService.syncPayroll(tenantId);
-      await Promise.all([fetchSnapshot(), fetchTabData('payroll', pageStates.payroll, searchTerm)]);
-      pushFeedback({ tone: 'ready', title: 'Payroll sync accepted', detail: 'Compensation ledger command completed.' });
+      const readback = await Promise.all([fetchSnapshot(), fetchTabData('payroll', pageStates.payroll, searchTerm)]);
+      const verified = readback.every((result) => isVerifiedReadState({ status: result.status }));
+      pushFeedback(verified ? { tone: 'ready', title: 'Payroll command accepted and verified', detail: 'The source readback completed.' } : { tone: 'warning', title: 'Payroll command accepted; readback unavailable', detail: 'The source acknowledged the command, but current readback could not be verified. No updated state is claimed.' });
     } catch (error) {
-      pushFeedback({ tone: 'warning', title: 'Payroll sync pending', detail: error?.response?.data?.message || error?.message || 'Payroll source did not answer.' });
+      pushFeedback(resolveHrErrorFeedback(error, 'Payroll source unavailable'));
     } finally {
       setIsRefreshing(false);
     }
@@ -2881,8 +3571,16 @@ const HrDashboard = () => {
    * @collaboration HR export should be explicit, scoped and source-backed.
    */
   const exportActiveDataset = async () => {
-    await exportCSV(datasets[activeTab].items, `wilsy_hr_${activeTab}_${tenantId}`, { tenantId, redact: false });
-    pushFeedback({ tone: 'ready', title: 'HR export generated', detail: `${datasets[activeTab].items.length} ${activeConfig.label.toLowerCase()} rows exported.` });
+    if (!tenantScopeKey || dataScopeKey !== tenantScopeKey || !isVerifiedReadState(datasetReadStates[activeTab])) {
+      pushFeedback({ tone: 'warning', title: 'HR export unavailable', detail: 'Export requires a verified current-scope source page.' });
+      return;
+    }
+    try {
+      await exportCSV(datasets[activeTab].items, `wilsy_hr_${activeTab}_${tenantId}`, { tenantId, redact: false });
+      pushFeedback({ tone: 'ready', title: 'HR export generated', detail: `${datasets[activeTab].items.length} verified ${activeConfig.label.toLowerCase()} rows exported.` });
+    } catch (error) {
+      pushFeedback(resolveHrErrorFeedback(error, 'HR export failed'));
+    }
   };
 
   /**
@@ -2894,6 +3592,12 @@ const HrDashboard = () => {
    * @collaboration Process buttons should route to real work rather than decorative command receipts.
    */
   const runProcessStep = (step = '', index = 0) => {
+    if (activeTab === 'candidates' || activeTab === 'offers') {
+      if (index === 0 && activeTab === 'candidates') beginHiringCommand('candidateCreate');
+      else if (index === 0 && activeTab === 'offers') beginHiringCommand('offerCreate');
+      else pushFeedback({ tone: 'ready', title: 'Select a source record', detail: 'Choose a ' + activeConfig.label.toLowerCase() + ' row to run its existing Python EOS action.' });
+      return;
+    }
     if (/generate payslip/i.test(step)) {
       const firstPayroll = datasets.payroll.items[0];
       if (firstPayroll) {
@@ -2948,7 +3652,8 @@ const HrDashboard = () => {
   const renderRowCells = (item = {}) => {
     const rows = {
       employees: [item.name, item.email, item.department || 'Unassigned', item.position || 'Staff', item.status || 'ACTIVE'],
-      candidates: [item.name, item.email, item.position || 'Role pending', item.stage || item.status || 'SCREENING', item.phone || 'No phone'],
+      candidates: [item.candidate_id, item.requisition_id, item.stage, item.source, item.revision],
+      offers: [item.offer_id, item.candidate_id, item.requisition_id, item.status, item.revision],
       jobOpenings: [item.title || item.name, item.department || 'Unassigned', item.location || 'Remote', item.priority || 'Normal', item.status || 'OPEN'],
       payroll: [item.employeeName || item.name, item.period || 'Current', `${formatMoney(item.grossPay)} gross`, `${formatMoney(item.employeeTax || item.statutoryDeductions || 0)} tax`, item.status || item.payrollGateStatus || 'READY'],
       benefits: [item.name, item.coverage || 'Coverage pending', formatMoney(item.cost), item.status || 'ACTIVE', item.type || 'Benefit'],
@@ -2958,7 +3663,8 @@ const HrDashboard = () => {
       timeoff: [item.employeeName || item.name, item.type || 'Leave', item.startDate ? new Date(item.startDate).toLocaleDateString() : '—', item.endDate ? new Date(item.endDate).toLocaleDateString() : '—', item.status || 'PENDING'],
       artifacts: [item.artifactTitle || item.name, item.artifactType || 'HR Artifact', item.artifactFormat || 'HTML', item.proofHash ? item.proofHash.slice(0, 14) : 'Proof pending', item.status || 'GENERATED']
     };
-    return (rows[activeTab] || rows.employees).map((value, index) => <td key={`${item.id}-${index}`}>{value}</td>);
+    const sourceIdentity = item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id || 'record';
+    return (rows[activeTab] || rows.employees).map((value, index) => <td key={`${sourceIdentity}-${index}`}>{value ?? 'Unavailable'}</td>);
   };
 
   /**
@@ -3241,9 +3947,21 @@ const HrDashboard = () => {
   };
 
   const activeDataset = datasets[activeTab] || EMPTY_DATASET;
+  const hiringSearchDisabled = ['candidates', 'offers'].includes(activeTab);
+  const activeTableColumns = {
+    candidates: ['Candidate ID', 'Approved Requisition', 'EOS Stage', 'Source', 'Revision'],
+    offers: ['Offer ID', 'Candidate ID', 'Requisition ID', 'Offer Status', 'Revision']
+  }[activeTab] || ['Primary', 'Source', 'Domain', 'Metric', 'Status'];
+  const activeReadState = datasetReadStates[activeTab] || { status: HR_READ_STATE.PENDING };
   const totalPages = Math.max(1, Math.ceil(activeDataset.total / (activeDataset.limit || DEFAULT_PAGE.limit)));
   const currentPage = Math.floor((activeDataset.offset || 0) / (activeDataset.limit || DEFAULT_PAGE.limit)) + 1;
 
+  if (!tenantScopeKey || snapshotReadState.status === HR_READ_STATE.AUTHENTICATION_REQUIRED || activeReadState.status === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+    return <main role="status" className="min-h-[40vh] rounded-2xl border border-amber-300/20 bg-slate-950 p-8 text-amber-100"><h1 className="text-xl font-semibold">Authentication required</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">The current principal and tenant session must be revalidated by Python EOS before HR data can be displayed.</p></main>;
+  }
+  if (dataScopeKey !== tenantScopeKey && !loading) {
+    return <main role="status" className="min-h-[40vh] rounded-2xl border border-white/10 bg-slate-950 p-8 text-slate-200"><h1 className="text-xl font-semibold">Verifying current HR workspace</h1><p className="mt-3 text-sm text-slate-400">The previous principal or tenant view is not carried into this session.</p></main>;
+  }
   if (loading) {
     return (
       <div className={styles.hrLoading}>
@@ -3275,16 +3993,15 @@ const HrDashboard = () => {
   );
 
   const hrTenantIdentity = {
-    name: activeTenant?.name || activeTenant?.displayName || activeTenant?.companyName || 'Wilsy OS Root',
-    displayName: activeTenant?.name || activeTenant?.displayName || 'Wilsy OS Root',
+    name: activeTenant?.name || activeTenant?.displayName || activeTenant?.companyName || 'Authenticated workspace',
+    displayName: activeTenant?.name || activeTenant?.displayName || 'Authenticated workspace',
     logo: activeTenant?.logo || activeTenant?.logoUrl || wilsyLogo,
     logoUrl: activeTenant?.logo || activeTenant?.logoUrl || wilsyLogo,
     status: 'TENANT COMMAND',
-    tenantId: tenantId || DEFAULT_TENANT_ID
+    tenantId
   };
 
   const hrStory = 'People operating system — hire, govern, pay, and prove every employee action.';
-
 
   return (
     <WilsyOSDashboardChrome
@@ -3298,16 +4015,17 @@ const HrDashboard = () => {
       operator={null}
       leftRail={hrChromeLeftRail}
       search={{
-        value: searchTerm,
-        onChange: (event) => setSearchTerm(event.target.value),
-        placeholder: 'Search HR ledger…'
+        value: hiringSearchDisabled ? '' : searchTerm,
+        onChange: hiringSearchDisabled ? undefined : (event) => setSearchTerm(event.target.value),
+        placeholder: hiringSearchDisabled ? 'EOS hiring search is not available on this page' : 'Search HR ledger…'
       }}
       actions={{
-        primaryLabel: workspace?.primary || 'Add Employee',
-        onPrimary: () => openMutationModal(),
-        primaryDisabled: Boolean(isRefreshing),
-        onSync: () => loadDashboard(),
-        syncLabel: 'Resync'
+        primaryLabel: activeTab === 'employees' ? 'Employee admission unavailable' : activeTab === 'candidates' ? 'Create candidate' : activeTab === 'offers' ? 'Prepare offer' : (workspace?.primary || 'HR command unavailable'),
+        onPrimaryAction: () => activeTab === 'candidates' ? beginHiringCommand('candidateCreate') : activeTab === 'offers' ? beginHiringCommand('offerCreate') : openMutationModal(),
+        primaryDisabled: Boolean(isRefreshing || activeTab === 'employees'),
+        onLiveSync: () => loadDashboard(),
+        isRefreshing,
+        liveSyncLabel: 'Resync'
       }}
       account={{
         isOpen: showProfilePanel,
@@ -3343,7 +4061,9 @@ const HrDashboard = () => {
             <section className={styles.hrFeedback} data-tone={feedback.tone}>
               <strong>{feedback.title}</strong>
               <span>{feedback.detail}</span>
-              <em>{snapshot.sourceStatus || 'HR_LEDGER_PENDING'}</em>
+              <em>{snapshotReadState.status === HR_READ_STATE.VERIFIED_DATA ? (snapshot.sourceStatus || 'SOURCE_VERIFIED') : snapshotReadState.status}</em>
+              {snapshotReadState.status === HR_READ_STATE.SOURCE_UNAVAILABLE && <div role="status" className="mt-2 flex flex-wrap items-center gap-3 text-xs text-amber-200"><span>{snapshotReadState.lastVerifiedAt ? `Summary source unavailable. Values from ${new Date(snapshotReadState.lastVerifiedAt).toLocaleString()} are not current.` : `Summary source unavailable (${snapshotReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). Counts are withheld.`}</span><button type="button" onClick={fetchSnapshot} disabled={snapshotReadState.revalidating}>Retry summary</button></div>}
+              {snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED && <p role="alert" className="mt-2 text-xs text-red-200">Summary access denied by Python EOS. Summary values are withheld.</p>}
             </section>
 
             <section className={styles.hrHero}>
@@ -3355,7 +4075,7 @@ const HrDashboard = () => {
               <div className={styles.hrHeroActions}>
                 <label className={styles.hrSearch}>
                   <Search size={16} />
-                  <input value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder="Search HR ledger..." />
+                  <input value={hiringSearchDisabled ? '' : searchTerm} onChange={hiringSearchDisabled ? undefined : event => setSearchTerm(event.target.value)} readOnly={hiringSearchDisabled} placeholder={hiringSearchDisabled ? 'EOS hiring search is not available on this page' : 'Search HR ledger...'} />
                 </label>
                 <button type="button" onClick={() => openArtifactGenerator()}>
                   <FileText size={15} />
@@ -3400,31 +4120,49 @@ const HrDashboard = () => {
                     <button type="button" onClick={() => updatePageOffset(true)} disabled={!activeDataset.hasMore || isRefreshing}>Next</button>
                   </div>
                 </header>
+                {(activeReadState.revalidating || [HR_READ_STATE.PENDING, HR_READ_STATE.SOURCE_UNAVAILABLE, HR_READ_STATE.ACCESS_DENIED].includes(activeReadState.status)) && <div role={activeReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'} className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm"><span>{activeReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied by Python EOS. No rows are displayed for this source.' : activeReadState.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? activeReadState.lastVerifiedAt ? `Source unavailable (${activeReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). Showing last verified results from ${new Date(activeReadState.lastVerifiedAt).toLocaleString()}; current results are not verified.` : `Source unavailable (${activeReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). No verified results are available.` : activeReadState.revalidating && activeReadState.verifiedAt ? `Updating. Results were last verified at ${new Date(activeReadState.verifiedAt).toLocaleString()}.` : 'Checking the authorized HR source…'}</span>{tenantScopeKey && activeReadState.status !== HR_READ_STATE.ACCESS_DENIED && <button type="button" onClick={() => fetchTabData(activeTab, pageStates[activeTab], searchTerm)} disabled={activeReadState.revalidating} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Retry source read</button>}</div>}
                 <div className={styles.hrTableWrap}>
                   <table>
                     <thead>
                       <tr>
-                        {['Primary', 'Source', 'Domain', 'Metric', 'Status'].map(header => <th key={header}>{header}</th>)}
+                        {activeTableColumns.map(header => <th key={header}>{header}</th>)}
                         <th>Command</th>
                       </tr>
                     </thead>
                     <tbody>
                       {activeDataset.items.map(item => (
-                        <tr key={item.id}>
+                        <tr key={item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id}>
                           {renderRowCells(item)}
                           <td>
-                            <button type="button" onClick={() => openMutationModal(activeConfig.modalType, item)}><Edit size={14} /></button>
-                            {activeTab === 'employees' && <button type="button" onClick={() => openArtifactGenerator(item)}><FileText size={14} /></button>}
-                            {activeTab === 'payroll' && <button type="button" onClick={() => generatePayslip(item)}><FileText size={14} /></button>}
-                            {!['payroll', 'artifacts'].includes(activeTab) && <button type="button" onClick={() => deleteRecord(item)}><Trash2 size={14} /></button>}
+                            {activeTab === 'employees' ? (
+                              <span className="text-xs text-slate-400">Read only</span>
+                            ) : activeTab === 'candidates' ? (
+                              <div className="flex flex-wrap gap-2">
+                                {['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK'].includes(item.stage) && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('candidateTransition', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Advance with evidence</button>}
+                                {item.stage === 'SELECTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerCreate', item)} className="rounded-lg border border-amber-300/30 px-2 py-1 text-xs text-amber-100 disabled:opacity-50">Prepare offer</button>}
+                                {!['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK', 'SELECTED'].includes(item.stage) && <span className="text-xs text-slate-400">Terminal stage</span>}
+                              </div>
+                            ) : activeTab === 'offers' ? (
+                              <div className="grid gap-2">
+                                {item.status === 'DRAFT' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerSubmit', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Submit for approval</button>}
+                                {item.status === 'SUBMITTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerDecision', item)} className="rounded-lg border border-emerald-300/25 px-2 py-1 text-xs text-emerald-100 disabled:opacity-50">Independent decision</button>}
+                                {item.status === 'APPROVED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerSend', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Send approved offer</button>}
+                                {item.status === 'SENT' && <span className="max-w-56 text-xs text-slate-400">Offer sent. Candidate signature-to-identity verification is not configured; acceptance is unavailable.</span>}
+                                {item.status === 'ACCEPTED' && <span className="max-w-56 text-xs text-amber-100">EOS reports ACCEPTED, but candidate identity binding is not certified; this does not prove candidate consent or employment.</span>}
+                                {!['DRAFT', 'SUBMITTED', 'APPROVED', 'SENT', 'ACCEPTED'].includes(item.status) && <span className="text-xs text-slate-400">No command is available for this offer state.</span>}
+                              </div>
+                            ) : (
+                              <>
+                                <button type="button" onClick={() => openMutationModal(activeConfig.modalType, item)}><Edit size={14} /></button>
+                                {activeTab === 'payroll' && <button type="button" onClick={() => generatePayslip(item)}><FileText size={14} /></button>}
+                                {!['payroll', 'artifacts'].includes(activeTab) && <button type="button" onClick={() => deleteRecord(item)}><Trash2 size={14} /></button>}
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}
-                      {!activeDataset.items.length && (
-                        <tr>
-                          <td colSpan={6}>No {activeConfig.label.toLowerCase()} records found in the HR ledger.</td>
-                        </tr>
-                      )}
+                      {!activeDataset.items.length && activeReadState.status === HR_READ_STATE.VERIFIED_EMPTY && activeDataset.total === 0 && <tr><td colSpan={6}>{activeTab === 'employees' ? 'No employees recorded.' : ['candidates', 'offers'].includes(activeTab) ? `No ${activeConfig.label.toLowerCase()} recorded by Python EOS.` : `No ${activeConfig.label.toLowerCase()} records recorded.`}</td></tr>}
+                      {!activeDataset.items.length && activeReadState.status === HR_READ_STATE.VERIFIED_DATA && activeDataset.total > 0 && <tr><td colSpan={6}>No records are on this page; the authorized source reports {activeDataset.total} records.</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -3754,6 +4492,65 @@ const HrDashboard = () => {
           </div>
         )}
 
+        {showHiringCommand && hiringCommand.scopeKey === tenantScopeKey && (
+          <div className={styles.hrModal} role="dialog" aria-modal="true" aria-label="Python EOS hiring command">
+            <section>
+              <header>
+                <div>
+                  <span><ShieldCheck size={16} /> Python EOS Hiring Lifecycle</span>
+                  <h2>{hiringCommand.kind === 'candidateCreate' ? 'Create candidate application' : hiringCommand.kind === 'candidateTransition' ? 'Advance candidate with evidence' : hiringCommand.kind === 'offerCreate' ? 'Prepare employment offer' : hiringCommand.kind === 'offerSubmit' ? 'Submit offer for approval' : hiringCommand.kind === 'offerDecision' ? 'Independent offer decision' : 'Send approved offer'}</h2>
+                </div>
+                <button type="button" disabled={hiringCommandState.status === 'PENDING' || ['UPLOADING', 'VERIFYING'].includes(candidateEvidenceState.status)} onClick={() => { setShowHiringCommand(false); setHiringCommand({ kind: '', item: null, scopeKey: null }); setHiringForm({}); candidateEvidenceOperationRef.current = null; setCandidateEvidenceState(createEmptyCandidateEvidenceState()); }} aria-label="Close hiring command"><X size={16} /></button>
+              </header>
+              <form className={styles.hrFormGrid} onSubmit={(event) => { event.preventDefault(); void saveHiringCommand(); }}>
+                {hiringCommand.kind === 'candidateCreate' && <>
+                  <p className="md:col-span-2 text-sm text-slate-300">Candidate intake requires a currently approved requisition in this tenant. Use only the opaque candidate profile reference; this command accepts no applicant name or contact data.</p>
+                  <label><span>Candidate ID *</span><input required maxLength={180} value={hiringForm.candidate_id || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, candidate_id: event.target.value }))}/></label>
+                  <label><span>Approved requisition ID *</span><input required maxLength={180} value={hiringForm.requisition_id || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, requisition_id: event.target.value }))}/></label>
+                  <label className="md:col-span-2"><span>Opaque candidate profile reference *</span><input required maxLength={240} value={hiringForm.candidate_profile_reference || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, candidate_profile_reference: event.target.value }))}/></label>
+                  <label><span>Application source *</span><input required maxLength={120} value={hiringForm.source || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, source: event.target.value }))}/></label>
+                </>}
+                {hiringCommand.kind === 'candidateTransition' && <>
+                  <p className="md:col-span-2 text-sm text-slate-300">Candidate {hiringCommand.item?.candidate_id} · current revision {hiringCommand.item?.revision}. Upload and verify one candidate-profile object through Python EOS before the stage command is enabled. Candidate bytes stay in memory and are streamed directly to EOS.</p>
+                  <label className="md:col-span-2"><span>Candidate evidence file *</span><input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png" disabled={['UPLOADING', 'VERIFYING', 'UNVERIFIED', 'VERIFIED'].includes(candidateEvidenceState.status)} onChange={selectCandidateEvidenceFile}/></label>
+                  {candidateEvidenceState.file && <p className="md:col-span-2 text-xs text-slate-300">Selected in this browser session: {candidateEvidenceState.file.name} · {candidateEvidenceState.file.size.toLocaleString('en-ZA')} bytes. The source stores a generic filename to avoid retaining the local filename.</p>}
+                  <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                    <button type="button" disabled={!candidateEvidenceState.file || candidateEvidenceState.status !== 'SELECTED'} onClick={() => void verifyCandidateEvidence({ upload: true })} className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs text-amber-100 disabled:opacity-50">{candidateEvidenceState.status === 'UPLOADING' ? 'Uploading to EOS…' : 'Upload and verify evidence'}</button>
+                    {candidateEvidenceState.status === 'UNVERIFIED' && <button type="button" disabled={['UPLOADING', 'VERIFYING'].includes(candidateEvidenceState.status)} onClick={() => void verifyCandidateEvidence()} className="rounded-lg border border-white/20 px-3 py-2 text-xs disabled:opacity-50">Check existing evidence</button>}
+                    {candidateEvidenceState.status === 'VERIFIED' && <span className="text-xs text-emerald-200"><CheckCircle size={14} className="mr-1 inline"/>EOS custody verified</span>}
+                  </div>
+                  {candidateEvidenceState.detail && <p role={candidateEvidenceState.status === 'UNVERIFIED' || candidateEvidenceState.status === 'UNAVAILABLE' ? 'alert' : 'status'} className="md:col-span-2 rounded-lg border border-white/10 p-3 text-xs text-slate-200">{candidateEvidenceState.detail}</p>}
+                  {candidateEvidenceState.status === 'VERIFIED' && <p className="md:col-span-2 break-all rounded-lg border border-emerald-300/15 bg-emerald-300/[0.04] p-3 text-xs text-emerald-100">Verified source reference: {candidateEvidenceState.reference}<br/>SHA3-512: {candidateEvidenceState.contentDigestSha3_512}</p>}
+                  <label><span>Next stage *</span><select required value={hiringForm.target_stage || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, target_stage: event.target.value }))}>{({ APPLIED: ['SCREENING', 'DECLINED', 'WITHDRAWN'], SCREENING: ['INTERVIEW', 'DECLINED', 'WITHDRAWN'], INTERVIEW: ['REFERENCE_CHECK', 'DECLINED', 'WITHDRAWN'], REFERENCE_CHECK: ['SELECTED', 'DECLINED', 'WITHDRAWN'] }[hiringCommand.item?.stage] || []).map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>
+                  <label><span>Decision reason *</span><textarea required maxLength={2000} value={hiringForm.reason || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, reason: event.target.value }))}/></label>
+                </>}
+                {hiringCommand.kind === 'offerCreate' && <>
+                  <p className="md:col-span-2 text-sm text-slate-300">EOS accepts offers only for a selected candidate tied to the same approved requisition. Compensation remains visible only in this authorized offer form and is never included in table rows.</p>
+                  <label><span>Offer ID *</span><input required maxLength={180} value={hiringForm.offer_id || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, offer_id: event.target.value }))}/></label>
+                  <label><span>Candidate ID *</span><input required maxLength={180} value={hiringForm.candidate_id || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, candidate_id: event.target.value }))}/></label>
+                  <label><span>Approved requisition ID *</span><input required maxLength={180} value={hiringForm.requisition_id || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, requisition_id: event.target.value }))}/></label>
+                  <label><span>Position title *</span><input required maxLength={180} value={hiringForm.position_title || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, position_title: event.target.value }))}/></label>
+                  <label><span>Employment type *</span><input required maxLength={80} value={hiringForm.employment_type || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, employment_type: event.target.value }))}/></label>
+                  <label><span>Work location *</span><input required maxLength={180} value={hiringForm.work_location || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, work_location: event.target.value }))}/></label>
+                  <label><span>Currency *</span><input required pattern="[A-Z]{3}" maxLength={3} value={hiringForm.currency || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, currency: event.target.value.toUpperCase() }))}/></label>
+                  <label><span>Gross compensation (minor units) *</span><input type="number" required min="1" step="1" value={hiringForm.gross_compensation_minor || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, gross_compensation_minor: event.target.value }))}/></label>
+                  <label><span>Pay frequency *</span><select required value={hiringForm.pay_frequency || 'MONTHLY'} onChange={(event) => setHiringForm((previous) => ({ ...previous, pay_frequency: event.target.value }))}>{['MONTHLY', 'ANNUAL', 'WEEKLY', 'FORTNIGHTLY', 'HOURLY'].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                  <label><span>Start date *</span><input type="date" required value={hiringForm.start_date || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, start_date: event.target.value }))}/></label>
+                  <label><span>Offer expiry *</span><input type="datetime-local" required value={hiringForm.expires_at || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, expires_at: event.target.value }))}/></label>
+                </>}
+                {hiringCommand.kind === 'offerDecision' && <>
+                  <p className="md:col-span-2 text-sm text-slate-300">Offer {hiringCommand.item?.offer_id} · current revision {hiringCommand.item?.revision}. Python EOS independently enforces decision capability.</p>
+                  <label><span>Decision *</span><select value={hiringForm.approved ? 'APPROVE' : 'REJECT'} onChange={(event) => setHiringForm((previous) => ({ ...previous, approved: event.target.value === 'APPROVE' }))}><option value="APPROVE">Approve</option><option value="REJECT">Reject</option></select></label>
+                  <label><span>Decision reason *</span><textarea required maxLength={2000} value={hiringForm.reason || ''} onChange={(event) => setHiringForm((previous) => ({ ...previous, reason: event.target.value }))}/></label>
+                </>}
+                {['offerSubmit', 'offerSend'].includes(hiringCommand.kind) && <p className="md:col-span-2 text-sm text-slate-300">Offer {hiringCommand.item?.offer_id} · current revision {hiringCommand.item?.revision}. Python EOS independently checks state and actor capability.</p>}
+                {hiringCommandState.detail && <p role={hiringCommandState.status === 'ACCESS_DENIED' ? 'alert' : 'status'} className="md:col-span-2 rounded-lg border border-white/10 p-3 text-sm text-amber-100">{hiringCommandState.detail}</p>}
+                <footer className="md:col-span-2 flex justify-end gap-2"><button type="button" disabled={hiringCommandState.status === 'PENDING' || ['UPLOADING', 'VERIFYING'].includes(candidateEvidenceState.status)} onClick={() => { setShowHiringCommand(false); setHiringCommand({ kind: '', item: null, scopeKey: null }); setHiringForm({}); candidateEvidenceOperationRef.current = null; setCandidateEvidenceState(createEmptyCandidateEvidenceState()); }} className="rounded-lg border border-white/15 px-4 py-2 text-xs">Cancel</button><button type="submit" disabled={hiringCommandState.status === 'PENDING' || (hiringCommand.kind === 'candidateTransition' && candidateEvidenceState.status !== 'VERIFIED')} className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 disabled:opacity-50">{hiringCommandState.status === 'PENDING' ? 'Waiting for EOS…' : 'Run EOS command'}</button></footer>
+              </form>
+            </section>
+          </div>
+        )}
+
         {showModal && (
           <div className={styles.hrModal} role="dialog" aria-modal="true" aria-label="HR mutation">
             <section>
@@ -3912,3 +4709,13 @@ const HrDashboard = () => {
 };
 
 export default HrDashboard;
+
+/**
+ * ARTIFACT: client/src/components/hr/HrDashboard.jsx
+ * VERSION: v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE
+ * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
+ * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
+ * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no financial execution command is authorized here.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

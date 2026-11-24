@@ -1,6 +1,11 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.0.2-SINGLE-COMMAND-SEARCH-OWNER
+ * VERSION: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -13,8 +18,24 @@
  *                            TenantContext owns selected tenant projection;
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: 2026-11-09 v19.0.2-SINGLE-COMMAND-SEARCH-OWNER claims the global
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY handles either event-listener order, focusing the exact mounted Headquarters work input when available and opening the controller fallback otherwise. Authority and route decisions are unchanged.
+ * CHANGELOG: v19.2.2-HEADQUARTERS-SEARCH-FOCUS-RECOVERY focuses the mounted Headquarters authorized-work search before consuming global search; if that target is absent, the controller opens its own command search. Authority and route decisions are unchanged.
+ * CHANGELOG: v19.2.1-OFFICIAL-BRAND-HEADER-ALIGNMENT aligns the existing
+ * Headquarters containment with the 72px official-brand header. Workspace,
+ * tenant manifest, customer Legal and SYSTEM routing semantics are unchanged.
+ * CHANGELOG: v19.2.0-WILSY-PLATFORM-OWNER-SEPARATION keeps the canonical WILSY company
+ * workspace outside Legal OS commercial routing, suppresses empty product rails
+ * and labels its admitted operating tools as internal workspaces. No IAM or
+ * persisted entitlement authority changes. Customer Legal routing is preserved.
+ * CHANGELOG: 2026-11-13 v19.1.0-CONTEXTUAL-HEADQUARTERS-PRODUCT-NAVIGATION
+ *            passes the exact EOS module-manifest navigation into Headquarters
+ *            sidebar, reclaiming the duplicate product strip without changing
+ *            admission, routing or tenant authority. Other products retain
+ *            their existing rail. Headquarters search focuses its authorized
+ *            work queue; other product search keeps its existing single owner.
+ *            Direct Headquarters routes reuse this same manifest/switch boundary.
+ *            2026-11-09 v19.0.2-SINGLE-COMMAND-SEARCH-OWNER claims the global
  *            search shortcut before shared chrome opens a second dialog.
  *            Shared search controls reuse the same cancelable event contract.
  *            2026-11-09 v19.0.1-HEADQUARTERS-PRODUCT-NAVIGATION restores the existing
@@ -66,6 +87,7 @@ import { useTenants } from '../../contexts/tenantContext.jsx';
 import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import api from '../../services/api.js';
+import { isWilsyPlatformTenant } from '../os/wilsyDashboardChromeConfig.js';
 import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import ErrorBoundary from '../ErrorBoundary';
 import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
@@ -569,6 +591,14 @@ export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {})
   ) {
     return DASHBOARD_KEYS.SYSTEM_SERVICES;
   }
+  const workspaceDashboard = WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
+  // The company building and operating WILSY OS is not a Legal customer.
+  // A stale Legal request cannot turn company capacity into Legal presentation;
+  // contradictory legacy Legal workspace facts require source correction.
+  if (isWilsyPlatformTenant(user.tenantId)) {
+    if (workspaceDashboard === DASHBOARD_KEYS.LEGAL) return '';
+    if (requestedDashboard === DASHBOARD_KEYS.LEGAL) return workspaceDashboard;
+  }
   const roleToken = normalizeDashboardToken(
     user.role || user.accountRole || user.tenantRole,
   );
@@ -583,7 +613,6 @@ export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {})
     return DASHBOARD_KEYS.LEGAL;
   }
 
-  const workspaceDashboard = WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
   if (!workspaceDashboard) return '';
   return requestedDashboard === workspaceDashboard
     ? requestedDashboard
@@ -794,17 +823,22 @@ const FounderReturnFrame = ({ dashboardLabel, onReturn, children }) => {
  * @institutional Presentation and optional device preferences only. No identity,
  * tenant membership, legal-practice, entitlement or financial authority is issued;
  * source services own transactions, commands, audit and durable replay.
- * @returns {JSX.Element} The server-selected workspace or explicit denial.
+ * @returns {JSX.Element} The server-selected product, existing explicit Headquarters presentation, or bounded denial.
  * @description Evaluates forensic identity and mounts the correct Command Center shard.
  *              Probes Kennel bridge health on mount for institutional telemetry.
  * @param {Object} props
  * @param {Object} props.user - Authenticated user from AuthProvider
  * @param {Function} [props.onLogout] - AuthProvider-owned logout command.
+ * @param {"headquarters"|null} [props.initialWorkspace] - Explicit authenticated route presentation, never source admission.
  */
-const SovereignDashboardController = ({ user: propUser, onLogout }) => {
+const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspace = null }) => {
   const { activeTenant } = useTenants();
   const navigate = useNavigate();
-  const [manualDashboardKey, setManualDashboardKey] = useState('');
+  // An explicit authenticated route selects presentation only; the manifest
+  // and each source continue to authorize their own records and commands.
+  const [manualDashboardKey, setManualDashboardKey] = useState(
+    initialWorkspace === 'headquarters' ? DASHBOARD_KEYS.HEADQUARTERS : '',
+  );
   const [systemServicesWorkspace, setSystemServicesWorkspace] = useState(null);
   const [systemServicesIncidents, setSystemServicesIncidents] = useState([]);
   const [systemServicesAssignments, setSystemServicesAssignments] = useState([]);
@@ -924,13 +958,22 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     TENANT_MODULE_DASHBOARD_ADMISSION, manualDashboardKey,
   );
   const dashboardKey = useMemo(() => {
+    // Preserve the pre-existing explicit Headquarters route for authenticated
+    // tenant capacities whose default product differs. This selects the same
+    // landing projection as before; every read and command still requires EOS
+    // source admission. An unresolved or SYSTEM workspace never uses it.
+    if (initialWorkspace === 'headquarters'
+      && manualDashboardKey === DASHBOARD_KEYS.HEADQUARTERS
+      && resolvedDashboardKey && resolvedDashboardKey !== DASHBOARD_KEYS.SYSTEM_SERVICES) {
+      return DASHBOARD_KEYS.HEADQUARTERS;
+    }
     if (!moduleDashboardRequested) return resolvedDashboardKey;
     return moduleManifest.status === 'ready'
       && moduleManifest.tenantId === moduleManifestTenantId
       && hasTenantModuleManifestAdmission(moduleManifest.modules, manualDashboardKey)
       ? manualDashboardKey
       : '';
-  }, [manualDashboardKey, moduleDashboardRequested, moduleManifest, resolvedDashboardKey]);
+  }, [initialWorkspace, manualDashboardKey, moduleDashboardRequested, moduleManifest, moduleManifestTenantId, resolvedDashboardKey]);
 
   const dashboardLabel = getDashboardDisplayName(dashboardKey || (moduleDashboardRequested ? manualDashboardKey : ''));
   const canReturnToFounder = Boolean(
@@ -1040,6 +1083,25 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         && (event.metaKey || event.ctrlKey);
       const isCustomOpen = event?.type === 'wilsy:open-command-search';
       if (!isKeyboardShortcut && !isCustomOpen) return;
+      if (event.defaultPrevented) {
+        if (dashboardKey === DASHBOARD_KEYS.HEADQUARTERS) {
+          document.getElementById('hq-work-search')?.focus();
+        }
+        return;
+      }
+      if (dashboardKey === DASHBOARD_KEYS.HEADQUARTERS) {
+        const authorizedWorkSearch = document.getElementById('hq-work-search');
+        const focusRequest = new CustomEvent(
+          'wilsy:focus-headquarters-work-search',
+          { cancelable: true },
+        );
+        window.dispatchEvent(focusRequest);
+        if (authorizedWorkSearch?.isConnected) {
+          event.preventDefault?.();
+          if (document.activeElement !== authorizedWorkSearch) authorizedWorkSearch.focus();
+          return;
+        }
+      }
       event.preventDefault?.();
       setIsGlobalCommandSearchOpen(true);
     };
@@ -1050,7 +1112,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       window.removeEventListener('keydown', handleGlobalCommandSearchKeyDown, true);
       window.removeEventListener('wilsy:open-command-search', handleGlobalCommandSearchKeyDown);
     };
-  }, []);
+  }, [dashboardKey]);
 
   // Mount telemetry once per identity+dashboard (not on every kernel poll)
   const mountLoggedRef = useRef('');
@@ -1274,6 +1336,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     needsControllerProductNavigation
     && moduleManifest.status === 'ready'
     && moduleManifest.tenantId === moduleManifestTenantId
+    && moduleManifest.modules.length > 0
   ) ? (
     <nav
       aria-label="Available WILSY OS products"
@@ -1289,7 +1352,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       }}
     >
       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', opacity: .7 }}>
-        YOUR PRODUCTS
+        {isWilsyPlatformTenant(user?.tenantId) && user.tenantId === moduleManifestTenantId ? 'INTERNAL WORKSPACES' : 'YOUR PRODUCTS'}
       </span>
       {moduleManifest.modules.map((module) => {
         const isActive = dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS && module.workspaceKey === (
@@ -1329,9 +1392,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   // ═══════════════════════════════════════════════════════════════════════════
   // BillingHUD may expand vertically; preserve scroll without clipping.
   // ═══════════════════════════════════════════════════════════════════════════
+  if (dashboardKey === DASHBOARD_KEYS.HEADQUARTERS) {
+    dashboardShard = <WilsyHeadquartersWorkspace productNavigation={controllerProductNavigation} />;
+  }
   const guardedShard = (
-    <div style={{ overflowX: 'hidden', overflowY: 'auto', minHeight: '100vh', width: '100%' }}>
-      {controllerProductNavigation}
+    <div style={{ overflowX: 'hidden', overflowY: dashboardKey === DASHBOARD_KEYS.HEADQUARTERS ? 'visible' : 'auto', minHeight: dashboardKey === DASHBOARD_KEYS.HEADQUARTERS ? 'calc(100dvh - 72px)' : '100vh', width: '100%' }}>
+      {dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS && controllerProductNavigation}
       <ErrorBoundary>
         {dashboardShard}
       </ErrorBoundary>
@@ -1371,7 +1437,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         </div>
       )}
 
-      {!systemServicesWorkspace && (
+      {!systemServicesWorkspace && dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS && (
       <button
         type="button"
         onClick={() => navigate('/my-work')}
@@ -1417,7 +1483,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.0.2-SINGLE-COMMAND-SEARCH-OWNER
+ * VERSION: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback

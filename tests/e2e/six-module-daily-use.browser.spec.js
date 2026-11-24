@@ -1,17 +1,18 @@
 /**
  * TITLE: WILSY OS Authenticated Seven-Module Daily Use Browser Certificate
- * VERSION: v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY
+ * VERSION: v1.2.0-MY-WORK-QUEUE-DRAWER-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify source-owned module work, authenticated Headquarters entry,
  *          owner commercial separation, HR denial and tenant isolation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/six-module-daily-use.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, EOS source services,
  * existing tenant module navigation, Headquarters and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY scopes completion to
- * the exact created task and verifies the unprivileged fixture Owner receives
- * HR directory denial instead of inferring HR authority from commercial capacity.
- * Existing seven-module, source completion and cross-tenant assertions remain.
+ * CERTIFICATION / UPDATE DATE: 2026-11-15.
+ * CHANGELOG: v1.2.0-MY-WORK-QUEUE-DRAWER-CERT selects source-backed rows,
+ * completes Operations and CRM through their owner commands, confirms projection
+ * readback, captures desktop/mobile drawer screenshots, and checks Escape focus
+ * restoration and mobile overflow. v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY
+ * scopes completion to exact created work and verifies Owner HR denial.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Existing synthetic actors and disposable records
  * only; preissued fixture sessions are not proof of human-completed MFA.
@@ -274,7 +275,7 @@ test('Operations and Intelligence workspaces remain usable at a narrow viewport'
 });
 
 
-test('Tenant Owner My Work aggregates only owner-authorized sources and completes through Operations', async ({ browser }) => {
+test('Tenant Owner My Work aggregates admitted sources and completes Operations and CRM through the queue detail drawer', async ({ browser }, testInfo) => {
   const { context, page, browserErrors } = await openAuthenticated(browser, 'tenant_owner');
   try {
     const responsePromise = page.waitForResponse(response => (
@@ -346,18 +347,42 @@ test('Tenant Owner My Work aggregates only owner-authorized sources and complete
     await expect(page.getByText(crmTitle, { exact: true })).toBeVisible();
     await expect(page.getByText(intelligenceTitle, { exact: true })).toBeVisible();
 
+    const operationsRow = page.getByRole('button', { name: new RegExp(title) });
+    await operationsRow.click();
+    await expect(page.getByRole('dialog', { name: title })).toBeVisible();
+    await testInfo.attach('my-work-desktop-queue-detail', {
+      body: await page.screenshot(), contentType: 'image/png',
+    });
+
     const completionPath = `/api/tenant-modules/operations/workspace/work-items/${encodeURIComponent(created.payload.work_item_id)}/complete`;
     const completion = page.waitForResponse(response => (
       new URL(response.url()).pathname === completionPath
       && response.request().method() === 'POST'
     ));
-    await page.getByLabel(`Completion note for ${title}`).fill('Verified and completed from the authenticated My Work queue.');
-    const operationsCard = page.locator('article').filter({ hasText: title });
-    await operationsCard.getByRole('button', { name: 'Complete', exact: true }).click();
+    await page.getByLabel('Completion note').fill('Verified and completed from the authenticated My Work queue.');
+    await page.getByRole('button', { name: 'Complete through Operations' }).click();
     const completed = await completion;
     expect(completed.status()).toBe(200);
     expect((await completed.json()).status).toBe('COMPLETED');
-    await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: new RegExp(title) })).toHaveCount(0);
+
+    const crmRow = page.getByRole('button', { name: new RegExp(crmTitle) });
+    await expect(crmRow).toBeVisible();
+    await crmRow.click();
+    await expect(page.getByRole('dialog', { name: crmTitle })).toBeVisible();
+    const crmCompletionPath = `/api/crm/owner-workspace/work-items/${encodeURIComponent(crmCreated.payload.work_item_id)}/complete`;
+    const crmCompletion = page.waitForResponse(response => (
+      new URL(response.url()).pathname === crmCompletionPath
+      && response.request().method() === 'POST'
+    ));
+    await page.getByLabel('Completion note').fill('CRM follow-up completed and verified.');
+    await page.getByRole('button', { name: 'Complete through CRM' }).click();
+    const crmCompleted = await crmCompletion;
+    expect(crmCompleted.status()).toBe(200);
+    expect((await crmCompleted.json()).status).toBe('COMPLETED');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: new RegExp(crmTitle) })).toHaveCount(0);
     expect(browserErrors, browserErrors.join('\\n')).toEqual([]);
   } finally {
     await context.close();
@@ -412,7 +437,7 @@ test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sour
   }
 });
 
-test('My Work remains usable on a narrow authenticated viewport', async ({ browser }) => {
+test('My Work remains usable on a narrow authenticated viewport', async ({ browser }, testInfo) => {
   const { context, page } = await openAuthenticated(
     browser,
     'tenant_owner',
@@ -426,6 +451,32 @@ test('My Work remains usable on a narrow authenticated viewport', async ({ brows
     await page.goto('/my-work');
     expect((await responsePromise).status()).toBe(200);
     await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
+    const mobileTitle = `Browser mobile My Work task ${state.database_name}`;
+    const mobileCreated = await page.evaluate(async ({ tenantId, title, databaseName }) => {
+      const response = await fetch('/api/crm/owner-workspace/work-items', {
+        method: 'POST', credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || ''}`,
+          'X-Tenant-ID': tenantId,
+          'Idempotency-Key': `mobile-my-work-${databaseName}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, description: 'Mobile authenticated queue certificate task.', kind: 'TASK', priority: 'NORMAL' }),
+      });
+      return { status: response.status, payload: await response.json().catch(() => ({})) };
+    }, { tenantId: state.tenant_id, title: mobileTitle, databaseName: state.database_name });
+    expect(mobileCreated.status).toBe(201);
+    await page.reload();
+    const mobileRow = page.getByRole('button', { name: new RegExp(mobileTitle) });
+    await expect(mobileRow).toBeVisible();
+    await mobileRow.click();
+    await expect(page.getByRole('dialog', { name: mobileTitle })).toBeVisible();
+    await testInfo.attach('my-work-mobile-detail-sheet', {
+      body: await page.screenshot(), contentType: 'image/png',
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(mobileRow).toBeFocused();
     const dimensions = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
       document: document.documentElement.scrollWidth,
@@ -475,7 +526,7 @@ test('Tenant Owner Headquarters is the authenticated daily workspace entry', asy
 });
 
 // ARTIFACT: six-module-daily-use.browser.spec.js
-// VERSION: v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY
+// VERSION: v1.2.0-MY-WORK-QUEUE-DRAWER-CERT
 // AUTHORITY BOUNDARY: Synthetic source commands and independent permission checks.
 // TENANT POSTURE: Exact fixture scope; foreign selectors remain denied.
 // FAIL-CLOSED POSTURE: Owner pricing and product admission cannot grant HR authority.

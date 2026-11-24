@@ -1,12 +1,18 @@
 /**
  * TITLE: WILSY OS Shared Dashboard Chrome Branding Presentation Certificate
- * VERSION: v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT
+ * VERSION: v2.3.0-WILSY-PLATFORM-OWNER-MANIFEST-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certify that shared dashboard chrome accepts tenant branding only
  *          from the authenticated D21B8 tenant projection and never promotes
  *          legacy logo/path/browser fields into presentation authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * SECURITY / PRIVACY POSTURE: Synthetic descriptors only; no production authority.
+ * TENANT BOUNDARY: Exact canonical company versus independently entitled customers.
+ * COLLABORATION / OWNERSHIP: Shared chrome, canonical manifest adapter and EOS source.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * CHANGELOG: v2.3.0-WILSY-PLATFORM-OWNER-MANIFEST-CERT proves company Legal exclusion,
+ * original customer behavior and complete validation before policy filtering.
  * CHANGELOG: 2026-11-06 v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT certifies exact-tenant server-issued product navigation, strict module/product/workspace binding, rejection of forged entitlement fields, and canonical dashboard-switch events.\n *            2026-09-28 v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT certifies one reusable command-pill interaction contract across Account, Trust Center, Refresh, primary actions and actionable rail controls, including semantic active states, keyboard focus, pressed/disabled behavior and reduced-motion parity. No tenant, subscription, entitlement or financial authority is created.
  * AUTHORITY BOUNDARY: Browser presentation only; Python EOS/D21B2B-D21B8 own branding truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
@@ -209,13 +215,7 @@ describe('L10-P2C1 shared clickable-pill interaction contract', () => {
   });
 });
 
-// ARTIFACT: WilsyOSDashboardChrome.test.jsx
-// VERSION: v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT
-// AUTHORITY BOUNDARY: browser presentation certificate only; no source authority
-// TENANT POSTURE: branding accepted only from exact authenticated tenant projection
-// FAIL-CLOSED POSTURE: legacy/foreign/browser branding is suppressed
-// FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
-// END OF WILSY OS SOVEREIGN ARTIFACT
+
 
 
 describe('EOS-issued tenant product navigation', () => {
@@ -237,6 +237,16 @@ describe('EOS-issued tenant product navigation', () => {
       }],
     },
   };
+
+  it('keeps Legal as a customer product rather than a WILSY internal workspace', () => {
+    const company = structuredClone(manifest); company.workspace.tenantId = 'WILSYTENANT-4CD2FZ4O';
+    expect(validateWilsyModuleManifest(company, company.workspace.tenantId)).toEqual([]);
+    expect(validateWilsyModuleManifest(manifest, 'ACME-001')[0].moduleId).toBe('LEGAL_OS');
+    const duplicate = structuredClone(company); duplicate.workspace.modules.push({ ...duplicate.workspace.modules[0] });
+    expect(() => validateWilsyModuleManifest(duplicate, company.workspace.tenantId)).toThrow('MODULE_MANIFEST_ENTRY_INVALID');
+    const forged = structuredClone(company); forged.workspace.modules[0].permissions = ['*'];
+    expect(() => validateWilsyModuleManifest(forged, company.workspace.tenantId)).toThrow('MODULE_MANIFEST_ENTRY_INVALID');
+  });
 
   it('admits only the READY manifest bound to the exact authenticated tenant', () => {
     const result = validateWilsyModuleManifest(manifest, 'ACME-001');
@@ -303,9 +313,17 @@ describe('EOS-issued tenant product navigation', () => {
 });
 
 // ARTIFACT: WilsyOSDashboardChrome.test.jsx
-// VERSION: v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT
+// VERSION: v2.3.0-WILSY-PLATFORM-OWNER-MANIFEST-CERT
 // AUTHORITY BOUNDARY: browser presentation certificate only
 // TENANT POSTURE: module navigation binds to exact authenticated tenant
 // FAIL-CLOSED POSTURE: malformed, duplicate, foreign or forged module evidence rejects
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+// END OF WILSY OS SOVEREIGN ARTIFACT
+
+// ARTIFACT: WilsyOSDashboardChrome.test.jsx
+// VERSION: v2.3.0-WILSY-PLATFORM-OWNER-MANIFEST-CERT
+// AUTHORITY BOUNDARY: browser presentation certificate only; no source authority
+// TENANT POSTURE: branding accepted only from exact authenticated tenant projection
+// FAIL-CLOSED POSTURE: legacy/foreign/browser branding is suppressed
+// FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
 // END OF WILSY OS SOVEREIGN ARTIFACT

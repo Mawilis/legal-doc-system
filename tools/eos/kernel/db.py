@@ -1,39 +1,60 @@
 # -*- coding: utf-8 -*-
 """
-===============================================================================
-EPITOME: WILSY OS - SOVEREIGN KENNEL DATABASE ANCHOR (ATLAS-RESILIENT)
-STANDARD: BIBLICAL WORTH BILLIONS NO CHILD'S PLACE
-===============================================================================
-File:           tools/eos/kernel/db.py
-Version:        v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI
-Authority:      Wilsy OS Core Governance
-Classification: Production Artifact (Zero-Downtime Architecture)
-CHANGELOG: v2.3.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT recognizes both WILSY_ENV
-            and ENV as deployment environment markers so the canonical EOS
-            Kubernetes manifest cannot be misclassified as development;
-            v2.2.0 makes MONGODB_URI the sole database authority and blocks
-            repository dotenv rescue in production.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+Wilsy OS canonical Kennel database lifecycle and opt-in timing boundary.
 
-COLLABORATION COMMENTS:
-- @Wilson: Added conditional TLS options for development to bypass SSL
-  handshake errors without compromising production security.
-- @WilsyOS: TLS options are enabled only when ENV != 'production'.
-- @WilsyOS: Connection and retry lifecycle is now explicit and import-inert;
-  API startup owns connect/disconnect and no thread is created implicitly.
-
-Forensic Relationships:
-  Upstream:   kennel.py, billing_registry.py, all SaaS modules
-  Downstream: All Mongoose/PyMongo models and collections
-===============================================================================
+TITLE: WILSY OS Sovereign Kennel Database Anchor
+VERSION: v2.6.0-BOUNDED-ON-DEMAND-CONNECTIONS
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Owns the sole EOS MongoClient lifecycle and canonical database binding;
+         optionally observes request-scoped pool and command timings; avoids
+         eager unused sockets on shared-capacity MongoDB deployments.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/db.py
+COLLABORATION / OWNERSHIP: EOS runtime owns connection startup and shutdown;
+                           AuthRegistry supplies validated timing context only.
+CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG:
+  v2.6.0-BOUNDED-ON-DEMAND-CONNECTIONS — Sets the shared canonical
+    client minimum pool to zero: connections open only when required by
+    admitted operations instead of maintaining ten idle connections per
+    server. Logs only LOCAL_LOOPBACK or REMOTE_TLS target classification and
+    opt-in client bootstrap/ping elapsed milliseconds, never URI or hosts.
+    Existing maximum pool, transaction, tenant and TLS guards are unchanged.
+  v2.5.0-STRICT-REMOTE-MONGO-TLS — Requires TLS for every non-loopback
+    MongoDB target, rejects explicit insecure remote overrides, and always
+    validates certificates and hostnames for TLS connections.
+  v2.4.0-OPT-IN-MONGO-REQUEST-DIAGNOSTICS — Adds fail-isolated, trace-bound
+    Mongo pool checkout and command round-trip telemetry at the canonical
+    MongoClient construction boundary. It records no query, document, database,
+    endpoint, credential, principal, tenant, or exception values.
+  v2.3.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT — Treats either WILSY_ENV or ENV
+    production marker as authoritative and blocks repository dotenv rescue.
+  v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI — Makes MONGODB_URI the sole database
+    authority and blocks repository dotenv rescue in production.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Remote MongoDB transport requires certificate- and
+    hostname-verified TLS. Mongo monitoring is disabled unless
+    WILSY_MY_WORK_TIMING=1; telemetry is allowlisted and fail-isolated.
+TENANT BOUNDARY: Database selection is configuration-owned; query tenant scope
+    remains the calling registry's responsibility.
+AUTHORITY BOUNDARY: Connection lifecycle and safe diagnostics only; no business
+    or authorization authority is created.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
 """
-
 import logging
+import ipaddress
 import os
+import re
 import threading
+import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
+from typing import Any, Iterator
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors, monitoring
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +62,48 @@ logger = logging.getLogger(__name__)
 # not inherit Node's dotenv bootstrap. Repository dotenv is a development/test
 # convenience only; production must receive MONGODB_URI from deployment.
 _REPOSITORY_ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
+
+
+def _mongo_hosts(uri: str) -> tuple[str, ...]:
+    """Extract MongoDB seed hosts without exposing URI credentials.
+
+    This parser is used only to distinguish loopback development targets from
+    remote databases. PyMongo remains responsible for full URI validation and
+    connection semantics.
+    """
+    try:
+        parsed = urlsplit(uri)
+        authority = parsed.netloc.rsplit("@", 1)[-1]
+        hosts: list[str] = []
+        for endpoint in authority.split(","):
+            value = endpoint.strip()
+            if value.startswith("[") and "]" in value:
+                host = value[1:value.index("]")]
+            else:
+                host = value.rsplit(":", 1)[0] if ":" in value else value
+            if host:
+                hosts.append(host.rstrip(".").lower())
+        if parsed.scheme == "mongodb+srv" and parsed.hostname:
+            return (parsed.hostname.rstrip(".").lower(),)
+        return tuple(hosts)
+    except (TypeError, ValueError):
+        return ()
+
+
+def _is_loopback_mongo_uri(uri: str) -> bool:
+    """Return true only when every canonical MongoDB seed is loopback."""
+    hosts = _mongo_hosts(uri)
+    if not hosts:
+        return False
+    for host in hosts:
+        if host == "localhost":
+            continue
+        try:
+            if not ipaddress.ip_address(host).is_loopback:
+                return False
+        except ValueError:
+            return False
+    return True
 
 
 def _is_production_environment() -> bool:
@@ -73,6 +136,301 @@ _ready = False
 _last_error = None
 _state_lock = threading.RLock()
 _retry_thread = None
+
+_MONGO_TIMING_ENVIRONMENT_VARIABLE = "WILSY_MY_WORK_TIMING"
+_MONGO_TIMING_STAGES = frozenset(
+    {
+        "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+        "AUTH_CREDENTIAL_EXACT_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_COLLISION_VERIFICATION",
+        "AUTH_CREDENTIAL_RECORD_HYDRATION_VALIDATION",
+    }
+)
+_MONGO_TRACE_PATTERN = re.compile(
+    r"TRC-(?:[A-Z0-9]{8}-[A-Z0-9]{6}|SERVER-[A-F0-9]{12})\Z"
+)
+_MONGO_TIMING_CONTEXT: ContextVar[dict[str, Any] | None] = ContextVar(
+    "wilsy_kernel_mongo_timing_context", default=None
+)
+
+
+def _mongo_timing_is_enabled() -> bool:
+    """Return whether request-scoped Mongo timing was enabled at process runtime."""
+    return os.getenv(_MONGO_TIMING_ENVIRONMENT_VARIABLE, "").strip() == "1"
+
+
+def _emit_mongo_timing(
+    *,
+    trace_id: str,
+    operation_stage: str,
+    event: str,
+    outcome: str,
+    duration_ms: float,
+    checked_out: int | None = None,
+    pool_capacity: int | None = None,
+) -> None:
+    """Write only allowlisted stage labels and bounded numeric diagnostics."""
+    if (
+        not _mongo_timing_is_enabled()
+        or _MONGO_TRACE_PATTERN.fullmatch(trace_id) is None
+        or operation_stage not in _MONGO_TIMING_STAGES
+        or event not in {
+            "AUTH_MONGO_POOL_CHECKOUT",
+            "AUTH_MONGO_POOL_CHECKOUT_FAILURE",
+            "AUTH_MONGO_POOL_PRESSURE",
+            "AUTH_MONGO_COMMAND_ROUND_TRIP",
+            "AUTH_MONGO_CLIENT_RESIDUAL",
+        }
+        or outcome not in {"OK", "FAILED", "OBSERVED"}
+    ):
+        return
+    try:
+        if event == "AUTH_MONGO_POOL_PRESSURE":
+            if checked_out is None or pool_capacity is None:
+                return
+            logger.info(
+                "WILSY_MONGO_TIMING trace_id=%s operation_stage=%s event=%s outcome=%s checked_out=%d pool_capacity=%d",
+                trace_id,
+                operation_stage,
+                event,
+                outcome,
+                max(0, checked_out),
+                max(0, pool_capacity),
+            )
+            return
+        safe_duration = max(0.0, float(duration_ms))
+        logger.info(
+            "WILSY_MONGO_TIMING trace_id=%s operation_stage=%s event=%s outcome=%s duration_ms=%.3f",
+            trace_id,
+            operation_stage,
+            event,
+            outcome,
+            safe_duration,
+        )
+    except Exception:
+        # Optional diagnostics must never alter database or authorization behavior.
+        return
+
+
+@contextmanager
+def mongo_timing_scope(*, stage: str, correlation: str | None) -> Iterator[None]:
+    """Bind one safe credential-read stage to Mongo monitoring callbacks.
+
+    @description Correlates pool and command timing for the exact synchronous
+    Mongo operation performed inside this scope.
+    @collaboration AuthRegistry credential-currentness diagnostics only.
+    @institutional Observation has no connection, query, transaction, tenant,
+    credential, or authorization authority. Invalid context remains unobserved.
+    """
+    if (
+        not _mongo_timing_is_enabled()
+        or stage not in _MONGO_TIMING_STAGES
+        or not isinstance(correlation, str)
+        or _MONGO_TRACE_PATTERN.fullmatch(correlation) is None
+    ):
+        yield
+        return
+    scope: dict[str, Any] = {
+        "trace_id": correlation,
+        "operation_stage": stage,
+        "started_ns": time.perf_counter_ns(),
+        "pool_wait_ms": 0.0,
+        "command_round_trip_ms": 0.0,
+    }
+    token = _MONGO_TIMING_CONTEXT.set(scope)
+    outcome = "OBSERVED"
+    try:
+        yield
+    except BaseException:
+        outcome = "FAILED"
+        raise
+    finally:
+        _MONGO_TIMING_CONTEXT.reset(token)
+        elapsed_ms = max(0.0, (time.perf_counter_ns() - scope["started_ns"]) / 1_000_000)
+        residual_ms = max(
+            0.0,
+            elapsed_ms - scope["pool_wait_ms"] - scope["command_round_trip_ms"],
+        )
+        _emit_mongo_timing(
+            trace_id=scope["trace_id"],
+            operation_stage=scope["operation_stage"],
+            event="AUTH_MONGO_CLIENT_RESIDUAL",
+            outcome=outcome,
+            duration_ms=residual_ms,
+        )
+
+
+class _RequestMongoTimingListener(monitoring.CommandListener, monitoring.ConnectionPoolListener):
+    """Observe scoped Mongo checkout and round-trip timings without query data."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._command_scopes: dict[tuple[Any, ...], dict[str, Any]] = {}
+        self._checked_out: dict[Any, int] = {}
+        self._pool_capacities: dict[Any, int] = {}
+        self._configured_pool_capacity: int | None = None
+
+    def started(self, event: Any) -> None:
+        try:
+            scope = _MONGO_TIMING_CONTEXT.get()
+            if scope is None or not _mongo_timing_is_enabled():
+                return
+            key = self._command_key(event)
+            with self._lock:
+                self._command_scopes[key] = scope
+        except Exception:
+            return
+
+    @staticmethod
+    def _command_key(event: Any) -> tuple[Any, ...]:
+        """Use internal driver correlation fields without logging them."""
+        return (
+            getattr(event, "connection_id", None),
+            getattr(event, "server_connection_id", None),
+            getattr(event, "service_id", None),
+            getattr(event, "operation_id", None),
+            int(event.request_id),
+        )
+
+    def succeeded(self, event: Any) -> None:
+        self._finish_command(event, outcome="OK")
+
+    def failed(self, event: Any) -> None:
+        self._finish_command(event, outcome="FAILED")
+
+    def _finish_command(self, event: Any, *, outcome: str) -> None:
+        try:
+            with self._lock:
+                scope = self._command_scopes.pop(self._command_key(event), None)
+            if scope is None:
+                return
+            duration_micros = getattr(event, "duration_micros", None)
+            if isinstance(duration_micros, (int, float)) and not isinstance(duration_micros, bool):
+                duration = max(0.0, float(duration_micros) / 1000.0)
+            else:
+                duration = max(0.0, float(event.duration.total_seconds()) * 1000.0)
+            scope["command_round_trip_ms"] += duration
+            _emit_mongo_timing(
+                trace_id=scope["trace_id"],
+                operation_stage=scope["operation_stage"],
+                event="AUTH_MONGO_COMMAND_ROUND_TRIP",
+                outcome=outcome,
+                duration_ms=duration,
+            )
+        except Exception:
+            return
+
+    def configure_pool_capacity(self, value: int) -> None:
+        """Record the canonical client setting for per-server saturation context."""
+        if isinstance(value, int) and value > 0:
+            self._configured_pool_capacity = value
+
+    def pool_created(self, event: Any) -> None:
+        try:
+            options = getattr(event, "options", {})
+            maximum = (
+                options.get("maxPoolSize", self._configured_pool_capacity)
+                if isinstance(options, dict)
+                else self._configured_pool_capacity
+            )
+            if isinstance(maximum, int) and maximum > 0:
+                with self._lock:
+                    self._pool_capacities[event.address] = maximum
+                    self._checked_out.setdefault(event.address, 0)
+        except Exception:
+            return
+
+    def pool_ready(self, event: Any) -> None:
+        return
+
+    def pool_cleared(self, event: Any) -> None:
+        return
+
+    def pool_closed(self, event: Any) -> None:
+        try:
+            with self._lock:
+                self._checked_out.pop(event.address, None)
+                self._pool_capacities.pop(event.address, None)
+        except Exception:
+            return
+
+    def connection_created(self, event: Any) -> None:
+        return
+
+    def connection_ready(self, event: Any) -> None:
+        return
+
+    def connection_closed(self, event: Any) -> None:
+        return
+
+    def connection_check_out_started(self, event: Any) -> None:
+        return
+
+    def connection_checked_out(self, event: Any) -> None:
+        try:
+            with self._lock:
+                active = self._checked_out.get(event.address, 0) + 1
+                self._checked_out[event.address] = active
+                capacity = self._pool_capacities.get(event.address)
+            scope = _MONGO_TIMING_CONTEXT.get()
+            if scope is None:
+                return
+            duration_seconds = getattr(event, "duration", None)
+            wait_ms = max(0.0, float(duration_seconds or 0.0) * 1000.0)
+            scope["pool_wait_ms"] += wait_ms
+            _emit_mongo_timing(
+                trace_id=scope["trace_id"],
+                operation_stage=scope["operation_stage"],
+                event="AUTH_MONGO_POOL_CHECKOUT",
+                outcome="OK",
+                duration_ms=wait_ms,
+            )
+            if capacity is not None:
+                _emit_mongo_timing(
+                    trace_id=scope["trace_id"],
+                    operation_stage=scope["operation_stage"],
+                    event="AUTH_MONGO_POOL_PRESSURE",
+                    outcome="OBSERVED",
+                    duration_ms=0.0,
+                    checked_out=active,
+                    pool_capacity=capacity,
+                )
+        except Exception:
+            return
+
+    def connection_checked_in(self, event: Any) -> None:
+        try:
+            with self._lock:
+                active = max(0, self._checked_out.get(event.address, 0) - 1)
+                self._checked_out[event.address] = active
+        except Exception:
+            return
+
+    def connection_check_out_failed(self, event: Any) -> None:
+        try:
+            scope = _MONGO_TIMING_CONTEXT.get()
+            if scope is None:
+                return
+            duration_seconds = getattr(event, "duration", None)
+            wait_ms = max(0.0, float(duration_seconds or 0.0) * 1000.0)
+            with self._lock:
+                active = self._checked_out.get(event.address, 0)
+                capacity = self._pool_capacities.get(event.address)
+            _emit_mongo_timing(
+                trace_id=scope["trace_id"],
+                operation_stage=scope["operation_stage"],
+                event="AUTH_MONGO_POOL_CHECKOUT_FAILURE",
+                outcome="FAILED",
+                duration_ms=wait_ms,
+                checked_out=active if capacity is not None else None,
+                pool_capacity=capacity,
+            )
+        except Exception:
+            return
+
+
+_MONGO_TIMING_LISTENER = _RequestMongoTimingListener()
 _retry_stop = None
 
 
@@ -136,37 +494,70 @@ def connect_db(force_reconnect=False):
         logger.error("[KENNEL_DB] 💥 CRITICAL: No MONGODB_URI in environment.")
         return False, "MONGODB_URI missing"
 
-    # Determine environment
-    is_dev = not _is_production_environment()
+    # Remote MongoDB transport is always encrypted. Only all-loopback
+    # development replica sets retain the established non-TLS default.
+    # Atlas SRV hosts are remote by definition. Explicit TLS configuration may
+    # enable TLS locally, but cannot downgrade any remote or production target.
+    is_loopback_target = _is_loopback_mongo_uri(uri)
+    tls_required = _is_production_environment() or not is_loopback_target
+    configured_tls = os.getenv('WILSY_KENNEL_DB_TLS')
+    if configured_tls is not None:
+        normalized_tls = configured_tls.strip().lower()
+        if normalized_tls not in {'1', 'true', 'yes', 'on', '0', 'false', 'no', 'off'}:
+            _last_error = 'WILSY_KENNEL_DB_TLS configuration invalid'
+            logger.error('[KENNEL_DB] TLS configuration is invalid; connection refused.')
+            return False, 'TLS configuration invalid'
+        requested_tls = normalized_tls in {'1', 'true', 'yes', 'on'}
+        if tls_required and not requested_tls:
+            _last_error = 'TLS required for remote MongoDB target'
+            logger.error('[KENNEL_DB] TLS downgrade refused for remote database target.')
+            return False, 'TLS required for remote database target'
+        tls_enabled = requested_tls or tls_required
+    else:
+        tls_enabled = tls_required
 
-    # PyMongo connection options.  Local certification Mongo is deliberately
-    # non-TLS; Atlas and production remain TLS-first unless explicitly opted
-    # out by a controlled environment setting.
+    # PyMongo uses the platform trust store and verifies hostnames by default.
+    # Set both flags explicitly so development configuration cannot silently
+    # accept an invalid Atlas certificate or endpoint identity.
     options = {
-        'tls': (
-            os.getenv('WILSY_KENNEL_DB_TLS', '').strip().lower() in {'1', 'true', 'yes', 'on'}
-            if os.getenv('WILSY_KENNEL_DB_TLS') is not None
-            else (uri.startswith('mongodb+srv://') or not is_dev)
-        ),
+        'tls': tls_enabled,
         'connectTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_CONNECT_TIMEOUT_MS', 30000)),
         'socketTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SOCKET_TIMEOUT_MS', 45000)),
         'serverSelectionTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SERVER_SELECTION_MS', 5000)),
         'maxPoolSize': 50,
-        'minPoolSize': 10,
+        'minPoolSize': 0,
         'maxIdleTimeMS': 60000,
         'retryWrites': True,
         'retryReads': True,
     }
     if options['tls']:
-        options['tlsAllowInvalidCertificates'] = is_dev
-        options['tlsAllowInvalidHostnames'] = is_dev
+        options['tlsAllowInvalidCertificates'] = False
+        options['tlsAllowInvalidHostnames'] = False
 
     local_client = None
     try:
-        logger.info("[KENNEL_DB] 📡 Initiating explicit replica set link...")
+        logger.info(
+            "[KENNEL_DB] Canonical target=%s TLS=%s min_pool=%d max_pool=%d",
+            "LOCAL_LOOPBACK" if is_loopback_target else "REMOTE_TLS",
+            "ENABLED" if tls_enabled else "DISABLED",
+            options["minPoolSize"], options["maxPoolSize"],
+        )
+        bootstrap_started_ns = time.perf_counter_ns()
+        if _mongo_timing_is_enabled():
+            _MONGO_TIMING_LISTENER.configure_pool_capacity(options["maxPoolSize"])
+            options["event_listeners"] = [_MONGO_TIMING_LISTENER]
         local_client = MongoClient(uri, **options)
         # Force a ping to verify connectivity
+        constructed_ns = time.perf_counter_ns()
         local_client.admin.command('ping')
+        ping_completed_ns = time.perf_counter_ns()
+        if _mongo_timing_is_enabled():
+            logger.info(
+                "WILSY_MONGO_BOOTSTRAP target=%s client_construct_ms=%.3f first_ping_ms=%.3f",
+                "LOCAL_LOOPBACK" if is_loopback_target else "REMOTE_TLS",
+                (constructed_ns - bootstrap_started_ns) / 1_000_000,
+                (ping_completed_ns - constructed_ns) / 1_000_000,
+            )
         database = local_client.get_database()  # Uses the database from the URI
         with _state_lock:
             previous_client = _client
@@ -186,16 +577,16 @@ def connect_db(force_reconnect=False):
             _ready = False
         logger.error(f"[KENNEL_DB] ⚠️ REPLICA LINK SEVERED — Kennel will run DEGRADED.")
         logger.error(f"[KENNEL_DB] Atlas checklist: Network Access → Verify IP whitelist.")
-        logger.error(f"[KENNEL_DB] Detail: {str(e)[:240]}")
-        return False, f"ServerSelectionTimeoutError: {str(e)[:200]}"
+        logger.error("[KENNEL_DB] Server selection failed; endpoint details withheld.")
+        return False, "ServerSelectionTimeoutError"
     except Exception as e:
         if local_client is not None:
             local_client.close()
         with _state_lock:
             _last_error = e
             _ready = False
-        logger.error(f"[KENNEL_DB] ⚠️ Connection error: {str(e)[:240]}")
-        return False, f"Connection error: {str(e)[:200]}"
+        logger.error("[KENNEL_DB] Connection failure class=%s; endpoint details withheld.", type(e).__name__)
+        return False, "Connection error"
 
 
 # ─── Self-Healing Background Retry ──────────────────────────────────────
@@ -275,7 +666,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.3.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT
+# VERSION: v2.6.0-BOUNDED-ON-DEMAND-CONNECTIONS
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.

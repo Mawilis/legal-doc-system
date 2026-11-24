@@ -1,18 +1,24 @@
 /**
  * TITLE: WILSY OS tenant module manifest contract
- * VERSION: v1.0.0-EOS-TENANT-MODULE-MANIFEST-CLIENT
+ * VERSION: v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST-CLIENT
  * AUTHORITY: Browser validation of the authenticated server-issued module projection.
- * PURPOSE: Bind module identity, product identity, workspace route and entitlement
+ * EPITOME: Bind module identity, product identity, workspace route and entitlement
  *          evidence to one exact tenant without creating any client authorization.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/utils/tenantModuleManifest.js
  * COLLABORATION / OWNERSHIP: EOS auth module manifest owns the response; client consumes presentation metadata only.
- * CERTIFICATION / UPDATE DATE: 2026-11-06
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST-CLIENT excludes Legal OS only
+ * from WILSY company presentation after every source row is validated. The v1
+ * response schema and customer entitlement/navigation semantics remain intact.
  * CHANGELOG: v1.0.0 establishes strict tenant-bound response validation and a closed module-to-product mapping.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: No local entitlement inference, browser-supplied role, route grant or permission expansion.
  * TENANT BOUNDARY: Exact authenticated tenant match is mandatory.
+ * AUTHORITY BOUNDARY: Validates EOS-issued module presentation metadata only; no IAM, entitlement issuance, route admission or resource authority.
  * FINANCIAL AUTHORITY BOUNDARY: No pricing, payment, execution or settlement authority.
  */
+
+import { isWilsyPlatformTenant } from '../components/os/wilsyDashboardChromeConfig.js';
 
 export const MODULE_MANIFEST_VERSION = 'v1.0.0-EOS-TENANT-MODULE-MANIFEST';
 
@@ -69,7 +75,14 @@ export const MODULE_PRESENTATION = Object.freeze({
 });
 
 /**
- * Admit only the exact READY server-issued module projection for the active tenant.
+ * @description Admit only the exact READY source projection for the active tenant.
+ * @collaboration Shared chrome and SovereignDashboardController consume this projection.
+ * @institutional WILSY company navigation excludes Legal OS; this presentation
+ * policy grants no role or entitlement and does not mutate source evidence.
+ * @param {Object} payload Exact source response.
+ * @param {string} expectedTenantId Authenticated tenant selector.
+ * @returns {ReadonlyArray<Object>} Validated internal/customer workspace entries.
+ * @throws {Error} Stable contract error on foreign, malformed or duplicate rows.
  * This validates presentation metadata only; destinations and APIs independently authorize.
  */
 export const validateWilsyModuleManifest = (payload, expectedTenantId) => {
@@ -121,11 +134,11 @@ export const validateWilsyModuleManifest = (payload, expectedTenantId) => {
     }
     seen.add(module.moduleId);
     return Object.freeze({ ...module });
-  });
+  }).filter(module => !(isWilsyPlatformTenant(expectedTenantId) && module.moduleId === 'LEGAL_OS'));
 };
 
 // ARTIFACT: tenantModuleManifest.js
-// VERSION: v1.0.0-EOS-TENANT-MODULE-MANIFEST-CLIENT
+// VERSION: v1.1.0-WILSY-PLATFORM-OWNER-MANIFEST-CLIENT
 // AUTHORITY BOUNDARY: presentation validation only; no IAM or route admission
 // TENANT POSTURE: exact authenticated tenant match required
 // FAIL-CLOSED POSTURE: unknown, duplicate, malformed, foreign or forged entries reject

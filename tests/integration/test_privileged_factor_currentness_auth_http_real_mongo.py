@@ -1,5 +1,5 @@
 """TITLE: Privileged Factor Currentness Auth HTTP Real-Mongo Certificate.
-VERSION: v1.0.0-P3-R3G-S5-A2-AUTH-HTTP-ATOMICITY
+VERSION: v1.1.0-CONSOLIDATION-DISCOVERED-TENANT-MFA-CERT
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Certifies that the production-mounted OTP HTTP route atomically commits
 one canonical session and one interactive factor-currentness event in a real
@@ -7,8 +7,9 @@ MongoDB replica-set transaction, and aborts both on post-session failure.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_privileged_factor_currentness_auth_http_real_mongo.py
 COLLABORATION / OWNERSHIP: Auth router, AuthRegistry, Kernel DB seams, factor
 currentness registry, WilsyAPIServer, and local certification replica set.
-CERTIFICATION/UPDATE DATE: 2026-10-14.
+CERTIFICATION/UPDATE DATE: 2026-11-10.
 CHANGELOG:
+  v1.1.0-CONSOLIDATION-DISCOVERED-TENANT-MFA-CERT: Carries the explicit discovered tenant through real OTP requests and proves missing/foreign selectors fail before session writes.
   v1.0.0-P3-R3G-S5-A2-AUTH-HTTP-ATOMICITY: Adds success, invalid-OTP, and
   post-session transactional-failure proofs through POST /api/auth/verify-otp,
   plus production identity proof for validate-MFA and both OTP aliases.
@@ -191,7 +192,7 @@ def test_verify_otp_commits_session_and_factor_atomically(
     registry = _CertificateAuthRegistry()
     response = _http(monkeypatch, mongo_context, registry).post(
         "/api/auth/verify-otp",
-        json={"email": email, "code": pyotp.TOTP(secret).now()},
+        json={"tenant_id": _TenantRegistry.tenant_id, "email": email, "code": pyotp.TOTP(secret).now()},
     )
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -225,7 +226,7 @@ def test_invalid_otp_writes_neither_session_nor_factor(
     registry = _CertificateAuthRegistry()
     response = _http(monkeypatch, mongo_context, registry).post(
         "/api/auth/verify-otp",
-        json={"email": email, "code": _invalid_code(secret)},
+        json={"tenant_id": _TenantRegistry.tenant_id, "email": email, "code": _invalid_code(secret)},
     )
     assert response.status_code == 401
     assert mongo_context.database["sessions"].count_documents(
@@ -244,7 +245,7 @@ def test_post_session_failure_aborts_session_and_factor(
     registry = _PostSessionFailureRegistry()
     response = _http(monkeypatch, mongo_context, registry).post(
         "/api/auth/verify-otp",
-        json={"email": email, "code": pyotp.TOTP(secret).now()},
+        json={"tenant_id": _TenantRegistry.tenant_id, "email": email, "code": pyotp.TOTP(secret).now()},
     )
     assert response.status_code == 500
     assert mongo_context.database["sessions"].count_documents(
@@ -286,8 +287,25 @@ def test_production_route_identities_and_validate_transaction_compatibility() ->
     )
 
 
+
+@pytest.mark.parametrize("tenant", [None, "foreign-tenant"])
+def test_missing_or_foreign_discovered_tenant_cannot_issue_session(
+    monkeypatch: pytest.MonkeyPatch, mongo_context: _MongoContext, tenant: str | None,
+) -> None:
+    """MFA proof alone cannot override the explicit discovered tenant boundary."""
+    _principal, email, secret, _revision = _seed(mongo_context.database)
+    response = _http(monkeypatch, mongo_context, _CertificateAuthRegistry()).post(
+        "/api/auth/verify-otp",
+        json={"tenant_id": tenant, "email": email, "code": pyotp.TOTP(secret).now()},
+    )
+    assert response.status_code in {400, 401, 403}
+    assert mongo_context.database["sessions"].count_documents({}) == 0
+    assert mongo_context.database["refresh_tokens"].count_documents({}) == 0
+    assert mongo_context.database[FACTOR_COLLECTION].count_documents({}) == 0
+
+
 # ARTIFACT: test_privileged_factor_currentness_auth_http_real_mongo.py
-# VERSION: v1.0.0-P3-R3G-S5-A2-AUTH-HTTP-ATOMICITY
+# VERSION: v1.1.0-CONSOLIDATION-DISCOVERED-TENANT-MFA-CERT
 # AUTHORITY BOUNDARY: Real persistence and HTTP observation only; no privileged activation or role authority.
 # TENANT POSTURE: UUID-isolated disposable database and exact tenant/principal credential reads.
 # FAIL-CLOSED POSTURE: Invalid OTP and post-session failure must leave zero durable session/factor rows.

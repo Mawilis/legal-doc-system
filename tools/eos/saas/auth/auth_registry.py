@@ -1,15 +1,37 @@
-"""Wilsy OS canonical authentication registry.
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+Wilsy OS canonical authentication registry.
 
 TITLE: WILSY OS Authentication Registry
-VERSION: v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION
+VERSION: v1.17.0-COMBINED-LEGACY-IDENTITY-READ
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns password, JWT, OTP, session, and refresh-token business semantics
          while consuming the caller-established canonical Kernel database.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/auth/auth_registry.py
 COLLABORATION / OWNERSHIP: Auth router delegates here; tools.eos.kernel.db owns
                            the sole Mongo lifecycle and connection recovery.
-CERTIFICATION / UPDATE DATE: 2026-10-14
+CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
+  v1.17.0-COMBINED-LEGACY-IDENTITY-READ — Combines exact canonical and
+    ObjectId identity predicates into one tenant-scoped Mongo read for
+    ObjectId-shaped principals, retaining bounded collision detection and
+    caller ClientSession propagation.
+  v1.16.0-CORRELATED-MONGO-READ-DIAGNOSTICS — Propagates only the validated
+    opaque request trace and fixed read-stage label into the canonical Kernel
+    Mongo timing scope; diagnostic failure cannot alter authorization.
+  v1.15.0-CURRENTNESS-VALIDATED-TENANT-HYDRATION — Reuses the canonical
+    tenant entity and canonical/legacy collision checks already established by
+    exact credential identity resolution. Credential-currentness reads avoid
+    duplicate tenant resolution and duplicate collision lookup; all other
+    _doc_to_user callers retain independent validation and caller-session paths.
+  v1.14.0-CREDENTIAL-CURRENTNESS-TIMING — Emits opt-in, trace-bound fixed-stage
+    durations around exact tenant credential revision resolution; telemetry is
+    fail-isolated and carries no identity or credential data.
+  v1.13.0-CONSOLIDATION-STRICT-IDENTITY-HYDRATION — Rejects malformed canonical identities and non-BSON legacy IDs; preserves established absent/null user_id ObjectId compatibility without writes; denies canonical/legacy collisions; sanitizes opt-in legacy diagnostics; validates hydration before tenant-bound auth updates.
   v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION — Normalizes only valid Mongo-hydrated session expiry datetimes and observation datetimes to aware UTC before currentness comparison, preserving exact tenant/principal/reference binding, caller-owned session propagation, and fail-closed non-datetime handling.
   v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION — Extends the D15G developer-persona transaction seam so canonical
     tenant validation for register_user participates in the exact caller-owned
@@ -75,12 +97,147 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Any
 import uuid
 import logging
+import os
+import re
+import time
 
 from bson import ObjectId
 from pymongo.errors import ConnectionFailure, DuplicateKeyError, PyMongoError
 
 from ..domain.auth import User, Session, AuthRequest, VerifyOTPRequest
+from ..domain.tenant import TenantEntity
 from ..tenancy.tenant_registry import TenantRegistry
+
+
+_CREDENTIAL_TIMING_ENVIRONMENT_VARIABLE = "WILSY_MY_WORK_TIMING"
+_CREDENTIAL_TIMING_STAGES = frozenset(
+    {
+        "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+        "AUTH_CREDENTIAL_EXACT_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_COLLISION_VERIFICATION",
+        "AUTH_CREDENTIAL_RECORD_HYDRATION_VALIDATION",
+    }
+)
+_CREDENTIAL_MONGO_READ_STAGES = frozenset(
+    {
+        "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+        "AUTH_CREDENTIAL_EXACT_IDENTITY_LOOKUP",
+        "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
+    }
+)
+_CREDENTIAL_TIMING_TRACE_PATTERN = re.compile(
+    r"TRC-(?:[A-Z0-9]{8}-[A-Z0-9]{6}|SERVER-[A-F0-9]{12})\Z"
+)
+
+
+def _validated_credential_timing_correlation() -> str | None:
+    """Return the active validated opaque trace only while diagnostics are enabled."""
+    if os.getenv(_CREDENTIAL_TIMING_ENVIRONMENT_VARIABLE, "").strip() != "1":
+        return None
+    try:
+        from tools.eos.auth.authentication import (
+            current_request_timing_correlation,
+            request_timing_enabled,
+        )
+
+        correlation = current_request_timing_correlation()
+        if (
+            request_timing_enabled() is not True
+            or not isinstance(correlation, str)
+            or _CREDENTIAL_TIMING_TRACE_PATTERN.fullmatch(correlation) is None
+        ):
+            return None
+        return correlation
+    except Exception:
+        # Trace acquisition is optional and never changes currentness decisions.
+        return None
+
+
+def _run_with_mongo_timing_scope(
+    *, stage: str, correlation: str | None, operation: Any
+) -> Any:
+    """Run a read under the Kernel observer without making it an authority."""
+    if correlation is None or stage not in _CREDENTIAL_MONGO_READ_STAGES:
+        return operation()
+    try:
+        scope_factory = getattr(kernel_db, "mongo_timing_scope", None)
+        if not callable(scope_factory):
+            return operation()
+        scope: Any = scope_factory(stage=stage, correlation=correlation)
+        scope.__enter__()
+    except Exception:
+        # Instrumentation setup is fault-isolated before the read is invoked.
+        return operation()
+    try:
+        result = operation()
+    except BaseException as operation_error:
+        try:
+            scope.__exit__(
+                type(operation_error), operation_error, operation_error.__traceback__
+            )
+        except Exception:
+            pass
+        raise
+    try:
+        scope.__exit__(None, None, None)
+    except Exception:
+        # Observer teardown cannot change the exact operation result.
+        pass
+    return result
+
+
+def _emit_credential_currentness_timing(
+    *, stage: str, outcome: str, started_ns: int
+) -> None:
+    """Emit fixed-stage credential lookup timing without exposing record data.
+
+    @institutional This opt-in observer records elapsed time only. It owns no
+    authentication, credential, tenant, persistence, or transaction authority.
+    """
+
+    if (
+        stage not in _CREDENTIAL_TIMING_STAGES
+        or outcome not in {"OK", "UNAVAILABLE"}
+        or os.getenv(_CREDENTIAL_TIMING_ENVIRONMENT_VARIABLE, "").strip() != "1"
+    ):
+        return
+    try:
+        from tools.eos.auth.authentication import emit_request_timing
+
+        correlation = _validated_credential_timing_correlation()
+        if correlation is None:
+            return
+        emit_request_timing(
+            stage=stage,
+            outcome=outcome,
+            started_ns=started_ns,
+            correlation=correlation,
+        )
+    except Exception:
+        # Credential authority never depends on optional diagnostic telemetry.
+        return
+
+
+def _timed_credential_currentness_stage(stage: str, operation: Any) -> Any:
+    """Run one exact read stage and report only its closed timing outcome."""
+
+    started_ns = time.perf_counter_ns()
+    outcome = "UNAVAILABLE"
+    correlation = _validated_credential_timing_correlation()
+    try:
+        result = _run_with_mongo_timing_scope(
+            stage=stage, correlation=correlation, operation=operation
+        )
+    except Exception:
+        raise
+    else:
+        outcome = "OK"
+        return result
+    finally:
+        _emit_credential_currentness_timing(
+            stage=stage, outcome=outcome, started_ns=started_ns
+        )
 from tools.eos.kernel import db as kernel_db
 from tools.eos.auth.jwt_provider import TokenPurpose, create_access_token
 from tools.eos.auth.principal_authority import PrincipalAuthority
@@ -91,7 +248,7 @@ from tools.eos.auth.principal_authority_repository import (
 )
 from tools.eos.auth.principal_status import PrincipalStatus
 
-VERSION = "v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION"
+VERSION = "v1.17.0-COMBINED-LEGACY-IDENTITY-READ"
 
 # Configuration
 JWT_EXPIRY_HOURS = 24
@@ -103,12 +260,19 @@ logger = logging.getLogger(__name__)
 
 
 class AuthRegistryTenantError(RuntimeError):
-    """Signal that a principal tenant reference is not canonical and ACTIVE.
+    """Expose a stable authentication integrity code without persisted identity.
 
-    This exception is deliberately fail-closed: callers receive no JWT, session,
-    refresh token, or hydrated user when the canonical tenants collection cannot
-    prove exactly one permitted tenant row. It grants no membership or role.
+    Invalid tenant, identity, revision or authority state must not hydrate a user,
+    mutate auth state or issue final credentials. The generic message discloses
+    no tenant, principal, credential or financial facts. HTTP translation remains
+    caller-owned; this exception performs no repair or transaction lifecycle.
     """
+
+    def __init__(self, code: str) -> None:
+        """Retain only a registry-owned code and non-identifying human message."""
+        super().__init__(code)
+        self.error = code
+        self.message = "Authentication identity, tenant or authority could not be verified."
 
 
 def _validated_credential_revision(value: Any, *, present: bool = True) -> int:
@@ -133,16 +297,20 @@ def _validated_credential_revision(value: Any, *, present: bool = True) -> int:
 
 class AuthRegistry:
     """
-    Institutional authentication registry with MongoDB persistence.
-    Handles password hashing, JWT issuance, OTP generation/validation, and session creation.
+    Own legacy authentication semantics using the caller-established Kernel DB.
+
+    TenantRegistry validates tenant truth; PrincipalAuthority admits final
+    sessions. Global Principal credentials, membership, capacity and KMS MFA
+    remain separate authorities. No read silently migrates identity, and caller
+    sessions never transfer transaction ownership to this registry.
     """
 
     def __init__(self, tenant_registry: Optional[TenantRegistry] = None):
-        """
-        Initialize the auth registry.
-        @param tenant_registry: Optional TenantRegistry instance. Currently not used,
-               but kept for future compatibility.
-        """
+        """Bind the caller-supplied tenant resolver or canonical TenantRegistry.
+
+        No connection, index, tenant, identity, permission, or transaction is
+        created. Kernel owns persistence lifecycle; dependency absence fails
+        closed when the first governed operation resolves it."""
         self.tenant_registry = tenant_registry or TenantRegistry
 
     def _require_canonical_tenant(
@@ -248,35 +416,69 @@ class AuthRegistry:
         except (TypeError, ValueError):
             return None
 
+    @staticmethod
+    def _document_user_id(doc: Dict[str, Any]) -> str:
+        """Validate persisted identity without coercion, mutation, or disclosure.
+
+        Established absent/null user_id rows may retain their actual BSON
+        ObjectId identity. Empty strings, false booleans, numbers, containers,
+        whitespace, control characters and non-ObjectId fallbacks are corrupt
+        state. In particular, None can never become the string "None".
+        This compatibility identity is not a Global Principal credential or
+        evidence of membership, MFA, session, or financial authority.
+        """
+        value = doc.get("user_id")
+        if value is None:
+            mongo_id = doc.get("_id")
+            if isinstance(mongo_id, ObjectId):
+                return str(mongo_id)
+        elif (
+            isinstance(value, str)
+            and value
+            and value == value.strip()
+            and not any(ord(character) < 32 or ord(character) == 127 for character in value)
+        ):
+            return value
+        logger.error("AUTH_PRINCIPAL_IDENTITY_INVALID")
+        raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_INVALID")
+
     def _resolve_user_identity(
         self, user_id: str, *, session: Any = None
     ) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
-        """Resolve one durable user and its exact mutation predicate.
+        """Resolve an exact authentication identity without canonical precedence.
 
-        Canonical ``user_id`` identity always wins.  If absent, a validated
-        ObjectId string resolves exactly one legacy Mongo document by ``_id``.
-        Returning the matched document together with its predicate keeps reads,
-        updates, and MFA enrollment on the same effective principal without
-        broadening a query or using email as mutation identity.
+        This platform credential lookup predates tenant selection. Tenant-bound
+        commands use _resolve_exact_credential_identity. Both canonical and
+        ObjectId paths are checked when applicable; competing rows fail closed
+        without disclosing either tenant. A legacy row cannot redirect to a
+        different persisted user_id. The caller owns the optional session.
         """
+        if not isinstance(user_id, str) or not user_id or user_id != user_id.strip():
+            raise AuthRegistryTenantError("AUTH_PRINCIPAL_CANONICAL_INVALID")
         users = self._collection("users")
         canonical_filter = {"user_id": user_id}
-        document = self._call_collection(
+        canonical_document = self._call_collection(
             users, "find_one", canonical_filter, session=session
         )
-        if document is not None:
-            return document, canonical_filter
-
         object_id = self._validated_legacy_object_id(user_id)
-        if object_id is None:
-            return None, None
+        legacy_document = None
         legacy_filter = {"_id": object_id}
-        document = self._call_collection(
-            users, "find_one", legacy_filter, session=session
-        )
-        if document is None:
+        if object_id is not None:
+            legacy_document = self._call_collection(
+                users, "find_one", legacy_filter, session=session
+            )
+        if canonical_document is not None and legacy_document is not None:
+            if canonical_document.get("_id") != legacy_document.get("_id"):
+                logger.error("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+                raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        if canonical_document is not None:
+            return canonical_document, canonical_filter
+        if legacy_document is None:
             return None, None
-        return document, legacy_filter
+        if self._document_user_id(legacy_document) != user_id:
+            logger.error("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+            raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        return legacy_document, legacy_filter
 
     def _resolve_exact_credential_identity(
         self,
@@ -284,6 +486,7 @@ class AuthRegistry:
         user_id: str,
         *,
         session: Any = None,
+        diagnostics: bool = False,
     ) -> tuple[Dict[str, Any], Dict[str, Any], User, int]:
         """Read one exact tenant/principal credential document.
 
@@ -293,7 +496,18 @@ class AuthRegistry:
         are checked and a collision fails closed.  No email, username, or
         tenantless fallback can authorize credential mutation.
         """
-        canonical = self._require_canonical_tenant(tenant_id)
+        def observe(stage: str, operation: Any) -> Any:
+            if diagnostics:
+                return _timed_credential_currentness_stage(stage, operation)
+            return operation()
+
+        canonical = observe(
+            "AUTH_CREDENTIAL_TENANT_RESOLUTION",
+            lambda: self._require_canonical_tenant(
+                tenant_id,
+                session=session,
+            ),
+        )
         canonical_tenant_id = canonical.tenant_id
         if not isinstance(user_id, str) or not user_id.strip():
             raise AuthRegistryTenantError("AUTH_PRINCIPAL_CANONICAL_INVALID")
@@ -302,50 +516,124 @@ class AuthRegistry:
             "user_id": user_id,
             "tenantId": canonical_tenant_id,
         }
-        canonical_document = self._call_collection(
-            users, "find_one", canonical_filter, session=session
-        )
-
         object_id = self._validated_legacy_object_id(user_id)
         legacy_filter: Optional[Dict[str, Any]] = None
         legacy_document: Optional[Dict[str, Any]] = None
-        if object_id is not None:
+        if object_id is None:
+            canonical_document = observe(
+                "AUTH_CREDENTIAL_EXACT_IDENTITY_LOOKUP",
+                lambda: self._call_collection(
+                    users, "find_one", canonical_filter, session=session
+                ),
+            )
+        else:
             legacy_filter = {"_id": object_id, "tenantId": canonical_tenant_id}
-            legacy_document = self._call_collection(
-                users, "find_one", legacy_filter, session=session
+
+            def read_canonical_and_legacy_candidates() -> tuple[
+                Optional[Dict[str, Any]], Optional[Dict[str, Any]]
+            ]:
+                # One exact tenant-scoped command evaluates both identity paths.
+                # A bounded result set retains fail-closed collision detection
+                # without serial command round trips or unbounded document reads.
+                candidate_filter = {
+                    "tenantId": canonical_tenant_id,
+                    "$or": [
+                        {"user_id": user_id},
+                        {"_id": object_id},
+                    ],
+                }
+                cursor = self._call_collection(
+                    users,
+                    "find",
+                    candidate_filter,
+                    session=session,
+                )
+                candidates = list(cursor.limit(3))
+                if len(candidates) > 2:
+                    raise AuthRegistryTenantError(
+                        "AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS"
+                    )
+                canonical_candidates = [
+                    candidate
+                    for candidate in candidates
+                    if candidate.get("user_id") == user_id
+                ]
+                legacy_candidates = [
+                    candidate
+                    for candidate in candidates
+                    if candidate.get("_id") == object_id
+                ]
+                if len(canonical_candidates) > 1 or len(legacy_candidates) > 1:
+                    raise AuthRegistryTenantError(
+                        "AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS"
+                    )
+                return (
+                    canonical_candidates[0] if canonical_candidates else None,
+                    legacy_candidates[0] if legacy_candidates else None,
+                )
+
+            canonical_document, legacy_document = observe(
+                "AUTH_CREDENTIAL_LEGACY_IDENTITY_LOOKUP",
+                read_canonical_and_legacy_candidates,
             )
 
-        if canonical_document is not None and legacy_document is not None:
-            canonical_identity = canonical_document.get("_id")
-            legacy_identity = legacy_document.get("_id")
-            if canonical_identity != legacy_identity:
-                raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        def verify_identity_collision() -> None:
+            if canonical_document is not None and legacy_document is not None:
+                canonical_identity = canonical_document.get("_id")
+                legacy_identity = legacy_document.get("_id")
+                if canonical_identity != legacy_identity:
+                    raise AuthRegistryTenantError(
+                        "AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS"
+                    )
+            if canonical_document is None and legacy_document is not None:
+                persisted_user_id = legacy_document.get("user_id")
+                if persisted_user_id not in (None, "", user_id):
+                    raise AuthRegistryTenantError(
+                        "AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS"
+                    )
+
+        observe(
+            "AUTH_CREDENTIAL_COLLISION_VERIFICATION",
+            verify_identity_collision,
+        )
 
         if canonical_document is not None:
             document = canonical_document
             identity_filter = canonical_filter
         elif legacy_document is not None and legacy_filter is not None:
-            persisted_user_id = legacy_document.get("user_id")
-            if persisted_user_id not in (None, "", user_id):
-                raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
             document = legacy_document
             identity_filter = legacy_filter
         else:
             raise AuthRegistryTenantError("AUTH_PRINCIPAL_CREDENTIAL_NOT_FOUND")
 
-        user = self._doc_to_user(document)
-        if user.tenantId != canonical_tenant_id or user.id != user_id:
-            raise AuthRegistryTenantError("AUTH_CREDENTIAL_TENANT_OR_ID_MISMATCH")
-        revision = self._document_credential_revision(document)
+        def hydrate_and_validate() -> tuple[User, int]:
+            revision = self._document_credential_revision(document)
+            user = self._hydrate_user_for_canonical_tenant(document, canonical)
+            if user.tenantId != canonical_tenant_id or user.id != user_id:
+                raise AuthRegistryTenantError("AUTH_CREDENTIAL_TENANT_OR_ID_MISMATCH")
+            return user, revision
+
+        user, revision = observe(
+            "AUTH_CREDENTIAL_RECORD_HYDRATION_VALIDATION",
+            hydrate_and_validate,
+        )
         return document, identity_filter, user, revision
 
     def hash_password(self, password: str) -> str:
-        """Generate bcrypt hash."""
+        """Return a bcrypt verifier using the configured work factor.
+
+        Consumes caller-supplied password material only in memory, logs nothing,
+        and performs no persistence, tenant lookup, or authority grant. Encoding
+        and bcrypt errors propagate to the owning authentication boundary."""
         salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
         return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
     def verify_password(self, password: str, hashed: str) -> bool:
-        """Verify password against stored hash."""
+        """Compare a password with its durable bcrypt verifier.
+
+        The authentication router owns tenant binding and response translation.
+        No state changes or authority are created; malformed verifier errors
+        propagate and must never become successful authentication."""
         return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
     def _canonical_jwt_claims(
@@ -530,7 +818,7 @@ class AuthRegistry:
             return None
         try:
             document, _ = self._resolve_user_identity(user_id, session=session)
-            user = self._doc_to_user(document) if document is not None else None
+            user = self._doc_to_user(document, session=session) if document is not None else None
         except AuthRegistryTenantError:
             return None
         if user is None:
@@ -563,7 +851,7 @@ class AuthRegistry:
         document, _ = self._resolve_user_identity(user_id, session=session)
         if document is None:
             raise AuthRegistryTenantError("AUTH_PRINCIPAL_CANONICAL_INVALID")
-        user = self._doc_to_user(document)
+        user = self._doc_to_user(document, session=session)
         canonical = self._require_canonical_tenant(tenant_id)
         if canonical.tenant_id != user.tenantId:
             raise AuthRegistryTenantError("AUTH_TENANT_CANONICAL_INVALID")
@@ -576,7 +864,12 @@ class AuthRegistry:
         return int(getattr(result, "deleted_count", 0))
 
     def create_otp_secret(self, user_id: str) -> str:
-        """Generate a new OTP secret and store it."""
+        """Persist a newly generated legacy TOTP secret for an admitted identity.
+
+        The owning MFA flow must prove the exact principal and tenant before
+        calling this identity-keyed legacy store. Returns secret material only
+        to that flow; performs no Global Principal enrollment or role grant.
+        Upsert errors propagate and this method owns no transaction."""
         secret = pyotp.random_base32()
         self._collection("otp_secrets").update_one(
             {"user_id": user_id},
@@ -586,12 +879,22 @@ class AuthRegistry:
         return secret
 
     def get_otp_secret(self, user_id: str) -> Optional[str]:
-        """Retrieve stored OTP secret."""
+        """Read legacy TOTP material for the caller-proven authentication identity.
+
+        The owning MFA flow supplies tenant/principal admission. This global
+        identity-keyed compatibility read neither repairs factors nor confers
+        a Global Principal mapping, session, membership or financial authority.
+        Missing material returns None; storage errors propagate."""
         doc = self._collection("otp_secrets").find_one({"user_id": user_id})
         return doc["secret"] if doc else None
 
     def get_otp_uri(self, user_id: str, email: str) -> str:
-        """Generate otpauth URI for QR code."""
+        """Return the provisioning URI for the existing or newly persisted factor.
+
+        Only an admitted legacy MFA setup flow may consume the returned secret
+        URI. This may create the identity-keyed factor if absent, never rotates
+        an existing factor, logs no secret, and grants no session or membership.
+        Factor persistence and TOTP construction failures propagate."""
         secret = self.get_otp_secret(user_id)
         if not secret:
             secret = self.create_otp_secret(user_id)
@@ -599,7 +902,11 @@ class AuthRegistry:
         return totp.provisioning_uri(name=email, issuer_name="Wilsy OS")
 
     def verify_otp(self, user_id: str, code: str) -> bool:
-        """Verify a Google Authenticator TOTP code against the enrolled secret."""
+        """Verify a code against the existing caller-proven legacy factor.
+
+        The owning flow proves tenant and identity; this read grants no session
+        and changes no enrollment state. Missing factor returns False. One
+        adjacent time window permits bounded clock drift; errors propagate."""
         secret = self.get_otp_secret(user_id)
         if not secret:
             return False
@@ -631,7 +938,7 @@ class AuthRegistry:
             permissions=user.permissions,
             sessionReference=session_reference,
         )
-        # Store session in MongoDB (optional)
+        # Session persistence is mandatory before refresh material is created.
         self._call_collection(
             self._collection("sessions"),
             "insert_one",
@@ -807,18 +1114,43 @@ class AuthRegistry:
         return user
 
     def get_user_by_email(self, email: str) -> Optional[User]:
-        """Retrieve user by email from MongoDB."""
+        """Read the legacy credential identified before tenant selection.
+
+        Email is a platform authentication lookup, never a tenant mutation key
+        or a Global Principal mapping. Hydration proves persisted identity and
+        canonical tenant before returning credential material to auth callers.
+        Missing users return None; malformed state and database errors propagate."""
         doc = self._collection("users").find_one({"email": email})
         if not doc:
             return None
-        return self._doc_to_user(doc)
+        user = self._doc_to_user(doc)
+        # This pre-tenant platform credential lookup must agree with the exact
+        # global identity resolver. A tenant-scoped hydration alone cannot spot
+        # a competing legacy/canonical identity under a different tenant.
+        resolved, _identity_filter = self._resolve_user_identity(user.id)
+        if (
+            resolved is None
+            or resolved.get("_id") != doc.get("_id")
+            or resolved.get("tenantId") != user.tenantId
+        ):
+            logger.error("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+            raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        return user
 
     def get_user_by_id(self, user_id: str, *, session: Any = None) -> Optional[User]:
-        """Retrieve user by ID from MongoDB."""
+        """Read an exact legacy authentication identity under caller session ownership.
+
+        Canonical and BSON ObjectId paths must not compete or redirect. This
+        platform lookup precedes tenant selection; tenant-bound credential
+        commands use the exact scoped resolver. Missing identity returns None;
+        malformed identity or tenant state fails closed. No repair is performed."""
         doc, _ = self._resolve_user_identity(user_id, session=session)
         if not doc:
             return None
-        return self._doc_to_user(doc)
+        user = self._doc_to_user(doc, session=session)
+        if user.id != user_id:
+            raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        return user
 
     def get_credential_revision(
         self,
@@ -838,7 +1170,13 @@ class AuthRegistry:
         hash, MFA, role, membership, JWT, or financial authority is returned.
         """
         _document, _identity_filter, _user, revision = self._resolve_exact_credential_identity(
-            tenant_id, user_id, session=session
+            tenant_id,
+            user_id,
+            session=session,
+            diagnostics=(
+                os.getenv(_CREDENTIAL_TIMING_ENVIRONMENT_VARIABLE, "").strip()
+                == "1"
+            ),
         )
         return revision
 
@@ -943,26 +1281,28 @@ class AuthRegistry:
         )
         return int(getattr(result, "deleted_count", 0))
 
-    def _doc_to_user(self, doc: Dict[str, Any]) -> User:
-        """
-        Convert MongoDB document to User object.
-        If 'user_id' field is missing, fall back to '_id' (converted to str).
-        """
-        # Get user ID with the bounded legacy ObjectId compatibility path.
-        self._document_credential_revision(doc)
-        user_id = doc.get("user_id")
-        if not user_id:
-            # Fallback to MongoDB _id
-            user_id = str(doc.get("_id", ""))
-            if user_id:
-                logger.warning(f"_doc_to_user: Missing 'user_id' field. Using '_id' fallback: {user_id}")
-            else:
-                raise ValueError("User document has neither 'user_id' nor '_id'")
+    def _hydrate_user_for_canonical_tenant(
+        self,
+        doc: Dict[str, Any],
+        canonical_tenant: TenantEntity,
+    ) -> User:
+        """Hydrate an already-validated user without repeating persistence reads.
 
+        @institutional Callers must establish the canonical tenant and complete
+        any identity collision checks before using this pure projection path.
+        This method never resolves a tenant, queries Mongo, mutates a record, or
+        grants authentication or authorization authority.
+        @tenant Requires the exact canonical tenant already bound to the document.
+        @transaction No session is opened or consumed; caller-owned reads remain
+        in their original ClientSession.
+        @financial No financial execution authority.
+        """
+        user_id = self._document_user_id(doc)
         persisted_tenant_id = doc.get("tenantId")
-        canonical = self._require_canonical_tenant(persisted_tenant_id)
-        if canonical.tenant_id != persisted_tenant_id:
-            raise AuthRegistryTenantError("AUTH_TENANT_CANONICAL_INVALID")
+        if canonical_tenant.tenant_id != persisted_tenant_id:
+            raise AuthRegistryTenantError("AUTH_CREDENTIAL_TENANT_OR_ID_MISMATCH")
+        if doc.get("user_id") is None and os.getenv("WILSY_MODEL_DEBUG") == "1":
+            logger.warning("AUTH_LEGACY_OBJECT_ID_COMPATIBILITY")
 
         return User(
             id=user_id,
@@ -971,7 +1311,7 @@ class AuthRegistry:
             lastName=doc.get("lastName", ""),
             role=doc.get("role", "USER"),
             permissions=doc.get("permissions", []),
-            tenantId=canonical.tenant_id,
+            tenantId=canonical_tenant.tenant_id,
             passwordHash=doc.get("passwordHash", ""),
             mfaRegistered=doc.get("mfaRegistered", False),
             mfaSecret=None,  # OTP secret stored separately
@@ -980,8 +1320,46 @@ class AuthRegistry:
             updatedAt=doc.get("updatedAt", datetime.utcnow())
         )
 
+    def _doc_to_user(self, doc: Dict[str, Any], *, session: Any = None) -> User:
+        """Hydrate only a valid identity and canonical tenant, without repair.
+
+        Legacy compatibility accepts only BSON ObjectId fallback and retains
+        existing null user_id compatibility. A tenant-scoped competing identity
+        rejects the hydration. No raw identifier, email, hash, factor or token
+        is logged; optional legacy warnings require WILSY_MODEL_DEBUG=1.
+        Authentication identity does not establish Global Principal admission.
+        """
+        self._document_credential_revision(doc)
+        user_id = self._document_user_id(doc)
+        persisted_tenant_id = doc.get("tenantId")
+        canonical = self._require_canonical_tenant(persisted_tenant_id, session=session)
+        if canonical.tenant_id != persisted_tenant_id:
+            raise AuthRegistryTenantError("AUTH_TENANT_CANONICAL_INVALID")
+
+        object_id = self._validated_legacy_object_id(user_id)
+        if object_id is not None:
+            # POPIA section 19 / GDPR Article 32: only inspect a competing
+            # identity inside the already-proven tenant, never by email.
+            collision_filter = (
+                {"user_id": user_id, "tenantId": persisted_tenant_id}
+                if doc.get("user_id") is None
+                else {"_id": object_id, "tenantId": persisted_tenant_id}
+            )
+            competing = self._call_collection(
+                self._collection("users"), "find_one", collision_filter, session=session
+            )
+            if competing is not None and competing.get("_id") != doc.get("_id"):
+                logger.error("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+                raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        return self._hydrate_user_for_canonical_tenant(doc, canonical)
+
     def authenticate(self, email: str, password: str) -> Optional[User]:
-        """Authenticate user by email and password."""
+        """Return the hydrated legacy user only after bcrypt password verification.
+
+        The router still owns discovered-tenant binding, MFA and session admission.
+        Password success creates no Global Principal credential, membership,
+        permission or financial authority. Missing or wrong credentials return
+        None; malformed persisted identity and verification failures propagate."""
         user = self.get_user_by_email(email)
         if not user:
             return None
@@ -990,7 +1368,14 @@ class AuthRegistry:
         return None
 
     def update_user(self, user_id: str, **kwargs) -> Optional[User]:
-        """Update user fields in MongoDB."""
+        """Update admitted legacy MFA, covenant, role or permission fields.
+
+        The owning auth flow must authorize the requested fields. This method
+        proves identity and tenant before one tenant-bound write, guards legacy
+        identity against canonical reassignment, and rehydrates durable state.
+        It never updates Global Principal, membership, credential or factor
+        authorities and owns no transaction. No supported fields or no durable
+        change returns None; malformed identity and persistence errors propagate."""
         update_fields = {}
         for key, value in kwargs.items():
             if key in ["mfaRegistered", "hasSignedCovenant", "role", "permissions"]:
@@ -1001,11 +1386,19 @@ class AuthRegistry:
         document, identity_filter = self._resolve_user_identity(user_id)
         if identity_filter is None:
             return None
-        # Validate the persisted principal before mutating any auth field; a
-        # malformed tenant reference must not receive an MFA/role update.
-        self._require_canonical_tenant(document.get("tenantId") if document else None)
-        if document is not None:
-            self._document_credential_revision(document)
+        # Hydrate before mutation: malformed identity must never receive an
+        # MFA/role write and only fail later during the response readback.
+        if document is None:
+            return None
+        user = self._doc_to_user(document)
+        if user.id != user_id:
+            raise AuthRegistryTenantError("AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS")
+        identity_filter = dict(identity_filter)
+        identity_filter["tenantId"] = user.tenantId
+        if "user_id" not in identity_filter:
+            # Mongo equality with None matches only missing/null legacy state;
+            # a concurrently assigned canonical identity cannot be overwritten.
+            identity_filter["user_id"] = None
         result = self._collection("users").update_one(
             identity_filter,
             {"$set": update_fields}
@@ -1019,9 +1412,11 @@ _registry = None
 
 def get_auth_registry(tenant_registry: Optional[TenantRegistry] = None) -> AuthRegistry:
     """
-    Get the singleton AuthRegistry instance.
-    @param tenant_registry: Optional TenantRegistry. If provided and the registry
-           doesn't exist yet, it will be used; otherwise ignored.
+    Return the process-local authentication service without caching database state.
+
+    The optional tenant resolver is installed only on first construction.
+    Callers retain HTTP, tenant admission and transaction ownership. This
+    factory creates no identity, authority, connection, index or financial state.
     """
     global _registry
     if _registry is None:
@@ -1032,10 +1427,10 @@ __all__ = ["AuthRegistry", "AuthRegistryTenantError", "get_auth_registry"]
 
 """
 ARTIFACT: tools/eos/saas/auth/auth_registry.py
-VERSION: v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION
+VERSION: v1.17.0-COMBINED-LEGACY-IDENTITY-READ
 AUTHORITY BOUNDARY: authentication business semantics; TenantRegistry owns canonical tenant validation; registration and its tenant validation may participate in but never own a caller transaction
 TENANT POSTURE: users, JWTs, sessions, credential reads/CAS, and refresh validation require one ACTIVE canonical tenant_id; revocations are tenant_id + user_id scoped
-FAIL-CLOSED POSTURE: unavailable, missing, duplicate, inactive, or pseudo tenant references, malformed credential revisions, corrupt-present refresh tenant fields, and missing/inactive durable principal authority issue no final auth material
+FAIL-CLOSED POSTURE: invalid identity types, malformed BSON fallbacks, competing identity rows, invalid tenant/revision/refresh state, or missing principal authority issue no final auth material; compatibility reads never migrate identities
 FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 END OF WILSY OS SOVEREIGN ARTIFACT
 """

@@ -1,14 +1,16 @@
 /**
  * TITLE: WILSY OS Unified My Work Client Projection Contract
- * VERSION: v1.0.0-SOURCE-COVERAGE-CONTRACT
+ * VERSION: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Validates the existing EOS My Work read shape consistently across
  *          Daily Attention, Headquarters, and My Work without creating authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/unifiedMyWorkProjection.js
  * COLLABORATION / OWNERSHIP: Python EOS owns visibility, records and commands;
  *                            authenticated client views consume this validator.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-SOURCE-COVERAGE-CONTRACT establishes one pure validation
+ * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT recognizes the EOS-owned HR
+ *            source identifier without creating a browser HR permission or
+ *            command path. v1.0.0-SOURCE-COVERAGE-CONTRACT establishes one pure validation
  *            contract for tenant/principal scope, source admission, source
  *            counts, row identity, summary counts and command-authority claims.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -25,6 +27,7 @@ const SOURCES = Object.freeze({
   OPERATIONS: 'Operations',
   INTELLIGENCE: 'Intelligence',
   CRM: 'CRM',
+  HR: 'HR & Hiring',
 });
 const VALID_PRIORITIES = new Set(['CRITICAL', 'HIGH', 'NORMAL', 'LOW']);
 
@@ -166,7 +169,7 @@ export function unifiedMyWorkSourceLabel(source) {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.js
- * VERSION: v1.0.0-SOURCE-COVERAGE-CONTRACT
+ * VERSION: v1.1.0-HR-SOURCE-COVERAGE-CONTRACT
  * AUTHORITY BOUNDARY: Client projection validation and source labels only.
  * TENANT POSTURE: Exact supplied scope is checked; server authorization remains canonical.
  * FAIL-CLOSED POSTURE: Malformed scope, counts, rows or source metadata are rejected.

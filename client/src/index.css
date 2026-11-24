@@ -1,3 +1,20 @@
+/**
+ * TITLE: WILSY OS Global Platform Presentation
+ * VERSION: v28.5.1-OFFICIAL-PLATFORM-BRAND
+ * AUTHORITY: Wilsy OS Core Governance; presentation only.
+ * EPITOME: Preserve existing layout and interaction styling while identifying
+ * the public platform as WILSY OS rather than a single customer product.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/index.css
+ * COLLABORATION / OWNERSHIP: Existing global and authentication page consumers.
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v28.5.1-OFFICIAL-PLATFORM-BRAND uses the approved platform tagline in
+ * the decorative footer; all selectors and non-brand declarations are preserved.
+ * COMPLIANCE: Static presentation; no personal data processing.
+ * SECURITY / PRIVACY POSTURE: No credentials, external content or diagnostics.
+ * TENANT BOUNDARY: Platform wording does not infer tenant identity or membership.
+ * AUTHORITY BOUNDARY: CSS grants no permission, product or business capability.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
 @import './styles/tokens/wilsy-theme-authority.css';
 @import "tailwindcss" source(none);
 @import "./styles/tokens/z-index.css";
@@ -88,7 +105,7 @@
 
   /* 🌑 VIGNETTE & SOVEREIGN IDENTIFIER */
   body::after {
-    content: "WILSY OS — LEGAL SOVEREIGN STANDARD";
+    content: "WILSY OS — Build. Operate. Grow.";
     position: fixed;
     bottom: 20px;
     right: 30px;
@@ -127,3 +144,12 @@
 .text-gold { color: var(--color-gold); }
 .bg-obsidian { background-color: var(--color-obsidian); }
 .border-gold { border-color: var(--color-gold); }
+
+/* ARTIFACT: index.css
+ * VERSION: v28.5.1-OFFICIAL-PLATFORM-BRAND
+ * AUTHORITY BOUNDARY: Presentation only.
+ * TENANT POSTURE: Platform-neutral branding; no identity authority.
+ * FAIL-CLOSED POSTURE: No security or source-state decision in styling.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

@@ -1,11 +1,17 @@
 /**
- * WILSY OS — ENTERPRISE LEGAL SPECIALIST WORKSPACE SHELL CERTIFICATE
- * VERSION: v1.1.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION-CERT
+ * TITLE: WILSY OS Enterprise Legal Specialist Workspace Shell Certificate
+ * VERSION: v1.3.1-LEGAL-PRACTICE-COMMERCE-SEPARATION-SOVEREIGN-METADATA
+ * CHANGELOG: v1.3.1-LEGAL-PRACTICE-COMMERCE-SEPARATION-SOVEREIGN-METADATA completes artifact ownership and privacy posture without changing certificate behavior.
+ * CHANGELOG: v1.3.0-LEGAL-PRACTICE-COMMERCE-SEPARATION-CERT — certifies current Python Legal workspace fixtures, Sheriff/Deputy routes and branding while enforcing tenant-owner-only commercial context.
  * AUTHORITY: Browser presentation certification only.
  * EPITOME: Certifies shared Sheriff/Deputy Legal OS chrome plus exact
  *          server-result-driven commercial presentation states without
  *          browser-owned IAM, plan, tenant, payment or settlement authority.
- * CERTIFICATION / UPDATE DATE: 2026-10-16
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardEnterpriseWorkspaceShell.test.jsx
+ * COLLABORATION / OWNERSHIP: Enterprise Legal workspace shell and client certificate owners.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic principal, tenant and workspace fixtures only.
  * CHANGELOG: 2026-10-16 v1.1.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION-CERT
  *            adds authorized, denied and unavailable commercial presentation
  *            proofs and preserves authenticated tenant branding as an
@@ -14,7 +20,7 @@
  *                  remain separate server-derived presentation authorities.
  * AUTHORITY BOUNDARY: role labels, browser permissions and navigation state
  *                     never grant commercial or Legal Operations authority.
- * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial authority is created by client presentation.
  */
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -42,6 +48,9 @@ const mocks = vi.hoisted(() => ({
   getDeputyPersonalActiveWork: vi.fn(),
   getDeputyFieldCapabilities: vi.fn(),
   getLegalCommercialContext: vi.fn(),
+  getLegalPracticeWorkspace: vi.fn(),
+  getLegalConflictScreenings: vi.fn(),
+  syncPendingDeputyLocationEvidence: vi.fn(),
   brandingHook: vi.fn(),
 }));
 
@@ -51,14 +60,15 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getDeputyPersonalActiveWork: mocks.getDeputyPersonalActiveWork,
   getDeputyFieldCapabilities: mocks.getDeputyFieldCapabilities,
   getLegalCommercialContext: mocks.getLegalCommercialContext,
+  getLegalPracticeWorkspace: mocks.getLegalPracticeWorkspace,
+  getLegalConflictScreenings: mocks.getLegalConflictScreenings,
+  syncPendingDeputyLocationEvidence: mocks.syncPendingDeputyLocationEvidence,
   getLegalClientMatters: vi.fn(),
   getLegalClientAcceptanceInstruments: vi.fn(),
   createLegalClientAcceptanceContext: vi.fn(),
   getLegalClientAcceptanceContent: vi.fn(),
   confirmLegalClientAcceptance: vi.fn(),
-  getLegalConflictScreenings: vi.fn(),
   getLegalFinanceEvidence: vi.fn(),
-  getLegalPracticeWorkspace: vi.fn(),
   getLegalProductiveWork: vi.fn(),
   generateLegalReturnOfService: vi.fn(),
   issueLegalConflictReview: vi.fn(),
@@ -120,41 +130,24 @@ const sheriffQueues = Object.freeze({
   activeAttempts: [],
 });
 
-const authorizedCommercialContext = Object.freeze({
-  access: 'AUTHORIZED',
-  context: Object.freeze({
-    tenantId: 'tenant-law',
-    product: Object.freeze({
-      productId: 'LEGAL_OPERATIONS',
-      workspaceKey: 'LEGAL_DASHBOARD',
-      available: true,
-      entitlementState: 'ACTIVE',
-    }),
-    subscription: Object.freeze({
-      subscriptionId: 'WILSYSUB-CERT-1',
-      status: 'active',
-      currentPeriodEnd: '2026-11-16T09:00:00+00:00',
-    }),
-    plan: Object.freeze({
-      planId: 'WILSYPLAN-CERT-1',
-      tier: 'ENTERPRISE',
-      name: 'Certified Legal Plan',
-      features: Object.freeze(['legal.core']),
-      catalogueVersion: 7,
-    }),
-    commercial: Object.freeze({
-      amount: 14400,
-      currency: 'ZAR',
-      billingFrequency: 'annual',
-      monthlyEquivalentAmount: 1200,
-      financialExecutionAuthority: false,
-    }),
+const emptyPracticeWorkspace = Object.freeze({
+  schema: 'WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2',
+  version: 'v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API',
+  tenantId: 'tenant-law',
+  visibility: 'LEGAL_PRACTICE_WORKSPACE',
+  summary: Object.freeze({
+    matters_total: 0, matters_open: 0, matters_closed: 0,
+    instructions_total: 0, instructions_registered: 0, instructions_accepted: 0,
+    instructions_closed: 0, instructions_cancelled: 0, documents_total: 0,
+    documents_registered: 0, documents_received: 0, documents_allocated: 0,
+    documents_returned: 0, attempts_total: 0, attempts_allocated: 0,
+    attempts_attempted: 0, attempts_completed: 0, attempts_not_completed: 0,
+    attempts_cancelled: 0, executions_total: 0, executions_completed: 0,
+    executions_not_completed: 0, returns_total: 0,
   }),
-});
-
-const deniedCommercialContext = Object.freeze({
-  access: 'DENIED',
-  context: null,
+  matters: Object.freeze([]), instructions: Object.freeze([]),
+  documents: Object.freeze([]), attempts: Object.freeze([]),
+  executions: Object.freeze([]), returns: Object.freeze([]),
 });
 
 beforeEach(() => {
@@ -178,9 +171,18 @@ beforeEach(() => {
   mocks.getDeputyPersonalActiveWork.mockReset();
   mocks.getDeputyFieldCapabilities.mockReset();
   mocks.getLegalCommercialContext.mockReset();
-  mocks.getLegalCommercialContext.mockResolvedValue(
-    deniedCommercialContext,
-  );
+  mocks.getLegalPracticeWorkspace.mockReset();
+  mocks.getLegalPracticeWorkspace.mockResolvedValue(emptyPracticeWorkspace);
+  mocks.getLegalConflictScreenings.mockReset();
+  mocks.getLegalConflictScreenings.mockResolvedValue({
+    schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+    version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+    tenantId: 'tenant-law',
+    visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+    screenings: [],
+  });
+  mocks.syncPendingDeputyLocationEvidence.mockReset();
+  mocks.syncPendingDeputyLocationEvidence.mockResolvedValue({ syncedAttemptIds: [] });
   mocks.brandingHook.mockReset();
   mocks.brandingHook.mockReturnValue({
     objectUrl: null,
@@ -213,186 +215,95 @@ describe('WILSY Legal OS enterprise specialist shell', () => {
     ).toBeInTheDocument();
 
     expect(
-      container.querySelector('[data-legal-workspace-viewport="MY_WORK"]'),
+      container.querySelector('[data-legal-workspace-viewport="PROCESS_SERVICE"]'),
     ).not.toBeNull();
   });
 
-  it('shows grey locked menu entries and explains attempted access', async () => {
-    render(<LegalDashboard roleView="SHERIFF" />);
+  it('narrows Legal Practice actions to the authoritative permission projection', async () => {
+    mocks.authState.user = {
+      ...mocks.authState.user,
+      role: 'tenant_legal_partner',
+      legalPermissionsAuthoritative: true,
+      permissions: [],
+    };
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
 
+    expect(mocks.getSheriffOperationalQueues).not.toHaveBeenCalled();
     await waitFor(() =>
-      expect(mocks.getSheriffOperationalQueues).toHaveBeenCalledTimes(1),
+      expect(mocks.getLegalPracticeWorkspace).toHaveBeenCalledTimes(1),
     );
 
-    await waitFor(() =>
-      expect(mocks.getLegalCommercialContext).toHaveBeenCalledTimes(1),
-    );
-
-    await waitFor(() => {
-      expect(
-        document.querySelector(
-          '[data-commercial-context-state="DENIED"]',
-        ),
-      ).not.toBeNull();
-    });
-
-    const matters = screen.getByRole('button', { name: /Matters/i });
-    expect(matters).toHaveAttribute('aria-disabled', 'true');
-    expect(matters).toHaveAttribute('data-access-state', 'DENIED');
-
-    fireEvent.click(matters);
-
-    const notice = screen.getByRole('status', {
-      name: 'Workspace access notice',
-    });
-    expect(notice).toHaveTextContent('Access not permitted');
-    expect(notice).toHaveTextContent('Matter-practice workspace');
-
-    const calendar = screen.getByRole('button', { name: /Calendar/i });
-    expect(calendar).toHaveAttribute('data-access-state', 'UNAVAILABLE');
-
-    fireEvent.click(calendar);
+    expect(mocks.getLegalCommercialContext).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-commercial-context-state]')).toBeNull();
     expect(
-      screen.getByRole('status', { name: 'Workspace access notice' }),
-    ).toHaveTextContent('certified specialist calendar source');
+      screen.getByRole('navigation', {
+        name: 'Legal practice workspace navigation',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Matters' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'New Instruction' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Conflict Reviews' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Finance Evidence' }),
+    ).not.toBeInTheDocument();
   });
 
-  it('switches available My Work and Process Service navigation', async () => {
-    const { container } = render(
-      <LegalDashboard roleView="SHERIFF" />,
-    );
+  it('routes Sheriff to Process Service and Deputy to My Work', async () => {
+    const sheriff = render(<LegalDashboard roleView="SHERIFF" />);
 
     await waitFor(() =>
       expect(mocks.getSheriffOperationalQueues).toHaveBeenCalledTimes(1),
     );
-
-    fireEvent.click(
-      screen.getByRole('button', { name: /^Process Service$/i }),
-    );
-
     expect(
-      container.querySelector(
+      sheriff.container.querySelector(
         '[data-legal-workspace-viewport="PROCESS_SERVICE"]',
       ),
     ).not.toBeNull();
-    expect(screen.getByRole('heading', { name: 'Process Service' }))
-      .toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /^My Work$/i }));
-
     expect(
-      container.querySelector(
-        '[data-legal-workspace-viewport="MY_WORK"]',
-      ),
+      screen.queryByRole('button', { name: /^My Work$/i }),
+    ).not.toBeInTheDocument();
+    sheriff.unmount();
+
+    mocks.authState.user = {
+      ...mocks.authState.user,
+      id: 'principal-deputy',
+      email: 'deputy.operator@example.test',
+      role: 'tenant_deputy',
+    };
+    mocks.getDeputyPersonalActiveWork.mockResolvedValue({
+      tenantId: 'tenant-law',
+      visibility: 'DEPUTY_PERSONAL_ACTIVE_WORK',
+      deputyId: 'principal-deputy',
+      activeAttempts: [],
+    });
+    render(<LegalDashboard roleView="DEPUTY" />);
+
+    await waitFor(() =>
+      expect(mocks.getDeputyPersonalActiveWork).toHaveBeenCalled(),
+    );
+    expect(
+      document.querySelector('[data-legal-workspace-viewport="MY_WORK"]'),
     ).not.toBeNull();
   });
+  it('keeps tenant-owner commercial details out of Legal Practice', async () => {
+    mocks.authState.user = { ...mocks.authState.user, role: 'tenant_legal_partner' };
+    const { container } = render(<LegalDashboard roleView="LEGAL_PARTNER" />);
 
-  it('renders canonical commercial detail only after server-authorized result', async () => {
-    mocks.getLegalCommercialContext.mockResolvedValueOnce(
-      authorizedCommercialContext,
+    await waitFor(() =>
+      expect(mocks.getLegalPracticeWorkspace).toHaveBeenCalledTimes(1),
     );
 
-    const { container } = render(
-      <LegalDashboard roleView="SHERIFF" />,
-    );
-
-    await waitFor(() => {
-      expect(
-        container.querySelector(
-          '[data-commercial-context-state="AUTHORIZED"]',
-        ),
-      ).not.toBeNull();
-    });
-
-    expect(
-      mocks.getLegalCommercialContext,
-    ).toHaveBeenCalledTimes(1);
-
-    const commercial = container.querySelector(
-      '[data-commercial-context-state="AUTHORIZED"]',
-    );
-
-    expect(commercial).toHaveTextContent('Certified Legal Plan');
-    expect(commercial).toHaveTextContent('ENTERPRISE');
-    expect(commercial).toHaveTextContent('LEGAL_OPERATIONS');
-    expect(commercial).toHaveTextContent('WILSYSUB-CERT-1');
-    expect(commercial).toHaveTextContent('Monthly equivalent');
-    expect(commercial).toHaveTextContent(/ZAR\s+1[,\s]?200/);
-    expect(commercial).toHaveTextContent(
-      'Financial execution authority: none',
-    );
+    expect(mocks.getLegalCommercialContext).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-commercial-context-state]')).toBeNull();
+    expect(screen.queryByText('Certified Legal Plan')).not.toBeInTheDocument();
+    expect(screen.queryByText('WILSYSUB-CERT-1')).not.toBeInTheDocument();
   });
 
-  it('renders commercial detail as locked when the server denies access', async () => {
-    mocks.getLegalCommercialContext.mockResolvedValueOnce(
-      deniedCommercialContext,
-    );
-
-    const { container } = render(
-      <LegalDashboard roleView="SHERIFF" />,
-    );
-
-    await waitFor(() => {
-      expect(
-        container.querySelector(
-          '[data-commercial-context-state="DENIED"]',
-        ),
-      ).not.toBeNull();
-    });
-
-    const commercial = container.querySelector(
-      '[data-commercial-context-state="DENIED"]',
-    );
-
-    expect(commercial).toHaveTextContent(
-      'Commercial details locked',
-    );
-    expect(commercial).toHaveTextContent(
-      'Legal role does not grant subscription authority.',
-    );
-
-    expect(
-      screen.queryByText('Certified Legal Plan'),
-    ).not.toBeInTheDocument();
-
-    expect(
-      screen.queryByText('WILSYSUB-CERT-1'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('renders commercial source unavailable without manufacturing plan truth', async () => {
-    mocks.getLegalCommercialContext.mockRejectedValueOnce(
-      new Error('COMMERCIAL_SOURCE_UNAVAILABLE'),
-    );
-
-    const { container } = render(
-      <LegalDashboard roleView="SHERIFF" />,
-    );
-
-    await waitFor(() => {
-      expect(
-        container.querySelector(
-          '[data-commercial-context-state="UNAVAILABLE"]',
-        ),
-      ).not.toBeNull();
-    });
-
-    const commercial = container.querySelector(
-      '[data-commercial-context-state="UNAVAILABLE"]',
-    );
-
-    expect(commercial).toHaveTextContent(
-      'Commercial context unavailable',
-    );
-    expect(commercial).toHaveTextContent(
-      'will not infer plan, subscription or price evidence',
-    );
-    expect(
-      screen.queryByText('Certified Legal Plan'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('keeps authenticated tenant branding independent from authorized commercial context', async () => {
+  it('keeps authenticated tenant branding independent of owner commercial context', async () => {
     mocks.authState.tenant = {
       tenantId: 'tenant-law',
       name: 'Fortune Legal LLP',
@@ -417,46 +328,22 @@ describe('WILSY Legal OS enterprise specialist shell', () => {
         favicon: null,
       },
     };
-
     mocks.brandingHook.mockReturnValue({
       objectUrl: 'blob:authenticated-tenant-logo',
       status: 'READY',
       errorCode: null,
     });
+    mocks.authState.user = { ...mocks.authState.user, role: 'tenant_legal_partner' };
+    const { container } = render(<LegalDashboard roleView="LEGAL_PARTNER" />);
 
-    mocks.getLegalCommercialContext.mockResolvedValueOnce(
-      authorizedCommercialContext,
+    await waitFor(() =>
+      expect(mocks.getLegalPracticeWorkspace).toHaveBeenCalledTimes(1),
     );
 
-    const { container } = render(
-      <LegalDashboard roleView="SHERIFF" />,
-    );
-
-    await waitFor(() => {
-      expect(
-        container.querySelector(
-          '[data-commercial-context-state="AUTHORIZED"]',
-        ),
-      ).not.toBeNull();
-    });
-
-    expect(
-      container.querySelector(
-        '[data-wilsy-tenant-branding="authenticated"]',
-      ),
-    ).not.toBeNull();
-
-    expect(
-      screen.getByText(/Fortune Legal Identity/),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText('Certified Legal Plan'),
-    ).toBeInTheDocument();
-
-    expect(
-      mocks.getLegalCommercialContext,
-    ).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('[data-wilsy-tenant-branding="authenticated"]')).not.toBeNull();
+    expect(screen.getByText(/Fortune Legal Identity/)).toBeInTheDocument();
+    expect(mocks.getLegalCommercialContext).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-commercial-context-state]')).toBeNull();
   });
 
   it('opens shared account surface for authenticated Sheriff identity', async () => {
@@ -477,7 +364,7 @@ describe('WILSY Legal OS enterprise specialist shell', () => {
 
 /**
  * ARTIFACT: legalDashboardEnterpriseWorkspaceShell.test.jsx
- * VERSION: v1.1.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION-CERT
+ * VERSION: v1.3.1-LEGAL-PRACTICE-COMMERCE-SEPARATION-SOVEREIGN-METADATA
  * AUTHORITY BOUNDARY: browser presentation certificate only; server response remains authoritative
  * TENANT POSTURE: authenticated tenant branding and commercial context remain separate server-derived projections
  * FAIL-CLOSED POSTURE: denied or unavailable commercial evidence never reveals or fabricates plan/subscription/value truth

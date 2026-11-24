@@ -1,6 +1,11 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION
+ * VERSION: v1.13.0-COMPANY-DOCUMENT-BROWSER-SCOPE
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -8,8 +13,17 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION selects exact daily browser
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.13.0-COMPANY-DOCUMENT-BROWSER-SCOPE adds an exact company-document suite,
+ *            isolated company actors and independent immutable publication verification.
+ *            All prior preflight, suite and cleanup gates remain intact.
+ * CHANGELOG: v1.12.0-HEADQUARTERS-OPERATING-BROWSER-SCOPE selects the strict
+ *            Headquarters durable verifier for the exact standalone desktop/mobile
+ *            suite. All prior suite scopes, preflights and cleanup remain intact.
+ *            v1.11.0-HR-DENIAL-BROWSER-SCOPE selects the isolated HR dashboard
+ *            denial browser journey and its read-only employee-admission verifier;
+ *            all Legal, SYSTEM, daily, and combined scopes remain independent.
+ *            v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION selects exact daily browser
  *            lifecycle evidence when and only when the one-file Daily Attention
  *            calendar suite is run; preserves all existing broader Legal and
  *            SYSTEM durable verification and disposable cleanup contracts.
@@ -59,6 +73,8 @@ const python = process.env.BROWSER_CERT_PYTHON
     : 'python');
 const fixture = join(repo, 'tests/e2e/browser_cert_fixture.py');
 const scopeVerifier = join(repo, 'tests/e2e/browser_cert_scope_verify.py');
+const companyDocumentSuite = process.argv.slice(2).length === 1
+  && process.argv[2] === 'tests/e2e/company-operating-documents.browser.spec.js';
 const playwright = join(repo, 'node_modules/.bin/playwright');
 const clientDirectory = join(repo, 'client');
 const chrome = process.env.WILSY_BROWSER_EXECUTABLE
@@ -575,6 +591,11 @@ try {
     'FIXTURE_SEED',
   );
 
+  if (companyDocumentSuite) {
+    await runAndWait(python, [join(repo, 'tests/e2e/company_document_cert_fixture.py'), 'seed', '--state', statePath],
+      { stdio: ['ignore', 'pipe', 'pipe'] }, 'COMPANY_DOCUMENT_FIXTURE_SEED');
+  }
+
   setPhase('startup', 'eos_startup');
   console.info('[BROWSER-CERT-STARTUP] service=EOS action=starting port=' + eosPort);
   const eosProcess = spawnOwned(
@@ -656,19 +677,27 @@ try {
     && browserTestArguments.includes('tests/e2e/system-services-incident.browser.spec.js')
     && browserTestArguments.includes('tests/e2e/system-services-response.browser.spec.js');
   const broadSuite = browserTestArguments.includes('--grep-invert');
+  const hrDashboardSuite = browserTestArguments.length === 1
+    && browserTestArguments[0] === 'tests/e2e/hr-dashboard-read-state.browser.spec.js';
+  // A selected HR dashboard suite is read-only and verifies only its own
+  // employee-admission boundary; it must not demand unrelated Legal evidence.
   // A selected daily-only suite must be certified against its own durable
   // Operations effects, not the Legal reviews created by different browser
   // specs. Any unexpected argument combination stays in strict combined mode.
   const dailySuite = browserTestArguments.length === 1
     && browserTestArguments[0] === 'tests/e2e/daily-attention-calendar.browser.spec.js';
-  const verificationScope = dailySuite ? 'daily'
-    : systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
+  const headquartersSuite = browserTestArguments.length === 1
+    && browserTestArguments[0] === 'tests/e2e/headquarters-operating-workspace.browser.spec.js';
+  const verificationScope = companyDocumentSuite ? 'company-documents' : headquartersSuite ? 'headquarters' : hrDashboardSuite ? 'hr'
+    : dailySuite ? 'daily'
+      : systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
   await runAndWait(
     python,
     [scopeVerifier, '--state', statePath, '--scope', verificationScope],
     { env: playwrightEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
     'FIXTURE_VERIFY',
   );
+  console.info('[BROWSER-CERT-DURABLE] scope=' + verificationScope + ' status=verified');
 } catch (error) {
   failed = true;
   primaryFailure = failureEvidence(error, phase, subphase);
@@ -729,7 +758,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION
+// VERSION: v1.13.0-COMPANY-DOCUMENT-BROWSER-SCOPE
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero

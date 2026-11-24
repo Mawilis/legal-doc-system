@@ -1,12 +1,14 @@
 /*
- * WILSY OS — SOVEREIGN INTELLIGENCE DOCK PRESENTATION CONTRACT
- * VERSION: v1.1.1-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION
+ * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
+ * VERSION: v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION adds compact movable launcher, a nonmodal
+ * companion panel, viewport limits, distinct AI emblem and modal layering.
  * CHANGELOG: v1.1.1-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION — Added Dock-owned WILSY OS branding styles;
  *            existing generic chat, Suggestions, History, and billing styles remain intact.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -610,45 +612,19 @@
    ================================================================ */
 
 /* Minimal dock container */
-.intelligenceDockContainer {
-  position: fixed;
-  right: 20px;
-  bottom: 24px;
-  z-index: 12000;
-}
-
-.dockLauncherButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  background: #0a0a0a;
-  color: #f0d78c;
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.dockWindow {
-  width: min(420px, 94vw);
-  height: min(640px, 82vh);
-  display: flex;
-  flex-direction: column;
-  border-radius: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  background: #080808;
-  color: #e8e8e8;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
-  overflow: hidden;
-}
-
-.dockExpanded {
-  width: min(560px, 96vw);
-  height: min(780px, 90vh);
-}
+.intelligenceDockContainer{position:fixed;right:16px;bottom:16px;z-index:70;font-family:Inter,Arial,sans-serif;max-width:calc(100vw - 24px)}
+.intelligenceDockContainer *{box-sizing:border-box}.intelligenceDockContainer button{font:inherit}.intelligenceDockContainer button:focus-visible{outline:3px solid #f4cf73;outline-offset:3px}.intelligenceDockContainer[data-dragging=true]{user-select:none}
+:global(body:has([aria-modal="true"]) [data-wilsy-intelligence-dock]){visibility:hidden!important;pointer-events:none!important}
+.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.launcherTray{display:flex;align-items:center;gap:2px;padding:4px;border:1px solid #c6a74d9c;border-radius:18px;background:linear-gradient(130deg,#132e50,#07182c);box-shadow:0 8px 24px #07182c26,0 1px 2px #00000030;color:#f0d78c;max-width:calc(100vw - 24px)}
+.moveHandle{display:grid;place-items:center;align-self:stretch;min-width:24px;border:0;border-radius:8px;color:#bda974;background:transparent;cursor:grab;touch-action:none;padding:4px}.moveHandle:hover{color:#ffe3a0;background:#ffffff0b}.intelligenceDockContainer[data-dragging=true] .moveHandle{cursor:grabbing}
+.dockLauncherButton{display:flex;align-items:center;gap:8px;min-height:42px;border:0;background:transparent;color:#f8df99;cursor:pointer;padding:0 7px 0 0;border-radius:10px;text-align:left}.dockLauncherButton>span{font-size:12px;font-weight:750;letter-spacing:.025em;line-height:1.3}.dockLauncherButton small{display:block;font-size:7px;letter-spacing:.12em;font-weight:600;color:#a7b8d0;margin-top:2px}.aiEmblem{display:block;width:36px;height:36px;object-fit:contain}.launcherSizeControl{align-self:stretch;display:grid;place-items:center;min-width:26px;border:0;border-left:1px solid #d8b96026;background:transparent;color:#d8bd76;border-radius:8px;cursor:pointer;padding:4px}.launcherSizeControl:hover{background:#ffffff0b}.launcherMinimized{gap:0;padding:3px;border-radius:16px}.launcherMinimized .dockLauncherButton{min-height:36px;padding:0}.launcherMinimized .aiEmblem{width:30px;height:30px}.launcherMinimized .moveHandle{min-width:20px}.launcherMinimized .launcherSizeControl{min-width:22px}
+.dockWindow{width:min(420px,calc(100vw - 24px));height:min(620px,calc(100dvh - 108px));display:flex;flex-direction:column;border-radius:18px;border:1px solid #c9aa5780;background:#0a1b30;color:#e8edf6;box-shadow:0 20px 70px #06132755;overflow:hidden}.dockExpanded{width:min(560px,calc(100vw - 24px));height:min(760px,calc(100dvh - 108px))}.headerEmblem{display:block;width:38px;height:38px;object-fit:contain;flex-shrink:0}
+@media(max-width:600px){.intelligenceDockContainer{right:12px;bottom:12px}.dockWindow,.dockExpanded{width:calc(100vw - 24px);height:min(620px,calc(100dvh - 108px))}.dockHeader{padding:10px 8px!important;gap:4px}.dockHeaderTitle{gap:6px!important;min-width:0;flex:1}.dockHeaderTitle>div>span{font-size:11px}.headerEmblem{width:30px;height:30px}.dockHeaderActions{gap:2px!important}.dockHeaderActions button{min-width:28px;min-height:32px;padding:4px}.kennelBadge{font-size:8px!important}.dockNavBar{overflow-x:auto;flex-shrink:0}.navTabButton{flex-shrink:0;min-width:58px}.launcherTray .moveHandle{min-width:28px}.launcherSizeControl{min-width:30px}}
 
 .dockHeader {
+  gap: 4px;
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -711,6 +687,7 @@
   padding: 6px;
 }
 
+.intelligenceDockContainer .navTabButton{font-size:10px;line-height:1.25;min-height:42px;gap:4px;padding:7px 6px;flex:1 0 76px}.intelligenceDockContainer .navTabButton svg{width:16px;height:16px;flex-shrink:0}.intelligenceDockContainer .dockHeaderTitle>div>span{font-size:13px;line-height:1.35}.intelligenceDockContainer .dockHeaderTitle{flex:1;min-width:0}.intelligenceDockContainer .dockHeaderActions{flex-shrink:0}
 .dockNavBar {
   display: flex;
   gap: 6px;
@@ -913,7 +890,7 @@
 
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.1.1-C1E-R1D-A1-WILSY-OS-BRAND-CONSOLIDATION
+ * VERSION: v1.2.0-MOVABLE-AI-COMPANION-PRESENTATION
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority

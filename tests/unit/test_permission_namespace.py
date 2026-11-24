@@ -1,15 +1,42 @@
-"""TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: WILSY OS Permission Namespace Canon Certification.
+VERSION: v1.21.1-CRM-WORK-EDIT-INVENTORY-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
 billing-intelligence evidence-read, and field-service outcome/return command
-semantics.
+semantics and exact WILSY platform-employer permission metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-15.
+CERTIFICATION / UPDATE DATE: 2026-11-17.
 CHANGELOG:
-2026-11-05 v1.14.0-PERMISSION-CANON-COUNT-RECONCILIATION updates the direct namespace certificate to the current source canon: 144 canonical permissions and 147 total rows. This is a count-only certification correction; no permission metadata, role grants or authorization behavior changes.\n2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 138 canonical permissions / 141 total rows. No role grants or assignment allowlist changes are created.
+2026-11-17 v1.21.1-CRM-WORK-EDIT-INVENTORY-CERT pins the independently
+scoped CRM work-edit permission, preserves separate possession and
+business-role admission, and verifies 203 canonical permissions.
+2026-11-16 v1.20.0-PROJECT-PERMISSION-CERT verifies four exact own-tenant project permissions and confirms no existing authorization role receives them. Canonical source count becomes 202 permissions / 205 total rows.
+2026-11-13 v1.20.0-PROJECT-PERMISSION-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
+2026-11-13 v1.18.0-PLATFORM-EMPLOYEE-ADMISSION-CURRENTNESS-CERT certifies that employee admission alone
+requires current tenant-scope workforce evidence in the shared EOS authorization
+transaction; the other platform-employer permissions retain their existing
+currentness posture. It creates no route, assignment, employee or IAM state.
+The source canon remains 195 canonical permissions and 198 total rows.
+2026-11-12 v1.17.0-PLATFORM-EMPLOYEE-ADMISSION-ROLE-CERT certifies the
+dedicated, single-permission employee-admission authorization role as
+non-authorizing vocabulary. No principal assignment, business-role eligibility,
+operation binding, or route is created; offer acceptance remains absent.
+The source canon remains 195 canonical permissions and 198 total rows.
+2026-11-12 v1.16.0-PLATFORM-EMPLOYER-ROLE-MATRIX-CERT aligns the exact
+role-map certificate with the designated static employer roles. It preserves
+metadata-only authorization semantics, no role grant for employee admission,
+and absence of offer acceptance pending verified candidate identity binding.
+The source canon remains 195 canonical permissions and 198 total rows.
+2026-11-05 v1.14.0-PERMISSION-CANON-COUNT-RECONCILIATION updates the direct namespace certificate to the current source canon: 144 canonical permissions and 147 total rows. This is a count-only certification correction; no permission metadata, role grants or authorization behavior changes.
+2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 138 canonical permissions / 141 total rows. No role grants or assignment allowlist changes are created.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -137,20 +164,21 @@ tenant_product_entitlement:issue authority substrate.
     2026-08-30 v1.1.1-PERMISSION-NAMESPACE-CERT added explicit wildcard,
     alias, and hard-delete absence coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: No credentials, JWT authority projections,
+SECURITY / PRIVACY POSTURE: No credentials, JWT authority projections,
 persistence, or financial execution are processed.
 TENANT BOUNDARY: Permission metadata never proves membership; conflict-review,
 subscription, plan, WILSY AI capacity-read, and billing-intelligence evidence-
 read permissions require separately proven exact ACTIVE tenant membership.
 AUTHORITY BOUNDARY: Tests policy metadata, not assignment or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
+SECURITY / PRIVACY POSTURE: Tests verify permission metadata and fail-closed boundaries; they grant no credentials, memberships, roles, access or execution authority.
 """
 import json
 from pathlib import Path
 
 import pytest
 
-VERSION = "v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT"
+VERSION = "v1.20.0-PROJECT-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -286,8 +314,45 @@ def test_provider_reconciliation_read_permission_is_system_scoped_and_non_author
     assert metadata.disposition is PermissionDisposition.CANONICAL
 
 
+@pytest.mark.parametrize(
+    ("permission", "capability"),
+    [
+        ("project:read", "read own-tenant project lists and details"),
+        ("project:create", "create own-tenant projects"),
+        ("project:update", "update own-tenant projects"),
+        ("project:archive", "archive own-tenant projects without deletion"),
+    ],
+)
+def test_project_permissions_are_exact_and_do_not_grant_existing_roles(
+    permission: str, capability: str,
+) -> None:
+    """Project metadata remains non-authorizing and adds no role possession."""
+    from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
+
+    metadata = permission_metadata(permission)
+    assert metadata.permission_id == permission
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.business_capability == capability
+    assert metadata.tenant_membership_required is True
+    assert metadata.system_assignment_required is False
+    assert metadata.workforce_currentness_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+    from tools.eos.auth.roles import get_roles_granting_permission
+    assert set(get_roles_granting_permission(permission)) == {"PROJECTS_PLATFORM_OWNER"}
+    for invalid in (
+        "project:*", "project:delete", "project:READ",
+        " project:read", "project:read ",
+    ):
+        with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
+            permission_metadata(invalid)
+
+
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.59.0-INSTITUTIONAL-OFFER-SIGNATURE-AUTHORITY"
+    assert POLICY_VERSION == "v1.64.0-CRM-WORK-EDIT-PERMISSION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -422,9 +487,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 179
+    ) == 203
 
-    assert len(rows) == 182
+    assert len(rows) == 206
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1055,13 +1120,6 @@ def test_system_services_and_iam_vocabulary_is_system_scoped_and_non_authorizing
         with pytest.raises(ValueError):
             permission_metadata(invalid)
 
-# ARTIFACT: test_permission_namespace.py
-# VERSION: v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT
-# AUTHORITY BOUNDARY: permission semantic certification only
-# TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
-# FAIL-CLOSED POSTURE: unknown and malformed values deny
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 
@@ -1114,3 +1172,85 @@ def test_institutional_offer_signature_manifest_is_owner_only_and_non_authorizin
     assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_manager", operation) != ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_director", operation) != ELIGIBLE
+
+PLATFORM_EMPLOYER_PERMISSIONS = (
+    "platform_employer:employee_directory:read",
+    "platform_employer:headcount_requisition:read",
+    "platform_employer:headcount_requisition:create",
+    "platform_employer:headcount_requisition:decide",
+    "platform_employer:hiring_candidate:read",
+    "platform_employer:hiring_candidate:create",
+    "platform_employer:hiring_candidate:transition",
+    "platform_employer:hiring_candidate_evidence:upload",
+    "platform_employer:hiring_candidate_evidence:read",
+    "platform_employer:hiring_offer:read",
+    "platform_employer:hiring_offer:create",
+    "platform_employer:hiring_offer:submit",
+    "platform_employer:hiring_offer:decide",
+    "platform_employer:hiring_offer:send",
+    "platform_employer:hiring_offer:sign",
+    "platform_employer:employee_admission:create",
+)
+
+
+def test_platform_employer_capabilities_are_exact_non_authorizing_tenant_metadata() -> None:
+    """Vocabulary and static role definitions create no assignment or IAM."""
+    from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
+
+    assert len(PLATFORM_EMPLOYER_PERMISSIONS) == 16
+    assert len(set(PLATFORM_EMPLOYER_PERMISSIONS)) == 16
+    serialized_rows = json.loads(canonical_permissions())
+    serialized_ids = {row["permission_id"] for row in serialized_rows}
+    assert set(PLATFORM_EMPLOYER_PERMISSIONS) <= serialized_ids
+
+    for permission in PLATFORM_EMPLOYER_PERMISSIONS:
+        metadata = permission_metadata(permission)
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.system_assignment_required is False
+        assert metadata.workforce_currentness_required is (
+            permission == "platform_employer:employee_admission:create"
+        )
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert metadata.disposition is PermissionDisposition.CANONICAL
+    expected_role_sets = {
+        "platform_employer:employee_directory:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:headcount_requisition:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:headcount_requisition:create": {"HR_MANAGER"},
+        "platform_employer:headcount_requisition:decide": {"HR_DIRECTOR"},
+        "platform_employer:hiring_candidate:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:hiring_candidate:create": {"HR_MANAGER"},
+        "platform_employer:hiring_candidate:transition": {"HR_MANAGER"},
+        "platform_employer:hiring_candidate_evidence:upload": {"HR_MANAGER"},
+        "platform_employer:hiring_candidate_evidence:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:hiring_offer:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:hiring_offer:create": {"HR_MANAGER"},
+        "platform_employer:hiring_offer:submit": {"HR_MANAGER"},
+        "platform_employer:hiring_offer:decide": {"HR_DIRECTOR"},
+        "platform_employer:hiring_offer:send": {"HR_MANAGER"},
+        "platform_employer:hiring_offer:sign": {"TENANT_OWNER"},
+        "platform_employer:employee_admission:create": {"PLATFORM_EMPLOYEE_ADMISSION_OFFICER"},
+    }
+    assert set(expected_role_sets) == set(PLATFORM_EMPLOYER_PERMISSIONS)
+    for permission, expected_roles in expected_role_sets.items():
+        actual_roles = {
+            role
+            for role, role_permissions in ROLE_PERMISSIONS_MAP.items()
+            if permission in role_permissions
+        }
+        assert actual_roles == expected_roles
+
+    with pytest.raises(ValueError):
+        permission_metadata("platform_employer:hiring_offer:accept")
+
+
+# ARTIFACT: tests/unit/test_permission_namespace.py
+# VERSION: v1.21.1-CRM-WORK-EDIT-INVENTORY-CERT
+# AUTHORITY BOUNDARY: certifies permission metadata and designated static role definitions only; assignments and current authorization remain separate
+# TENANT POSTURE: exact WILSY employer tenant enforcement and customer HR entitlement checks remain independent runtime gates
+# FAIL-CLOSED POSTURE: offer acceptance is absent; employee admission has one unassigned role and no operation binding or route
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,6 +1,12 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+ * TITLE: WILSY OS Tenant Identity Brand Fidelity Certificate
  * WILSY OS — PREMIUM TENANT IDENTITY CERTIFICATE
- * VERSION: v1.8.0-APPROVED-BRAND-IMAGE-PARITY-CERT
+ * VERSION: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the bounded discovery/login identity projection, permanent
  *          platform trust mark, and neutral tenant-logo fallback.
@@ -8,6 +14,9 @@
  * COLLABORATION / OWNERSHIP: Exercises TenantDiscovery, SovereignLogin, and
  *                            TenantIdentityCard without network or auth writes.
  * CERTIFICATION / UPDATE DATE: 2026-09-17
+ * CHANGELOG: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT binds the platform mark to the
+ * latest approved vivid presentation derivative. All tenant-logo, authority,
+ * identity, navigation and geometry assertions are retained.
  * CHANGELOG: v1.8.0-APPROVED-BRAND-IMAGE-PARITY-CERT — Verifies the exact approved platform PNG
  *            installed by the preserved branding checkpoint rather than an
  *            obsolete inline SVG assertion, retaining all identity and
@@ -159,7 +168,7 @@ describe('premium tenant identity projection', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByAltText('WILSY OS platform mark').getAttribute('src')).toBe('/brand/wilsy-os-master.png');
+    expect(screen.getByAltText('WILSY OS platform mark').getAttribute('src')).toBe('/brand/wilsy-os-official.png');
     fireEvent.change(screen.getByLabelText('Organization / workspace'), { target: { value: 'acme' } });
     fireEvent.click(screen.getByRole('button', { name: /continue securely/i }));
 
@@ -178,7 +187,7 @@ describe('premium tenant identity projection', () => {
     );
 
     expect(screen.getAllByAltText('WILSY OS platform mark')).toHaveLength(1);
-    expect(screen.getAllByAltText('WILSY OS platform mark')[0].getAttribute('src')).toBe('/brand/wilsy-os-master.png');
+    expect(screen.getAllByAltText('WILSY OS platform mark')[0].getAttribute('src')).toBe('/brand/wilsy-os-official.png');
     expect(screen.getByText('WILSY OS')).toBeInTheDocument();
     expect(screen.getByText('Acme Legal Holdings (Pty) Ltd')).toBeInTheDocument();
     expect(screen.getByText('Workspace: acme')).toBeInTheDocument();
@@ -218,7 +227,7 @@ describe('premium tenant identity projection', () => {
 
 /**
  * ARTIFACT: TenantIdentityPremium.test.jsx
- * VERSION: v1.8.0-APPROVED-BRAND-IMAGE-PARITY-CERT
+ * VERSION: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT
  * AUTHORITY BOUNDARY: deterministic client projection certificate only
  * TENANT POSTURE: no alias-specific logo or inferred legal identity
  * FAIL-CLOSED POSTURE: absent tenant identity is never fabricated

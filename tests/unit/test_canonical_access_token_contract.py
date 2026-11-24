@@ -1,15 +1,16 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+VERSION: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_canonical_access_token_contract.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
-CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT supplies the required discovered tenant to MFA verification and canonical workspace_id to synthetic workspace projections, preserving server-owned authentication and workspace contracts.
+           v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
            v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
            v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
            tenant alias, industry, region and sector as descriptive practice
@@ -513,7 +514,9 @@ def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
 
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: _MfaRegistry())
     response = asyncio.run(
-        auth_router.verify_otp(VerifyOTPRequest(email=user.email, code="123456"))
+        auth_router.verify_otp(
+            VerifyOTPRequest(email=user.email, tenant_id=TENANT, code="123456")
+        )
     )
     assert response.token is not None
     payload = jwt_provider.verify_access_token(response.token)
@@ -614,6 +617,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             principal_id=PRINCIPAL,
             email="principal@example.com",
             tenant_id=TENANT,
+            workspace_id="workspace-canonical-test",
             business_role="tenant_auditor",
             membership_revision=7,
             business_role_revision=11,
@@ -667,6 +671,8 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
         "workspace": {
             "tenantId": TENANT,
             "businessRole": "tenant_auditor",
+            "workspaceId": "workspace-canonical-test",
+            "workspaceContractVersion": auth_router.WORKSPACE_CONTRACT_VERSION,
             "membershipRevision": 7,
             "businessRoleRevision": 11,
             "legalPermissions": [],
@@ -855,6 +861,7 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
             principal_id=identity.identity_id,
             email="principal@example.com",
             tenant_id=identity.tenant_id,
+            workspace_id="workspace-canonical-test",
             business_role="tenant_legal_partner",
             membership_revision=7,
             business_role_revision=11,
@@ -1038,7 +1045,7 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+# VERSION: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT
 # AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, D21B7 branding presence/absence transport, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
 # FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile/branding-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model/branding authority deny or remain excluded

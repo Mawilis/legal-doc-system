@@ -3,18 +3,21 @@
 /**
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller Certification.
- * VERSION: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT
+ * VERSION: v1.3.0-WILSY-PLATFORM-OWNER-ROUTING-CERT
  * AUTHORITY: Unit certification of authenticated EOS workspace presentation routing.
  * EPITOME: Verifies Headquarters is mounted only from the EOS-issued
  *          WILSY_HEADQUARTERS workspace identifier.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/SovereignDashboardController.test.js
  * COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
  * CERTIFICATION / UPDATE DATE: 2026-11-08.
+ * CHANGELOG: v1.3.0-WILSY-PLATFORM-OWNER-ROUTING-CERT rejects company Legal requests
+ * while retaining customer commercial routing and independent Legal capacity.
  * CHANGELOG: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT updates owner, Legal-boundary,
  *            system-fallback and historical-alias expectations after the
  *            legacy Executive Dashboard retirement.
  *            v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION certifies the WILSY Headquarters dashboard mapping
  *            and mounted component without granting browser-side authority.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Client route selection is presentation only;
  *                             Python EOS remains the authority.
  * TENANT BOUNDARY: The server-issued workspace identifier is tenant-scoped.
@@ -44,6 +47,16 @@ const CONTROLLER_SOURCE = resolve(
 );
 
 describe('SovereignDashboardController EOS workspace contract', () => {
+  it('keeps the WILSY platform company outside Legal commercial routing', () => {
+    const user = { id: 'company-owner', tenantId: 'WILSYTENANT-4CD2FZ4O', role: 'TENANT_OWNER', workspaceId: 'WILSY_HEADQUARTERS' };
+    for (const request of ['LEGAL_DASHBOARD', DASHBOARD_KEYS.LEGAL, 'LEGAL_OS']) {
+      expect(resolveDashboardKey({ user, manualDashboardKey: request })).toBe(DASHBOARD_KEYS.HEADQUARTERS);
+    }
+    expect(resolveDashboardKey({ user: { ...user, workspaceId: undefined }, manualDashboardKey: 'LEGAL_DASHBOARD' })).toBe('');
+    expect(resolveDashboardKey({ user: { ...user, workspaceId: 'LEGAL_PRACTICE' } })).toBe('');
+    expect(resolveDashboardKey({ user: { ...user, tenantId: 'CUSTOMER-A', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' }, manualDashboardKey: 'LEGAL_DASHBOARD' })).toBe(DASHBOARD_KEYS.LEGAL);
+  });
+
   it('routes the tenant owner to Executive Command Centre from the EOS workspace contract', () => {
     expect(resolveDashboardKey({
       user: {
@@ -252,7 +265,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
 
 /* 
  * ARTIFACT: SovereignDashboardController.test.js
- * VERSION: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT
+ * VERSION: v1.3.0-WILSY-PLATFORM-OWNER-ROUTING-CERT
  * AUTHORITY BOUNDARY: unit certification of client workspace presentation routing
  * TENANT POSTURE: workspace identity is supplied by EOS; tests distinguish Headquarters and customer workspaces
  * FAIL-CLOSED POSTURE: no browser role or preference creates workspace authority

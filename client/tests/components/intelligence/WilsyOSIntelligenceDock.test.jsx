@@ -1,21 +1,24 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — Sovereign Intelligence Dock Unit Tests (Authority-Aware Runtime)
- * ═══════════════════════════════════════════════════════════════════════════════
- * File:           /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
- * Version:        v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
- * Authority:      Wilsy OS Core Governance
- * Epitome:        Certifies authority-aware Intelligence Dock routing: generic
- *                 non-legal Ask uses the canonical shared-api operator transport,
- *                 legal roles remain on certified C1C legal-services transport,
- *                 and billing-intelligence evidence is probed only for bounded
- *                 legal-finance roles without creating financial authority.
- * Classification: Production Test Artifact — Institutional Contract
- *
- * Contributors:
- *   - Wilson Khanyezi (CEO/Lead Architect) – Mandated sovereign test coverage.
- *   - AI Engineering – Corrected POST argument count; added third arg matcher.
- *
+ * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
+ * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
+ * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
+ * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
+ * conversation drafts while preserving every existing source/advisory boundary.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
+ * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT proves kernel health
+ * is probed without waiting for unresolved optional finance evidence.
+ * v1.5.0-MOVABLE-COMPANION-STATE-CERT certifies movement, minimization, retained drafts,
+ * reset controls and unchanged request behavior with prior source tests intact.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard access.
+ * SECURITY / PRIVACY POSTURE: Synthetic subjects and transient UI only.
+ * TENANT BOUNDARY: Existing scope/currentness tests retained; mocks grant no IAM.
+ * AUTHORITY BOUNDARY: Test evidence only; no real Founder/MFA acceptance claim.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
+/**
+ * HISTORICAL CHANGELOG
  * Change Log:
  *   2026-09-24 v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT — Aligned direct
  *     certification with finance-only billing evidence probes, C1C legal-role
@@ -30,8 +33,6 @@
  *     and no-fabrication failure certificates.
  *   2026-08-07 v1.0.8-KENNEL-PHASE4 — Fixed POST calls to include third argument.
  *
- * Certification Seal: PRODUCTION_READY_v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
- * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import React from 'react';
@@ -206,6 +207,45 @@ describe('WilsyOSIntelligenceDock', () => {
     });
   });
 
+  it('minimizes and restores without erasing the current workspace or AI prompt', async () => {
+    render(<><label>Unsubmitted workspace note<textarea defaultValue="Keep my unsaved work"/></label><WilsyOSIntelligenceDock/></>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const prompt = await screen.findByPlaceholderText('Ask Wilsy OS…');
+    fireEvent.change(prompt, { target: { value: 'Keep this AI draft' } });
+    fireEvent.click(screen.getByTitle('Minimize dock'));
+    expect(screen.queryByRole('region', { name: 'WILSY OS AI companion' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Unsubmitted workspace note')).toHaveValue('Keep my unsaved work');
+    expect(screen.getByTitle('Restore AI launcher')).toBeVisible();
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toHaveValue('Keep this AI draft');
+    expect(mockApiPost).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('region', { name: 'WILSY OS AI companion' }), { key: 'Escape' });
+    expect(screen.getByTitle('Restore AI launcher')).toBeVisible();
+    expect(screen.getByLabelText('Unsubmitted workspace note')).toHaveValue('Keep my unsaved work');
+  });
+  it('moves with the keyboard and resets without navigation or source commands', () => {
+    const navigate = vi.fn(); window.addEventListener('wilsy:switch-dashboard', navigate);
+    const mounted = render(<WilsyOSIntelligenceDock/>);
+    const handle = screen.getByRole('button', { name: 'Move WILSY OS AI' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    const root = mounted.container.querySelector('[data-wilsy-intelligence-dock]');
+    expect(root.style.left).not.toBe('');
+    fireEvent.keyDown(handle, { key: 'Home' }); expect(root.style.left).toBe('');
+    expect(navigate).not.toHaveBeenCalled(); expect(mockApiPost).not.toHaveBeenCalled();
+    window.removeEventListener('wilsy:switch-dashboard', navigate);
+  });
+  it('keeps the distinct neural-core artwork in both launcher and open companion', () => {
+    const mounted = render(<WilsyOSIntelligenceDock/>);
+    expect(mounted.container.querySelector('img').getAttribute('src')).toBe('/brand/wilsy-ai-emblem.svg');
+    fireEvent.click(screen.getByTitle('Minimize AI launcher'));
+    expect(mounted.container.querySelector('[data-ai-layout="MINIMIZED"]')).not.toBeNull();
+    fireEvent.click(screen.getByTitle('Restore AI launcher'));
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.getByAltText('Wilsy AI neural core')).toHaveAttribute('src', '/brand/wilsy-ai-emblem.svg');
+    expect(screen.getByRole('region', { name: 'WILSY OS AI companion' })).not.toHaveAttribute('aria-modal', 'true');
+    fireEvent.click(screen.getByTitle('Expand dock')); fireEvent.click(screen.getByTitle('Reset AI position'));
+    expect(screen.getByTitle('Restore dock size')).toBeVisible();
+  });
   it('uses WILSY OS for the Dock-owned closed launcher and never exposes Wilsy AI as product copy', () => {
     render(<WilsyOSIntelligenceDock />);
     expect(screen.getByText('WILSY OS')).toBeInTheDocument();
@@ -273,6 +313,25 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(
       mockApiGet.mock.calls.some(([path]) => path === '/billing/intelligence/evidence')
     ).toBe(false);
+  });
+
+  it('starts EOS health even when optional billing evidence is unresolved', async () => {
+    let finishBilling;
+    const pendingBilling = new Promise((resolve) => { finishBilling = resolve; });
+    mockApiGet.mockImplementation((path) => {
+      if (path === '/billing/intelligence/evidence') return pendingBilling;
+      if (path === '/kernel') return Promise.resolve({
+        status: 200, data: { status: 'OPERATIONAL' },
+      });
+      return Promise.resolve({ status: 200, data: {} });
+    });
+
+    render(<WilsyOSIntelligenceDock authUser={{ role: 'LEGAL_FINANCE', tenantId: 'TEST_TENANT' }} />);
+    await waitFor(() => {
+      expect(mockApiGet).toHaveBeenCalledWith('/billing/intelligence/evidence', expect.anything());
+      expect(mockApiGet).toHaveBeenCalledWith('/kernel', expect.anything());
+    });
+    finishBilling({ status: 403, data: { detail: 'forbidden' } });
   });
 
   it('requests canonical billing evidence only for legal-finance authority with an aware ISO as_of boundary', async () => {
@@ -652,7 +711,7 @@ describe('WilsyOSIntelligenceDock', () => {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
+ * INSTITUTIONAL CERTIFICATION SEAL — Intelligence Dock Unit Tests v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Direct tests certify finance-only billing-intelligence probing, non-finance
  * exclusion, canonical generic operator transport, C1C legal-role routing, and
@@ -662,11 +721,10 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.4.0-LEGAL-AUTHORITY-AWARE-RUNTIME-CERT
+ * VERSION: v1.5.1-INDEPENDENT-HEALTH-PROBE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
  * FINANCIAL EXECUTION AUTHORITY: none
  * END OF WILSY OS SOVEREIGN ARTIFACT
- * ═══════════════════════════════════════════════════════════════════════════════
  */

@@ -1,15 +1,16 @@
 """WILSY OS tenant-bearing refresh authority certificate.
 
 TITLE: AuthRegistry Tenant-Bearing Refresh Direct Unit Certificate
-VERSION: v1.1.0-R10C2F6B-TENANT-BEARING-REFRESH-CERT-RECONCILIATION
+VERSION: v1.2.0-CONSOLIDATION-IDENTITY-SESSION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Directly certifies the R10C2B Python refresh-token creation,
          validation, compatibility, and tenant-scoped revocation seams.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_auth_registry_tenant_bearing_refresh.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry with deterministic recording
                            fakes; no canonical or disposable Mongo is used.
-CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG:
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG: v1.2.0-CONSOLIDATION-IDENTITY-SESSION-CERT — Advances tenant resolver doubles to the caller-session contract and preserves exact issuer/legacy scope assertions.
+
   v1.0.0-R10C2B-TENANT-BEARING-REFRESH-CERT — Certifies explicit and
     backward-compatible tenant-bearing refresh creation, temporary missing-
     field validation, corrupt-present rejection, exact tenant+user revocation,
@@ -114,7 +115,7 @@ class _RecordingDatabase:
 
 class _TenantRegistry:
     @staticmethod
-    def resolve_canonical_tenant(value: object, allow_alias: bool = False) -> SimpleNamespace:
+    def resolve_canonical_tenant(value: object, allow_alias: bool = False, session: Any = None) -> SimpleNamespace:
         if value not in {"TENANT-ONE", "TENANT-TWO"}:
             raise ValueError("tenant is not an active canonical tenant")
         return SimpleNamespace(tenant_id=value)
@@ -333,7 +334,8 @@ def test_legacy_identity_uses_only_existing_user_id_then_validated_object_id_fal
     user_queries = [call[1] for call in database.collections["users"].calls]
     assert user_queries[0] == {"user_id": str(legacy_id)}
     assert user_queries[1] == {"_id": legacy_id}
-    assert all(set(query).issubset({"user_id", "_id"}) for query in user_queries)
+    assert all(set(query).issubset({"user_id", "_id", "tenantId"}) for query in user_queries)
+    assert user_queries[-1] == {"user_id": str(legacy_id), "tenantId": "TENANT-ONE"}
 
 
 @pytest.mark.parametrize(
@@ -422,7 +424,7 @@ def test_refresh_token_is_not_echoed_by_failure_contract(
 
 """
 ARTIFACT: tests/unit/test_auth_registry_tenant_bearing_refresh.py
-VERSION: v1.1.0-R10C2F6B-TENANT-BEARING-REFRESH-CERT-RECONCILIATION
+VERSION: v1.2.0-CONSOLIDATION-IDENTITY-SESSION-CERT
 AUTHORITY BOUNDARY: Offline direct unit evidence for AuthRegistry refresh seams only
 TENANT POSTURE: Exact tenant-bearing creation and tenant_id + user_id revocation;
                 missing tenant remains temporary pre-migration compatibility

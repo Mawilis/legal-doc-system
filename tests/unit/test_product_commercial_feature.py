@@ -1,7 +1,7 @@
 """Direct certificate for the D22B3 product commercial feature mapping.
 
 TITLE: Product Commercial Feature Mapping Direct Certificate
-VERSION: v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS-CERT
+VERSION: v1.2.0-PROJECTS-COMMERCIAL-FEATURE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact immutable product/feature mappings, D22A catalogue binding,
          deterministic integrity, uniqueness and absence of runtime authority.
@@ -10,7 +10,8 @@ COLLABORATION / OWNERSHIP: Direct pure-domain certificate for D22B3 metadata;
                             D22A remains product authority and later composition
                             must obtain authoritative subscription truth.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE-CERT establishes adversarial
+CHANGELOG: v1.2.0-PROJECTS-COMMERCIAL-FEATURE-CERT adds exact Projects-to-projects.core mapping evidence without entitlement authority.
+           v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE-CERT establishes adversarial
            evidence for exact six-product mappings and unknown failures,
            immutability, uniqueness, catalogue binding and authority absence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -37,7 +38,7 @@ from tools.eos.saas.entitlement.product_catalogue import (
 )
 
 
-def test_all_six_catalogued_products_have_exact_d22a_bound_mappings() -> None:
+def test_all_mapped_catalogued_products_have_exact_d22a_bound_mappings() -> None:
     """Every selectable product maps to one explicit canonical feature identity."""
     expected = {
         TenantProductId.LEGAL_OPERATIONS: "legal.core",
@@ -46,6 +47,7 @@ def test_all_six_catalogued_products_have_exact_d22a_bound_mappings() -> None:
         TenantProductId.HR: "hr.core",
         TenantProductId.OPERATIONS: "operations.core",
         TenantProductId.INTELLIGENCE: "intelligence.core",
+        TenantProductId.PROJECTS: "projects.core",
     }
     for product_id, feature_id in expected.items():
         descriptor = mapping.get_product_commercial_feature(product_id)
@@ -139,7 +141,7 @@ def test_catalogue_drift_and_stored_fingerprint_drift_reject() -> None:
 
 
 def test_mapping_is_immutable_and_listing_is_exact_deterministic_unique() -> None:
-    """Listing exposes all six products in canonical D22A order."""
+    """Listing exposes each mapped product in canonical D22A order."""
     first = mapping.list_product_commercial_features()
     second = mapping.list_product_commercial_features()
     assert first == second
@@ -150,10 +152,11 @@ def test_mapping_is_immutable_and_listing_is_exact_deterministic_unique() -> Non
         TenantProductId.HR,
         TenantProductId.OPERATIONS,
         TenantProductId.INTELLIGENCE,
+        TenantProductId.PROJECTS,
     )
     assert tuple(item.feature_id for item in first) == (
         "legal.core", "billing.core", "crm.core", "hr.core",
-        "operations.core", "intelligence.core"
+        "operations.core", "intelligence.core", "projects.core"
     )
     assert len({item.product_id for item in first}) == len(first)
     assert len({item.feature_id for item in first}) == len(first)
@@ -200,7 +203,7 @@ def test_source_has_no_runtime_authority_dependencies_or_mutation_surface() -> N
 
 
 # ARTIFACT: test_product_commercial_feature.py
-# VERSION: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE-CERT
+# VERSION: v1.2.0-PROJECTS-COMMERCIAL-FEATURE-CERT
 # AUTHORITY BOUNDARY: direct pure mapping evidence only; no subscription, entitlement, IAM, route or classification authority
 # TENANT POSTURE: no tenant identity or tenant commercial decision
 # FAIL-CLOSED POSTURE: exact mappings, catalogue binding, uniqueness and authority absence are mandatory

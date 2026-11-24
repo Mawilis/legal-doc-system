@@ -1,13 +1,39 @@
-"""TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.6.0-P47-R94-WORK-ASSIGNMENT-IAM-CERT
+"""
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+TITLE: Tenant Authorization Composition Certification.
+VERSION: v1.13.1-CRM-WORK-BINDING-VERSION-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
-principal, membership, business-role, and durable final-role truth.
+principal, membership, business-role, and durable final-role truth. It also proves platform-employer
+permissions are restricted to the exact WILSY company tenant before authority reads.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
+2026-11-17 v1.13.1-CRM-WORK-BINDING-VERSION-CERT refreshes two
+strict runtime-version assertions to the canonical CRM work-edit release.
+All binding, tenant fence, business role and denial assertions remain intact.
+2026-11-16 v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT verifies exact Projects pairs, tenant_owner eligibility, the dedicated assigned role, missing-role denial, and the internal-role foreign-tenant fence. No role assignment or entitlement is created.
+2026-11-13 v1.13.0-PROJECTS-ROLE-TENANT-FENCE-CERT adds the three separately granted company-document capabilities to exact expectations; all pre-existing employment and IAM gates remain intact.
+2026-11-13 v1.10.0-PLATFORM-EMPLOYEE-ADMISSION-CURRENTNESS-CERT certifies that admission also requires
+current workforce evidence in an active tenant-scope authorization transaction.
+Without that evidence the decision denies before the admission-officer grant is
+read. The route remains absent and no role assignment is created.
+2026-11-12 v1.9.0-PLATFORM-EMPLOYEE-ADMISSION-BINDING-CERT certifies
+source v1.50.0 exact operation pairs against existing business-role policy,
+static roles, active membership, exact WILSY employer tenant and active role
+assignments. Admission requires HR Director business capacity plus the separate
+admission-officer authorization role; wrong roles, crossed pairs and foreign
+scope deny. Offer acceptance remains unbound, and no admission command exists.
+2026-11-12 v1.7.0-PLATFORM-EMPLOYER-TENANT-SCOPE-CERT certifies the
+source v1.48.0 pre-read tenant restriction for all platform_employer permissions.
+A foreign-tenant attempt denies before principal, membership, business-role or
+permission-assignment reads; no canonical employer assignment is created.
 2026-10-21 v1.6.0-P47-R94-WORK-ASSIGNMENT-IAM-CERT certifies the exact
 assignment operation/permission binding and current Partner/Attorney IAM gates.
     2026-10-20 P47-R61-R4: Certifies the Partner-only
@@ -124,7 +150,7 @@ conjunctive current-truth authorization.
 v1.2.0-M11-R8-R3B-P6A-CERT certifies the exact inbound
 collection authorization-request composition while preserving fail-closed gate precedence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Deterministic resolve-only readers; projected transport authority cannot grant; mutation tripwires remain armed.
+SECURITY / PRIVACY POSTURE: Deterministic resolve-only readers; projected transport authority cannot grant; mutation tripwires remain armed.
 TENANT BOUNDARY: Exact principal and tenant scope, ACTIVE membership, one eligible tenant business role, and an ACTIVE granting authorization role are conjunctively required for every certified binding, including own-tenant evidence reads.
 AUTHORITY BOUNDARY: Certifies the frozen composition against migrated role-definition policy; tests do not authorize by themselves, wire routes, or own persistence.
 FINANCIAL AUTHORITY BOUNDARY: Financial execution remains prohibited; Kennel EOS remains exclusive.
@@ -133,6 +159,7 @@ FINANCIAL AUTHORITY BOUNDARY: Financial execution remains prohibited; Kennel EOS
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, cast
 
 import pytest
@@ -159,8 +186,26 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipNotFoundError,
     TenantMembershipRepositoryError,
 )
+from tools.eos.auth.roles import get_roles_granting_permission
+from tools.eos.auth.tenant_authority_policy import (
+    BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    DENY,
+    ELIGIBLE,
+    PLATFORM_EMPLOYER_OPERATIONS,
+    TENANT_ROLES,
+    tenant_role_operation_eligibility,
+)
+from tools.eos.auth.workspace_bootstrap_projection import (
+    WILSY_COMPANY_TENANT_ID,
+)
+from tools.eos.workforce.domain.workforce_relationship import (
+    WorkforceRelationship,
+    WorkforceRelationshipStatus,
+    WorkforceRelationshipType,
+    WorkforceScopeKind,
+)
 
-VERSION = "v1.6.0-P47-R94-WORK-ASSIGNMENT-IAM-CERT"
+VERSION = "v1.13.1-CRM-WORK-BINDING-VERSION-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -182,7 +227,7 @@ class _PrincipalReader:
         self.calls: list[str] = []
         self.write_calls = 0
 
-    def resolve(self, principal_id: str) -> object:
+    def resolve(self, principal_id: str, *, session: object = None) -> object:
         self.calls.append(principal_id)
         if self.outage:
             raise PrincipalAuthorityRepositoryError("outage")
@@ -206,17 +251,24 @@ class _PrincipalReader:
 class _MembershipReader:
     """Resolve-only membership reader with explicit mutation tripwires."""
 
-    def __init__(self, value: object, *, outage: bool = False) -> None:
+    def __init__(
+        self,
+        value: object,
+        *,
+        outage: bool = False,
+        tenant_id: str = _TENANT,
+    ) -> None:
         self.value = value
         self.outage = outage
+        self.tenant_id = tenant_id
         self.calls: list[tuple[str, str]] = []
         self.write_calls = 0
 
-    def resolve(self, principal_id: str, tenant_id: str) -> object:
+    def resolve(self, principal_id: str, tenant_id: str, *, session: object = None) -> object:
         self.calls.append((principal_id, tenant_id))
         if self.outage:
             raise TenantMembershipRepositoryError("outage")
-        if (principal_id, tenant_id) != (_PID, _TENANT):
+        if (principal_id, tenant_id) != (_PID, self.tenant_id):
             raise TenantMembershipNotFoundError("missing")
         return self.value
 
@@ -236,9 +288,9 @@ class _MembershipReader:
 class _BusinessRoleRecord:
     """Exact durable business-role fixture for selected-capacity decisions."""
 
-    def __init__(self, business_role: str) -> None:
+    def __init__(self, business_role: str, tenant_id: str = _TENANT) -> None:
         self.principal_id = _PID
-        self.tenant_id = _TENANT
+        self.tenant_id = tenant_id
         self.business_role = business_role
         self.status = RoleAssignmentStatus.ACTIVE
 
@@ -257,7 +309,7 @@ class _AssignmentReader:
         self.calls: list[tuple[str, str, str]] = []
         self.write_calls = 0
 
-    def resolve(self, principal_id: str, tenant_id: str, role_id: str) -> object:
+    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: object = None) -> object:
         key = (principal_id, tenant_id, role_id)
         self.calls.append(key)
         if key in self.outage_keys:
@@ -291,13 +343,20 @@ def _membership(
     *,
     status: TenantMembershipStatus = TenantMembershipStatus.ACTIVE,
     outage: bool = False,
+    tenant_id: str = _TENANT,
 ) -> _MembershipReader:
-    return _MembershipReader(_StatusRecord(status), outage=outage)
+    return _MembershipReader(
+        _StatusRecord(status), outage=outage, tenant_id=tenant_id
+    )
 
 
-def _business(role: str) -> _AssignmentReader:
+def _business(role: str, *, tenant_id: str = _TENANT) -> _AssignmentReader:
     return _AssignmentReader(
-        {(_PID, _TENANT, role): _BusinessRoleRecord(role)}
+        {
+            (_PID, tenant_id, role): _BusinessRoleRecord(
+                role, tenant_id=tenant_id
+            )
+        }
     )
 
 
@@ -314,20 +373,21 @@ def _assignments(
     *active_roles: str,
     revoked_roles: tuple[str, ...] = (),
     outage_roles: tuple[str, ...] = (),
+    tenant_id: str = _TENANT,
 ) -> _AssignmentReader:
     values: dict[tuple[str, str, str], object] = {
-        (_PID, _TENANT, role): _StatusRecord(RoleAssignmentStatus.ACTIVE)
+        (_PID, tenant_id, role): _StatusRecord(RoleAssignmentStatus.ACTIVE)
         for role in active_roles
     }
     values.update(
         {
-            (_PID, _TENANT, role): _StatusRecord(RoleAssignmentStatus.REVOKED)
+            (_PID, tenant_id, role): _StatusRecord(RoleAssignmentStatus.REVOKED)
             for role in revoked_roles
         }
     )
     return _AssignmentReader(
         values,
-        outage_keys={(_PID, _TENANT, role) for role in outage_roles},
+        outage_keys={(_PID, tenant_id, role) for role in outage_roles},
     )
 
 
@@ -342,6 +402,8 @@ def _decision(
     principal_id: object = _PID,
     tenant_id: object = _TENANT,
     selected_business_role: object = None,
+    session: object = None,
+    workforce_relationship_collection: object = None,
 ) -> TenantAuthorizationDecision:
     return authorize_tenant_operation(
         principal_id=principal_id,
@@ -353,6 +415,8 @@ def _decision(
         business_role_repository=business_repository,
         role_assignment_repository=assignment_repository,
         selected_business_role=selected_business_role,
+        session=session,
+        workforce_relationship_collection=workforce_relationship_collection,
     )
 
 
@@ -803,6 +867,96 @@ def test_permission_operation_binding_remains_exact() -> None:
         assignment_repository=assignments,
     )
     assert result.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    assert assignments.calls == []
+
+
+@pytest.mark.parametrize(
+    ("operation", "permission"),
+    [
+        ("project_list", "project:read"),
+        ("project_detail", "project:read"),
+        ("project_create", "project:create"),
+        ("project_update", "project:update"),
+        ("project_archive", "project:archive"),
+    ],
+)
+def test_project_operation_pairs_require_dedicated_assigned_role(
+    operation: str, permission: str,
+) -> None:
+    """Eligible owner capacity cannot substitute for Projects role possession."""
+    assert ta._BINDINGS.get(operation) == permission
+    tenant = WILSY_COMPANY_TENANT_ID
+    assignments = _assignments("TENANT_OWNER", tenant_id=tenant)
+    decision = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_owner", tenant_id=tenant),
+        assignment_repository=assignments,
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert decision.authorized is False
+    assert decision.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+    assert assignments.calls == [("p", tenant, "PROJECTS_PLATFORM_OWNER")]
+
+
+@pytest.mark.parametrize(
+    ("operation", "permission"),
+    [
+        ("project_list", "project:read"),
+        ("project_detail", "project:read"),
+        ("project_create", "project:create"),
+        ("project_update", "project:update"),
+        ("project_archive", "project:archive"),
+    ],
+)
+def test_canonical_company_owner_with_dedicated_projects_role_is_eligible(
+    operation: str, permission: str,
+) -> None:
+    """WILSY tenant_owner plus an ACTIVE Projects role passes existing IAM gates."""
+    tenant = WILSY_COMPANY_TENANT_ID
+    assignments = _assignments("PROJECTS_PLATFORM_OWNER", tenant_id=tenant)
+    decision = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_owner", tenant_id=tenant),
+        assignment_repository=assignments,
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert decision.authorized is True
+    assert decision.business_role == "tenant_owner"
+    assert decision.authorization_role == "PROJECTS_PLATFORM_OWNER"
+
+
+def test_internal_projects_role_is_ignored_in_customer_tenant() -> None:
+    """A stale or migrated internal role cannot authorize customer Projects."""
+    tenant = "tenant-b"
+    assignments = _assignments("PROJECTS_PLATFORM_OWNER", tenant_id=tenant)
+    decision = _decision(
+        permission_id="project:read",
+        operation="project_list",
+        business_repository=_business("tenant_owner", tenant_id=tenant),
+        assignment_repository=assignments,
+        membership_repository=_membership(tenant_id=tenant),
+        tenant_id=tenant,
+    )
+    assert decision.authorized is False
+    assert decision.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+    assert assignments.calls == []
+
+
+def test_project_crossed_operation_pairs_deny_before_role_assignment_reads() -> None:
+    """A project permission cannot be replayed across another operation."""
+    assignments = _assignments("TENANT_OWNER")
+    decision = _decision(
+        permission_id="project:archive",
+        operation="project_create",
+        business_repository=_business("tenant_owner"),
+        assignment_repository=assignments,
+    )
+    assert decision.authorized is False
+    assert decision.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
     assert assignments.calls == []
 
 
@@ -1445,7 +1599,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+    assert ta.VERSION == "v1.54.0-CRM-WORK-EDIT-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1459,7 +1613,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+    assert ta.VERSION == "v1.54.0-CRM-WORK-EDIT-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2693,13 +2847,6 @@ def test_p47_r94_work_assignment_binding_is_current_exact_and_distinct() -> None
     ).reason is TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND
 
 
-# ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.6.0-P47-R94-WORK-ASSIGNMENT-IAM-CERT
-# AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
-# TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant binding, and ACTIVE granting role are conjunctively required
-# FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
-# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 
 def test_verified_selected_capacity_narrows_authorization_without_permission_union() -> None:
@@ -2726,3 +2873,337 @@ def test_selected_ineligible_capacity_does_not_fall_back_to_another_active_capac
     assert decision.authorized is False
     assert decision.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
     assert decision.business_role == "tenant_auditor"
+
+
+def test_platform_employer_permissions_deny_outside_canonical_wilsy_tenant_before_reads() -> None:
+    """Foreign tenant claims cannot reach any current-authority repository."""
+    principal = _principal()
+    membership = _membership()
+    business = _business("tenant_hr_manager")
+    assignments = _assignments("HR_MANAGER")
+
+    decision = _decision(
+        permission_id="platform_employer:employee_admission:create",
+        operation="platform_employer_employee_admission_create",
+        business_repository=business,
+        assignment_repository=assignments,
+        principal_repository=principal,
+        membership_repository=membership,
+        tenant_id="CUSTOMER-TENANT-ONLY",
+    )
+
+    assert decision.authorized is False
+    assert decision.reason is TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH
+    assert principal.calls == []
+    assert membership.calls == []
+    assert business.calls == []
+    assert assignments.calls == []
+
+
+PLATFORM_EMPLOYER_BINDINGS = {
+    "platform_employer_employee_directory_read":
+        "platform_employer:employee_directory:read",
+    "platform_employer_headcount_requisition_read":
+        "platform_employer:headcount_requisition:read",
+    "platform_employer_headcount_requisition_create":
+        "platform_employer:headcount_requisition:create",
+    "platform_employer_headcount_requisition_decide":
+        "platform_employer:headcount_requisition:decide",
+    "platform_employer_hiring_candidate_read":
+        "platform_employer:hiring_candidate:read",
+    "platform_employer_hiring_candidate_create":
+        "platform_employer:hiring_candidate:create",
+    "platform_employer_hiring_candidate_transition":
+        "platform_employer:hiring_candidate:transition",
+    "platform_employer_hiring_candidate_evidence_upload":
+        "platform_employer:hiring_candidate_evidence:upload",
+    "platform_employer_hiring_candidate_evidence_read":
+        "platform_employer:hiring_candidate_evidence:read",
+    "platform_employer_hiring_offer_read":
+        "platform_employer:hiring_offer:read",
+    "platform_employer_hiring_offer_create":
+        "platform_employer:hiring_offer:create",
+    "platform_employer_hiring_offer_submit":
+        "platform_employer:hiring_offer:submit",
+    "platform_employer_hiring_offer_decide":
+        "platform_employer:hiring_offer:decide",
+    "platform_employer_hiring_offer_send":
+        "platform_employer:hiring_offer:send",
+    "platform_employer_hiring_offer_sign":
+        "platform_employer:hiring_offer:sign",
+    "platform_employer_employee_admission_create":
+        "platform_employer:employee_admission:create",
+}
+
+
+def test_platform_employer_bindings_match_the_existing_operation_policy() -> None:
+    """All and only governed PFE operations bind to their canonical permissions."""
+    assert tuple(PLATFORM_EMPLOYER_BINDINGS) == PLATFORM_EMPLOYER_OPERATIONS
+    for operation, permission in PLATFORM_EMPLOYER_BINDINGS.items():
+        assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
+        assert ta._BINDINGS[operation] == permission
+        assert list(ta._BINDINGS).count(operation) == 1
+
+    assert "platform_employer_hiring_offer_accept" not in ta._BINDINGS
+    assert "platform_employer:hiring_offer:accept" not in (
+        BUSINESS_ROLE_OPERATION_PERMISSIONS.values()
+    )
+    assert get_roles_granting_permission(
+        "platform_employer:employee_admission:create"
+    ) == ("PLATFORM_EMPLOYEE_ADMISSION_OFFICER",)
+    assert get_roles_granting_permission(
+        "platform_employer:hiring_offer:accept"
+    ) == ()
+
+
+def test_platform_employer_business_role_eligibility_is_least_privilege() -> None:
+    """Manager, director and owner operations remain independently eligible."""
+    expected = {
+        "tenant_hr_manager": {
+            "platform_employer_employee_directory_read",
+            "platform_employer_headcount_requisition_read",
+            "platform_employer_headcount_requisition_create",
+            "platform_employer_hiring_candidate_read",
+            "platform_employer_hiring_candidate_create",
+            "platform_employer_hiring_candidate_transition",
+            "platform_employer_hiring_candidate_evidence_upload",
+            "platform_employer_hiring_candidate_evidence_read",
+            "platform_employer_hiring_offer_read",
+            "platform_employer_hiring_offer_create",
+            "platform_employer_hiring_offer_submit",
+            "platform_employer_hiring_offer_send",
+        },
+        "tenant_hr_director": {
+            "platform_employer_employee_directory_read",
+            "platform_employer_headcount_requisition_read",
+            "platform_employer_headcount_requisition_decide",
+            "platform_employer_hiring_candidate_read",
+            "platform_employer_hiring_candidate_evidence_read",
+            "platform_employer_hiring_offer_read",
+            "platform_employer_hiring_offer_decide",
+            "platform_employer_employee_admission_create",
+        },
+        "tenant_owner": {"platform_employer_hiring_offer_sign"},
+    }
+    for role, operations in expected.items():
+        actual = {
+            operation
+            for operation in PLATFORM_EMPLOYER_OPERATIONS
+            if tenant_role_operation_eligibility(role, operation) == ELIGIBLE
+        }
+        assert actual == operations
+    for role in TENANT_ROLES - set(expected):
+        for operation in PLATFORM_EMPLOYER_OPERATIONS:
+            assert tenant_role_operation_eligibility(role, operation) == DENY
+
+
+def test_platform_employer_authorization_requires_exact_scope_and_independent_roles() -> None:
+    """Existing current-truth checks authorize only the matched employer command."""
+    authorized_cases = (
+        (
+            "platform_employer:hiring_candidate:create",
+            "platform_employer_hiring_candidate_create",
+            "tenant_hr_manager",
+            "HR_MANAGER",
+        ),
+        (
+            "platform_employer:hiring_offer:decide",
+            "platform_employer_hiring_offer_decide",
+            "tenant_hr_director",
+            "HR_DIRECTOR",
+        ),
+        (
+            "platform_employer:hiring_offer:sign",
+            "platform_employer_hiring_offer_sign",
+            "tenant_owner",
+            "TENANT_OWNER",
+        ),
+    )
+    for permission, operation, business_role, authorization_role in authorized_cases:
+        decision = _decision(
+            permission_id=permission,
+            operation=operation,
+            business_repository=_business(
+                business_role, tenant_id=WILSY_COMPANY_TENANT_ID
+            ),
+            assignment_repository=_assignments(
+                authorization_role, tenant_id=WILSY_COMPANY_TENANT_ID
+            ),
+            membership_repository=_membership(
+                tenant_id=WILSY_COMPANY_TENANT_ID
+            ),
+            tenant_id=WILSY_COMPANY_TENANT_ID,
+        )
+        assert decision == TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+            business_role,
+            authorization_role,
+        )
+
+    manager_decision = _decision(
+        permission_id="platform_employer:hiring_offer:decide",
+        operation="platform_employer_hiring_offer_decide",
+        business_repository=_business(
+            "tenant_hr_manager", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        assignment_repository=_assignments(
+            "HR_MANAGER", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        membership_repository=_membership(tenant_id=WILSY_COMPANY_TENANT_ID),
+        tenant_id=WILSY_COMPANY_TENANT_ID,
+    )
+    assert manager_decision.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+    admission_with_manager_capacity = _decision(
+        permission_id="platform_employer:employee_admission:create",
+        operation="platform_employer_employee_admission_create",
+        business_repository=_business(
+            "tenant_hr_manager", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        assignment_repository=_assignments(
+            "PLATFORM_EMPLOYEE_ADMISSION_OFFICER",
+            tenant_id=WILSY_COMPANY_TENANT_ID,
+        ),
+        membership_repository=_membership(tenant_id=WILSY_COMPANY_TENANT_ID),
+        tenant_id=WILSY_COMPANY_TENANT_ID,
+    )
+    assert admission_with_manager_capacity.reason is (
+        TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    )
+
+    admission_without_dedicated_assignment = _decision(
+        permission_id="platform_employer:employee_admission:create",
+        operation="platform_employer_employee_admission_create",
+        business_repository=_business(
+            "tenant_hr_director", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        assignment_repository=_assignments(
+            "HR_DIRECTOR", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        membership_repository=_membership(tenant_id=WILSY_COMPANY_TENANT_ID),
+        tenant_id=WILSY_COMPANY_TENANT_ID,
+    )
+    assert admission_without_dedicated_assignment.reason is (
+        TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE
+    )
+
+    crossed = _decision(
+        permission_id="platform_employer:hiring_offer:create",
+        operation="platform_employer_hiring_offer_send",
+        business_repository=_business(
+            "tenant_hr_manager", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        assignment_repository=_assignments(
+            "HR_MANAGER", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        membership_repository=_membership(tenant_id=WILSY_COMPANY_TENANT_ID),
+        tenant_id=WILSY_COMPANY_TENANT_ID,
+    )
+    assert crossed.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+    admission_crossed = _decision(
+        permission_id="platform_employer:hiring_offer:create",
+        operation="platform_employer_employee_admission_create",
+        business_repository=_business(
+            "tenant_hr_director", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        assignment_repository=_assignments(
+            "PLATFORM_EMPLOYEE_ADMISSION_OFFICER",
+            tenant_id=WILSY_COMPANY_TENANT_ID,
+        ),
+        membership_repository=_membership(tenant_id=WILSY_COMPANY_TENANT_ID),
+        tenant_id=WILSY_COMPANY_TENANT_ID,
+    )
+    assert admission_crossed.reason is (
+        TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+    )
+
+
+def test_platform_employer_admission_requires_current_exact_tenant_workforce(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Admission needs workforce currentness plus both independent IAM roles."""
+    effective = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    relationship = WorkforceRelationship(
+        relationship_id="admission-currentness-test",
+        revision=1,
+        scope_kind=WorkforceScopeKind.TENANT,
+        scope_id=WILSY_COMPANY_TENANT_ID,
+        principal_id=_PID,
+        relationship_type=WorkforceRelationshipType.EMPLOYEE,
+        status=WorkforceRelationshipStatus.ACTIVE,
+        effective_from=effective,
+        effective_until=None,
+        status_effective_at=effective,
+        reason_reference="admission-currentness-unit-certificate",
+        supersedes_fingerprint=None,
+    )
+    collection = object()
+
+    def read_exact_workforce(
+        scope_kind: str,
+        scope_id: str,
+        principal_id: str,
+        *,
+        collection: object,
+        session: object,
+    ) -> tuple[WorkforceRelationship, ...]:
+        assert scope_kind == "TENANT"
+        assert scope_id == WILSY_COMPANY_TENANT_ID
+        assert principal_id == _PID
+        assert collection is not None
+        assert session is not None
+        return (relationship,)
+
+    monkeypatch.setattr(ta, "list_principal_relationships", read_exact_workforce)
+
+    class ActiveTransaction:
+        def in_transaction(self) -> bool:
+            return True
+
+    active_session = ActiveTransaction()
+    common = {
+        "permission_id": "platform_employer:employee_admission:create",
+        "operation": "platform_employer_employee_admission_create",
+        "business_repository": _business(
+            "tenant_hr_director", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        "principal_repository": _principal(),
+        "membership_repository": _membership(
+            tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+        "tenant_id": WILSY_COMPANY_TENANT_ID,
+        "session": active_session,
+        "workforce_relationship_collection": collection,
+    }
+    authorized = _decision(
+        **common,
+        assignment_repository=_assignments(
+            "PLATFORM_EMPLOYEE_ADMISSION_OFFICER",
+            tenant_id=WILSY_COMPANY_TENANT_ID,
+        ),
+    )
+    assert authorized == TenantAuthorizationDecision(
+        True,
+        TenantAuthorizationReason.AUTHORIZED,
+        "tenant_hr_director",
+        "PLATFORM_EMPLOYEE_ADMISSION_OFFICER",
+    )
+
+    missing_admission_role = _decision(
+        **common,
+        assignment_repository=_assignments(
+            "HR_DIRECTOR", tenant_id=WILSY_COMPANY_TENANT_ID
+        ),
+    )
+    assert missing_admission_role.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+
+
+# ARTIFACT: tests/unit/test_tenant_authorization.py
+# VERSION: v1.13.1-CRM-WORK-BINDING-VERSION-CERT
+# AUTHORITY BOUNDARY: certifies exact composition, operation policy and static role conjunctions only; fixtures create no assignment
+# TENANT POSTURE: platform-employer decisions are restricted to the canonical WILSY company tenant and require active membership, eligible business role and active assigned authorization role
+# FAIL-CLOSED POSTURE: crossed pairs deny; offer acceptance remains unbound; admission has no command or route
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

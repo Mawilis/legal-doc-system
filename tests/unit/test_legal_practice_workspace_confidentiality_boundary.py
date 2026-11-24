@@ -1,4 +1,25 @@
-"""G79-R5: populated legal workspace must not leak without wall clearance."""
+"""
+TITLE: WILSY OS Legal Practice Workspace Confidentiality Boundary Certification
+VERSION: v1.0.0-SOVEREIGN-CONFIDENTIALITY-TEST-CERTIFICATION
+AUTHORITY: WILSY OS Core Governance / Legal Operations confidentiality contract
+EPITOME: Certifies that uncleared Legal Practice matter data fails closed before
+         lifecycle disclosure, without leaking restricted identifiers.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_practice_workspace_confidentiality_boundary.py
+COLLABORATION / OWNERSHIP: Python EOS Legal Operations router owns clearance and
+                           workspace projection; this test is read-only proof.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG:
+  v1.0.0-SOVEREIGN-CONFIDENTIALITY-TEST-CERTIFICATION — Certify complete sovereign header and seal; retain
+  the existing G79-R5 assertions and runtime semantics without modification.
+COMPLIANCE: AGENTS.md v1.2.0; G79-R5 confidentiality disclosure boundary.
+SECURITY / PRIVACY POSTURE: Restricted matter and evidence locators never
+                            appear in an uncleared workspace error response.
+TENANT BOUNDARY: No cross-tenant disclosure; this proof never creates, reads,
+                 or mutates real tenant persistence.
+AUTHORITY BOUNDARY: An unratified confidentiality wall denies Legal Practice
+                    disclosure; test code cannot grant clearance.
+FINANCIAL AUTHORITY BOUNDARY: No payment, settlement, or Kennel EOS execution.
+"""
 import ast
 from pathlib import Path
 
@@ -97,3 +118,13 @@ def test_actual_practice_route_denies_before_lifecycle_reads():
 def test_other_independent_routes_remain_declared():
     assert callable(router.get_legal_productive_work_projection)
     assert callable(router.get_legal_practice_workspace_projection)
+
+# =============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: tests/unit/test_legal_practice_workspace_confidentiality_boundary.py
+# VERSION: v1.0.0-SOVEREIGN-CONFIDENTIALITY-TEST-CERTIFICATION
+# AUTHORITY BOUNDARY: Legal Practice confidentiality clearance; test-only proof.
+# TENANT POSTURE: Deny uncleared disclosure; no tenant data mutation.
+# FAIL-CLOSED POSTURE: Unavailable clearance blocks populated workspace reads.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no financial action.
+# END OF WILSY OS SOVEREIGN ARTIFACT

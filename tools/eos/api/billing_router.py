@@ -1,67 +1,42 @@
 # -*- coding: utf-8 -*-
 """
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – BILLING ROUTER (FASTAPI) – LAZY KERNEL DATABASE HANDLES                                      ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.11.0-L7D-B-LAZY-BILLING-HANDLES                                                                  ║
-║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
-║ EPITOME:        Uses global MongoDB client from billing_registry; composes certified billing intelligence and ║
-║                 WILSY AI capacity evidence through caller-owned transactions.                                 ║
-║ CLASSIFICATION: Production Artifact                                                                             ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 🔧 CHANGE LOG:                                                                                                  ║
-║   2026-09-15 v1.11.0-L7D-B-LAZY-BILLING-HANDLES – Resolves active kernel database/client handles at request time; ║
-║                imports no longer freeze unavailable Mongo snapshots.                                             ║
-║   2026-09-13 v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP – Binds the canonical billing-intelligence evidence route to      ║
-║                RequireTenantAuthorization and derives tenant scope only from its authorized context; legacy compatibility routes ║
-║                remain unchanged.                                                                                                  ║
-║   2026-09-13 v1.9.0-M13-P6D-WILSY-AI-CAPACITY-HTTP – Adds the authorized own-tenant WILSY AI usage-capacity    ║
-║                evidence endpoint over the canonical P4/P6B/P6A/P6C chain; HTTP owns only transport and        ║
-║                transaction lifecycle.                                                                          ║
-║   2026-09-12 v1.8.4-M12-P8-BILLING-INTELLIGENCE-GROWTH – Accepts an explicit prior evidence identity for P7 growth; no historical inference. ║
-║   2026-09-12 v1.8.3-M12-P6-BILLING-INTELLIGENCE-SUBSCRIPTIONS – Injects canonical tenant-scoped subscriptions into the Python intelligence orchestrator; P5 owns MRR/ARR policy. ║
-║   2026-09-12 v1.8.2-M12-P4-INTELLIGENCE-AUTHORITY-CONVERGENCE – Removes legacy
-║                router-owned intelligence formulas; summary/analytics remain
-║                explicit fail-closed compatibility boundaries.                    ║
-║   2026-09-12 v1.8.1-M12-P3-CANONICAL-INTELLIGENCE-SEAM – Adds the delegated
-║                /billing/intelligence/evidence canonical P1/P2 evidence seam; legacy
-║                summary/analytics remain explicitly non-canonical.                         ║
-║   2026-09-04 v1.8.0-FINANCIAL-TRUTH-HTTP-FIREWALL – HTTP payment success/failure, refund, partial-payment settlement, paid-state, and paid-at mutation fail closed behind Kennel EOS. ║
-║   2026-09-03 v1.7.1-PLAN-CATALOGUE-CONVERGENCE – /billing/plans delegates canonical catalogue truth to PlanRegistry and fails closed on catalogue errors. ║
-║   2026-08-25 v1.7.0-DUNNING-LIFECYCLE – Persisted 3/7/10/14/21/30 lifecycle with read-only suspension and SHA3 audit proof. ║
-║   2026-08-21 v1.6.1-CROSS-TENANT-RESOLVE – Use global mongo_client from billing_registry; remove request.app dependency.      ║
-║   2026-08-21 v1.4.2-PRODUCTION – Fixed mongo_client access; use request.app.mongo_client (removed).           ║
-║   2026-08-21 v1.4.0-ORDER-GENERATION – Integrated OrderNumberService.                                          ║
-║   ...                                                                                                          ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-ABSOLUTE CANONICAL PATH:
-    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/billing_router.py
-
-TENANT BOUNDARY:
-    Legacy X-Tenant-Id remains requested billing scope only. The WILSY AI
-    capacity evidence endpoint accepts tenant scope only from the shared
-    TenantAuthorizationContext after canonical own-tenant authorization.
-    This transport layer does not create tenant membership, commercial
-    authority, payment execution authority, or settlement authority.
-
-AUTHORITY BOUNDARY:
-    This router is Python HTTP transport/composition over sovereign Python EOS
-    business owners. The WILSY AI capacity route delegates identity, bounded
-    observation retrieval, and capacity derivation without duplicating truth.
-    Caller payloads cannot manufacture provider execution or settlement truth.
-
-FINANCIAL AUTHORITY BOUNDARY:
-    Kennel EOS exclusively owns financial execution truth. HTTP callers cannot
-    declare payment success/failure/refund, record partial settlement, stamp
-    paid_at, or directly establish InvoiceStatus.PAID.
+TITLE: WILSY OS Python EOS Billing HTTP Router
+VERSION: v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Composes Python-owned billing HTTP surfaces. Invoice proof reference
+         verification uses canonical own-tenant authorization and persists an
+         audit observation; Kennel EOS retains all financial execution truth.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/billing_router.py
+COLLABORATION / OWNERSHIP: BillingRegistry, billing domain, TenantAuthorizationContext,
+                           Kernel database and client billing projections.
+CERTIFICATION / UPDATE DATE: 2026-11-10
+CHANGELOG:
+  2026-11-10 v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY confines legacy QR
+    matching to tenant-owned client invoices, rejects conflicting tenant and
+    identity aliases, requires persisted currency, and uses the canonical
+    invoice identity only as a deterministic trace alias when no trace is stored.
+  2026-11-10 v1.12.0-EOS-QR-AUDIT-AUTHORIZATION adds authenticated tenant-bound
+    legacy invoice QR issue/verify routes, authenticates persisted billing-audit
+    reads, and denies integrity-control writes until a governed capability exists.
+  2026-11-10 v1.11.1-MERKLE-TENANT-AUTHORIZATION scopes invoice proof lookup and
+    verification audit evidence to the authenticated TenantAuthorizationContext;
+    caller tenant fields cannot override that scope. Legacy compatibility routes
+    remain individually bounded by their existing contracts.
+  2026-09-15 v1.11.0-L7D-B-LAZY-BILLING-HANDLES resolves active kernel database
+    and client handles at request time.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Verification accepts only a SHA3-512-shaped
+  reference, performs tenant-scoped reads, and records no invoice content.
+TENANT BOUNDARY: The proof verification route derives tenant scope only from
+  RequireTenantAuthorization; body/header tenant labels never replace it.
+AUTHORITY BOUNDARY: Python HTTP transport and source-owned billing evidence;
+  no invoice authenticity, execution, payment, or settlement is inferred.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
+  and settlement truth.
 
 CONSTITUTION:
-    REQUEST != AUTHORIZATION != EXECUTION != SETTLEMENT.
-    NO EVIDENCE = NO FACT.
-
+REQUEST != AUTHORIZATION != EXECUTION != SETTLEMENT.
+NO EVIDENCE = NO FACT.
 """
 
 from __future__ import annotations
@@ -75,6 +50,7 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import hashlib
 import json
+import re
 
 from pydantic import BaseModel
 
@@ -112,9 +88,14 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
+from ..saas.billing.invoice_qr_legacy_contract import (
+    InvoiceQrContractError,
+    build_legacy_invoice_qr_payload,
+    verify_legacy_invoice_qr_payload,
+)
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.11.0-L7D-B-LAZY-BILLING-HANDLES"
+VERSION = "v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY"
 
 _BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION = RequireTenantAuthorization(
     "billing_intelligence:evidence:read",
@@ -134,6 +115,11 @@ _BILLING_DUNNING_PROJECTION_READ_AUTHORIZATION = RequireTenantAuthorization(
 _BILLING_DUNNING_PROJECTION_EVALUATE_AUTHORIZATION = RequireTenantAuthorization(
     "billing_dunning:projection:evaluate",
     "billing_dunning_projection_evaluate",
+)
+
+_BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION = RequireTenantAuthorization(
+    "audit:read",
+    "audit_read",
 )
 
 
@@ -331,6 +317,108 @@ def _raise_wilsy_ai_capacity_http_failure(
 
 # ─── Router ──────────────────────────────────────────────────────────────────
 router = APIRouter(prefix="/billing", tags=["Billing"])
+qr_router = APIRouter(prefix="/qr", tags=["Billing QR"])
+
+
+def _invoice_field(document: Dict[str, Any], *names: str) -> Any:
+    """Return the first non-null persisted invoice field without synthesizing truth."""
+    for name in names:
+        value = document.get(name)
+        if value is not None:
+            return value
+    return None
+
+
+def _invoice_trace_id(document: Dict[str, Any], canonical_invoice_id: Any) -> str | None:
+    """Resolve persisted trace identity or its stable invoice-ID compatibility alias."""
+    values = [
+        document[name]
+        for name in ("trace_id", "traceId")
+        if document.get(name) is not None
+    ]
+    normalized = {str(value).strip() for value in values}
+    if len(normalized) > 1 or "" in normalized:
+        return None
+    if normalized:
+        return next(iter(normalized))
+    fallback = str(canonical_invoice_id).strip() if canonical_invoice_id is not None else ""
+    return fallback or None
+
+
+def _tenant_invoice_lookup_query(
+    tenant_id: str,
+    *,
+    invoice_id: str | None = None,
+    trace_id: str | None = None,
+) -> Dict[str, Any]:
+    """Build one exact tenant-bounded legacy/current invoice selector."""
+    tenant_fields = (
+        "tenant_id",
+        "tenantId",
+        "recipient_tenant_id",
+        "recipientTenantId",
+    )
+    invoice_fields = (
+        "invoice_id",
+        "invoiceId",
+        "invoice_number",
+        "invoiceNumber",
+    )
+    trace_fields = (
+        "trace_id",
+        "traceId",
+    )
+    identity_clauses = (
+        [{field: invoice_id} for field in invoice_fields]
+        if isinstance(invoice_id, str) and invoice_id
+        else []
+    ) + (
+        [{field: trace_id} for field in trace_fields]
+        if isinstance(trace_id, str) and trace_id
+        else []
+    )
+    tenant_consistency = [
+        {"$or": [{field: tenant_id}, {field: None}]}
+        for field in tenant_fields
+    ]
+    return {
+        "$and": [
+            {"$or": [{field: tenant_id} for field in tenant_fields]},
+            *tenant_consistency,
+            {"$or": identity_clauses},
+        ]
+    }
+
+
+def _find_tenant_invoice(
+    database: Any,
+    tenant_id: str,
+    *,
+    invoice_id: str | None = None,
+    trace_id: str | None = None,
+) -> Dict[str, Any] | None:
+    """Read one client invoice using consistent exact-tenant ownership fields."""
+    query = _tenant_invoice_lookup_query(
+        tenant_id,
+        invoice_id=invoice_id,
+        trace_id=trace_id,
+    )
+    document = database["client_invoices"].find_one(query)
+    if document is None:
+        return None
+    if not isinstance(document, dict):
+        raise TypeError("BILLING_QR_PERSISTED_INVOICE_INVALID")
+    owner_fields = (
+        "tenant_id",
+        "tenantId",
+        "recipient_tenant_id",
+        "recipientTenantId",
+    )
+    owners = [document[field] for field in owner_fields if document.get(field) is not None]
+    if not owners or any(str(owner) != tenant_id for owner in owners):
+        return None
+    return document
+
 
 # ─── Request/Response Schemas (Pydantic) ──────────────────────────────────
 class LineItemCreate(BaseModel):
@@ -1354,30 +1442,320 @@ async def anchor_investor_proof(payload: Dict[str, Any], tenant_id: str = Depend
     return record
 
 
+@router.get("/invoices/{invoice_id}/qr", response_model=Dict[str, Any])
+async def issue_invoice_qr_reference(
+    invoice_id: str,
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Issue a non-persisted legacy-compatible QR only for an authorized invoice.
+
+    Authority: Requires canonical audit:read tenant authorization.
+    Tenant scope: Both invoice lookup and signed tenant derive from the same
+        TenantAuthorizationContext; foreign absence is indistinguishable.
+    Mutation: No invoice or QR state is persisted.
+    Financial boundary: Does not establish invoice payment, execution, or settlement.
+    """
+    tenant_id = authorization.tenant_id
+    try:
+        document = _find_tenant_invoice(
+            _require_db(),
+            tenant_id,
+            invoice_id=invoice_id,
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        _log_error(error, "ISSUE_INVOICE_QR", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_QR_INVOICE_LOOKUP_UNAVAILABLE",
+        ) from error
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="BILLING_QR_INVOICE_NOT_FOUND",
+        )
+
+    canonical_invoice_id = _invoice_field(
+        document, "invoice_number", "invoiceNumber", "invoice_id", "invoiceId"
+    )
+    total = _invoice_field(
+        document, "total_amount", "totalAmount", "total", "grand_total", "grandTotal"
+    )
+    trace_id = _invoice_trace_id(document, canonical_invoice_id)
+    currency = _invoice_field(document, "currency")
+    if (
+        canonical_invoice_id is None
+        or str(canonical_invoice_id) != invoice_id
+        or total is None
+        or trace_id is None
+        or currency is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="QR_SOURCE_FIELDS_UNAVAILABLE",
+        )
+
+    try:
+        qr = build_legacy_invoice_qr_payload(
+            {
+                "invoiceId": str(canonical_invoice_id),
+                "tenantId": tenant_id,
+                "amount": total,
+                "currency": currency,
+                "traceId": str(trace_id),
+                "sealHash": _invoice_field(
+                    document, "seal_hash", "sealHash", "proof_hash", "proofHash"
+                ) or "",
+                "merkleRoot": _invoice_field(
+                    document, "merkle_root", "merkleRoot"
+                ) or "",
+                "documentType": "INVOICE",
+            }
+        )
+    except InvoiceQrContractError as error:
+        if error.code.startswith("QR_SIGNING_CONFIGURATION") or error.code.startswith(
+            "QR_VERIFICATION_BASE_URL"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=error.code,
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=error.code,
+        ) from error
+
+    return {
+        "verificationUrl": qr.verification_url,
+        "encodedPayload": qr.encoded_payload,
+        "payload": dict(qr.payload),
+        "signatureAlgorithm": "SHA3-512-LEGACY-SECRET-SUFFIX",
+        "verificationMode": "LEGACY_INVOICE_QR_COMPATIBILITY",
+        "persisted": False,
+    }
+
+
+@qr_router.get("/verify/{encoded_payload}", response_model=Dict[str, Any])
+async def verify_signed_invoice_qr(
+    encoded_payload: str,
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Validate historical QR bytes and match the persisted invoice in own tenant.
+
+    Authority: Requires canonical audit:read tenant authorization.
+    Tenant scope: The signed tenant must exactly equal the authorized tenant before
+        any invoice lookup; database selectors include tenant ownership fields.
+    Mutation: Read-only. No qrVerified flag, invoice, or audit control is changed.
+    Financial boundary: A valid result is not payment, execution, or settlement.
+    """
+    tenant_id = authorization.tenant_id
+    try:
+        verified = verify_legacy_invoice_qr_payload(encoded_payload)
+    except InvoiceQrContractError as error:
+        status_code = (
+            status.HTTP_503_SERVICE_UNAVAILABLE
+            if error.code == "QR_SIGNING_CONFIGURATION_UNAVAILABLE"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(status_code=status_code, detail=error.code) from error
+
+    payload = verified.payload
+    if payload["tenantId"] != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="BILLING_QR_INVOICE_NOT_FOUND",
+        )
+    if payload["documentType"] != "INVOICE":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="BILLING_QR_DOCUMENT_TYPE_UNSUPPORTED",
+        )
+
+    try:
+        document = _find_tenant_invoice(
+            _require_db(),
+            tenant_id,
+            invoice_id=payload["documentId"],
+            trace_id=payload["traceId"],
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        _log_error(error, "VERIFY_SIGNED_INVOICE_QR", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_QR_INVOICE_LOOKUP_UNAVAILABLE",
+        ) from error
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="BILLING_QR_INVOICE_NOT_FOUND",
+        )
+
+    canonical_invoice_id = _invoice_field(
+        document, "invoice_number", "invoiceNumber", "invoice_id", "invoiceId"
+    )
+    persisted_trace_id = _invoice_trace_id(document, canonical_invoice_id)
+    if (
+        canonical_invoice_id is None
+        or str(canonical_invoice_id) != payload["documentId"]
+        or persisted_trace_id is None
+        or str(persisted_trace_id) != payload["traceId"]
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="BILLING_QR_PERSISTED_IDENTITY_MISMATCH",
+        )
+
+    persisted_amount = _invoice_field(
+        document, "total_amount", "totalAmount", "total", "grand_total", "grandTotal"
+    )
+    if persisted_amount is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_QR_PERSISTED_AMOUNT_UNAVAILABLE",
+        )
+    try:
+        amount_matches = float(persisted_amount) == float(payload["amount"])
+    except (TypeError, ValueError, OverflowError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_QR_PERSISTED_AMOUNT_INVALID",
+        ) from error
+    if not amount_matches:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="BILLING_QR_AMOUNT_MISMATCH",
+        )
+
+    persisted_currency = _invoice_field(document, "currency")
+    if persisted_currency is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_QR_PERSISTED_CURRENCY_UNAVAILABLE",
+        )
+    if str(persisted_currency).upper() != payload["currency"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="BILLING_QR_CURRENCY_MISMATCH",
+        )
+
+    persisted_seal = _invoice_field(
+        document, "seal_hash", "sealHash", "proof_hash", "proofHash"
+    )
+    seal_reference_matches = (
+        not payload["sealHash"]
+        or (
+            persisted_seal is not None
+            and str(persisted_seal).upper() == payload["sealHash"].upper()
+        )
+    )
+    if not seal_reference_matches:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="BILLING_QR_SEAL_REFERENCE_MISMATCH",
+        )
+
+    return {
+        "valid": True,
+        "signatureValid": True,
+        "tenantScopedInvoiceFound": True,
+        "amountMatches": True,
+        "sealReferenceMatches": bool(payload["sealHash"]),
+        "verificationMode": "LEGACY_SIGNED_QR_PERSISTED_INVOICE_MATCH",
+        "tenantId": tenant_id,
+        "documentId": payload["documentId"],
+        "traceId": payload["traceId"],
+        "documentType": payload["documentType"],
+        "amount": payload["amount"],
+        "currency": payload["currency"],
+        "sealHash": payload["sealHash"],
+        "merkleRoot": payload["merkleRoot"],
+        "pkiVerification": "NOT_PERFORMED",
+        "paymentExecution": "NOT_EVALUATED",
+        "settlement": "NOT_EVALUATED",
+    }
+
+
 @router.get("/audit/events", response_model=List[Dict[str, Any]])
-async def list_billing_audit_events(tenant_id: str = Depends(get_tenant_id), limit: int = 100):
-    """Expose persisted Kennel anchors only; no synthetic client-side audit rows."""
-    rows = list(_require_db()["billing_audit_events"].find({"tenant_id": tenant_id}, {"_id": 0}).sort("created_at", -1).limit(min(max(limit, 1), 250)))
+async def list_billing_audit_events(
+    limit: int = Query(default=100, ge=1, le=250),
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION
+    ),
+) -> List[Dict[str, Any]]:
+    """Expose persisted billing events only inside the authorized tenant.
+
+    Authority: Requires canonical audit:read authorization.
+    Tenant scope: Query derives from TenantAuthorizationContext only.
+    Mutation: Read-only; no synthetic audit event is created.
+    """
+    tenant_id = authorization.tenant_id
+    try:
+        rows = list(
+            _require_db()["billing_audit_events"]
+            .find({"tenant_id": tenant_id}, {"_id": 0})
+            .sort("created_at", -1)
+            .limit(limit)
+        )
+    except Exception as error:
+        _log_error(error, "LIST_BILLING_AUDIT_EVENTS", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_AUDIT_EVENTS_UNAVAILABLE",
+        ) from error
     return rows
 
 
 @router.get("/audit/integrity", response_model=Dict[str, Any])
-async def get_audit_integrity(tenant_id: str = Depends(get_tenant_id)):
-    return _require_db()["billing_integrity_controls"].find_one(
-        {"tenant_id": tenant_id}, {"_id": 0}
-    ) or {"tenant_id": tenant_id, "auto_renew": True, "encrypted_backup": True, "neural_sync": False, "source": "EOS_DEFAULTS"}
+async def get_audit_integrity(
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Read source-provided integrity controls for the authorized tenant.
+
+    The explicit EOS_DEFAULTS source is a configured default posture, not proof
+    that the values were persisted or independently executed.
+    """
+    tenant_id = authorization.tenant_id
+    try:
+        value = _require_db()["billing_integrity_controls"].find_one(
+            {"tenant_id": tenant_id}, {"_id": 0}
+        )
+    except Exception as error:
+        _log_error(error, "GET_BILLING_AUDIT_INTEGRITY", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_AUDIT_INTEGRITY_UNAVAILABLE",
+        ) from error
+    return value or {
+        "tenant_id": tenant_id,
+        "auto_renew": True,
+        "encrypted_backup": True,
+        "neural_sync": False,
+        "source": "EOS_DEFAULTS",
+    }
 
 
 @router.patch("/audit/integrity", response_model=Dict[str, Any])
-async def update_audit_integrity(payload: Dict[str, bool], tenant_id: str = Depends(get_tenant_id)):
-    allowed = {key: value for key, value in payload.items() if key in {"auto_renew", "encrypted_backup", "neural_sync"} and isinstance(value, bool)}
-    if not allowed:
-        raise HTTPException(status_code=400, detail="Submit at least one boolean integrity control")
-    next_state = {"tenant_id": tenant_id, **allowed, "updated_at": datetime.now(timezone.utc).isoformat()}
-    next_state["proof_hash"] = _sha3_512(next_state)
-    _require_db()["billing_integrity_controls"].update_one({"tenant_id": tenant_id}, {"$set": next_state}, upsert=True)
-    _require_db()["billing_audit_events"].insert_one({"tenant_id": tenant_id, "event_type": "INTEGRITY_CONTROL_UPDATED", "proof_hash": next_state["proof_hash"], "metadata": allowed, "created_at": datetime.now(timezone.utc)})
-    return next_state
+async def update_audit_integrity(
+    payload: Dict[str, bool],
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Deny integrity-control mutation until a governed Python EOS write exists."""
+    del payload, authorization
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="AUDIT_INTEGRITY_WRITE_AUTHORITY_UNAVAILABLE",
+    )
 
 
 @router.get("/forensic-status", response_model=ForensicStatusResponse)
@@ -1937,47 +2315,104 @@ async def evaluate_dunning_lifecycle(
 @router.post("/audit/verifyChain", response_model=Dict[str, Any])
 async def verify_invoice_chain(
     body: MerkleVerifyBody,
-    tenant_id: str = Depends(get_tenant_id),
-):
-    seal = body.sealHash or body.seal_hash or body.proofHash or body.proof_hash or ""
-    tid = body.tenantId or body.tenant_id or tenant_id
-    if not seal:
-        raise HTTPException(status_code=400, detail="sealHash required")
-    coll_db = _require_db()
-    # Look for matching proof on invoices or audit events
-    hit = coll_db["platform_invoices"].find_one({
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_FORENSIC_REFERENCE_VERIFY_AUTHORIZATION
+    ),
+) -> Dict[str, Any]:
+    """Check a persisted invoice proof reference inside the authorized tenant.
+
+    A valid result means a matching SHA3-512-shaped reference exists in a
+    tenant-owned invoice or billing audit record. This lookup does not replay a
+    Merkle chain, verify a QR signature, validate document content, or establish
+    payment or settlement truth. A caller-supplied tenant field is accepted for
+    wire compatibility only and is never used for lookup or audit scope.
+    """
+    tenant_id = authorization.tenant_id
+    candidate = next(
+        (
+            value.strip()
+            for value in (body.sealHash, body.seal_hash, body.proofHash, body.proof_hash)
+            if isinstance(value, str) and value.strip()
+        ),
+        "",
+    )
+    if not re.fullmatch(r"[A-Fa-f0-9]{128}", candidate):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="BILLING_PROOF_HASH_INVALID",
+        )
+
+    seal = candidate.upper()
+    hash_values = [seal, seal.lower()]
+    tenant_query = {
         "$or": [
-            {"proof_hash": seal}, {"proofHash": seal},
-            {"seal_hash": seal}, {"sealHash": seal},
+            {"tenant_id": tenant_id},
+            {"tenantId": tenant_id},
         ]
-    })
-    if not hit:
-        hit = coll_db["client_invoices"].find_one({
-            "$or": [
-                {"proof_hash": seal}, {"proofHash": seal},
-                {"seal_hash": seal}, {"sealHash": seal},
-            ]
-        })
-    audit = coll_db["billing_audit_events"].find_one({"proof_hash": seal}) or coll_db["billing_audit_events"].find_one({"proofHash": seal})
-    valid = bool(hit or audit)
-    result = {
+    }
+    hash_query = {
+        "$or": [
+            {field: {"$in": hash_values}}
+            for field in ("proof_hash", "proofHash", "seal_hash", "sealHash")
+        ]
+    }
+    scoped_query = {"$and": [tenant_query, hash_query]}
+
+    try:
+        coll_db = _require_db()
+        invoice_hit = coll_db["platform_invoices"].find_one(scoped_query)
+        if not invoice_hit:
+            invoice_hit = coll_db["client_invoices"].find_one(scoped_query)
+
+        audit_hit = coll_db["billing_audit_events"].find_one(
+            {
+                "$and": [
+                    tenant_query,
+                    {
+                        "$or": [
+                            {"proof_hash": {"$in": hash_values}},
+                            {"proofHash": {"$in": hash_values}},
+                        ]
+                    },
+                ]
+            }
+        )
+        valid = bool(invoice_hit or audit_hit)
+        coll_db["billing_audit_events"].insert_one(
+            {
+                "tenant_id": tenant_id,
+                "event_type": "BILLING_PROOF_REFERENCE_CHECKED",
+                "proof_hash": seal,
+                "valid": valid,
+                "verification_scope": "AUTHORIZED_TENANT",
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        _log_error(
+            error,
+            "BILLING_PROOF_REFERENCE_VERIFICATION_FAILED",
+            tenant_id=tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BILLING_PROOF_REFERENCE_VERIFICATION_UNAVAILABLE",
+        ) from error
+
+    return {
         "success": True,
         "valid": valid,
-        "sealHash": seal.upper() if seal else "",
-        "tenantId": tid,
-        "matchedInvoice": bool(hit),
-        "matchedAudit": bool(audit),
+        "sealHash": seal,
+        "tenantId": tenant_id,
+        "matchedInvoice": bool(invoice_hit),
+        "matchedAudit": bool(audit_hit),
         "algorithm": "SHA3-512",
+        "verificationMode": "PERSISTED_REFERENCE_MATCH",
+        "verificationScope": "AUTHORIZED_TENANT",
         "verifiedAt": datetime.now(timezone.utc).isoformat(),
     }
-    coll_db["billing_audit_events"].insert_one({
-        "tenant_id": tid,
-        "event_type": "CHAIN_VERIFY",
-        "proof_hash": seal,
-        "valid": valid,
-        "created_at": datetime.now(timezone.utc),
-    })
-    return result
 
 
 @router.get("/actions", response_model=Dict[str, Any])
@@ -2004,10 +2439,10 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.11.0-L7D-B-LAZY-BILLING-HANDLES
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
 ════════════════════════════════════════════════════════════════════════════════
 Status:          ENGINEERING ARTIFACT — PRODUCTION ACTIVATION NOT CERTIFIED
-Version:         v1.11.0-L7D-B-LAZY-BILLING-HANDLES
+Version:         v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
 Fixes:           Financial-truth HTTP firewall; canonical billing-intelligence authorization seam and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue authority is PlanRegistry; Kennel remains exclusive financial execution authority. Dunning is a separate collection projection and cannot mutate subscription lifecycle or access.
@@ -2018,15 +2453,16 @@ Note:            Plan catalogue authority is PlanRegistry; Kennel remains exclus
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.11.0-L7D-B-LAZY-BILLING-HANDLES
+# VERSION: v1.12.1-EOS-QR-PERSISTED-SOURCE-BOUNDARY
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:
-#   Legacy tenant header is requested scope; canonical intelligence evidence
-#   scope is derived only from TenantAuthorizationContext.
+#   Audit reads and QR issue/verify use TenantAuthorizationContext. Integrity
+#   controls are read-only until governed write authority is established.
 # FAIL-CLOSED POSTURE:
 #   Payment status, refund, partial settlement, paid state, and paid-at caller
-#   mutation are rejected before billing-registry mutation.
+#   mutation are rejected before billing-registry mutation. QR validation is
+#   read-only and requires the signed tenant and invoice to match current IAM.
 # FINANCIAL EXECUTION AUTHORITY:
 #   Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT

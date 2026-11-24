@@ -1,3 +1,24 @@
+"""TITLE: WILSY OS Owner Commercial Work Authority Certificate.
+VERSION: v1.2.0-SEPARATE-CRM-EDIT-AUTHORITY
+AUTHORITY: Disposable unit evidence for existing EOS permission and eligibility contracts.
+EPITOME: Certifies CRM work permissions remain exact tenant permissions and
+         distinguishes possession from business-role eligibility.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_owner_commercial_work_authority.py
+COLLABORATION / OWNERSHIP: Permission namespace, roles, tenant authorization, and Owner CRM routes.
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.2.0-SEPARATE-CRM-EDIT-AUTHORITY certifies canonical
+           work-update permission, least-eligible business capacities, exact
+           owner/admin static possession and auditor/specialist denial.
+CHANGELOG: v1.1.0-CURRENT-TENANT-OWNER-PERMISSION-SET aligns the exact
+           TENANT_OWNER possession fixture with the independently certified
+           platform-employer signing permission; CRM assertions remain unchanged.
+           v1.0.0-OWNER-COMMERCIAL-WORK-AUTHORITY certifies exact CRM work grants.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No credentials, tenant records, or external authority are used.
+TENANT BOUNDARY: Permission metadata remains tenant scoped; no cross-tenant permission is introduced.
+AUTHORITY BOUNDARY: Static possession and business eligibility are separate from runtime authorization.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution permission is added or exercised.
+"""
 import pytest
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
@@ -11,6 +32,7 @@ from tools.eos.auth.tenant_authorization import _BINDINGS
 CASES = (
     ("crm_work_item_read", "crm:work_item:read"),
     ("crm_work_item_create", "crm:work_item:create"),
+    ("crm_work_item_update", "crm:work_item:update"),
     ("crm_work_item_complete", "crm:work_item:complete"),
 )
 
@@ -48,6 +70,7 @@ def test_static_role_grants_are_narrow_and_nonpossessory():
         "subscription:read",
         "crm:work_item:read",
         "crm:work_item:create",
+        "crm:work_item:update",
         "crm:work_item:complete",
         "operations:work_item:read",
         "operations:work_item:create",
@@ -55,6 +78,7 @@ def test_static_role_grants_are_narrow_and_nonpossessory():
         "intelligence:work_item:read",
         "intelligence:work_item:create",
         "intelligence:work_item:complete",
+        "platform_employer:hiring_offer:sign",
         "tenant:commercial_agreement:read",
         "tenant:commercial_agreement:draft:create",
         "tenant:commercial_agreement:execute",
@@ -74,7 +98,17 @@ def test_static_role_grants_are_narrow_and_nonpossessory():
     ]
     assert get_roles_granting_permission("crm:work_item:read") == ("AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:create") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
+    assert get_roles_granting_permission("crm:work_item:update") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:complete") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
     for role, grants in ROLE_PERMISSIONS_MAP.items():
         if role not in {"AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER"}:
             assert not any(permission in grants for _, permission in CASES)
+
+
+# ARTIFACT: tests/unit/test_owner_commercial_work_authority.py
+# VERSION: v1.2.0-SEPARATE-CRM-EDIT-AUTHORITY
+# AUTHORITY BOUNDARY: Test evidence only; runtime authorization remains EOS-owned.
+# TENANT POSTURE: Canonical tenant permissions require active runtime scope.
+# FAIL-CLOSED POSTURE: Specialized roles retain no CRM work-item grants.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

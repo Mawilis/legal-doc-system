@@ -1,18 +1,27 @@
-"""WILSY OS pure authorization-role revocation-edge policy.
+"""
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+WILSY OS pure authorization-role revocation-edge policy.
 
 TITLE: Authorization Role Revocation Policy
-VERSION: v1.0.0-P1-R3A-PURE-AUTHORIZATION-ROLE-REVOCATION-POLICY
+VERSION: v1.2.0-COMPANY-DOCUMENT-READER-REVOCATION
 AUTHORITY: Wilsy OS Core Governance / Sovereign IAM Design
 EPITOME: Decide whether one already-trusted, already-current authorization-role
-         revocation edge is structurally permitted by the frozen normal graph.
+         revocation edge is structurally permitted, including the WILSY-only
+         employee-admission officer role lifecycle.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authorization_role_revocation_policy.py
 COLLABORATION / OWNERSHIP: P1-R3A owns pure edge policy; a later command layer
                             must independently prove actor authorization and own
                             persistence, evidence, and transaction lifecycle.
-CERTIFICATION / UPDATE DATE: 2026-10-13
-CHANGELOG: v1.0.0-P1-R3A freezes ENTERPRISE_ADMIN revocation of ACTIVE AUDITOR
-           and SERVICE_WORKER assignments as the only normal allowed edges,
-           with categorical enterprise-root and system-root target protection.
+CERTIFICATION / UPDATE DATE: 2026-11-14
+CHANGELOG:
+    2026-11-14 v1.2.0-COMPANY-DOCUMENT-READER-REVOCATION adds only the WILSY-scoped
+    Enterprise Admin -> company document reader revocation edge. Existing
+    root protections and all prior revocation edges remain unchanged.
+    2026-11-12 v1.2.0-COMPANY-DOCUMENT-READER-REVOCATION allows the
+    existing Enterprise Admin revocation path to revoke an ACTIVE admission
+    officer role assignment only inside the canonical WILSY company tenant.
+    Existing root lifecycle protections and same-tenant checks remain intact.
+    v1.0.0-P1-R3A retains the original two normal lower-role revocation edges.
 COMPLIANCE: NIST privileged-access lifecycle principles; POPIA section 19;
             GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Exact closed graph, strict identity validation,
@@ -36,22 +45,37 @@ from enum import StrEnum
 from typing import Final
 
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
+from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION: Final[str] = "v1.0.0-P1-R3A-PURE-AUTHORIZATION-ROLE-REVOCATION-POLICY"
+VERSION: Final[str] = "v1.2.0-COMPANY-DOCUMENT-READER-REVOCATION"
 ROLE_REVOKE_OPERATION: Final[str] = "role_revoke"
 ENTERPRISE_ADMIN: Final[str] = "ENTERPRISE_ADMIN"
 SOVEREIGN_ARCHITECT: Final[str] = "SOVEREIGN_ARCHITECT"
 AUDITOR: Final[str] = "AUDITOR"
 SERVICE_WORKER: Final[str] = "SERVICE_WORKER"
+PLATFORM_EMPLOYEE_ADMISSION_OFFICER: Final[str] = (
+    "PLATFORM_EMPLOYEE_ADMISSION_OFFICER"
+)
+
+COMPANY_DOCUMENT_READER: Final[str] = "COMPANY_DOCUMENT_READER"
 
 _KNOWN_ROLES: Final[frozenset[str]] = frozenset(
-    {ENTERPRISE_ADMIN, SOVEREIGN_ARCHITECT, AUDITOR, SERVICE_WORKER}
+    {
+        ENTERPRISE_ADMIN,
+        SOVEREIGN_ARCHITECT,
+        AUDITOR,
+        SERVICE_WORKER,
+        PLATFORM_EMPLOYEE_ADMISSION_OFFICER,
+        COMPANY_DOCUMENT_READER,
+    }
 )
 _NORMAL_REVOCATION_EDGES: Final[frozenset[tuple[str, str]]] = frozenset(
     {
         (ENTERPRISE_ADMIN, AUDITOR),
         (ENTERPRISE_ADMIN, SERVICE_WORKER),
+        (ENTERPRISE_ADMIN, PLATFORM_EMPLOYEE_ADMISSION_OFFICER),
+        (ENTERPRISE_ADMIN, COMPANY_DOCUMENT_READER),
     }
 )
 
@@ -177,9 +201,19 @@ def evaluate_authorization_role_revocation(
         return _decision(allowed=False, denial_code=AuthorizationRoleRevocationDenialCode.SYSTEM_ROOT_NOT_TENANT_DELEGATION, **facts)
     if actor_authorization_role not in _KNOWN_ROLES or actor_authorization_role != ENTERPRISE_ADMIN:
         return _decision(allowed=False, denial_code=AuthorizationRoleRevocationDenialCode.ACTOR_ROLE_NOT_AUTHORIZED, **facts)
-    if target_authorization_role not in _KNOWN_ROLES or target_authorization_role not in {AUDITOR, SERVICE_WORKER}:
+    if target_authorization_role not in _KNOWN_ROLES or target_authorization_role not in {
+        AUDITOR,
+        SERVICE_WORKER,
+        PLATFORM_EMPLOYEE_ADMISSION_OFFICER,
+        COMPANY_DOCUMENT_READER,
+    }:
         return _decision(allowed=False, denial_code=AuthorizationRoleRevocationDenialCode.TARGET_ROLE_NOT_REVOCABLE, **facts)
     if (actor_authorization_role, target_authorization_role) not in _NORMAL_REVOCATION_EDGES:
+        return _decision(allowed=False, denial_code=AuthorizationRoleRevocationDenialCode.TARGET_ROLE_NOT_REVOCABLE, **facts)
+    if (
+        target_authorization_role in {PLATFORM_EMPLOYEE_ADMISSION_OFFICER, COMPANY_DOCUMENT_READER}
+        and target_tenant_id != WILSY_COMPANY_TENANT_ID
+    ):
         return _decision(allowed=False, denial_code=AuthorizationRoleRevocationDenialCode.TARGET_ROLE_NOT_REVOCABLE, **facts)
     return _decision(allowed=True, denial_code=None, **facts)
 
@@ -187,15 +221,17 @@ def evaluate_authorization_role_revocation(
 __all__ = [
     "VERSION",
     "ROLE_REVOKE_OPERATION",
+    "PLATFORM_EMPLOYEE_ADMISSION_OFFICER",
+    "COMPANY_DOCUMENT_READER",
     "AuthorizationRoleRevocationDenialCode",
     "AuthorizationRoleRevocationDecision",
     "evaluate_authorization_role_revocation",
 ]
 
 # ARTIFACT: authorization_role_revocation_policy.py
-# VERSION: v1.0.0-P1-R3A-PURE-AUTHORIZATION-ROLE-REVOCATION-POLICY
+# VERSION: v1.2.0-COMPANY-DOCUMENT-READER-REVOCATION
 # AUTHORITY BOUNDARY: pure revocation-edge policy only; no actor authorization, mutation, evidence, transaction, root rotation, activation, or break glass
-# TENANT POSTURE: exact same-tenant structural facts are mandatory; every cross-tenant edge denies
-# FAIL-CLOSED POSTURE: only ENTERPRISE_ADMIN to ACTIVE AUDITOR or SERVICE_WORKER is allowed; all other edges deny
+# TENANT POSTURE: exact same-tenant structural facts are mandatory; admission-officer revocation is WILSY-company-only
+# FAIL-CLOSED POSTURE: only Enterprise Admin may revoke active allowlisted roles; roots, foreign scopes and all other edges deny
 # FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT

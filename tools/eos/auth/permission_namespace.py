@@ -1,237 +1,271 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.56.0-SYSTEM-SERVICES-IAM-VOCABULARY
-AUTHORITY: Immutable permission vocabulary and scope metadata only.
-EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated WILSY OS System Services and IAM command metadata,
-inbound-collection, merchant-configuration, provider-policy, WILSY AI,
-billing-intelligence, Legal Operations lifecycle/client visibility, matter
-deadline read/write vocabulary, and explicit
-human conflict-review and Engagement firm-decision capability semantics without
-granting tenant-wide matter enumeration, reviewer identity, legal determination,
-waiver, engagement,
-representation, cross-tenant authority, or financial execution.
+VERSION: v1.64.0-CRM-WORK-EDIT-PERMISSION
+AUTHORITY: Canonical permission vocabulary and scope metadata only.
+EPITOME: Defines exact, non-self-authorizing permission metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
-COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-21
-CHANGELOG:
-    2026-10-25 v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
-    Adds one dedicated SYSTEM-scoped reconciliation-read permission vocabulary
-    only. This metadata grants no possession, assignment, operator activation,
-    tenant/provider scope, runtime invocation, orphan proof, cleanup, deletion,
-    retention/legal-hold, or financial authority.
-    2026-10-21 v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
-    Canonical own-tenant operational issuer permission metadata; not possession or matter access.
-    2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
-    Introduces dedicated own-tenant Legal work-assignment permission
-    metadata only. No static role grants, business eligibility,
-    actor authorization, assignment persistence, HTTP command,
-    supervision, workflow, completion or financial authority.
-    2026-10-20 v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
-    Registers separate, non-authorizing practitioner-binding read vocabulary.
-    2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
-    Integrates verified committed practitioner-policy issuer permission.
-    2026-10-20 v1.49.0-P47-R9-BINDING-PROVISION-PERMISSION
-    Adds only own-tenant Partner-only practitioner matter-binding
-    provisioning IAM. Active current-truth checks remain mandatory;
-    no content, ethical-wall, read or financial authority is granted.
-    2026-10-17 v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION adds the exact own-tenant
-    legal_operations:work_item:complete permission vocabulary for bounded
-    Legal work-item completion admission. It remains membership-gated,
-    non-cross-tenant, non-financial and non-self-authorizing; it grants no
-    role possession, business-role eligibility, assignment, supervision,
-    workflow release, completion event, payment, execution or settlement
-    authority.
-    2026-10-16 v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION adds the exact
-    own-tenant legal_operations:productive_work:read permission for an
-    authenticated principal's productive-work projection. The vocabulary is
-    membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
-    it grants no record enumeration, workflow mutation, assignment,
-    supervision, legal act, HTTP, payment, execution, or settlement authority.
-    2026-10-15 v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION adds the exact
-    privileged_activation:break_glass SYSTEM vocabulary for a separately
-    certified dual-control P7 command. Metadata alone grants no authority and
-    creates no assignment, activation, role, route, token, or financial power.
-    2026-10-15 v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION
-    adds the exact privileged_activation:revoke canonical SYSTEM permission
-    vocabulary for the separately certified P6 supervisory command service.
-    It requires separately proven current SYSTEM assignment and does not by
-    itself revoke an activation, assign permissions or roles, create
-    eligibility or assurance, issue activations, grant break-glass authority,
-    create HTTP authority, cross tenant boundaries, or execute finance.
-    2026-10-14 v1.43.0-D12 adds the exact SYSTEM command permissions
-    system_permission_assignment:write and system_permission_assignment:revoke.
-    Both require separately proven current SYSTEM assignment and grant no
-    static-role, wildcard, recursive, arbitrary, tenant, or financial authority.
-    2026-10-14 v1.42.0-P4-R0A adds the dedicated
-    privileged_activation:issue SYSTEM permission vocabulary for normal,
-    self-only privileged-activation issuance. It requires separately proven
-    current system assignment and does not itself grant target privilege,
-    activation, break-glass, cross-tenant, or financial authority.
-    2026-10-13 v1.41.0-CX26-R3 adds the dedicated own-tenant
-    legal_operations:operating_model:manage permission. It is membership-gated,
-    non-cross-tenant, non-financial, and non-self-authorizing; it grants no
-    entitlement, personnel assignment, workflow, legal act, or financial power.
-    2026-10-11 v1.39.0 adds the dedicated own-tenant
-    legal_operations:matter_acceptance_instrument:write provisioning vocabulary.
-    It is distinct from approval and grants no lifecycle, acceptance or finance.
-    2026-10-11 v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS adds the exact
-    own-tenant legal_operations:matter_deadline:read and
-    legal_operations:matter_deadline:write permission vocabulary. Both remain
-    membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
-    this vocabulary-only release creates no operation binding, role grant,
-    deadline mutation, HTTP route, legal-rule inference or financial authority.
-    2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
-    adds tenant_product_entitlement:issue as one exact own-tenant,
-    membership-required and non-financial permission for bounded product
-    entitlement evidence issuance from canonical commercial truth. It grants
-    no subscription, plan, IAM assignment, route or financial authority.
-    2026-10-06 v1.36.0-CRM-P9C1-LEAD-PERMISSIONS adds the exact
-    own-tenant crm:lead:create and crm:lead:read canonical permission
-    vocabulary for the separately governed CRM Lead command authority.
-    Both permissions remain tenant-membership gated, non-cross-tenant,
-    non-financial and non-self-authorizing. They grant no role possession,
-    business-role eligibility, subscription entitlement, quota, AI,
-    transport, persistence mutation or financial execution authority.
-    2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
-    adds hr:employee_relation:write as one exact canonical own-tenant
-    TENANT permission for EmployeeRelation evidence composition. It
-    remains membership-gated, non-cross-tenant, non-financial and
-    non-self-authorizing and grants no HTTP, payroll, payment or
-    settlement authority.
-    2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
-    adds the dedicated own-tenant legal_operations:evidence_cleanup:authorize
-    permission vocabulary for a later separately certified Legal Evidence
-    cleanup actor/command authorization gate. The permission remains tenant-
-    membership gated, non-cross-tenant, non-financial and non-self-authorizing.
-    It does not establish cleanup eligibility, bind an A2 cleanup authorization,
-    create a cleanup command, mutate a provider, delete an object, prove
-    provider execution, release retention/legal hold, or assert settlement.
-    2026-09-29 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds the dedicated
-    legal_operations:evidence:write own-tenant permission vocabulary for
-    authenticated Legal evidence-content ingest. The permission is tenant-
-    membership gated, non-cross-tenant, non-financial and non-self-authorizing.
-    It does not itself grant role possession, matter/document scope,
-    ProcessDocument/custody mutation, Court/Court Online filing, AI authority,
-    billing, payment, execution or settlement truth.
-    2026-09-28 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds dedicated
-    tenant_branding read/profile/asset-management permission metadata. All
-    remain own-tenant, membership-gated, non-cross-tenant, non-financial and
-    non-self-authorizing.
-    2026-09-28 v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM adds the
-    exact own-tenant legal_operations:matter_representation_firm_decision:write
-    permission vocabulary. It remains membership-gated, non-cross-tenant,
-    non-financial and non-self-authorizing; it does not grant roles, issue a
-    firm decision, form Representation, authorize Court, or execute finance.
-    2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM adds the exact
-    own-tenant legal_operations:matter_engagement_firm_decision:write
-    permission vocabulary. It remains membership-gated, non-cross-tenant,
-    non-financial and non-self-authorizing; it does not grant roles, bind an
-    operation, issue a firm decision, form Engagement, authorize
-    Representation/Court, or execute or settle finance.
-    2026-09-27 v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM adds the
-    dedicated own-tenant legal_operations:matter_mandate_acknowledgment:write
-    permission. It is membership-gated, non-cross-tenant, non-financial and
-    non-self-authorizing; it does not issue acknowledgments or create mandate,
-    engagement, payment, execution or settlement authority.
-    2026-09-26 v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM adds the
-    dedicated own-tenant matter-acceptance-instrument approval permission;
-    it remains membership-gated, non-cross-tenant, non-financial and
-    non-self-authorizing.
-    2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM adds the dedicated own-tenant
-    legal_operations:client_acceptance:write permission for server-composed
-    client-acceptance evidence. It remains membership-gated, non-cross-tenant,
-    non-financial and non-self-authorizing; it does not prove engagement,
-    representation, Court, payment, execution or settlement authority.
-    2026-09-23 v1.25.0-L8-8I-CONFLICT-REVIEW-IAM adds the dedicated own-tenant
-    legal_operations:client_matter:read permission vocabulary for a future
-    explicitly-bound LEGAL_CLIENT matter projection only. The permission is
-    membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
-    it does not grant tenant-wide matter enumeration, internal instruction or
-    sheriff/deputy queue visibility, service/return evidence, billing, payment,
-    execution, settlement, or visibility provisioning authority.
-    2026-09-23 v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM adds the dedicated own-tenant
-    legal_operations:client_visibility:write permission vocabulary for future
-    L8-7 client-to-matter visibility grant/revoke provisioning. The permission
-    is membership-gated, non-cross-tenant, non-financial and non-self-
-    authorizing; it does not itself prove actor role, target LEGAL_CLIENT IAM,
-    CaseMatter scope, current ACTIVE visibility, client reads, service, billing,
-    payment, execution or settlement authority.
-    2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM adds the dedicated own-tenant
-    legal_operations:deputy_queue:read permission for an authenticated deputy's
-    binding-scoped personal active-work projection only. It is non-cross-tenant,
-    non-financial, non-self-authorizing, and does not grant sheriff tenant-wide
-    queue visibility, lifecycle mutation, service completion, return, billing,
-    payment, AI, execution, or settlement authority.
-    2026-09-23 v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM adds the dedicated own-tenant
-    legal_operations:queue:read permission for authenticated sheriff cockpit
-    projection only; it is non-cross-tenant, non-financial, and does not
-    authorize queue mutation, deputy impersonation, or personal-queue scope.
-    2026-09-23 v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM adds one dedicated
-    own-tenant acceptance/office-receipt permission. It remains membership-
-    gated, non-cross-tenant, non-financial, and non-self-authorizing; receipt
-    authority remains distinct from allocation and service.
-    2026-09-23 v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM adds one
-    dedicated own-tenant process-service directory provisioning permission;
-    metadata remains membership-gated, non-cross-tenant, non-financial, and
-    non-self-authorizing.
-    2026-09-17 v1.18.0-C1E-R1 adds dedicated legal-advisory generate/read
-    permissions without legal execution, provider, or financial authority.
-    2026-09-17 v1.17.0-C1C-R1 adds the dedicated own-tenant legal-services
-    execution permission for the governed C1C orchestration route.
-    2026-09-16 v1.16.0-C1B-R2 adds the dedicated own-tenant reasoning
-    execution permission; it grants no provider, model, financial, or
-    cross-tenant authority.
-    2026-09-15 v1.15.0-L7B-WILSY-AI-LEGAL-TOOL adds the dedicated own-tenant
-    Legal Tool Gateway read permission; it remains non-financial and
-    non-cross-tenant.
-    2026-09-15 v1.14.0-L7B-LEGAL-OPERATIONS-IAM adds authenticated field-service
-    command vocabulary for attempt outcomes and return generation without
-    granting typed subject authority or financial execution.
-    2026-09-15 v1.13.0-L7A-LEGAL-OPERATIONS-IAM adds explicit own-tenant
-    Legal Operations read/write vocabulary without granting authority alone.
-    2026-09-13 v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ adds the
-    canonical own-tenant billing-intelligence evidence read permission; it
-    remains membership-gated, non-cross-tenant, non-financial, and
-    non-self-authorizing.
-    2026-09-13 v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ adds the canonical
-    own-tenant WILSY AI usage-capacity evidence read permission; it remains
-    membership-gated, non-cross-tenant, non-financial, and non-self-authorizing.
-    2026-09-10 v1.10.0-M11-R8-R3B-P8-P3D-P4A adds four dedicated
-    tenant inbound provider credential-security permissions; all remain
-    own-tenant, non-financial, and non-self-authorizing.
-    2026-09-09 v1.9.0-M11-R8-R3B-P8-P3B-I2-R3 adds the explicit
-    inbound merchant-configuration remediation permission for the future
-    COMPROMISED-to-DISABLED authority; no lifecycle or secret authority is
-    granted.
-    2026-09-09 v1.8.0-M11-R8-R3B-P8-P3A adds the seven dedicated
-    tenant inbound merchant-configuration and provider-policy permissions;
-    all remain explicit, own-tenant, non-financial and non-self-authorizing.
-    2026-09-09 v1.7.0-M11-R8-R3B-P6A adds the exact
-    inbound_collection:authorization:create tenant privilege; it remains
-    provider-neutral, non-financial, and non-self-authorizing.
-    2026-09-04 runtime VERSION is the canonical policy provenance source for
-    trusted authorization-evidence capture; no policy semantics changed.
-    2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION adds the
-    tenant-scoped platform_billing:release capability without execution authority.
-    2026-09-03 v1.3.0-PLAN-PERMISSION-CANON adds plan:read and plan:manage
-    as explicit own-tenant, membership-required, non-cross-tenant,
-    non-financial canonical permissions.
-    v1.2.0-SUBSCRIPTION-PERMISSION-CANON added subscription:read and
-    subscription:manage as explicit own-tenant, membership-required,
-    non-cross-tenant, non-financial canonical permissions.
-    v1.1.0-PERMISSION-NAMESPACE-CANON added the bounded TENANT vocabulary.
+COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.64.0-CRM-WORK-EDIT-PERMISSION defines a separate own-tenant
+           CRM task-edit permission; metadata alone grants no assignment,
+           entitlement, command, transaction or cross-tenant access.
+CHANGELOG: v1.63.0-PROJECT-PERMISSION-VOCABULARY — Preserves exact permission namespace semantics.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY / PRIVACY POSTURE: Metadata never authenticates, authorizes, proves
-membership, trusts transport projections, or grants execution.
-TENANT BOUNDARY: Subscription, plan, WILSY AI usage-capacity, and
-billing-intelligence evidence read permissions require separately proven ACTIVE
-membership in the exact selected tenant and never permit cross-tenant access.
-AUTHORITY BOUNDARY: Owns permission vocabulary semantics only. WILSY AI
-capacity and billing-intelligence evidence remain read-only projections;
-current role assignment and final authorization remain separate authorities.
-FINANCIAL AUTHORITY BOUNDARY: Subscription, plan, WILSY AI capacity, and
-billing-intelligence evidence permissions cannot approve, release, execute,
-collect, or settle funds.
-Kennel EOS remains exclusive.
+SECURITY / PRIVACY POSTURE: Metadata only; no secrets or session issuance.
+TENANT BOUNDARY: Own-tenant permissions require separate active membership.
+AUTHORITY BOUNDARY: Permission definitions grant no role possession or admission.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+
+HISTORICAL POLICY DOCUMENTATION:
+  TITLE: WILSY OS Permission Namespace Semantic Canon. VERSION: v1.63.0-PROJECT-PERMISSION-VOCABULARY
+  AUTHORITY: Immutable permission vocabulary and scope metadata only.
+  EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated WILSY OS System Services and IAM command metadata,
+  inbound-collection, merchant-configuration, provider-policy, WILSY AI,
+  billing-intelligence, Legal Operations lifecycle/client visibility, matter
+  deadline read/write vocabulary, and explicit
+  human conflict-review and Engagement firm-decision capability semantics. It also
+  defines non-authorizing WILSY platform-employer hiring and future employee-admission
+  vocabulary. Metadata alone grants no tenant-wide matter enumeration, reviewer
+  identity, legal determination, waiver, engagement, representation, cross-tenant
+  authority, or financial execution.
+  ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
+  COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
+  CERTIFICATION / UPDATE DATE: 2026-11-13
+  CHANGELOG:
+      2026-11-16 v1.63.0-PROJECT-PERMISSION-VOCABULARY adds four exact own-tenant project permissions. List and detail bind to read; create, update, and archive remain distinct. No role grant, eligibility, product entitlement, route, or tenant-specific assignment is created.
+      2026-11-13 v1.62.0-COMPANY-DOCUMENT-CAPABILITIES adds independent exact-company document metadata only; all existing employment and other grants, eligibility and operation bindings remain unchanged. No principal assignment is created.
+      2026-11-13 v1.61.0-PLATFORM-EMPLOYER-ADMISSION-WORKFORCE-CURRENTNESS requires current tenant-scope workforce
+      evidence for the employee-admission permission through the existing EOS
+      authorization transaction. Other platform-employer permissions retain their
+      existing currentness policy; customer HR entitlement remains independent.
+      This metadata creates no admission route, role assignment, employee, IAM,
+      entitlement, payroll, cross-tenant or financial authority.
+      2026-11-12 v1.60.0-PLATFORM-EMPLOYER-CAPABILITY-VOCABULARY adds exact
+      tenant-scoped capabilities for WILSY platform-employer workforce, headcount,
+      hiring, evidence custody and future employee admission. This vocabulary grants
+      no role eligibility, operation binding, permission assignment, candidate
+      acceptance, employee admission, IAM provisioning, customer HR entitlement,
+      payroll, cross-tenant or financial authority. Routes remain blocked until
+      canonical employer-tenant scope and customer HR entitlement gates are wired.
+      2026-10-25 v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+      Adds one dedicated SYSTEM-scoped reconciliation-read permission vocabulary
+      only. This metadata grants no possession, assignment, operator activation,
+      tenant/provider scope, runtime invocation, orphan proof, cleanup, deletion,
+      retention/legal-hold, or financial authority.
+      2026-10-21 v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+      Canonical own-tenant operational issuer permission metadata; not possession or matter access.
+      2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
+      Introduces dedicated own-tenant Legal work-assignment permission
+      metadata only. No static role grants, business eligibility,
+      actor authorization, assignment persistence, HTTP command,
+      supervision, workflow, completion or financial authority.
+      2026-10-20 v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
+      Registers separate, non-authorizing practitioner-binding read vocabulary.
+      2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
+      Integrates verified committed practitioner-policy issuer permission.
+      2026-10-20 v1.49.0-P47-R9-BINDING-PROVISION-PERMISSION
+      Adds only own-tenant Partner-only practitioner matter-binding
+      provisioning IAM. Active current-truth checks remain mandatory;
+      no content, ethical-wall, read or financial authority is granted.
+      2026-10-17 v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION adds the exact own-tenant
+      legal_operations:work_item:complete permission vocabulary for bounded
+      Legal work-item completion admission. It remains membership-gated,
+      non-cross-tenant, non-financial and non-self-authorizing; it grants no
+      role possession, business-role eligibility, assignment, supervision,
+      workflow release, completion event, payment, execution or settlement
+      authority.
+      2026-10-16 v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION adds the exact
+      own-tenant legal_operations:productive_work:read permission for an
+      authenticated principal's productive-work projection. The vocabulary is
+      membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
+      it grants no record enumeration, workflow mutation, assignment,
+      supervision, legal act, HTTP, payment, execution, or settlement authority.
+      2026-10-15 v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION adds the exact
+      privileged_activation:break_glass SYSTEM vocabulary for a separately
+      certified dual-control P7 command. Metadata alone grants no authority and
+      creates no assignment, activation, role, route, token, or financial power.
+      2026-10-15 v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION
+      adds the exact privileged_activation:revoke canonical SYSTEM permission
+      vocabulary for the separately certified P6 supervisory command service.
+      It requires separately proven current SYSTEM assignment and does not by
+      itself revoke an activation, assign permissions or roles, create
+      eligibility or assurance, issue activations, grant break-glass authority,
+      create HTTP authority, cross tenant boundaries, or execute finance.
+      2026-10-14 v1.43.0-D12 adds the exact SYSTEM command permissions
+      system_permission_assignment:write and system_permission_assignment:revoke.
+      Both require separately proven current SYSTEM assignment and grant no
+      static-role, wildcard, recursive, arbitrary, tenant, or financial authority.
+      2026-10-14 v1.42.0-P4-R0A adds the dedicated
+      privileged_activation:issue SYSTEM permission vocabulary for normal,
+      self-only privileged-activation issuance. It requires separately proven
+      current system assignment and does not itself grant target privilege,
+      activation, break-glass, cross-tenant, or financial authority.
+      2026-10-13 v1.41.0-CX26-R3 adds the dedicated own-tenant
+      legal_operations:operating_model:manage permission. It is membership-gated,
+      non-cross-tenant, non-financial, and non-self-authorizing; it grants no
+      entitlement, personnel assignment, workflow, legal act, or financial power.
+      2026-10-11 v1.39.0 adds the dedicated own-tenant
+      legal_operations:matter_acceptance_instrument:write provisioning vocabulary.
+      It is distinct from approval and grants no lifecycle, acceptance or finance.
+      2026-10-11 v1.38.0-D3B-AUTH1-MATTER-DEADLINE-PERMISSIONS adds the exact
+      own-tenant legal_operations:matter_deadline:read and
+      legal_operations:matter_deadline:write permission vocabulary. Both remain
+      membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
+      this vocabulary-only release creates no operation binding, role grant,
+      deadline mutation, HTTP route, legal-rule inference or financial authority.
+      2026-10-09 v1.37.0-D22B3-P17-TENANT-PRODUCT-ENTITLEMENT-ISSUANCE-PERMISSION
+      adds tenant_product_entitlement:issue as one exact own-tenant,
+      membership-required and non-financial permission for bounded product
+      entitlement evidence issuance from canonical commercial truth. It grants
+      no subscription, plan, IAM assignment, route or financial authority.
+      2026-10-06 v1.36.0-CRM-P9C1-LEAD-PERMISSIONS adds the exact
+      own-tenant crm:lead:create and crm:lead:read canonical permission
+      vocabulary for the separately governed CRM Lead command authority.
+      Both permissions remain tenant-membership gated, non-cross-tenant,
+      non-financial and non-self-authorizing. They grant no role possession,
+      business-role eligibility, subscription entitlement, quota, AI,
+      transport, persistence mutation or financial execution authority.
+      2026-10-04 v1.34.0-P0-C12E4B3B-HR-EMPLOYEE-RELATION-WRITE-PERMISSION
+      adds hr:employee_relation:write as one exact canonical own-tenant
+      TENANT permission for EmployeeRelation evidence composition. It
+      remains membership-gated, non-cross-tenant, non-financial and
+      non-self-authorizing and grants no HTTP, payroll, payment or
+      settlement authority.
+      2026-10-02 v1.33.0-L10A2R-C4D6E-A3-P1A-LEGAL-EVIDENCE-CLEANUP-AUTHORITY-PERMISSION
+      adds the dedicated own-tenant legal_operations:evidence_cleanup:authorize
+      permission vocabulary for a later separately certified Legal Evidence
+      cleanup actor/command authorization gate. The permission remains tenant-
+      membership gated, non-cross-tenant, non-financial and non-self-authorizing.
+      It does not establish cleanup eligibility, bind an A2 cleanup authorization,
+      create a cleanup command, mutate a provider, delete an object, prove
+      provider execution, release retention/legal hold, or assert settlement.
+      2026-09-29 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds the dedicated
+      legal_operations:evidence:write own-tenant permission vocabulary for
+      authenticated Legal evidence-content ingest. The permission is tenant-
+      membership gated, non-cross-tenant, non-financial and non-self-authorizing.
+      It does not itself grant role possession, matter/document scope,
+      ProcessDocument/custody mutation, Court/Court Online filing, AI authority,
+      billing, payment, execution or settlement truth.
+      2026-09-28 v1.32.0-L10A3A-LEGAL-EVIDENCE-IAM adds dedicated
+      tenant_branding read/profile/asset-management permission metadata. All
+      remain own-tenant, membership-gated, non-cross-tenant, non-financial and
+      non-self-authorizing.
+      2026-09-28 v1.30.0-L9C11-P21B-FIRM-REPRESENTATION-DECISION-IAM adds the
+      exact own-tenant legal_operations:matter_representation_firm_decision:write
+      permission vocabulary. It remains membership-gated, non-cross-tenant,
+      non-financial and non-self-authorizing; it does not grant roles, issue a
+      firm decision, form Representation, authorize Court, or execute finance.
+      2026-09-27 v1.29.0-L9C1-ENGAGEMENT-FIRM-DECISION-IAM adds the exact
+      own-tenant legal_operations:matter_engagement_firm_decision:write
+      permission vocabulary. It remains membership-gated, non-cross-tenant,
+      non-financial and non-self-authorizing; it does not grant roles, bind an
+      operation, issue a firm decision, form Engagement, authorize
+      Representation/Court, or execute or settle finance.
+      2026-09-27 v1.28.0-L9B10-P5-MANDATE-ACKNOWLEDGMENT-IAM adds the
+      dedicated own-tenant legal_operations:matter_mandate_acknowledgment:write
+      permission. It is membership-gated, non-cross-tenant, non-financial and
+      non-self-authorizing; it does not issue acknowledgments or create mandate,
+      engagement, payment, execution or settlement authority.
+      2026-09-26 v1.27.0-L9A4-P2B3-MATTER-ACCEPTANCE-APPROVAL-IAM adds the
+      dedicated own-tenant matter-acceptance-instrument approval permission;
+      it remains membership-gated, non-cross-tenant, non-financial and
+      non-self-authorizing.
+      2026-09-26 v1.26.0-L9A3-CLIENT-ACCEPTANCE-IAM adds the dedicated own-tenant
+      legal_operations:client_acceptance:write permission for server-composed
+      client-acceptance evidence. It remains membership-gated, non-cross-tenant,
+      non-financial and non-self-authorizing; it does not prove engagement,
+      representation, Court, payment, execution or settlement authority.
+      2026-09-23 v1.25.0-L8-8I-CONFLICT-REVIEW-IAM adds the dedicated own-tenant
+      legal_operations:client_matter:read permission vocabulary for a future
+      explicitly-bound LEGAL_CLIENT matter projection only. The permission is
+      membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
+      it does not grant tenant-wide matter enumeration, internal instruction or
+      sheriff/deputy queue visibility, service/return evidence, billing, payment,
+      execution, settlement, or visibility provisioning authority.
+      2026-09-23 v1.23.0-L8-7C1-CLIENT-VISIBILITY-WRITE-IAM adds the dedicated own-tenant
+      legal_operations:client_visibility:write permission vocabulary for future
+      L8-7 client-to-matter visibility grant/revoke provisioning. The permission
+      is membership-gated, non-cross-tenant, non-financial and non-self-
+      authorizing; it does not itself prove actor role, target LEGAL_CLIENT IAM,
+      CaseMatter scope, current ACTIVE visibility, client reads, service, billing,
+      payment, execution or settlement authority.
+      2026-09-23 v1.22.0-L8-6C-DEPUTY-PERSONAL-QUEUE-IAM adds the dedicated own-tenant
+      legal_operations:deputy_queue:read permission for an authenticated deputy's
+      binding-scoped personal active-work projection only. It is non-cross-tenant,
+      non-financial, non-self-authorizing, and does not grant sheriff tenant-wide
+      queue visibility, lifecycle mutation, service completion, return, billing,
+      payment, AI, execution, or settlement authority.
+      2026-09-23 v1.21.0-L8-6A-SHERIFF-QUEUE-READ-IAM adds the dedicated own-tenant
+      legal_operations:queue:read permission for authenticated sheriff cockpit
+      projection only; it is non-cross-tenant, non-financial, and does not
+      authorize queue mutation, deputy impersonation, or personal-queue scope.
+      2026-09-23 v1.20.0-L8-3-LEGAL-OPERATIONS-RECEIPT-IAM adds one dedicated
+      own-tenant acceptance/office-receipt permission. It remains membership-
+      gated, non-cross-tenant, non-financial, and non-self-authorizing; receipt
+      authority remains distinct from allocation and service.
+      2026-09-23 v1.19.0-L8-1-LEGAL-OPERATIONS-DIRECTORY-IAM adds one
+      dedicated own-tenant process-service directory provisioning permission;
+      metadata remains membership-gated, non-cross-tenant, non-financial, and
+      non-self-authorizing.
+      2026-09-17 v1.18.0-C1E-R1 adds dedicated legal-advisory generate/read
+      permissions without legal execution, provider, or financial authority.
+      2026-09-17 v1.17.0-C1C-R1 adds the dedicated own-tenant legal-services
+      execution permission for the governed C1C orchestration route.
+      2026-09-16 v1.16.0-C1B-R2 adds the dedicated own-tenant reasoning
+      execution permission; it grants no provider, model, financial, or
+      cross-tenant authority.
+      2026-09-15 v1.15.0-L7B-WILSY-AI-LEGAL-TOOL adds the dedicated own-tenant
+      Legal Tool Gateway read permission; it remains non-financial and
+      non-cross-tenant.
+      2026-09-15 v1.14.0-L7B-LEGAL-OPERATIONS-IAM adds authenticated field-service
+      command vocabulary for attempt outcomes and return generation without
+      granting typed subject authority or financial execution.
+      2026-09-15 v1.13.0-L7A-LEGAL-OPERATIONS-IAM adds explicit own-tenant
+      Legal Operations read/write vocabulary without granting authority alone.
+      2026-09-13 v1.12.0-M14-P1-BILLING-INTELLIGENCE-EVIDENCE-READ adds the
+      canonical own-tenant billing-intelligence evidence read permission; it
+      remains membership-gated, non-cross-tenant, non-financial, and
+      non-self-authorizing.
+      2026-09-13 v1.11.0-M13-P6D-WILSY-AI-CAPACITY-READ adds the canonical
+      own-tenant WILSY AI usage-capacity evidence read permission; it remains
+      membership-gated, non-cross-tenant, non-financial, and non-self-authorizing.
+      2026-09-10 v1.10.0-M11-R8-R3B-P8-P3D-P4A adds four dedicated
+      tenant inbound provider credential-security permissions; all remain
+      own-tenant, non-financial, and non-self-authorizing.
+      2026-09-09 v1.9.0-M11-R8-R3B-P8-P3B-I2-R3 adds the explicit
+      inbound merchant-configuration remediation permission for the future
+      COMPROMISED-to-DISABLED authority; no lifecycle or secret authority is
+      granted.
+      2026-09-09 v1.8.0-M11-R8-R3B-P8-P3A adds the seven dedicated
+      tenant inbound merchant-configuration and provider-policy permissions;
+      all remain explicit, own-tenant, non-financial and non-self-authorizing.
+      2026-09-09 v1.7.0-M11-R8-R3B-P6A adds the exact
+      inbound_collection:authorization:create tenant privilege; it remains
+      provider-neutral, non-financial, and non-self-authorizing.
+      2026-09-04 runtime VERSION is the canonical policy provenance source for
+      trusted authorization-evidence capture; no policy semantics changed.
+      2026-09-04 v1.4.0-PLATFORM-BILLING-RELEASE-PERMISSION adds the
+      tenant-scoped platform_billing:release capability without execution authority.
+      2026-09-03 v1.3.0-PLAN-PERMISSION-CANON adds plan:read and plan:manage
+      as explicit own-tenant, membership-required, non-cross-tenant,
+      non-financial canonical permissions.
+      v1.2.0-SUBSCRIPTION-PERMISSION-CANON added subscription:read and
+      subscription:manage as explicit own-tenant, membership-required,
+      non-cross-tenant, non-financial canonical permissions.
+      v1.1.0-PERMISSION-NAMESPACE-CANON added the bounded TENANT vocabulary.
+  COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+  SECURITY / PRIVACY POSTURE: Metadata never authenticates, authorizes, proves
+  membership, trusts transport projections, or grants execution.
+  TENANT BOUNDARY: Subscription, plan, WILSY AI usage-capacity, and
+  billing-intelligence evidence read permissions require separately proven ACTIVE
+  membership in the exact selected tenant and never permit cross-tenant access.
+  AUTHORITY BOUNDARY: Owns permission vocabulary semantics only. WILSY AI
+  capacity and billing-intelligence evidence remain read-only projections;
+  current role assignment and final authorization remain separate authorities.
+  FINANCIAL AUTHORITY BOUNDARY: Subscription, plan, WILSY AI capacity, and
+  billing-intelligence evidence permissions cannot approve, release, execute,
+  collect, or settle funds.
+  Kennel EOS remains exclusive.
+  VERSION: v1.56.0-SYSTEM-SERVICES-IAM-VOCABULARY
 """
 
 from __future__ import annotations
@@ -243,7 +277,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.59.0-INSTITUTIONAL-OFFER-SIGNATURE-AUTHORITY"
+VERSION = "v1.64.0-CRM-WORK-EDIT-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -321,6 +355,85 @@ _PERMISSIONS: Final = MappingProxyType(
         "security:institutional_signer:approve": _meta("security:institutional_signer:approve", "TENANT", "TENANT", "independently approve a pending own-tenant institutional signer enrollment", tenant=True),
         "security:institutional_signer:revoke": _meta("security:institutional_signer:revoke", "TENANT", "TENANT", "revoke an active own-tenant institutional signer enrollment", tenant=True),
 
+        **{
+            permission_id: _meta(
+                permission_id,
+                "TENANT",
+                "TENANT",
+                capability,
+                tenant=True,
+                workforce=(
+                    permission_id
+                    == "platform_employer:employee_admission:create"
+                ),
+            )
+            for permission_id, capability in (
+                (
+                    "platform_employer:employee_directory:read",
+                    "read the exact WILSY employer tenant workforce directory",
+                ),
+                (
+                    "platform_employer:headcount_requisition:read",
+                    "read WILSY platform-employer headcount requisitions",
+                ),
+                (
+                    "platform_employer:headcount_requisition:create",
+                    "create and submit WILSY platform-employer headcount requisitions",
+                ),
+                (
+                    "platform_employer:headcount_requisition:decide",
+                    "independently decide WILSY platform-employer headcount requisitions",
+                ),
+                (
+                    "platform_employer:hiring_candidate:read",
+                    "read WILSY platform-employer candidate lifecycle evidence",
+                ),
+                (
+                    "platform_employer:hiring_candidate:create",
+                    "create WILSY platform-employer candidate applications",
+                ),
+                (
+                    "platform_employer:hiring_candidate:transition",
+                    "advance WILSY platform-employer candidate stages with exact evidence",
+                ),
+                (
+                    "platform_employer:hiring_candidate_evidence:upload",
+                    "upload WILSY platform-employer candidate evidence bytes",
+                ),
+                (
+                    "platform_employer:hiring_candidate_evidence:read",
+                    "read WILSY platform-employer candidate evidence bytes",
+                ),
+                (
+                    "platform_employer:hiring_offer:read",
+                    "read WILSY platform-employer employment-offer evidence",
+                ),
+                (
+                    "platform_employer:hiring_offer:create",
+                    "prepare WILSY platform-employer employment offers",
+                ),
+                (
+                    "platform_employer:hiring_offer:submit",
+                    "submit WILSY platform-employer offers for independent approval",
+                ),
+                (
+                    "platform_employer:hiring_offer:decide",
+                    "independently approve or reject WILSY platform-employer offers",
+                ),
+                (
+                    "platform_employer:hiring_offer:send",
+                    "send independently approved WILSY platform-employer offers",
+                ),
+                (
+                    "platform_employer:hiring_offer:sign",
+                    "prepare WILSY platform-employer offer signature manifests",
+                ),
+                (
+                    "platform_employer:employee_admission:create",
+                    "admit an employee only from independently verified WILSY employment evidence",
+                ),
+            )
+        },
         "kernel:read": _meta(
             "kernel:read",
             "SYSTEM",
@@ -588,8 +701,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "read CRM leads",
             tenant=True,
         ),
+        "project:read": _meta("project:read", "TENANT", "TENANT", "read own-tenant project lists and details", tenant=True),
+        "project:create": _meta("project:create", "TENANT", "TENANT", "create own-tenant projects", tenant=True),
+        "project:update": _meta("project:update", "TENANT", "TENANT", "update own-tenant projects", tenant=True),
+        "project:archive": _meta("project:archive", "TENANT", "TENANT", "archive own-tenant projects without deletion", tenant=True),
         "crm:work_item:read": _meta("crm:work_item:read", "TENANT", "TENANT", "read owner commercial work items", tenant=True),
         "crm:work_item:create": _meta("crm:work_item:create", "TENANT", "TENANT", "create owner commercial work items", tenant=True),
+        "crm:work_item:update": _meta("crm:work_item:update", "TENANT", "TENANT", "edit active owner commercial work items", tenant=True),
         "crm:work_item:complete": _meta("crm:work_item:complete", "TENANT", "TENANT", "complete owner commercial work items", tenant=True),
         "operations:work_item:read": _meta("operations:work_item:read", "TENANT", "TENANT", "read Operations work items", tenant=True),
         "operations:work_item:create": _meta("operations:work_item:create", "TENANT", "TENANT", "create Operations work items", tenant=True),
@@ -1235,6 +1353,11 @@ _PERMISSIONS: Final = MappingProxyType(
             tenant=True,
             disposition=PermissionDisposition.BLOCKED_AMBIGUOUS,
         ),
+        # Company Mission/Strategy vocabulary grants no permission possession.
+        **{f"company_operating_document:{action}": _meta(
+            f"company_operating_document:{action}", "TENANT", "TENANT",
+            f"{action} exact-WILSY-company operating documents", tenant=True,
+        ) for action in ("read", "author", "publish")},
         "admin:all": _meta(
             "admin:all",
             "SYSTEM",
@@ -1330,7 +1453,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+# VERSION: v1.64.0-CRM-WORK-EDIT-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

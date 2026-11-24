@@ -10,21 +10,33 @@
  * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
  * ║                                                                                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - BILLING NUCLEUS HUD [V68.3.2‑PAYMENT‑ENHANCEMENT]
+ * 🏛️ WILSY OS - BILLING NUCLEUS HUD [V68.4.1-GOVERNED-C2-TENANT-BOUNDARY]
+ * ║ TITLE: WILSY OS Billing HUD                                                                                                            ║
+ * ║ AUTHORITY: Wilsy OS Core Governance                                                                                                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: SOVEREIGN REVENUE COMMAND CENTER – WITH OPTIMISTIC ORDER IDENTITY, PAYMENT METHOD SELECTION, DUNNING STATUS, & QUICK ACTIONS║
  * ║           This version introduces foundational UI elements for multi‑payment method support, dunning visibility, and batch operations. ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 68.3.2‑PAYMENT‑ENHANCEMENT | PRODUCTION READY                                                                                      ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/BillingHUD.jsx                                   ║
+ * ║ VERSION: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY                                                                                           ║
+ * ║ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/BillingHUD.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated enterprise‑grade billing engine.                                                    ║
  * ║ • AI Engineering – V68.3.2: Added paymentMethod state, stubbed DunningStatusBadge, quick action "Send Reminder", and payment history. ║
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v68.3.2):                                                                                                              ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-11-10                                                                                                 ║
+ * ║ COLLABORATION / OWNERSHIP: BillingHUD, invoice-proof client, and authenticated EOS transport owners.                                     ║
+ * ║ CHANGELOG: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY completes sovereign header and seal version agreement without behavior change.            ║
+ * ║ SECURITY / PRIVACY POSTURE: Authenticated Python EOS projections; no caller tenant label grants authority.                            ║
+ * ║ TENANT BOUNDARY: Current workspace client billing only; global recipient lookup stays unavailable pending governed C2.                 ║
+ * ║ AUTHORITY BOUNDARY: Client projection and command transport only; Python EOS owns authorization and persistence.                        ║
+ * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns payment execution and settlement.                                              ║
+ * ║ 🔧 CHANGE LOG (v68.4.1):                                                                                                              ║
+ * ║   2026-11-10 – Removes global tenant searches, browser-recent and synthetic fallback recipients; scopes subscriptions to EOS workspace.║
+ * ║   2026-11-10 – Blocks PlatformInvoice issue until governed cross-tenant directory authority exists; preserves tenant-client invoices. ║
+ * ║   Previous v68.3.2 change log:                                                                                                              ║
  * ║   2026-08-24 – Added paymentMethod state (default: 'manual') to support selection.                                                   ║
  * ║   2026-08-24 – Added `paymentMethod` prop to InvoiceLedgerItem and InvoiceDetailModal.                                               ║
  * ║   2026-08-24 – Added `sendReminder` callback (stubbed) for quick actions.                                                             ║
@@ -108,7 +120,6 @@ import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import hudStyles from './BillingHUD.module.css';
 import StatementEngine from './StatementEngine';
 import { AuditTab } from '../audit/AuditTab';
-import TenantSwitcher from '../sovereign/TenantSwitcher';
 import SovereignTenantManager from '../sovereign/Sovereign_TenantManager';
 import InvoiceLedgerItem from './InvoiceLedgerItem';
 import LedgerExplorer from './LedgerExplorer';
@@ -261,155 +272,6 @@ const createBillingIdempotencyKey = (tenantId = 'GLOBAL_ROOT') => {
     : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   return `WILSY-BILL-${String(tenantId || 'GLOBAL_ROOT').toUpperCase()}-${entropy.toUpperCase()}`;
 };
-
-const normalizeTenantDirectoryRow = (row = {}) => {
-  const org = row.organization || row.org || {};
-  const id = String(
-    row.tenant_id || row.tenantId || row.id || row._id || row.code || ''
-  ).trim();
-  const label = String(
-    row.legal_name
-    || row.legalName
-    || org.legal_name
-    || row.organization_name
-    || org.organization_name
-    || row.name
-    || row.displayName
-    || row.companyName
-    || row.alias
-    || id
-  ).trim();
-  const alias = String(row.alias || '').trim();
-  const status = String(row.status || 'ACTIVE').trim();
-  const verified = row.verified === true
-    || row.verified === 'true'
-    || row.verified === 1
-    || Boolean(row.compliance_flags?.sars_verified)
-    || Boolean(row.compliance_flags?.cipc_registered);
-  return {
-    id,
-    label,
-    alias,
-    status,
-    verified,
-    name: String(row.name || org.organization_name || label).trim(),
-    legalName: String(row.legal_name || row.legalName || org.legal_name || '').trim(),
-    taxId: row.tax_id || row.taxId || '',
-    contactEmail: row.contact_email || row.contactEmail || '',
-    region: row.region || '',
-    industry: row.industry || org.industry || '',
-    proofHash: row.proof_hash || row.proofHash || '',
-    raw: row,
-  };
-};
-
-const unwrapTenantDirectoryPayload = (response) => {
-  const root = response?.data ?? response ?? {};
-  const payload = root?.data !== undefined && !Array.isArray(root) && !root.tenants
-    ? root.data
-    : root;
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.tenants)) return payload.tenants;
-  if (Array.isArray(payload?.data?.tenants)) return payload.data.tenants;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.results)) return payload.results;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
-};
-
-/** Known production seed — ensures compose never blocks when directory is momentarily empty */
-
-const RECENT_TENANT_KEY = 'wilsy.billing.recentTenants.v1';
-const MAX_RECENT_TENANTS = 8;
-const loadRecentTenants = () => {
-  try {
-    const raw = localStorage.getItem(RECENT_TENANT_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_RECENT_TENANTS) : [];
-  } catch { return []; }
-};
-const pushRecentTenant = (row) => {
-  if (!row?.id) return;
-  try {
-    const next = [
-      { id: row.id, label: row.label || row.legalName || row.name || row.id, verified: !!row.verified },
-      ...loadRecentTenants().filter((r) => r.id !== row.id),
-    ].slice(0, MAX_RECENT_TENANTS);
-    localStorage.setItem(RECENT_TENANT_KEY, JSON.stringify(next));
-  } catch { /* ignore quota */ }
-};
-
-const WILSY_SEED_TENANT_ROW = Object.freeze({
-  tenant_id: 'WILSYTENANT-4CD2FZ4O',
-  alias: 'wilsy',
-  name: 'wilsy',
-  legal_name: 'Wilsy (Pty) Ltd',
-  tax_id: '9395759229',
-  contact_email: 'wilson@wilsy.os',
-  industry: 'Private Company',
-  region: 'ZA',
-  status: 'ACTIVE',
-  verified: true,
-  compliance_flags: {
-    popia_section_19: true,
-    gdpr_article_32: true,
-    soc2_cc7_2: true,
-    cipc_registered: true,
-    sars_verified: true,
-  },
-});
-
-/**
- * Multi-path tenant business directory loader.
- * Tries /business/tenants then /tenants; merges seed when empty so Platform compose stays usable.
- */
-async function loadTenantBusinessDirectory({ search = '', signal, limit = 50 } = {}) {
-  const q = String(search || '').trim();
-  const params = { limit, ...(q ? { search: q } : {}) };
-  const headers = { 'X-Tenant-ID': 'GLOBAL_ROOT' };
-  const paths = ['/business/tenants', '/tenants'];
-  let lastError = null;
-  for (const path of paths) {
-    try {
-      if (import.meta.env?.DEV) {
-        console.info('[BILLING-TENANT-DIR] GET', path, params);
-      }
-      const response = await sovereignClient.get(path, { params, headers, signal });
-      const rows = unwrapTenantDirectoryPayload(response);
-      if (import.meta.env?.DEV) {
-        console.info('[BILLING-TENANT-DIR] rows', path, Array.isArray(rows) ? rows.length : 0, rows?.[0]);
-      }
-      if (Array.isArray(rows) && rows.length > 0) {
-        return { rows, source: 'LIVE_DIRECTORY', path };
-      }
-      // empty but successful — keep trying alternate path
-      if (Array.isArray(rows)) {
-        lastError = null;
-      }
-    } catch (err) {
-      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') throw err;
-      lastError = err;
-      if (import.meta.env?.DEV) {
-        console.warn('[BILLING-TENANT-DIR] fail', path, err?.message || err);
-      }
-    }
-  }
-  // Offline / empty: seed verified Wilsy so founder can still issue platform invoices
-  const seedMatches = !q || [
-    WILSY_SEED_TENANT_ROW.tenant_id,
-    WILSY_SEED_TENANT_ROW.alias,
-    WILSY_SEED_TENANT_ROW.name,
-    WILSY_SEED_TENANT_ROW.legal_name,
-  ].join(' ').toLowerCase().includes(q.toLowerCase());
-  if (seedMatches) {
-    return { rows: [WILSY_SEED_TENANT_ROW], source: 'SEED_DIRECTORY', path: 'seed' };
-  }
-  if (lastError) throw lastError;
-  return { rows: [], source: 'LIVE_DIRECTORY', path: 'empty' };
-}
-
-
-
 
 /** Sovereign toast — non-blocking, auto-dismiss, production grade */
 const showBillingToast = (message = '', { tone = 'ok', ms = 2800 } = {}) => {
@@ -969,7 +831,7 @@ const computeLoyaltyTenure = (sinceDate, now = new Date(), opts = {}) => {
 const BillingHUD = ({ user: routeUser = null }) => {
   const { logout, user: contextAuthUser } = useAuth() || {};
   // ─── Unified tenant context ──────────────────────────────────────────────
-  const { activeTenant, tenants: allTenants, accessPosture, isReadOnly } = useTenants();
+  const { activeTenant, accessPosture, isReadOnly } = useTenants();
   const mesh = useSovereignMesh();
   const {
     eventBus,
@@ -988,6 +850,10 @@ const BillingHUD = ({ user: routeUser = null }) => {
     () => getBillingPermissions(authUser),
     [authUser]
   );
+
+  const authenticatedTenantId = String(
+    activeTenant?.tenant_id || activeTenant?.tenantId || activeTenant?.id || '',
+  ).trim();
 
   const tenantId = canSwitchBillingMode
     ? 'GLOBAL_ROOT'
@@ -1039,6 +905,9 @@ const BillingHUD = ({ user: routeUser = null }) => {
     const next = mode === 'PLATFORM' ? 'PLATFORM' : 'CLIENT';
     setInvoiceMode(next);
     setIssuerMode(next === 'PLATFORM' ? 'PLATFORM' : 'CLIENT');
+    if (next === 'PLATFORM') {
+      setManualInvoice((previous) => ({ ...previous, tenantId: '', tenantName: '' }));
+    }
   };
 
   // ─── TABS DEFINITION ──────────────────────────────────────────────────
@@ -1166,7 +1035,9 @@ const BillingHUD = ({ user: routeUser = null }) => {
   const [plansError, setPlansError] = useState(null);
 
   // ─── SUBSCRIPTION HOOK ────────────────────────────────────────────────
-  const subscriptionHook = useSubscriptions(tenantId, { autoLoad: activeTab === 'subscriptions' });
+  const subscriptionHook = useSubscriptions(authenticatedTenantId, {
+    autoLoad: activeTab === 'subscriptions' && Boolean(authenticatedTenantId),
+  });
   const safeSubscriptions = (() => {
     try {
       const raw = subscriptionHook?.subscriptions;
@@ -1192,16 +1063,8 @@ const BillingHUD = ({ user: routeUser = null }) => {
     metadata: {}
   });
   const [subscriptionFeedback, setSubscriptionFeedback] = useState(null);
-  const [subscriptionTenantSearch, setSubscriptionTenantSearch] = useState('');
-  const [subscriptionTenantDirectory, setSubscriptionTenantDirectory] = useState([]);
-  const [subscriptionTenantSource, setSubscriptionTenantSource] = useState('STANDBY');
-  const [invoiceTenantSearch, setInvoiceTenantSearch] = useState('');
-  const [invoiceTenantDirectory, setInvoiceTenantDirectory] = useState([]);
-  const [invoiceTenantSource, setInvoiceTenantSource] = useState('STANDBY');
-  const [invoiceTenantDirectoryState, setInvoiceTenantDirectoryState] = useState({ loading: false, error: null });
   const [clientDirectory, setClientDirectory] = useState([]);
   const [clientDirectorySource, setClientDirectorySource] = useState('STANDBY');
-  const [tenantManagerOpen, setTenantManagerOpen] = useState(false);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [auditModal, setAuditModal] = useState({ open: false, subscriptionId: '', auditTrail: [], loading: false });
   const [subscriptionVerifyState, setSubscriptionVerifyState] = useState({});
@@ -1269,7 +1132,6 @@ const BillingHUD = ({ user: routeUser = null }) => {
   const [ledgerPageSize] = useState(20);
   const [kindFilter, setKindFilter] = useState('ALL');
   const [lastSavedInvoice, setLastSavedInvoice] = useState(null);
-  const [recentTenants, setRecentTenants] = useState(() => (typeof loadRecentTenants === 'function' ? loadRecentTenants() : []));
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [amountPresetFlash, setAmountPresetFlash] = useState(null);
 
@@ -1327,85 +1189,12 @@ const BillingHUD = ({ user: routeUser = null }) => {
 
   // ─── OTHER EFFECTS ────────────────────────────────────────────────────
   useEffect(() => {
-    if (!canSwitchBillingMode || activeTab !== 'subscriptions') return undefined;
-
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      try {
-        // Production path: /api/business/tenants (verified business directory)
-        const response = await sovereignClient.get('/business/tenants', {
-          params: {
-            limit: 50,
-            ...(subscriptionTenantSearch.trim()
-              ? { search: subscriptionTenantSearch.trim() }
-              : {}),
-          },
-          headers: { 'X-Tenant-ID': 'GLOBAL_ROOT' },
-          signal: controller.signal,
-        });
-        const rows = unwrapTenantDirectoryPayload(response);
-        setSubscriptionTenantDirectory(Array.isArray(rows) ? rows : []);
-        setSubscriptionTenantSource('LIVE_DIRECTORY');
-      } catch (err) {
-        if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
-        setSubscriptionTenantDirectory([]);
-        setSubscriptionTenantSource('SOURCE_SILENT');
-      }
-    }, 180);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [activeTab, canSwitchBillingMode, subscriptionTenantSearch]);
-
-  useEffect(() => {
-    // Load whenever Platform compose is visible. Do not hard-block on role flags —
-    // SUPER_ADMIN must always reach the verified business directory.
-    const onInvoices = activeTab === 'invoices';
-    const onPlatform = invoiceMode === 'PLATFORM';
-    const onCompose = invoiceWorkspace === 'compose';
-    if (!onInvoices || !onPlatform || !onCompose) return undefined;
-
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      setInvoiceTenantDirectoryState({ loading: true, error: null });
-      try {
-        const { rows, source } = await loadTenantBusinessDirectory({
-          search: invoiceTenantSearch,
-          signal: controller.signal,
-          limit: 50,
-        });
-        setInvoiceTenantDirectory(Array.isArray(rows) ? rows : []);
-        setInvoiceTenantSource(source || 'LIVE_DIRECTORY');
-        setInvoiceTenantDirectoryState({ loading: false, error: null });
-      } catch (err) {
-        if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
-        // Last-resort seed so compose is never blocked
-        setInvoiceTenantDirectory([WILSY_SEED_TENANT_ROW]);
-        setInvoiceTenantSource('SEED_DIRECTORY');
-        const message = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Tenant directory could not be loaded.';
-        setInvoiceTenantDirectoryState({ loading: false, error: null });
-        if (import.meta.env?.DEV) {
-          console.warn('[BILLING-TENANT-DIR] using seed after error', message);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setInvoiceTenantDirectoryState((previous) => ({ ...previous, loading: false }));
-        }
-      }
-    }, 120);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [activeTab, invoiceMode, invoiceWorkspace, invoiceTenantSearch]);
-
-  useEffect(() => {
-    if (canSwitchBillingMode || subscriptionForm.tenantId) return;
-    setSubscriptionForm((previous) => ({ ...previous, tenantId }));
-  }, [canSwitchBillingMode, subscriptionForm.tenantId, tenantId]);
+    setSubscriptionForm((previous) => (
+      previous.tenantId === authenticatedTenantId
+        ? previous
+        : { ...previous, tenantId: authenticatedTenantId }
+    ));
+  }, [authenticatedTenantId]);
 
   useEffect(() => {
     if (activeTab !== 'invoices' || invoiceMode !== 'CLIENT') {
@@ -1569,60 +1358,6 @@ const BillingHUD = ({ user: routeUser = null }) => {
       loadPayables();
     }
   }, [activeTab, loadPayables]);
-
-  const availableSubscriptionTenants = useMemo(() => {
-    const seen = new Set();
-    const needle = subscriptionTenantSearch.trim().toLowerCase();
-    return [...(subscriptionTenantDirectory || []), ...(allTenants || [])]
-      .map((row) => normalizeTenantDirectoryRow(row))
-      .filter((candidate) => candidate.id && candidate.label)
-      .filter((candidate) => {
-        const key = candidate.id.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        if (!needle) return true;
-        const hay = [
-          candidate.id,
-          candidate.label,
-          candidate.name,
-          candidate.legalName,
-          candidate.alias,
-          candidate.taxId,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        return hay.includes(needle);
-      })
-      .slice(0, 12);
-  }, [allTenants, subscriptionTenantDirectory, subscriptionTenantSearch]);
-
-  const availableInvoiceTenants = useMemo(() => {
-    const seen = new Set();
-    const needle = invoiceTenantSearch.trim().toLowerCase();
-    return [...(invoiceTenantDirectory || []), ...(allTenants || [])]
-      .map((row) => normalizeTenantDirectoryRow(row))
-      .filter((candidate) => candidate.id && candidate.label)
-      .filter((candidate) => {
-        const key = candidate.id.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        if (!needle) return true;
-        const hay = [
-          candidate.id,
-          candidate.label,
-          candidate.name,
-          candidate.legalName,
-          candidate.alias,
-          candidate.taxId,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        return hay.includes(needle);
-      })
-      .slice(0, 12); // HARD CAP — never render more than 12; server search handles million-tenant scale
-  }, [allTenants, invoiceTenantDirectory, invoiceTenantSearch]);
 
   const addLog = useCallback((action, result) => {
     setLogs(prev => [
@@ -2468,8 +2203,8 @@ const BillingHUD = ({ user: routeUser = null }) => {
     const { tenantId: targetTenant, planId, amount, currency, billingFrequency, trialPeriodDays, startDate, metadata } = subscriptionForm;
     setSubscriptionFeedback(null);
 
-    if (!targetTenant) {
-      setSubscriptionFeedback({ ok: false, message: 'Select a verified tenant shard before creating a subscription.', at: new Date().toISOString() });
+    if (!authenticatedTenantId || targetTenant !== authenticatedTenantId) {
+      setSubscriptionFeedback({ ok: false, message: 'Subscription changes require the authenticated workspace tenant; cross-tenant targeting is unavailable pending governed C2.', at: new Date().toISOString() });
       return;
     }
     if (!planId) {
@@ -2755,6 +2490,10 @@ const BillingHUD = ({ user: routeUser = null }) => {
     event.preventDefault();
     if (serviceAccessBlocked) {
       showBillingToast(serviceAccessMessage, { tone: 'warn' });
+      return;
+    }
+    if (invoiceMode === 'PLATFORM') {
+      showBillingToast('Platform invoice targeting is unavailable pending governed Python EOS C2 tenant-directory authority.', { tone: 'warn' });
       return;
     }
     const recipientTenantId = manualInvoice.tenantId.trim();
@@ -3078,6 +2817,14 @@ const BillingHUD = ({ user: routeUser = null }) => {
       return;
     }
     const isClient = invoiceMode === 'CLIENT';
+    if (!isClient) {
+      showBillingToast('Platform invoice targeting is unavailable pending governed Python EOS C2 tenant-directory authority.', { tone: 'warn' });
+      return;
+    }
+    if (!authenticatedTenantId || !manualInvoice.tenantId.trim()) {
+      showBillingToast('Select a client under the authenticated tenant before creating an invoice.', { tone: 'warn' });
+      return;
+    }
     if (!caps.createPlatformInvoice && !caps.createClientInvoice) {
       showBillingToast('You do not have permission to create invoices.', { tone: 'warn' });
       return;
@@ -3094,8 +2841,8 @@ const BillingHUD = ({ user: routeUser = null }) => {
         taxType: manualInvoice.taxType || 'VAT',
         customerTaxId: manualInvoice.customerTaxId || ''
       }, {
-        issuerTenantId: 'GLOBAL_ROOT',
-        recipientTenantId: manualInvoice.tenantId.trim() || 'CLIENT_A',
+        issuerTenantId: authenticatedTenantId,
+        recipientTenantId: manualInvoice.tenantId.trim(),
         amount: parseBillingMoneyInput(manualInvoice.amount) || 1200
       });
       const finalTaxResult = await globalTaxEngine.calculateFromInvoiceDraft(draft, {
@@ -3925,7 +3672,7 @@ const BillingHUD = ({ user: routeUser = null }) => {
                   type="button"
                   className={hudStyles.secondaryButton}
                   onClick={runQuickInvoice}
-                  disabled={serviceAccessBlocked || !!processing || !(caps.createPlatformInvoice || caps.createClientInvoice)}
+                  disabled={invoiceMode === 'PLATFORM' || serviceAccessBlocked || !!processing || !(caps.createPlatformInvoice || caps.createClientInvoice)}
                   title="Generate a quick invoice draft for the current tenant context"
                 >
                   <FileText size={15} /> Create Invoice
@@ -4054,7 +3801,7 @@ const BillingHUD = ({ user: routeUser = null }) => {
                   {processing === 'auto_billing' ? <RefreshCw className="animate-spin" size={15} /> : <Zap size={15} />}
                   Run Billing
                 </button>
-                <button type="button" className={hudStyles.secondaryButton} onClick={runQuickInvoice} disabled={!!processing || !(caps.createPlatformInvoice || caps.createClientInvoice)}>
+                <button type="button" className={hudStyles.secondaryButton} onClick={runQuickInvoice} disabled={invoiceMode === 'PLATFORM' || !!processing || !(caps.createPlatformInvoice || caps.createClientInvoice)}>
                   <FileText size={15} /> Create Invoice
                 </button>
                 <button type="button" className={hudStyles.secondaryButton} onClick={runSealTaxPosture} disabled={!!processing} title="Seal the live tax posture for audit-ready compliance">
@@ -4563,139 +4310,22 @@ const BillingHUD = ({ user: routeUser = null }) => {
                     <div className={hudStyles.field}>
                       <label>{invoiceMode === 'CLIENT' ? 'Client / customer ID' : 'Target tenant'}</label>
                       {invoiceMode === 'PLATFORM' ? (
-                        <>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-                            <input
-                              value={invoiceTenantSearch}
-                              placeholder={manualInvoice.tenantId ? 'Selected — clear to search another' : 'Search tenant business name or ID'}
-                              onChange={(event) => {
-                                const next = event.target.value;
-                                setInvoiceTenantSearch(next);
-                                if (manualInvoice.tenantId) {
-                                  setManualInvoice((previous) => ({
-                                    ...previous,
-                                    tenantId: '',
-                                    tenantName: '',
-                                  }));
-                                }
-                              }}
-                              role="combobox"
-                              aria-autocomplete="list"
-                              aria-expanded={availableInvoiceTenants.length > 0 && !manualInvoice.tenantId}
-                              aria-controls="billing-tenant-results"
-                              required={!manualInvoice.tenantId}
-                              readOnly={Boolean(manualInvoice.tenantId)}
-                              style={manualInvoice.tenantId ? { flex: 1, opacity: 0.95 } : { flex: 1 }}
-                            />
-                            {manualInvoice.tenantId ? (
-                              <button
-                                type="button"
-                                className={hudStyles.secondaryButton}
-                                title="Clear selected tenant"
-                                aria-label="Clear selected tenant"
-                                onClick={() => {
-                                  setManualInvoice((previous) => ({
-                                    ...previous,
-                                    tenantId: '',
-                                    tenantName: '',
-                                    customerTaxId: '',
-                                  }));
-                                  setInvoiceTenantSearch('');
-                                }}
-                                style={{ whiteSpace: 'nowrap', minWidth: 88 }}
-                              >
-                                Clear
-                              </button>
-                            ) : null}
-                          </div>
-                          {!manualInvoice.tenantId && (
-                            <>
-                              <div
-                                id="billing-tenant-results"
-                                role="listbox"
-                                aria-label="Available tenant businesses"
-                                style={{ display: availableInvoiceTenants.length ? 'grid' : 'none', gap: '6px', marginTop: '8px' }}
-                              >
-                                {availableInvoiceTenants.map((candidate) => (
-                                  <button
-                                    key={candidate.id}
-                                    type="button"
-                                    className={hudStyles.secondaryButton}
-                                    role="option"
-                                    aria-selected={false}
-                                    onClick={() => {
-                                      setManualInvoice((previous) => ({
-                                        ...previous,
-                                        tenantId: candidate.id,
-                                        tenantName: candidate.label,
-                                        customerTaxId: candidate.taxId || previous.customerTaxId || '',
-                                      }));
-                                      setInvoiceTenantSearch(candidate.label);
-                                      pushRecentTenant({ id: candidate.id, label: candidate.label, verified: candidate.verified, taxId: candidate.taxId });
-                                      setRecentTenants(loadRecentTenants());
-                                    }}
-                                    style={{ justifyContent: 'space-between', textAlign: 'left' }}
-                                  >
-                                    <span>
-                                      {candidate.label}
-                                      {candidate.verified ? ' · Verified' : ''}
-                                    </span>
-                                    <small>{candidate.id} · {candidate.status}</small>
-                                  </button>
-                                ))}
-                              </div>
-                              {recentTenants.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }} role="list" aria-label="Recent recipients">
-                                  <span style={{ fontSize: '0.65rem', color: '#64748b', width: '100%', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Recent</span>
-                                  {recentTenants.map((r) => (
-                                    <button
-                                      key={r.id}
-                                      type="button"
-                                      role="listitem"
-                                      className={hudStyles.secondaryButton}
-                                      style={{ fontSize: '0.72rem', padding: '4px 10px' }}
-                                      onClick={() => {
-                                        setManualInvoice((prev) => ({ ...prev, tenantId: r.id, tenantName: r.label }));
-                                        setInvoiceTenantSearch(r.label);
-                                        pushRecentTenant(r);
-                                        setRecentTenants(loadRecentTenants());
-                                      }}
-                                    >
-                                      {r.verified ? '✓ ' : ''}{r.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                          <small role="status">
-                            {manualInvoice.tenantId
-                              ? `Selected: ${manualInvoice.tenantName || manualInvoice.tenantId} (${manualInvoice.tenantId}) — Clear to choose another.`
-                              : invoiceTenantDirectoryState.loading
-                                ? 'Loading tenant businesses…'
-                                : invoiceTenantDirectoryState.error
-                                  ? `Tenant directory unavailable: ${invoiceTenantDirectoryState.error}`
-                                  : invoiceTenantSource === 'SOURCE_SILENT'
-                                    ? 'Tenant directory is unavailable. Check Kennel /api/business/tenants.'
-                                    : invoiceTenantSource === 'LIVE_DIRECTORY' && invoiceTenantSearch.trim() && !availableInvoiceTenants.length
-                                      ? 'No tenant businesses match that search. Try legal name, alias, or tenant ID.'
-                                      : invoiceTenantSource === 'LIVE_DIRECTORY' && !invoiceTenantSearch.trim() && availableInvoiceTenants.length === 0
-                                        ? 'Directory loaded but empty. Confirm tenants exist in Kennel.'
-                                        : invoiceTenantSource === 'SEED_DIRECTORY'
-                                          ? 'Using offline seed directory. Live Kennel list will replace this when available.'
-                                          : 'Search and select the recipient business (legal name, alias, or ID).'}
+                        <div className={hudStyles.fieldFull} role="status" aria-label="Platform invoice recipient unavailable">
+                          <strong>Cross-tenant recipient selection is unavailable.</strong>
+                          <small>
+                            Python EOS does not expose a governed cross-tenant tenant-directory capability. Platform invoice issue remains disabled until the separate C2 authority milestone is complete.
                           </small>
-                        </>
+                        </div>
                       ) : (
                         <input
                           value={manualInvoice.tenantId}
-                          placeholder={invoiceMode === 'CLIENT' ? 'CLIENT-ID' : 'TENANT-ID'}
+                          placeholder="Client ID within the authenticated tenant"
                           onChange={event => setManualInvoice(prev => ({ ...prev, tenantId: event.target.value, tenantName: '' }))}
                           onBlur={() => setManualInvoice(prev => ({ ...prev, tenantId: prev.tenantId.trim() }))}
-                          role={invoiceMode === 'CLIENT' ? 'combobox' : undefined}
-                          aria-autocomplete={invoiceMode === 'CLIENT' ? 'list' : undefined}
-                          aria-expanded={invoiceMode === 'CLIENT' && clientDirectory.length > 0}
-                          aria-controls={invoiceMode === 'CLIENT' ? 'billing-client-results' : undefined}
+                          role="combobox"
+                          aria-autocomplete="list"
+                          aria-expanded={clientDirectory.length > 0}
+                          aria-controls="billing-client-results"
                           required
                         />
                       )}
@@ -5055,6 +4685,7 @@ const BillingHUD = ({ user: routeUser = null }) => {
                             processing === 'invoice' ||
                             serviceAccessBlocked ||
                             isFrozen ||
+                            invoiceMode === 'PLATFORM' ||
                             !manualInvoice.tenantId?.trim() ||
                             !(parseBillingMoneyInput(manualInvoice.amount) > 0) ||
                             !(invoiceMode === 'CLIENT' ? caps.createClientInvoice : caps.createPlatformInvoice)
@@ -5442,53 +5073,16 @@ const BillingHUD = ({ user: routeUser = null }) => {
 
                 <form className={hudStyles.formGrid} onSubmit={handleCreateSubscription}>
                   {canSwitchBillingMode && (
-                    <div className={`${hudStyles.field} ${hudStyles.fieldFull}`}>
-                      <label htmlFor="subscription-tenant-search">Find target tenant</label>
-                      <input
-                        id="subscription-tenant-search"
-                        type="search"
-                        value={subscriptionTenantSearch}
-                        onChange={(event) => setSubscriptionTenantSearch(event.target.value)}
-                        placeholder="Search tenant name or ID"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        aria-expanded={availableSubscriptionTenants.length > 0}
-                        aria-controls="subscription-tenant-results"
-                      />
-                      <div
-                        id="subscription-tenant-results"
-                        role="listbox"
-                        aria-label="Available tenant shards"
-                        style={{ display: availableSubscriptionTenants.length ? 'grid' : 'none', gap: '6px', marginTop: '8px' }}
-                      >
-                        {availableSubscriptionTenants.map((candidate) => (
-                          <button
-                            key={candidate.id}
-                            type="button"
-                            className={hudStyles.secondaryButton}
-                            role="option"
-                            aria-selected={subscriptionForm.tenantId === candidate.id}
-                            onClick={() => {
-                              setSubscriptionForm((previous) => ({ ...previous, tenantId: candidate.id }));
-                              setSubscriptionTenantSearch(candidate.label);
-                            }}
-                            style={{ justifyContent: 'space-between' }}
-                          >
-                            <span>{candidate.label}</span>
-                            <small>{candidate.id} · {candidate.status}</small>
-                          </button>
-                        ))}
-                      </div>
-                      <small>{subscriptionTenantSource === 'SOURCE_SILENT' ? 'Tenant directory is unavailable; enter a verified tenant ID.' : 'Select a verified tenant shard before creating its subscription.'}</small>
+                    <div className={`${hudStyles.field} ${hudStyles.fieldFull}`} role="status">
+                      Cross-tenant subscription targeting is unavailable pending governed Python EOS C2 tenant-directory authority. Subscription reads and changes remain bound to the authenticated workspace tenant.
                     </div>
                   )}
                   <div className={hudStyles.field}>
-                    <label>{canSwitchBillingMode ? 'Selected tenant' : 'Tenant'}</label>
+                    <label>Authenticated workspace tenant</label>
                     <input
                       value={subscriptionForm.tenantId}
-                      onChange={e => setSubscriptionForm(prev => ({ ...prev, tenantId: e.target.value }))}
-                      placeholder={canSwitchBillingMode ? 'Select a tenant above' : 'TENANT-ID'}
-                      readOnly={!canSwitchBillingMode}
+                      placeholder="Waiting for authenticated tenant"
+                      readOnly
                       required
                     />
                   </div>
@@ -6161,103 +5755,10 @@ const BillingHUD = ({ user: routeUser = null }) => {
           </section>
         )}
 
-        {activeTab === 'tenants' && tenantManagerOpen && (
-          <section className={hudStyles.mainGrid} style={{ gridTemplateColumns: '1fr' }} aria-label="Tenant management cockpit">
+        {activeTab === 'tenants' && (
+          <section className={hudStyles.mainGrid} style={{ gridTemplateColumns: '1fr' }} aria-label="Tenant management availability">
             <div className={hudStyles.panel} style={{ gridColumn: '1 / -1' }}>
-              <div className={hudStyles.panelHeader}>
-                <div className={hudStyles.panelTitle}>
-                  <Users size={18} />
-                  <div>
-                    <span>Tenant management</span>
-                    <h2>Tenant Management Cockpit</h2>
-                  </div>
-                </div>
-                <button type="button" className={hudStyles.secondaryButton} onClick={() => setTenantManagerOpen(false)}>
-                  Return to billing
-                </button>
-              </div>
               <SovereignTenantManager />
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'tenants' && !tenantManagerOpen && (
-          <section className={hudStyles.mainGrid} style={{ gridTemplateColumns: '1fr' }} aria-label="Tenants workspace">
-            <div className={hudStyles.panel} style={{ gridColumn: '1 / -1' }}>
-              <div className={hudStyles.panelHeader}>
-                <div className={hudStyles.panelTitle}>
-                  <Users size={18} />
-                  <div>
-                    <span>Tenant management</span>
-                    <h2>Sovereign Tenant Shards</h2>
-                  </div>
-                </div>
-                <div className={hudStyles.heroActions}>
-                  <button
-                    type="button"
-                    className={hudStyles.primaryButton}
-                    onClick={() => {
-                      void broadcastTelemetry(
-                        activeTenant?.id || tenantId,
-                        'BILLING',
-                        'MANAGE_TENANTS_OPENED',
-                        'BillingHUD',
-                        { userId: authUser?.id, timestamp: new Date().toISOString() }
-                      ).catch(() => { });
-                      setTenantManagerOpen(true);
-                    }}
-                    title="Open the full tenant management cockpit without leaving billing"
-                  >
-                    <LayoutDashboard size={15} /> Manage Tenants
-                  </button>
-                </div>
-              </div>
-
-              <div className={hudStyles.metricGrid} style={{ marginBottom: '24px' }}>
-                <article className={hudStyles.metricCard}>
-                  <Users size={18} />
-                  <span>Total Shards</span>
-                  <strong>{allTenants.length}</strong>
-                  <small>Active tenant shards</small>
-                </article>
-                <article className={hudStyles.metricCard} data-tone="green">
-                  <CheckCircle size={18} />
-                  <span>Active Shards</span>
-                  <strong>{allTenants.filter(t => t.status === 'Active').length}</strong>
-                  <small>Operational tenants</small>
-                </article>
-                <article className={hudStyles.metricCard} data-tone="red">
-                  <AlertTriangle size={18} />
-                  <span>Suspended</span>
-                  <strong>{allTenants.filter(t => t.status === 'Suspended').length}</strong>
-                  <small>Locked or inactive</small>
-                </article>
-                <article className={hudStyles.metricCard} data-tone="cyan">
-                  <TrendingUp size={18} />
-                  <span>Total Revenue</span>
-                  <strong>
-                    {formatMoney(
-                      allTenants.reduce((sum, t) => sum + (t.revenue || 0), 0),
-                      'ZAR'
-                    )}
-                  </strong>
-                  <small>Aggregate tenant ARR</small>
-                </article>
-              </div>
-
-              <div className={hudStyles.switcherContainer} style={{ marginTop: '16px' }}>
-                <h3 style={{ fontSize: '0.8rem', color: '#888', marginBottom: '12px', letterSpacing: '1px' }}>
-                  QUICK SWITCH OR SUSPEND
-                </h3>
-                <TenantSwitcher
-                  kennelShard="GLOBAL"
-                  kennelTenantId={tenantId}
-                  tenants={allTenants}
-                />
-                <p style={{ fontSize: '0.6rem', color: '#555', marginTop: '8px' }}>
-                  Use the floating switcher to change or suspend tenants directly from the billing cockpit.
-                </p>
-              </div>
             </div>
           </section>
         )}
@@ -6817,6 +6318,7 @@ const BillingHUD = ({ user: routeUser = null }) => {
               disabled={
                 processing === 'invoice' ||
                 isFrozen ||
+                invoiceMode === 'PLATFORM' ||
                 !manualInvoice.tenantId?.trim() ||
                 !(parseBillingMoneyInput(manualInvoice.amount) > 0) ||
                 !(invoiceMode === 'CLIENT' ? caps.createClientInvoice : caps.createPlatformInvoice)
@@ -6892,13 +6394,11 @@ const BillingHUD = ({ user: routeUser = null }) => {
 export default BillingHUD;
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — BillingHUD V68.3.2‑PAYMENT‑ENHANCEMENT
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT — PAYMENT ENHANCEMENT
- * Phase:           Phase 0 — FOUNDATION ENHANCEMENTS
- * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
- * ────────────────────────────────────────────────────────────────────────────────
- * 🔒 This file is ready for deployment.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: client/src/components/billing/BillingHUD.jsx
+ * VERSION: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY
+ * AUTHORITY BOUNDARY: Tenant-scoped client billing uses EOS authorization; global recipient selection remains unavailable pending governed C2.
+ * TENANT POSTURE: Subscription requests use the exact authenticated workspace tenant; client invoice search carries that same scope.
+ * FAIL-CLOSED POSTURE: Platform invoice issue and quick issue cannot proceed without governed cross-tenant directory authority.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns payment execution and settlement.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

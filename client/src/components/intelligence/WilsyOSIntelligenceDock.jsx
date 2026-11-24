@@ -1,33 +1,30 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
- * ═══════════════════════════════════════════════════════════════════════════════
- * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.6.1-STALE-OPERATOR-TURN-RENDER-GUARD
- * Authority:      Wilsy OS Core Governance
- * Epitome:        Authority-aware operator dock. Kernel posture comes only from
- *                 the canonical /kernel transport. Legal workspace Ask requests
- *                 use certified C1C legal-services transport rather than the
- *                 unmounted legacy /api/ai/operator route. Billing-intelligence
- *                 evidence is probed only for the bounded legal-finance role.
- *                 Core Legal deadline posture is read directly from certified D6B,
- *                 independently of paid WILSY AI advisory capability. Conversation
- *                 history is explicitly session-memory only until a
- *                 Python-EOS durable history authority is separately certified.
- * Classification: Production Artifact — Institutional Contract
- * Tenant Boundary: C1E payloads are server-scoped and rendered without client
- *                   tenant inference or persistence.
- * Authority Boundary: Python EOS owns legal advisory authority; this file is a
- *                     projection and exposes no legal command authority.
- * Financial Authority Boundary: None; Kennel EOS remains exclusive.
- * Compliance: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * Security / Privacy Posture: Authentication remains in api.js; C1E state is
- *                              held only in React memory.
- *
- * Contributors:
- *   - Wilson Khanyezi (CEO/Lead Architect) – Mandated Kennel as Source of Truth.
- *   - AI Engineering – Phase 4: replace local engine with backend call.
- *
+ * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
+ * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
+ * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
+ * EPITOME: Keep contextual intelligence alongside the operator's current work,
+ * with a movable/minimizable launcher and preserved source-owned AI contracts.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
+ * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
+ * Legal advisory/deadline adapters and session-only conversation engines.
+ * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v4.7.1-INDEPENDENT-KERNEL-HEALTH starts EOS kernel health independently
+ * of optional finance evidence, publishes verified health immediately, and
+ * enriches context only after independently verified optional evidence.
+ * v4.7.0-MOVABLE-MINIMIZABLE-AI-COMPANION adds a distinct vector AI identity, pointer/keyboard
+ * movement, viewport clamping, compact minimization and reset without navigation,
+ * source commands, background modal interference or conversation resets.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; accessible controls.
+ * SECURITY / PRIVACY POSTURE: Position and size are ephemeral React preferences;
+ * no identity, message or layout is written to browser storage by these controls.
+ * TENANT BOUNDARY: Existing exact tenant/principal/capacity scope remains owner
+ * of all conversation/API state; layout controls never create permission.
+ * AUTHORITY BOUNDARY: Companion presentation only; all source requests and
+ * late-response guards remain unchanged. No route or workspace switch occurs.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
+/**
+ * HISTORICAL CHANGELOG
  * Change Log:
  *   2026-11-09 v4.6.1-STALE-OPERATOR-TURN-RENDER-GUARD discards responses, errors,
  *   replies and in-flight UI mutations from a superseded tenant, principal
@@ -62,26 +59,13 @@
  *     with backend POST /api/ai/operator; removed client engine import.
  *   2026-08-04 v3.1.0-KENNEL-PHASE1-FINAL — Raw fetch removed; api service only.
  *
- * Forensic Relationships:
- *   Upstream:   ../../services/api, authContext/tenantContext (soft),
- *               suggestion + history engines
- *   Downstream: App shell, Boardroom, Founder chrome
- *   Kennel:     GET /kernel (health via canonical api.js transport)
- *               GET /billing/intelligence/evidence (LEGAL_FINANCE optimization only)
- *               C1C legal-services transport for legal workspace Ask
- *               C1C/C1E legal advisory transport (R1B adapter)
- *
- * Certification Seal: PRODUCTION_READY_v4.4.1-LEGAL-AUTHORITY-AWARE-ARTIFACT-INTEGRITY
- * ═══════════════════════════════════════════════════════════════════════════════
  */
-
 /* eslint-disable */
 
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   ArrowUpRight,
-  BrainCircuit,
   FileCheck2,
   History,
   MessageSquareText,
@@ -90,6 +74,9 @@ import {
   SendHorizontal,
   ShieldCheck,
   Sparkles,
+  GripVertical,
+  Minus,
+  RotateCcw,
   X,
 } from 'lucide-react';
 import api from '../../services/api.js'; // Sovereign HTTP client – forensic seals, tenant headers, auto refresh
@@ -310,6 +297,70 @@ export function WilsyOSIntelligenceDock({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [launcherMinimized, setLauncherMinimized] = useState(false);
+  const [dockPosition, setDockPosition] = useState(null);
+  const [dragging, setDragging] = useState(false);
+  const [positionNotice, setPositionNotice] = useState('');
+  const dockContainerRef = useRef(null);
+  const dragRef = useRef(null);
+  const companionPanelRef = useRef(null);
+  const launcherButtonRef = useRef(null);
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    if (isOpen) companionPanelRef.current?.focus({ preventScroll: true });
+    else if (wasOpenRef.current) launcherButtonRef.current?.focus({ preventScroll: true });
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // Geometry is a transient preference, never business or identity state.
+  const clampDockPosition = useCallback((x, y) => {
+    const bounds = dockContainerRef.current?.getBoundingClientRect();
+    const width = bounds?.width || 44; const height = bounds?.height || 44;
+    const top = Math.min(84, Math.max(12, window.innerHeight - height - 12));
+    return { x: Math.max(12, Math.min(x, window.innerWidth - width - 12)),
+      y: Math.max(top, Math.min(y, window.innerHeight - height - 12)) };
+  }, []);
+  useLayoutEffect(() => {
+    const keepVisible = () => setDockPosition(current => current
+      ? clampDockPosition(current.x, current.y) : current);
+    keepVisible(); window.addEventListener('resize', keepVisible);
+    return () => window.removeEventListener('resize', keepVisible);
+  }, [isOpen, isExpanded, launcherMinimized, clampDockPosition]);
+  const beginDockMove = event => {
+    if (event.button !== 0) return;
+    event.preventDefault(); event.stopPropagation();
+    const bounds = dockContainerRef.current.getBoundingClientRect();
+    dragRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY,
+      left: bounds.left, top: bounds.top };
+    event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true);
+  };
+  const moveDock = event => {
+    const start = dragRef.current;
+    if (!start || start.id !== event.pointerId) return;
+    event.preventDefault(); event.stopPropagation();
+    setDockPosition(clampDockPosition(start.left + event.clientX - start.x,
+      start.top + event.clientY - start.y));
+  };
+  const endDockMove = event => {
+    if (!dragRef.current || dragRef.current.id !== event.pointerId) return;
+    dragRef.current = null; setDragging(false);
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setPositionNotice('AI companion moved. Your workspace is unchanged.');
+  };
+  const moveDockWithKeyboard = event => {
+    if (event.key === 'Home') { event.preventDefault(); setDockPosition(null); setPositionNotice('AI companion position reset.'); return; }
+    const deltas = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (!deltas[event.key]) return;
+    event.preventDefault(); event.stopPropagation();
+    const bounds = dockContainerRef.current.getBoundingClientRect();
+    const step = event.shiftKey ? 48 : 16; const [x, y] = deltas[event.key];
+    setDockPosition(clampDockPosition(bounds.left + x * step, bounds.top + y * step));
+    setPositionNotice('AI companion moved. Use Home to reset.');
+  };
+  const moveHandle = <button type="button" className={styles.moveHandle}
+    title="Drag to move · arrow keys to adjust · Home to reset" aria-label="Move WILSY OS AI"
+    onPointerDown={beginDockMove} onPointerMove={moveDock} onPointerUp={endDockMove}
+    onPointerCancel={endDockMove} onKeyDown={moveDockWithKeyboard}><GripVertical size={16}/></button>;
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -371,27 +422,20 @@ export function WilsyOSIntelligenceDock({
       && healthGenerationRef.current === generation
       && dockScopeRef.current === dockScope
     );
-    let billingIntelligenceEvidence;
-    if (canProbeBillingIntelligence(authUser?.role)) {
-      try {
-        const asOf = new Date().toISOString();
-        const billingRes = await api.get('/billing/intelligence/evidence', {
-          params: { as_of: asOf },
-          timeout: 8000,
-          signal: controller.signal,
-        });
-        if (!isCurrent()) return;
-        if (
-          billingRes?.status === 200
-          && billingRes?.data
-          && typeof billingRes.data === 'object'
-        ) {
-          billingIntelligenceEvidence = billingRes.data;
-        }
-      } catch {
-        // Optional finance evidence remains server-authorized and fail-quiet.
-      }
-    }
+    // Optional finance evidence must never serialize or delay kernel health.
+    // Its own EOS IAM remains authoritative; a failure yields no finance facts.
+    const billingEvidenceRead = canProbeBillingIntelligence(authUser?.role)
+      ? api.get('/billing/intelligence/evidence', {
+        params: { as_of: new Date().toISOString() },
+        timeout: 8000,
+        signal: controller.signal,
+      }).then((response) => (
+        response?.status === 200
+        && response?.data
+        && typeof response.data === 'object'
+          ? response.data : null
+      )).catch(() => null)
+      : Promise.resolve(null);
 
     try {
       // Optional EOS health reads never authorize or block Headquarters.
@@ -413,11 +457,18 @@ export function WilsyOSIntelligenceDock({
           tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
         },
       });
-      if (billingIntelligenceEvidence) {
-        normalizedDockContext.billingIntelligenceEvidence = billingIntelligenceEvidence;
-      }
       if (!isCurrent()) return;
       setDockContext(normalizedDockContext);
+      // Publish the independent verified kernel result before optional finance
+      // completion; late responses may enrich only the same live auth scope.
+      const billingIntelligenceEvidence = await billingEvidenceRead;
+      if (!isCurrent()) return;
+      if (billingIntelligenceEvidence) {
+        setDockContext({
+          ...normalizedDockContext,
+          billingIntelligenceEvidence,
+        });
+      }
     } catch (err) {
       if (!isCurrent()) return;
       // Absence of verified EOS health is not successful advisory context.
@@ -830,24 +881,36 @@ export function WilsyOSIntelligenceDock({
   const authoritativeTenantBrand = resolveAuthoritativeTenantBrand(activeTenant);
 
   return (
-    <div className={styles.intelligenceDockContainer} data-wilsy-intelligence-dock="active" data-kennel={kennelPosture}>
+    <div ref={dockContainerRef} className={styles.intelligenceDockContainer}
+      data-wilsy-intelligence-dock="active" data-kennel={kennelPosture}
+      data-ai-layout={isOpen ? 'OPEN' : launcherMinimized ? 'MINIMIZED' : 'LAUNCHER'}
+      data-dragging={dragging ? 'true' : undefined}
+      style={dockPosition ? { left: dockPosition.x, top: dockPosition.y, right: 'auto', bottom: 'auto' } : undefined}>
+      <span className={styles.srOnly} role="status">{positionNotice}</span>
       {!isOpen && (
-        <button
-          type="button"
-          className={styles.dockLauncherButton}
-          onClick={() => setIsOpen(true)}
-          title="Open Wilsy OS Intelligence Dock"
-        >
-          <Sparkles className={styles.launcherIcon} />
-          <span>WILSY OS</span>
-        </button>
+        <div className={`${styles.launcherTray} ${launcherMinimized ? styles.launcherMinimized : ''}`}>
+          {moveHandle}
+          <button ref={launcherButtonRef} type="button" className={styles.dockLauncherButton}
+            onClick={() => setIsOpen(true)} title="Open Wilsy OS Intelligence Dock"
+            aria-label="Open Wilsy OS Intelligence Dock" aria-expanded="false">
+            <img src="/brand/wilsy-ai-emblem.svg" className={styles.aiEmblem} alt="" aria-hidden="true"/>
+            {!launcherMinimized && <span>WILSY OS<small>AI COMPANION</small></span>}
+          </button>
+          <button type="button" className={styles.launcherSizeControl}
+            title={launcherMinimized ? 'Restore AI launcher' : 'Minimize AI launcher'}
+            onClick={() => { setLauncherMinimized(value => !value); setPositionNotice('AI launcher size changed.'); }}>
+            {launcherMinimized ? <PanelRightOpen size={14}/> : <Minus size={14}/>}
+          </button>
+        </div>
       )}
 
       {isOpen && (
-        <div className={`${styles.dockWindow} ${isExpanded ? styles.dockExpanded : ''}`}>
+        <section className={`${styles.dockWindow} ${isExpanded ? styles.dockExpanded : ''}`} ref={companionPanelRef} tabIndex={-1} role="region" aria-label="WILSY OS AI companion"
+          onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); setIsOpen(false); setLauncherMinimized(true); } }}>
           <div className={styles.dockHeader}>
+            {moveHandle}
             <div className={styles.dockHeaderTitle}>
-              <BrainCircuit className={styles.headerLogo} />
+              <img src="/brand/wilsy-ai-emblem.svg" className={styles.headerEmblem} alt="Wilsy AI neural core"/>
               <div>
                 <span>WILSY OS Intelligence Dock</span>
                 <small className={styles.kennelBadge} data-posture={kennelPosture}>
@@ -861,18 +924,22 @@ export function WilsyOSIntelligenceDock({
               </div>
             </div>
             <div className={styles.dockHeaderActions}>
+              <button type="button" className={styles.headerIconButton} title="Reset AI position"
+                onClick={() => { setDockPosition(null); setPositionNotice('AI companion position reset.'); }}><RotateCcw size={15}/></button>
+              <button type="button" className={styles.headerIconButton} title="Minimize dock"
+                onClick={() => { setIsOpen(false); setLauncherMinimized(true); }}><Minus size={16}/></button>
               <button
                 type="button"
                 className={styles.headerIconButton}
                 onClick={() => setIsExpanded(!isExpanded)}
-                title={isExpanded ? 'Minimize dock' : 'Expand dock'}
+                title={isExpanded ? 'Restore dock size' : 'Expand dock'}
               >
                 {isExpanded ? <Minimize2 size={16} /> : <PanelRightOpen size={16} />}
               </button>
               <button
                 type="button"
                 className={styles.headerIconButton}
-                onClick={() => setIsOpen(false)}
+                onClick={() => { setIsOpen(false); setLauncherMinimized(false); }}
                 title="Close dock"
               >
                 <X size={16} />
@@ -1262,7 +1329,7 @@ export function WilsyOSIntelligenceDock({
               </div>
             )}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
@@ -1287,7 +1354,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.6.1-STALE-OPERATOR-TURN-RENDER-GUARD
+ * VERSION: v4.7.1-INDEPENDENT-KERNEL-HEALTH
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate

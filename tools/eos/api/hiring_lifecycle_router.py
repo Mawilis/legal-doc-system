@@ -1,20 +1,42 @@
-"""Authenticated WILSY candidate and employment-offer commands.
-
-All access is exact-tenant canonical IAM. Acceptance records consent evidence only;
-it never creates an employee, principal, membership, capacity, IAM grant or payroll.
+"""TITLE: WILSY EOS authenticated candidate and employment-offer lifecycle API.
+VERSION: v1.6.0-SAFE-MY-WORK-PROJECTION
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Exposes tenant-authorized hiring reads and commands over the canonical
+         candidate, offer, evidence, and signature registries.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hiring_lifecycle_router.py
+COLLABORATION / OWNERSHIP: Mounted by the Python EOS API server; consumed by the HR client and candidate-evidence routes.
+CERTIFICATION / UPDATE DATE: 2026-11-15.
+CHANGELOG:
+  v1.6.0-SAFE-MY-WORK-PROJECTION — Adds an internal, source-owned, minimal
+  action projection for Unified My Work. Candidate, offer-term, compensation,
+  identity and evidence data remain inside this owner; every action command
+  retains its own current authorization, maker-checker, revision and evidence
+  checks.
+  v1.5.0-PLATFORM-EMPLOYER-ROUTE-SCOPE — Adds exact-WILSY platform-employer permission pairs to candidate and offer operations while retaining customer HR entitlement gating and disabled acceptance.
+  v1.4.0-CANDIDATE-IDENTITY-BINDING-FAIL-CLOSED — Keeps the authenticated acceptance route unavailable before offer lookup, PKI verification, or persistence until an approved candidate identity proofing source binds the signer to the candidate.
+  v1.3.0-CUSTODY-VERIFIED-CANDIDATE-TRANSITION — Requires an immutable candidate evidence ID/version in the exact tenant and verifies its registered content digest before recording a stage transition.
+  v1.2.0-APPROVED-REQUISITION-CANDIDATE-GATE — Requires a source-verified approved requisition in the same tenant before candidate creation.
+  v1.1.0-TENANT-SCOPED-HIRING-READ-PAGES — Adds bounded candidate and offer list reads using existing exact-tenant read capabilities and snapshot transactions.
+  v1.0.0 — Establishes authenticated tenant-scoped candidate and offer lifecycle commands.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Request tenant comes from authenticated EOS context; candidate transition evidence is exact-tenant and digest-bound; institutional signatory enrollment alone is not candidate identity proof.
+TENANT BOUNDARY: Every lifecycle read and command uses the exact authenticated tenant; platform-employer pairs are selected only for canonical WILSY.
+AUTHORITY BOUNDARY: Customer HR routes require active exact-tenant HR entitlement plus tenant IAM and applicable workforce currentness. Canonical WILSY employer routes use separately assigned platform-employer permissions through the same EOS resolver. Candidate transitions require exact evidence custody; offer acceptance remains disabled until a governed candidate identity source binds the signer to the candidate.
+FINANCIAL AUTHORITY BOUNDARY: No payroll, payment, execution, or settlement authority is granted.
+TRANSACTION BOUNDARY: MongoDB snapshot transactions own persisted lifecycle changes and consistent list totals.
 """
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import base64
-import binascii
 import hashlib
+import hmac
 import json
 import os
 from typing import Annotated, Any
 
 import boto3
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.read_concern import ReadConcern
@@ -25,9 +47,10 @@ from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, 
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.domain.hiring_lifecycle import (
     CandidateApplication, CandidateStage, CandidateStageEvidence,
-    EmploymentOffer, OfferTerms, OfferDecision, OfferAcceptanceEvidence, OfferStatus,
+    EmploymentOffer, OfferTerms, OfferDecision, OfferStatus,
 )
 from tools.eos.saas.domain.candidate_evidence import CandidateEvidenceKind
+from tools.eos.saas.domain.headcount_requisition import RequisitionStatus
 from tools.eos.saas.hr.candidate_evidence_registry import (
     COLLECTION as CANDIDATE_EVIDENCE_COLLECTION,
     EVENT_COLLECTION as CANDIDATE_EVIDENCE_EVENT_COLLECTION,
@@ -40,7 +63,6 @@ from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
     CandidateEvidenceS3Error,
     CandidateEvidenceS3StorageAdapter,
 )
-from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
 from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
@@ -55,30 +77,79 @@ from tools.eos.security.institutional_signature_evidence_registry import (
     InstitutionalSignatureEvidenceError,
     InstitutionalSignatureEvidenceRegistry,
 )
+from tools.eos.saas.hr.headcount_requisition_registry import (
+    COLLECTION as HEADCOUNT_COLLECTION,
+    EVENT_COLLECTION as HEADCOUNT_EVENT_COLLECTION,
+    HeadcountRequisitionNotFound,
+    HeadcountRequisitionRegistry,
+    HeadcountRequisitionRegistryError,
+)
 from tools.eos.saas.hr.hiring_lifecycle_registry import (
     CANDIDATE_COLLECTION, OFFER_COLLECTION, EVENT_COLLECTION,
-    HiringLifecycleRegistry, HiringLifecycleNotFound,
-    HiringLifecycleRegistryConflict, HiringLifecycleRegistryError,
+    MAX_PAGE_LIMIT, MAX_PAGE_OFFSET, HiringLifecycleRegistry,
+    HiringLifecycleNotFound, HiringLifecycleRegistryConflict,
+    HiringLifecycleRegistryError,
 )
 
+VERSION = "v1.6.0-SAFE-MY-WORK-PROJECTION"
 router = APIRouter(prefix="/hr/hiring", tags=["Hiring Lifecycle"])
-_CANDIDATE_READ = RequireTenantAuthorization("hr:hiring_candidate:read", "hr_hiring_candidate_read")
-_CANDIDATE_CREATE = RequireTenantAuthorization("hr:hiring_candidate:create", "hr_hiring_candidate_create")
-_CANDIDATE_TRANSITION = RequireTenantAuthorization("hr:hiring_candidate:transition", "hr_hiring_candidate_transition")
-_OFFER_READ = RequireTenantAuthorization("hr:hiring_offer:read", "hr_hiring_offer_read")
-_OFFER_CREATE = RequireTenantAuthorization("hr:hiring_offer:create", "hr_hiring_offer_create")
-_OFFER_SUBMIT = RequireTenantAuthorization("hr:hiring_offer:submit", "hr_hiring_offer_submit")
-_OFFER_DECIDE = RequireTenantAuthorization("hr:hiring_offer:decide", "hr_hiring_offer_decide")
-_OFFER_SEND = RequireTenantAuthorization("hr:hiring_offer:send", "hr_hiring_offer_send")
+_CANDIDATE_READ = RequireTenantAuthorization(
+    "hr:hiring_candidate:read", "hr_hiring_candidate_read",
+    platform_employer_permission_id="platform_employer:hiring_candidate:read",
+    platform_employer_operation="platform_employer_hiring_candidate_read",
+)
+_CANDIDATE_CREATE = RequireTenantAuthorization(
+    "hr:hiring_candidate:create", "hr_hiring_candidate_create",
+    platform_employer_permission_id="platform_employer:hiring_candidate:create",
+    platform_employer_operation="platform_employer_hiring_candidate_create",
+)
+_CANDIDATE_TRANSITION = RequireTenantAuthorization(
+    "hr:hiring_candidate:transition", "hr_hiring_candidate_transition",
+    platform_employer_permission_id="platform_employer:hiring_candidate:transition",
+    platform_employer_operation="platform_employer_hiring_candidate_transition",
+)
+_OFFER_READ = RequireTenantAuthorization(
+    "hr:hiring_offer:read", "hr_hiring_offer_read",
+    platform_employer_permission_id="platform_employer:hiring_offer:read",
+    platform_employer_operation="platform_employer_hiring_offer_read",
+)
+_OFFER_CREATE = RequireTenantAuthorization(
+    "hr:hiring_offer:create", "hr_hiring_offer_create",
+    platform_employer_permission_id="platform_employer:hiring_offer:create",
+    platform_employer_operation="platform_employer_hiring_offer_create",
+)
+_OFFER_SUBMIT = RequireTenantAuthorization(
+    "hr:hiring_offer:submit", "hr_hiring_offer_submit",
+    platform_employer_permission_id="platform_employer:hiring_offer:submit",
+    platform_employer_operation="platform_employer_hiring_offer_submit",
+)
+_OFFER_DECIDE = RequireTenantAuthorization(
+    "hr:hiring_offer:decide", "hr_hiring_offer_decide",
+    platform_employer_permission_id="platform_employer:hiring_offer:decide",
+    platform_employer_operation="platform_employer_hiring_offer_decide",
+)
+_OFFER_SEND = RequireTenantAuthorization(
+    "hr:hiring_offer:send", "hr_hiring_offer_send",
+    platform_employer_permission_id="platform_employer:hiring_offer:send",
+    platform_employer_operation="platform_employer_hiring_offer_send",
+)
 _OFFER_ACCEPT = RequireTenantAuthorization("hr:hiring_offer:accept", "hr_hiring_offer_accept")
-_OFFER_SIGN = RequireTenantAuthorization("hr:hiring_offer:sign", "hr_hiring_offer_sign")
+_OFFER_SIGN = RequireTenantAuthorization(
+    "hr:hiring_offer:sign", "hr_hiring_offer_sign",
+    platform_employer_permission_id="platform_employer:hiring_offer:sign",
+    platform_employer_operation="platform_employer_hiring_offer_sign",
+)
 
 
 class StrictModel(BaseModel):
+    """Reject undeclared command fields at authenticated hiring boundaries."""
+
     model_config = ConfigDict(extra="forbid")
 
 
 class CandidateCreate(StrictModel):
+    """Canonical candidate creation input; tenant and actor come from EOS context."""
+
     candidate_id: str = Field(min_length=1, max_length=180)
     requisition_id: str = Field(min_length=1, max_length=180)
     candidate_profile_reference: str = Field(min_length=1, max_length=240)
@@ -86,14 +157,21 @@ class CandidateCreate(StrictModel):
 
 
 class CandidateTransition(StrictModel):
+    """Evidence-backed candidate transition with optimistic revision control."""
+
     expected_revision: int = Field(ge=1, strict=True)
     target_stage: CandidateStage
     reason: str = Field(min_length=1, max_length=2000)
-    evidence_reference: str = Field(min_length=1, max_length=240)
+    evidence_reference: str = Field(
+        min_length=1, max_length=240,
+        pattern=r"^candidate-evidence://[A-Za-z0-9][A-Za-z0-9._:-]{0,255}/[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$",
+    )
     evidence_fingerprint: str = Field(pattern=r"^[0-9a-f]{128}$")
 
 
 class OfferCreate(StrictModel):
+    """Offer preparation input; approval and acceptance remain separate commands."""
+
     offer_id: str = Field(min_length=1, max_length=180)
     candidate_id: str = Field(min_length=1, max_length=180)
     requisition_id: str = Field(min_length=1, max_length=180)
@@ -108,12 +186,16 @@ class OfferCreate(StrictModel):
 
 
 class OfferDecisionRequest(StrictModel):
+    """Independent offer decision input bound to the expected revision."""
+
     expected_revision: int = Field(ge=1, strict=True)
     approved: bool
     reason: str = Field(min_length=1, max_length=2000)
 
 
 class OfferSignatureManifestRequest(StrictModel):
+    """Exact signed-offer evidence reference used for signing and verification."""
+
     expected_revision: int = Field(ge=1, strict=True)
     evidence_reference: str = Field(min_length=1, max_length=240)
     evidence_fingerprint: str = Field(pattern=r"^[0-9a-f]{128}$")
@@ -121,6 +203,8 @@ class OfferSignatureManifestRequest(StrictModel):
 
 
 class OfferAcceptanceRequest(OfferSignatureManifestRequest):
+    """Candidate-consent evidence; this request never admits an employee or IAM principal."""
+
     accepted_at: datetime
     signer_certificate_pem_base64: str = Field(min_length=1, max_length=65536)
     intermediate_certificate_pems_base64: list[Annotated[str, Field(min_length=1, max_length=65536)]] = Field(min_length=1, max_length=8)
@@ -150,6 +234,7 @@ def _signed_offer_manifest(*, tenant_id: str, offer: EmploymentOffer, evidence: 
 
 
 def _registry(db: Any) -> HiringLifecycleRegistry:
+    """Compose canonical lifecycle collections with majority read/write concern."""
     opts = {"write_concern": WriteConcern(w="majority", j=True), "read_concern": ReadConcern("majority")}
     return HiringLifecycleRegistry(
         db.get_collection(CANDIDATE_COLLECTION, **opts),
@@ -159,6 +244,11 @@ def _registry(db: Any) -> HiringLifecycleRegistry:
 
 
 def _transaction(callback):
+    """Run one registry operation in the existing caller-owned snapshot transaction.
+
+    This boundary ensures indexes before use, translates persistence failures to
+    stable HTTP outcomes, and never converts an unavailable read into empty data.
+    """
     client, db = get_client(), get_database()
     if client is None or db is None:
         raise HTTPException(status_code=503, detail="HIRING_DATABASE_UNAVAILABLE")
@@ -206,13 +296,102 @@ def _transaction(callback):
 
 
 def _command_fingerprint(*, tenant_id: str, actor_id: str, aggregate_id: str, action: str, payload: dict[str, Any]) -> str:
+    """Fingerprint the exact tenant, actor, aggregate, action, and command payload."""
     canonical = json.dumps({"tenant_id": tenant_id, "actor_id": actor_id, "aggregate_id": aggregate_id, "action": action, "payload": payload}, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha3_512(canonical.encode("utf-8")).hexdigest()
 
 
 def _idempotent_id(tenant_id: str, key: str, prefix: str) -> str:
+    """Derive a stable opaque decision identifier from tenant-scoped input."""
     digest = hashlib.sha3_256(f"{tenant_id}:{key}".encode()).hexdigest()[:24].upper()
     return f"{prefix}-{digest}"
+
+
+def _project_my_work(
+    *,
+    tenant_id: str,
+    principal_id: str,
+    may_submit: bool,
+    may_decide: bool,
+    may_send: bool,
+    now: datetime,
+) -> dict[str, object]:
+    """Return source-owned, non-sensitive pending offer actions only.
+
+    The aggregate must independently admit the offer read capability and each
+    action capability before invoking this private adapter. The lifecycle owner
+    reads its own snapshot transaction and returns opaque action identities and
+    lifecycle state only; candidate identifiers, profile references, offer
+    terms, remuneration, evidence and actor identities never cross into My
+    Work. Candidate transitions are intentionally absent because the current
+    domain has no authenticated-principal action assignment. Offer commands
+    retain authoritative status, revision, maker-checker and evidence checks.
+    """
+    if not isinstance(principal_id, str) or not principal_id.strip():
+        raise HTTPException(status_code=503, detail="HIRING_MY_WORK_SCOPE_INVALID")
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
+        raise HTTPException(status_code=503, detail="HIRING_MY_WORK_CLOCK_INVALID")
+
+    def read(registry: HiringLifecycleRegistry, session: Any) -> dict[str, object]:
+        items: list[dict[str, object]] = []
+        offset = 0
+        total: int | None = None
+        while total is None or offset < total:
+            page, page_total = registry.list_offers(
+                tenant_id=tenant_id,
+                limit=MAX_PAGE_LIMIT,
+                offset=offset,
+                session=session,
+            )
+            if total is None:
+                total = page_total
+            elif page_total != total:
+                raise HTTPException(status_code=503, detail="HIRING_MY_WORK_SNAPSHOT_INCONSISTENT")
+            for value in page:
+                if (
+                    may_submit
+                    and value.status is OfferStatus.DRAFT
+                    and value.prepared_by_principal_id == principal_id
+                ):
+                    items.append({
+                        "work_item_id": f"OFFER:{value.offer_id}:SUBMIT",
+                        "title": "Submit employment offer",
+                        "status": "PENDING_ACTION",
+                        "priority": "NORMAL",
+                        "kind": "HR_OFFER_SUBMIT",
+                    })
+                elif (
+                    may_decide
+                    and value.status is OfferStatus.SUBMITTED
+                    and value.prepared_by_principal_id != principal_id
+                ):
+                    items.append({
+                        "work_item_id": f"OFFER:{value.offer_id}:DECIDE",
+                        "title": "Independently decide employment offer",
+                        "status": "PENDING_ACTION",
+                        "priority": "HIGH",
+                        "kind": "HR_OFFER_DECISION",
+                    })
+                elif (
+                    may_send
+                    and value.status is OfferStatus.APPROVED
+                    and value.terms.expires_at > now
+                ):
+                    items.append({
+                        "work_item_id": f"OFFER:{value.offer_id}:SEND",
+                        "title": "Send approved employment offer",
+                        "status": "PENDING_ACTION",
+                        "priority": "HIGH",
+                        "kind": "HR_OFFER_SEND",
+                    })
+            offset += len(page)
+            if not page and offset < (total or 0):
+                raise HTTPException(status_code=503, detail="HIRING_MY_WORK_PAGE_INCOMPLETE")
+            if offset > MAX_PAGE_OFFSET:
+                raise HTTPException(status_code=503, detail="HIRING_MY_WORK_BOUND_EXCEEDED")
+        return {"tenant_id": tenant_id, "items": items}
+
+    return _transaction(read)
 
 
 @router.post("/candidates", status_code=201)
@@ -221,6 +400,30 @@ async def create_candidate(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_CANDIDATE_CREATE),
 ):
+    """Create a candidate only for an approved requisition in the exact tenant.
+
+    The headcount registry is read inside the same snapshot transaction as the
+    candidate write. This prevents an unapproved or cross-tenant requisition ID
+    from creating a candidate lifecycle record.
+    """
+    database = get_database()
+    if database is None:
+        raise HTTPException(status_code=503, detail="HIRING_DATABASE_UNAVAILABLE")
+    headcount_current = database.get_collection(
+        HEADCOUNT_COLLECTION,
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    headcount_events = database.get_collection(
+        HEADCOUNT_EVENT_COLLECTION,
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    try:
+        HeadcountRequisitionRegistry.ensure_indexes(headcount_current, headcount_events)
+    except HeadcountRequisitionRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    headcount_registry = HeadcountRequisitionRegistry(headcount_current, headcount_events)
     now = datetime.now(timezone.utc)
     value = CandidateApplication(
         tenant_id=context.tenant_id, candidate_id=body.candidate_id,
@@ -229,14 +432,54 @@ async def create_candidate(
         source=body.source, created_by_principal_id=context.identity.identity_id,
         created_at=now,
     )
-    return _transaction(lambda registry, tx: registry.create_candidate(
-        value, actor_principal_id=context.identity.identity_id,
-        occurred_at=now, session=tx, idempotency_key=idempotency_key,
-    )).to_dict()
+
+    def command(registry: HiringLifecycleRegistry, tx: Any) -> CandidateApplication:
+        try:
+            requisition = headcount_registry.get(
+                tenant_id=context.tenant_id,
+                requisition_id=body.requisition_id,
+                session=tx,
+            )
+        except HeadcountRequisitionNotFound as error:
+            raise HTTPException(
+                status_code=409,
+                detail="HIRING_APPROVED_REQUISITION_REQUIRED",
+            ) from error
+        if requisition.status is not RequisitionStatus.APPROVED:
+            raise HTTPException(
+                status_code=409,
+                detail="HIRING_APPROVED_REQUISITION_REQUIRED",
+            )
+        return registry.create_candidate(
+            value, actor_principal_id=context.identity.identity_id,
+            occurred_at=now, session=tx, idempotency_key=idempotency_key,
+        )
+
+    return _transaction(command).to_dict()
+
+
+@router.get("/candidates")
+async def list_candidates(
+    limit: int = Query(default=50, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
+    context: TenantAuthorizationContext = Depends(_CANDIDATE_READ),
+):
+    """Read one bounded candidate page for the exact authorized tenant."""
+    items, total = _transaction(lambda registry, tx: registry.list_candidates(
+        tenant_id=context.tenant_id, limit=limit, offset=offset, session=tx,
+    ))
+    return {
+        "items": [item.to_dict() for item in items],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "hasMore": offset + len(items) < total,
+    }
 
 
 @router.get("/candidates/{candidate_id}")
 async def read_candidate(candidate_id: str, context: TenantAuthorizationContext = Depends(_CANDIDATE_READ)):
+    """Read one candidate only within the authenticated tenant."""
     return _transaction(lambda registry, tx: registry.get_candidate(
         tenant_id=context.tenant_id, candidate_id=candidate_id, session=tx,
     )).to_dict()
@@ -248,13 +491,57 @@ async def transition_candidate(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_CANDIDATE_TRANSITION),
 ):
+    """Advance a candidate only with matching immutable, tenant-scoped evidence custody.
+
+    The evidence record is resolved by exact tenant, candidate, evidence ID and
+    version inside the same snapshot transaction as candidate stage persistence.
+    Missing, cross-candidate, wrong-kind or digest-mismatched evidence is exposed
+    as one non-disclosing command conflict.
+    """
     now = datetime.now(timezone.utc)
+    database = get_database()
+    if database is None:
+        raise HTTPException(status_code=503, detail="HIRING_DATABASE_UNAVAILABLE")
+    collection_options = {
+        "write_concern": WriteConcern(w="majority", j=True),
+        "read_concern": ReadConcern("majority"),
+    }
+    evidence_registry = CandidateEvidenceRegistry(
+        database.get_collection(CANDIDATE_EVIDENCE_COLLECTION, **collection_options),
+        database.get_collection(CANDIDATE_EVIDENCE_EVENT_COLLECTION, **collection_options),
+    )
+    evidence_identity = body.evidence_reference.removeprefix("candidate-evidence://")
+    evidence_id, separator, evidence_version_id = evidence_identity.partition("/")
+    if not separator or not evidence_id or not evidence_version_id:
+        raise HTTPException(status_code=422, detail="CANDIDATE_EVIDENCE_REFERENCE_INVALID")
+
     def command(registry, tx):
         command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=candidate_id, action=f"CANDIDATE_{body.target_stage.value}", payload=body.model_dump(mode="json"))
         replay = registry.get_transition_replay(tenant_id=context.tenant_id, aggregate_type="CANDIDATE", aggregate_id=candidate_id, action=f"CANDIDATE_{body.target_stage.value}", idempotency_key=idempotency_key, command_fingerprint=command_hash, session=tx)
         if replay is not None:
             return replay
         current = registry.get_candidate(tenant_id=context.tenant_id, candidate_id=candidate_id, session=tx)
+        try:
+            source_evidence = evidence_registry.get(
+                tenant_id=context.tenant_id, candidate_id=candidate_id,
+                evidence_id=evidence_id, evidence_version_id=evidence_version_id,
+                session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(
+                status_code=409,
+                detail="CANDIDATE_TRANSITION_VERIFIED_EVIDENCE_REQUIRED",
+            ) from error
+        if (
+            source_evidence.evidence_kind is not CandidateEvidenceKind.CANDIDATE_PROFILE
+            or not hmac.compare_digest(
+                source_evidence.content_digest_sha3_512, body.evidence_fingerprint,
+            )
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="CANDIDATE_TRANSITION_VERIFIED_EVIDENCE_REQUIRED",
+            )
         evidence = CandidateStageEvidence(
             actor_principal_id=context.identity.identity_id,
             target_stage=body.target_stage, reason=body.reason,
@@ -278,6 +565,7 @@ async def create_offer(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_CREATE),
 ):
+    """Prepare an offer only for a selected candidate in the same tenant."""
     now = datetime.now(timezone.utc)
     def command(registry, tx):
         candidate = registry.get_candidate(tenant_id=context.tenant_id, candidate_id=body.candidate_id, session=tx)
@@ -302,8 +590,28 @@ async def create_offer(
     return _transaction(command).to_dict()
 
 
+@router.get("/offers")
+async def list_offers(
+    limit: int = Query(default=50, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
+    context: TenantAuthorizationContext = Depends(_OFFER_READ),
+):
+    """Read one bounded, offer-authorized page for the exact tenant."""
+    items, total = _transaction(lambda registry, tx: registry.list_offers(
+        tenant_id=context.tenant_id, limit=limit, offset=offset, session=tx,
+    ))
+    return {
+        "items": [item.to_dict() for item in items],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "hasMore": offset + len(items) < total,
+    }
+
+
 @router.get("/offers/{offer_id}")
 async def read_offer(offer_id: str, context: TenantAuthorizationContext = Depends(_OFFER_READ)):
+    """Read one offer, including terms, only within the authenticated tenant."""
     return _transaction(lambda registry, tx: registry.get_offer(
         tenant_id=context.tenant_id, offer_id=offer_id, session=tx,
     )).to_dict()
@@ -315,6 +623,7 @@ async def submit_offer(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_SUBMIT),
 ):
+    """Submit one prepared offer for independent approval."""
     now = datetime.now(timezone.utc)
     def command(registry, tx):
         command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SUBMITTED", payload={"expected_revision": expected_revision})
@@ -338,6 +647,7 @@ async def decide_offer(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_DECIDE),
 ):
+    """Approve or reject an offer under the separate decision capability."""
     now = datetime.now(timezone.utc)
     def command(registry, tx):
         action = "OFFER_APPROVED" if body.approved else "OFFER_REJECTED"
@@ -368,6 +678,7 @@ async def send_offer(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_SEND),
 ):
+    """Send only an independently approved offer at the expected revision."""
     now = datetime.now(timezone.utc)
     def command(registry, tx):
         command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SENT", payload={"expected_revision": expected_revision})
@@ -469,6 +780,7 @@ async def get_offer_signature_manifest(
     body: OfferSignatureManifestRequest,
     context: TenantAuthorizationContext = Depends(_OFFER_SIGN),
 ):
+    """Return the canonical signature manifest for exact approved offer evidence."""
     if context.tenant_id != INSTITUTIONAL_TENANT_ID:
         raise HTTPException(status_code=403, detail="INSTITUTIONAL_PKI_TENANT_SCOPE_INVALID")
 
@@ -513,195 +825,32 @@ async def get_offer_signature_manifest(
     return _transaction(query)
 
 
-@router.post("/offers/{offer_id}/accept")
+@router.post("/offers/{offer_id}/accept", status_code=503)
 async def accept_offer(
     offer_id: str, body: OfferAcceptanceRequest, request: Request,
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_ACCEPT),
 ):
-    if context.tenant_id != INSTITUTIONAL_TENANT_ID:
-        raise HTTPException(status_code=403, detail="INSTITUTIONAL_PKI_TENANT_SCOPE_INVALID")
-    action = "OFFER_ACCEPTED_CONSENT_ONLY"
-    command_hash = _command_fingerprint(
-        tenant_id=context.tenant_id, actor_id=context.identity.identity_id,
-        aggregate_id=offer_id, action=action, payload=body.model_dump(mode="json"),
+    """Fail closed until a governed source binds the candidate identity to the signer.
+
+    Authorization still runs through the existing exact-tenant EOS capability.
+    The handler deliberately performs no offer/evidence lookup, PKI verification,
+    audit write, lifecycle transition, or employee/IAM mutation because current
+    institutional signatory enrollment is not proof of candidate identity.
+    """
+    raise HTTPException(
+        status_code=503,
+        detail="CANDIDATE_IDENTITY_BINDING_UNAVAILABLE",
     )
 
-    # Replays of committed commands do not become unavailable when a later CRL
-    # expires. Every new acceptance must pass fresh live verification.
-    def preflight(registry, tx):
-        replay = registry.get_transition_replay(
-            tenant_id=context.tenant_id, aggregate_type="OFFER",
-            aggregate_id=offer_id, action=action,
-            idempotency_key=idempotency_key, command_fingerprint=command_hash,
-            session=tx,
-        )
-        if replay is not None:
-            return {"replay": replay}
-        current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
-        database = get_database()
-        if database is None:
-            raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_DATABASE_UNAVAILABLE")
-        evidence_registry = CandidateEvidenceRegistry(
-            database[CANDIDATE_EVIDENCE_COLLECTION],
-            database[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
-        )
-        try:
-            signed_offer = evidence_registry.get(
-                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
-                evidence_id=body.evidence_reference,
-                evidence_version_id=body.evidence_version_id, session=tx,
-            )
-        except CandidateEvidenceRegistryNotFound as error:
-            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CUSTODY_REQUIRED") from error
-        if (
-            current.status is not OfferStatus.SENT
-            or current.revision != body.expected_revision
-            or signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
-            or signed_offer.offer_id != offer_id
-            or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
-        ):
-            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_INVALID")
-        return {"offer": current, "evidence": signed_offer}
 
-    observed = _transaction(preflight)
-    if "replay" in observed:
-        return observed["replay"].to_dict()
-
-    if getattr(request.app.state, "institutional_pki_ready", False) is not True:
-        raise HTTPException(status_code=503, detail="INSTITUTIONAL_PKI_NOT_READY")
-    verifier = getattr(request.app.state, "institutional_pki_verifier", None)
-    if not isinstance(verifier, InstitutionalPKIVerifier):
-        raise HTTPException(status_code=503, detail="INSTITUTIONAL_PKI_VERIFIER_UNAVAILABLE")
-
-    bucket = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_BUCKET", "").strip()
-    region = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_REGION", "").strip()
-    kms_key_id = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_KMS_KEY_ID", "").strip()
-    if not bucket or not region or not kms_key_id:
-        raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_PROVIDER_NOT_CONFIGURED")
-    try:
-        storage = CandidateEvidenceS3StorageAdapter(
-            CandidateEvidenceS3Configuration(bucket=bucket, region=region, kms_key_id=kms_key_id),
-            client=boto3.client("s3", region_name=region),
-        )
-        # The adapter streams the exact S3 object version, verifies KMS metadata,
-        # length and SHA3-512, and returns only after the entire object is checked.
-        with storage.read_verified_object(observed["evidence"]):
-            pass
-        signed_payload = _signed_offer_manifest(
-            tenant_id=context.tenant_id,
-            offer=observed["offer"],
-            evidence=observed["evidence"],
-        )
-        leaf_pem = base64.b64decode(body.signer_certificate_pem_base64, validate=True)
-        intermediate_pems = tuple(base64.b64decode(value, validate=True) for value in body.intermediate_certificate_pems_base64)
-        signature = base64.b64decode(body.detached_signature_base64, validate=True)
-        if not leaf_pem or any(not value for value in intermediate_pems) or not signature:
-            raise ValueError("empty cryptographic input")
-        verification = verifier.verify_signed_payload(
-            leaf_pem=leaf_pem,
-            intermediate_pems=intermediate_pems,
-            signed_payload=signed_payload,
-            signature=signature,
-            verified_at=datetime.now(timezone.utc),
-        )
-    except HTTPException:
-        raise
-    except (binascii.Error, ValueError) as error:
-        raise HTTPException(status_code=422, detail="INSTITUTIONAL_SIGNATURE_INPUT_INVALID") from error
-    except InstitutionalPKIError as error:
-        status = 409 if error.code in {
-            "INSTITUTIONAL_PKI_CERTIFICATE_REVOKED",
-            "INSTITUTIONAL_PKI_DOCUMENT_SIGNATURE_INVALID",
-            "INSTITUTIONAL_PKI_CERTIFICATE_OUTSIDE_VALIDITY",
-        } else 503 if "CRL" in error.code or "UNAVAILABLE" in error.code else 422
-        raise HTTPException(status_code=status, detail=error.code) from error
-    except CandidateEvidenceS3Error as error:
-        raise HTTPException(status_code=503, detail=error.code) from error
-    except Exception as error:
-        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNATURE_VERIFICATION_UNAVAILABLE") from error
-
-    def command(registry, tx):
-        replay = registry.get_transition_replay(
-            tenant_id=context.tenant_id, aggregate_type="OFFER",
-            aggregate_id=offer_id, action=action,
-            idempotency_key=idempotency_key, command_fingerprint=command_hash,
-            session=tx,
-        )
-        if replay is not None:
-            return replay
-        current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
-        database = get_database()
-        if database is None:
-            raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_DATABASE_UNAVAILABLE")
-        evidence_registry = CandidateEvidenceRegistry(
-            database[CANDIDATE_EVIDENCE_COLLECTION],
-            database[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
-        )
-        signed_offer = evidence_registry.get(
-            tenant_id=context.tenant_id, candidate_id=current.candidate_id,
-            evidence_id=body.evidence_reference,
-            evidence_version_id=body.evidence_version_id, session=tx,
-        )
-        if (
-            signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
-            or signed_offer.offer_id != offer_id
-            or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
-            or signed_offer.fingerprint != observed["evidence"].fingerprint
-            or current.revision != observed["offer"].revision
-            or current.fingerprint != observed["offer"].fingerprint
-            or current.status is not OfferStatus.SENT
-        ):
-            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_CHANGED")
-        signer_registry = InstitutionalSignerEnrollmentRegistry(
-            database[INSTITUTIONAL_SIGNER_COLLECTION],
-            database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
-        )
-        signer_registry.require_active(
-            tenant_id=context.tenant_id,
-            certificate_fingerprint_sha256=verification.certificate_verification.leaf_fingerprint_sha256,
-            certificate_serial_number_hex=verification.certificate_verification.serial_number_hex,
-            issuer_subject_sha256=verification.certificate_verification.issuer_subject_sha256,
-            trust_root_sha256=verification.certificate_verification.root_fingerprint_sha256,
-            session=tx,
-        )
-        signature_registry = InstitutionalSignatureEvidenceRegistry(
-            database[INSTITUTIONAL_SIGNATURE_COLLECTION],
-            database[INSTITUTIONAL_SIGNATURE_EVENT_COLLECTION],
-        )
-        signature_registry.record_verified(
-            tenant_id=context.tenant_id,
-            offer_id=offer_id,
-            candidate_id=current.candidate_id,
-            evidence_id=body.evidence_reference,
-            evidence_version_id=body.evidence_version_id,
-            evidence_digest_sha3_512=signed_offer.content_digest_sha3_512,
-            signed_manifest_digest_sha3_512=verification.payload_digest_sha3_512,
-            signer_certificate_sha256=verification.certificate_verification.leaf_fingerprint_sha256,
-            signer_serial_number_hex=verification.certificate_verification.serial_number_hex,
-            trust_root_sha256=verification.certificate_verification.root_fingerprint_sha256,
-            signature_sha256=verification.signature_fingerprint_sha256,
-            signature_algorithm=verification.signature_algorithm,
-            pki_verification_fingerprint=verification.verification_fingerprint,
-            verified_at=verification.certificate_verification.verified_at,
-            actor_principal_id=context.identity.identity_id,
-            idempotency_key=f"offer-accept:{context.tenant_id}:{offer_id}:{body.evidence_version_id}",
-            session=tx,
-        )
-        updated = current.accept(OfferAcceptanceEvidence(
-            evidence_reference=body.evidence_reference,
-            evidence_fingerprint=body.evidence_fingerprint,
-            accepted_at=body.accepted_at,
-        ), expected_revision=body.expected_revision)
-        return registry.transition_offer(
-            current=current, updated=updated, actor_principal_id=context.identity.identity_id,
-            action=action, occurred_at=datetime.now(timezone.utc),
-            expected_revision=body.expected_revision, session=tx,
-            idempotency_key=idempotency_key,
-            command_fingerprint=command_hash,
-        )
-
-    return _transaction(command).to_dict()
+__all__ = ["VERSION", "router"]
 
 
-__all__ = ["router"]
+# ARTIFACT: tools/eos/api/hiring_lifecycle_router.py
+# VERSION: v1.6.0-SAFE-MY-WORK-PROJECTION
+# AUTHORITY BOUNDARY: Existing exact-tenant EOS capabilities authorize each route; employer pairs are canonical-WILSY-only, while customer HR also requires active HR entitlement.
+# TENANT POSTURE: Read and command context is authenticated; tenant inputs are not caller-controlled.
+# FAIL-CLOSED POSTURE: Candidate transitions require same-tenant digest-bound custody; offer acceptance returns CANDIDATE_IDENTITY_BINDING_UNAVAILABLE before database or PKI work until identity proofing is governed.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no payment or settlement route is exposed.
+# END OF WILSY OS SOVEREIGN ARTIFACT

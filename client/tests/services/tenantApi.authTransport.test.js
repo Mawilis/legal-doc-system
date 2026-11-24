@@ -1,14 +1,17 @@
 /**
  * TITLE: Canonical Tenant Transport Certificate
- * VERSION: v1.0.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT
+ * VERSION: v1.1.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves tenant operations share the AuthProvider-owned HTTP client,
  *          preserve its bearer, and fail closed on authentication responses.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/services/tenantApi.authTransport.test.js
  * COLLABORATION / OWNERSHIP: TenantApiClient and AuthProvider browser contract.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
- * CHANGELOG: v1.0.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT — Initial focused
- *            canonical transport and retry-boundary certificate.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG:
+ *   v1.1.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY-CERT — Proves global tenant listing,
+ *     creation, and suspension reject before making any authenticated transport call.
+ *   v1.0.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT — Initial focused canonical
+ *     transport and retry-boundary certificate.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic bearer only; no live credentials.
  * TENANT BOUNDARY: Requests remain tenant-scoped by the canonical API client.
@@ -36,6 +39,8 @@ import { TenantApiClient } from '../../src/services/api/tenantApi.js';
 describe('canonical tenant authenticated transport', () => {
   beforeEach(() => {
     api.get.mockReset();
+    api.post.mockReset();
+    api.patch.mockReset();
     api.defaults.headers.common = { Authorization: 'Bearer mfa-session-token' };
   });
 
@@ -59,6 +64,22 @@ describe('canonical tenant authenticated transport', () => {
     expect(api.get).toHaveBeenCalledTimes(1);
   });
 
+
+  it.each([
+    ['tenant directory read', (client) => client.getTenants()],
+    ['tenant creation', (client) => client.createTenant({ alias: 'untrusted' })],
+    ['tenant suspension', (client) => client.suspendTenant('TENANT-B', 'untrusted')],
+  ])('denies %s before transport while governed C2 is unavailable', async (_label, invoke) => {
+    const client = new TenantApiClient({ retryCount: 0 });
+
+    await expect(invoke(client)).rejects.toMatchObject({
+      code: 'GOVERNED_C2_CAPABILITY_REQUIRED',
+    });
+    expect(api.get).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('retries one bounded transient 5xx response', async () => {
     vi.useFakeTimers();
     api.get
@@ -76,10 +97,10 @@ describe('canonical tenant authenticated transport', () => {
 
 /**
  * ARTIFACT: client/tests/services/tenantApi.authTransport.test.js
- * VERSION: v1.0.0-R1D-B0F-B4-R3-CANONICAL-TRANSPORT-CERT
+ * VERSION: v1.1.0-GOVERNED-C2-TENANT-LIFECYCLE-DENY-CERT
  * AUTHORITY BOUNDARY: canonical transport behavior only
  * TENANT POSTURE: no cross-tenant authority is inferred by the adapter
- * FAIL-CLOSED POSTURE: 401/403 responses are terminal and never retried
+ * FAIL-CLOSED POSTURE: global list/create/suspend reject before transport pending governed C2; 401/403 are terminal
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

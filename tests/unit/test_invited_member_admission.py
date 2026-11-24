@@ -1,13 +1,15 @@
 """WILSY OS — unit certificate for invited-member admission.
 
 TITLE: Invited-member admission authority unit certificate
-VERSION: v1.0.0-WILSY-F1C2B-A3
+VERSION: v1.1.0-EXISTING-MEMBER-ROLE-ADMISSION-CERT
 AUTHORITY: Wilsy OS Core Governance
 PURPOSE: Verify fail-closed three-write admission semantics.
 EPITOME: Recipient-bound invitation provenance and atomic orchestration.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_invited_member_admission.py
 COLLABORATION / OWNERSHIP: EOS auth unit certification.
-CERTIFICATION / UPDATE DATE: 2026-09-06
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.1.0-EXISTING-MEMBER-ROLE-ADMISSION-CERT proves accepted
+additional-role admission for ACTIVE members and fail-closed inactive cases.
 CHANGELOG: v1.0.0 establishes A3 unit evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Raw capability remains transient.
@@ -28,6 +30,7 @@ from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.invitation import InvitationAuthority, InvitationStatus
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
+from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 
 class Session:
     def __enter__(self): return self
@@ -51,6 +54,51 @@ def test_success_uses_invitation_role_and_digest(monkeypatch):
     _wire(monkeypatch,inv); result=m.InvitedMemberAdmissionComposition(Client(),*[SimpleNamespace()] * 5).admit(identity=_identity(),invitation_id="i",capability=cap)
     assert result[0].status.value=="ACTIVE" and result[1].role_id=="AUDITOR"
 
+def test_existing_active_member_accepts_a_new_role_without_second_membership(monkeypatch):
+    """A recipient's accepted capability adds only the delegated role."""
+    now = datetime.now(timezone.utc)
+    cap = "recipient-approved-capability"
+    invitation = InvitationAuthority(
+        "i-existing", "tenant", "recipient", "inviter",
+        "PROJECTS_PLATFORM_OWNER", hashlib.sha3_512(cap.encode()).hexdigest(),
+        InvitationStatus.ACTIVE, now + timedelta(hours=1), 0, now,
+    )
+    _wire(monkeypatch, invitation)
+    current = TenantMembershipAuthority("recipient", "tenant", TenantMembershipStatus.ACTIVE, 4)
+    monkeypatch.setattr(m.TenantMembershipRepository, "resolve", lambda *a, **k: current)
+    monkeypatch.setattr(m.TenantMembershipRepository, "insert", lambda *a, **k: pytest.fail("duplicate membership forbidden"))
+    inserted = []
+    monkeypatch.setattr(m.RoleAssignmentRepository, "insert", lambda *a, **k: inserted.append(a[0]))
+    result = m.InvitedMemberAdmissionComposition(Client(), *[SimpleNamespace()] * 5).admit(
+        identity=_identity(), invitation_id="i-existing", capability=cap,
+    )
+    assert result[0] is current
+    assert len(inserted) == 1 and result[1] is inserted[0]
+    assert result[1].role_id == "PROJECTS_PLATFORM_OWNER"
+
+
+@pytest.mark.parametrize("state", [TenantMembershipStatus.SUSPENDED, TenantMembershipStatus.REVOKED])
+def test_existing_inactive_member_cannot_accept_a_role(monkeypatch, state):
+    """Membership suspension or revocation is not silently undone."""
+    now = datetime.now(timezone.utc)
+    cap = "recipient-approved-capability"
+    invitation = InvitationAuthority(
+        "i-inactive", "tenant", "recipient", "inviter",
+        "PROJECTS_PLATFORM_OWNER", hashlib.sha3_512(cap.encode()).hexdigest(),
+        InvitationStatus.ACTIVE, now + timedelta(hours=1), 0, now,
+    )
+    _wire(monkeypatch, invitation)
+    current = TenantMembershipAuthority("recipient", "tenant", state, 4)
+    monkeypatch.setattr(m.TenantMembershipRepository, "resolve", lambda *a, **k: current)
+    monkeypatch.setattr(m.TenantMembershipRepository, "insert", lambda *a, **k: pytest.fail("membership insert forbidden"))
+    monkeypatch.setattr(m.RoleAssignmentRepository, "insert", lambda *a, **k: pytest.fail("role insert forbidden"))
+    monkeypatch.setattr(m.InvitationRepository, "consume", lambda *a, **k: pytest.fail("invitation consumption forbidden"))
+    with pytest.raises(m.InvitedMemberAdmissionError, match="MEMBERSHIP_NOT_ACTIVE"):
+        m.InvitedMemberAdmissionComposition(Client(), *[SimpleNamespace()] * 5).admit(
+            identity=_identity(), invitation_id="i-inactive", capability=cap,
+        )
+
+
 def test_wrong_capability_denied_before_writes(monkeypatch):
     now=datetime.now(timezone.utc); inv=InvitationAuthority("i","tenant","recipient","inviter","AUDITOR","0"*128,InvitationStatus.ACTIVE,now+timedelta(hours=1),0,now); _wire(monkeypatch,inv)
     with pytest.raises(m.InvitedMemberAdmissionError,match="INVALID_CAPABILITY"): m.InvitedMemberAdmissionComposition(Client(),*[SimpleNamespace()] * 5).admit(identity=_identity(),invitation_id="i",capability="bad")
@@ -69,8 +117,9 @@ def test_raw_capability_digest_is_lowercase_sha3():
     assert hashlib.sha3_512(b"x").hexdigest() == hashlib.sha3_512(b"x").hexdigest()
 
 # ARTIFACT: test_invited_member_admission.py
-# VERSION: v1.0.0-WILSY-F1C2B-A3
+# VERSION: v1.1.0-EXISTING-MEMBER-ROLE-ADMISSION-CERT
 # AUTHORITY BOUNDARY: unit evidence only
+# TENANT POSTURE: recipient-bound invitation and exact tenant membership
 # FAIL-CLOSED POSTURE: malformed authority denies
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

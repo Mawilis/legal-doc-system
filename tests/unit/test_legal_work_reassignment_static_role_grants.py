@@ -1,15 +1,18 @@
 """
 TITLE: WILSY OS P9 Legal Work Reassignment Static Grant RED Certificate
-VERSION: v1.0.0-P9-R22-REASSIGNMENT-STATIC-GRANTS-RED
+VERSION: v1.0.2-P9-R22-REASSIGNMENT-STATIC-GRANTS-CERT
 AUTHORITY: Wilsy OS Core Engineering / Python EOS IAM
 EPITOME:
     Freeze the exact least-privilege static authorization-role matrix
     for later bounded own-tenant Legal work-item reassignment admission.
-ABSOLUTE CANONICAL PATH:
-    tests/unit/test_legal_work_reassignment_static_role_grants.py
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_work_reassignment_static_role_grants.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-19
+CERTIFICATION / UPDATE DATE: 2026-11-11
 CHANGELOG:
+           v1.0.2-P9-R22-REASSIGNMENT-STATIC-GRANTS-CERT records the verified sovereign metadata correction; test and production behavior are unchanged.
+    2026-11-11 v1.0.1-P9-R22-REASSIGNMENT-STATIC-GRANTS-CERT updates the exact
+    current static role-map inventory count while retaining every-role proof
+    that only Legal Attorney and Legal Partner receive reassignment.
     2026-10-19 v1.0.0-P9-R22-REASSIGNMENT-STATIC-GRANTS-RED
     certifies Partner/Attorney-only static policy and every-other-role denial.
 COMPLIANCE: Test-first, exact grant enumeration, no wildcard authority.
@@ -48,7 +51,7 @@ def test_reassignment_static_grant_is_exactly_partner_and_attorney() -> None:
 
 
 def test_every_other_role_excluded_including_enterprise_and_sovereign() -> None:
-    assert len(ROLE_PERMISSIONS_MAP) == 38
+    assert len(ROLE_PERMISSIONS_MAP) == 40
 
     for role, grants in ROLE_PERMISSIONS_MAP.items():
         if role not in ALLOWED_ROLES:
@@ -88,7 +91,7 @@ def test_static_policy_does_not_convert_vocabulary_to_execution_authority() -> N
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_legal_work_reassignment_static_role_grants.py
-# VERSION: v1.0.0-P9-R22-REASSIGNMENT-STATIC-GRANTS-RED
+# VERSION: v1.0.2-P9-R22-REASSIGNMENT-STATIC-GRANTS-CERT
 # AUTHORITY BOUNDARY: static role-grant test only; no actual possession
 # TENANT POSTURE: separately prove exact current tenant membership
 # FAIL-CLOSED POSTURE: all non-Partner/Attorney roles denied

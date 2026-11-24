@@ -1,16 +1,26 @@
 /**
- * WILSY OS — HR Dashboard Authority Boundary Certificate
- *
- * VERSION: v1.0.0-HR-DASHBOARD-AUTHORITY-BOUNDARY-RED
+ * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
+ * VERSION: v1.3.1-HR-STRICT-PAGE-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
- *
- * PURPOSE:
- * Prove that the HR dashboard cannot advertise or invoke HR mutations for
- * which no executable backend authority has been certified.
- *
- * This certificate intentionally begins RED against the current production
- * dashboard. It must become GREEN only by removing/fail-closing stale client
- * capabilities or by separately proving a real authoritative backend contract.
+ * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
+ *          sources as empty success and guards the exact session invalidation boundary.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
+ * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
+ * CERTIFICATION / UPDATE DATE: 2026-11-12
+ * CHANGELOG:
+ *   v1.3.1-HR-STRICT-PAGE-CONTRACT — Aligns the regression assertion with the normalizer that requires source pagination metadata before verification.
+ *   v1.3.0-HR-STRICT-PAGE-CONTRACT — Requires source pagination metadata before a workforce response can become verified data or verified empty.
+ *   v1.2.0-HR-NO-MISSING-METRIC-ZERO — Guards snapshot count and currency formatters against turning missing or invalid values into zero.
+ *   v1.1.0-HR-SESSION-INVALIDATION — Certifies explicit read states, verified-empty rendering, tenant/principal/session scoping, and all-request invalidation after 401.
+ *   v1.0.0-HR-DASHBOARD-AUTHORITY-BOUNDARY-RED — Prevented unsupported HR dashboard
+ *     actions from being presented as executable without Python EOS authority.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Static contract checks contain no credentials or HR
+ *                             payloads and protect against stale cross-scope display.
+ * TENANT BOUNDARY: Dashboard reads require the exact authenticated tenant and principal.
+ * AUTHORITY BOUNDARY: Tests verify presentation and transport contracts only; Python
+ *                     EOS remains the source of authorization and HR business truth.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
  */
 
 import fs from 'node:fs';
@@ -18,17 +28,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
-
-const dashboardPath = path.join(
-  ROOT,
-  'src/components/hr/HrDashboard.jsx',
-);
-
-const servicePath = path.join(
-  ROOT,
-  'src/services/hrService.js',
-);
-
+const dashboardPath = path.join(ROOT, 'src/components/hr/HrDashboard.jsx');
+const servicePath = path.join(ROOT, 'src/services/hrService.js');
 const dashboard = fs.readFileSync(dashboardPath, 'utf8');
 const service = fs.readFileSync(servicePath, 'utf8');
 
@@ -47,6 +48,10 @@ const forbiddenDashboardCalls = [
   'hrService.generatePayslip',
   'hrService.deleteEmployeeWorkLog',
   'hrService.deleteEmployeeRelation',
+  'hrService.getEmployees',
+  'hrService.createEmployee',
+  'hrService.updateEmployee',
+  'hrService.deleteEmployee',
 ];
 
 const forbiddenInventedServiceExports = [
@@ -82,13 +87,10 @@ const requiredExistingServiceExports = [
   'getTimeOffRequests',
 ];
 
-describe('HR dashboard authority boundary', () => {
+describe('HR dashboard authority and read-state boundary', () => {
   it('does not call stale or unauthorized HR capabilities', () => {
     for (const symbol of forbiddenDashboardCalls) {
-      expect(
-        dashboard,
-        `dashboard must not invoke ${symbol}`,
-      ).not.toContain(symbol);
+      expect(dashboard, `dashboard must not invoke ${symbol}`).not.toContain(symbol);
     }
   });
 
@@ -97,54 +99,85 @@ describe('HR dashboard authority boundary', () => {
       const declarationPattern = new RegExp(
         `\\bexport\\s+(?:(?:async\\s+)?function|const|let|var)\\s+${symbol}\\b`,
       );
-
-      expect(
-        service,
-        `hrService must not manufacture ${symbol}`,
-      ).not.toMatch(declarationPattern);
+      expect(service, `hrService must not manufacture ${symbol}`).not.toMatch(declarationPattern);
     }
   });
 
-  it('preserves already-existing HR service capabilities', () => {
+  it('preserves existing service exports while keeping their failures transparent', () => {
     for (const symbol of requiredExistingServiceExports) {
-      expect(
-        service,
-        `existing certified HR service capability ${symbol} must remain`,
-      ).toMatch(
-        new RegExp(
-          `export\\s+const\\s+${symbol}\\b`,
-        ),
+      expect(service, `existing service export ${symbol} must remain`).toMatch(
+        new RegExp(`export\\s+const\\s+${symbol}\\b`),
       );
     }
+    expect(service).toContain("createHrTransportError('HR_API_CIRCUIT_OPEN', 503)");
+    expect(service).toContain("createHrTransportError('HR_SOURCE_RESPONSE_INVALID', 502)");
+    expect(service).not.toMatch(/return\s+emptyPage\b/);
+  });
+
+  it('keeps verified data, verified empty, denied, unavailable and authentication states distinct', () => {
+    for (const state of [
+      'VERIFIED_DATA',
+      'VERIFIED_EMPTY',
+      'ACCESS_DENIED',
+      'SOURCE_UNAVAILABLE',
+      'AUTHENTICATION_REQUIRED',
+    ]) {
+      expect(dashboard).toContain(`${state}: '${state}'`);
+    }
+    expect(dashboard).toContain('const verifiedDataset = normalizeDataset(payload)');
+    expect(dashboard).toContain('unavailableReadState(previous[tabName], errorCode)');
+    expect(dashboard).toContain("if (status === 401) return HR_READ_STATE.AUTHENTICATION_REQUIRED");
+    expect(dashboard).toContain("if (status === 403) return HR_READ_STATE.ACCESS_DENIED");
+    expect(dashboard).toContain("if (value === null || value === undefined || value === '') return 'Unavailable'");
+    expect(dashboard).toContain("if (!Number.isFinite(numeric)) return 'Unavailable'");
+    expect(dashboard).toContain('const total = payload.total;');
+    expect(dashboard).toContain('const hasMore = payload.hasMore;');
+    expect(dashboard).not.toContain('payload.total ?? items?.length');
+  });
+
+  it('shows no employees only after a valid authoritative empty workforce response', () => {
+    expect(dashboard).toContain("api.get('/hr/workforce'");
+    expect(dashboard).toContain('activeReadState.status === HR_READ_STATE.VERIFIED_EMPTY && activeDataset.total === 0');
+    expect(dashboard).toContain('No employees recorded.');
+    expect(dashboard).not.toContain('DEFAULT_TENANT_ID');
+    expect(dashboard).not.toContain("'MASTER'");
+  });
+
+  it('clears current HR data and invalidates every pending source read after a 401', () => {
+    expect(dashboard).toContain('invalidatedSessionScopeKeyRef = useRef(null)');
+    expect(dashboard).toContain('invalidatedSessionScopeKeyRef.current === requestedScopeKey');
+    expect(dashboard).toContain('invalidateHrSessionScope(requestedScopeKey, errorCode)');
+    expect(dashboard).toContain('snapshotRequestSequenceRef.current += 1');
+    expect(dashboard).toContain('datasetRequestSequencesRef.current[datasetName] =');
+    expect(dashboard).toContain('setDatasetReadStates(createInitialDatasetReadStates(HR_READ_STATE.AUTHENTICATION_REQUIRED))');
+    expect(dashboard).toContain('setSnapshot(createEmptySnapshot())');
+  });
+
+  it('binds pending reads to exact tenant, principal and authenticated session generation', () => {
+    expect(dashboard).toContain('`${tenantId}\\u001f${principalId}\\u001f${String(auth.sessionGeneration ?? \'\')}`');
+    expect(dashboard).toContain('tenantScopeKeyRef.current !== requestedScopeKey');
+    expect(dashboard).toContain('datasetRequestSequencesRef.current[tabName] !== requestSequence');
   });
 
   it('does not couple HR artifact generation to an uncertified relation write', () => {
-    const artifactStart = dashboard.indexOf(
-      'const generateArtifact = async',
-    );
-
+    const artifactStart = dashboard.indexOf('const generateArtifact = async');
     expect(artifactStart).toBeGreaterThanOrEqual(0);
-
-    const artifactEnd = dashboard.indexOf(
-      'const generatePayslip = async',
-      artifactStart,
-    );
-
+    const artifactEnd = dashboard.indexOf('const generatePayslip = async', artifactStart);
     expect(artifactEnd).toBeGreaterThan(artifactStart);
-
-    const artifactBlock = dashboard.slice(
-      artifactStart,
-      artifactEnd,
-    );
-
-    expect(artifactBlock).not.toContain(
-      'hrService.createEmployeeRelation',
-    );
+    expect(dashboard.slice(artifactStart, artifactEnd)).not.toContain('hrService.createEmployeeRelation');
   });
 
   it('does not advertise executable payslip generation without backend authority', () => {
-    expect(dashboard).not.toContain(
-      'hrService.generatePayslip',
-    );
+    expect(dashboard).not.toContain('hrService.generatePayslip');
   });
 });
+
+/**
+ * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
+ * VERSION: v1.3.1-HR-STRICT-PAGE-CONTRACT
+ * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
+ * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
+ * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

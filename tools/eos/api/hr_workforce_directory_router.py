@@ -1,10 +1,20 @@
-"""Authenticated, least-privilege WILSY workforce directory projection.
-
-This endpoint is read-only. Tenant scope comes exclusively from the canonical
-RequireTenantAuthorization dependency; caller query/body tenant identifiers
-are not accepted. Only directory-safe fields are projected from the existing
-employee registry. Restricted HR, identity, health and financial attributes
-are never returned.
+"""TITLE: WILSY authenticated workforce directory projection.
+VERSION: v1.0.1-PLATFORM-EMPLOYER-DIRECTORY-SCOPE
+AUTHORITY: Existing Python EOS tenant authorization and canonical employee directory read.
+EPITOME: Projects a bounded set of directory-safe employee fields from the
+         existing employees source for authenticated HR or platform-employer
+         viewers, without creating employment or identity authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr_workforce_directory_router.py
+COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/workforce; consumed by Headquarters and HR directory views.
+CERTIFICATION / UPDATE DATE: 2026-11-12.
+CHANGELOG:
+  v1.0.1-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
+  v1.0.0-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Adds canonical WILSY platform-employer read authorization while preserving customer HR entitlement, exact tenant query, bounded projection and read-only behavior.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Tenant scope comes only from EOS authorization; directory fields are projected explicitly and sensitive identity, health and financial attributes are excluded.
+TENANT BOUNDARY: Every read filters the exact authorized tenant; employer alternate permission is selected only for canonical WILSY.
+AUTHORITY BOUNDARY: Customer access requires active HR entitlement and tenant IAM/currentness. WILSY employer access uses its separately assigned platform-employer permission through the same EOS resolver. This route creates no employee, membership, principal, IAM, or entitlement state.
+FINANCIAL AUTHORITY BOUNDARY: No payroll execution, payment, settlement or commercial entitlement authority.
 """
 from __future__ import annotations
 
@@ -24,6 +34,8 @@ router = APIRouter(prefix="/api/hr/workforce", tags=["hr-workforce"])
 _DIRECTORY_AUTHORITY = RequireTenantAuthorization(
     "hr:employee_directory:read",
     "hr_employee_directory_read",
+    platform_employer_permission_id="platform_employer:employee_directory:read",
+    platform_employer_operation="platform_employer_employee_directory_read",
 )
 
 _DIRECTORY_PROJECTION = {
@@ -111,3 +123,12 @@ async def list_workforce_directory(
         "hasMore": offset + len(items) < total,
         "source": "AUTHORISED_HR_EMPLOYEE_REGISTRY",
     }
+
+
+# ARTIFACT: hr_workforce_directory_router.py
+# VERSION: v1.0.1-PLATFORM-EMPLOYER-DIRECTORY-SCOPE
+# AUTHORITY BOUNDARY: Existing EOS tenant authorization gates read-only directory projection; the route grants no employee, principal, membership, IAM, or entitlement authority.
+# TENANT POSTURE: Exact authorized tenant is applied to every employee query; employer alternate pair is canonical-WILSY-only.
+# FAIL-CLOSED POSTURE: Missing database, malformed authorization, or source read failure returns unavailable and never an empty-success projection.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,13 +1,22 @@
 /**
- * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v6.0.4-L10-P2C3-ROLE-QUEUE-TRUTH-CERT
+ * TITLE: WILSY OS Role-Scoped Legal Cockpit Migration Certificate
+ * VERSION: v6.0.7-L10-P2C3-COMPLETE-SOVEREIGN-SEAL
+ * CHANGELOG: v6.0.7-L10-P2C3-COMPLETE-SOVEREIGN-SEAL completes required end-seal metadata without changing certificate behavior.
+ * CHANGELOG: v6.0.6-L10-P2C3-ROLE-QUEUE-TRUTH-SOVEREIGN-METADATA completes artifact boundaries without changing certificate behavior.
+ * CHANGELOG: v6.0.5-L10-P2C3-ROLE-QUEUE-TRUTH-CERT — mocks the current pending Deputy location evidence synchronizer used by LegalDashboard.
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves the canonical LegalDashboard preserves certified
  *          SHERIFF/DEPUTY/LEGAL_CLIENT behavior while adding role-resolved Legal
  *          Practice and Legal Finance workspaces backed only by certified
  *          workspace, finance, intake and ReturnOfService adapter contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-30
+ * COLLABORATION / OWNERSHIP: LegalDashboard role workspaces and client certificate owners.
+ * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic role, tenant and matter fixtures only.
+ * TENANT BOUNDARY: All role fixtures use an explicit server-authorized tenant scope.
+ * AUTHORITY BOUNDARY: Presentation and wiring evidence only; Python EOS owns business authorization.
+ * FINANCIAL AUTHORITY BOUNDARY: Client presentation does not authorize financial execution.
  * CHANGELOG: 2026-10-30 v6.0.4-L10-P2C3-ROLE-QUEUE-TRUTH-CERT imports the scoped Testing Library query helper and asserts unsupported future Sheriff capabilities remain absent rather than relying on removed roadmap-card copy. No production authority or queue behavior changes.
  * CHANGELOG: 2026-09-28 v6.0.3-L10-P2B-ACCOUNT-CENTER-ASYNC-RENDER-CERT waits for the client shared-chrome DOM contract before asserting its attributes, preventing CI timing from observing the transient loading branch after the canonical adapter resolves. Production role behavior is unchanged.
  *            2026-09-24 v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT aligns the LEGAL_CLIENT Open matters metric assertion with the shared chrome's semantic metric-label element; production role behavior is unchanged.
@@ -69,6 +78,7 @@ const {
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  syncPendingDeputyLocationEvidence,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -80,6 +90,7 @@ const {
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
   getSheriffOperationalQueues: vi.fn(),
+  syncPendingDeputyLocationEvidence: vi.fn().mockResolvedValue({ synchronized: 0 }),
   recordDeputyFieldOutcome: vi.fn(),
   registerLegalIntake: vi.fn(),
   transitionDeputyFieldAttempt: vi.fn(),
@@ -94,6 +105,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
+  syncPendingDeputyLocationEvidence,
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
@@ -863,10 +875,11 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
 
 /**
  * ARTIFACT: legalDashboardSheriffMigration.test.jsx
- * VERSION: v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT
+ * VERSION: v6.0.7-L10-P2C3-COMPLETE-SOVEREIGN-SEAL
  * AUTHORITY BOUNDARY: deterministic Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation and governed command wiring evidence only
  * TENANT POSTURE: all role surfaces remain server-authorized; practice uses D11 snapshot truth, client uses D7 visibility, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved/denied/unavailable client or internal reads, menu/search state, drifted deputy evidence, command errors and failed refresh never cross-fallback, invent matters or claim success
- * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * FINANCIAL AUTHORITY BOUNDARY: Client presentation does not authorize financial execution.
+ * FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively owns execution.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */

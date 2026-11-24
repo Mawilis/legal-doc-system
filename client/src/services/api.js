@@ -1,7 +1,12 @@
 /**
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+ * SECURITY / PRIVACY POSTURE: No credentials or personal information exposed by this metadata repair.
+ * TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-governed.
+ * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: V74.9.0-SESSION-OWNED-BEARER-CURRENTNESS
+ * VERSION: v74.14.0-STRICT-PROJECTS-COMMAND-BODIES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -10,7 +15,27 @@
  * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v74.14.0-STRICT-PROJECTS-COMMAND-BODIES preserves EOS
+ *            Projects POST/PATCH/Archive command payloads without inserting
+ *            a forbidden timestamp field. Existing forensic timestamp,
+ *            nonce, trace and request seal headers are unchanged.
+ * CHANGELOG: v74.13.0-STRICT-CRM-STATUS-CANCEL-BODIES keeps
+ *            EOS /status and /cancel commands free of injected timestamp
+ *            JSON. Forensic time and seal remain in request headers, not
+ *            strict Pydantic command payloads.
+ * CHANGELOG: 2026-11-17 v74.12.0-CRM-AUDITED-EDIT-CANONICAL-BODY
+ *            preserves strict CRM PATCH task-edit payloads as provided by
+ *            the caller; forensic timestamps remain transport headers.
+ *            Existing create/complete and all other request sealing remain.
+ * CHANGELOG: 2026-11-14 v74.11.0-PROVIDER-OWNED-AUTHENTICATED-RETRY delegates
+ *            one authenticated retry to the current AuthProvider refresh owner;
+ *            exact reader-grant bodies survive sealing; missing company-route
+ *            credentials fail before transport, and late
+ *            old-session denials cannot rotate or invalidate a newer session.
+ *            V74.10.0-COMPANY-DOCUMENT-CANONICAL-BODIES preserves exact
+ *            Mission/Strategy draft, submit and publication bodies. Transport
+ *            timestamps and seals remain headers; other routes are unchanged.
  * CHANGELOG: V74.9.0-SESSION-OWNED-BEARER-CURRENTNESS — Stops harvesting
  *            arbitrary response tokens; AuthProvider exclusively promotes EOS
  *            candidates. Missing-bearer legal reads fail locally, and a delayed
@@ -327,28 +352,23 @@ const getSyncedTimestamp = () => {
 syncServerTime();
 setInterval(syncServerTime, TIME_SYNC_INTERVAL);
 
-// ============================================================================
-// ⚙️ ATOMIC QUEUE ENGINE
-// ============================================================================
-
-let isRotating = false;
-let requestQueue = [];
+// AuthProvider remains the sole refresh/promotion owner. This registration is
+// an in-memory callback, not a credential store or an alternate authority.
+let sessionRefreshHandler = null;
 
 /**
- * @function processQueue
- * @description Processes or rejects queued requests during token rotation to prevent race conditions and double refreshes.
- * @param {Error|null} error - Transmission error if rotation failed.
- * @param {string|null} token - New access token upon successful rotation.
- * @collaboration AI Engineering (2026-08-14) — Atomic queue.
- * @epitome Guarantees that only one refresh request is active at a time.
- * @institutional Prevents concurrency issues during token renewal.
+ * @description Register the active provider's refresh callback; return owner-safe cleanup.
+ * @collaboration AuthProvider refreshes via EOS and revalidates the workspace.
+ * @institutional Transport never issues/promotes credentials; stale owners cannot
+ * unregister a newer callback. No IAM, transaction or financial authority exists here.
+ * @param {Function} handler Current provider callback receiving the failed bearer.
+ * @returns {Function} Unregister this exact callback only.
+ * @throws {TypeError} If the supplied owner is not callable.
  */
-const processQueue = (error, token = null) => {
-  requestQueue.forEach(prom => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  requestQueue = [];
+api.registerSessionRefreshHandler = (handler) => {
+  if (typeof handler !== 'function') throw new TypeError('SESSION_REFRESH_OWNER_REQUIRED');
+  sessionRefreshHandler = handler;
+  return () => { if (sessionRefreshHandler === handler) sessionRefreshHandler = null; };
 };
 
 // ============================================================================
@@ -395,12 +415,6 @@ api.interceptors.request.use(
       }
     }
 
-    if (isRotating) {
-      return new Promise((resolve, reject) => {
-        requestQueue.push({ resolve, reject });
-      }).then(() => config);
-    }
-
     // A caller may supply a freshly verified candidate bearer during MFA-to-session
     // promotion. Preserve that explicit credential for server-side revalidation;
     // never silently replace its identity with a possibly stale browser-stored token.
@@ -436,7 +450,7 @@ api.interceptors.request.use(
     }
 
     if (
-      /^\/legal-acceptance(?:\/|$)/i.test(config.url || '')
+      /^\/(?:legal-acceptance|company-operating-documents)(?:\/|$)/i.test(config.url || '')
       && !hasSuppliedAuthorization && (!hasStoredToken || config.skipAuth)
     ) {
       const missing = new Error('AUTHENTICATION_REQUIRED');
@@ -488,9 +502,14 @@ api.interceptors.request.use(
       // x-forensic-timestamp header and request seal; it is not legal body truth.
       const preservesCanonicalRequestBody = (
         /^\/legal-acceptance\/accept$/i.test(config.url)
+        || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish))$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
-        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
+        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/(?:complete|status|cancel))?)?$/i.test(config.url)
         || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
+        // Python EOS Projects uses strict Pydantic command payloads. Keep
+        // create/update/archive body exact; forensic time remains in headers.
+        || (/^\/(?:projects)(?:\/[^/]+(?:\/archive)?)?$/i.test(config.url)
+          && ['POST', 'PATCH'].includes((config.method || '').toUpperCase()))
       );
       const isMultipartBody = typeof FormData !== 'undefined'
         && config.data instanceof FormData;
@@ -587,6 +606,32 @@ api.interceptors.response.use(
         !current || authorization.trim() !== current
         || (stored && authorization.trim() !== 'Bearer ' + stored)
       ) return Promise.reject(error);
+
+      // Only the current session owner may rotate credentials. Explicit MFA
+      // candidate reads opt out above; refresh failures never retry recursively.
+      if (sessionRefreshHandler && !originalRequest._sessionRefreshRetried) {
+        originalRequest._sessionRefreshRetried = true;
+        const owner = sessionRefreshHandler;
+        try {
+          const renewed = await owner(authorization.trim());
+          const anchored = api.defaults?.headers?.common?.Authorization;
+          if (owner !== sessionRefreshHandler || typeof renewed !== 'string'
+              || !renewed || anchored !== 'Bearer ' + renewed
+              || getStoredToken() !== renewed || originalRequest.signal?.aborted) {
+            return Promise.reject(error);
+          }
+          if (typeof originalRequest.headers?.set === 'function') {
+            originalRequest.headers.set('Authorization', anchored);
+          } else {
+            originalRequest.headers.Authorization = anchored;
+          }
+          return api(originalRequest);
+        } catch {
+          // Provider owns fail-closed invalidation; do not purge a newer session
+          // after logout/login, capacity switch or refresh failure.
+          return Promise.reject(error);
+        }
+      }
 
       purgeTokens();
       if (api.defaults?.headers?.common) delete api.defaults.headers.common.Authorization;
@@ -787,7 +832,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: V74.9.0-SESSION-OWNED-BEARER-CURRENTNESS
+ * VERSION: v74.14.0-STRICT-PROJECTS-COMMAND-BODIES
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata

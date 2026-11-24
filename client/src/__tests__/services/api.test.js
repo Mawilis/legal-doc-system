@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.1.0-MFA-BOOTSTRAP-503-CURRENTNESS
+ * VERSION: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies
+ *            no extra timestamp fields in CRM status/cancel POSTs while
+ *            cryptographic forensic headers remain intact.
+ * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies six exact
+ *            company-document mutation paths retain caller fields and forensic headers.
  * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
  *            covenant status, normal dashboard backoff and 403 separation.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -213,6 +218,24 @@ describe('api.js – Sovereign HTTP Client', () => {
       );
     });
 
+    it('preserves both classifications and all three strict company-document commands', async () => {
+      bindAuthenticatedTransport();
+      for (const classification of ['MISSION', 'STRATEGY']) {
+        for (const action of ['drafts', 'submit', 'publish']) {
+          const payload = { expected_revision: 1, synthetic_field: 'transport preservation only' };
+          const sealed = await requestInterceptorCapture.fulfilled({
+            url: '/company-operating-documents/' + classification + '/' + action,
+            method: 'post', data: { ...payload }, headers: { 'Idempotency-Key': 'synthetic-key' },
+          });
+          expect(sealed.data).toEqual(payload);
+          expect(sealed.data).not.toHaveProperty('timestamp');
+          expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+          expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
+          expect(sealed.headers['Idempotency-Key']).toBe('synthetic-key');
+        }
+      }
+    });
+
     it('preserves exact EOS responder decision bodies while retaining forensic headers', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
       bindAuthenticatedTransport();
@@ -249,6 +272,14 @@ describe('api.js – Sovereign HTTP Client', () => {
         {
           url: '/crm/owner-workspace/work-items/work-1/complete',
           data: { completion_note: 'Completed by the assigned owner.' },
+        },
+        {
+          url: '/crm/owner-workspace/work-items/work-1/status',
+          data: { status: 'DRAFT', expected_updated_at: '2026-11-17T10:13:00Z' },
+        },
+        {
+          url: '/crm/owner-workspace/work-items/work-1/cancel',
+          data: { reason: 'Withdrawn by owner', expected_updated_at: '2026-11-17T10:13:00Z' },
         },
         ...['operations', 'intelligence'].flatMap(module => [
           {
@@ -518,7 +549,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.1.0-MFA-BOOTSTRAP-503-CURRENTNESS
+ * VERSION: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.

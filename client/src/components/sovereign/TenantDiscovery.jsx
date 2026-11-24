@@ -1,6 +1,7 @@
 /**
+ * TITLE: WILSY OS Workspace Discovery
  * WILSY OS — SECURE WORKSPACE DISCOVERY
- * VERSION: v3.2.0-INSTITUTIONAL-AUTH-BRAND
+ * VERSION: v3.2.1-OFFICIAL-SQUARE-BRAND
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Resolves one organization/workspace through the bounded server
  *          discovery contract; never downloads or filters a tenant directory.
@@ -8,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: authContext owns the exact `/api/auth/discover`
  *                            transport; this component is presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-17
+ * CHANGELOG: v3.2.1-OFFICIAL-SQUARE-BRAND uses the same official
+ * square platform mark. Credential, discovery, MFA and customer identity
+ * contracts are preserved; no client-owned authentication authority is added.
  * CHANGELOG: v3.2.0-INSTITUTIONAL-AUTH-BRAND — Uses the established WILSY
  *            brand asset and a restrained institutional discovery panel.
  *            v3.1.0-PREMIUM-TENANT-IDENTITY — Restored the real WILSY OS
@@ -23,12 +27,21 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
+import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
 import React, { useState } from 'react';
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from '../auth/TenantIdentityCard.jsx';
 
+/**
+ * @description Render the existing source-governed authentication surface.
+ * @collaboration AuthProvider and Python EOS retain all discovery/session authority.
+ * @institutional Branding is presentation only. No tenant, credential, permission,
+ * transaction, idempotency or financial execution authority is created here.
+ * @param {Object} props Existing server-state presentation callbacks.
+ * @returns {JSX.Element} The original guarded interaction with official branding.
+ */
 export default function TenantDiscovery({ savedTenant }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,7 +76,7 @@ export default function TenantDiscovery({ savedTenant }) {
     <main style={pageStyle}>
       <section style={cardStyle} aria-labelledby="discovery-title">
         <div style={platformBrandStyle}>
-          <img src="/brand/wilsy-os-master.png" alt="WILSY OS platform mark" style={platformMarkStyle} />
+          <img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS platform mark" style={platformMarkStyle} />
           <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
         </div>
         <h1 id="discovery-title" style={titleStyle}>Secure Workspace Access</h1>
@@ -113,7 +126,7 @@ const cardStyle = {
   boxShadow: '0 30px 90px rgba(0,0,0,.42)',
 };
 const platformBrandStyle = { display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '28px', borderBottom: '1px solid rgba(245,241,232,.1)', color: '#d5b04f' };
-const platformMarkStyle = { width: '46px', height: '46px', objectFit: 'cover', objectPosition: '50% 13%', borderRadius: '8px', background: '#fff' };
+const platformMarkStyle = { width: '64px', height: '64px', objectFit: 'contain', borderRadius: '8px', background: '#06152b' };
 const brandCopyStyle = { display: 'grid', gap: '3px' };
 const titleStyle = { margin: '38px 0 10px', fontSize: 'clamp(32px, 5vw, 48px)', lineHeight: 1.04, fontWeight: 650, letterSpacing: '-.035em' };
 const copyStyle = { margin: '0 0 32px', color: '#b8b6ae', lineHeight: 1.6, fontSize: '15px' };
@@ -125,7 +138,7 @@ const errorStyle = { display: 'flex', gap: '9px', alignItems: 'flex-start', marg
 
 /**
  * ARTIFACT: client/src/components/sovereign/TenantDiscovery.jsx
- * VERSION: v3.2.0-INSTITUTIONAL-AUTH-BRAND
+ * VERSION: v3.2.1-OFFICIAL-SQUARE-BRAND
  * AUTHORITY BOUNDARY: bounded discovery projection only
  * TENANT POSTURE: no client-side directory enumeration or fallback tenant
  * FAIL-CLOSED POSTURE: discovery failure leaves tenant unresolved

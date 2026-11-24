@@ -1,9 +1,16 @@
 """TITLE: WILSY OS Practitioner Binding Read Permission Certificate.
-VERSION: v1.0.0-P12C-R4N-P10D2-P4C10-R2B
+VERSION: v1.0.3-P12C-R4N-PERMISSION-NAMESPACE-CURRENTNESS-CERT
 AUTHORITY: Canonical permission vocabulary and historical integrity only.
 EPITOME: Verify binding-read metadata without manufacturing role authority.
-CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: Initial test-first regression and provenance certificate.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_practitioner_matter_binding_read_permission.py
+COLLABORATION / OWNERSHIP: Certifies canonical permission namespace metadata and role-map evidence only.
+CERTIFICATION / UPDATE DATE: 2026-11-11
+CHANGELOG: v1.0.3-P12C-R4N-PERMISSION-NAMESPACE-CURRENTNESS-CERT adds the missing canonical path and confirms exact tenant and financial authority boundaries; test behavior is unchanged.
+           v1.0.2-P12C-R4N-PERMISSION-NAMESPACE-CURRENTNESS-CERT records the verified sovereign metadata correction; test and production behavior are unchanged.
+           v1.0.1-P12C-R4N-PERMISSION-NAMESPACE-CURRENTNESS-CERT checks the canonical permission namespace's current version while retaining the historical R4N/P4C9 changelog and exact read-permission contract.
+           v1.0.0 established test-first regression and provenance certification.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic permission metadata only; no matter content is read or disclosed.
 TENANT BOUNDARY: Exact own-tenant membership is required.
 AUTHORITY BOUNDARY: Vocabulary is not role possession or matter access.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
@@ -39,7 +46,7 @@ PREVIOUS_VERSION = (
 def test_exact_canonical_read_permission() -> None:
     metadata = permission_metadata(READ)
 
-    assert VERSION == "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+    assert VERSION == "v1.59.0-INSTITUTIONAL-OFFER-SIGNATURE-AUTHORITY"
     assert metadata.permission_id == READ
     assert metadata.disposition is PermissionDisposition.CANONICAL
     assert metadata.namespace == "TENANT"
@@ -103,9 +110,13 @@ def test_historical_changelog_is_preserved() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_legal_practitioner_matter_binding_read_permission.py
-# VERSION: v1.0.0-P12C-R4N-P10D2-P4C10-R2B
+# VERSION: v1.0.3-P12C-R4N-PERMISSION-NAMESPACE-CURRENTNESS-CERT
 # AUTHORITY: Permission vocabulary regression only
 # ROLE GRANTS: NONE
 # CONTENT ACCESS: NONE
 # FINANCIAL EXECUTION: NONE
+# AUTHORITY BOUNDARY: Permission vocabulary regression only; no role possession or matter access
+# TENANT POSTURE: Exact own-tenant membership is required independently
+# FAIL-CLOSED POSTURE: Unknown, absent, or noncanonical permission metadata rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

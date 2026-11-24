@@ -1,13 +1,16 @@
 """WILSY OS invited-member admission authority.
 
 TITLE: Canonical invited-member admission
-VERSION: v1.0.0-WILSY-F1C2B-A3
+VERSION: v1.1.0-EXISTING-MEMBER-DELEGATED-ROLE-ADMISSION
 AUTHORITY: Wilsy OS Core Governance
-PURPOSE: Atomically admit an invitation recipient into one tenant.
-EPITOME: Consume invitation, create membership, and create its role together.
+PURPOSE: Atomically admit a recipient or add a delegated role to an ACTIVE member.
+EPITOME: Consume a recipient-bound invitation, reuse current ACTIVE membership if present, and create only the new role.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/invited_member_admission.py
 COLLABORATION / OWNERSHIP: EOS auth orchestration.
-CERTIFICATION / UPDATE DATE: 2026-09-06
+CERTIFICATION / UPDATE DATE: 2026-11-17
+CHANGELOG: v1.1.0-EXISTING-MEMBER-DELEGATED-ROLE-ADMISSION admits an additional
+role for an already ACTIVE member without creating a duplicate membership;
+invitation capability, tenant/principal match, source roles and CAS still apply.
 CHANGELOG: v1.0.0 establishes governed three-write admission.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Raw capability is transient and never persisted.
@@ -54,13 +57,26 @@ class InvitedMemberAdmissionComposition:
         if TenantRegistry.get(invitation.tenant_id, collection=self.tenant_collection, session=session) is None: raise InvitedMemberAdmissionError("TENANT_NOT_FOUND")
         principal=PrincipalAuthorityRepository.get(identity.identity_id, collection=self.principal_collection, session=session)
         if principal.status is not PrincipalStatus.ACTIVE: raise InvitedMemberAdmissionError("RECIPIENT_PRINCIPAL_NOT_ACTIVE")
-        try: TenantMembershipRepository.resolve(identity.identity_id, invitation.tenant_id, collection=self.membership_collection, session=session); raise InvitedMemberAdmissionError("MEMBERSHIP_ALREADY_EXISTS")
-        except TenantMembershipNotFoundError: pass
+        # Existing ACTIVE members may accept an additional delegated role.
+        # Never insert a duplicate membership or reactivate suspended/revoked
+        # membership as a side effect of role admission.
+        try:
+            membership = TenantMembershipRepository.resolve(
+                identity.identity_id, invitation.tenant_id,
+                collection=self.membership_collection, session=session,
+            )
+        except TenantMembershipNotFoundError:
+            membership = None
+        if membership is not None and membership.status is not TenantMembershipStatus.ACTIVE:
+            raise InvitedMemberAdmissionError("MEMBERSHIP_NOT_ACTIVE")
         try: RoleAssignmentRepository.resolve(identity.identity_id, invitation.tenant_id, invitation.authorization_role_id, collection=self.role_collection, session=session); raise InvitedMemberAdmissionError("ROLE_ASSIGNMENT_ALREADY_EXISTS")
         except RoleAssignmentNotFoundError: pass
-        membership=TenantMembershipAuthority(identity.identity_id, invitation.tenant_id, TenantMembershipStatus.ACTIVE, 0)
+        new_membership = membership is None
+        if new_membership:
+            membership = TenantMembershipAuthority(identity.identity_id, invitation.tenant_id, TenantMembershipStatus.ACTIVE, 0)
         role=RoleAssignmentAuthority(identity.identity_id, invitation.tenant_id, invitation.authorization_role_id, RoleAssignmentStatus.ACTIVE, 0)
-        TenantMembershipRepository.insert(membership, collection=self.membership_collection, session=session)
+        if new_membership:
+            TenantMembershipRepository.insert(membership, collection=self.membership_collection, session=session)
         RoleAssignmentRepository.insert(role, collection=self.role_collection, session=session)
         try: InvitationRepository.consume(invitation.invitation_id, digest, invitation.revision, now, collection=self.invitation_collection, session=session)
         except InvitationRepositoryError as e: raise InvitedMemberAdmissionError("INVITATION_CONSUME_FAILED") from e
@@ -79,8 +95,9 @@ def admit_invited_member(*, identity: SovereignIdentity, invitation_id: str, cap
     return InvitedMemberAdmissionComposition(client,db["tenants"],db["principal_authorities"],db["tenant_memberships"],db["role_assignments"],db["invitations"]).admit(identity=identity, invitation_id=invitation_id, capability=capability)
 
 # ARTIFACT: invited_member_admission.py
-# VERSION: v1.0.0-WILSY-F1C2B-A3
-# AUTHORITY BOUNDARY: three-write invitation admission only
-# FAIL-CLOSED POSTURE: invalid and conflicting authority denies
+# VERSION: v1.1.0-EXISTING-MEMBER-DELEGATED-ROLE-ADMISSION
+# AUTHORITY BOUNDARY: invitation admission or existing-ACTIVE-member role addition; no grants without accepted capability
+# TENANT POSTURE: exact invitation/current membership tenant and recipient identity
+# FAIL-CLOSED POSTURE: inactive or conflicting memberships and role assignments deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
