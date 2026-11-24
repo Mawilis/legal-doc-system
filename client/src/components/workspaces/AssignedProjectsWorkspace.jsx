@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
+ * VERSION: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK records the last
+ *          initialized list callback only when the live mount dispatches.
+ *          Replayed effects and same-selector rerenders cannot issue a
+ *          second GET, but a changed selector generates a new callback
+ *          and manual Refresh always uses the source. No IAM/cache change.
  * CHANGELOG: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
  *          stabilizes equal tenant headers so parent rerenders don't
  *          repeat authorized participant reads, and defers the initial
@@ -154,6 +159,7 @@ export default function AssignedProjectsWorkspace({
     headersRef.current = { ...incomingHeaders };
   }
   const headers = headersRef.current;
+  const admittedInitialRead = useRef(null);
 
   const list = useCallback(async (offset = 0) => {
     const active = scope, request = ++sequence.current;
@@ -199,7 +205,11 @@ export default function AssignedProjectsWorkspace({
     focusHandled.current = null;
     command.current = { fingerprint: '', key: '' };
     let active = true;
-    queueMicrotask(() => { if (active) void list(0); });
+    queueMicrotask(() => {
+      if (!active || admittedInitialRead.current === list) return;
+      admittedInitialRead.current = list;
+      void list(0);
+    });
     return () => { active = false; sequence.current += 1; };
   }, [scope, list]);
 
@@ -557,7 +567,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
+// VERSION: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
