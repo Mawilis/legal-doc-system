@@ -9,9 +9,9 @@
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
  * CHANGELOG: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK records the last
- *          initialized list callback only when the live mount dispatches.
+ *          exact source scope and header snapshot when live mount dispatches.
  *          Replayed effects and same-selector rerenders cannot issue a
- *          second GET, but a changed selector generates a new callback
+ *          second GET, but a changed selector generates new admission evidence
  *          and manual Refresh always uses the source. No IAM/cache change.
  * CHANGELOG: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
  *          stabilizes equal tenant headers so parent rerenders don't
@@ -206,8 +206,10 @@ export default function AssignedProjectsWorkspace({
     command.current = { fingerprint: '', key: '' };
     let active = true;
     queueMicrotask(() => {
-      if (!active || admittedInitialRead.current === list) return;
-      admittedInitialRead.current = list;
+      const admission = JSON.stringify([scope, ...Object.entries(headers)
+        .sort(([a], [b]) => a.localeCompare(b))]);
+      if (!active || admittedInitialRead.current === admission) return;
+      admittedInitialRead.current = admission;
       void list(0);
     });
     return () => { active = false; sequence.current += 1; };
