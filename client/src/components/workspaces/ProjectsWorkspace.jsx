@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.43.0-ONE-NETWORK-MOUNT-PER-SCOPE
+ * VERSION: v2.44.0-SINGLE-PROJECT-TASK-PANEL-ACROSS-TABS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,6 +16,11 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * CHANGELOG: v2.44.0-SINGLE-PROJECT-TASK-PANEL-ACROSS-TABS keeps a single task source
+ *            panel and verified page mounted when switching between Work
+ *            & milestones and Activity & discussion. Both are views of the
+ *            same authorized work graph; only changing project/session
+ *            identity remounts and re-reads EOS. No stale cross-session data.
  * CHANGELOG: v2.43.0-ONE-NETWORK-MOUNT-PER-SCOPE defers
  *            initial Projects list and summary reads to the post-effect
  *            microtask, preventing the discarded development StrictMode
@@ -1926,16 +1931,12 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
             {projectView === 'people' && <ProjectParticipantsPanel key={'participants:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders}/>}
-            {projectView === 'work' && <ProjectTasksPanel key={'work:' + detail.project.project_id + ':' + sessionScope}
+            {(projectView === 'work' || projectView === 'discussions') && <ProjectTasksPanel
+              key={'project-task-scope:' + detail.project.project_id + ':' + sessionScope}
               projectId={detail.project.project_id} tenantId={tenantId}
               principalId={principalId} tenantHeaders={tenantHeaders}
+              discussionOnly={projectView === 'discussions'}
               focusTaskId={focusProjectId === detail.project.project_id ? focusTaskId : null}
-              onFocusedTaskChange={handleFocusedTaskChange}
-              onOpenProjectPeople={() => setProjectView('people')}/>}
-            {projectView === 'discussions' && <ProjectTasksPanel
-              key={'discussions:' + detail.project.project_id + ':' + sessionScope}
-              projectId={detail.project.project_id} tenantId={tenantId}
-              principalId={principalId} tenantHeaders={tenantHeaders} discussionOnly
               onFocusedTaskChange={handleFocusedTaskChange}
               onOpenProjectPeople={() => setProjectView('people')}/>}
             {projectView === 'notes' && <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
@@ -2030,7 +2031,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.43.0-ONE-NETWORK-MOUNT-PER-SCOPE
+// VERSION: v2.44.0-SINGLE-PROJECT-TASK-PANEL-ACROSS-TABS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
