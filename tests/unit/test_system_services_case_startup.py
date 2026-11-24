@@ -76,7 +76,7 @@ def test_system_services_startup_does_not_create_cases_or_grants() -> None:
 
 
 def test_system_services_server_version_tracks_governed_router_composition() -> None:
-    assert server.VERSION == "v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION"
+    assert server.VERSION == "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: System Services Case Startup Certificate
