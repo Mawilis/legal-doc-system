@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS
+ * VERSION: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ routes
+ *          authenticated queue and readback GETs through the existing
+ *          exact-session My Work coordinator, preventing a second independent
+ *          fetch from competing with Daily Attention and Headquarters. Caller
+ *          cancellation remains local, denied/foreign projections fail closed,
+ *          and confirmed commands still invalidate the shared snapshot.
  * CHANGELOG: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS removes the
  *          movable dark task modal, showing a Projects-style light focused
  *          record in the work area; source CRM editor, command readback,
@@ -170,9 +176,9 @@ import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 import { readAttentionSourceActions } from '../../services/attentionFeedClient.js';
-import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
 import {
   currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
   invalidateUnifiedMyWork,
 } from '../../services/unifiedMyWorkSync.js';
 
@@ -352,15 +358,12 @@ export default function MyWorkWorkspace(props = {}) {
     setError('');
     setErrorStatus(null);
     try {
-      const response = await api.get('/my-work', {
-        forceNetworkRetry: true,
-        signal: controller.signal,
-      });
+      const verified = await readUnifiedMyWork(
+        currentUnifiedMyWorkScope(auth, authUser?.tenantId),
+        { tenantId: authUser?.tenantId, principalId: authUser?.id },
+        { signal: controller.signal, force: quiet },
+      );
       if (request !== requestRef.current || scopeRef.current !== scopeKey) return null;
-      const verified = assertUnifiedMyWorkProjection(response?.data, {
-        tenantId: authUser?.tenantId,
-        principalId: authUser?.id,
-      });
       setProjection(verified);
       setProjectionScope(scopeKey);
       return verified;
@@ -384,7 +387,7 @@ export default function MyWorkWorkspace(props = {}) {
         setRefreshing(false);
       }
     }
-  }, [authUser?.id, authUser?.tenantId, scopeKey]);
+  }, [auth, authUser?.id, authUser?.tenantId, scopeKey]);
 
   useEffect(() => {
     void load();
