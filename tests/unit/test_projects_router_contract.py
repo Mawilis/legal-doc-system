@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT
+VERSION: v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -17,6 +17,9 @@ AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
                     claim a live role assignment, entitlement or database write.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 CHANGELOG:
+  v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT confirms safe opaque
+  correlation with existing pre-handler authorization timing; unknown
+  or untrusted trace values cannot enter Projects source logs.
   v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT retains all five
   existing no-keyword whole-read retry assertions unchanged, and
   independently verifies profiled list request-local timing isolation.
@@ -1598,7 +1601,7 @@ def test_profiled_projects_get_preserves_snapshot_scope_and_emits_safe_slow_timi
     assert result["schema"] == "WILSY-PROJECT-LIST/V1"
     assert calls == [context]
     record = caplog.text
-    assert "PROJECTS_GET_LATENCY operation=TASK_LIST outcome=SLOW" in record
+    assert "PROJECTS_GET_LATENCY trace_id=TRACE_UNAVAILABLE operation=TASK_LIST outcome=SLOW" in record
     assert "session_open_ms=5.0" in record
     assert "entitlement_ms=190.0" in record
     assert "tenant-private-marker" not in record
@@ -1633,6 +1636,19 @@ def test_profiled_project_list_preserves_original_transaction_signature(
     assert projects_router._project_list_read_timings.get() is None
 
 
+def test_project_latency_trace_rejects_untrusted_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Never put caller-provided arbitrary strings or principals in timing logs."""
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "secret-token-value")
+    assert projects_router._safe_projects_read_trace() == "TRACE_UNAVAILABLE"
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "TRC-ABCDEFGH-ABC123")
+    assert projects_router._safe_projects_read_trace() == "TRC-ABCDEFGH-ABC123"
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "TRC-SERVER-ABCDEF123456")
+    assert projects_router._safe_projects_read_trace() == "TRC-SERVER-ABCDEF123456"
+
+
 def test_profiled_projects_get_preserves_entitlement_denial(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -1657,7 +1673,7 @@ def test_profiled_projects_get_preserves_entitlement_denial(
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT
+# VERSION: v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
