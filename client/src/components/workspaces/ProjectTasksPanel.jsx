@@ -472,10 +472,13 @@ function validParticipants(data, tenantId, principalId, projectId) {
 function ProjectReadinessRollback({ task, tenantId, principalId, projectId, headers, onOpenEvidence, onOpenApprovals }) {
   const [snapshot, setSnapshot] = useState({ state: 'IDLE', attachments: [], approvals: [], issue: '' });
   const generation = useRef(0);
+  const controllerRef = useRef(null);
   const key = [tenantId, principalId, projectId, task.task_id, task.revision].join('\u0000');
   const load = useCallback(async () => {
     const request = ++generation.current;
+    controllerRef.current?.abort();
     const controller = new AbortController();
+    controllerRef.current = controller;
     setSnapshot({ state: 'LOADING', attachments: [], approvals: [], issue: '' });
     const base = '/projects/' + encodeURIComponent(projectId) + '/tasks/' + encodeURIComponent(task.task_id);
     try {
@@ -483,7 +486,7 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
         api.get(base + '/attachments?limit=50&offset=0', { headers, signal: controller.signal }),
         api.get(base + '/approvals?limit=50&offset=0', { headers, signal: controller.signal }),
       ]);
-      if (request !== generation.current) return () => controller.abort();
+      if (request !== generation.current) return;
       const [evidence, decisions] = results.map(result => result.data);
       const scopedPage = (page, schema) => page?.schema === schema
         && page.tenant_id === tenantId && page.principal_id === principalId
@@ -504,7 +507,7 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
         && !Object.hasOwn(item, 'download_url') && !Object.hasOwn(item, 'storage_receipt');
       const validDecision = item => item?.schema === 'wilsy.project.approval.v1'
         && item.tenant_id === tenantId && item.project_id === projectId
-        && item.task_id === task.task_id && /^pap-[a-f0-9]{48}$/.test(item.approval_id || '')
+        && item.task_id === task.task_id && /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
         && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
         && item.requester_principal_id !== item.reviewer_principal_id
         && typeof item.requester_principal_id === 'string'
@@ -525,11 +528,13 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
       setSnapshot({ state: 'UNVERIFIED', attachments: [], approvals: [],
         issue: 'At least one independent EOS record could not be verified. Review the source panels and retry.' });
     }
-    return () => controller.abort();
   }, [key]);
   useEffect(() => {
     void load();
-    return () => { generation.current += 1; };
+    return () => {
+      generation.current += 1;
+      controllerRef.current?.abort();
+    };
   }, [load]);
   const clean = snapshot.attachments.filter(item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length;
   const pending = snapshot.approvals.filter(item => item.status === 'PENDING').length;
