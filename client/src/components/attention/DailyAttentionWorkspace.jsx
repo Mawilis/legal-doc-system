@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.18.0-FOCUSED-CALENDAR-WORKSPACE
+ * VERSION: v3.18.1-BOUNDED-CALENDAR-REFRESH
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre owns current-session
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v3.18.1-BOUNDED-CALENDAR-REFRESH restores a working
+ *          source revalidation control inside focused calendar mode,
+ *          with no duplicate task API or widened authorization.
  * CHANGELOG: v3.18.0-FOCUSED-CALENDAR-WORKSPACE gives the calendar
  *          exclusive use of the bounded work area with a compact return
  *          toolbar; hides list-only header, disclosures and footer in this
@@ -631,11 +634,17 @@ export default function DailyAttentionWorkspace({
               <h2 className="text-sm font-semibold text-white">Work calendar</h2>
               <p className="truncate text-[10px] text-slate-400">Authorised deadlines · {rows.length} verified work items</p>
             </div>
-            <button type="button" onClick={() => setMode('LIST')}
-              aria-label="Close calendar and return to work list"
-              className="shrink-0 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-              Back to work
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <button type="button" onClick={onRefresh} aria-label="Refresh"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                <RefreshCw size={13}/> Refresh
+              </button>
+              <button type="button" onClick={() => setMode('LIST')}
+                aria-label="Close calendar and return to work list"
+                className="rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                Back to work
+              </button>
+            </div>
           </div>
         ) : mode === 'CREATE' ? (
           <div className="flex min-h-12 items-center justify-between gap-3" aria-label="Create mode toolbar">
@@ -1285,7 +1294,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.18.0-FOCUSED-CALENDAR-WORKSPACE
+// VERSION: v3.18.1-BOUNDED-CALENDAR-REFRESH
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
