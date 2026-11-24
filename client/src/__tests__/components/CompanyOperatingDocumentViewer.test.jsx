@@ -719,7 +719,7 @@ describe('Strategy source-owned project execution readback', () => {
     const openCanonicalProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject: openCanonicalProject }));
     fireEvent.click(await screen.findByRole('button', {
-      name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
+      name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
     const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
     await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
@@ -866,7 +866,7 @@ describe('Strategy source-owned project execution readback', () => {
     });
     render(wrap({ classification: 'STRATEGY' }));
     fireEvent.click(await screen.findByRole('button', {
-      name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
+      name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
     const readback = await screen.findByRole('region', { name: 'M02 live execution readback' });
     const currentReadback = () => screen.getByRole('region', { name: 'M02 live execution readback' });
@@ -1051,12 +1051,12 @@ describe('Strategy source-owned project execution readback', () => {
     fireEvent.change(findProject, { target: { value: 'never-a-real-project' } });
     expect(screen.getByText(/No verified projects match this search/)).toBeVisible();
     expect(screen.getByText('0 matching · 1 source-verified projects')).toBeVisible();
-    expect(screen.queryByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/ })).not.toBeInTheDocument();
     fireEvent.change(findProject, { target: { value: 'foundation' } });
     expect(screen.getByText('1 matching · 1 source-verified projects')).toBeVisible();
     fireEvent.change(findProject, { target: { value: '' } });
-    const verifyButton = await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ });
-    expect(screen.getByRole('button', { name: /Open project delivery for WILSY OS — Unified Operating Platform Foundation/ })).toBeVisible();
+    const verifyButton = await screen.findByRole('button', { name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/ });
+    expect(screen.getByRole('button', { name: /Open Work and milestones for WILSY OS — Unified Operating Platform Foundation/ })).toBeVisible();
     expect(onOpenProject).not.toHaveBeenCalled();
     expect(screen.getByText('Revision 2')).toBeVisible();
     const newProjectForm = document.querySelector('form[aria-label="Create governed EOS project"]');
@@ -1113,7 +1113,7 @@ describe('Strategy source-owned project execution readback', () => {
     });
     render(wrap({ classification: 'STRATEGY' }));
     fireEvent.click(await screen.findByRole('button', {
-      name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/,
+      name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
     expect(await screen.findByText(/No currently effective EOS-published Strategy exists/)).toBeVisible();
     expect(screen.getByText(/An admitted Founder may submit and self-ratify Strategy/)).toBeVisible();
@@ -1183,7 +1183,7 @@ describe('Strategy source-owned project execution readback', () => {
         project_id: projectId, task } });
     });
     render(wrap({ classification: 'STRATEGY' }));
-    fireEvent.click(await screen.findByRole('button', { name: /Verify execution for WILSY OS — Unified Operating Platform Foundation/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/ }));
     expect(await screen.findByRole('heading', { name: 'My Work implementation programme' })).toBeVisible();
     expect(screen.getByText(/0 of 18 planned records persisted in EOS/)).toBeVisible();
     const plannedRegister = screen.getByText('Browse all 18 planned milestones and tasks');
