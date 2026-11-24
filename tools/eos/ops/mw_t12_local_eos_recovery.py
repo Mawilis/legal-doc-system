@@ -1,11 +1,17 @@
 """TITLE: MW-T12 isolated local Python EOS service recovery operator.
-VERSION: v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE
+VERSION: v1.4.0-IMMUTABLE-ROLLBACK-CANDIDATE-ADMISSION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Own a fresh loopback-only local mongod replica and execute the
          existing authenticated Python EOS restart and durable browser verifier.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_local_eos_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS operator; canonical browser certification runner.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.4.0-IMMUTABLE-ROLLBACK-CANDIDATE-ADMISSION adds
+           a read-only rollback-candidate gate: explicit 40-hex older
+           commit, verified Git commit object and ancestor relationship,
+           immutable Python EOS and browser certification source files at
+           that revision. It never checks out a rollback, starts or stops
+           services, modifies tracked files, or certifies rollback execution.
 CHANGELOG: v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE requires a verified
            immutable Git commit and a clean tracked working tree before and
            after the existing disposable EOS restart/browser drill. A changed
@@ -49,7 +55,7 @@ import time
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-VERSION = "v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE"
+VERSION = "v1.4.0-IMMUTABLE-ROLLBACK-CANDIDATE-ADMISSION"
 SET_NAME = "wilsyVendorCertRS"
 BROWSER_SUITE = "tests/e2e/headquarters-operating-workspace.browser.spec.js"
 BROWSER_RUNNER = "tests/e2e/run-browser-cert.mjs"
@@ -231,6 +237,65 @@ def _certified_source_revision() -> str:
     return digest
 
 
+# The rollback admission only verifies release-critical, source-owned code.
+# A versioned executable/artifact, dependency closure and post-switch readback
+# still require a separately governed nonproduction execution certificate.
+ROLLBACK_REQUIRED_PATHS = (
+    "tools/eos/api/server.py",
+    "tools/eos/kernel/db.py",
+    "tests/e2e/run-browser-cert.mjs",
+    "tests/e2e/headquarters-operating-workspace.browser.spec.js",
+)
+
+
+def _admit_rollback_candidate(target: str) -> tuple[str, str]:
+    """Prove a historical Python EOS rollback candidate without switching it.
+
+    The candidate must be a strict ancestor of the current, clean checked-out
+    exact HEAD and must contain every required source and browser test path.
+    No remote repository/network, production runtime, credentials or writable
+    source tree is involved. Returns only verified commit object names.
+    """
+    current = _certified_source_revision()
+    if not isinstance(target, str) or (
+        len(target) != 40
+        or any(character not in "0123456789abcdef" for character in target)
+    ):
+        raise MWRecoveryError("ROLLBACK_TARGET_FULL_SHA_REQUIRED")
+    if target == current:
+        raise MWRecoveryError("ROLLBACK_TARGET_MUST_PRECEDE_HEAD")
+
+    def git_read(*arguments: str) -> str:
+        try:
+            result = subprocess.run(
+                ["git", *arguments], check=True, capture_output=True,
+                text=True, timeout=10,
+            )
+        except (OSError, subprocess.SubprocessError) as error:
+            raise MWRecoveryError("ROLLBACK_SOURCE_PROOF_UNAVAILABLE") from error
+        return result.stdout.strip()
+
+    if git_read("cat-file", "-t", target) != "commit":
+        raise MWRecoveryError("ROLLBACK_TARGET_NOT_COMMIT")
+    try:
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", target, current],
+            check=True, capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise MWRecoveryError("ROLLBACK_TARGET_NOT_ANCESTOR") from error
+    for required in ROLLBACK_REQUIRED_PATHS:
+        # Object lookup is immutable and ensures the historical revision
+        # contains the actual source file required by our Python EOS lane.
+        kind = git_read("cat-file", "-t", f"{target}:{required}")
+        if kind != "blob":
+            raise MWRecoveryError("ROLLBACK_SOURCE_FILE_INVALID")
+
+    if _certified_source_revision() != current:
+        raise MWRecoveryError("SOURCE_REVISION_CHANGED_DURING_CHECK")
+    return current, target
+
+
 def run(binary: str, node: str) -> int:
     """Execute real authenticated restart against a new ephemeral local replica.
 
@@ -311,12 +376,21 @@ def main(argv: list[str] | None = None) -> int:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true")
     group.add_argument("--run", action="store_true")
+    group.add_argument("--rollback-check", metavar="EXACT_OLDER_COMMIT")
     args = parser.parse_args(argv)
     try:
         binary, node = _guard()
         if args.check:
             print("MW_T12_HOST_PREREQUISITES=PASS")
             print("MW_T12_RECOVERY_EXECUTED=FALSE")
+            return 0
+        if args.rollback_check is not None:
+            candidate, rollback = _admit_rollback_candidate(args.rollback_check)
+            print("MW_T12_CANDIDATE_EXACT_HEAD=" + candidate)
+            print("MW_T12_ROLLBACK_TARGET=" + rollback)
+            print("MW_T12_ROLLBACK_SOURCE_ADMISSION=PASS")
+            print("MW_T12_ROLLBACK_EXECUTED=FALSE")
+            print("MW_T12_VERSIONED_ROLLBACK_CERTIFIED=FALSE")
             return 0
         result = run(binary, node)
         if result != 0:
@@ -337,7 +411,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_local_eos_recovery.py
-# VERSION: v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE
+# VERSION: v1.4.0-IMMUTABLE-ROLLBACK-CANDIDATE-ADMISSION
 # AUTHORITY BOUNDARY: Local synthetic Python EOS test only, no production operations.
 # TENANT POSTURE: Random test tenant and local temporary database exclusively.
 # FAIL-CLOSED POSTURE: Missing tooling, health, startup, readback, browser or shutdown denies success.
