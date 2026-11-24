@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT
+ * VERSION: v2.76.0-SHARED-TASK-TAB-READ-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.76.0-SHARED-TASK-TAB-READ-CERT verifies switching from work
+ *          into project discussion preserves one task GET and the source
+ *          snapshot instead of remounting the same task panel and
+ *          restarting authorization and database reads.
  * CHANGELOG: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT treats an EOS-sourced
  *          immutable comment displayed after held readback as the actual
  *          milestone certificate, independently of composer clearing UX.
@@ -1495,9 +1499,16 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="top-level-discussions-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    // Work and discussion project the same EOS task source. Switching view
+    // must not issue a second costly authentication/database read fanout.
+    await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td button' });
+    const taskPath = `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`;
+    const taskReads = () => api.get.mock.calls.filter(([path]) => path === taskPath).length;
+    expect(taskReads()).toBe(1);
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Project workspace views' }))
       .getByRole('button', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Project discussions workspace' })).toBeVisible();
+    expect(taskReads()).toBe(1);
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'EOS verified To-do checklist' })).not.toBeInTheDocument();
     const options = await screen.findByRole('list', { name: 'Verified discussion work items' });
@@ -2919,7 +2930,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT
+ * VERSION: v2.76.0-SHARED-TASK-TAB-READ-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
