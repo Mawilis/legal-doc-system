@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS canonical authentication registry.
 
 TITLE: WILSY OS Authentication Registry
-VERSION: v1.17.0-COMBINED-LEGACY-IDENTITY-READ
+VERSION: v1.18.0-INDEXED-DUAL-IDENTITY-CURRENTNESS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns password, JWT, OTP, session, and refresh-token business semantics
          while consuming the caller-established canonical Kernel database.
@@ -16,7 +16,13 @@ COLLABORATION / OWNERSHIP: Auth router delegates here; tools.eos.kernel.db owns
                            the sole Mongo lifecycle and connection recovery.
 CERTIFICATION / UPDATE DATE: 2026-11-15
 CHANGELOG:
-  v1.17.0-COMBINED-LEGACY-IDENTITY-READ — Combines exact canonical and
+  v1.18.0-INDEXED-DUAL-IDENTITY-CURRENTNESS replaces the measured
+    multi-index $or credential-currentness read with two bounded,
+    independently indexed exact-tenant point queries. Preserves legacy
+    collision rejection, original ClientSession, missing legacy user_id
+    compatibility, revocation, and all fail-closed identity validation;
+    no IAM, JWT, TTL, TLS, or pool changes.
+  v1.18.0-INDEXED-DUAL-IDENTITY-CURRENTNESS — Combines exact canonical and
     ObjectId identity predicates into one tenant-scoped Mongo read for
     ObjectId-shaped principals, retaining bounded collision detection and
     caller ClientSession propagation.
@@ -248,7 +254,7 @@ from tools.eos.auth.principal_authority_repository import (
 )
 from tools.eos.auth.principal_status import PrincipalStatus
 
-VERSION = "v1.17.0-COMBINED-LEGACY-IDENTITY-READ"
+VERSION = "v1.18.0-INDEXED-DUAL-IDENTITY-CURRENTNESS"
 
 # Configuration
 JWT_EXPIRY_HOURS = 24
@@ -532,44 +538,34 @@ class AuthRegistry:
             def read_canonical_and_legacy_candidates() -> tuple[
                 Optional[Dict[str, Any]], Optional[Dict[str, Any]]
             ]:
-                # One exact tenant-scoped command evaluates both identity paths.
-                # A bounded result set retains fail-closed collision detection
-                # without serial command round trips or unbounded document reads.
-                candidate_filter = {
-                    "tenantId": canonical_tenant_id,
-                    "$or": [
-                        {"user_id": user_id},
-                        {"_id": object_id},
-                    ],
-                }
-                cursor = self._call_collection(
-                    users,
-                    "find",
-                    candidate_filter,
-                    session=session,
-                )
-                candidates = list(cursor.limit(3))
-                if len(candidates) > 2:
+                # Avoid a multi-index $or plan on an authentication hot path.
+                # Both exact-tenant lookups use the already-established
+                # (tenantId, user_id) and Mongo _id indexes, respectively.
+                # Sequential calls preserve caller-owned ClientSession safety;
+                # never run concurrent commands in the same session.
+                # The canonical read remains bounded to detect duplicate
+                # identity records even where the index is nonunique.
+                canonical_candidates = list(self._call_collection(
+                    users, "find", canonical_filter, session=session,
+                ).limit(2))
+                if len(canonical_candidates) > 1:
                     raise AuthRegistryTenantError(
                         "AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS"
                     )
-                canonical_candidates = [
-                    candidate
-                    for candidate in candidates
-                    if candidate.get("user_id") == user_id
-                ]
-                legacy_candidates = [
-                    candidate
-                    for candidate in candidates
-                    if candidate.get("_id") == object_id
-                ]
-                if len(canonical_candidates) > 1 or len(legacy_candidates) > 1:
+                legacy_candidate = self._call_collection(
+                    users, "find_one", legacy_filter, session=session,
+                )
+                # Never infer an identity match from the index alone.
+                if legacy_candidate is not None and (
+                    legacy_candidate.get("_id") != object_id
+                    or legacy_candidate.get("tenantId") != canonical_tenant_id
+                ):
                     raise AuthRegistryTenantError(
                         "AUTH_PRINCIPAL_IDENTITY_AMBIGUOUS"
                     )
                 return (
                     canonical_candidates[0] if canonical_candidates else None,
-                    legacy_candidates[0] if legacy_candidates else None,
+                    legacy_candidate,
                 )
 
             canonical_document, legacy_document = observe(
@@ -1427,7 +1423,7 @@ __all__ = ["AuthRegistry", "AuthRegistryTenantError", "get_auth_registry"]
 
 """
 ARTIFACT: tools/eos/saas/auth/auth_registry.py
-VERSION: v1.17.0-COMBINED-LEGACY-IDENTITY-READ
+VERSION: v1.18.0-INDEXED-DUAL-IDENTITY-CURRENTNESS
 AUTHORITY BOUNDARY: authentication business semantics; TenantRegistry owns canonical tenant validation; registration and its tenant validation may participate in but never own a caller transaction
 TENANT POSTURE: users, JWTs, sessions, credential reads/CAS, and refresh validation require one ACTIVE canonical tenant_id; revocations are tenant_id + user_id scoped
 FAIL-CLOSED POSTURE: invalid identity types, malformed BSON fallbacks, competing identity rows, invalid tenant/revision/refresh state, or missing principal authority issue no final auth material; compatibility reads never migrate identities
