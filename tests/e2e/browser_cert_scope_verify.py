@@ -6,14 +6,18 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS Suite-scoped durable browser certification verifier.
 
 TITLE: WILSY OS Suite-Scoped Durable Browser Certificate
-VERSION: v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT
+VERSION: v1.6.0-FOUR-VIEWPORT-HEADQUARTERS-DURABLE-CERT
 AUTHORITY: Disposable certification verifier; Python EOS owns business truth.
 EPITOME: Verify the durable consequences of independently selected test suites.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_scope_verify.py
 COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
                             existing Legal and SYSTEM certification suites.
 CERTIFICATION / UPDATE DATE: 2026-11-13
-CHANGELOG: v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT adds exact company-document revision/receipt verification
+CHANGELOG: v1.6.0-FOUR-VIEWPORT-HEADQUARTERS-DURABLE-CERT requires
+           exactly four independently completed Headquarters browser work
+           items, one from each 1440/1760/1024/390 viewport. Existing
+           UUID, owner, completion and foreign-tenant checks are unchanged.
+           v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT adds exact company-document revision/receipt verification
            via a companion fixture; all existing scope checks are preserved.
            v1.4.0-HEADQUARTERS-DURABLE-SOURCE-CERT independently rehydrates
            both desktop/mobile Headquarters source completions, exact creator,
@@ -185,9 +189,9 @@ def verify_daily(database, state):
         return parsed.version == 4 and str(parsed) == value.lower()
 
     if (
-        len(work_ids) != 2
+        len(work_ids) != 4
         or not all(isinstance(value, str) and value for value in work_ids)
-        or len(request_keys) != 2
+        or len(request_keys) != 4
         or not all(is_v4_uuid(value) for value in request_keys)
     ):
         raise RuntimeError("BROWSER_CERT_DAILY_WORK_IDENTITY_INVALID")
@@ -229,7 +233,7 @@ def verify_daily(database, state):
 
 
 def verify_headquarters(database, state):
-    """Require exactly two independently completed Headquarters browser tasks.
+    """Require exactly four independently completed Headquarters browser tasks.
 
     The browser suite proves authenticated command routing and tenant denial.
     This read-only companion certifies that each result actually persisted
@@ -245,7 +249,7 @@ def verify_headquarters(database, state):
         "description": "",
         "title": {"$regex": "^Headquarters source work hq-browser-"},
     }))
-    if len(rows) != 2:
+    if len(rows) != 4:
         raise RuntimeError("BROWSER_CERT_HEADQUARTERS_WORK_CARDINALITY_INVALID")
 
     work_ids = {row.get("work_item_id") for row in rows}
@@ -492,7 +496,7 @@ if __name__ == "__main__":
     main()
 
 # ARTIFACT: tests/e2e/browser_cert_scope_verify.py
-# VERSION: v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT
+# VERSION: v1.6.0-FOUR-VIEWPORT-HEADQUARTERS-DURABLE-CERT
 # AUTHORITY BOUNDARY: Disposable read-only source verification only.
 # TENANT POSTURE: Exact disposable tenant; HR scope confirms no employee admission.
 # FAIL-CLOSED POSTURE: Missing/partial/foreign work never passes certification.
