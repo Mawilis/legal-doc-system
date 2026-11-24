@@ -340,7 +340,7 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     )
 
 # ARTIFACT: EOS Runtime Database Ownership Certificate
-# VERSION: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION
+# VERSION: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION
 # AUTHORITY BOUNDARY: Offline repository ownership evidence.
 # TENANT POSTURE: No data access or mutation.
 # FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.
