@@ -1,13 +1,23 @@
 """TITLE: WILSY OS Daily Attention Authenticated HTTP Read Surface
-VERSION: v1.4.0-GOVERNED-CRM-EDIT-CAPABILITY
+VERSION: v1.5.0-EXACT-CRM-CAPABILITY-SOURCE-READ
 AUTHORITY: WILSY OS Core Governance; canonical source EOS service authority.
 EPITOME: Serve cursor-bounded attention feeds, counts, source coverage and
          deadline calendar from the existing independently authorised My Work.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/attention_router.py
 COLLABORATION / OWNERSHIP: unified_my_work_router.read_my_work authorizes
-         source reads and tenant/principal admission; attention_feed_projection
+         full feed source reads; its existing CRM read dependency and CRM
+         source transaction authorize CRM-only command capability admission;
+         attention_feed_projection
          normalizes read-only items; no second source/task registry is created.
-CERTIFICATION / UPDATE DATE: 2026-11-17
+CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.5.0-EXACT-CRM-CAPABILITY-SOURCE-READ replaces only the
+           CRM command-availability endpoint's expensive full My Work
+           dependency with the existing exact-tenant CRM read IAM, source
+           transaction and entitlement verification. Command capabilities
+           retain independent current create/update/complete IAM, with every
+           context checked against the authenticated principal and tenant.
+           Denied/absent CRM read, missing entitlement and source outage fail
+           closed. Other attention routes and source-owned commands unchanged.
 CHANGELOG: v1.4.0-GOVERNED-CRM-EDIT-CAPABILITY returns optional CRM
            UPDATE only when current exact tenant/principal independent edit
            authorization is admitted. Each source command reauthorizes, and
@@ -28,8 +38,9 @@ CHANGELOG: v1.3.0-ISOLATED-SOURCE-ACTION-AVAILABILITY adds
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No unauthorised partial queue, no credentials or
          work bodies in logs, no source actions offered as executable HTTP.
-TENANT BOUNDARY: Every endpoint depends on revalidated canonical read_my_work
-         including current bearer, tenant header and module/record authority.
+TENANT BOUNDARY: Full feed endpoints retain canonical read_my_work; CRM action
+         availability uses exact CRM read IAM, bearer, tenant header and source
+         entitlement check without admitting unrelated source records.
 AUTHORITY BOUNDARY: Source services exclusively own task/approval commands;
          these GET endpoints cannot create, alter or acknowledge work.
 TRANSACTION / IDEMPOTENCY BOUNDARY: All reads use source-owned transactions;
@@ -43,9 +54,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from starlette.concurrency import run_in_threadpool
 
-from tools.eos.api.unified_my_work_router import read_my_work
+from tools.eos.api.unified_my_work_router import (
+    _CRM_READ, _assert_context, _read_crm, read_my_work,
+)
+from tools.eos.auth.authentication import get_current_identity
 from tools.eos.api.tenant_authorization_http import (
     OptionalTenantAuthorization, TenantAuthorizationContext,
 )
@@ -262,9 +277,44 @@ def _source_actions(
     }
 
 
+async def _read_exact_crm_action_scope(
+    tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
+    identity: Any = Depends(get_current_identity),
+    crm_read: TenantAuthorizationContext | None = Depends(_CRM_READ),
+) -> dict[str, Any]:
+    """Admit CRM capability presentation from fresh exact-tenant source truth.
+
+    Only a current CRM read IAM result and a successful existing CRM source
+    transaction/entitlement read can admit the CRM module. This is not a
+    command permit: create/update/complete remain separate per-request EOS IAM
+    dependencies and the source commands reauthorize every mutation. No
+    cross-source read, shared transaction, cache or new Mongo client exists.
+    An absent entitlement, denied read or foreign scope rejects without
+    exposing records or another tenant's existence.
+    """
+    if not isinstance(tenant_id, str) or not tenant_id or tenant_id != tenant_id.strip():
+        raise HTTPException(status_code=403, detail="TENANT_SCOPE_REQUIRED")
+    principal_id = identity.identity_id
+    _assert_context(crm_read, tenant_id=tenant_id, principal_id=principal_id)
+    if crm_read is None:
+        raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED")
+    # The canonical CRM source transaction verifies its real product
+    # entitlement. Omitted entitlement is a denial here, not an empty queue.
+    source = await run_in_threadpool(_read_crm, tenant_id=tenant_id)
+    if source is None:
+        raise HTTPException(status_code=403, detail="ATTENTION_SOURCE_NOT_AUTHORIZED")
+    if source.get("tenant_id") != tenant_id:
+        raise HTTPException(status_code=503, detail="ATTENTION_SOURCE_SCOPE_INCONSISTENT")
+    return {
+        "tenant_id": tenant_id,
+        "principal_id": principal_id,
+        "sources_included": ["CRM"],
+    }
+
+
 @router.get("/actions/crm")
 async def attention_crm_actions(
-    source: dict[str, Any] = Depends(read_my_work),
+    source: dict[str, Any] = Depends(_read_exact_crm_action_scope),
     create: TenantAuthorizationContext | None = Depends(_CRM_CREATE),
     complete: TenantAuthorizationContext | None = Depends(_CRM_COMPLETE),
     update: TenantAuthorizationContext | None = Depends(_CRM_UPDATE),
@@ -316,12 +366,13 @@ async def attention_source_health(
 __all__ = ["router", "attention_feed", "attention_counts",
            "attention_calendar", "attention_source_health",
            "attention_authorised_actions", "attention_crm_actions",
-           "attention_operations_actions", "attention_intelligence_actions"]
+           "attention_operations_actions", "attention_intelligence_actions",
+           "_read_exact_crm_action_scope"]
 
 # ARTIFACT: tools/eos/api/attention_router.py
-# VERSION: v1.4.0-GOVERNED-CRM-EDIT-CAPABILITY
+# VERSION: v1.5.0-EXACT-CRM-CAPABILITY-SOURCE-READ
 # AUTHORITY BOUNDARY: Authenticated source-owned reads; no attention commands.
-# TENANT POSTURE: Exact tenant/principal read_my_work dependency each request.
+# TENANT POSTURE: Full feeds use read_my_work; CRM action scope independently revalidates exact tenant IAM and entitlement.
 # FAIL-CLOSED POSTURE: No inferred health, entitlement, access or cleared queue.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
