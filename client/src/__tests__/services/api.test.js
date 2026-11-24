@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.6.0-STRICT-FOUNDER-STRATEGY-BODY-CERT
+ * VERSION: v1.7.0-VERIFIED-TENANT-NAVIGATION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.7.0-VERIFIED-TENANT-NAVIGATION-CERT asserts that
+ *            authenticated Projects, My Work, attention and CRM cannot
+ *            leave the browser without an EOS-verified transport tenant;
+ *            navigation retains the exact selected ID, logout clears it,
+ *            and alias candidates remain rejected.
  * CHANGELOG: v1.6.0-STRICT-FOUNDER-STRATEGY-BODY-CERT
  *            certifies new Founder draft, submit, ratify and link commands
  *            preserve exact strict Pydantic bodies without injected timestamp;
@@ -160,6 +165,63 @@ describe('api.js – Sovereign HTTP Client', () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+  });
+
+  describe('EOS-verified tenant navigation transport interlock', () => {
+    const scopedUrls = [
+      '/projects?limit=1',
+      '/projects/prj-' + 'a'.repeat(48) + '/tasks',
+      '/my-work',
+      '/attention/actions/crm',
+      '/crm/owner-workspace',
+    ];
+    const activeId = 'WILSYTENANT-4CD2FZ4O';
+
+    it('rejects tenant-bound requests locally while workspace bootstrap is unresolved', async () => {
+      localStorageMock.setItem('wilsy_auth_token', 'synthetic-session-bearer');
+      for (const url of scopedUrls) {
+        await expect(requestInterceptorCapture.fulfilled({
+          url, method: 'get', headers: {},
+        })).rejects.toMatchObject({
+          code: 'VERIFIED_TENANT_CONTEXT_REQUIRED',
+          isClientAuthGuard: true,
+        });
+      }
+      // Bootstrap is allowed to obtain the EOS-owned authenticated tenant.
+      const bootstrap = await requestInterceptorCapture.fulfilled({
+        url: '/auth/workspace-bootstrap',
+        method: 'get',
+        headers: { Authorization: 'Bearer synthetic-session-bearer' },
+      });
+      expect(bootstrap.headers['X-Tenant-ID']).toBeUndefined();
+    });
+
+    it('keeps the exact canonical tenant throughout successive workspace navigations', async () => {
+      localStorageMock.setItem('wilsy_auth_token', 'synthetic-session-bearer');
+      setActiveTenantTransportId(activeId);
+      for (const url of scopedUrls) {
+        const sealed = await requestInterceptorCapture.fulfilled({
+          url, method: 'get',
+          headers: { 'X-Tenant-ID': 'wilsy' },
+        });
+        expect(sealed.headers['X-Tenant-ID']).toBe(activeId);
+        expect(sealed.headers.Authorization).toBe('Bearer synthetic-session-bearer');
+      }
+      setActiveTenantTransportId(null);
+      await expect(requestInterceptorCapture.fulfilled({
+        url: '/projects', method: 'get', headers: {},
+      })).rejects.toMatchObject({ code: 'VERIFIED_TENANT_CONTEXT_REQUIRED' });
+    });
+
+    it('rejects display aliases as active tenant IDs without inventing a fallback', () => {
+      expect(() => setActiveTenantTransportId('wilsy')).toThrow(
+        'ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID',
+      );
+      expect(() => setActiveTenantTransportId('WILSY')).toThrow(
+        'ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID',
+      );
+      expect(() => setActiveTenantTransportId(activeId)).not.toThrow();
+    });
   });
 
   // ──────────────────────────────────────────────────────────────────────────
