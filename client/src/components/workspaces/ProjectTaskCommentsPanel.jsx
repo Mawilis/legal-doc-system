@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
+ * VERSION: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE stabilizes
+ *          semantically equal parent-provided tenant headers so ordinary
+ *          parent rerenders cannot restart all four task activity GETs.
+ *          Actual header changes still revalidate source scope; EOS-owned
+ *          status, pagination, evidence and explicit retry remain unchanged.
  * CHANGELOG: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
  *          displays independently verified task lifecycle, approval
  *          and evidence events even if the comment source fails.
@@ -206,7 +211,19 @@ export default function ProjectTaskCommentsPanel({
   const sourceBase = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
     + encodeURIComponent(taskId);
-  const headers = tenantHeaders || {};
+  // Parent task view may recreate an equal tenantHeaders object on every
+  // render. Depending on object identity restarted four EOS GETs, including
+  // long-running comments, whenever the parent refreshed any UI state.
+  // Keep a stable value snapshot; actual header changes still trigger reads.
+  const headersRef = useRef(null);
+  const candidateHeaders = tenantHeaders && typeof tenantHeaders === 'object' ? tenantHeaders : {};
+  const previousHeaders = headersRef.current;
+  const candidateKeys = Object.keys(candidateHeaders);
+  if (!previousHeaders || candidateKeys.length !== Object.keys(previousHeaders).length
+      || candidateKeys.some(key => previousHeaders[key] !== candidateHeaders[key])) {
+    headersRef.current = { ...candidateHeaders };
+  }
+  const headers = headersRef.current;
 
   const loadEvents = useCallback(async (nextOffset = 0) => {
     const active = scope;
@@ -240,7 +257,7 @@ export default function ProjectTaskCommentsPanel({
       setEventHasMore(false);
       setEventState('UNAVAILABLE');
     }
-  }, [scope, eventRoute, tenantHeaders, tenantId, principalId, projectId, taskId]);
+  }, [scope, eventRoute, headers, tenantId, principalId, projectId, taskId]);
 
   const loadEvidence = useCallback(async (kind) => {
     const active = scope;
@@ -304,7 +321,7 @@ export default function ProjectTaskCommentsPanel({
       setSourceHasMore(false);
       setSourceState('UNAVAILABLE');
     }
-  }, [scope, sourceBase, tenantHeaders, tenantId, projectId, taskId, principalId]);
+  }, [scope, sourceBase, headers, tenantId, projectId, taskId, principalId]);
 
   const load = useCallback(async (nextOffset = 0) => {
     const sequence = ++generation.current;
@@ -346,7 +363,7 @@ export default function ProjectTaskCommentsPanel({
       setState(code === 401 || code === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
-  }, [scope, tenantId, principalId, projectId, taskId, route, tenantHeaders]);
+  }, [scope, tenantId, principalId, projectId, taskId, route, headers]);
 
   useEffect(() => {
     generation.current += 1;
@@ -669,7 +686,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
+// VERSION: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
