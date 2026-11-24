@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES
+VERSION: v1.47.1-PRESERVED-READ-RETRY-INTERFACE
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -30,7 +30,12 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
 CHANGELOG:
-   v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES profiles slow/failing
+   v1.47.1-PRESERVED-READ-RETRY-INTERFACE retains the original
+  zero-keyword Projects list transaction call and exact bounded retry
+  contract, while a request-local ContextVar carries timing state into
+  the unmodified transaction/entitlement path. No global mutable scope,
+  IAM change or repeated source query is introduced.
+  v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES profiles slow/failing
    read-only Projects list/task/task activity/evidence transactions;
    times Mongo session, entitlement and source phases with safe labels.
    No IAM, session, retry, query, mutation or timeout changes.
@@ -209,6 +214,7 @@ CHANGELOG:
 """
 from __future__ import annotations
 
+from contextvars import ContextVar
 from datetime import date, datetime, timezone
 import hashlib
 import logging
@@ -357,8 +363,13 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY"
+VERSION: Final[str] = "v1.47.1-PRESERVED-READ-RETRY-INTERFACE"
 logger = logging.getLogger("WilsyOS.API.Projects")
+# Projects list keeps its established _transaction(context, callback) call
+# contract; profiling metadata lives only within the current request context.
+_project_list_read_timings: ContextVar[dict[str, float] | None] = ContextVar(
+    "wilsy_projects_list_read_timings", default=None,
+)
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
@@ -743,6 +754,8 @@ def _transaction(
     project and entitlement reads in each attempt receive the exact callback
     session. Index DDL belongs to the application startup readiness gate.
     """
+    if phase_timings is None:
+        phase_timings = _project_list_read_timings.get()
     _require_project_role_tenant(context)
     client, database = kernel_db.get_client(), kernel_db.get_database()
     if client is None or database is None:
@@ -1182,6 +1195,14 @@ def _profiled_projects_get(
             )
 
     try:
+        if operation == "PROJECT_LIST":
+            token = _project_list_read_timings.set(timings)
+            try:
+                # Preserve the original no-keyword transaction interface and
+                # whole-read retry semantics pinned by institutional tests.
+                return _transaction(context, measured)
+            finally:
+                _project_list_read_timings.reset(token)
         return _transaction(context, measured, phase_timings=timings)
     except Exception:
         outcome = "FAILED"
@@ -4268,7 +4289,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES
+# VERSION: v1.47.1-PRESERVED-READ-RETRY-INTERFACE
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
