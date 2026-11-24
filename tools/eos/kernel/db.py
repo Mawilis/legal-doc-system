@@ -666,7 +666,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.5.0-STRICT-REMOTE-MONGO-TLS
+# VERSION: v2.6.0-BOUNDED-ON-DEMAND-CONNECTIONS
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.
