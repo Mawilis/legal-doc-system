@@ -1,13 +1,13 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.40.1-HEADER-INSPECTION-COMPLIANCE
+VERSION: v1.41.0-READ-PHASE-INSTRUMENTATION-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_projects_router_contract.py
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
-CERTIFICATION / UPDATE DATE: 2026-11-23.
+CERTIFICATION / UPDATE DATE: 2026-11-24.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
                             connection, tenant records or mutation.
@@ -17,6 +17,9 @@ AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
                     claim a live role assignment, entitlement or database write.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 CHANGELOG:
+  v1.41.0-READ-PHASE-INSTRUMENTATION-CERT verifies bounded,
+  no-identity logs for slow/failing read-only Projects GET handlers;
+  wraps one original snapshot transaction and never swallows 403.
   v1.40.1-HEADER-INSPECTION-COMPLIANCE moves the existing sovereign authority
   and privacy fields into the inspected file header; test behavior unchanged.
   v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
@@ -151,7 +154,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.30.0-ATOMIC-TEMPLATE-CI-CERT"
+VERSION = "v1.41.0-READ-PHASE-INSTRUMENTATION-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -1560,9 +1563,71 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 
+def test_profiled_projects_get_preserves_snapshot_scope_and_emits_safe_slow_timings(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A measured GET uses one original session and never emits tenant/actor."""
+    context = SimpleNamespace(tenant_id="tenant-private-marker",
+                              identity=SimpleNamespace(identity_id="principal-private-marker"))
+    calls = []
+
+    def transaction(authorized, callback, *, phase_timings):
+        assert authorized is context
+        calls.append(authorized)
+        phase_timings.update({
+            "session_open_ms": 5.0, "transaction_ms": 1200.0,
+            "entitlement_ms": 190.0, "attempts": 1.0,
+        })
+        return callback("same-registry", "same-session")
+
+    def source(registry, session):
+        assert registry == "same-registry" and session == "same-session"
+        # Simulate a slow operation without opening a real Mongo connection.
+        monkeypatch.setattr(projects_router, "perf_counter", lambda: 0.0)
+        return {"schema": "WILSY-PROJECT-LIST/V1"}
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    clock = iter([0.0, 0.0, 1.1, 1.2])
+    monkeypatch.setattr(projects_router, "perf_counter", lambda: next(clock))
+    with caplog.at_level("WARNING"):
+        result = projects_router._profiled_projects_get(
+            context, "PROJECT_LIST", source,
+        )
+    assert result["schema"] == "WILSY-PROJECT-LIST/V1"
+    assert calls == [context]
+    record = caplog.text
+    assert "PROJECTS_GET_LATENCY operation=PROJECT_LIST outcome=SLOW" in record
+    assert "session_open_ms=5.0" in record
+    assert "entitlement_ms=190.0" in record
+    assert "tenant-private-marker" not in record
+    assert "principal-private-marker" not in record
+
+
+def test_profiled_projects_get_preserves_entitlement_denial(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """No timing instrumentation may transform an exact source denial."""
+    expected = HTTPException(status_code=403, detail="PROJECTS_ENTITLEMENT_REQUIRED")
+
+    def deny(_context, _callback, *, phase_timings):
+        assert isinstance(phase_timings, dict)
+        raise expected
+
+    monkeypatch.setattr(projects_router, "_transaction", deny)
+    with caplog.at_level("WARNING"):
+        with pytest.raises(HTTPException) as caught:
+            projects_router._profiled_projects_get(
+                object(), "TASK_COMMENTS", lambda *_args: {},
+            )
+    assert caught.value is expected
+    assert "operation=TASK_COMMENTS outcome=FAILED" in caplog.text
+
+
+
+
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.40.1-HEADER-INSPECTION-COMPLIANCE
+# VERSION: v1.41.0-READ-PHASE-INSTRUMENTATION-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
