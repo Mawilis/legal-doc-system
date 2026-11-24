@@ -1,7 +1,7 @@
 """Unit certification for fail-closed authentication authority projection.
 
 TITLE: Authentication Principal Authority Certificate
-VERSION: v1.2.0-NONBLOCKING-AUTHENTICATION-WORKER-CERT
+VERSION: v1.2.1-ENV-INDEPENDENT-TIMING-TEST
 AUTHORITY: Test-only evidence for canonical principal and durable revision gates.
 EPITOME: Certifies that protected authentication reaches canonical principal
     authority and exact durable credential-revision comparison.
@@ -10,6 +10,10 @@ COLLABORATION / OWNERSHIP: Test-only certificate; authentication.py and its
     canonical AuthRegistry dependency remain read-only in this gate.
 CERTIFICATION / UPDATE DATE: 2026-11-24
 CHANGELOG:
+    2026-11-24 v1.2.1-ENV-INDEPENDENT-TIMING-TEST explicitly removes
+    inherited opt-in diagnostic flag for disabled-telemetry assertion, then
+    enables it inside the test. Shell instrumentation must never affect the
+    same test's deterministic privacy and stage verification.
     2026-11-24 v1.2.0-NONBLOCKING-AUTHENTICATION-WORKER-CERT verifies
     synchronous principal and credential currentness occur outside the event
     loop while request-local opaque timing correlation reaches both worker
@@ -158,6 +162,7 @@ def test_active_requires_durable_authority_and_projects_status(monkeypatch):
 def test_request_timing_is_opt_in_and_excludes_credential_and_identity_data(
     caplog, monkeypatch
 ):
+    monkeypatch.delenv("WILSY_MY_WORK_TIMING", raising=False)
     payload = access_payload(
         identity_id="principal-private",
         tenant_id="tenant-private",
