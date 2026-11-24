@@ -373,7 +373,9 @@ export default function MyWorkWorkspace(props = {}) {
       const status = requestError?.response?.status;
       const code = safeErrorCode(requestError);
       const mustClear = status === 401 || status === 403
-        || code === 'MY_WORK_SCOPE_MISMATCH';
+        || code === 'MY_WORK_SCOPE_MISMATCH'
+        || code === 'MY_WORK_AUTHENTICATED_SCOPE_REQUIRED'
+        || code === 'MY_WORK_AUTHENTICATED_SCOPE_INVALID';
       if (mustClear || !quiet) {
         setProjection(null);
         setProjectionScope(null);
