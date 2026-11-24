@@ -1,5 +1,5 @@
 """TITLE: MW-T12 single-database rollback source continuity certificate.
-VERSION: v1.3.0-REDACTED-SEED-FAILURE-CLASSIFICATION-CERT
+VERSION: v1.4.0-SEED-VERSUS-POST-BROWSER-EVIDENCE-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify one disposable Mongo dataset, three exact source versions,
          independent durable readback and fail-closed audit evidence checks.
@@ -7,6 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing fixture owns exact-tenant source records;
          current/older staged code must not create new database consumers.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.4.0-SEED-VERSUS-POST-BROWSER-EVIDENCE-CERT
+           guards the fixture contract: source-only continuity checks only
+           seeded evidence while the independent post-browser verifier
+           still requires the legal conflict-review record. Neither
+           assertion authorizes creating synthetic reviewer decisions.
 CHANGELOG: v1.3.0-REDACTED-SEED-FAILURE-CLASSIFICATION-CERT
            proves known seed-only verifier failures are safely classified
            and unrecognized stderr secrets are not propagated. The
@@ -37,6 +42,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution.
 """
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 import subprocess
@@ -186,6 +192,23 @@ def test_different_database_or_actor_state_is_denied() -> None:
         operator._authenticate_unchanged("http://127.0.0.1:19095", fixture)
 
 
+def test_fixture_seed_continuity_excludes_browser_created_review_but_full_verify_requires_it() -> None:
+    """Never require an uncreated review or relax later browser verification."""
+    fixture = Path(__file__).resolve().parents[1] / "e2e" / "browser_cert_fixture.py"
+    source = fixture.read_text(encoding="utf-8")
+    parsed = ast.parse(source)
+    funcs = {
+        node.name: ast.get_source_segment(source, node) or ""
+        for node in parsed.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    assert '"legal_conflict_screenings"' in funcs["verify_seed"]
+    assert '"legal_conflict_reviews"' not in funcs["verify_seed"]
+    assert '"legal_conflict_reviews"' not in funcs["fingerprint"]
+    assert 'review_count = database["legal_conflict_reviews"]' in funcs["verify"]
+    assert "BROWSER_CERT_DURABLE_REVIEW_CARDINALITY_INVALID" in funcs["verify"]
+
+
 def test_verify_seed_failure_code_is_allowlisted_and_never_leaks_stderr(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:
@@ -268,7 +291,7 @@ def test_mutated_audit_records_fail_before_version_pass(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_same_data_rehearsal.py
-# VERSION: v1.3.0-REDACTED-SEED-FAILURE-CLASSIFICATION-CERT
+# VERSION: v1.4.0-SEED-VERSUS-POST-BROWSER-EVIDENCE-CERT
 # AUTHORITY BOUNDARY: Synthetic local source-version continuity only.
 # TENANT POSTURE: No external database or production actor.
 # FAIL-CLOSED POSTURE: Missing or mutated source evidence denies success.
