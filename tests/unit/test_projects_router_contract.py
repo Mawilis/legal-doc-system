@@ -1582,8 +1582,7 @@ def test_profiled_projects_get_preserves_snapshot_scope_and_emits_safe_slow_timi
 
     def source(registry, session):
         assert registry == "same-registry" and session == "same-session"
-        # Simulate a slow operation without opening a real Mongo connection.
-        monkeypatch.setattr(projects_router, "perf_counter", lambda: 0.0)
+        # No real Mongo access; the deterministic clock represents source latency.
         return {"schema": "WILSY-PROJECT-LIST/V1"}
 
     monkeypatch.setattr(projects_router, "_transaction", transaction)
