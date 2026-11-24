@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING
+VERSION: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -18,6 +18,11 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT extends
+  explicit opt-in, identifier-free request timing to exactly the two remaining
+  slow GET boundaries: module manifest and CRM attention command availability.
+  No route or query arguments, credential material, source payloads, IAM,
+  authentication, caching or timeout semantics are changed.
 CHANGELOG: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING adds bounded,
   opt-in request boundary duration logging for four exact GET routes. This
   includes FastAPI dependency/authentication time that handler-only telemetry
@@ -594,6 +599,8 @@ class WilsyAPIServer:
             # comparison with Chrome's overall request time.
             diagnostic_routes = {
                 "/api/auth/workspace-bootstrap": "WORKSPACE_BOOTSTRAP",
+                "/api/auth/module-manifest": "MODULE_MANIFEST",
+                "/api/attention/actions/crm": "ATTENTION_CRM_ACTIONS",
                 "/api/my-work": "MY_WORK",
                 "/api/projects": "PROJECTS_LIST",
                 "/api/projects/summary": "PROJECTS_SUMMARY",
@@ -1351,7 +1358,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING
+# VERSION: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
