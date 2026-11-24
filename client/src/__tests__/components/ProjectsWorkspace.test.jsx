@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.74.0-ASYNC-SOURCE-READY-CLIENT-CERT
+ * VERSION: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
- * CERTIFICATION / UPDATE DATE: 2026-11-20.
+ * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION exercises existing exact-task
+ *          comment commands, waits for independent readback and refreshes
+ *          history without inventing rollback, Strategy or release truth.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic exact-scope fixtures only; no tokens,
  *          real identities, private comments or production credentials.
@@ -1598,6 +1601,111 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
   });
 
+  it('simulates MW-T12 milestone recording with EOS comment readback and blocked release', async () => {
+    const storedProject = project({ name: 'WILSY OS — Unified Operating Platform Foundation', status: 'active' });
+    const taskId = 'ptk-' + 'c'.repeat(48);
+    const task = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null,
+      title: 'MW-T12 — Certify production readiness and rollback', description: '',
+      status: 'IN_PROGRESS', assignee_principal_id: PRINCIPAL, due_date: '2026-11-23',
+      depends_on: [], created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      revision: 3, created_at: '2026-11-17T10:13:00+00:00',
+      updated_at: '2026-11-24T04:31:00+00:00', fingerprint: 'a'.repeat(128),
+    };
+    const sha = '840b294865a102ede84f77e3fc83ce4dcaabec19';
+    const milestone = [
+      '## MW-T12 — Engineering delivery update',
+      '**CI:** 23/23 exact-head GitHub workflows passed',
+      '**Commit:** ' + sha,
+      '**Local build:** successful, with nonblocking warnings',
+      '**Rollback and recovery:** NOT CERTIFIED — nonproduction drill pending',
+      '**Strategy outcome:** READBACK REQUIRED — no outcome score certified',
+      '**Task lifecycle:** IN_PROGRESS — production release remains BLOCKED',
+    ].join('\n\n');
+    const comment = {
+      schema: 'wilsy.project.comment.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, comment_id: 'pcm-' + 'd'.repeat(48),
+      author_principal_id: PRINCIPAL, body: milestone, mentions: [],
+      fingerprint: 'f'.repeat(128), created_at: '2026-11-24T04:35:00+00:00',
+    };
+    const comments = `/projects/${PROJECT_ID}/tasks/${taskId}/comments`;
+    let persisted = false;
+    let commentReads = 0;
+    let releaseReadback;
+    const heldReadback = new Promise(resolve => { releaseReadback = resolve; });
+    mockProjectGet(async (route, config = {}) => {
+      if (route === '/projects') return { data: list([storedProject]) };
+      if (route === '/projects/summary') return { data: summary([storedProject]) };
+      if (route === `/projects/${PROJECT_ID}`) return { data: result(storedProject) };
+      if (route === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [task],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (route === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [],
+        limit: 100, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (route === comments + '?limit=50&offset=0') {
+        expect(config.headers['X-Tenant-ID']).toBe(TENANT);
+        commentReads += 1;
+        if (persisted && commentReads === 2) await heldReadback;
+        return { data: {
+          schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId,
+          items: persisted ? [comment] : [], limit: 50, offset: 0,
+          has_more: false, next_offset: null,
+        } };
+      }
+      throw new Error('Unexpected simulated EOS GET ' + route);
+    });
+    api.post.mockImplementation(async (route, payload, config) => {
+      expect(route).toBe(comments);
+      expect(payload).toEqual({ body: milestone, mentions: [] });
+      expect(config.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(config.headers['Idempotency-Key']).toBeTruthy();
+      persisted = true;
+      return { data: {
+        schema: 'WILSY-PROJECT-COMMENT-RESULT/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId, comment,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="mw-t12-milestone-simulation"/>);
+    fireEvent.click(await screen.findByRole('button', {
+      name: /View project WILSY OS — Unified Operating Platform Foundation/,
+    }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Project workspace views' }))
+      .getByRole('button', { name: 'Activity & discussion' }));
+    const queue = await screen.findByRole('list', { name: 'Verified discussion work items' });
+    fireEvent.click(within(queue).getByRole('button', { name: /MW-T12 — Certify production readiness and rollback/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Write update' }));
+    const editor = screen.getByRole('textbox', { name: 'New task comment' });
+    fireEvent.change(editor, { target: { value: milestone } });
+    fireEvent.click(screen.getByRole('button', { name: 'Publish to EOS' }));
+    await waitFor(() => expect(commentReads).toBe(2));
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(editor).toHaveValue(milestone);
+    expect(api.patch).not.toHaveBeenCalled();
+    await act(async () => { releaseReadback(); });
+    await waitFor(() => expect(editor).toHaveValue(''));
+    const history = document.querySelector('[aria-label="Verified task activity history"]');
+    await waitFor(() => expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed'));
+    expect(history).toHaveTextContent(sha);
+    expect(history).toHaveTextContent('NOT CERTIFIED');
+    expect(history).toHaveTextContent('READBACK REQUIRED');
+    expect(history).toHaveTextContent('production release remains BLOCKED');
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(commentReads).toBeGreaterThanOrEqual(3));
+    expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed');
+    expect(task.status).toBe('IN_PROGRESS');
+    expect(storedProject.status).toBe('active');
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('prioritizes the task source and classifies real EOS HTTP 503 without auxiliary reads', async () => {
     const persisted = project();
     let rejectTasks;
@@ -2801,7 +2909,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.74.0-ASYNC-SOURCE-READY-CLIENT-CERT
+ * VERSION: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
