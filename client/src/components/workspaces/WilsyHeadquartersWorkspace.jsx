@@ -5,13 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.14.1-PROJECT-WORK-KEY-FOCUS
+ * VERSION: v4.14.2-EXACT-ROW-DIRECT-HANDOFF
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v4.14.2-EXACT-ROW-DIRECT-HANDOFF sends the selected
+ *          validated EOS row directly to its governed source workspace,
+ *          rather than re-looking up a possibly stale parent snapshot.
  * CHANGELOG: v4.14.1-PROJECT-WORK-KEY-FOCUS preserves the source
  *          work_item_id when opening exact project tasks through Headquarters
  *          without granting authority or inventing task records.
@@ -1363,7 +1366,7 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
         : !snapshot ? <div className="hq-work-status" role="alert"><strong>{error === 'MY_WORK_ACCESS_DENIED' ? 'My Work authorization required' : 'My Work snapshot unavailable'}</strong><p>Current work could not be verified. Retry the source read.</p><button type="button" onClick={onRefresh}>Retry source read</button></div>
           : !selected ? <div className={visibleItems.length ? 'hq-work-list' : 'hq-work-list hq-work-list--empty'} aria-label="Authorized Headquarters work queue">
             {visibleItems.length === 0 ? <div className="hq-work-status hq-verified-empty" data-work-state={items.length ? 'FILTERED_EMPTY' : 'VERIFIED_EMPTY'}><span className="hq-empty-icon"><CheckCircle2 size={21}/></span><div><strong>{items.length ? 'No matching work' : 'Current source read verified'}</strong><p>{!items.length ? snapshot.sources_included.length ? 'No active work was returned by the authorized sources at the recorded time.' : 'No work source was included in this session.' : 'No work matches these filters.'}</p>{snapshot.sources_included.includes('OPERATIONS') && <button type="button" onClick={onManage}>Create or manage Operations work</button>}<span className="hq-empty-time">Verified {formatHeadquartersDeadline(snapshot.as_of)}</span></div></div>
-              : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onSelect(item.source_key); setCommand({ state: 'IDLE', message: '' }); }}>
+              : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onOpen(item); setCommand({ state: 'IDLE', message: '' }); }}>
                 <span className={'hq-round ' + ({ LEGAL: 'hq-purple', OPERATIONS: 'hq-green', INTELLIGENCE: 'hq-blue', CRM: 'hq-orange' }[item.source] || 'hq-blue')}>{item.source === 'LEGAL' ? <FileText size={17}/> : item.source === 'CRM' ? <Users size={17}/> : <CheckCircle2 size={17}/>}</span>
                 <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}{item.source === 'PROJECTS' ? item.dependency_readiness === 'WAITING' ? ' · Waiting on ' + item.dependency_remaining + ' predecessor(s)' : item.dependency_readiness === 'READY' ? item.dependency_total ? ' · Predecessors complete' : ' · No predecessor gate' : ' · Readiness unverified' : ''}</small></span>
                 <span className="hq-priority" data-priority={item.priority}>{item.priority === 'NORMAL' ? 'Normal' : item.priority === 'HIGH' ? 'High' : item.priority === 'LOW' ? 'Low' : 'Critical'}</span><ChevronRight size={13}/>
@@ -1657,7 +1660,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.14.1-PROJECT-WORK-KEY-FOCUS
+ * VERSION: v4.14.2-EXACT-ROW-DIRECT-HANDOFF
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
