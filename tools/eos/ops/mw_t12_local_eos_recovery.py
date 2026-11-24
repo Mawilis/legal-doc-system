@@ -1,11 +1,14 @@
 """TITLE: MW-T12 isolated local Python EOS service recovery operator.
-VERSION: v1.0.0-ISOLATED-HOST-REPLICA-EOS-RECOVERY
+VERSION: v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Own a fresh loopback-only local mongod replica and execute the
          existing authenticated Python EOS restart and durable browser verifier.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_local_eos_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS operator; canonical browser certification runner.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE creates a private
+           temporary Headquarters evidence directory, passes its canonical
+           path to Playwright and keeps all assertions and cleanup intact.
 CHANGELOG: v1.0.0-ISOLATED-HOST-REPLICA-EOS-RECOVERY replaces unreliable
            Docker Desktop host port forwarding with an operator-owned temporary
            local mongod process and exact synthetic database, without altering
@@ -33,7 +36,7 @@ import time
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-VERSION = "v1.0.0-ISOLATED-HOST-REPLICA-EOS-RECOVERY"
+VERSION = "v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE"
 SET_NAME = "wilsyVendorCertRS"
 BROWSER_SUITE = "tests/e2e/headquarters-operating-workspace.browser.spec.js"
 BROWSER_RUNNER = "tests/e2e/run-browser-cert.mjs"
@@ -147,6 +150,8 @@ def run(binary: str, node: str) -> int:
         directory = Path(temporary)
         dbpath = directory / "mongo"
         dbpath.mkdir(mode=0o700)
+        headquarters_evidence = directory / "headquarters-browser-evidence"
+        headquarters_evidence.mkdir(mode=0o700)
         try:
             process = subprocess.Popen(
                 [
@@ -173,6 +178,7 @@ def run(binary: str, node: str) -> int:
                     f"?replicaSet={SET_NAME}&directConnection=true"
                 ),
                 "MW_T12_EOS_SERVICE_RECOVERY": "1",
+                "WILSY_HEADQUARTERS_EVIDENCE_DIR": str(headquarters_evidence),
                 "ENV": "development",
                 "WILSY_ENV": "development",
             })
@@ -230,7 +236,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_local_eos_recovery.py
-# VERSION: v1.0.0-ISOLATED-HOST-REPLICA-EOS-RECOVERY
+# VERSION: v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE
 # AUTHORITY BOUNDARY: Local synthetic Python EOS test only, no production operations.
 # TENANT POSTURE: Random test tenant and local temporary database exclusively.
 # FAIL-CLOSED POSTURE: Missing tooling, health, startup, readback, browser or shutdown denies success.
