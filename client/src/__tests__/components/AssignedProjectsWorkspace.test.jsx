@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Participant Projects and Inbox Client Certificate
- * VERSION: v1.2.0-SINGLE-PARTICIPANT-LIST-SCOPE-CERT
+ * VERSION: v1.2.1-INDEPENDENT-INBOX-READ-CERT
  * AUTHORITY: Mocked EOS client presentation only; server retains all IAM.
  * EPITOME: Certify participant-only assigned project selection, own-assignee
  *          lifecycle, mention notification acknowledgement and tenant isolation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/AssignedProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: AssignedProjectsWorkspace, api.js mock.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.1-INDEPENDENT-INBOX-READ-CERT counts only
+ *          assigned-project reads, not independently authorized inbox
+ *          requests mounted after list verification; still checks
+ *          duplicate suppression and exact header-change readback.
  * CHANGELOG: v1.2.0-SINGLE-PARTICIPANT-LIST-SCOPE-CERT
  *          proves one initial participant project GET under StrictMode,
  *          no duplicate on equal parent headers, and fresh validation on
@@ -78,11 +82,22 @@ afterEach(() => {
 const response = data => ({ data });
 
 it('reads assigned projects once per StrictMode scope and revalidates changed headers', async () => {
-  api.get.mockResolvedValue({ data: {
-    schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
-    tenant_id: tenantId, principal_id: principalId,
-    items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
-  } });
+  const assignedPath = '/projects/my-projects?limit=50&offset=0';
+  const approvalPath = '/projects/my-approvals?limit=50&offset=0';
+  const assignedReads = () => api.get.mock.calls.filter(([path]) => path === assignedPath).length;
+  api.get.mockImplementation(async path => {
+    if (path === assignedPath) return { data: {
+      schema: 'WILSY-PROJECT-MY-PROJECTS/V1',
+      tenant_id: tenantId, principal_id: principalId,
+      items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    if (path === approvalPath) return { data: {
+      schema: 'WILSY-PROJECT-PENDING-APPROVALS/V1',
+      tenant_id: tenantId, principal_id: principalId,
+      items: [], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Unexpected source read ' + path);
+  });
   const props = {
     tenantId, principalId, sessionScope: 'participant-test-scope',
     tenantHeaders: { 'X-Tenant-ID': tenantId }, onBack: () => {},
@@ -90,17 +105,17 @@ it('reads assigned projects once per StrictMode scope and revalidates changed he
   const { rerender } = render(<React.StrictMode>
     <AssignedProjectsWorkspace {...props}/>
   </React.StrictMode>);
-  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(assignedReads()).toBe(1));
   await act(async () => {
     rerender(<React.StrictMode><AssignedProjectsWorkspace {...props}
       tenantHeaders={{ 'X-Tenant-ID': tenantId }}/></React.StrictMode>);
   });
-  expect(api.get).toHaveBeenCalledTimes(1);
+  expect(assignedReads()).toBe(1);
   await act(async () => {
     rerender(<React.StrictMode><AssignedProjectsWorkspace {...props}
       tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Test-Scope': 'changed' }}/></React.StrictMode>);
   });
-  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(assignedReads()).toBe(2));
 });
 
 it('lists only assigned projects, acts on own task and marks own mention read', async () => {
@@ -242,7 +257,7 @@ it('opens a directly authorized project focus beyond the first discovery page', 
 
 
 // ARTIFACT: AssignedProjectsWorkspace.test.jsx
-// VERSION: v1.2.0-SINGLE-PARTICIPANT-LIST-SCOPE-CERT
+// VERSION: v1.2.1-INDEPENDENT-INBOX-READ-CERT
 // AUTHORITY BOUNDARY: client mock only, no real principal IAM claims
 // TENANT POSTURE: foreign tenant response is rejected
 // FAIL-CLOSED POSTURE: no task actions or unread claims without EOS
