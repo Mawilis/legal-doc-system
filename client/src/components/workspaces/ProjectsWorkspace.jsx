@@ -797,9 +797,9 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     setError('');
     let listFailed = false;
     try {
-      // Portfolio aggregation is independent of the authorized project page.
-      // A healthy /projects response must not wait on a slower /summary.
-      // Both results retain their own exact session scope checks.
+      // The project list is the actionable source and is admitted first.
+      // Its verified page must not wait for the optional summary read.
+      // Both independent responses retain exact session scope checks.
       let summaryAuthorityDenied = false;
       const listResponse = await api.get(
         statusFilterRef.current === 'all' && pageOffsetRef.current === 0 && !ownerOnlyRef.current
@@ -833,39 +833,39 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
       // both authenticated transactions together can make both hit the
       // client deadline. Admit the summary only after verified list readback.
       // Keep its original exact-source and authorization checks below.
-        void api.get('/projects/summary', { headers: tenantHeaders }).then(response => {
-          if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope
-            || summaryAuthorityDenied) return;
-          setSummary(assertProjectSummary(response?.data, tenantId, principalId));
-        }).catch(cause => {
-          if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
-          const code = classifyFailure(cause);
-          setSummary(null);
-          // Invalid cross-scope or malformed envelopes are security failures, not
-          // an ordinary unavailable counter. Do not retain project visibility.
-          if (cause?.message === 'PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID') {
-            summaryAuthorityDenied = true;
-            itemsRef.current = [];
-            setItems([]);
-            setDetail(null);
-            changeSelection(null);
-            setError('PROJECT_SOURCE_UNAVAILABLE');
-            setSourceState('UNAVAILABLE');
-            return;
-          }
-          // A transient summary outage is not proof that the independently
-          // verified authorized project page has failed.
-          if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED'
-            || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
-            summaryAuthorityDenied = true;
-            itemsRef.current = [];
-            setItems([]);
-            setDetail(null);
-            changeSelection(null);
-            setError(code);
-            setSourceState('DENIED');
-          }
-        });
+      void api.get('/projects/summary', { headers: tenantHeaders }).then(response => {
+        if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope
+          || summaryAuthorityDenied) return;
+        setSummary(assertProjectSummary(response?.data, tenantId, principalId));
+      }).catch(cause => {
+        if (listFailed || sequence !== listSequence.current || activeScope.current !== requestScope) return;
+        const code = classifyFailure(cause);
+        setSummary(null);
+        // Invalid cross-scope or malformed envelopes are security failures, not
+        // an ordinary unavailable counter. Do not retain project visibility.
+        if (cause?.message === 'PROJECT_SUMMARY_SCOPE_OR_SHAPE_INVALID') {
+          summaryAuthorityDenied = true;
+          itemsRef.current = [];
+          setItems([]);
+          setDetail(null);
+          changeSelection(null);
+          setError('PROJECT_SOURCE_UNAVAILABLE');
+          setSourceState('UNAVAILABLE');
+          return;
+        }
+        // A transient summary outage is not proof that the independently
+        // verified authorized project page has failed.
+        if (code === 'ACCESS_DENIED' || code === 'AUTHENTICATION_REQUIRED'
+          || code === 'PROJECTS_ENTITLEMENT_REQUIRED') {
+          summaryAuthorityDenied = true;
+          itemsRef.current = [];
+          setItems([]);
+          setDetail(null);
+          changeSelection(null);
+          setError(code);
+          setSourceState('DENIED');
+        }
+      });
       const currentSelection = selectedRef.current;
       if (!preserveSelection || (currentSelection && !nextItems.some((item) => item.project_id === currentSelection))) {
         changeSelection(null);
