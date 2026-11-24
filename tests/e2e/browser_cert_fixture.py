@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.6.0-SAME-DATABASE-IMMUTABLE-EVIDENCE-FINGERPRINT
+VERSION: v1.7.0-SEEDED-ONLY-SOURCE-READBACK
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -11,6 +11,13 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_fixture.py
 COLLABORATION / OWNERSHIP: L8-8M-R3 browser certificate; no production authority.
 CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.7.0-SEEDED-ONLY-SOURCE-READBACK adds a read-only
+           verify-seed command for the same-data rollback gate. It verifies
+           exact UUID tenant, seeded Legal screening and review, entitlement
+           history, workflow transitions, and SYSTEM incident/assignment
+           identities before browser-issued response commands exist.
+           The existing full verify command is unchanged and remains the
+           post-browser response/decision/audit certificate.
 CHANGELOG: v1.6.0-SAME-DATABASE-IMMUTABLE-EVIDENCE-FINGERPRINT adds
            a read-only snapshot fingerprint of canonical fixture history,
            event and evidence records from the existing UUID-scoped Mongo
@@ -1656,6 +1663,63 @@ def verify(state_path: Path) -> None:
         client.close()
 
 
+def verify_seed(state_path: Path) -> None:
+    """Verify only canonical seed-owned records for source-switch continuity.
+
+    The full browser verifier separately requires response decisions created
+    later by Playwright. No response decisions are invented or bypassed here.
+    Exact tenant and seeded identifiers are asserted on the same disposable
+    replica using one read-only snapshot transaction.
+    """
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    client = MongoClient(_uri(), serverSelectionTimeoutMS=5000)
+    try:
+        database = _owned_database(client)
+        tenant_id = state.get("tenant_id")
+        if (
+            state.get("database_name") != database.name
+            or not isinstance(tenant_id, str)
+            or not tenant_id.startswith("browser-tenant-")
+        ):
+            raise RuntimeError("BROWSER_CERT_SEED_SCOPE_INVALID")
+        with client.start_session() as session:
+            session.start_transaction(read_concern=ReadConcern("snapshot"))
+            try:
+                for name, identifier_key, identifier_field in (
+                    ("legal_conflict_screenings", "screening_id", "screening_id"),
+                    ("legal_conflict_reviews", "screening_id", "screening_id"),
+                    (SYSTEM_INCIDENT_COLLECTION, "system_incident_id", "incident_id"),
+                    (SYSTEM_INCIDENT_ASSIGNMENT_COLLECTION, "system_assignment_id", "assignment_id"),
+                ):
+                    expected = state.get(identifier_key)
+                    if not isinstance(expected, str) or not expected:
+                        raise RuntimeError("BROWSER_CERT_SEED_IDENTIFIER_INVALID")
+                    selector = {identifier_field: expected}
+                    if name in ("legal_conflict_screenings", "legal_conflict_reviews"):
+                        selector["tenant_id"] = tenant_id
+                    if database[name].count_documents(selector, session=session) != 1:
+                        raise RuntimeError("BROWSER_CERT_SEEDED_SOURCE_RECORD_MISSING")
+                if database["tenant_product_entitlement_history"].count_documents(
+                    {"tenant_id": tenant_id}, session=session,
+                ) < 6:
+                    raise RuntimeError("BROWSER_CERT_SEEDED_ENTITLEMENT_HISTORY_MISSING")
+                workflows = state.get("specialist_workflows")
+                if not isinstance(workflows, dict) or set(workflows) != {
+                    "partner", "attorney", "paralegal", "secretary",
+                }:
+                    raise RuntimeError("BROWSER_CERT_SEEDED_WORKFLOW_SCOPE_INVALID")
+                for evidence in workflows.values():
+                    if database[LEGAL_WORKFLOW_TRANSITION_COLLECTION].count_documents({
+                        "tenant_id": tenant_id,
+                        "transition_id": evidence["transition_id"],
+                    }, session=session) != 1:
+                        raise RuntimeError("BROWSER_CERT_SEEDED_WORKFLOW_TRANSITION_MISSING")
+            finally:
+                session.abort_transaction()
+    finally:
+        client.close()
+
+
 def fingerprint(state_path: Path) -> None:
     """Output a redacted digest of immutable synthetic work/audit evidence.
 
@@ -1702,7 +1766,7 @@ def fingerprint(state_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Disposable browser-cert fixture")
-    parser.add_argument("command", choices=("seed", "verify", "fingerprint", "cleanup"))
+    parser.add_argument("command", choices=("seed", "verify", "verify-seed", "fingerprint", "cleanup"))
     parser.add_argument("--state", type=Path)
     args = parser.parse_args()
     if args.command == "seed":
@@ -1713,6 +1777,10 @@ def main() -> None:
         if args.state is None:
             raise SystemExit("--state is required for verify")
         verify(args.state)
+    elif args.command == "verify-seed":
+        if args.state is None:
+            raise SystemExit("--state is required for verify-seed")
+        verify_seed(args.state)
     elif args.command == "fingerprint":
         if args.state is None:
             raise SystemExit("--state is required for fingerprint")
@@ -1726,7 +1794,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.6.0-SAME-DATABASE-IMMUTABLE-EVIDENCE-FINGERPRINT
+# VERSION: v1.7.0-SEEDED-ONLY-SOURCE-READBACK
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: authenticated tenant and unjoined foreign tenant in a runner-owned disposable database
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop
