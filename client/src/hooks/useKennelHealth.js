@@ -4,7 +4,7 @@
  * Wilsy OS — useKennelHealth Hook
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/hooks/useKennelHealth.js
- * Version:        v1.0.0-INSTITUTIONAL-SEAL
+ * Version:        v1.1.0-STRICTMODE-HEALTH-PROBE-SUPPRESSION
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Production‑grade custom hook that monitors the health of the
  *                 EOS Kernel API via the certified Node BFF bridge. Polls the
@@ -21,6 +21,9 @@
  *     as a foundational component for the Kennel‑integrated Living Cockpit.
  *
  * Change Log:
+ *   2026-11-24 v1.1.0-STRICTMODE-HEALTH-PROBE-SUPPRESSION — One initial
+ *     kernel health read per live effect; discarded development effects
+ *     cannot flood the EOS health endpoint. Current source read still wins.
  *   2026-07-31 v1.0.0-INSTITUTIONAL-SEAL — Initial certified release.
  *
  * Forensic Relationships:
@@ -30,7 +33,7 @@
  *   Shared Crypto / Events / Config: api service (forensic headers), x-request-seal,
  *               X-Wilsy-Bridge: kernel-v1.1.1, PORT 4000, PORT 9095.
  *
- * Certification Seal: PRODUCTION_READY_v1.0.0-INSTITUTIONAL-SEAL
+ * Certification Seal: SOURCE_REVIEW_REQUIRED_v1.1.0-STRICTMODE-HEALTH-PROBE-SUPPRESSION
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -139,13 +142,17 @@ export const useKennelHealth = (options = {}) => {
   useEffect(() => {
     isMounted.current = true;
 
+    // Defer the initial check beyond StrictMode's discarded setup turn.
+    // This is not a health cache; the surviving effect reads live EOS.
+    let active = true;
     if (immediate) {
-      checkKennelHealth();
+      queueMicrotask(() => { if (active) void checkKennelHealth(); });
     }
 
     intervalRef.current = setInterval(checkKennelHealth, pollInterval);
 
     return () => {
+      active = false;
       isMounted.current = false;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
