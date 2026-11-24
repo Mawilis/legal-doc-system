@@ -1,11 +1,17 @@
 """TITLE: MW-T12 isolated local Python EOS service recovery operator.
-VERSION: v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE
+VERSION: v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Own a fresh loopback-only local mongod replica and execute the
          existing authenticated Python EOS restart and durable browser verifier.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_local_eos_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS operator; canonical browser certification runner.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE requires actual
+           browser network/readback screenshots for all four certified
+           Headquarters widths after the already authorized runner succeeds.
+           It rejects missing, malformed, foreign-fixture, failed-read and
+           browser-error evidence; never prints or persists source records.
+           No deployment rollback or production release authority is inferred.
 CHANGELOG: v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE creates a private
            temporary Headquarters evidence directory, passes its canonical
            path to Playwright and keeps all assertions and cleanup intact.
@@ -23,6 +29,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 import secrets
@@ -36,7 +43,7 @@ import time
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-VERSION = "v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE"
+VERSION = "v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE"
 SET_NAME = "wilsyVendorCertRS"
 BROWSER_SUITE = "tests/e2e/headquarters-operating-workspace.browser.spec.js"
 BROWSER_RUNNER = "tests/e2e/run-browser-cert.mjs"
@@ -136,6 +143,51 @@ def _stop_owned(process: subprocess.Popen[bytes]) -> None:
         raise MWRecoveryError("OWNED_MONGO_SHUTDOWN_UNVERIFIED")
 
 
+def _verify_headquarters_evidence(directory: Path) -> None:
+    """Fail closed unless each authenticated responsive journey left proof.
+
+    The browser runner, not this wrapper, owns assertions, tokens, source
+    commands and durable fixture readback. This checks only deterministic
+    artifacts created in the operator-owned disposable directory and
+    publishes no session, source task or tenant identifiers.
+    """
+    for width, height in ((1440, 900), (1760, 1000), (1024, 900), (390, 844)):
+        prefix = f"headquarters-{width}"
+        record_path = directory / f"{prefix}-network.json"
+        try:
+            # This temporary directory is created under this process and is
+            # never selected from user-supplied paths or existing tenants.
+            if not record_path.is_file() or record_path.is_symlink():
+                raise MWRecoveryError("HEADQUARTERS_NETWORK_EVIDENCE_MISSING")
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError) as error:
+            raise MWRecoveryError("HEADQUARTERS_NETWORK_EVIDENCE_INVALID") from error
+        if not isinstance(record, dict) or (
+            record.get("viewport") != {"width": width, "height": height}
+            or record.get("fixture") != "DISPOSABLE_SYNTHETIC_SESSION"
+            or record.get("founderMfaAcceptance") is not False
+            or record.get("browserErrors") != []
+        ):
+            raise MWRecoveryError("HEADQUARTERS_VIEWPORT_OR_BROWSER_EVIDENCE_INVALID")
+        requests = record.get("network")
+        if not isinstance(requests, list) or not any(
+            isinstance(item, dict)
+            and item.get("method") == "GET"
+            and item.get("path") == "/api/my-work"
+            and item.get("status") == 200
+            for item in requests
+        ):
+            raise MWRecoveryError("HEADQUARTERS_AUTHENTICATED_READBACK_MISSING")
+        for suffix in ("", "-ai-companion", "-record", "-readback"):
+            screenshot = directory / f"{prefix}{suffix}.png"
+            try:
+                if screenshot.is_symlink() or not screenshot.is_file() or screenshot.stat().st_size == 0:
+                    raise MWRecoveryError("HEADQUARTERS_BROWSER_SCREENSHOT_MISSING")
+            except OSError as error:
+                raise MWRecoveryError("HEADQUARTERS_BROWSER_SCREENSHOT_INVALID") from error
+    print("MW_T12_HEADQUARTERS_FOUR_VIEWPORT_EVIDENCE=PASS", flush=True)
+
+
 def run(binary: str, node: str) -> int:
     """Execute real authenticated restart against a new ephemeral local replica.
 
@@ -190,6 +242,7 @@ def run(binary: str, node: str) -> int:
             exit_code = completed.returncode
             if exit_code != 0:
                 raise MWRecoveryError("AUTHENTICATED_EOS_RUNNER_FAILED")
+            _verify_headquarters_evidence(headquarters_evidence)
             return 0
         except MWRecoveryError as error:
             primary_failure = error
@@ -236,7 +289,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_local_eos_recovery.py
-# VERSION: v1.1.0-OWNED-HEADQUARTERS-BROWSER-EVIDENCE
+# VERSION: v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE
 # AUTHORITY BOUNDARY: Local synthetic Python EOS test only, no production operations.
 # TENANT POSTURE: Random test tenant and local temporary database exclusively.
 # FAIL-CLOSED POSTURE: Missing tooling, health, startup, readback, browser or shutdown denies success.
