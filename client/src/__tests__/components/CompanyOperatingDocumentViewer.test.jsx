@@ -730,7 +730,7 @@ describe('Strategy source-owned project execution readback', () => {
     expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
     const resume = screen.getByRole('region', { name: 'Continue your last updated task' });
     expect(within(resume).getByText('Your last recorded task update')).toBeVisible();
-    fireEvent.click(within(resume).getByRole('button', { name: 'Continue inspecting' }));
+    fireEvent.click(within(resume).getByRole('button', { name: 'Inspect evidence' }));
     expect(screen.getByRole('searchbox', { name: 'Find work by title' })).toHaveValue(work[0].title);
     expect(screen.getByRole('button', { name: 'Show execution overview' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
@@ -1058,7 +1058,8 @@ describe('Strategy source-owned project execution readback', () => {
     const verifyButton = await screen.findByRole('button', { name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/ });
     expect(screen.getByRole('button', { name: /Open Work and milestones for WILSY OS — Unified Operating Platform Foundation/ })).toBeVisible();
     expect(onOpenProject).not.toHaveBeenCalled();
-    expect(screen.getByText('Revision 2')).toBeVisible();
+    const projectRow = screen.getByRole('row', { name: /WILSY OS — Unified Operating Platform Foundation/ });
+    expect(within(projectRow).getByRole('cell', { name: '2' })).toBeVisible();
     const newProjectForm = document.querySelector('form[aria-label="Create governed EOS project"]');
     expect(newProjectForm?.closest('details')?.open).toBe(false);
     expect(api.post).not.toHaveBeenCalled();
@@ -1228,7 +1229,7 @@ describe('Strategy source-owned project execution readback', () => {
       return Promise.reject(new Error('UNEXPECTED_ROUTE'));
     });
     render(wrap({ classification: 'STRATEGY' }));
-    fireEvent.click(await screen.findByRole('button', { name: /Verify execution/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Verify task execution/ }));
     expect(await screen.findByText(/No Strategy progress was inferred/)).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Source-verified project execution' })).not.toBeInTheDocument();
   });
