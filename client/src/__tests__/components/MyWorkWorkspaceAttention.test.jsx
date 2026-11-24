@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Source-owned My Work Attention Handoff Tests
- * VERSION: v1.4.0-QUEUE-DETAIL-HANDOFF-CERT
+ * VERSION: v1.5.0-INPLACE-FOCUS-HANDOFF-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies that Daily Attention and Headquarters focus only exact
  *          work keys admitted by fresh EOS projection and retain session scope.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspaceAttention.test.jsx
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS /api/my-work and source-owned completion routes.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.5.0-INPLACE-FOCUS-HANDOFF-CERT certifies selected
+ *            source-owned task regions in the in-place Projects-style
+ *            workspace, including route handoff, scope and draft isolation.
  * CHANGELOG: v1.4.0-QUEUE-DETAIL-HANDOFF-CERT validates compact queue row
  *            highlighting, focused detail handoff, current session isolation,
  *            route refresh and dirty draft clearing when authority scope changes.
@@ -63,16 +66,16 @@ beforeEach(() => {
 describe('Daily Attention and Headquarters My Work handoff', () => {
   it('opens only the EOS-admitted work selected by route state', async () => {
     renderWithFocus(item.source_key);
-    await screen.findByRole('dialog', { name: item.title });
+    await screen.findByRole('region', { name: item.title });
     expect(selectedRow().closest('article').className).toContain('ring-2');
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close work details' })));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to work' })));
     expect(api.get).toHaveBeenCalledTimes(1);
     expect(api.post).not.toHaveBeenCalled();
   });
 
   it('opens the exact verified source key supplied by Headquarters', async () => {
     render(<MemoryRouter><MyWorkWorkspace focusWorkItem={item.source_key} /></MemoryRouter>);
-    await screen.findByRole('dialog', { name: item.title });
+    await screen.findByRole('region', { name: item.title });
     expect(selectedRow().closest('article').className).toContain('ring-2');
     expect(api.post).not.toHaveBeenCalled();
   });
@@ -82,7 +85,7 @@ describe('Daily Attention and Headquarters My Work handoff', () => {
     await screen.findByText(item.title);
     expect(selectedRow().getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryByText('NOT-AUTHORISED')).toBeNull();
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('region', { name: item.title })).toBeNull();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -93,7 +96,7 @@ describe('Daily Attention and Headquarters My Work handoff', () => {
     render(<MemoryRouter initialEntries={['/my-work']}><NavigationHarness /></MemoryRouter>);
     await screen.findByText('No active work in admitted sources');
     fireEvent.click(screen.getByRole('button', { name: 'Open attention item' }));
-    await screen.findByRole('dialog', { name: item.title });
+    await screen.findByRole('region', { name: item.title });
     expect(api.get).toHaveBeenCalledTimes(2);
   });
 
@@ -104,10 +107,10 @@ describe('Daily Attention and Headquarters My Work handoff', () => {
     render(<MemoryRouter initialEntries={['/my-work']}><NavigationHarness /></MemoryRouter>);
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole('button', { name: 'Open attention item' }));
-    await screen.findByRole('dialog', { name: item.title });
+    await screen.findByRole('region', { name: item.title });
     await act(async () => resolveOld({ data: { ...payload, items: [{ ...item, title: 'Obsolete source snapshot' }] } }));
     expect(screen.queryByText('Obsolete source snapshot')).toBeNull();
-    expect(screen.getByRole('dialog', { name: item.title })).toBeTruthy();
+    expect(screen.getByRole('region', { name: item.title })).toBeTruthy();
   });
 
   it('aborts and suppresses a projection read after session generation changes', async () => {
@@ -182,7 +185,7 @@ describe('Daily Attention and Headquarters My Work handoff', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspaceAttention.test.jsx
- * VERSION: v1.4.0-QUEUE-DETAIL-HANDOFF-CERT
+ * VERSION: v1.5.0-INPLACE-FOCUS-HANDOFF-CERT
  * AUTHORITY BOUNDARY: Authenticated projection handoff; source owns commands.
  * TENANT POSTURE: Only current exact-scope EOS rows may be focused.
  * FAIL-CLOSED POSTURE: Forged, stale and foreign route records are not displayed.
