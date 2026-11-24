@@ -1,11 +1,17 @@
 """TITLE: MW-T12 isolated local Python EOS service recovery operator.
-VERSION: v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE
+VERSION: v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Own a fresh loopback-only local mongod replica and execute the
          existing authenticated Python EOS restart and durable browser verifier.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_local_eos_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS operator; canonical browser certification runner.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE requires a verified
+           immutable Git commit and a clean tracked working tree before and
+           after the existing disposable EOS restart/browser drill. A changed
+           or dirty source cannot certify the earlier evidence. The bounded
+           source revision is emitted only after successful postflight.
+           This is exact-head local service evidence, not a rollback claim.
 CHANGELOG: v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE requires actual
            browser network/readback screenshots for all four certified
            Headquarters widths after the already authorized runner succeeds.
@@ -43,7 +49,7 @@ import time
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-VERSION = "v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE"
+VERSION = "v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE"
 SET_NAME = "wilsyVendorCertRS"
 BROWSER_SUITE = "tests/e2e/headquarters-operating-workspace.browser.spec.js"
 BROWSER_RUNNER = "tests/e2e/run-browser-cert.mjs"
@@ -188,6 +194,43 @@ def _verify_headquarters_evidence(directory: Path) -> None:
     print("MW_T12_HEADQUARTERS_FOUR_VIEWPORT_EVIDENCE=PASS", flush=True)
 
 
+def _certified_source_revision() -> str:
+    """Admit only a clean, identifiable Git commit for local EOS evidence.
+
+    This reads the checked-out repository; it never fetches, checks out,
+    merges, resets, mutates or trusts a user-selected branch/URI. Only a
+    forty-character public Git object ID is retained. Failure is bounded so
+    no local path, environment variable or source content enters the record.
+    """
+    try:
+        root = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=True, capture_output=True, text=True, timeout=10,
+        )
+        commit = subprocess.run(
+            ["git", "rev-parse", "--verify", "HEAD^{commit}"],
+            check=True, capture_output=True, text=True, timeout=10,
+        )
+        state = subprocess.run(
+            ["git", "status", "--porcelain=v1", "--untracked-files=no"],
+            check=True, capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise MWRecoveryError("SOURCE_REVISION_UNAVAILABLE") from error
+    current_root = Path.cwd().resolve()
+    if Path(root.stdout.strip()).resolve() != current_root:
+        raise MWRecoveryError("SOURCE_REPOSITORY_ROOT_REQUIRED")
+    digest = commit.stdout.strip()
+    if (
+        len(digest) != 40
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise MWRecoveryError("SOURCE_COMMIT_INVALID")
+    if state.stdout.strip():
+        raise MWRecoveryError("SOURCE_TRACKED_WORKTREE_DIRTY")
+    return digest
+
+
 def run(binary: str, node: str) -> int:
     """Execute real authenticated restart against a new ephemeral local replica.
 
@@ -195,6 +238,7 @@ def run(binary: str, node: str) -> int:
     startup/stop/restart verification, browser tests, and fixture readback.
     This wrapper owns only mongod lifecycle and never stores EOS secrets.
     """
+    exact_head = _certified_source_revision()
     nonce = secrets.token_hex(12)
     database = "wilsy_l8_8m_r3_mwt12_" + nonce
     port = _free_port()
@@ -243,6 +287,10 @@ def run(binary: str, node: str) -> int:
             if exit_code != 0:
                 raise MWRecoveryError("AUTHENTICATED_EOS_RUNNER_FAILED")
             _verify_headquarters_evidence(headquarters_evidence)
+            if _certified_source_revision() != exact_head:
+                raise MWRecoveryError("SOURCE_REVISION_CHANGED_DURING_DRILL")
+            print("MW_T12_EXACT_HEAD=" + exact_head, flush=True)
+            print("MW_T12_SOURCE_PROVENANCE=VERIFIED_UNCHANGED", flush=True)
             return 0
         except MWRecoveryError as error:
             primary_failure = error
@@ -289,7 +337,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_local_eos_recovery.py
-# VERSION: v1.2.0-FOUR-VIEWPORT-RECOVERY-EVIDENCE-GATE
+# VERSION: v1.3.0-EXACT-HEAD-RECOVERY-PROVENANCE
 # AUTHORITY BOUNDARY: Local synthetic Python EOS test only, no production operations.
 # TENANT POSTURE: Random test tenant and local temporary database exclusively.
 # FAIL-CLOSED POSTURE: Missing tooling, health, startup, readback, browser or shutdown denies success.
