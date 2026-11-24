@@ -1326,7 +1326,7 @@ def project_summary(
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
             "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
             "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
-            _safe_projects_read_trace(), _safe_projects_read_trace(), elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            _safe_projects_read_trace(), elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
@@ -1345,7 +1345,7 @@ def project_summary(
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
             "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
             "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
-            elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            _safe_projects_read_trace(), elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
