@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY
+ * VERSION: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING gives each
+ *          source-backed activity action group consistent 16px horizontal
+ *          gutters, 12px wrapped-row gutters, and 16px breathing room
+ *          against section dividers. Small screens wrap without adjoining
+ *          controls or border contact. Shared wp-button semantics, source
+ *          state, IAM and evidence remain unchanged.
  * CHANGELOG: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY adopts the
  *          existing shared Projects 36px compact action pattern for all
  *          Activity toolbar, evidence, composer, paging and source-retry
@@ -567,12 +573,12 @@ export default function ProjectTaskCommentsPanel({
   };
 
   return <section ref={discussionRef} aria-label="Activity & discussion"
-    className="scroll-mt-24 border-t border-slate-200 pt-2">
-    <div className="flex items-center justify-between gap-3">
+    className="scroll-mt-24 border-t border-slate-200 pt-4">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pb-4">
       <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
         <MessageSquare size={16}/> Activity &amp; discussion
       </h4>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3">
         <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
           onClick={() => {
             void load(offset); void loadEvents(eventOffset);
@@ -595,7 +601,7 @@ export default function ProjectTaskCommentsPanel({
     {(state === 'READY' || eventState === 'READY'
       || approvalState === 'READY' || attachmentState === 'READY') && <>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2" aria-label="Verified discussion availability">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-b border-slate-200 py-4" aria-label="Verified discussion availability">
         <p role="status" className="text-xs text-slate-600">
           {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
             : 'No comments on this page'} · task activity
@@ -619,10 +625,10 @@ export default function ProjectTaskCommentsPanel({
             taskId={taskId} participantMode tenantHeaders={tenantHeaders}
             onClose={() => setShowTaskEvidence(false)}/>
         </div>}
-      <div id="verified-task-comment-history" aria-label="Verified task activity history">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div id="verified-task-comment-history" aria-label="Verified task activity history" className="pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pb-4">
         <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
           {typeof onViewApprovals === 'function' &&
             <button type="button" className={ACTIVITY_ACTION_CLASS} onClick={onViewApprovals}>Decisions &amp; approvals</button>}
           {typeof onViewAttachments === 'function' &&
@@ -756,7 +762,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY
+// VERSION: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
