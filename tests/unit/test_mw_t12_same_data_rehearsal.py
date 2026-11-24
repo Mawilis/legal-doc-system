@@ -1,5 +1,5 @@
 """TITLE: MW-T12 single-database rollback source continuity certificate.
-VERSION: v1.2.1-MOCKED-VERSION-VERIFY-SEED-CONTRACT
+VERSION: v1.3.0-REDACTED-SEED-FAILURE-CLASSIFICATION-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify one disposable Mongo dataset, three exact source versions,
          independent durable readback and fail-closed audit evidence checks.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing fixture owns exact-tenant source records;
          current/older staged code must not create new database consumers.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.0-REDACTED-SEED-FAILURE-CLASSIFICATION-CERT
+           proves known seed-only verifier failures are safely classified
+           and unrecognized stderr secrets are not propagated. The
+           complete live rehearsal remains fail closed on nonzero exit.
 CHANGELOG: v1.2.1-MOCKED-VERSION-VERIFY-SEED-CONTRACT updates
            the mocked version runner to invoke the real orchestration's
            seed-only verifier once per source revision. The test now proves
@@ -182,6 +186,38 @@ def test_different_database_or_actor_state_is_denied() -> None:
         operator._authenticate_unchanged("http://127.0.0.1:19095", fixture)
 
 
+def test_verify_seed_failure_code_is_allowlisted_and_never_leaks_stderr(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    message = (
+        b"RuntimeError: BROWSER_CERT_SEEDED_SOURCE_RECORD_MISSING "
+        b"at private-identity-token-must-not-leak"
+    )
+    monkeypatch.setattr(
+        subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=1, stderr=message),
+    )
+    with pytest.raises(MWRecoveryError) as known:
+        operator._run_fixture(tmp_path / "fixture.py", "verify-seed",
+                              tmp_path / "state.json", {}, tmp_path)
+    assert known.value.code == (
+        "SAME_DATA_FIXTURE_VERIFY_SEED_FAILED_"
+        "BROWSER_CERT_SEEDED_SOURCE_RECORD_MISSING"
+    )
+    assert "private-identity-token" not in known.value.code
+    monkeypatch.setattr(
+        subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=1, stderr=b"PRIVATE_URI=secret mongodb://unknown"
+        ),
+    )
+    with pytest.raises(MWRecoveryError) as unknown:
+        operator._run_fixture(tmp_path / "fixture.py", "verify-seed",
+                              tmp_path / "state.json", {}, tmp_path)
+    assert unknown.value.code == "SAME_DATA_FIXTURE_VERIFY_SEED_FAILED_UNCLASSIFIED"
+    assert "secret" not in unknown.value.code
+
+
 def test_fingerprint_requires_bounded_sha3_digest(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:
@@ -232,7 +268,7 @@ def test_mutated_audit_records_fail_before_version_pass(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_same_data_rehearsal.py
-# VERSION: v1.2.1-MOCKED-VERSION-VERIFY-SEED-CONTRACT
+# VERSION: v1.3.0-REDACTED-SEED-FAILURE-CLASSIFICATION-CERT
 # AUTHORITY BOUNDARY: Synthetic local source-version continuity only.
 # TENANT POSTURE: No external database or production actor.
 # FAIL-CLOSED POSTURE: Missing or mutated source evidence denies success.
