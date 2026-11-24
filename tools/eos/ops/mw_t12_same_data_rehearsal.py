@@ -1,5 +1,5 @@
 """TITLE: MW-T12 same-data reversible Python EOS rollback rehearsal.
-VERSION: v1.3.0-SEEDED-LIFECYCLE-VERIFICATION
+VERSION: v1.4.0-BOUNDED-FIXTURE-FAILURE-PROVENANCE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Reuse a single UUID-owned replica database across current, historical,
          and restored-current Python EOS binaries with authenticated readback.
@@ -8,6 +8,11 @@ COLLABORATION / OWNERSHIP: Existing MW-T12 source staging and owned Mongo
          utilities; existing browser-cert fixture owns seeding, record
          verification, and database cleanup. No extra DB client introduced.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.4.0-BOUNDED-FIXTURE-FAILURE-PROVENANCE
+           classifies fixture seed-only errors using a fixed whitelist of
+           source-defined verification codes; no raw stderr, URI, principal,
+           JWT or record is emitted. All failed fixture actions still deny
+           the rehearsal and enforce owned database/process cleanup.
 CHANGELOG: v1.3.0-SEEDED-LIFECYCLE-VERIFICATION uses
            the fixture's new read-only verify-seed command before and after
            each staged EOS source switch. The full post-browser verifier
@@ -70,9 +75,29 @@ from tools.eos.ops.mw_t12_versioned_rehearsal import (
     _stage_revision,
 )
 
-VERSION = "v1.3.0-SEEDED-LIFECYCLE-VERIFICATION"
+VERSION = "v1.4.0-BOUNDED-FIXTURE-FAILURE-PROVENANCE"
 FIXTURE = "tests/e2e/browser_cert_fixture.py"
 READ_TIMEOUT = 12
+# Fixed source-owned diagnostics only. Never print subprocess stderr or secrets.
+SEED_FAILURE_CODES = (
+    "BROWSER_CERT_SEED_SCOPE_INVALID",
+    "BROWSER_CERT_SEED_IDENTIFIER_INVALID",
+    "BROWSER_CERT_SEEDED_SOURCE_RECORD_MISSING",
+    "BROWSER_CERT_SEEDED_ENTITLEMENT_HISTORY_MISSING",
+    "BROWSER_CERT_SEEDED_WORKFLOW_SCOPE_INVALID",
+    "BROWSER_CERT_SEEDED_WORKFLOW_TRANSITION_MISSING",
+    "BROWSER_CERT_LOCAL_REPLICA_SET_URI_REQUIRED",
+    "BROWSER_CERT_DATABASE_NOT_OWNED",
+)
+
+
+def _fixture_failure_code(action: str, stderr: bytes) -> str:
+    """Return a literal, allowlisted code—not untrusted exception text."""
+    if action == "verify-seed":
+        for code in SEED_FAILURE_CODES:
+            if code.encode("ascii") in stderr:
+                return code
+    return "UNCLASSIFIED"
 
 
 def _run_fixture(script: Path, action: str, state: Path, env: dict[str, str],
@@ -83,12 +108,16 @@ def _run_fixture(script: Path, action: str, state: Path, env: dict[str, str],
     try:
         result = subprocess.run(
             arguments, cwd=cwd, env=env, check=False,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120,
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120,
         )
     except (OSError, subprocess.SubprocessError) as error:
         raise MWRecoveryError("SAME_DATA_FIXTURE_COMMAND_UNAVAILABLE") from error
     if result.returncode != 0:
-        raise MWRecoveryError("SAME_DATA_FIXTURE_" + action.upper() + "_FAILED")
+        detail = _fixture_failure_code(action, result.stderr or b"")
+        raise MWRecoveryError(
+            "SAME_DATA_FIXTURE_" + action.upper().replace("-", "_")
+            + "_FAILED_" + detail
+        )
 
 
 def _fingerprint_fixture(script: Path, state: Path, env: dict[str, str],
@@ -349,7 +378,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_same_data_rehearsal.py
-# VERSION: v1.3.0-SEEDED-LIFECYCLE-VERIFICATION
+# VERSION: v1.4.0-BOUNDED-FIXTURE-FAILURE-PROVENANCE
 # AUTHORITY BOUNDARY: Only disposable single-database three-phase source test.
 # TENANT POSTURE: UUID synthetic local replica; never canonical wilsy or Atlas.
 # FAIL-CLOSED POSTURE: Auth, durable fixture or cleanup failure denies success.
