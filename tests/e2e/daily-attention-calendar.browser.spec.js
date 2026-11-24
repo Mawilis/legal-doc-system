@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.13.2-BLUEPRINT-AGENDA-SEMANTICS-CERT
+ * VERSION: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT follows the
+ *          approved focused My Work record region, retaining the actual
+ *          EOS completion, Mongo readback and source/aggregate parity proof.
  * CHANGELOG: v3.13.2-BLUEPRINT-AGENDA-SEMANTICS-CERT locates the
  *          shared Projects-style calendar row by its accessible listitem
  *          role, not the retired article role, retaining actual source work.
@@ -628,9 +631,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
       await agendaItem.getByRole('button', {name: 'Review and complete in My Work'}).click();
       await expect(panel).toHaveCount(0);
-      const workItem = page.getByRole('dialog', {name: title, exact: true});
+      const workItem = page.getByRole('region', {name: title, exact: true});
       await expect(workItem).toBeVisible();
-      await expect(workItem.getByRole('button', {name: 'Close work details'})).toBeFocused();
+      await expect(workItem.getByRole('button', {name: 'Back to work'})).toBeFocused();
       await workItem.getByRole('textbox', {name: 'Completion note'})
         .fill('Source-owned calendar completion evidence');
       const completedResponse = page.waitForResponse(response => (
@@ -991,7 +994,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.13.2-BLUEPRINT-AGENDA-SEMANTICS-CERT
+// VERSION: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
