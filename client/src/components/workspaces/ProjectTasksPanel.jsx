@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.65.0-SOURCE-VERIFIED-EXECUTION-READINESS
+ * VERSION: v1.66.0-GOVERNED-READINESS-ROLLBACK
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.66.0-GOVERNED-READINESS-ROLLBACK adds a read-only MW-T12 readiness and
+ *          rollback inspection using exact-task EOS attachment and business
+ *          decision manifests, with release explicitly blocked absent
+ *          independent deployment and rollback certification.
  * CHANGELOG: v1.65.0-SOURCE-VERIFIED-EXECUTION-READINESS makes task execution
  *          readiness reflect the current EOS source facts, exposes direct
  *          evidence/approval/activity actions, and does not infer production
@@ -454,6 +458,117 @@ function validParticipants(data, tenantId, principalId, projectId) {
     ))
   ) throw new Error('PROJECT_PARTICIPANTS_SOURCE_INVALID');
   return data;
+}
+
+/**
+ * @description Inspect one readiness task's independently scoped evidence and
+ * reviewer-decision manifests. This is a non-authorizing projection; neither
+ * task completion nor business approvals establish deployment/rollback truth.
+ * @authority Python EOS owns every record; production release requires a
+ * separately certified release authority not represented by these endpoints.
+ * @tenant Exact tenant, actor, project and task match required on every page.
+ * @mutation None. Reads are canceled and invalidated on scope/revision change.
+ */
+function ProjectReadinessRollback({ task, tenantId, principalId, projectId, headers, onOpenEvidence, onOpenApprovals }) {
+  const [snapshot, setSnapshot] = useState({ state: 'IDLE', attachments: [], approvals: [], issue: '' });
+  const generation = useRef(0);
+  const key = [tenantId, principalId, projectId, task.task_id, task.revision].join('\u0000');
+  const load = useCallback(async () => {
+    const request = ++generation.current;
+    const controller = new AbortController();
+    setSnapshot({ state: 'LOADING', attachments: [], approvals: [], issue: '' });
+    const base = '/projects/' + encodeURIComponent(projectId) + '/tasks/' + encodeURIComponent(task.task_id);
+    try {
+      const results = await Promise.all([
+        api.get(base + '/attachments?limit=50&offset=0', { headers, signal: controller.signal }),
+        api.get(base + '/approvals?limit=50&offset=0', { headers, signal: controller.signal }),
+      ]);
+      if (request !== generation.current) return () => controller.abort();
+      const [evidence, decisions] = results.map(result => result.data);
+      const scopedPage = (page, schema) => page?.schema === schema
+        && page.tenant_id === tenantId && page.principal_id === principalId
+        && page.project_id === projectId && page.task_id === task.task_id
+        && page.offset === 0 && page.limit === 50
+        && Array.isArray(page.items) && page.items.length <= 50
+        && page.has_more === false && page.next_offset === null;
+      const validEvidence = item => item?.schema === 'wilsy.project.attachment.v1'
+        && item.tenant_id === tenantId && item.project_id === projectId
+        && item.task_id === task.task_id && /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
+        && typeof item.filename === 'string' && item.filename.length > 0
+        && item.state === 'QUARANTINED' && item.revision === 1
+        && /^[a-f0-9]{128}$/.test(item.content_sha3_512 || '')
+        && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+        && (item.scan_clearance_status === 'QUARANTINED'
+          ? item.scan_clearance_fingerprint === null
+          : /^[a-f0-9]{128}$/.test(item.scan_clearance_fingerprint || ''))
+        && !Object.hasOwn(item, 'download_url') && !Object.hasOwn(item, 'storage_receipt');
+      const validDecision = item => item?.schema === 'wilsy.project.approval.v1'
+        && item.tenant_id === tenantId && item.project_id === projectId
+        && item.task_id === task.task_id && /^pap-[a-f0-9]{48}$/.test(item.approval_id || '')
+        && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
+        && item.requester_principal_id !== item.reviewer_principal_id
+        && typeof item.requester_principal_id === 'string'
+        && typeof item.reviewer_principal_id === 'string'
+        && Number.isSafeInteger(item.revision)
+        && /^[a-f0-9]{128}$/.test(item.fingerprint || '');
+      if (!scopedPage(evidence, 'WILSY-PROJECT-ATTACHMENT-LIST/V1')
+        || !scopedPage(decisions, 'WILSY-PROJECT-APPROVAL-LIST/V1')
+        || !evidence.items.every(validEvidence) || !decisions.items.every(validDecision)
+        || new Set(evidence.items.map(item => item.attachment_id)).size !== evidence.items.length
+        || new Set(decisions.items.map(item => item.approval_id)).size !== decisions.items.length) {
+        throw new Error('SOURCE_MANIFEST_INVALID');
+      }
+      setSnapshot({ state: 'VERIFIED', attachments: evidence.items, approvals: decisions.items, issue: '' });
+    } catch (error) {
+      if (request !== generation.current) return;
+      if (error?.name === 'CanceledError' || error?.name === 'AbortError') return;
+      setSnapshot({ state: 'UNVERIFIED', attachments: [], approvals: [],
+        issue: 'At least one independent EOS record could not be verified. Review the source panels and retry.' });
+    }
+    return () => controller.abort();
+  }, [key]);
+  useEffect(() => {
+    void load();
+    return () => { generation.current += 1; };
+  }, [load]);
+  const clean = snapshot.attachments.filter(item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length;
+  const pending = snapshot.approvals.filter(item => item.status === 'PENDING').length;
+  const rejected = snapshot.approvals.filter(item => item.status === 'REJECTED').length;
+  const approved = snapshot.approvals.filter(item => item.status === 'APPROVED').length;
+  const row = (name, result, detail) => <li className="grid gap-1 border-b border-slate-200 py-3 last:border-0 sm:grid-cols-[minmax(160px,1fr)_minmax(180px,2fr)]">
+    <span className="font-semibold text-slate-950">{name}</span>
+    <span className="text-slate-700"><strong className="mr-2 text-slate-900">{result}</strong>{detail}</span>
+  </li>;
+  return <section aria-label="MW-T12 readiness and rollback" className="mt-4 rounded-xl border border-slate-300 bg-white p-4">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h4 className="text-base font-bold text-slate-950">Readiness &amp; rollback</h4>
+        <p className="mt-1 text-sm text-slate-700">Independent EOS task evidence and reviewer decisions. Production release is not authorized here.</p>
+      </div>
+      <button type="button" disabled={snapshot.state === 'LOADING'} onClick={() => void load()}
+        className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-50">
+        <RefreshCw size={14} className="mr-2 inline"/> Verify sources
+      </button>
+    </div>
+    {snapshot.state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">Checking independent EOS evidence and decisions…</p>}
+    {snapshot.state === 'UNVERIFIED' && <p role="alert" className="mt-3 text-sm font-semibold text-rose-800">{snapshot.issue}</p>}
+    <ul className="mt-3 text-sm">
+      {row('Authenticated test certification', 'Not certified', 'CI and authenticated production-like test evidence are not certified by these task APIs.')}
+      {row('MongoDB and runtime resilience', 'Not certified', 'Primary recovery, latency, TLS and operational SLO evidence require separate certification.')}
+      {row('IAM / tenant isolation', 'Not certified', 'Current task access does not prove a complete security-role test matrix.')}
+      {row('Rollback drill', 'Not certified', 'No source-verified rollback execution and recovery result is available from these APIs.')}
+      {row('Task attachments', snapshot.state === 'VERIFIED' ? clean + ' scan-clean verified' : 'Unverified',
+        snapshot.state === 'VERIFIED' ? ' of ' + snapshot.attachments.length + ' attachments; clean scan does not certify test content.' : 'The attachment manifest is not currently verified.' )}
+      {row('Independent task reviews', snapshot.state === 'VERIFIED' ? approved + ' approved' : 'Unverified',
+        snapshot.state === 'VERIFIED' ? ' · ' + pending + ' pending · ' + rejected + ' rejected. Business decisions are not release approvals.' : 'The approval manifest is not currently verified.')}
+      {row('Production release permission', 'BLOCKED', 'No independent deployment certification or authorized release decision is established.')}
+    </ul>
+    <div className="mt-3 flex flex-wrap gap-2">
+      <button type="button" onClick={onOpenEvidence} className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 text-sm font-semibold text-white hover:bg-blue-900">Inspect evidence</button>
+      <button type="button" onClick={onOpenApprovals} className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-100">Inspect reviewer decisions</button>
+    </div>
+    <p className="mt-3 text-xs text-slate-600">This read-only assessment does not change task status, approve deployment, create certification evidence or execute a rollback.</p>
+  </section>;
 }
 
 /** @description Display one exact-project task/participant workflow, never local truth. */
@@ -2246,6 +2361,14 @@ export default function ProjectTasksPanel({
                 or strategic outcome attainment. Review the independently authorized source records before completion.
               </p>
             </section>}
+            {drawerTask.kind === 'TASK'
+              && /(?:^|—\\s*)certify production readiness and rollback$/i.test(drawerTask.title.trim())
+              && <ProjectReadinessRollback
+                key={[scope, drawerTask.task_id, drawerTask.revision].join(':')}
+                task={drawerTask} tenantId={tenantId} principalId={principalId}
+                projectId={projectId} headers={headers}
+                onOpenEvidence={() => { const item = drawerTask; closeDrawer(); setAttachmentTaskId(item.task_id); }}
+                onOpenApprovals={() => { const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id); }}/>}
             <section className="pt-5" aria-label="Task description">
               <h4 className="text-sm font-bold text-slate-950">Description</h4>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
@@ -2333,7 +2456,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.65.0-SOURCE-VERIFIED-EXECUTION-READINESS
+// VERSION: v1.66.0-GOVERNED-READINESS-ROLLBACK
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
