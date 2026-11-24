@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY
+ * VERSION: v1.5.0-SOLO-OPERATOR-REVIEW-CLARITY
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.5.0-SOLO-OPERATOR-REVIEW-CLARITY distinguishes
+ *          a single-contributor operating project from independently
+ *          reviewed work, avoids presenting an unusable review form when
+ *          no other EOS-verified reviewer exists, and directs the operator
+ *          to ordinary task work without granting reviewer authority.
  * CHANGELOG: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY explains the
  *          source-verified independent-reviewer gate beside the selector,
  *          provides project People and retry actions at the decision point,
@@ -386,6 +391,9 @@ export default function ProjectTaskApprovalsPanel({
     if (participantAuthorityState !== 'VERIFYING') void refreshReviewers();
   }, [scope, refreshReviewers, participantAuthorityState, participantHasMore, participants, principalId, participantMode]);
   const options = verifiedReviewers;
+  const noIndependentReviewer = !participantMode
+    && (reviewerSource === 'READY' || reviewerSource === 'PARTIAL')
+    && options.length === 0;
   const reviewerName = person => {
     const name = [person.first_name, person.last_name].filter(value =>
       typeof value === 'string' && value.trim()).join(' ').trim();
@@ -458,7 +466,22 @@ export default function ProjectTaskApprovalsPanel({
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next</button>
       </nav>}
-      {!participantMode && <form onSubmit={requestReview} className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+      {noIndependentReviewer && <section aria-label="Solo operator review guidance"
+        className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+        <h5 className="text-base font-bold">Solo project operation</h5>
+        <p className="mt-2 leading-relaxed">EOS has verified no other active eligible contributor on the current project participant page. You can continue your authorized task work, record activity and attach evidence without requesting an independent business review.</p>
+        <p className="mt-2 leading-relaxed">An independent review requires a different verified contributor. Founder or Owner status does not convert a self-attestation into an independent approval. Deployment, rollback certification and financial release remain separately governed.</p>
+        {reviewerSource === 'PARTIAL' && <p className="mt-2 font-semibold">Additional participant pages exist. Verify those pages before concluding that the project has no other reviewer.</p>}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" className="wp-button wp-button-primary" disabled={busy}
+            onClick={() => onClose?.()}>Return to task work</button>
+          <button type="button" className="wp-button" disabled={busy}
+            onClick={() => void refreshReviewers()}>Recheck eligible reviewers</button>
+          {typeof onManageContributors === 'function' && <button type="button"
+            className="wp-button" disabled={busy} onClick={onManageContributors}>Open project People</button>}
+        </div>
+      </section>}
+      {!participantMode && !noIndependentReviewer && <form onSubmit={requestReview} className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-white p-3">
         <h5 className="font-semibold text-slate-900">Request independent review</h5>
         <label className="block text-sm font-semibold text-slate-800">Named project contributor
           <select aria-label="Review contributor" required value={reviewer}
@@ -558,7 +581,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY
+// VERSION: v1.5.0-SOLO-OPERATOR-REVIEW-CLARITY
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies
