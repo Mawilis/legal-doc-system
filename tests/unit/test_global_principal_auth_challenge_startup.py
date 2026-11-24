@@ -104,7 +104,7 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
 
 
 def test_server_version_is_the_governed_global_auth_route_bootstrap():
-    assert server.VERSION == "v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION"
+    assert server.VERSION == "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
