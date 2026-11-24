@@ -1,5 +1,5 @@
 """TITLE: MW-T12 same-data reversible Python EOS rollback rehearsal.
-VERSION: v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT
+VERSION: v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Reuse a single UUID-owned replica database across current, historical,
          and restored-current Python EOS binaries with authenticated readback.
@@ -8,6 +8,11 @@ COLLABORATION / OWNERSHIP: Existing MW-T12 source staging and owned Mongo
          utilities; existing browser-cert fixture owns seeding, record
          verification, and database cleanup. No extra DB client introduced.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK
+           binds the HTTP SYSTEM incident and responder assignment to the
+           same seeded exact IDs after each rollback phase. Nonmatching,
+           oversized, unavailable or malformed HTTP records fail closed.
+           Source rows and tokens remain unlogged.
 CHANGELOG: v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT obtains
            the existing source fixture's read-only snapshot digest before
            each Python EOS source switch and rejects mutations of selected
@@ -59,7 +64,7 @@ from tools.eos.ops.mw_t12_versioned_rehearsal import (
     _stage_revision,
 )
 
-VERSION = "v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT"
+VERSION = "v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK"
 FIXTURE = "tests/e2e/browser_cert_fixture.py"
 READ_TIMEOUT = 12
 
@@ -120,6 +125,30 @@ def _read_authorized(base: str, route: str, token: str,
         raise MWRecoveryError("SAME_DATA_HTTP_READ_UNAVAILABLE") from error
 
 
+def _read_records(base: str, route: str, token: str) -> list[dict[str, object]]:
+    """Bounded authenticated source-record readback (no response logging)."""
+    try:
+        with urlopen(
+            Request(base + route, headers={"Authorization": "Bearer " + token}),
+            timeout=READ_TIMEOUT,
+        ) as response:
+            if response.status != 200:
+                raise MWRecoveryError("SAME_DATA_SOURCE_RECORD_STATUS_DENIED")
+            raw = response.read(65_537)
+        if len(raw) > 65_536:
+            raise MWRecoveryError("SAME_DATA_SOURCE_RESPONSE_OVERSIZED")
+        result = json.loads(raw)
+        if not isinstance(result, list) or any(
+            not isinstance(item, dict) for item in result
+        ):
+            raise MWRecoveryError("SAME_DATA_SOURCE_RESPONSE_INVALID")
+        return result
+    except MWRecoveryError:
+        raise
+    except (OSError, URLError, TimeoutError, UnicodeError, ValueError) as error:
+        raise MWRecoveryError("SAME_DATA_SOURCE_RECORD_UNAVAILABLE") from error
+
+
 def _health(base: str, process: subprocess.Popen[bytes]) -> None:
     deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
@@ -165,6 +194,17 @@ def _authenticate_unchanged(base: str, state: dict[str, object]) -> None:
     for route, token, scope, code in expected:
         if _read_authorized(base, route, token, scope) != code:
             raise MWRecoveryError("SAME_DATA_AUTHORIZATION_READBACK_FAILED")
+    for route, identifier_key, field in (
+        ("/api/system-services/security-incidents", "system_incident_id", "incidentId"),
+        ("/api/system-services/security-incident-assignments/mine",
+         "system_assignment_id", "assignmentId"),
+    ):
+        identifier = state.get(identifier_key)
+        if not isinstance(identifier, str) or not identifier:
+            raise MWRecoveryError("SAME_DATA_SOURCE_RECORD_ID_MISSING")
+        records = _read_records(base, route, responder)
+        if not any(record.get(field) == identifier for record in records):
+            raise MWRecoveryError("SAME_DATA_SOURCE_RECORD_ID_MISMATCH")
 
 
 def _certify_running_version(
@@ -303,7 +343,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_same_data_rehearsal.py
-# VERSION: v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT
+# VERSION: v1.2.0-EXACT-AUTHENTICATED-SOURCE-RECORD-READBACK
 # AUTHORITY BOUNDARY: Only disposable single-database three-phase source test.
 # TENANT POSTURE: UUID synthetic local replica; never canonical wilsy or Atlas.
 # FAIL-CLOSED POSTURE: Auth, durable fixture or cleanup failure denies success.
