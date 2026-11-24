@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.11.4-FILE-PICKER-READABLE-CONTRAST
+ * VERSION: v1.12.0-STABLE-ATTACHMENT-READ-SCOPE
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.12.0-STABLE-ATTACHMENT-READ-SCOPE
+ *          stabilizes equivalent tenantHeaders across parent rerenders
+ *          and defers mount GETs past StrictMode's discarded setup;
+ *          real tenant changes and explicit refresh always reverify EOS.
+ *          No upload, clearance, IAM, or timeout semantics changed.
  * CHANGELOG: v1.11.4-FILE-PICKER-READABLE-CONTRAST makes the
  *          single keyboard-operable Browse files control use an explicit
  *          high-contrast foreground/background, protecting against
@@ -125,7 +130,18 @@ export default function ProjectTaskAttachmentsPanel({
   const readRoot = ownerReadMode ? ownerRoot
     : (participantMode ? contributorRoot : ownerRoot);
   const uploadReadVerified = participantMode && uploadReadState === 'VERIFIED';
-  const headers = tenantHeaders || {};
+  // A parent may recreate an equivalent header object on rerender.
+  // The source read must restart only on an actual selector change.
+  const headersRef = useRef(null);
+  const incomingHeaders = tenantHeaders && typeof tenantHeaders === 'object'
+    ? tenantHeaders : {};
+  const existingHeaders = headersRef.current;
+  const headerKeys = Object.keys(incomingHeaders);
+  if (!existingHeaders || headerKeys.length !== Object.keys(existingHeaders).length
+      || headerKeys.some(key => existingHeaders[key] !== incomingHeaders[key])) {
+    headersRef.current = { ...incomingHeaders };
+  }
+  const headers = headersRef.current;
 
   const load = useCallback(async (nextOffset = 0) => {
     const request = ++generation.current;
@@ -206,7 +222,7 @@ export default function ProjectTaskAttachmentsPanel({
                     : 'EOS could not reach or verify the task attachment manifest. No upload or download is confirmed.');
       return false;
     }
-  }, [scope, readRoot, contributorRoot, ownerReadMode, participantMode, tenantId, principalId, projectId, taskId, tenantHeaders]);
+  }, [scope, readRoot, contributorRoot, ownerReadMode, participantMode, tenantId, principalId, projectId, taskId, headers]);
 
   useEffect(() => {
     generation.current += 1;
@@ -214,8 +230,11 @@ export default function ProjectTaskAttachmentsPanel({
     setItems([]);
     setOffset(0);
     uploadOrigin.current = { fingerprint: '', key: '' };
-    void load(0);
-    return () => { generation.current += 1; };
+    // Discarded React StrictMode mount must not start a second costly
+    // authenticated EOS read. Real scope changes still issue fresh reads.
+    let active = true;
+    queueMicrotask(() => { if (active) void load(0); });
+    return () => { active = false; generation.current += 1; };
   }, [scope, load]);
 
   const verifyScan = async item => {
