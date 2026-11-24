@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT
+ * VERSION: v2.78.1-SINGLE-MODAL-EXIT-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.78.1-SINGLE-MODAL-EXIT-CERT checks
+ *          Activity in the focused Projects task workspace has one
+ *          visible parent Back to Work action and no redundant nested
+ *          Close; all source-backed content and navigation remain.
  * CHANGELOG: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT uses
  *          the accessible ordered source activity timeline for positional
  *          assertions, and explicitly expands the immutable long MW-T12
@@ -1612,6 +1616,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
      })).getByRole('menuitem', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
     expect(screen.getByRole('button', { name: '← Work' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Close task discussion' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     const discussion = screen.getByRole('region', { name: 'Activity & discussion' });
@@ -2964,7 +2969,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT
+ * VERSION: v2.78.1-SINGLE-MODAL-EXIT-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
