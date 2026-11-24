@@ -1,5 +1,5 @@
 """TITLE: MW-T12 disposable versioned Python EOS execution switch rehearsal.
-VERSION: v1.0.0-DISPOSABLE-SOURCE-VERSION-EXECUTION-REHEARSAL
+VERSION: v1.0.1-ROOT-BOUNDED-TRACKED-SYMLINKS
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Prove two immutable executable source revisions can independently
          pass the existing controlled EOS restart and browser certification.
@@ -8,6 +8,12 @@ COLLABORATION / OWNERSHIP: MW-T12 recovery operator owns Mongo and browser
          evidence; existing Python EOS browser runner owns synthetic actors,
          authenticated reads, process stop/restart and cleanup.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.0.1-ROOT-BOUNDED-TRACKED-SYMLINKS accepts only
+           repository-tracked relative symlinks whose normalized targets stay
+           inside the private extraction root; absolute, escaping, hardlink
+           and special entries still fail closed. The Python data extraction
+           filter independently validates every extracted member. No live
+           checkout, tenant, authorization or running process is changed.
 CHANGELOG: v1.0.0-DISPOSABLE-SOURCE-VERSION-EXECUTION-REHEARSAL
            stages exact historical Git archives outside the live checkout;
            runs separately isolated source-version browser certification at
@@ -28,6 +34,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import posixpath
 from pathlib import Path
 import shutil
 import subprocess
@@ -50,7 +57,7 @@ from tools.eos.ops.mw_t12_local_eos_recovery import (
     _wait_primary,
 )
 
-VERSION = "v1.0.0-DISPOSABLE-SOURCE-VERSION-EXECUTION-REHEARSAL"
+VERSION = "v1.0.1-ROOT-BOUNDED-TRACKED-SYMLINKS"
 
 
 def _stage_revision(revision: str, checkout: Path, destination: Path) -> None:
@@ -64,14 +71,36 @@ def _stage_revision(revision: str, checkout: Path, destination: Path) -> None:
                 check=True, timeout=120,
             )
         with tarfile.open(archive, mode="r:") as source:
-            # Explicitly deny symlink, hardlink and special-file extraction,
-            # including tracked assets capable of escaping the private root.
+            # Git archives may legitimately contain tracked relative
+            # symlinks. Admit only links staying inside the owned root;
+            # disallow hardlinks, devices and all other special entries.
+            # The Python data filter also checks each extracted path and
+            # resolved link against the real destination at extraction time.
             members = source.getmembers()
-            if any(
-                not member.isfile() and not member.isdir()
-                for member in members
-            ):
-                raise MWRecoveryError("VERSION_ARCHIVE_UNSAFE_MEMBER")
+            for member in members:
+                name = member.name
+                normalized = posixpath.normpath(name)
+                if (
+                    posixpath.isabs(name)
+                    or normalized in {".", ".."}
+                    or normalized.startswith("../")
+                ):
+                    raise MWRecoveryError("VERSION_ARCHIVE_UNSAFE_MEMBER")
+                if member.isfile() or member.isdir():
+                    continue
+                if not member.issym():
+                    raise MWRecoveryError("VERSION_ARCHIVE_UNSAFE_MEMBER")
+                link = member.linkname
+                target = posixpath.normpath(
+                    posixpath.join(posixpath.dirname(name), link)
+                )
+                if (
+                    not link
+                    or posixpath.isabs(link)
+                    or target in {".", ".."}
+                    or target.startswith("../")
+                ):
+                    raise MWRecoveryError("VERSION_ARCHIVE_UNSAFE_MEMBER")
             source.extractall(path=destination, filter="data")
         for required in ROLLBACK_REQUIRED_PATHS:
             item = destination / required
@@ -205,7 +234,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_versioned_rehearsal.py
-# VERSION: v1.0.0-DISPOSABLE-SOURCE-VERSION-EXECUTION-REHEARSAL
+# VERSION: v1.0.1-ROOT-BOUNDED-TRACKED-SYMLINKS
 # AUTHORITY BOUNDARY: Two isolated local EOS source versions, no live deployment.
 # TENANT POSTURE: Distinct synthetic local fixtures, never canonical wilsy.
 # FAIL-CLOSED POSTURE: Missing source, proof, auth, browser, cleanup denies success.
