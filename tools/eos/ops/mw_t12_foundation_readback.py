@@ -11,7 +11,7 @@ CERTIFICATION / UPDATE DATE: 2026-11-24.
 CHANGELOG: v1.3.0-CANONICAL-SESSION-TENANT-BINDING uses the verified
            persisted Founder tenant ID, not the public wilsy alias,
            for Projects and asserts bootstrap tenant and Owner capacity.
-CHANGELOG: v1.3.0-CANONICAL-SESSION-TENANT-BINDING authenticates the
+CHANGELOG: v1.2.0-IDENTITY-VERIFIER-PREFLIGHT authenticates the
            supplied bearer on canonical GET /api/auth/verify-token before
            Projects reads; HTTP 401 is distinguished from Projects authority
            or entitlement denial without printing any identity or token.
