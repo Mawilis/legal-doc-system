@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE
+ * VERSION: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ defers the
+ *          four independent initial activity/evidence GETs beyond
+ *          discarded React StrictMode mount effects. Explicit retries
+ *          and EOS source authorization remain independent and unchanged.
  * CHANGELOG: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE stabilizes
  *          semantically equal parent-provided tenant headers so ordinary
  *          parent rerenders cannot restart all four task activity GETs.
@@ -385,11 +389,17 @@ export default function ProjectTaskCommentsPanel({
     setOffset(0);
     setHasMore(false);
     command.current = { fingerprint: '', key: '' };
-    void load(0);
-    void loadEvents();
-    void loadEvidence('approvals');
-    void loadEvidence('attachments');
-    return () => { generation.current += 1; };
+    let active = true;
+    // A discarded development mount must not issue four independent EOS
+    // transactions just to be immediately superseded by StrictMode replay.
+    queueMicrotask(() => {
+      if (!active) return;
+      void load(0);
+      void loadEvents();
+      void loadEvidence('approvals');
+      void loadEvidence('attachments');
+    });
+    return () => { active = false; generation.current += 1; };
   }, [scope, load, loadEvents, loadEvidence]);
 
   useEffect(() => {
