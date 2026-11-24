@@ -1,5 +1,5 @@
 """TITLE: MW-T12 same-data reversible Python EOS rollback rehearsal.
-VERSION: v1.0.0-THREE-PHASE-SAME-DATA-EOS-REHEARSAL
+VERSION: v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Reuse a single UUID-owned replica database across current, historical,
          and restored-current Python EOS binaries with authenticated readback.
@@ -8,6 +8,12 @@ COLLABORATION / OWNERSHIP: Existing MW-T12 source staging and owned Mongo
          utilities; existing browser-cert fixture owns seeding, record
          verification, and database cleanup. No extra DB client introduced.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT obtains
+           the existing source fixture's read-only snapshot digest before
+           each Python EOS source switch and rejects mutations of selected
+           durable work, entitlement-history and audit evidence. All PASS
+           labels are withheld until the single owned database is cleaned
+           and stopped. Credentials and source rows remain secret.
 CHANGELOG: v1.0.0-THREE-PHASE-SAME-DATA-EOS-REHEARSAL performs a strictly
            opt-in source revision switch on one disposable Mongo replica
            without reseeding or dropping it between versions. An exact
@@ -53,7 +59,7 @@ from tools.eos.ops.mw_t12_versioned_rehearsal import (
     _stage_revision,
 )
 
-VERSION = "v1.0.0-THREE-PHASE-SAME-DATA-EOS-REHEARSAL"
+VERSION = "v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT"
 FIXTURE = "tests/e2e/browser_cert_fixture.py"
 READ_TIMEOUT = 12
 
@@ -72,6 +78,26 @@ def _run_fixture(script: Path, action: str, state: Path, env: dict[str, str],
         raise MWRecoveryError("SAME_DATA_FIXTURE_COMMAND_UNAVAILABLE") from error
     if result.returncode != 0:
         raise MWRecoveryError("SAME_DATA_FIXTURE_" + action.upper() + "_FAILED")
+
+
+def _fingerprint_fixture(script: Path, state: Path, env: dict[str, str],
+                         cwd: Path) -> str:
+    """Read a canonical, record-based audit digest via the existing fixture."""
+    try:
+        result = subprocess.run(
+            [sys.executable, str(script), "fingerprint", "--state", str(state)],
+            cwd=cwd, env=env, check=False, capture_output=True, timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise MWRecoveryError("SAME_DATA_AUDIT_FINGERPRINT_UNAVAILABLE") from error
+    digest = result.stdout.decode("ascii", errors="replace").strip()
+    if (
+        result.returncode != 0
+        or len(digest) != 64
+        or any(c not in "0123456789abcdef" for c in digest)
+    ):
+        raise MWRecoveryError("SAME_DATA_AUDIT_FINGERPRINT_INVALID")
+    return digest
 
 
 def _read_authorized(base: str, route: str, token: str,
@@ -143,7 +169,7 @@ def _authenticate_unchanged(base: str, state: dict[str, object]) -> None:
 
 def _certify_running_version(
     source: Path, env: dict[str, str], state_file: Path,
-    fixture: Path, revision: str,
+    fixture: Path, revision: str, fingerprint: str,
 ) -> None:
     port = _free_port()
     base = "http://127.0.0.1:" + str(port)
@@ -164,6 +190,8 @@ def _certify_running_version(
             raise MWRecoveryError("SAME_DATA_DATABASE_IDENTITY_MISMATCH")
         _authenticate_unchanged(base, state)
         _run_fixture(fixture, "verify", state_file, env, Path.cwd())
+        if _fingerprint_fixture(fixture, state_file, env, Path.cwd()) != fingerprint:
+            raise MWRecoveryError("SAME_DATA_AUDIT_EVIDENCE_MUTATED")
         print("MW_T12_SAME_DATA_VERSION_" + revision[:12] + "=PASS", flush=True)
     except (OSError, UnicodeError, ValueError) as error:
         raise MWRecoveryError("SAME_DATA_VERSION_READBACK_FAILED") from error
@@ -220,31 +248,38 @@ def rehearse_same_data(target: str) -> int:
             seeded = True
             _run_fixture(fixture, "seed", state_path, env, checkout)
             _run_fixture(fixture, "verify", state_path, env, checkout)
+            baseline = _fingerprint_fixture(fixture, state_path, env, checkout)
             for label, sha in (("current", current), ("historical", older),
                                ("restored", current)):
                 source = root / (label + "-source")
                 source.mkdir(mode=0o700)
                 _stage_revision(sha, checkout, source)
                 _link_local_dependencies(checkout, source)
-                _certify_running_version(source, env, state_path, fixture, sha)
+                _certify_running_version(
+                    source, env, state_path, fixture, sha, baseline
+                )
                 if _certified_source_revision() != current:
                     raise MWRecoveryError("SOURCE_REVISION_CHANGED_DURING_DRILL")
-            print("MW_T12_SAME_DATA_THREE_PHASE_READBACK=PASS", flush=True)
-            print("MW_T12_SAME_DATA_RECORDS_RESEEDED=FALSE", flush=True)
-            print("MW_T12_SAME_DATA_BACKEND_SOURCE_RESTORED=TRUE", flush=True)
-            print("MW_T12_VERSIONED_ROLLBACK_CERTIFIED=FALSE", flush=True)
-            print("MW_T12_FULL_INFRASTRUCTURE_RECOVERY_CERTIFIED=FALSE", flush=True)
-            return 0
         finally:
             if seeded and mongo is not None and mongo.poll() is None:
                 try:
                     _run_fixture(fixture, "cleanup", state_path, env, checkout)
-                    print("MW_T12_SAME_DATA_FIXTURE_REMOVED=TRUE", flush=True)
                 finally:
                     _stop_owned(mongo)
+                print("MW_T12_SAME_DATA_FIXTURE_REMOVED=TRUE", flush=True)
             elif mongo is not None:
                 _stop_owned(mongo)
+                if seeded:
+                    raise MWRecoveryError("SAME_DATA_MONGO_EXITED_BEFORE_CLEANUP")
             print("MW_T12_SAME_DATA_OWNED_MONGO_STOPPED=TRUE", flush=True)
+    # Only the verified, cleaned, and stopped case may claim success.
+    print("MW_T12_SAME_DATA_THREE_PHASE_READBACK=PASS", flush=True)
+    print("MW_T12_SAME_DATA_IMMUTABLE_AUDIT_EVIDENCE=UNCHANGED", flush=True)
+    print("MW_T12_SAME_DATA_RECORDS_RESEEDED=FALSE", flush=True)
+    print("MW_T12_SAME_DATA_BACKEND_SOURCE_RESTORED=TRUE", flush=True)
+    print("MW_T12_VERSIONED_ROLLBACK_CERTIFIED=FALSE", flush=True)
+    print("MW_T12_FULL_INFRASTRUCTURE_RECOVERY_CERTIFIED=FALSE", flush=True)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -268,7 +303,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_same_data_rehearsal.py
-# VERSION: v1.0.0-THREE-PHASE-SAME-DATA-EOS-REHEARSAL
+# VERSION: v1.1.0-SAME-DATA-IMMUTABLE-AUDIT-FINGERPRINT
 # AUTHORITY BOUNDARY: Only disposable single-database three-phase source test.
 # TENANT POSTURE: UUID synthetic local replica; never canonical wilsy or Atlas.
 # FAIL-CLOSED POSTURE: Auth, durable fixture or cleanup failure denies success.
