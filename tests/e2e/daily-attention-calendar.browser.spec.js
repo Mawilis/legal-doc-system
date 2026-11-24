@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.13.0-REPLACEMENT-BRIEFING-CERT
+ * VERSION: v3.13.1-FOCUSED-DETAIL-AND-CALENDAR-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v3.13.1-FOCUSED-DETAIL-AND-CALENDAR-CERT verifies the
+ *          full-width task replacement on desktop and mobile plus focused
+ *          calendar refresh without restoring the legacy split rail.
  * CHANGELOG: v3.13.0-REPLACEMENT-BRIEFING-CERT verifies that priority
  *          briefing replaces the inbox and Back to work restores the
  *          verified source list on desktop and mobile.
@@ -445,17 +448,12 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const rail = triage.getByRole('complementary', {name: 'Attention detail rail'});
       await expect(rail).toBeVisible();
       const railBounds = await rail.boundingBox();
-      expect(railBounds.width).toBeGreaterThan(300);
-      if (viewport.width >= 768) {
-        const panelBounds = await triage.boundingBox();
-        expect(panelBounds).not.toBeNull();
-        // Production desktop uses a 38/62 work/detail split, not the old 420px drawer.
-        expect(railBounds.width / panelBounds.width).toBeGreaterThanOrEqual(0.59);
-        expect(railBounds.width / panelBounds.width).toBeLessThanOrEqual(0.65);
-      } else {
-        // Mobile switches to the full-workspace detail; it must fit the viewport.
-        expect(railBounds.width).toBeLessThanOrEqual(viewport.width);
-      }
+      expect(railBounds).not.toBeNull();
+      const workspaceBounds = await triage.boundingBox();
+      expect(workspaceBounds).not.toBeNull();
+      // Focused task detail replaces the list across desktop and mobile.
+      expect(railBounds.width / workspaceBounds.width).toBeGreaterThanOrEqual(0.95);
+      await expect(triage.locator('[data-attention-work-list="true"]')).toBeHidden();
       expect(railBounds.x).toBeGreaterThanOrEqual(0);
       expect(railBounds.x + railBounds.width).toBeLessThanOrEqual(viewport.width);
       await expect(triage.getByRole('button', {name: 'Open full record'})).toBeVisible();
@@ -475,12 +473,8 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
       await expect(triage.getByTestId('attention-refresh-state'))
         .toHaveAttribute('data-attention-refresh-state', 'UPDATING');
-      if (viewport.width >= 768) {
-        await expect(row).toBeVisible();
-      } else {
-        // When detail is open, mobile intentionally hides the underlying work list.
-        await expect(row).toBeHidden();
-      }
+      // Every viewport uses the focused detail, with its queue hidden until Back.
+      await expect(row).toBeHidden();
       await expect(rail).toBeVisible();
       expect(await panel.getAttribute('style')).toBe(panelStyleBeforeRefresh);
       expect(await workListScroll.evaluate(node => node.scrollTop)).toBe(scrollBeforeRefresh);
@@ -994,7 +988,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.13.0-REPLACEMENT-BRIEFING-CERT
+// VERSION: v3.13.1-FOCUSED-DETAIL-AND-CALENDAR-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
