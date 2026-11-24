@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.3.1-ISOLATED-SOURCE-ALERT-CERT
+ * VERSION: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT verifies
+ *          equivalent parent header objects do not restart the four
+ *          EOS activity sources, while a real header change does.
+ *          No mocked response becomes authorization or persisted truth.
  * CHANGELOG: v1.3.1-ISOLATED-SOURCE-ALERT-CERT allows
  *          multiple independent error alerts while asserting the precise
  *          failed comment source, without erasing lifecycle evidence.
@@ -28,7 +32,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -68,6 +72,30 @@ function mount(contributor = false) {
         first_name: 'Task', last_name: 'Owner' }] : [])]}
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
 }
+
+it('does not refetch four activity sources on equivalent parent rerenders', async () => {
+  api.get.mockImplementation(async () => {
+    throw new Error('Synthetic unavailable response');
+  });
+  const props = {
+    tenantId, principalId, projectId, taskId, participants: [],
+    tenantHeaders: { 'X-Tenant-ID': tenantId }, onClose: () => {},
+  };
+  const { rerender } = render(<ProjectTaskCommentsPanel {...props} />);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(4));
+
+  await act(async () => {
+    rerender(<ProjectTaskCommentsPanel {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId }} />);
+  });
+  expect(api.get).toHaveBeenCalledTimes(4);
+
+  await act(async () => {
+    rerender(<ProjectTaskCommentsPanel {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Test-Scope': 'changed' }} />);
+  });
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(8));
+});
 
 it('publishes a comment and mention only after verified source list readback', async () => {
   let items = [];
@@ -177,7 +205,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.3.1-ISOLATED-SOURCE-ALERT-CERT
+// VERSION: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
