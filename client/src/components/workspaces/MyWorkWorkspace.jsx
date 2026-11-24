@@ -5,15 +5,19 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST
+ * VERSION: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/MyWorkWorkspace.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST replaces former dark-
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS removes the
+ *          movable dark task modal, showing a Projects-style light focused
+ *          record in the work area; source CRM editor, command readback,
+ *          audit history and completion evidence remain authoritative.
+ * CHANGELOG: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS replaces former dark-
  *          surface pale priority text with WCAG-conscious readable
  *          values on the new light workforce blueprint rows.
  * CHANGELOG: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE replaces legacy queue rows with
@@ -301,79 +305,6 @@ export default function MyWorkWorkspace(props = {}) {
   const rowRefs = useRef(new Map());
   const [selectedKey, setSelectedKey] = useState(null);
   const closeButtonRef = useRef(null);
-  const [workbench, setWorkbench] = useState(null);
-  const workbenchGestureRef = useRef(null);
-  const startWorkbenchGesture = (event, mode) => {
-    if ((event.button != null && event.button !== 0) || window.innerWidth < 768) return;
-    if (mode === 'MOVE' && event.target.closest('button, input, select, textarea, a')) return;
-    event.preventDefault();
-    workbenchGestureRef.current = {
-      mode, pointerX: event.clientX, pointerY: event.clientY,
-      geometry: workbench,
-    };
-  };
-  useEffect(() => {
-    if (!selectedKey) { workbenchGestureRef.current = null; return undefined; }
-    const geometry = () => {
-      const width = Math.min(Math.max(window.innerWidth * 0.68, 640), 1280, window.innerWidth - 48);
-      const height = Math.min(window.innerHeight - 48, 920);
-      return {
-        x: Math.max(24, Math.round((window.innerWidth - width) / 2)),
-        y: Math.max(24, Math.round((window.innerHeight - height) / 2)),
-        width, height,
-      };
-    };
-    setWorkbench(geometry());
-    const move = (event) => {
-      const gesture = workbenchGestureRef.current;
-      if (!gesture?.geometry || window.innerWidth < 768) return;
-      const before = gesture.geometry;
-      const dx = event.clientX - gesture.pointerX;
-      const dy = event.clientY - gesture.pointerY;
-      if (gesture.mode === 'MOVE') {
-        setWorkbench({
-          ...before,
-          x: Math.max(0, Math.min(window.innerWidth - before.width, before.x + dx)),
-          y: Math.max(0, Math.min(window.innerHeight - 52, before.y + dy)),
-        });
-      } else {
-        const minWidth = Math.min(560, window.innerWidth - 32);
-        const width = Math.max(minWidth, Math.min(window.innerWidth - before.x - 12, before.width + dx));
-        setWorkbench({ ...before, width });
-      }
-    };
-    const finish = () => { workbenchGestureRef.current = null; };
-    const clamp = () => {
-      workbenchGestureRef.current = null;
-      setWorkbench((before) => {
-        if (!before) return geometry();
-        const width = Math.min(before.width, window.innerWidth - 24);
-        const height = Math.min(before.height, window.innerHeight - 24);
-        return {
-          x: Math.max(0, Math.min(before.x, window.innerWidth - width)),
-          y: Math.max(0, Math.min(before.y, window.innerHeight - 52)),
-          width, height,
-        };
-      });
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('mousemove', move);
-    window.addEventListener('pointerup', finish);
-    window.addEventListener('mouseup', finish);
-    window.addEventListener('pointercancel', finish);
-    window.addEventListener('resize', clamp);
-    return () => {
-      workbenchGestureRef.current = null;
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('pointerup', finish);
-      window.removeEventListener('mouseup', finish);
-      window.removeEventListener('pointercancel', finish);
-      window.removeEventListener('resize', clamp);
-    };
-  }, [selectedKey]);
-
-
   const queueHeadingRef = useRef(null);
   const previousSelectedRef = useRef(null);
   const pendingRef = useRef(new Set());
@@ -817,11 +748,9 @@ export default function MyWorkWorkspace(props = {}) {
   }
 
   return (
-    <div className="min-h-screen bg-[#080b10] text-slate-100">
-      <main
-        aria-hidden={selectedItem && (typeof window === 'undefined' || window.innerWidth < 768) ? 'true' : undefined}
-        className="min-h-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-10"
-      >
+    <div className="wilsy-project-work-surface min-h-[60dvh] bg-[#f5f7fc] text-[#182f51]">
+      <style>{PROJECTS_STYLE_MY_WORK}</style>
+      <main hidden={Boolean(selectedItem)} className="px-3 py-4 sm:px-6 sm:py-6 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div className="min-w-0">
@@ -1024,42 +953,18 @@ export default function MyWorkWorkspace(props = {}) {
       </main>
 
       {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/55 md:pointer-events-none md:bg-transparent" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) requestClose();
-        }}>
-          <aside id="my-work-detail-dialog" role="dialog" aria-modal={typeof window === "undefined" || window.innerWidth < 768}
-            aria-labelledby="my-work-detail-title" aria-describedby="my-work-detail-description"
-            style={workbench && typeof window !== 'undefined' && window.innerWidth >= 768 ? {
-              left: workbench.x, top: workbench.y,
-              width: workbench.width, height: workbench.height,
-            } : undefined}
-            className="pointer-events-auto absolute inset-0 flex w-full flex-col overflow-y-auto rounded-none border border-white/10 bg-[#101b2b] shadow-2xl outline-none md:inset-auto md:min-h-80 md:rounded-xl md:ring-1 md:ring-amber-300/20">
-            <div role="separator" aria-orientation="vertical" aria-label="Resize work details"
-              tabIndex={0} title="Drag to resize the workbench"
-              onPointerDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
-              onMouseDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
-              onKeyDown={(event) => {
-                if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-                event.preventDefault();
-                setWorkbench((before) => before && ({
-                  ...before,
-                  width: Math.max(Math.min(560, window.innerWidth - 32),
-                    Math.min(window.innerWidth - before.x - 12,
-                      before.width + (event.key === 'ArrowRight' ? 48 : -48))),
-                }));
-              }}
-              className="absolute right-0 top-14 z-20 hidden h-[calc(100%-3.5rem)] w-2 cursor-ew-resize touch-none bg-transparent hover:bg-amber-300/20 focus-visible:bg-amber-300/30 md:block" />
-            <header onPointerDown={(event) => startWorkbenchGesture(event, 'MOVE')}
-              onMouseDown={(event) => startWorkbenchGesture(event, 'MOVE')}
-              className="flex cursor-move touch-none items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-6">
-              <span className="sr-only">Drag this header to move the workbench. Resize using the right edge or its keyboard arrow controls.</span>
+        <section className="wilsy-source-task-focus px-3 py-4 sm:px-6" aria-label="Selected authorised work">
+          <aside id="my-work-detail-dialog" role="region" aria-labelledby="my-work-detail-title"
+            aria-describedby="my-work-detail-description"
+            className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[#d5dfef] bg-white shadow-sm">
+            <header className="flex items-start justify-between gap-3 border-b border-[#d5dfef] px-4 py-4 sm:px-6">
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-amber-200">{SOURCE_LABELS[selectedItem.source] || selectedItem.source} work</p>
                 <h2 id="my-work-detail-title" className="mt-1 break-words text-xl font-semibold text-white">{selectedItem.title}</h2>
               </div>
-              <button ref={closeButtonRef} type="button" onClick={requestClose} aria-label="Close work details"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                <X size={18} />
+              <button ref={closeButtonRef} type="button" onClick={requestClose} aria-label="Back to work"
+                className="shrink-0 rounded-lg border border-[#c9d6e8] bg-white px-3 py-2 text-sm font-semibold text-[#18365f] hover:bg-[#eef5ff]">
+                ← Back to work
               </button>
             </header>
 
@@ -1256,12 +1161,38 @@ export default function MyWorkWorkspace(props = {}) {
               </footer>
             ) : null}
           </aside>
-        </div>
+        </section>
       )}
     </div>
   );
 }
 
+
+/* Projects-standard light task surface. EOS data and actions remain source-owned. */
+const PROJECTS_STYLE_MY_WORK = `
+.wilsy-project-work-surface{font-family:Inter,Arial,sans-serif;color:#172e52;background:#f5f7fc}
+.wilsy-project-work-surface [hidden]{display:none!important}
+.wilsy-project-work-surface main>div{max-width:1200px}
+.wilsy-project-work-surface main>div>header{background:#102d51;color:#fff;border-radius:14px 14px 0 0;padding:16px 22px}
+.wilsy-project-work-surface main>div>section{background:#fff;border:1px solid #d5dfef;padding:14px 20px}
+.wilsy-project-work-surface main>div>section :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300){color:#172e52!important}
+.wilsy-project-work-surface main>div>section :is(.text-slate-400,.text-slate-500){color:#526787!important}
+.wilsy-project-work-surface main>div>section :is(input,select){background:#fff!important;color:#172e52!important;border-color:#c3d2e8!important}
+.wilsy-project-work-surface main>div>section button[aria-pressed=true]{background:#1747ce!important;color:#fff!important;border-color:#1747ce!important}
+.wilsy-project-work-surface main>div>section button[aria-pressed=false]{background:#f4f7fe!important;color:#18365f!important;border-color:#cedaeb!important}
+.wilsy-project-work-surface main>div>footer{background:#f8faff;border:1px solid #d5dfef;padding:10px 20px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside{color:#172e52}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-amber-100,.text-amber-200){color:#172e52!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-slate-400,.text-slate-500){color:#526787!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside section{background:#f8faff!important;border:1px solid #d5dfef!important;border-radius:12px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside :is(input,textarea,select){background:#fff!important;color:#172e52!important;border-color:#bfd0e7!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside button{border-radius:9px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside .bg-amber-300{background:#1747ce!important;color:#fff!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside .text-rose-200{color:#b42318!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside .text-emerald-200{color:#12734c!important}
+@media(max-width:767px){.wilsy-project-work-surface .wilsy-source-task-focus{padding:9px}}
+`;
 
 /**
  * @description Execute a source-owned, audited CRM task revision from a
@@ -1729,7 +1660,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST
+ * VERSION: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
