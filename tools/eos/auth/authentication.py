@@ -3,12 +3,19 @@ COLLABORATION / OWNERSHIP: WILSY OS Core Engineering; adjacent authorities remai
 Wilsy OS authentication projection guarded by durable principal authority.
 
 TITLE: WILSY OS Authentication Projection
-VERSION: v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES
+VERSION: v1.5.0-NONBLOCKING-DURABLE-IDENTITY-RESOLUTION
 AUTHORITY: Cryptographic credential verification and current PrincipalAuthority gating.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authentication.py
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-24
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 CHANGELOG:
+    2026-11-24 v1.5.0-NONBLOCKING-DURABLE-IDENTITY-RESOLUTION keeps the
+    canonical async FastAPI dependency but offloads its existing complete
+    synchronous authentication/currentness and caller-owned SYSTEM transaction
+    to one worker thread. An opaque trace is established before dispatch and
+    propagated by AnyIO contextvars. No token, IAM, collision, session,
+    transaction, tenant or error semantics change; a slow MongoDB command
+    cannot monopolize the asyncio event loop.
     2026-11-15 v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES emits an overall
     credential-currentness observation for both success and failure outcomes;
     AuthRegistry emits bounded read-stage timing under the same safe trace.
@@ -52,6 +59,7 @@ from typing import Any, Final, Optional
 from pymongo.errors import PyMongoError
 from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from starlette.concurrency import run_in_threadpool
 from tools.eos.api.exceptions import UnauthorizedAccessException
 from tools.eos.auth.audit import log_auth_event
 from tools.eos.auth.identity import SovereignIdentity
@@ -71,7 +79,7 @@ from tools.eos.saas.auth.auth_registry import AuthRegistry
 
 security_scheme = HTTPBearer(auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-VERSION: Final[str] = "v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES"
+VERSION: Final[str] = "v1.5.0-NONBLOCKING-DURABLE-IDENTITY-RESOLUTION"
 logger = logging.getLogger("WilsyOS.Auth.Authentication")
 _TIMING_ENVIRONMENT_VARIABLE: Final[str] = "WILSY_MY_WORK_TIMING"
 _TRACE_IDENTIFIER: Final[re.Pattern[str]] = re.compile(
@@ -189,17 +197,35 @@ async def get_current_identity(
     api_key: Optional[str] = Security(api_key_header),
     repository: PrincipalAuthorityRepository = Depends(get_principal_authority_repository),
 ) -> SovereignIdentity:
-    """Authenticate one ACCESS JWT against current durable principal authority.
+    """Authenticate against fresh durable authority without blocking asyncio.
 
-    Cryptographic verification is followed by exact ACCESS-purpose and
-    credential-revision checks.  The durable revision is read through
-    ``AuthRegistry.get_credential_revision`` only after the canonical principal
-    is ACTIVE, and the token is accepted only on exact equality.  PRE_AUTH,
-    legacy-purpose, stale, future, malformed, missing, and unavailable states
-    fail closed without exposing revision values or owning persistence.
+    FastAPI owns injection, the request trace is established in its task, and
+    AnyIO copies that trace into the worker thread. Every canonical principal,
+    credential-revision, GLOBAL/SYSTEM session-currentness and transaction
+    check is performed by the unchanged synchronous verifier before returning
+    an identity. No authority is cached, delegated or skipped.
+    """
+    correlation = establish_request_timing_correlation(request)
+    return await run_in_threadpool(
+        _get_current_identity_sync, request, credentials, api_key, repository,
+        correlation,
+    )
+
+
+def _get_current_identity_sync(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials],
+    api_key: Optional[str],
+    repository: PrincipalAuthorityRepository,
+    correlation: str,
+) -> SovereignIdentity:
+    """Run one complete exact-currentness authentication on a worker thread.
+
+    SYSTEM Mongo ClientSession start/commit/abort/end remain in the same worker
+    thread. Caller dependencies and all error classification remain unchanged.
+    The trace is an opaque diagnostic only, not authentication authority.
     """
     authentication_started_ns = time.perf_counter_ns()
-    correlation = establish_request_timing_correlation(request)
     if api_key:
         log_auth_event("API_KEY_AUTH", "unresolved", False, {"reason": "principal_resolution_required"})
         raise UnauthorizedAccessException("API-key principal is not mapped to durable authority.")
@@ -476,7 +502,7 @@ __all__ = [
 ]
 
 # ARTIFACT: authentication.py
-# VERSION: v1.4.0-CREDENTIAL-CURRENTNESS-SUBSTAGES
+# VERSION: v1.5.0-NONBLOCKING-DURABLE-IDENTITY-RESOLUTION
 # AUTHORITY BOUNDARY: credential verification plus durable ACTIVE principal gate
 # TENANT POSTURE: tenant claim is context only; membership authority is separate
 # FAIL-CLOSED POSTURE: missing, invalid, absent, unavailable, suspended, and revoked authority denies
