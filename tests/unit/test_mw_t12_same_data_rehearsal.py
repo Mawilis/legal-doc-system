@@ -1,5 +1,5 @@
 """TITLE: MW-T12 single-database rollback source continuity certificate.
-VERSION: v1.0.0-SAME-DATA-SOURCE-CONTINUITY-TEST
+VERSION: v1.1.0-EXACT-HTTP-SOURCE-RECORD-CONTINUITY-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify one disposable Mongo dataset, three exact source versions,
          independent durable readback and fail-closed audit evidence checks.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing fixture owns exact-tenant source records;
          current/older staged code must not create new database consumers.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-EXACT-HTTP-SOURCE-RECORD-CONTINUITY-CERT
+           verifies HTTP results carry the same explicitly seeded
+           incident and assignment IDs and reject foreign/missing evidence;
+           adds a bounded parser rejection for oversized responses.
 CHANGELOG: v1.0.0-SAME-DATA-SOURCE-CONTINUITY-TEST validates one seed,
            current-to-older-to-restored exact revision order, unchanged
            database identity, record fingerprint rejection, expected HTTP
@@ -37,6 +41,8 @@ def _actor_fixture(database: str) -> dict[str, object]:
     return {
         "tenant_id": "browser-tenant-test",
         "database_name": database,
+        "system_incident_id": "synthetic-incident-id",
+        "system_assignment_id": "synthetic-assignment-id",
         "actors": {
             "partner": {"access_token": "synthetic-partner"},
             "tenant_owner": {"access_token": "synthetic-owner"},
@@ -137,9 +143,17 @@ def test_unchanged_authority_requires_all_exact_http_results(
         return 200
 
     monkeypatch.setattr(operator, "_read_authorized", read)
+    def records(_base, route, _token):
+        return [{"incidentId": evidence["system_incident_id"]}] if (
+            route.endswith("security-incidents")
+        ) else [{"assignmentId": evidence["system_assignment_id"]}]
+    monkeypatch.setattr(operator, "_read_records", records)
     operator._authenticate_unchanged("http://127.0.0.1:19095", evidence)
     assert len(observed) == 7
     assert all(scope == evidence["tenant_id"] for route, _, scope in observed[:3])
+    monkeypatch.setattr(operator, "_read_records", lambda *args: [])
+    with pytest.raises(MWRecoveryError, match="SAME_DATA_SOURCE_RECORD_ID_MISMATCH"):
+        operator._authenticate_unchanged("http://127.0.0.1:19095", evidence)
     monkeypatch.setattr(operator, "_read_authorized", lambda *args: 200)
     with pytest.raises(MWRecoveryError, match="SAME_DATA_AUTHORIZATION_READBACK_FAILED"):
         operator._authenticate_unchanged("http://127.0.0.1:19095", evidence)
@@ -202,7 +216,7 @@ def test_mutated_audit_records_fail_before_version_pass(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_same_data_rehearsal.py
-# VERSION: v1.0.0-SAME-DATA-SOURCE-CONTINUITY-TEST
+# VERSION: v1.1.0-EXACT-HTTP-SOURCE-RECORD-CONTINUITY-CERT
 # AUTHORITY BOUNDARY: Synthetic local source-version continuity only.
 # TENANT POSTURE: No external database or production actor.
 # FAIL-CLOSED POSTURE: Missing or mutated source evidence denies success.
