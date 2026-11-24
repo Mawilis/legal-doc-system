@@ -1,3 +1,20 @@
+/**
+ * TITLE: WILSY OS Kernel Health Hook
+ * VERSION: v1.1.0-STRICTMODE-HEALTH-PROBE-SUPPRESSION
+ * AUTHORITY: Python EOS kernel status and existing authenticated API transport.
+ * EPITOME: Observe live kernel health without duplicate development-mode polls.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/hooks/useKennelHealth.js
+ * COLLABORATION / OWNERSHIP: EOS owns kernel status; the client hook owns presentation and polling.
+ * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v1.1.0-STRICTMODE-HEALTH-PROBE-SUPPRESSION avoids an
+ *            immediate GET from discarded React StrictMode effects;
+ *            existing polling and source error behavior are unchanged.
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Health read only, no token or identity logging.
+ * TENANT BOUNDARY: No tenant selector or business membership authority issued.
+ * AUTHORITY BOUNDARY: The hook does not authorize EOS work or financial actions.
+ * FINANCIAL AUTHORITY BOUNDARY: None; Python EOS remains exclusive authority.
+ */
 /* eslint-disable */
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -165,3 +182,13 @@ export const useKennelHealth = (options = {}) => {
 };
 
 export default useKennelHealth;
+
+/*
+ * ARTIFACT: client/src/hooks/useKennelHealth.js
+ * VERSION: v1.1.0-STRICTMODE-HEALTH-PROBE-SUPPRESSION
+ * AUTHORITY BOUNDARY: Live kernel status observation only; no authorization or source mutation.
+ * TENANT POSTURE: No tenant/scope substitution or permission claim.
+ * FAIL-CLOSED POSTURE: Unknown, offline and degraded remain explicit, never a fabricated success.
+ * FINANCIAL EXECUTION AUTHORITY: None; Python EOS owns source truth.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
