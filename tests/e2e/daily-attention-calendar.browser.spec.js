@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT
+ * VERSION: v3.13.4-INPLACE-CRM-REVISION-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v3.13.4-INPLACE-CRM-REVISION-CERT verifies audited
+ *          source title changes in the approved in-place record region
+ *          and returns to work without the retired modal.
  * CHANGELOG: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT follows the
  *          approved focused My Work record region, retaining the actual
  *          EOS completion, Mongo readback and source/aggregate parity proof.
@@ -848,7 +851,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const revisionRow = page.getByRole('button', {name: new RegExp(revisionOriginal)});
       await expect(revisionRow).toBeVisible();
       await revisionRow.click();
-      const revisionDialog = page.getByRole('dialog', {name: revisionOriginal});
+      const revisionDialog = page.getByRole('region', {name: revisionOriginal});
       await expect(revisionDialog).toBeVisible();
       const sourceEdit = revisionDialog.getByRole('button', {name: 'Edit CRM task'});
       await expect(sourceEdit).toBeVisible();
@@ -873,11 +876,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const patchReceipt = patchPayload;
       expect(patchReceipt.work_item_id).toBe(revisionWork.work_item_id);
       expect(patchReceipt.title).toBe(revisionChanged);
-      const renamedDialog = page.getByRole('dialog', {name: revisionChanged});
+      const renamedDialog = page.getByRole('region', {name: revisionChanged});
       await expect(renamedDialog.getByText(
         'CRM edit confirmed by source, audit history and fresh My Work.',
       )).toBeVisible();
-      await renamedDialog.getByRole('button', {name: 'Close work details'}).click();
+      await renamedDialog.getByRole('button', {name: 'Back to work'}).click();
       await expect(page.getByRole('button', {name: revisionChanged})).toBeVisible();
       const persistedRevision = await context.request.get(
         crmPath + '/' + revisionWork.work_item_id, {headers},
@@ -994,7 +997,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT
+// VERSION: v3.13.4-INPLACE-CRM-REVISION-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
