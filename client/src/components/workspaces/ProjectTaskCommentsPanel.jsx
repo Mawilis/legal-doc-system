@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING
+ * VERSION: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
+ *          existing source-owned comment editor directly under the action
+ *          bar and replaces the timeline while writing. Opening explicitly
+ *          focuses the textarea; closing restores the untouched history.
+ *          Verified publication returns to the reloaded source timeline.
+ *          No authorization, command, evidence or persistence changes.
  * CHANGELOG: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING gives each
  *          source-backed activity action group consistent 16px horizontal
  *          gutters, 12px wrapped-row gutters, and 16px breathing room
@@ -261,6 +267,7 @@ export default function ProjectTaskCommentsPanel({
   const generation = useRef(0);
   const discussionRef = useRef(null);
   const composerRef = useRef(null);
+  const composerInputRef = useRef(null);
   const navigatedScope = useRef(null);
   const command = useRef({ fingerprint: '', key: '' });
   const contributorEligible = Array.isArray(participants) && participants.some(person =>
@@ -470,7 +477,10 @@ export default function ProjectTaskCommentsPanel({
 
   useEffect(() => {
     if (showComposer && state === 'READY') {
-      composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+      // A workspace action must make its editor immediately actionable,
+      // not leave keyboard focus on the trigger above a long activity log.
+      composerInputRef.current?.focus({ preventScroll: true });
+      composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'nearest' });
     }
   }, [showComposer, state]);
 
@@ -544,6 +554,7 @@ export default function ProjectTaskCommentsPanel({
       command.current = { fingerprint: '', key: '' };
       setBody('');
       setMentions([]);
+      setShowComposer(false);
     } catch (cause) {
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
@@ -608,11 +619,17 @@ export default function ProjectTaskCommentsPanel({
         </p>
         {state === 'READY' && contributorEligible && <button type="button" className={ACTIVITY_ACTION_CLASS}
           aria-expanded={showTaskEvidence}
-          onClick={() => setShowTaskEvidence(value => !value)}>
+          onClick={() => {
+            setShowComposer(false);
+            setShowTaskEvidence(value => !value);
+          }}>
           {showTaskEvidence ? 'Close file upload' : 'Upload task evidence'}
         </button>}
         {state === 'READY' && <button type="button" className={ACTIVITY_ACTION_CLASS} aria-expanded={showComposer}
-          aria-controls="task-comment-composer" onClick={() => setShowComposer(current => !current)}>
+          aria-controls="task-comment-composer" onClick={() => {
+            setShowTaskEvidence(false);
+            setShowComposer(current => !current);
+          }}>
           {showComposer ? 'Close editor' : 'Write update'}
         </button>}
       </div>
@@ -625,6 +642,45 @@ export default function ProjectTaskCommentsPanel({
             taskId={taskId} participantMode tenantHeaders={tenantHeaders}
             onClose={() => setShowTaskEvidence(false)}/>
         </div>}
+      {showComposer && <div id="task-comment-composer" ref={composerRef}
+        className="scroll-mt-28" role="region" aria-label="Write a progress update">
+      <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
+        <label className="block text-sm font-semibold text-slate-800">Write a progress update
+          <textarea ref={composerInputRef} aria-label="New task comment" required rows={5}
+            maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
+            placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
+            className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-normal text-slate-900"/>
+        </label>
+        <section aria-label="Live formatted comment preview" className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h5 className="text-xs font-bold uppercase tracking-wide text-slate-700">Live formatted preview</h5>
+            <span className="text-xs tabular-nums text-slate-600">{body.length} / 5000 characters</span>
+          </div>
+          {body.trim() ? <MarkdownText value={body}/> : <p className="text-sm text-slate-600">
+            Formatted text will appear here as you type or paste.
+          </p>}
+        </section>
+        <fieldset className="rounded-lg border border-slate-200 p-3">
+          <legend className="px-1 text-xs font-semibold text-slate-800">Mention verified contributors (optional)</legend>
+          <div className="grid max-h-32 gap-2 overflow-auto sm:grid-cols-2">
+            {participants.filter(item => item.principal_id !== principalId).map(person =>
+              <label className="flex items-center gap-2 break-all text-xs text-slate-800"
+                key={person.principal_id}>
+                <input type="checkbox" checked={mentions.includes(person.principal_id)}
+                  disabled={!mentions.includes(person.principal_id) && mentions.length >= 10}
+                  onChange={event => setMentions(list => event.target.checked
+                    ? [...list, person.principal_id]
+                    : list.filter(value => value !== person.principal_id))}/>
+                {[person.first_name, person.last_name].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Contributor name unavailable'}
+              </label>)}
+          </div>
+          <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
+        </fieldset>
+        <button className={ACTIVITY_ACTION_CLASS + " wp-button-primary"} type="submit"
+          disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
+      </form>
+      </div>}
+      {!showComposer && <>
       <div id="verified-task-comment-history" aria-label="Verified task activity history" className="pt-4">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pb-4">
         <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
@@ -718,51 +774,14 @@ export default function ProjectTaskCommentsPanel({
         {' '}Project Notes remain separate project-wide records.</p>
 
       </details>
-      {showComposer && <div id="task-comment-composer" ref={composerRef}
-        className="scroll-mt-28">
-      <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
-        <label className="block text-sm font-semibold text-slate-800">Write a progress update
-          <textarea aria-label="New task comment" required rows={5}
-            maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
-            placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
-            className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-normal text-slate-900"/>
-        </label>
-        <section aria-label="Live formatted comment preview" className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h5 className="text-xs font-bold uppercase tracking-wide text-slate-700">Live formatted preview</h5>
-            <span className="text-xs tabular-nums text-slate-600">{body.length} / 5000 characters</span>
-          </div>
-          {body.trim() ? <MarkdownText value={body}/> : <p className="text-sm text-slate-600">
-            Formatted text will appear here as you type or paste.
-          </p>}
-        </section>
-        <fieldset className="rounded-lg border border-slate-200 p-3">
-          <legend className="px-1 text-xs font-semibold text-slate-800">Mention verified contributors (optional)</legend>
-          <div className="grid max-h-32 gap-2 overflow-auto sm:grid-cols-2">
-            {participants.filter(item => item.principal_id !== principalId).map(person =>
-              <label className="flex items-center gap-2 break-all text-xs text-slate-800"
-                key={person.principal_id}>
-                <input type="checkbox" checked={mentions.includes(person.principal_id)}
-                  disabled={!mentions.includes(person.principal_id) && mentions.length >= 10}
-                  onChange={event => setMentions(list => event.target.checked
-                    ? [...list, person.principal_id]
-                    : list.filter(value => value !== person.principal_id))}/>
-                {[person.first_name, person.last_name].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Contributor name unavailable'}
-              </label>)}
-          </div>
-          <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
-        </fieldset>
-        <button className={ACTIVITY_ACTION_CLASS + " wp-button-primary"} type="submit"
-          disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
-      </form>
-      </div>}
+      </>}
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
     </>}
   </section>;
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING
+// VERSION: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
