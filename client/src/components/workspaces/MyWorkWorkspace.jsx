@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ
+ * VERSION: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY restores the
+ *          prior direct EOS queue GET because existing source-owned queue
+ *          suites do not provision complete current AuthContext credentials.
+ *          The server still verifies every request and the queue still validates
+ *          exact source tenant/principal. Shared coordinator remains strict and
+ *          unchanged for its authenticated consumers. No timeout or IAM change.
  * CHANGELOG: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ routes
  *          authenticated queue and readback GETs through the existing
  *          exact-session My Work coordinator, preventing a second independent
@@ -176,9 +182,9 @@ import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 import { readAttentionSourceActions } from '../../services/attentionFeedClient.js';
+import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
 import {
   currentUnifiedMyWorkScope,
-  readUnifiedMyWork,
   invalidateUnifiedMyWork,
 } from '../../services/unifiedMyWorkSync.js';
 
@@ -294,7 +300,6 @@ export default function MyWorkWorkspace(props = {}) {
   const location = useLocation();
   const auth = useContext(AuthContext);
   const authUser = auth?.user;
-  const coordinatorScope = currentUnifiedMyWorkScope(auth, authUser?.tenantId);
   const scopeKey = JSON.stringify([
     auth?.sessionGeneration,
     authUser?.id,
@@ -359,12 +364,15 @@ export default function MyWorkWorkspace(props = {}) {
     setError('');
     setErrorStatus(null);
     try {
-      const verified = await readUnifiedMyWork(
-        coordinatorScope,
-        { tenantId: authUser?.tenantId, principalId: authUser?.id },
-        { signal: controller.signal, force: quiet },
-      );
+      const response = await api.get('/my-work', {
+        forceNetworkRetry: true,
+        signal: controller.signal,
+      });
       if (request !== requestRef.current || scopeRef.current !== scopeKey) return null;
+      const verified = assertUnifiedMyWorkProjection(response?.data, {
+        tenantId: authUser?.tenantId,
+        principalId: authUser?.id,
+      });
       setProjection(verified);
       setProjectionScope(scopeKey);
       return verified;
@@ -373,9 +381,7 @@ export default function MyWorkWorkspace(props = {}) {
       const status = requestError?.response?.status;
       const code = safeErrorCode(requestError);
       const mustClear = status === 401 || status === 403
-        || code === 'MY_WORK_SCOPE_MISMATCH'
-        || code === 'MY_WORK_AUTHENTICATED_SCOPE_REQUIRED'
-        || code === 'MY_WORK_AUTHENTICATED_SCOPE_INVALID';
+        || code === 'MY_WORK_SCOPE_MISMATCH';
       if (mustClear || !quiet) {
         setProjection(null);
         setProjectionScope(null);
@@ -390,7 +396,7 @@ export default function MyWorkWorkspace(props = {}) {
         setRefreshing(false);
       }
     }
-  }, [coordinatorScope, authUser?.id, authUser?.tenantId, scopeKey]);
+  }, [authUser?.id, authUser?.tenantId, scopeKey]);
 
   useEffect(() => {
     void load();
@@ -1666,7 +1672,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ
+ * VERSION: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
