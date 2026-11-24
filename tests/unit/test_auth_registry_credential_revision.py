@@ -1065,7 +1065,7 @@ def test_identity_fracture_logs_only_stable_code_even_with_debug_disabled(
 
 
 # ARTIFACT: tests/unit/test_auth_registry_credential_revision.py
-# VERSION: v1.8.0-COMBINED-LEGACY-IDENTITY-CERTIFICATE
+# VERSION: v1.9.0-INDEXED-DUAL-IDENTITY-CERTIFICATE
 # AUTHORITY BOUNDARY: direct offline evidence for AuthRegistry credential, tenant-resolution, and caller-transaction registration seams
 # TENANT POSTURE: canonical tenant resolution and credential persistence preserve exact caller transaction scope
 # FAIL-CLOSED POSTURE: malformed state, races, count anomalies, readback drift, and transaction-boundary violations fail
