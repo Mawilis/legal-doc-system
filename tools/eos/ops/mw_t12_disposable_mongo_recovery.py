@@ -1,11 +1,15 @@
 """TITLE: MW-T12 disposable MongoDB backup/restore certificate rehearsal.
-VERSION: v1.0.0-DISPOSABLE-MONGO-RECOVERY
+VERSION: v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Run a real synthetic Mongo dump, fault, restore and readback in a
          newly created network-disabled Docker container; never touch EOS.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_disposable_mongo_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS engineering operator / Docker.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION provisions explicit
+           tmpfs ownership for the official Mongo image, removes the immutable
+           root filesystem constraint and reports allowlisted container state
+           on startup failure without disclosing Docker logs or secrets.
 CHANGELOG: v1.0.0-DISPOSABLE-MONGO-RECOVERY adds isolated synthetic recovery
            evidence with fail-closed preflight and mandatory cleanup.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -28,7 +32,7 @@ import sys
 import time
 from typing import Any
 
-VERSION = "v1.0.0-DISPOSABLE-MONGO-RECOVERY"
+VERSION = "v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION"
 IMAGE = "mongo:7"
 
 
@@ -73,6 +77,24 @@ def preflight() -> None:
         raise RecoveryGateError("IMAGE_ID_UNVERIFIABLE")
 
 
+def _startup_failure(container: str) -> RecoveryGateError:
+    """Classify an owned disposable container without reading untrusted logs.
+
+    Only Docker's status enum and OOM flag are used; a failed inspection leaves
+    the original startup error. This never reports endpoints or user data.
+    """
+    try:
+        status = docker("inspect", container, "--format", "{{.State.Status}}")
+        oom = docker("inspect", container, "--format", "{{.State.OOMKilled}}")
+    except RecoveryGateError:
+        return RecoveryGateError("MONGO_START_UNAVAILABLE")
+    if oom == "true":
+        return RecoveryGateError("MONGO_CONTAINER_OOM")
+    if status in {"exited", "dead", "removing"}:
+        return RecoveryGateError("MONGO_CONTAINER_EXITED")
+    return RecoveryGateError("MONGO_START_UNAVAILABLE")
+
+
 def primary(container: str) -> None:
     """Wait for an isolated single-node replica-set primary."""
     for _ in range(45):
@@ -83,7 +105,7 @@ def primary(container: str) -> None:
             pass
         time.sleep(1)
     else:
-        raise RecoveryGateError("MONGO_START_UNAVAILABLE")
+        raise _startup_failure(container)
     mongo(container, 'rs.initiate({_id:"mwT12",members:[{_id:0,host:"127.0.0.1:27017"}]})')
     for _ in range(45):
         try:
@@ -120,10 +142,10 @@ def exercise() -> dict[str, Any]:
         docker(
             "run", "-d", "--name", name,
             "--label", "wilsy.mw_t12.disposable=true",
-            "--network", "none", "--read-only",
-            "--tmpfs", "/data/db:rw,size=128m",
-            "--tmpfs", "/data/configdb:rw,size=16m",
-            "--tmpfs", "/tmp:rw,size=128m",
+            "--network", "none",
+            "--tmpfs", "/data/db:rw,size=256m,uid=999,gid=999,mode=0700",
+            "--tmpfs", "/data/configdb:rw,size=32m,uid=999,gid=999,mode=0700",
+            "--tmpfs", "/tmp:rw,size=128m,mode=1777",
             "--memory", "768m", "--cpus", "1",
             IMAGE, "mongod", "--replSet", "mwT12",
             "--bind_ip", "127.0.0.1",
@@ -218,7 +240,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_disposable_mongo_recovery.py
-# VERSION: v1.0.0-DISPOSABLE-MONGO-RECOVERY
+# VERSION: v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION
 # AUTHORITY BOUNDARY: Disposable Mongo component rehearsal only, not EOS recovery.
 # TENANT POSTURE: No canonical or external tenant state is touched.
 # FAIL-CLOSED POSTURE: Any Docker, isolation, backup, fault, restore, readback or cleanup failure denies success.
