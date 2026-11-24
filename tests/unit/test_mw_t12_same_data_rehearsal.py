@@ -1,5 +1,5 @@
 """TITLE: MW-T12 single-database rollback source continuity certificate.
-VERSION: v1.2.0-SEEDED-ONLY-LIFECYCLE-REGRESSION
+VERSION: v1.2.1-MOCKED-VERSION-VERIFY-SEED-CONTRACT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify one disposable Mongo dataset, three exact source versions,
          independent durable readback and fail-closed audit evidence checks.
@@ -7,6 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing fixture owns exact-tenant source records;
          current/older staged code must not create new database consumers.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.1-MOCKED-VERSION-VERIFY-SEED-CONTRACT updates
+           the mocked version runner to invoke the real orchestration's
+           seed-only verifier once per source revision. The test now proves
+           one initial and three per-version checks; it does not modify the
+           live EOS operator or reduce authorization and audit assertions.
 CHANGELOG: v1.2.0-SEEDED-ONLY-LIFECYCLE-REGRESSION
            distinguishes seed-only source verification from the full
            post-browser response/decision verifier. The rehearsal now
@@ -88,7 +93,13 @@ def test_three_versions_share_one_seed_and_cleanup_after_evidence(
                 encoding="utf-8",
             )
 
-    def version(_stage, env, state, _fixture, revision, fingerprint):
+    def version(_stage, env, state, fixture_path, revision, fingerprint):
+        # Mirror the seed-only read performed by _certify_running_version.
+        # This test replaces that implementation to avoid starting live EOS,
+        # so it must explicitly exercise the mocked fixture's own contract.
+        operator._run_fixture(
+            fixture_path, "verify-seed", state, env, Path.cwd(),
+        )
         phases.append((revision, env["BROWSER_CERT_MONGO_URI"], fingerprint))
         assert Path(state).is_file()
         assert actions.count("seed") == 1
@@ -221,7 +232,7 @@ def test_mutated_audit_records_fail_before_version_pass(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_same_data_rehearsal.py
-# VERSION: v1.2.0-SEEDED-ONLY-LIFECYCLE-REGRESSION
+# VERSION: v1.2.1-MOCKED-VERSION-VERIFY-SEED-CONTRACT
 # AUTHORITY BOUNDARY: Synthetic local source-version continuity only.
 # TENANT POSTURE: No external database or production actor.
 # FAIL-CLOSED POSTURE: Missing or mutated source evidence denies success.
