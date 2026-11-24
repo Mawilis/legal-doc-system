@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.41.0-READ-PHASE-INSTRUMENTATION-CERT
+VERSION: v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -17,6 +17,9 @@ AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
                     claim a live role assignment, entitlement or database write.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 CHANGELOG:
+  v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT retains all five
+  existing no-keyword whole-read retry assertions unchanged, and
+  independently verifies profiled list request-local timing isolation.
   v1.41.0-READ-PHASE-INSTRUMENTATION-CERT verifies bounded,
   no-identity logs for slow/failing read-only Projects GET handlers;
   wraps one original snapshot transaction and never swallows 403.
@@ -1590,16 +1593,44 @@ def test_profiled_projects_get_preserves_snapshot_scope_and_emits_safe_slow_timi
     monkeypatch.setattr(projects_router, "perf_counter", lambda: next(clock))
     with caplog.at_level("WARNING"):
         result = projects_router._profiled_projects_get(
-            context, "PROJECT_LIST", source,
+            context, "TASK_LIST", source,
         )
     assert result["schema"] == "WILSY-PROJECT-LIST/V1"
     assert calls == [context]
     record = caplog.text
-    assert "PROJECTS_GET_LATENCY operation=PROJECT_LIST outcome=SLOW" in record
+    assert "PROJECTS_GET_LATENCY operation=TASK_LIST outcome=SLOW" in record
     assert "session_open_ms=5.0" in record
     assert "entitlement_ms=190.0" in record
     assert "tenant-private-marker" not in record
     assert "principal-private-marker" not in record
+
+
+def test_profiled_project_list_preserves_original_transaction_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One original zero-keyword snapshot call; request timing context is reset."""
+    context = SimpleNamespace(tenant_id="synthetic-tenant",
+                              identity=SimpleNamespace(identity_id="synthetic-reader"))
+    calls = []
+
+    def transaction(actual, callback, **kwargs):
+        assert actual is context
+        assert kwargs == {}
+        timings = projects_router._project_list_read_timings.get()
+        assert isinstance(timings, dict)
+        calls.append(True)
+        return callback("exact-tenant-registry", "fresh-session")
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    result = projects_router._profiled_projects_get(
+        context, "PROJECT_LIST",
+        lambda registry, session: {"registry": registry, "session": session},
+    )
+    assert result == {
+        "registry": "exact-tenant-registry", "session": "fresh-session",
+    }
+    assert calls == [True]
+    assert projects_router._project_list_read_timings.get() is None
 
 
 def test_profiled_projects_get_preserves_entitlement_denial(
@@ -1626,7 +1657,7 @@ def test_profiled_projects_get_preserves_entitlement_denial(
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.41.0-READ-PHASE-INSTRUMENTATION-CERT
+# VERSION: v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
