@@ -2245,7 +2245,7 @@ export default function ProjectTasksPanel({
                 Task status does not certify deployment readiness, rollback capability, evidence clearance
                 or strategic outcome attainment. Review the independently authorized source records before completion.
               </p>
-            </section>
+            </section>}
             <section className="pt-5" aria-label="Task description">
               <h4 className="text-sm font-bold text-slate-950">Description</h4>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
