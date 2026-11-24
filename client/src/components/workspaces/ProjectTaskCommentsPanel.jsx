@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT
+ * VERSION: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,12 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY adopts the
+ *          existing shared Projects 36px compact action pattern for all
+ *          Activity toolbar, evidence, composer, paging and source-retry
+ *          controls. Source-backed reading remains visually primary;
+ *          mobile actions wrap without oversized button geometry.
+ *          No text, command, authorization or response contract changes.
  * CHANGELOG: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT moves
  *          mandatory institutional authority and privacy declarations ahead
  *          of the long history, satisfying the first-100-line integrity
@@ -112,6 +118,9 @@ import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 const LIST = 'WILSY-PROJECT-COMMENT-LIST/V1';
 const RESULT = 'WILSY-PROJECT-COMMENT-RESULT/V1';
 const COMMENT = /^pcm-[a-f0-9]{48}$/;
+// Reuse the existing Projects action class with the same compact override
+// already used by task/workspace actions. Minimum height remains 36px.
+const ACTIVITY_ACTION_CLASS = 'wp-button !min-h-9 !px-3 !py-1 !text-xs';
 
 function checkComment(value, tenantId, projectId, taskId) {
   return Boolean(
@@ -206,7 +215,7 @@ function ActivityCommentBody({ value }) {
       <p className="break-words text-sm font-medium leading-6 text-slate-900">{introduction}</p>
       <p className="text-xs leading-5 text-slate-600">Long update · {lines.length} populated lines · Full source text retained</p>
     </div>}
-    <button type="button" className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+    <button type="button" className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
       aria-expanded={expanded} onClick={() => setExpanded(open => !open)}>
       {expanded ? 'Collapse update' : 'Read full update'}
     </button>
@@ -564,12 +573,12 @@ export default function ProjectTaskCommentsPanel({
         <MessageSquare size={16}/> Activity &amp; discussion
       </h4>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="wp-button" disabled={busy}
+        <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
           onClick={() => {
             void load(offset); void loadEvents(eventOffset);
             void loadEvidence('approvals'); void loadEvidence('attachments');
           }}><RefreshCw size={14}/> Refresh</button>
-        {showClose && <button type="button" className="wp-button" disabled={busy}
+        {showClose && <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
           onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>}
       </div>
     </div>
@@ -580,7 +589,7 @@ export default function ProjectTaskCommentsPanel({
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
       <div role="alert" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
         <span className="min-w-0 flex-1">{error}</span>
-        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+        <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
           onClick={() => void load(0)}>Retry comments</button>
       </div>}
     {(state === 'READY' || eventState === 'READY'
@@ -591,12 +600,12 @@ export default function ProjectTaskCommentsPanel({
           {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
             : 'No comments on this page'} · task activity
         </p>
-        {state === 'READY' && contributorEligible && <button type="button" className="wp-button"
+        {state === 'READY' && contributorEligible && <button type="button" className={ACTIVITY_ACTION_CLASS}
           aria-expanded={showTaskEvidence}
           onClick={() => setShowTaskEvidence(value => !value)}>
           {showTaskEvidence ? 'Close file upload' : 'Upload task evidence'}
         </button>}
-        {state === 'READY' && <button type="button" className="wp-button" aria-expanded={showComposer}
+        {state === 'READY' && <button type="button" className={ACTIVITY_ACTION_CLASS} aria-expanded={showComposer}
           aria-controls="task-comment-composer" onClick={() => setShowComposer(current => !current)}>
           {showComposer ? 'Close editor' : 'Write update'}
         </button>}
@@ -615,9 +624,9 @@ export default function ProjectTaskCommentsPanel({
         <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
         <div className="flex flex-wrap gap-2">
           {typeof onViewApprovals === 'function' &&
-            <button type="button" className="wp-button" onClick={onViewApprovals}>Decisions &amp; approvals</button>}
+            <button type="button" className={ACTIVITY_ACTION_CLASS} onClick={onViewApprovals}>Decisions &amp; approvals</button>}
           {typeof onViewAttachments === 'function' &&
-            <button type="button" className="wp-button" onClick={onViewAttachments}>Attachments &amp; evidence</button>}
+            <button type="button" className={ACTIVITY_ACTION_CLASS} onClick={onViewAttachments}>Attachments &amp; evidence</button>}
         </div>
       </div>
       <ol className="mt-3 space-y-2" aria-label="Source-verified task activity newest first">
@@ -663,18 +672,18 @@ export default function ProjectTaskCommentsPanel({
       </ol>
       {(eventOffset > 0 || eventHasMore) &&
         <nav aria-label="Task event pages" className="mt-3 flex items-center justify-between gap-2">
-          <button type="button" className="wp-button" disabled={eventOffset === 0 || eventState === 'LOADING'}
+          <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={eventOffset === 0 || eventState === 'LOADING'}
             onClick={() => void loadEvents(Math.max(0, eventOffset - 50))}>Previous lifecycle events</button>
           <span className="text-xs text-slate-600">Lifecycle page {Math.floor(eventOffset / 50) + 1}</span>
-          <button type="button" className="wp-button" disabled={!eventHasMore || eventState === 'LOADING'}
+          <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={!eventHasMore || eventState === 'LOADING'}
             onClick={() => void loadEvents(eventOffset + 50)}>Next lifecycle events</button>
         </nav>}
       {(offset > 0 || hasMore) &&
         <nav aria-label="Task comment pages" className="mt-2 flex items-center justify-between gap-2">
-          <button className="wp-button" type="button" disabled={busy || offset === 0}
+          <button className={ACTIVITY_ACTION_CLASS} type="button" disabled={busy || offset === 0}
             onClick={() => void load(Math.max(0, offset - 50))}>Previous comments</button>
           <span className="text-xs text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
-          <button className="wp-button" type="button" disabled={busy || !hasMore}
+          <button className={ACTIVITY_ACTION_CLASS} type="button" disabled={busy || !hasMore}
             onClick={() => void load(offset + 50)}>Next comments</button>
         </nav>}
 
@@ -737,7 +746,7 @@ export default function ProjectTaskCommentsPanel({
           </div>
           <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
         </fieldset>
-        <button className="wp-button wp-button-primary" type="submit"
+        <button className={ACTIVITY_ACTION_CLASS + " wp-button-primary"} type="submit"
           disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
       </form>
       </div>}
@@ -747,7 +756,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT
+// VERSION: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
