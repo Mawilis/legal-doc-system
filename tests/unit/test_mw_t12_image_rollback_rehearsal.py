@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback certificate.
-VERSION: v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-FAILURE-TESTS
+VERSION: v1.1.0-EXACT-GIT-DOCKER-CONTEXT-PROVENANCE-TEST
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify image labels and config hashes, precise three-phase image
          identity, one durable synthetic volume, fail-closed reads and
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 source archive and synthetic
          fixture contracts, no second tenant/session authority.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-EXACT-GIT-DOCKER-CONTEXT-PROVENANCE-TEST
+           refuses a differing Dockerfile, dependency lock or runtime
+           source blob rather than merely trusting a labelled local image;
+           fakes exact Git blob reads and runs no Docker process.
 CHANGELOG: v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-FAILURE-TESTS covers
            local-only image admission, expected SHA labels/config digest,
            current/historical/current rollout order, single volume, no
@@ -23,6 +27,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 import re
 from types import SimpleNamespace
 
@@ -65,6 +70,35 @@ def test_image_provenance_requires_exact_image_id_revision_and_drill(
         operator._image_identity("synthetic:local", CURRENT, "other-drill")
 
 
+def test_docker_build_context_must_equal_historical_git_objects(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    source = tmp_path / "stage"
+    paths = (
+        "Dockerfile.eos", "requirements.txt",
+        "tools/eos/api/server.py", "tools/eos/kernel/db.py",
+    )
+    for relative in paths:
+        item = source / relative
+        item.parent.mkdir(parents=True, exist_ok=True)
+        item.write_bytes(("immutable:" + relative).encode("ascii"))
+
+    def git(args: list[str], **_kwargs: object) -> SimpleNamespace:
+        assert args[0:2] == ["git", "show"]
+        assert args[2].startswith(CURRENT + ":")
+        return SimpleNamespace(
+            stdout=("immutable:" + args[2].split(":", 1)[1]).encode("ascii")
+        )
+
+    monkeypatch.setattr(subprocess, "run", git)
+    operator._verify_context(checkout, source, CURRENT)
+    (source / "Dockerfile.eos").write_bytes(b"unverified Dockerfile modification")
+    with pytest.raises(MWRecoveryError, match="IMAGE_GIT_CONTEXT_PROVENANCE_MISMATCH"):
+        operator._verify_context(checkout, source, CURRENT)
+
+
 def test_docker_cli_failure_is_redacted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -89,6 +123,7 @@ def _mock_rehearsal(
     monkeypatch.setattr(operator, "_certified_source_revision", lambda: CURRENT)
     monkeypatch.setattr(operator, "_free_port", lambda: 27053)
     monkeypatch.setattr(operator, "_stage_revision", lambda *args: None)
+    monkeypatch.setattr(operator, "_verify_context", lambda *args: None)
     monkeypatch.setattr(operator, "_wait_mongo", lambda port: events.append(("primary",)))
     monkeypatch.setattr(operator, "_init_owned_replica",
                         lambda *args: events.append(("replinit",)))
@@ -226,7 +261,7 @@ def test_live_image_phase_requires_expected_digest_auth_audit_and_owned_stop(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-FAILURE-TESTS
+# VERSION: v1.1.0-EXACT-GIT-DOCKER-CONTEXT-PROVENANCE-TEST
 # AUTHORITY BOUNDARY: Synthetic Docker command proof only.
 # TENANT POSTURE: No live Docker or production persistence.
 # FAIL-CLOSED POSTURE: Failures, wrong provenance and cleanup deny PASS.
