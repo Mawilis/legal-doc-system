@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE
+ * VERSION: v2.9.0-STRICTMODE-SINGLE-NETWORK-MOUNT-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v2.9.0-STRICTMODE-SINGLE-NETWORK-MOUNT-CERT
+ *          exercises the real workspace in React development StrictMode,
+ *          verifying discarded effect setups do not send duplicate
+ *          Projects list/summary GETs under one synthetic tenant scope.
  * CHANGELOG: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE anchors the
  *          exact synthetic project tenant within the isolated layout
  *          harness before rendering. New fail-closed shared transport
@@ -147,6 +151,14 @@ const assignedNotification = {
 for (const width of [1440, 390]) {
   test('Projects real rendered table and detail at ' + width + 'px', async ({ page }) => {
     await page.setViewportSize({ width, height: 950 });
+    const initialProjectGets = [];
+    page.on('request', request => {
+      const path = new URL(request.url()).pathname;
+      if (request.method() === 'GET'
+        && (path === '/api/projects' || path === '/api/projects/summary')) {
+        initialProjectGets.push(path);
+      }
+    });
     await page.route('**/api/**', async route => {
       const request = route.request();
       const url = new URL(request.url());
@@ -372,13 +384,16 @@ for (const width of [1440, 390]) {
       ApiModule.setActiveTenantTransportId(tenantId);
       const React = ReactModule.default;
       const root = ReactDomModule.default.createRoot(document.getElementById('project-visual-cert-root'));
-      root.render(React.createElement(WorkspaceModule.default, {
-        tenantId, principalId, sessionScope: 'visual-cert-session',
-      }));
+      root.render(React.createElement(React.StrictMode, null,
+        React.createElement(WorkspaceModule.default, {
+          tenantId, principalId, sessionScope: 'visual-cert-session',
+        })));
       window.__projectVisualCertRoot = root;
     }, { tenantId: TENANT, principalId: PRINCIPAL });
 
     await expect(page.locator('.wp-list-panel')).toBeVisible();
+    await expect.poll(() => initialProjectGets.filter(path => path === '/api/projects').length).toBe(1);
+    await expect.poll(() => initialProjectGets.filter(path => path === '/api/projects/summary').length).toBe(1);
     // Portfolio status is available on demand; it must not consume the
     // user's default working surface before the project table.
     const portfolioToggle = page.locator('details[aria-label="Portfolio breakdown"] > summary');
