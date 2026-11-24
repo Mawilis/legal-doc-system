@@ -20,7 +20,7 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
- * CHANGELOG: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION
+ * CHANGELOG: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
  *            keeps focused inspection visible below the fixed document bar.
  * CHANGELOG: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
  *            exposes source-backed recent-work continuation as a named region.
