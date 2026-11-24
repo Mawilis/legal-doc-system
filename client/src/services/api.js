@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK
+ * VERSION: v74.19.1-QUERY-STRING-TENANT-INTERLOCK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,6 +16,10 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v74.19.1-QUERY-STRING-TENANT-INTERLOCK extends the
+ *            tenant-scope route boundary to query-string and fragment
+ *            delimiters so /projects?limit=1 is guarded like /projects.
+ *            Keeps the existing fail-closed regression assertion unchanged.
  * CHANGELOG: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK prevents
  *            Projects, My Work, attention and CRM tenant-bound operations
  *            from leaving the browser before the EOS bootstrap tenant is
@@ -113,7 +117,7 @@ const api = axios.create({
 // Only business routes whose canonical Python EOS contract requires selected
 // tenant scope are interlocked. Authentication/bootstrap, tenant discovery,
 // SYSTEM bootstrap and public recovery remain unblocked.
-const TENANT_SCOPED_SOURCE_ROUTE = /^\/(?:projects|my-work|attention|crm)(?:\/|$)/i;
+const TENANT_SCOPED_SOURCE_ROUTE = /^\/(?:projects|my-work|attention|crm)(?:[/?#]|$)/i;
 
 const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 45000);
 const sourceBackoffUntil = new Map();
@@ -880,7 +884,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK
+ * VERSION: v74.19.1-QUERY-STRING-TENANT-INTERLOCK
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
