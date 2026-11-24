@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT
+ * VERSION: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
+ *          stabilizes equal tenant headers so parent rerenders don't
+ *          repeat authorized participant reads, and defers the initial
+ *          list GET past the discarded React development StrictMode effect.
+ *          Real scope changes and manual refresh still read from EOS.
  * CHANGELOG: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT aligns
  *          participant task rows and EOS commands to common enterprise
  *          work typography and controls; assignee IDs remain source keys
@@ -139,7 +144,16 @@ export default function AssignedProjectsWorkspace({
   const scope = [tenantId, principalId, sessionScope].join('\0');
   const currentScope = useRef(scope);
   currentScope.current = scope;
-  const headers = tenantHeaders || {};
+  const headersRef = useRef(null);
+  const incomingHeaders = tenantHeaders && typeof tenantHeaders === 'object'
+    ? tenantHeaders : {};
+  const previousHeaders = headersRef.current;
+  const headerKeys = Object.keys(incomingHeaders);
+  if (!previousHeaders || headerKeys.length !== Object.keys(previousHeaders).length
+      || headerKeys.some(key => previousHeaders[key] !== incomingHeaders[key])) {
+    headersRef.current = { ...incomingHeaders };
+  }
+  const headers = headersRef.current;
 
   const list = useCallback(async (offset = 0) => {
     const active = scope, request = ++sequence.current;
@@ -172,7 +186,7 @@ export default function AssignedProjectsWorkspace({
         : status === 401 ? 'Sign in to see assigned projects.'
           : 'Assigned projects could not be verified. Retry source read.');
     }
-  }, [scope, tenantId, principalId, tenantHeaders]);
+  }, [scope, tenantId, principalId, headers]);
 
   useEffect(() => {
     sequence.current += 1;
@@ -184,8 +198,9 @@ export default function AssignedProjectsWorkspace({
     setError('');
     focusHandled.current = null;
     command.current = { fingerprint: '', key: '' };
-    void list(0);
-    return () => { sequence.current += 1; };
+    let active = true;
+    queueMicrotask(() => { if (active) void list(0); });
+    return () => { active = false; sequence.current += 1; };
   }, [scope, list]);
 
   const openProject = async row => {
@@ -304,7 +319,7 @@ export default function AssignedProjectsWorkspace({
       });
     }
     return () => { live = false; };
-  }, [scope, listState, focusProjectId, projects, tenantId, principalId, tenantHeaders]);
+  }, [scope, listState, focusProjectId, projects, tenantId, principalId, headers]);
 
   const submit = async (fingerprint, action, confirm) => {
     if (busy || workState !== 'READY' || !selection) return;
