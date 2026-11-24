@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
+ * VERSION: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION replaces
+ *            passive project cards with an accessible live project register,
+ *            direct Work & milestones navigation and a source-verified task
+ *            resume command. Existing EOS graph, readback and IAM retained.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard accessibility.
  * SECURITY / PRIVACY POSTURE: Plain React text only; no persisted draft, generated
  * policy, inferred objectives, raw diagnostics or credentials in DOM/logs.
@@ -16,7 +20,7 @@
  * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
  * reauthorize every command; acknowledgement alone is not verified publication.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
- * CHANGELOG: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
+ * CHANGELOG: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION
  *            keeps focused inspection visible below the fixed document bar.
  * CHANGELOG: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
  *            exposes source-backed recent-work continuation as a named region.
@@ -1962,30 +1966,35 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       <span className={styles.sourceVerified}>Source verified · EOS</span>
                     </div>}
                     {projectState === 'READY' && projectItems.length > 0 && visibleStrategyProjects.length === 0 && <p role="status" className="text-sm text-slate-300">No verified projects match this search. The source project list is unchanged.</p>}
-                    {projectState === 'READY' && displayedStrategyProjects.length > 0 && <ul className={styles.strategyProjectList} aria-label="EOS project list">
-                      {displayedStrategyProjects.map(item => <li className={styles.strategyProjectRow} key={item.project_id}>
-                        <div className={styles.strategyProjectIdentity}>
-                          <strong>{item.name}</strong>
-                          <div className={styles.strategyProjectMeta}>
-                            <span className={styles.projectStatus} data-status={item.status}>{item.status}</span>
-                            <span>Revision {item.revision}</span>
-                          </div>
-                        </div>
-                        <div className={styles.strategyProjectActions}>
-                          <button type="button" disabled={delivery.state === 'LOADING'}
-                            aria-label={'Verify execution for ' + item.name}
-                            aria-pressed={delivery.state === 'READY' && delivery.projectId === item.project_id}
-                            onClick={() => void loadDelivery(item.project_id)}>
-                            <RefreshCw size={15}/> Verify execution
-                          </button>
-                          {typeof onOpenProject === 'function' && <button type="button"
-                            aria-label={'Open project delivery for ' + item.name}
-                            onClick={() => onOpenProject(item.project_id)}>
-                            Open project <ArrowUpRight size={15}/>
-                          </button>}
-                        </div>
-                      </li>)}
-                    </ul>}
+                    {projectState === 'READY' && displayedStrategyProjects.length > 0 && <div className="overflow-x-auto rounded-xl border border-[#cbd8ea] bg-white text-[#182f51]">
+                      <table className="w-full min-w-[620px] border-collapse text-left text-sm" aria-label="Verified EOS project register">
+                        <thead className="bg-[#eef3fa] text-xs font-semibold text-[#344c70]">
+                          <tr><th scope="col" className="px-4 py-3">Project</th><th scope="col" className="px-4 py-3">Source state</th><th scope="col" className="px-4 py-3">Revision</th><th scope="col" className="px-4 py-3 text-right">Work actions</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#dce5f1]">
+                          {displayedStrategyProjects.map(item => <tr key={item.project_id} className={delivery.projectId === item.project_id ? 'bg-[#eef5ff]' : 'bg-white hover:bg-[#f8faff]'}>
+                            <th scope="row" className="max-w-[440px] px-4 py-3 font-semibold text-[#172e52]">{item.name}</th>
+                            <td className="px-4 py-3"><span className="inline-flex rounded-md border border-[#b9d0e8] bg-[#f4f8fc] px-2 py-1 text-xs font-semibold text-[#254266]">{item.status.replaceAll('_', ' ')}</span></td>
+                            <td className="px-4 py-3 text-[#526787]">{item.revision}</td>
+                            <td className="px-4 py-3"><div className="flex flex-wrap justify-end gap-2">
+                              <button type="button" disabled={delivery.state === 'LOADING'}
+                                aria-label={'Verify task execution for ' + item.name}
+                                aria-pressed={delivery.state === 'READY' && delivery.projectId === item.project_id}
+                                onClick={() => void loadDelivery(item.project_id)}
+                                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#bdcde2] bg-white px-3 py-2 text-xs font-semibold text-[#17365e] hover:bg-[#eaf2fc]">
+                                <RefreshCw size={14}/> Verify work
+                              </button>
+                              {typeof onOpenProject === 'function' && <button type="button"
+                                aria-label={'Open Work and milestones for ' + item.name}
+                                onClick={() => onOpenProject(item.project_id)}
+                                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#1655cf] bg-[#1456cc] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0f45a8]">
+                                Work &amp; milestones <ArrowUpRight size={14}/>
+                              </button>}
+                            </div></td>
+                          </tr>)}
+                        </tbody>
+                      </table>
+                    </div>
                     {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
                     {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
                     {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution">
@@ -2018,8 +2027,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                               <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
                               <p className="max-w-xl truncate text-sm font-semibold text-white">{latestSourceWork.title}</p>
                             </div>
-                            <button type="button" className="rounded-md border border-sky-400/70 bg-sky-950/70 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
-                              onClick={() => resumeTask(latestSourceWork)}>Continue inspecting</button>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button type="button" className="rounded-md border border-sky-400/70 bg-sky-950/70 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                                onClick={() => resumeTask(latestSourceWork)}>Inspect evidence</button>
+                              {typeof onOpenProject === 'function' && <button type="button"
+                                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-3 py-2 text-sm font-bold text-white hover:bg-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                                onClick={() => {
+                                  recordTaskVisit(latestSourceWork.task_id);
+                                  onOpenProject(m04Execution.project.project_id, { taskId: latestSourceWork.task_id });
+                                }}>
+                                Continue in Work &amp; milestones <ArrowUpRight size={15}/>
+                              </button>}
+                            </div>
                           </div>}
                           <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
                             Strategy revision {document.revision} and Foundation project revision {m04Execution.project.revision}.
@@ -2392,7 +2411,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
+// VERSION: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
