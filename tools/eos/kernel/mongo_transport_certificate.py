@@ -32,7 +32,7 @@ from bson import ObjectId
 from pymongo.errors import PyMongoError
 from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
 
-VERSION: Final[str] = "v1.2.0-COMPLETE-SYNTHETIC-OR-TIMING"
+VERSION: Final[str] = "v1.3.0-READONLY-CREDENTIAL-PROJECT-PLANS"
 _INDEX: Final[str] = "wilsy_auth_users_tenant_identity_lookup"
 _ABSENT: Final[str] = "__WILSY_TRANSPORT_CERT_NEVER_A_REAL_ID__"
 
