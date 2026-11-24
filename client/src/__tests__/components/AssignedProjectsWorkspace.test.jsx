@@ -242,7 +242,7 @@ it('opens a directly authorized project focus beyond the first discovery page', 
 
 
 // ARTIFACT: AssignedProjectsWorkspace.test.jsx
-// VERSION: v1.1.1-FULL-PAGE-ATTENTION-FOCUS-CERT
+// VERSION: v1.2.0-SINGLE-PARTICIPANT-LIST-SCOPE-CERT
 // AUTHORITY BOUNDARY: client mock only, no real principal IAM claims
 // TENANT POSTURE: foreign tenant response is rejected
 // FAIL-CLOSED POSTURE: no task actions or unread claims without EOS
