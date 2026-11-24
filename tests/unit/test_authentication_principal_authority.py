@@ -380,7 +380,7 @@ def test_system_session_rejection_remains_401_and_aborts(monkeypatch):
     assert not session.committed
 
 # ARTIFACT: test_authentication_principal_authority.py
-# VERSION: v1.2.0-NONBLOCKING-AUTHENTICATION-WORKER-CERT
+# VERSION: v1.2.1-ENV-INDEPENDENT-TIMING-TEST
 # AUTHORITY BOUNDARY: principal authority and durable credential-revision evidence only
 # TENANT POSTURE: synthetic tenant context; no persistence or cross-tenant access
 # FAIL-CLOSED POSTURE: invalid, non-ACCESS, non-active, absent, and bypass attempts deny
