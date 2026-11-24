@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.68.0-STABLE-PROJECT-AUTHORITY-READS
+ * VERSION: v1.69.0-SINGLE-TASK-SCOPE-READ
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.69.0-SINGLE-TASK-SCOPE-READ defers the initial
+ *          task-list and optional authority requests beyond discarded
+ *          React StrictMode effect setup. Source-driven refresh, exact
+ *          tenant validation, IAM and command semantics remain unchanged.
  * CHANGELOG: v1.68.0-STABLE-PROJECT-AUTHORITY-READS stabilizes
  *          semantically identical tenant selector headers so parent rerenders
  *          cannot restart task list and three optional authority GETs.
@@ -939,8 +943,11 @@ export default function ProjectTasksPanel({
     setPendingTransition(null);
     setError('');
     command.current = { fingerprint: '', key: '' };
-    void load(0);
-    return () => { generation.current += 1; };
+    let active = true;
+    // One admitted EOS fanout per mounted scope: StrictMode immediately
+    // cleans up its first development effect before this microtask runs.
+    queueMicrotask(() => { if (active) void load(0); });
+    return () => { active = false; generation.current += 1; };
   }, [scope, load]);
 
   useEffect(() => {
