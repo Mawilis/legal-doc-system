@@ -1,5 +1,5 @@
 """TITLE: MW-T12 single-database rollback source continuity certificate.
-VERSION: v1.1.0-EXACT-HTTP-SOURCE-RECORD-CONTINUITY-CERT
+VERSION: v1.2.0-SEEDED-ONLY-LIFECYCLE-REGRESSION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify one disposable Mongo dataset, three exact source versions,
          independent durable readback and fail-closed audit evidence checks.
@@ -7,6 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing fixture owns exact-tenant source records;
          current/older staged code must not create new database consumers.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-SEEDED-ONLY-LIFECYCLE-REGRESSION
+           distinguishes seed-only source verification from the full
+           post-browser response/decision verifier. The rehearsal now
+           requires one initial seed check plus one per version and cannot
+           falsely certify browser-generated SYSTEM response events.
 CHANGELOG: v1.1.0-EXACT-HTTP-SOURCE-RECORD-CONTINUITY-CERT
            verifies HTTP results carry the same explicitly seeded
            incident and assignment IDs and reject foreign/missing evidence;
@@ -95,7 +100,7 @@ def test_three_versions_share_one_seed_and_cleanup_after_evidence(
     assert [step[0] for step in phases] == [CURRENT, OLDER, CURRENT]
     assert len({step[1] for step in phases}) == 1
     assert all(step[2] == "d" * 64 for step in phases)
-    assert actions == ["seed", "verify", "cleanup"]
+    assert actions == ["seed", "verify-seed", "verify-seed", "verify-seed", "verify-seed", "cleanup"]
     assert stopped == [fake_mongo]
     output = capsys.readouterr().out
     assert "MW_T12_SAME_DATA_THREE_PHASE_READBACK=PASS" in output
@@ -216,7 +221,7 @@ def test_mutated_audit_records_fail_before_version_pass(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_same_data_rehearsal.py
-# VERSION: v1.1.0-EXACT-HTTP-SOURCE-RECORD-CONTINUITY-CERT
+# VERSION: v1.2.0-SEEDED-ONLY-LIFECYCLE-REGRESSION
 # AUTHORITY BOUNDARY: Synthetic local source-version continuity only.
 # TENANT POSTURE: No external database or production actor.
 # FAIL-CLOSED POSTURE: Missing or mutated source evidence denies success.
