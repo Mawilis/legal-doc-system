@@ -557,7 +557,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT
+// VERSION: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny
