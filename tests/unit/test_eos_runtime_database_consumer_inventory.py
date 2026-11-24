@@ -1,7 +1,7 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
-VERSION: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT
-CHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
+VERSION: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION
+CHANGELOG: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION classifies three explicitly guarded index-provisioning CLI tools separately from runtime Mongo clients and asserts their main guards.\nCHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
  existing _main() guarded operator entrypoint rather than incorrectly
  requiring an unimplemented main() function; classification remains strict.
 CHANGELOG: v1.4.4-EXPLICIT-FOUNDER-CLI-CLASSIFICATION categorizes
@@ -65,6 +65,9 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py",
     "tools/eos/mongodb/read_only_index_verifier.py",
     "tools/eos/auth/founder_development_admission.py",
+    "tools/eos/ops/provision_atlas_company_document_indexes.py",
+    "tools/eos/ops/provision_atlas_strategy_project_link_indexes.py",
+    "tools/eos/ops/provision_local_strategy_project_link_indexes.py",
 }
 LEGACY_MIGRATION_HISTORY = (
     "server/scripts/finalize-migration.js",
@@ -151,6 +154,29 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
             runtime_calls.add(relative)
 
     assert runtime_calls == {CANONICAL_CONNECTOR, ISOLATED_AUDIT_SINK}
+    # Explicit index-provisioning operators are not long-running EOS consumers.
+    # Keep this narrow: assert each approved exception remains CLI guarded.
+    for relative in (
+        "tools/eos/ops/provision_atlas_company_document_indexes.py",
+        "tools/eos/ops/provision_atlas_strategy_project_link_indexes.py",
+        "tools/eos/ops/provision_local_strategy_project_link_indexes.py",
+    ):
+        tree = ast.parse((ROOT / relative).read_text(encoding="utf-8"), filename=relative)
+        main_functions = [node for node in tree.body
+                          if isinstance(node, ast.FunctionDef) and node.name == "main"]
+        assert len(main_functions) == 1, relative
+        guards = [node for node in tree.body if isinstance(node, ast.If)
+                  and isinstance(node.test, ast.Compare)
+                  and isinstance(node.test.left, ast.Name)
+                  and node.test.left.id == "__name__"
+                  and len(node.test.comparators) == 1
+                  and isinstance(node.test.comparators[0], ast.Constant)
+                  and node.test.comparators[0].value == "__main__"]
+        assert len(guards) == 1, relative
+        assert any(isinstance(node, ast.Call)
+                   and isinstance(node.func, ast.Name)
+                   and node.func.id == "main"
+                   for node in ast.walk(guards[0])), relative
     founder_cli = (ROOT / "tools/eos/auth/founder_development_admission.py").read_text(encoding="utf-8")
     assert 'if __name__ == "__main__":' in founder_cli
     assert "def _main()" in founder_cli
