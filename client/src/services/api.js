@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
+ * VERSION: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,6 +16,12 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CHANGELOG: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK prevents
+ *            Projects, My Work, attention and CRM tenant-bound operations
+ *            from leaving the browser before the EOS bootstrap tenant is
+ *            anchored; rejects reserved display aliases as selectors and
+ *            binds every authenticated read to current verified scope.
+ *            No browser IAM, tenant substitution or automatic cross-tenant retry.
  * CHANGELOG: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
  *            preserves exact JSON for the authenticated Founder Strategy
  *            draft, submit, ratify and project-link POST commands. Forensic
@@ -103,6 +109,11 @@ const api = axios.create({
   },
   timeout: 15000,
 });
+
+// Only business routes whose canonical Python EOS contract requires selected
+// tenant scope are interlocked. Authentication/bootstrap, tenant discovery,
+// SYSTEM bootstrap and public recovery remain unblocked.
+const TENANT_SCOPED_SOURCE_ROUTE = /^\/(?:projects|my-work|attention|crm)(?:\/|$)/i;
 
 const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 45000);
 const sourceBackoffUntil = new Map();
@@ -466,6 +477,19 @@ api.interceptors.request.use(
       missing.config = config;
       missing.isClientAuthGuard = true;
       throw missing;
+    }
+
+    // Tenant-scoped business reads must never run with an absent or stale
+    // selector while AuthProvider restores an EOS-issued session. The guard
+    // prevents false HTTP 403 "connection lost" reports on navigation.
+    // It cannot grant access; Python EOS independently authorizes every read.
+    if (TENANT_SCOPED_SOURCE_ROUTE.test(config.url || '')
+        && (!activeTenantTransportId || !isCanonicalTenantTransportId(activeTenantTransportId))) {
+      const missingScope = new Error('VERIFIED_TENANT_CONTEXT_REQUIRED');
+      missingScope.code = 'VERIFIED_TENANT_CONTEXT_REQUIRED';
+      missingScope.config = config;
+      missingScope.isClientAuthGuard = true;
+      throw missingScope;
     }
 
     // Attach tenant scope only after EOS workspace-bootstrap revalidation.
