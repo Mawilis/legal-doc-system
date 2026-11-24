@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback rehearsal.
-VERSION: v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE
+VERSION: v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify two provenance-labelled Python EOS Docker image identities
          against one owned persistent MongoDB volume across forward/reverse
@@ -9,6 +9,9 @@ COLLABORATION / OWNERSHIP: Extends the existing MW-T12 Git staging, immutable
          artifact admission, synthetic browser fixture, source read/deny and
          audit snapshot verification. Docker owns only names created here.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION
+           repairs the three-phase immutable image recheck indentation so
+           the rollback operator imports and phase admission can execute.
 CHANGELOG: v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE
            maps malformed fixture JSON, local state I/O and context read
            errors to fixed fail-closed codes; never leaks source rows,
@@ -66,7 +69,7 @@ from tools.eos.ops.mw_t12_same_data_rehearsal import (
     FIXTURE, _authenticate_unchanged, _fingerprint_fixture, _run_fixture,
 )
 
-VERSION = "v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE"
+VERSION = "v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION"
 MONGO_IMAGE = "mongo:7"
 SOURCE_LABEL = "wilsy.mwt12.source_sha"
 DRILL_LABEL = "wilsy.mwt12.disposable"
@@ -364,7 +367,7 @@ def rehearse_image(target: str) -> int:
                     prefix + "-" + label, tag, network, database, jwt,
                     state_file, fixture, env, baseline, sha,
                 )
-                 if _image_identity(tag, sha, drill) != identity:
+                if _image_identity(tag, sha, drill) != identity:
                     raise MWRecoveryError("IMAGE_TAG_MUTATED_DURING_DRILL")
                 if _certified_source_revision() != current:
                     raise MWRecoveryError("IMAGE_SOURCE_CHANGED_DURING_DRILL")
@@ -433,7 +436,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE
+# VERSION: v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION
 # AUTHORITY BOUNDARY: Local immutable Docker image and synthetic data only.
 # TENANT POSTURE: UUID-scoped local fixture, no canonical Founder tenant.
 # FAIL-CLOSED POSTURE: Provenance, exact HTTP, audit and cleanup are required.
