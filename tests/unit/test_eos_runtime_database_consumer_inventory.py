@@ -1,6 +1,11 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
-VERSION: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION
+VERSION: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION
+CHANGELOG: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION records the
+single local MW-T12 synthetic-replica recovery operator as non-runtime only
+when its explicit CLI main guard, loopback binding, process ownership and
+production denial remain present. The two-client runtime exclusivity assertion
+is unchanged.
 CHANGELOG: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION classifies three explicitly guarded index-provisioning CLI tools separately from runtime Mongo clients and asserts their main guards.
 CHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
  existing _main() guarded operator entrypoint rather than incorrectly
@@ -17,7 +22,7 @@ AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves Kernel-owned persistence and physical Node backend retirement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_runtime_database_consumer_inventory.py
 COLLABORATION / OWNERSHIP: Kernel DB, registry and runtime certification owners.
-CERTIFICATION / UPDATE DATE: 2026-11-17
+CERTIFICATION / UPDATE DATE: 2026-11-24
 CHANGELOG: v1.1.0-PHYSICAL-NODE-RETIREMENT replaces obsolete retained-file assertions with required absence; database ownership assertions remain intact.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Repository blob inspection only; no live records or credentials are read.
@@ -69,6 +74,7 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/ops/provision_atlas_company_document_indexes.py",
     "tools/eos/ops/provision_atlas_strategy_project_link_indexes.py",
     "tools/eos/ops/provision_local_strategy_project_link_indexes.py",
+    "tools/eos/ops/mw_t12_local_eos_recovery.py",
 }
 LEGACY_MIGRATION_HISTORY = (
     "server/scripts/finalize-migration.js",
@@ -178,6 +184,47 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
                    and isinstance(node.func, ast.Name)
                    and node.func.id == "main"
                    for node in ast.walk(guards[0])), relative
+    # MW-T12 owns an ephemeral loopback mongod solely as an explicit CLI
+    # browser-certification operator; it never runs as an EOS service.
+    # Do not permit arbitrary clients through this narrow exception.
+    recovery_path = ROOT / "tools/eos/ops/mw_t12_local_eos_recovery.py"
+    recovery_tree = ast.parse(recovery_path.read_text(encoding="utf-8"))
+    recovery_source = recovery_path.read_text(encoding="utf-8")
+    recovery_functions = {
+        node.name: node for node in recovery_tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    assert {"main", "_guard", "_wait_primary", "_stop_owned", "run"} <= recovery_functions.keys()
+    recovery_guards = [
+        node for node in recovery_tree.body
+        if isinstance(node, ast.If)
+        and isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and node.test.left.id == "__name__"
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], ast.Constant)
+        and node.test.comparators[0].value == "__main__"
+    ]
+    assert len(recovery_guards) == 1
+    assert any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        and node.func.id == "main"
+        for node in ast.walk(recovery_guards[0])
+    )
+    assert _constructs_mongo_client(recovery_functions["_wait_primary"])
+    assert all(
+        not _constructs_mongo_client(node)
+        for name, node in recovery_functions.items() if name != "_wait_primary"
+    )
+    assert 'connect_uri = f"mongodb://127.0.0.1:{port}/?directConnection=true"' in recovery_source
+    assert '"--bind_ip", "127.0.0.1"' in recovery_source
+    assert '"PRODUCTION_ENVIRONMENT_FORBIDDEN"' in recovery_source
+    assert 'for key in ("ENV", "WILSY_ENV")' in recovery_source
+    assert 'group.add_argument("--run", action="store_true")' in recovery_source
+    assert 'group.add_argument("--check", action="store_true")' in recovery_source
+    assert 'process = subprocess.Popen(' in recovery_source
+    assert '_stop_owned(process)' in recovery_source
+
     founder_cli = (ROOT / "tools/eos/auth/founder_development_admission.py").read_text(encoding="utf-8")
     assert 'if __name__ == "__main__":' in founder_cli
     assert "def _main()" in founder_cli
