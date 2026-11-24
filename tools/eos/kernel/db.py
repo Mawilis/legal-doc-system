@@ -4,15 +4,22 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Wilsy OS canonical Kennel database lifecycle and opt-in timing boundary.
 
 TITLE: WILSY OS Sovereign Kennel Database Anchor
-VERSION: v2.5.0-STRICT-REMOTE-MONGO-TLS
+VERSION: v2.6.0-BOUNDED-ON-DEMAND-CONNECTIONS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns the sole EOS MongoClient lifecycle and canonical database binding;
-         optionally observes request-scoped pool and command timings.
+         optionally observes request-scoped pool and command timings; avoids
+         eager unused sockets on shared-capacity MongoDB deployments.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/kernel/db.py
 COLLABORATION / OWNERSHIP: EOS runtime owns connection startup and shutdown;
                            AuthRegistry supplies validated timing context only.
-CERTIFICATION / UPDATE DATE: 2026-11-16
+CERTIFICATION / UPDATE DATE: 2026-11-24
 CHANGELOG:
+  v2.6.0-BOUNDED-ON-DEMAND-CONNECTIONS — Sets the shared canonical
+    client minimum pool to zero: connections open only when required by
+    admitted operations instead of maintaining ten idle connections per
+    server. Logs only LOCAL_LOOPBACK or REMOTE_TLS target classification and
+    opt-in client bootstrap/ping elapsed milliseconds, never URI or hosts.
+    Existing maximum pool, transaction, tenant and TLS guards are unchanged.
   v2.5.0-STRICT-REMOTE-MONGO-TLS — Requires TLS for every non-loopback
     MongoDB target, rejects explicit insecure remote overrides, and always
     validates certificates and hostnames for TLS connections.
@@ -518,7 +525,7 @@ def connect_db(force_reconnect=False):
         'socketTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SOCKET_TIMEOUT_MS', 45000)),
         'serverSelectionTimeoutMS': int(os.getenv('WILSY_KENNEL_DB_SERVER_SELECTION_MS', 5000)),
         'maxPoolSize': 50,
-        'minPoolSize': 10,
+        'minPoolSize': 0,
         'maxIdleTimeMS': 60000,
         'retryWrites': True,
         'retryReads': True,
@@ -529,13 +536,28 @@ def connect_db(force_reconnect=False):
 
     local_client = None
     try:
-        logger.info("[KENNEL_DB] 📡 Initiating explicit replica set link...")
+        logger.info(
+            "[KENNEL_DB] Canonical target=%s TLS=%s min_pool=%d max_pool=%d",
+            "LOCAL_LOOPBACK" if is_loopback_target else "REMOTE_TLS",
+            "ENABLED" if tls_enabled else "DISABLED",
+            options["minPoolSize"], options["maxPoolSize"],
+        )
+        bootstrap_started_ns = time.perf_counter_ns()
         if _mongo_timing_is_enabled():
             _MONGO_TIMING_LISTENER.configure_pool_capacity(options["maxPoolSize"])
             options["event_listeners"] = [_MONGO_TIMING_LISTENER]
         local_client = MongoClient(uri, **options)
         # Force a ping to verify connectivity
+        constructed_ns = time.perf_counter_ns()
         local_client.admin.command('ping')
+        ping_completed_ns = time.perf_counter_ns()
+        if _mongo_timing_is_enabled():
+            logger.info(
+                "WILSY_MONGO_BOOTSTRAP target=%s client_construct_ms=%.3f first_ping_ms=%.3f",
+                "LOCAL_LOOPBACK" if is_loopback_target else "REMOTE_TLS",
+                (constructed_ns - bootstrap_started_ns) / 1_000_000,
+                (ping_completed_ns - constructed_ns) / 1_000_000,
+            )
         database = local_client.get_database()  # Uses the database from the URI
         with _state_lock:
             previous_client = _client
@@ -555,16 +577,16 @@ def connect_db(force_reconnect=False):
             _ready = False
         logger.error(f"[KENNEL_DB] ⚠️ REPLICA LINK SEVERED — Kennel will run DEGRADED.")
         logger.error(f"[KENNEL_DB] Atlas checklist: Network Access → Verify IP whitelist.")
-        logger.error(f"[KENNEL_DB] Detail: {str(e)[:240]}")
-        return False, f"ServerSelectionTimeoutError: {str(e)[:200]}"
+        logger.error("[KENNEL_DB] Server selection failed; endpoint details withheld.")
+        return False, "ServerSelectionTimeoutError"
     except Exception as e:
         if local_client is not None:
             local_client.close()
         with _state_lock:
             _last_error = e
             _ready = False
-        logger.error(f"[KENNEL_DB] ⚠️ Connection error: {str(e)[:240]}")
-        return False, f"Connection error: {str(e)[:200]}"
+        logger.error("[KENNEL_DB] Connection failure class=%s; endpoint details withheld.", type(e).__name__)
+        return False, "Connection error"
 
 
 # ─── Self-Healing Background Retry ──────────────────────────────────────
