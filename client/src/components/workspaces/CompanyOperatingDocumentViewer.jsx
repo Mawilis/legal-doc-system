@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION
+ * VERSION: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST restores
+ *            approved primary and secondary button visibility in the
+ *            verified project register, with scoped stylesheet authority.
  * CHANGELOG: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION replaces
  *            passive project cards with an accessible live project register,
  *            direct Work & milestones navigation and a source-verified task
@@ -1966,7 +1969,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       <span className={styles.sourceVerified}>Source verified · EOS</span>
                     </div>}
                     {projectState === 'READY' && projectItems.length > 0 && visibleStrategyProjects.length === 0 && <p role="status" className="text-sm text-slate-300">No verified projects match this search. The source project list is unchanged.</p>}
-                    {projectState === 'READY' && displayedStrategyProjects.length > 0 && <div className="overflow-x-auto rounded-xl border border-[#cbd8ea] bg-white text-[#182f51]">
+                    {projectState === 'READY' && displayedStrategyProjects.length > 0 && <div className={styles.strategyWorkRegister + " overflow-x-auto rounded-xl border border-[#cbd8ea] bg-white text-[#182f51]"}>
                       <table className="w-full min-w-[620px] border-collapse text-left text-sm" aria-label="Verified EOS project register">
                         <thead className="bg-[#eef3fa] text-xs font-semibold text-[#344c70]">
                           <tr><th scope="col" className="px-4 py-3">Project</th><th scope="col" className="px-4 py-3">Source state</th><th scope="col" className="px-4 py-3">Revision</th><th scope="col" className="px-4 py-3 text-right">Work actions</th></tr>
@@ -1981,12 +1984,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                 aria-label={'Verify task execution for ' + item.name}
                                 aria-pressed={delivery.state === 'READY' && delivery.projectId === item.project_id}
                                 onClick={() => void loadDelivery(item.project_id)}
+                                data-register-action="VERIFY"
                                 className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#bdcde2] bg-white px-3 py-2 text-xs font-semibold text-[#17365e] hover:bg-[#eaf2fc]">
                                 <RefreshCw size={14}/> Verify work
                               </button>
                               {typeof onOpenProject === 'function' && <button type="button"
                                 aria-label={'Open Work and milestones for ' + item.name}
                                 onClick={() => onOpenProject(item.project_id)}
+                                data-register-action="OPEN_WORK"
                                 className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#1655cf] bg-[#1456cc] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0f45a8]">
                                 Work &amp; milestones <ArrowUpRight size={14}/>
                               </button>}
@@ -2411,7 +2416,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION
+// VERSION: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
