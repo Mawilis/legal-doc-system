@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback rehearsal.
-VERSION: v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS
+VERSION: v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify two provenance-labelled Python EOS Docker image identities
          against one owned persistent MongoDB volume across forward/reverse
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Extends the existing MW-T12 Git staging, immutable
          artifact admission, synthetic browser fixture, source read/deny and
          audit snapshot verification. Docker owns only names created here.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE
+           maps malformed fixture JSON, local state I/O and context read
+           errors to fixed fail-closed codes; never leaks source rows,
+           local paths or secrets through a raw traceback. No success
+           signal is emitted until all image and data cleanup completes.
 CHANGELOG: v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS
            verifies immutable Dockerfile, requirements and runtime source
            blobs against Git before each build and enables non-root EOS
@@ -61,7 +66,7 @@ from tools.eos.ops.mw_t12_same_data_rehearsal import (
     FIXTURE, _authenticate_unchanged, _fingerprint_fixture, _run_fixture,
 )
 
-VERSION = "v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS"
+VERSION = "v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE"
 MONGO_IMAGE = "mongo:7"
 SOURCE_LABEL = "wilsy.mwt12.source_sha"
 DRILL_LABEL = "wilsy.mwt12.disposable"
@@ -126,9 +131,11 @@ def _verify_context(checkout: Path, source: Path, revision: str) -> None:
             )
         except (OSError, subprocess.SubprocessError) as error:
             raise MWRecoveryError("IMAGE_GIT_CONTEXT_PROOF_UNAVAILABLE") from error
-        if hashlib.sha256(path.read_bytes()).digest() != hashlib.sha256(
-            result.stdout
-        ).digest():
+        try:
+            local_digest = hashlib.sha256(path.read_bytes()).digest()
+        except OSError as error:
+            raise MWRecoveryError("IMAGE_GIT_CONTEXT_READ_UNAVAILABLE") from error
+        if local_digest != hashlib.sha256(result.stdout).digest():
             raise MWRecoveryError("IMAGE_GIT_CONTEXT_PROVENANCE_MISMATCH")
 
 
@@ -253,8 +260,11 @@ def _verify_phase(name: str, image: str, network: str, database: str,
     try:
         _verify_container_image(name, _image_identity(image, revision, environment["MW_T12_IMAGE_DRILL"]))
         base = _wait_eos(name, port)
-        state = json.loads(state_file.read_text(encoding="utf-8"))
-        if state.get("database_name") != database:
+        try:
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError) as error:
+            raise MWRecoveryError("IMAGE_FIXTURE_STATE_UNAVAILABLE") from error
+        if not isinstance(state, dict) or state.get("database_name") != database:
             raise MWRecoveryError("IMAGE_DATABASE_IDENTITY_MISMATCH")
         _authenticate_unchanged(base, state)
         _run_fixture(fixture, "verify-seed", state_file, environment, Path.cwd())
@@ -423,7 +433,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.2.0-GIT-CONTEXT-PROVENANCE-AND-RUNTIME-TMPFS
+# VERSION: v1.3.0-STRUCTURED-IMAGE-READBACK-FAILURE
 # AUTHORITY BOUNDARY: Local immutable Docker image and synthetic data only.
 # TENANT POSTURE: UUID-scoped local fixture, no canonical Founder tenant.
 # FAIL-CLOSED POSTURE: Provenance, exact HTTP, audit and cleanup are required.
