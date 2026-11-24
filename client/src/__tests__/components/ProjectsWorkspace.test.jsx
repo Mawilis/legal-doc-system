@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION
+ * VERSION: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT waits for the actual
+ *          post-command source read rather than assuming a fixed GET
+ *          sequence; periodic component reads cannot satisfy the gate.
  * CHANGELOG: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION exercises existing exact-task
  *          comment commands, waits for independent readback and refreshes
  *          history without inventing rollback, Strategy or release truth.
@@ -1632,6 +1635,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const comments = `/projects/${PROJECT_ID}/tasks/${taskId}/comments`;
     let persisted = false;
     let commentReads = 0;
+    let sourceReadbackHeld = false;
     let releaseReadback;
     const heldReadback = new Promise(resolve => { releaseReadback = resolve; });
     mockProjectGet(async (route, config = {}) => {
@@ -1651,7 +1655,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       if (route === comments + '?limit=50&offset=0') {
         expect(config.headers['X-Tenant-ID']).toBe(TENANT);
         commentReads += 1;
-        if (persisted && commentReads === 2) await heldReadback;
+        if (persisted && !sourceReadbackHeld) {
+          sourceReadbackHeld = true;
+          await heldReadback;
+        }
         return { data: {
           schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
           principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId,
@@ -1685,7 +1692,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const editor = screen.getByRole('textbox', { name: 'New task comment' });
     fireEvent.change(editor, { target: { value: milestone } });
     fireEvent.click(screen.getByRole('button', { name: 'Publish to EOS' }));
-    await waitFor(() => expect(commentReads).toBe(2));
+    await waitFor(() => expect(sourceReadbackHeld).toBe(true));
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(editor).toHaveValue(milestone);
     expect(api.patch).not.toHaveBeenCalled();
@@ -2909,7 +2916,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION
+ * VERSION: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
