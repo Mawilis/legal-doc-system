@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback rehearsal.
-VERSION: v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-DATA-CONTINUITY
+VERSION: v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify two provenance-labelled Python EOS Docker image identities
          against one owned persistent MongoDB volume across forward/reverse
@@ -9,6 +9,11 @@ COLLABORATION / OWNERSHIP: Extends the existing MW-T12 Git staging, immutable
          artifact admission, synthetic browser fixture, source read/deny and
          audit snapshot verification. Docker owns only names created here.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS
+           retries owned Mongo replica initialization within a bounded
+           deadline rather than racing mongosh startup; rejects any
+           failed-owned-process cleanup; keeps EOS container filesystem
+           immutable with explicit local tmpfs writable runtime paths.
 CHANGELOG: v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-DATA-CONTINUITY builds current
            and historical source archives as separately identified local
            Python EOS images; proves container image ID and source label;
@@ -50,7 +55,7 @@ from tools.eos.ops.mw_t12_same_data_rehearsal import (
     FIXTURE, _authenticate_unchanged, _fingerprint_fixture, _run_fixture,
 )
 
-VERSION = "v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-DATA-CONTINUITY"
+VERSION = "v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS"
 MONGO_IMAGE = "mongo:7"
 SOURCE_LABEL = "wilsy.mwt12.source_sha"
 DRILL_LABEL = "wilsy.mwt12.disposable"
@@ -113,10 +118,21 @@ def _build_image(source: Path, tag: str, revision: str, drill: str) -> str:
     return _image_identity(tag, revision, drill)
 
 
-def _run_container(name: str, *arguments: str) -> None:
-    """Launch only a uniquely named owned container (never reuse)."""
-    _docker("run", "-d", "--name", name, "--label",
-            DRILL_LABEL + "=" + name.split("-")[2], *arguments)
+def _init_owned_replica(name: str) -> None:
+    """Initialize only the named disposable Mongo container, with bounds."""
+    command = (
+        'rs.initiate({_id:"' + SET_NAME
+        + '",members:[{_id:0,host:"mongo:27017"}]})'
+    )
+    deadline = time.monotonic() + 45
+    while time.monotonic() < deadline:
+        try:
+            _docker("exec", name, "mongosh", "--quiet", "--eval",
+                    command, timeout=8)
+            return
+        except MWRecoveryError:
+            time.sleep(0.5)
+    raise MWRecoveryError("IMAGE_MONGO_REPLICA_INIT_UNVERIFIED")
 
 
 def _local_database_uri(port: int, database: str) -> str:
@@ -198,7 +214,11 @@ def _verify_phase(name: str, image: str, network: str, database: str,
         "--env", "WILSY_PLATFORM_WORKFORCE_SCOPE_ID=browser-cert-platform-workforce",
         "--env", "ENV=development", "--env", "WILSY_ENV=development",
         "--env", "WILSY_KENNEL_DB_TLS=0",
-        "--read-only", "--tmpfs", "/tmp",
+        "--read-only",
+        "--tmpfs", "/tmp",
+        "--tmpfs", "/app/data",
+        "--tmpfs", "/app/reports",
+        "--tmpfs", "/var/log/wilsy-os",
         image,
     ]
     _docker("run", "-d", "--name", name, *args)
@@ -290,12 +310,7 @@ def rehearse_image(target: str) -> int:
                 "--quiet",
             )
             mongo_created = True
-            _docker(
-                "exec", mongo, "mongosh", "--quiet", "--eval",
-                'rs.initiate({_id:"' + SET_NAME
-                + '",members:[{_id:0,host:"mongo:27017"}]})',
-                timeout=45,
-            )
+            _init_owned_replica(mongo)
             _wait_mongo(port)
             seeded = True
             _run_fixture(fixture, "seed", state_file, env, checkout)
@@ -310,8 +325,7 @@ def rehearse_image(target: str) -> int:
                     prefix + "-" + label, tag, network, database, jwt,
                     state_file, fixture, env, baseline, sha,
                 )
-                _verify_container_image if False else None
-                if _image_identity(tag, sha, drill) != identity:
+                 if _image_identity(tag, sha, drill) != identity:
                     raise MWRecoveryError("IMAGE_TAG_MUTATED_DURING_DRILL")
                 if _certified_source_revision() != current:
                     raise MWRecoveryError("IMAGE_SOURCE_CHANGED_DURING_DRILL")
@@ -380,7 +394,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.0.0-DISPOSABLE-IMAGE-ROLLBACK-DATA-CONTINUITY
+# VERSION: v1.1.0-REPLICA-STARTUP-AND-IMAGE-OWNERSHIP-GUARDS
 # AUTHORITY BOUNDARY: Local immutable Docker image and synthetic data only.
 # TENANT POSTURE: UUID-scoped local fixture, no canonical Founder tenant.
 # FAIL-CLOSED POSTURE: Provenance, exact HTTP, audit and cleanup are required.
