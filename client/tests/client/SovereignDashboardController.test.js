@@ -3,13 +3,17 @@
 /**
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller Certification.
- * VERSION: v1.3.0-WILSY-PLATFORM-OWNER-ROUTING-CERT
+ * VERSION: v1.4.0-MANIFEST-EFFECT-REPLAY-CERT
  * AUTHORITY: Unit certification of authenticated EOS workspace presentation routing.
  * EPITOME: Verifies Headquarters is mounted only from the EOS-issued
  *          WILSY_HEADQUARTERS workspace identifier.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/SovereignDashboardController.test.js
  * COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
- * CERTIFICATION / UPDATE DATE: 2026-11-08.
+ * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v1.4.0-MANIFEST-EFFECT-REPLAY-CERT guards the
+ *            exact-tenant authenticated manifest read against StrictMode
+ *            effect replay without caching entitlements or weakening failure
+ *            isolation and server-owned navigation admission.
  * CHANGELOG: v1.3.0-WILSY-PLATFORM-OWNER-ROUTING-CERT rejects company Legal requests
  * while retaining customer commercial routing and independent Legal capacity.
  * CHANGELOG: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT updates owner, Legal-boundary,
@@ -47,6 +51,20 @@ const CONTROLLER_SOURCE = resolve(
 );
 
 describe('SovereignDashboardController EOS workspace contract', () => {
+  it('defers one source-authorized manifest read past cancelled effect replay', () => {
+    const source = readFileSync(CONTROLLER_SOURCE, 'utf8');
+    const start = source.indexOf("api.get('/auth/module-manifest')");
+    expect(start).toBeGreaterThan(0);
+    const window = source.slice(start - 190, start + 470);
+    expect(window).toContain('queueMicrotask(() => {');
+    expect(window).toContain('if (!current) return;');
+    expect(window).toContain('validateWilsyModuleManifest(data, moduleManifestTenantId)');
+    expect(window).toContain("if (current) setModuleManifest({ status: 'ready'");
+    expect(window).toContain("if (current) setModuleManifest({ status: 'unavailable'");
+    expect(source).toContain('return () => { current = false; };');
+    expect(source).not.toContain("localStorage.setItem('wilsy_module_manifest'");
+  });
+
   it('keeps the WILSY platform company outside Legal commercial routing', () => {
     const user = { id: 'company-owner', tenantId: 'WILSYTENANT-4CD2FZ4O', role: 'TENANT_OWNER', workspaceId: 'WILSY_HEADQUARTERS' };
     for (const request of ['LEGAL_DASHBOARD', DASHBOARD_KEYS.LEGAL, 'LEGAL_OS']) {
@@ -265,7 +283,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
 
 /* 
  * ARTIFACT: SovereignDashboardController.test.js
- * VERSION: v1.3.0-WILSY-PLATFORM-OWNER-ROUTING-CERT
+ * VERSION: v1.4.0-MANIFEST-EFFECT-REPLAY-CERT
  * AUTHORITY BOUNDARY: unit certification of client workspace presentation routing
  * TENANT POSTURE: workspace identity is supplied by EOS; tests distinguish Headquarters and customer workspaces
  * FAIL-CLOSED POSTURE: no browser role or preference creates workspace authority
