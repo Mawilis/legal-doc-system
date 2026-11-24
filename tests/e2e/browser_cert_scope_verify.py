@@ -266,9 +266,9 @@ def verify_headquarters(database, state):
         return parsed.version == 4 and str(parsed) == value.lower()
 
     if (
-        len(work_ids) != 2
+        len(work_ids) != 4
         or not all(isinstance(value, str) and value for value in work_ids)
-        or len(request_keys) != 2
+        or len(request_keys) != 4
         or not all(is_v4_uuid(value) for value in request_keys)
     ):
         raise RuntimeError("BROWSER_CERT_HEADQUARTERS_WORK_IDENTITY_INVALID")
