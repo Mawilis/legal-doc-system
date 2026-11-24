@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Named Project Reviewer Inbox Client Certificate
- * VERSION: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT
+ * VERSION: v1.2.0-SINGLE-REVIEWER-INBOX-SCOPE-CERT
  * AUTHORITY: Synthetic source-controlled EOS reviewer inbox contract.
  * EPITOME: Reject foreign inboxes, read exact named decisions and validate
  *          approved review disappearance after a source-owned CAS command.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectApprovalInbox.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectApprovalInbox and mocked api.js.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.2.0-SINGLE-REVIEWER-INBOX-SCOPE-CERT
+ *          proves one initial reviewer inbox GET under StrictMode,
+ *          stable headers on parent rerender and revalidation on a
+ *          changed transport selector without changing decision authority.
  * CHANGELOG: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT certifies bound evidence identifiers, the existing participant-authorized attachment viewer, and refusal of a decision ACK with changed file references.
  * CHANGELOG: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT verifies
  *          recipient-only inbox, approval request identity and readback.
@@ -17,7 +21,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -55,6 +59,28 @@ afterEach(() => {
 const mount = () => render(<ProjectApprovalInbox
   tenantId={tenant} principalId={principal}
   tenantHeaders={{ 'X-Tenant-ID': tenant }} sessionScope="recipient-test"/>);
+
+it('issues one source read in StrictMode and revalidates changed tenant headers', async () => {
+  api.get.mockResolvedValue({ data: list([]) });
+  const props = {
+    tenantId: tenant, principalId: principal,
+    tenantHeaders: { 'X-Tenant-ID': tenant }, sessionScope: 'recipient-test',
+  };
+  const { rerender } = render(<React.StrictMode>
+    <ProjectApprovalInbox {...props}/>
+  </React.StrictMode>);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    rerender(<React.StrictMode><ProjectApprovalInbox {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenant }}/></React.StrictMode>);
+  });
+  expect(api.get).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    rerender(<React.StrictMode><ProjectApprovalInbox {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenant, 'X-Test-Scope': 'changed' }}/></React.StrictMode>);
+  });
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+});
 
 it('approves exactly its own pending review after source readback', async () => {
   let items = [pending];
