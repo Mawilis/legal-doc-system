@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session Unified My Work Read Coordinator
- * VERSION: v1.1.2-BOUNDED-SOURCE-FAILURE-BACKOFF
+ * VERSION: v1.1.3-STRICTMODE-SUBSCRIBER-HANDOFF
  * AUTHORITY: WILSY OS Core Governance; EOS remains business and IAM authority.
  * EPITOME: Deduplicate concurrent authenticated My Work reads and revalidate
  *          exactly scoped subscribers after a server-confirmed source command.
@@ -9,6 +9,11 @@
  *                            unifiedMyWorkProjection validates EOS responses,
  *                            source services own all writes and durable audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.1.3-STRICTMODE-SUBSCRIBER-HANDOFF defers only last-listener cleanup
+ *            until the end of the current synchronous effect replay turn.
+ *            A same-scope reattachment preserves the in-flight EOS GET;
+ *            actual unmount still aborts and purges it. Explicit session
+ *            release and source-command invalidation remain immediate.
  * CHANGELOG: v1.1.2-BOUNDED-SOURCE-FAILURE-BACKOFF suppresses repeated same-session 503
  *            source reads for a bounded window, preserving explicit invalidation.
  *            v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP requires a current bearer and excludes SYSTEM
@@ -270,15 +275,23 @@ export function subscribeUnifiedMyWork(scopeKey, callback) {
     attached = false;
     entry.listeners.delete(callback);
     if (entry.listeners.size === 0) {
-      entry.version += 1;
-      entry.controller?.abort();
-      entry.pending = null;
-      entry.controller = null;
-      entry.payload = null;
-      entry.expiresAt = 0;
-      entry.sourceUnavailableUntil = 0;
-      entry.sourceUnavailableError = null;
-      discardIfUnused(scopeKey, entry);
+      // React StrictMode immediately tears down and reattaches effects in
+      // the same JS turn. Aborting here discards a still-current EOS read
+      // and starts a second authenticated Mongo transaction on reattach.
+      // Defer only this cleanup; real logout/release/invalidation below
+      // still revokes the exact session partition synchronously.
+      queueMicrotask(() => {
+        if (entries.get(scopeKey) !== entry || entry.listeners.size !== 0) return;
+        entry.version += 1;
+        entry.controller?.abort();
+        entry.pending = null;
+        entry.controller = null;
+        entry.payload = null;
+        entry.expiresAt = 0;
+        entry.sourceUnavailableUntil = 0;
+        entry.sourceUnavailableError = null;
+        discardIfUnused(scopeKey, entry);
+      });
     }
   };
 }
@@ -335,7 +348,7 @@ export function releaseUnifiedMyWork(scopeKey) {
 }
 
 // ARTIFACT: client/src/services/unifiedMyWorkSync.js
-// VERSION: v1.1.2-BOUNDED-SOURCE-FAILURE-BACKOFF
+// VERSION: v1.1.3-STRICTMODE-SUBSCRIBER-HANDOFF
 // AUTHORITY BOUNDARY: EOS-only reads; no browser command authorization.
 // TENANT POSTURE: Exact session/capacity partition, no persistent cache.
 // FAIL-CLOSED POSTURE: Superseded reads and invalid/foreign results reject.
