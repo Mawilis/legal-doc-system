@@ -598,7 +598,7 @@ for (const width of [1440, 390]) {
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE
+// VERSION: v2.9.0-STRICTMODE-SINGLE-NETWORK-MOUNT-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny
