@@ -294,6 +294,7 @@ export default function MyWorkWorkspace(props = {}) {
   const location = useLocation();
   const auth = useContext(AuthContext);
   const authUser = auth?.user;
+  const coordinatorScope = currentUnifiedMyWorkScope(auth, authUser?.tenantId);
   const scopeKey = JSON.stringify([
     auth?.sessionGeneration,
     authUser?.id,
@@ -359,7 +360,7 @@ export default function MyWorkWorkspace(props = {}) {
     setErrorStatus(null);
     try {
       const verified = await readUnifiedMyWork(
-        currentUnifiedMyWorkScope(auth, authUser?.tenantId),
+        coordinatorScope,
         { tenantId: authUser?.tenantId, principalId: authUser?.id },
         { signal: controller.signal, force: quiet },
       );
@@ -387,7 +388,7 @@ export default function MyWorkWorkspace(props = {}) {
         setRefreshing(false);
       }
     }
-  }, [auth, authUser?.id, authUser?.tenantId, scopeKey]);
+  }, [coordinatorScope, authUser?.id, authUser?.tenantId, scopeKey]);
 
   useEffect(() => {
     void load();
@@ -1663,7 +1664,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS
+ * VERSION: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
