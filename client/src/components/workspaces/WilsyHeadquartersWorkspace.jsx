@@ -16,12 +16,12 @@
  *          task and calendar selections to the existing governed My Work
  *          source editor or exact-project task lifecycle instead of the
  *          summary-only completion shortcut. No duplicate commands or grants.
- * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY routes
+ * CHANGELOG: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES routes
  *          right-rail calendar to a dedicated Headquarters work surface,
  *          and expands selected My Work records to the full operating canvas
  *          instead of squeezing them into the dashboard column. Return actions
  *          restore the preserved queue and overview without changing EOS.
- * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY preserves a
+ * CHANGELOG: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD preserves a
  *          genuinely compact verified-empty queue without forcing
  *          the populated-list maximum height on empty source states.
  * CHANGELOG: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS aligns
