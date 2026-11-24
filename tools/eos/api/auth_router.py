@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS
+VERSION: v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -13,8 +13,14 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION / UPDATE DATE: 2026-11-13.
+CERTIFICATION / UPDATE DATE: 2026-11-24.
 CHANGELOG:
+  v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
+  MongoDB-backed workspace-bootstrap and module-manifest read composition to
+  FastAPI's worker threads instead of blocking its shared asyncio event loop.
+  All dependency-authenticated currentness, caller-owned transaction retries,
+  founder designation, branding, module entitlements and 401/403/503 semantics
+  remain unchanged. No cache, timeout, grant or new runtime client.
   v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS: Separately reads
   persisted Founder title with canonical ACTIVE identity/tenant/owner role
   plus audit proof; no client-provided designation or IAM grant.
@@ -781,7 +787,7 @@ def _workspace_branding_asset_delivery(
 
 
 @router.get("/workspace-bootstrap")
-async def workspace_bootstrap(
+def workspace_bootstrap(
     identity: SovereignIdentity = Depends(get_current_identity),
     principal_repository: Any = Depends(get_principal_authority_repository),
     membership_repository: Any = Depends(get_tenant_membership_repository),
@@ -926,7 +932,7 @@ async def workspace_bootstrap(
 
 
 @router.get("/module-manifest")
-async def workspace_module_manifest(
+def workspace_module_manifest(
     identity: SovereignIdentity = Depends(get_current_identity),
 ) -> dict[str, object]:
     """Return the exact tenant's product-eligible module navigation projection.
@@ -1948,7 +1954,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS
+# VERSION: v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
