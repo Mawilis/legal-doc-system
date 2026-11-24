@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.66.0-GOVERNED-READINESS-ROLLBACK
+ * VERSION: v1.67.0-CENTERED-TASK-ACTION-WORKSPACE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.67.0-CENTERED-TASK-ACTION-WORKSPACE returns Files,
+ *          Approvals and Activity to the centered Projects task work surface;
+ *          a bounded resizable dialog replaces the pinned right-side panel.
+ *          Preserves existing exact-task authority and keyboard focus.
  * CHANGELOG: v1.66.0-GOVERNED-READINESS-ROLLBACK adds a read-only MW-T12 readiness and
  *          rollback inspection using exact-task EOS attachment and business
  *          decision manifests, with release explicitly blocked absent
@@ -1565,7 +1569,7 @@ export default function ProjectTasksPanel({
           onClick={closeFocusedAction}/>
         <div ref={focusedPanelRef} role="dialog" aria-modal="true"
           aria-label={'Task workspace: ' + selectedActionTask.title}
-          className="fixed right-3 top-[5.75rem] z-[89] max-h-[calc(100dvh-7rem)] w-[calc(100%-1.5rem)] max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:right-6 sm:p-5">
+          className="fixed left-1/2 top-1/2 z-[89] flex h-[min(760px,calc(100dvh-3rem))] min-h-[280px] w-[min(980px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 resize flex-col overflow-auto overscroll-contain rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5">
       <div className="mb-2 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
           onClick={closeFocusedAction}>← Work</button>
@@ -2497,7 +2501,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.66.0-GOVERNED-READINESS-ROLLBACK
+// VERSION: v1.67.0-CENTERED-TASK-ACTION-WORKSPACE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
