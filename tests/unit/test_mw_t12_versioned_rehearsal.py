@@ -1,5 +1,5 @@
 """TITLE: MW-T12 versioned source executable rehearsal failure-path certificate.
-VERSION: v1.0.0-ISOLATED-TWO-VERSION-RECOVERY-TEST
+VERSION: v1.0.1-OWNED-RUNTIME-DIRECTORY-FIX
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Validate isolated source provenance, non-mutating version switching,
          authenticated readback and mandatory temporary resource cleanup.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 recovery owns Mongo lifecycle,
          browser verifier owns synthetic actors, HTTP and durable readback.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.0.1-OWNED-RUNTIME-DIRECTORY-FIX creates the
+           same owner-scoped runtime directory the real rehearsal creates
+           before invoking the unit-isolated Mongo/browser runner.
 CHANGELOG: v1.0.0-ISOLATED-TWO-VERSION-RECOVERY-TEST checks version order,
            post-switch fail-closed behavior, immutable archive source proof,
            dependency-only staging, authenticated runner failure and owned
@@ -184,13 +187,15 @@ def test_authenticated_runner_failure_stops_only_owned_mongo(
         return SimpleNamespace(returncode=1)
 
     monkeypatch.setattr(subprocess, "run", failed_runner)
+    owner = tmp_path / "owned"
+    owner.mkdir()
     with pytest.raises(MWRecoveryError, match="VERSION_AUTHENTICATED_BROWSER_FAILED"):
-        operator._certify_staged_version("/fake/mongod", "/fake/node", OLDER, tmp_path, tmp_path / "owned")
+        operator._certify_staged_version("/fake/mongod", "/fake/node", OLDER, tmp_path, owner)
     assert stopped == [fake_mongo]
 
 
 # ARTIFACT: tests/unit/test_mw_t12_versioned_rehearsal.py
-# VERSION: v1.0.0-ISOLATED-TWO-VERSION-RECOVERY-TEST
+# VERSION: v1.0.1-OWNED-RUNTIME-DIRECTORY-FIX
 # AUTHORITY BOUNDARY: Synthetic failure-path tests, no live system mutation.
 # TENANT POSTURE: No canonical or authenticated production principal.
 # FAIL-CLOSED POSTURE: Historical proof or auth failure denies certificate.
