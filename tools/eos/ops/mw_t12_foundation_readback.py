@@ -1,6 +1,6 @@
 """ 
 TITLE: MW-T12 live Foundation project independent source readback.
-VERSION: v1.0.0-EXACT-TASK-COMMENT-READBACK
+VERSION: v1.1.0-EXACT-HTTP-DENIAL-CLASSIFICATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify, never mutate, an existing tenant-authorized Foundation
          project task and its previously posted engineering activity.
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing Python EOS Projects router and read-only
                            Projects task, comment and event registries.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.1.0-EXACT-HTTP-DENIAL-CLASSIFICATION distinguishes
+           HTTP 401 (session authentication) from HTTP 403 (source IAM/
+           selected capacity or entitlement), records only a bounded route
+           category, and never logs response bodies or bearer values.
 CHANGELOG: v1.0.0-EXACT-TASK-COMMENT-READBACK adds a fail-closed,
            independently repeated GET-only readback without any source writes.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -103,8 +107,10 @@ def _page(client, base: str, token: str, path: str) -> dict:
             if len(payload) > 1024 * 1024:
                 raise SourceReadbackDenied("EOS_SOURCE_PAGE_OVERSIZED")
     except HTTPError as error:
-        if error.code in {401, 403}:
-            raise SourceReadbackDenied("EXISTING_PROJECTS_AUTHORITY_DENIED") from None
+        if error.code == 401:
+            raise SourceReadbackDenied("EXISTING_EOS_SESSION_AUTHENTICATION_REQUIRED") from None
+        if error.code == 403:
+            raise SourceReadbackDenied("EXISTING_PROJECTS_READ_PERMISSION_OR_CAPACITY_DENIED") from None
         if error.code == 404:
             raise SourceReadbackDenied("SOURCE_ROUTE_OR_RECORD_NOT_FOUND") from None
         if error.code == 503:
@@ -301,7 +307,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_foundation_readback.py
-# VERSION: v1.0.0-EXACT-TASK-COMMENT-READBACK
+# VERSION: v1.1.0-EXACT-HTTP-DENIAL-CLASSIFICATION
 # AUTHORITY BOUNDARY: Strictly GET-only existing Python EOS Projects source.
 # TENANT POSTURE: Canonical wilsy only, exact current authorized principal.
 # FAIL-CLOSED POSTURE: No unique project, task, checkpoint or independent
