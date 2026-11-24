@@ -193,7 +193,7 @@ it('refuses decision confirmation when EOS changes bound evidence references', a
 });
 
 // ARTIFACT: ProjectApprovalInbox.test.jsx
-// VERSION: v1.1.0-REVIEWER-EVIDENCE-IDENTITY-CERT
+// VERSION: v1.2.0-SINGLE-REVIEWER-INBOX-SCOPE-CERT
 // AUTHORITY BOUNDARY: client source evidence only, no IAM financial approvals
 // TENANT POSTURE: exact tenant, recipient and approval command
 // FAIL-CLOSED POSTURE: foreign or unverified inbox cannot expose decisions
