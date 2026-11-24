@@ -1,5 +1,5 @@
 """TITLE: MW-T12 isolated Headquarters recovery evidence certificate.
-VERSION: v1.2.0-ROLLBACK-CANDIDATE-READONLY-ADMISSION-CERT
+VERSION: v1.2.1-ROLLBACK-COMMIT-VS-BLOB-PROOF-FIX
 AUTHORITY: WILSY OS Core Governance; synthetic test-only proof.
 EPITOME: Certify the existing local recovery operator checks authenticated
          browser evidence for every Headquarters viewport before success.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: The MW-T12 operator owns loopback replica lifecycle;
          Playwright owns assertions, network evidence and screen captures.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.1-ROLLBACK-COMMIT-VS-BLOB-PROOF-FIX distinguishes
+           the immutable commit-object type query from historical source
+           blob queries when inspecting observed read-only Git commands.
+           Keeps exact source-file coverage and ancestor-only assertions.
 CHANGELOG: v1.2.0-ROLLBACK-CANDIDATE-READONLY-ADMISSION-CERT
            proves strict old-commit ancestry and presence of required
            immutable EOS/browser source files. Denies equal, malformed,
@@ -115,8 +119,13 @@ def test_versioned_rollback_candidate_is_strict_ancestor_with_required_sources(
 
     monkeypatch.setattr(subprocess, "run", git)
     assert _admit_rollback_candidate(older) == (current, older)
-    asserted = {call[3].split(":", 1)[1] for call in calls
-                if len(call) == 4 and call[1:3] == ["cat-file", "-t"]}
+    assert ["git", "cat-file", "-t", older] in calls
+    asserted = {
+        call[3].split(":", 1)[1] for call in calls
+        if len(call) == 4
+        and call[1:3] == ["cat-file", "-t"]
+        and call[3].startswith(older + ":")
+    }
     assert asserted == set(ROLLBACK_REQUIRED_PATHS)
     assert all(call[1] in {"rev-parse", "status", "cat-file", "merge-base"} for call in calls)
 
@@ -236,7 +245,7 @@ def test_corrupted_browser_network_record_rejected(tmp_path: Path) -> None:
 
 
 # ARTIFACT: tests/unit/test_mw_t12_local_eos_recovery.py
-# VERSION: v1.2.0-ROLLBACK-CANDIDATE-READONLY-ADMISSION-CERT
+# VERSION: v1.2.1-ROLLBACK-COMMIT-VS-BLOB-PROOF-FIX
 # AUTHORITY BOUNDARY: Disposable test data and read-only certificate.
 # TENANT POSTURE: No canonical WILSY database, actor or credentials.
 # FAIL-CLOSED POSTURE: Missing or invalid proof denies certification.
