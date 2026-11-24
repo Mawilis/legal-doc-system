@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.76.0-SHARED-TASK-TAB-READ-CERT
+ * VERSION: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
  * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT confirms that the
+ *          actionable Projects list is independently source-verified
+ *          before optional portfolio summary starts a second transaction.
+ *          No permission, timeout, schema or IAM mock relaxation.
  * CHANGELOG: v2.76.0-SHARED-TASK-TAB-READ-CERT verifies switching from work
  *          into project discussion preserves one task GET and the source
  *          snapshot instead of remounting the same task panel and
@@ -450,6 +454,25 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+});
+
+describe('Free-tier Projects read admission order', () => {
+  it('does not issue an optional summary transaction while the authorized list is pending', async () => {
+    let resolveList;
+    const pendingList = new Promise(resolve => { resolveList = resolve; });
+    api.get.mockImplementation(path => {
+      if (path === '/projects') return pendingList;
+      if (path === '/projects/summary') return Promise.resolve({ data: summary([]) });
+      throw new Error('Unexpected read: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="list-first-free-tier-cert"/>);
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/projects')).toHaveLength(1));
+    expect(api.get.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
+    resolveList({ data: list([]) });
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(1));
+    expect(api.get.mock.calls.filter(([path]) => path === '/projects')).toHaveLength(1);
+  });
 });
 
 describe('Project task attachment source and contributor authority boundary', () => {
@@ -2930,7 +2953,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.76.0-SHARED-TASK-TAB-READ-CERT
+ * VERSION: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
