@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.0.0-EXACT-ECS-SOURCE-IP-AND-TEMPORARY-ATLAS-ADMISSION
+VERSION: v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION admits only task revisions with the exact
+           SSM-backed synthetic connection configuration, immutable known
+           image digest, execution-role identity and no application task role.
+           Denies dormant no-secret revisions; fixes missing-IP exception
+           handling and limits mutation attempts to verified ECS source IP.
 CHANGELOG: v1.0.0-EXACT-ECS-SOURCE-IP-AND-TEMPORARY-ATLAS-ADMISSION
            provides bounded Atlas entry inventory, public ENI attestation,
            explicit six-hour source-IP mutation gate, and post-write readback.
@@ -30,7 +35,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.0.0-EXACT-ECS-SOURCE-IP-AND-TEMPORARY-ATLAS-ADMISSION"
+VERSION = "v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -162,13 +167,45 @@ def public_source_ip(profile: str, task_arn: str) -> str:
     require(task.get("taskArn") == task_arn
             and task.get("launchType") == "FARGATE"
             and task.get("lastStatus") == "RUNNING"
-            and task.get("desiredStatus") == "RUNNING"
-            and task.get("taskDefinitionArn") in {
+            and task.get("desiredStatus") == "RUNNING",
+            "TASK_IDENTITY_OR_STATE_UNVERIFIED")
+    definition_arn = task.get("taskDefinitionArn")
+    require(isinstance(definition_arn, str)
+            and re.fullmatch(
                 "arn:aws:ecs:" + REGION + ":" + ACCOUNT +
-                ":task-definition/" + FAMILY + ":1",
-                "arn:aws:ecs:" + REGION + ":" + ACCOUNT +
-                ":task-definition/" + FAMILY + ":2",
-            }, "TASK_IDENTITY_OR_STATE_UNVERIFIED")
+                ":task-definition/" + FAMILY + r":[1-9][0-9]*",
+                definition_arn,
+            ) is not None,
+            "TASK_DEFINITION_NOT_OWNED")
+    definition = ecs.aws(
+        profile, "ecs", "describe-task-definition", "--task-definition",
+        definition_arn,
+    ).get("taskDefinition", {})
+    require(isinstance(definition, dict)
+            and definition.get("taskDefinitionArn") == definition_arn
+            and definition.get("status") == "ACTIVE"
+            and definition.get("executionRoleArn") == ecs.ROLE
+            and not definition.get("taskRoleArn")
+            and definition.get("networkMode") == "awsvpc"
+            and "FARGATE" in definition.get("requiresCompatibilities", []),
+            "TASK_DEFINITION_AUTHORITY_UNVERIFIED")
+    containers = definition.get("containerDefinitions")
+    require(isinstance(containers, list) and len(containers) == 1
+            and isinstance(containers[0], dict),
+            "TASK_DEFINITION_CONTAINER_INVALID")
+    container = containers[0]
+    expected_images = {
+        ecs.source.URI + "@" + ecs.DIGEST_HISTORICAL,
+        ecs.source.URI + "@" + ecs.DIGEST_CURRENT,
+    }
+    require(container.get("image") in expected_images
+            and container.get("name") == "python-eos"
+            and container.get("readonlyRootFilesystem") is True
+            and container.get("user") == "10001:10001"
+            and container.get("secrets") == [{
+                "name": "MONGODB_URI",
+                "valueFrom": ecs.SSM_PARAMETER_ARN,
+            }], "TASK_SYNTHETIC_SECRET_OR_IMAGE_UNVERIFIED")
     attachments = task.get("attachments", [])
     details = [
         detail for attachment in attachments if isinstance(attachment, dict)
@@ -195,7 +232,7 @@ def public_source_ip(profile: str, task_arn: str) -> str:
     address = (interface.get("Association") or {}).get("PublicIp")
     try:
         ip = ipaddress.ip_address(address)
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         raise NetworkAdmissionError("TASK_PUBLIC_ADDRESS_MISSING") from exc
     require(ip.version == 4 and ip.is_global,
             "TASK_PUBLIC_ADDRESS_NOT_GLOBAL")
@@ -277,7 +314,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.0.0-EXACT-ECS-SOURCE-IP-AND-TEMPORARY-ATLAS-ADMISSION
+# VERSION: v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION
 # AUTHORITY BOUNDARY: Only exact Atlas project temporary /32 source mutation.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
 # FAIL-CLOSED POSTURE: Wildcard or missing task identity denies all mutations.
