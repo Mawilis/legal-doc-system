@@ -1,0 +1,223 @@
+# TITLE: MW-T12 Nonproduction AWS Budget and Dormant Fargate Foundation
+# VERSION: v1.0.0-BUDGET-FIRST-DORMANT-ECS-FOUNDATION
+# AUTHORITY: WILSY OS Core Governance / AGENTS.md
+# EPITOME: Bootstrap budget notifications before opt-in nonproduction ECR,
+#   zero-task ECS cluster, dedicated closed security group and execution role.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/mw-t12-nonproduction-foundation.yaml
+# COLLABORATION / OWNERSHIP: Existing GHCR Python EOS image publication and
+#   MW-T12 ECS read-only admission retain image and recovery authority.
+# CERTIFICATION / UPDATE DATE: 2026-11-25
+# CHANGELOG: v1.0.0-BUDGET-FIRST-DORMANT-ECS-FOUNDATION
+#   Establish account-level spend warnings with explicit recipient and USD
+#   budget, separate opt-in dormant resources, narrow task execution policy,
+#   no launched tasks, no service, no image publication and no new VPC/NAT.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001
+# SECURITY / PRIVACY POSTURE: No customer data, static credentials, public
+#   ingress, task identity grants, production resources or unpinned images.
+# TENANT BOUNDARY: No tenant persistence; only nonproduction infrastructure.
+# AUTHORITY BOUNDARY: Declares infrastructure only, not AWS activation,
+#   budget enforcement, deployment approval or rollback certification.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  MW-T12 nonproduction budget-first foundation. Default creates a notification
+  budget only; optional foundation creates no billable running Fargate tasks.
+Parameters:
+  BudgetNotificationEmail:
+    Type: String
+    Description: Verified email recipient of AWS budget notifications.
+    AllowedPattern: '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'
+    ConstraintDescription: An email address is required.
+  MonthlyBudgetUSD:
+    Type: Number
+    Description: Explicitly approved account-wide monthly USD warning threshold.
+    MinValue: 1
+    MaxValue: 10000
+  EnableDormantFoundation:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['false', 'true']
+    Description: >-
+      Explicit opt-in AFTER budget notification and billing permissions are
+      independently verified. No ECS tasks are ever launched by this template.
+  ExistingVpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Existing reviewed nonproduction VPC (no VPC or NAT created).
+Conditions:
+  FoundationApproved: !Equals [!Ref EnableDormantFoundation, 'true']
+Resources:
+  MonthlySpendWarning:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub 'wilsy-mwt12-nonproduction-warning-${AWS::AccountId}'
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUSD
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            ThresholdType: PERCENTAGE
+            Threshold: 50
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetNotificationEmail
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            ThresholdType: PERCENTAGE
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetNotificationEmail
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            ThresholdType: PERCENTAGE
+            Threshold: 100
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetNotificationEmail
+  EosImageRepository:
+    Type: AWS::ECR::Repository
+    Condition: FoundationApproved
+    DependsOn: MonthlySpendWarning
+    Properties:
+      RepositoryName: wilsy/mwt12-eos-nonproduction
+      ImageTagMutability: IMMUTABLE
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Retain at most four rollback rehearsal images","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":4},"action":{"type":"expire"}}]}
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosRuntimeLogs:
+    Type: AWS::Logs::LogGroup
+    Condition: FoundationApproved
+    DependsOn: MonthlySpendWarning
+    Properties:
+      LogGroupName: /wilsy/mwt12/nonproduction/eos
+      RetentionInDays: 1
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: FoundationApproved
+    DependsOn: MonthlySpendWarning
+    Properties:
+      RoleName: wilsy-mwt12-eos-execution-nonproduction
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: OnlyEcsTasksInThisAccount
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*'
+      Policies:
+        - PolicyName: mwt12-ecr-and-logs-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ObtainEcrAuthToken
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Sid: PullOnlyOwnedRehearsalImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: !GetAtt EosImageRepository.Arn
+              - Sid: WriteOnlyRehearsalLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub '${EosRuntimeLogs.Arn}:log-stream:*'
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosClosedSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: FoundationApproved
+    DependsOn: MonthlySpendWarning
+    Properties:
+      GroupDescription: MW-T12 nonproduction EOS no inbound traffic, HTTPS egress only
+      VpcId: !Ref ExistingVpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: External TLS transport only, no database downgrade
+      Tags:
+        - Key: Name
+          Value: wilsy-mwt12-eos-closed
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosDormantCluster:
+    Type: AWS::ECS::Cluster
+    Condition: FoundationApproved
+    DependsOn: MonthlySpendWarning
+    Properties:
+      ClusterName: wilsy-mwt12-nonproduction
+      CapacityProviders:
+        - FARGATE
+      ClusterSettings:
+        - Name: containerInsights
+          Value: disabled
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+Outputs:
+  BudgetWarning:
+    Description: Account-wide COST warning, not an enforced spending cap.
+    Value: !Ref MonthlySpendWarning
+  ComputeActivation:
+    Description: This stack creates zero task definitions, services or running tasks.
+    Value: DISABLED
+  EcrRepositoryUri:
+    Condition: FoundationApproved
+    Description: Dormant image repository; images not yet published or charged as storage.
+    Value: !GetAtt EosImageRepository.RepositoryUri
+  EcsClusterArn:
+    Condition: FoundationApproved
+    Value: !GetAtt EosDormantCluster.Arn
+  ExecutionRoleArn:
+    Condition: FoundationApproved
+    Value: !GetAtt EosExecutionRole.Arn
+  ClosedSecurityGroup:
+    Condition: FoundationApproved
+    Value: !Ref EosClosedSecurityGroup
+# ARTIFACT: infra/aws/mw-t12-nonproduction-foundation.yaml
+# VERSION: v1.0.0-BUDGET-FIRST-DORMANT-ECS-FOUNDATION
+# AUTHORITY BOUNDARY: Budget-first nonproduction infrastructure; no task runtime.
+# TENANT POSTURE: No real tenant, data, MFA or production connection.
+# FAIL-CLOSED POSTURE: Foundation defaults off; no task or service is started.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
