@@ -1128,7 +1128,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByRole('button', { name: 'Legal tools' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Pick up where you left off' })).toBeVisible());
-    expect(screen.getByText(/No conversation messages are available in this view/)).toBeVisible();
+    expect(screen.getByText('No conversations yet.')).toBeVisible();
     expect(screen.queryByText('Thread 1')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
     expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
@@ -2026,7 +2026,7 @@ describe('WilsyOSIntelligenceDock', () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    fireEvent.click(screen.getByText('+ New'));
+    fireEvent.click(screen.getByRole('button', { name: '+ New conversation' }));
 
     await waitFor(() => {
       expect(mockCreateThread).toHaveBeenCalled();
