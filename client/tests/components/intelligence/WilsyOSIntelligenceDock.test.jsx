@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.45.0-LIVE-TASK-REFRESH-LOOP-CERT
+ * VERSION: v1.45.1-SECONDARY-SOURCE-DISCLOSURE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,9 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.45.1-SECONDARY-SOURCE-DISCLOSURE-CERT asserts source details
+ *            are collapsed until opened, preventing redundant banner
+ *            content above productive conversations.
  * CHANGELOG: v1.45.0-LIVE-TASK-REFRESH-LOOP-CERT exercises one live
  *            Python EOS task source request and its explicit refresh
  *            readback without a paid model, navigation or task mutation.
@@ -1208,6 +1211,8 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText(/EOS source status: workspace verified; kernel health not verified/)).toBeVisible();
     const summary = screen.getByLabelText('Inspect verified workspace context');
     expect(summary).toHaveTextContent('AI provider unavailable');
+    expect(summary.closest('details').open).toBe(false);
+    fireEvent.click(summary);
     expect(summary.closest('details').open).toBe(true);
     expect(screen.getByText(/450 requests available/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -1883,7 +1888,10 @@ describe('WilsyOSIntelligenceDock', () => {
       detail: { tenantId: 'TEST_TENANT', principalId: principal,
         locator: { workspace: 'PROJECTS', project_id: projectId, project_revision: 3 } },
     })));
-    expect(await screen.findByRole('button', { name: 'Inspect source: Verified current project' })).toBeVisible();
+    const verifiedProjectSource = await screen.findByRole('button', { name: 'Inspect source: Verified current project' });
+    expect(verifiedProjectSource).not.toBeVisible();
+    fireEvent.click(screen.getByLabelText('Inspect verified workspace context'));
+    expect(verifiedProjectSource).toBeVisible();
     expect(screen.getByText(/Source Person/)).toBeVisible();
     expect(screen.getByText(/Verified project sources can support reasoning only after independent EOS authorization/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -2409,7 +2417,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.45.0-LIVE-TASK-REFRESH-LOOP-CERT
+ * VERSION: v1.45.1-SECONDARY-SOURCE-DISCLOSURE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
