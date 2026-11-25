@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.49.0-MW-T11-ANSWER-FOCUS
+ * VERSION: v4.50.0-EOS-ENCRYPTED-HISTORY-UX
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,11 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.50.0-EOS-ENCRYPTED-HISTORY-UX presents EOS-encrypted saved transcript
+ *            state separately from fallback session-only history, supports
+ *            explicit authenticated owner deletion with confirmation and
+ *            revision validation, and never represents archived model text
+ *            as current source-owned EOS work facts.
  * CHANGELOG: v4.49.0-MW-T11-ANSWER-FOCUS places verified EOS task answers at the
  *            focal point of the conversation and moves optional full source
  *            details below the answer. Suppresses duplicated source prompt
@@ -224,6 +229,8 @@ import {
   createWilsyAIConversationThread,
   loadWilsyAIConversationThreads,
   persistWilsyAIConversationTurn,
+  deleteWilsyAIConversationThread,
+  wilsyAIConversationHistoryPosture,
 } from './wilsyAIConversationHistoryEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
 
@@ -1153,6 +1160,7 @@ export function WilsyOSIntelligenceDock({
   const sendLockRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
+  const [historyOperationError, setHistoryOperationError] = useState('');
   const recordedSourceReadRef = useRef('');
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [animatedAssistantKey, setAnimatedAssistantKey] = useState(null);
@@ -1223,6 +1231,7 @@ export function WilsyOSIntelligenceDock({
     founderActivationInFlightRef.current = false;
     resetWilsyAIConversationSession();
     setConversationThreads([]);
+    setHistoryOperationError('');
     setActiveThreadId(null);
     let rememberedConsent = false;
     if (consentKey) {
@@ -3088,10 +3097,14 @@ export function WilsyOSIntelligenceDock({
             {activeTab === 'history' && (
               <div className={styles.historyTabContent}>
                 <div className={styles.historyHeaderRow}>
-                  <div><h4>Recent session activity</h4><p style={{ color: '#aebed2', fontSize: 12, marginTop: 4 }}>Available only in the current authenticated session. EOS saved history is not yet enabled.</p></div>
+                  <div><h4>Conversations</h4><p style={{ color: '#aebed2', fontSize: 12, marginTop: 4 }}>
+                    {wilsyAIConversationHistoryPosture() === 'READY'
+                      ? 'Encrypted history is stored by Python EOS for 30 days. Saved transcripts are not live source verification.'
+                      : 'EOS saved history is unavailable. Current conversations are session-only and may disappear on refresh.'}
+                  </p></div>
                   <div className={styles.historyHeaderActions}>
                     <button type="button" className={styles.historyActionButton} onClick={handleNewThread}>+ New</button>
-                    <button type="button" className={styles.historyActionButton} onClick={handleRefresh}>Refresh session</button>
+                    <button type="button" className={styles.historyActionButton} onClick={handleRefresh}>Refresh history</button>
                     <button
                       type="button"
                       className={styles.clearHistoryButton}
@@ -3113,32 +3126,57 @@ export function WilsyOSIntelligenceDock({
                         }
                       }}
                     >
-                      Clear
+                      Clear session
                     </button>
                   </div>
                 </div>
                 <div className={styles.threadsList}>
                   {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).length === 0
                     && <p style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
-                      No recorded conversation turns or verified task inspections in this session.
-                      Source inspections and conversations are session-only; they do not survive
-                      refresh or sign-out until Python EOS certifies durable history.
+                      No conversation messages are available in this view. Refresh history to verify the current EOS archive.
                     </p>}
+                  {historyOperationError && <p role="alert" style={{ color: '#ffccba', fontSize: 12 }}>
+                    {historyOperationError}
+                  </p>}
                   {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).map((thread) => (
-                    <button
-                      type="button"
-                      key={thread.id}
-                      className={`${styles.threadCard} ${
-                        thread.id === activeThreadId ? styles.activeThreadCard : ''
-                      }`}
-                      onClick={() => { setAnimatedAssistantKey(null); setActiveThreadId(thread.id); setConversationView('WELCOME'); setActiveTab('chat'); }}
-                    >
-                      <MessageSquareText size={16} />
-                      <div>
-                        <h5>{thread.title || 'Sovereign Session'}</h5>
-                        <span>{thread.messages?.length || 0} messages</span>
-                      </div>
-                    </button>
+                    <div key={thread.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button type="button"
+                        className={`${styles.threadCard} ${
+                          thread.id === activeThreadId ? styles.activeThreadCard : ''
+                        }`}
+                        style={{ flex: 1, minWidth: 0 }}
+                        onClick={() => { setAnimatedAssistantKey(null); setActiveThreadId(thread.id); setConversationView('WELCOME'); setActiveTab('chat'); }}
+                      >
+                        <MessageSquareText size={16} />
+                        <div>
+                          <h5>{thread.title || 'Conversation'}</h5>
+                          <span>{thread.messages?.length || 0} messages · {
+                            thread.storagePosture === 'EOS_ENCRYPTED_HISTORY'
+                              ? 'Saved in EOS' : 'Session only'
+                          }</span>
+                        </div>
+                      </button>
+                      <button type="button" className={styles.historyActionButton}
+                        aria-label={`Delete conversation ${thread.title || 'Conversation'}`}
+                        style={{ minHeight: 40, padding: '6px 10px' }}
+                        onClick={async () => {
+                          if (!window.confirm('Delete this conversation from WILSY OS history? This cannot be undone.')) return;
+                          const scope = dockScopeRef.current;
+                          setHistoryOperationError('');
+                          try {
+                            const remaining = await deleteWilsyAIConversationThread(thread.id);
+                            if (scope !== dockScopeRef.current) return;
+                            setConversationThreads(remaining);
+                            if (activeThreadId === thread.id) {
+                              setActiveThreadId(remaining[0]?.id || null);
+                            }
+                          } catch {
+                            if (scope === dockScopeRef.current) {
+                              setHistoryOperationError('EOS could not verify deletion. The conversation was not removed.');
+                            }
+                          }
+                        }}>Delete</button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -3167,10 +3205,10 @@ export default WilsyOSIntelligenceDock;
  * no legal command, execution, financial authority, or browser persistence exists.
  * D6B complete: Core Legal deadline posture is an independent read-only D6
  * projection and does not require or enlarge WILSY AI entitlement or authority.
- * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
+ * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.49.0-MW-T11-ANSWER-FOCUS
+ * VERSION: v4.50.0-EOS-ENCRYPTED-HISTORY-UX
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
