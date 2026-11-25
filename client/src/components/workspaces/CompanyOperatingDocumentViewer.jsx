@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.6-VERIFIED-READ-ADMISSION
+ * VERSION: v2.32.7-TASK-FIRST-INSPECTOR
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.7-TASK-FIRST-INSPECTOR gives verified task search the first
+ *            visible content in INSPECT mode. The last-update preview is
+ *            shown only in work focus; the compact overview action remains
+ *            accessible, and the same EOS source and Projects handoffs remain.
  * CHANGELOG: v2.32.6-VERIFIED-READ-ADMISSION admits
  *            immediate task GET from the freshly validated EOS project
  *            list without waiting for React state to commit. No browser
@@ -2195,7 +2199,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                 onOpenProject(m04Execution.project.project_id, { taskId: nextAccountableTask.task_id });
                               }}>Open task in Projects <ArrowUpRight size={15}/></button>
                           </div>}
-                          {latestSourceWork && (m04FocusMode === 'INSPECT' || latestSourceWork.task_id !== nextAccountableTask?.task_id) && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
+                          {m04FocusMode === 'WORK' && latestSourceWork && latestSourceWork.task_id !== nextAccountableTask?.task_id && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
                               <p className="max-w-xl truncate text-sm font-semibold text-white">{latestSourceWork.title}</p>
@@ -2218,7 +2222,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
                           {m04FocusMode === 'INSPECT' && executionInspectorOpen && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/60 p-2.5">
                             <span className="text-sm text-slate-200">{m04Execution.rows.length} verified tasks · {executionMatches.length} matching current view</span>
-                            <button type="button" onClick={() => setExecutionInspectorOpen(false)}
+                            <button type="button" data-m04-overview="true" onClick={() => setExecutionInspectorOpen(false)}
                               className="rounded-md border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">Show execution overview</button>
                           </div>}
                           {m04FocusMode === 'INSPECT' && !executionInspectorOpen && <>
@@ -2589,7 +2593,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.6-VERIFIED-READ-ADMISSION
+// VERSION: v2.32.7-TASK-FIRST-INSPECTOR
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
