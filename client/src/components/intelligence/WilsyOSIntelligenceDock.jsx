@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.50.0-EOS-ENCRYPTED-HISTORY-UX
+ * VERSION: v4.51.0-MW-T11-CANONICAL-DEADLINE-DEPENDENCY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,10 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.51.0-MW-T11-CANONICAL-DEADLINE-DEPENDENCY reads canonical selected-task due_at
+ *            and verified dependency IDs from the independently admitted
+ *            EOS context; never claims missing deadlines because client
+ *            expected an unsupported due_date alias. No guessed schedule.
  * CHANGELOG: v4.50.0-EOS-ENCRYPTED-HISTORY-UX presents EOS-encrypted saved transcript
  *            state separately from fallback session-only history, supports
  *            explicit authenticated owner deletion with confirmation and
@@ -1695,10 +1699,19 @@ export function WilsyOSIntelligenceDock({
         });
         const verifiedStatus = typeof task.status === 'string'
           ? task.status.replaceAll('_', ' ').toLowerCase() : 'not provided';
+        const dueValue = task.due_at ?? task.due_date;
+        const deadline = typeof dueValue === 'string'
+          && /^\d{4}-\d{2}-\d{2}(?:$|T)/.test(dueValue)
+          ? dueValue.slice(0, 10) : 'not supplied by EOS';
+        const dependencyLine = Array.isArray(task.depends_on)
+          && task.depends_on.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
+          ? '\nDependencies: ' + task.depends_on.length + ' recorded (completion separately verified)'
+          : '';
         const reply = 'EOS source verified: ' + task.title
           + '\nLifecycle: ' + verifiedStatus
           + '\nRevision: ' + task.revision
-          + '\nDeadline: ' + (task.due_date || 'not supplied by EOS')
+          + '\nDeadline: ' + deadline
+          + dependencyLine
           + '\nPython EOS · Read-only inspection. No model invoked or task changed.';
         const recorded = await persistWilsyAIConversationTurn({
           threadId: afterRequest.id,
@@ -2590,9 +2603,11 @@ export function WilsyOSIntelligenceDock({
                         {Number.isSafeInteger(visibleWorkspaceContext.data.work.selected_task.revision)
                           ? visibleWorkspaceContext.data.work.selected_task.revision : 'unverified'}
                         {' · Deadline '}
-                        {/^\d{4}-\d{2}-\d{2}$/.test(
-                          visibleWorkspaceContext.data.work.selected_task.due_date || '')
-                          ? visibleWorkspaceContext.data.work.selected_task.due_date : 'not verified'}
+                        {/^\d{4}-\d{2}-\d{2}(?:$|T)/.test(
+                          visibleWorkspaceContext.data.work.selected_task.due_at
+                            || visibleWorkspaceContext.data.work.selected_task.due_date || '')
+                          ? String(visibleWorkspaceContext.data.work.selected_task.due_at
+                            || visibleWorkspaceContext.data.work.selected_task.due_date).slice(0, 10) : 'not verified'}
                       </p>}
                     <p style={{ margin: '4px 0' }}>
                       {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
@@ -3208,7 +3223,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.50.0-EOS-ENCRYPTED-HISTORY-UX
+ * VERSION: v4.51.0-MW-T11-CANONICAL-DEADLINE-DEPENDENCY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
