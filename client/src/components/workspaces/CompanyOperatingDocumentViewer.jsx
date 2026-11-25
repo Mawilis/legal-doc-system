@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.4-RESTORED-FOUNDATION-READ
+ * VERSION: v2.32.5-REFRESH-READY-EXECUTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.5-REFRESH-READY-EXECUTION repairs automatic
+ *            task loading from the verified list returned by EOS rather
+ *            than stale pre-render React state; URL navigation retains the
+ *            selected M04 task/evidence inspector across reload and back.
+ *            Auth, tenant, source readback and task commands remain EOS-owned.
  * CHANGELOG: v2.32.4-RESTORED-FOUNDATION-READ automatically
  *            revalidates the unique existing Foundation task page when
  *            Strategy opens or remounts. No cached EOS truth, synthesized
@@ -340,6 +345,7 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, BookOpen, CheckCircle2, Clock3, FileText, History, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import { currentUnifiedMyWorkScope } from '../../services/unifiedMyWorkSync.js';
@@ -619,6 +625,19 @@ const commandFailure = (failure, action, acknowledged) => {
  * @returns {JSX.Element} Accessible responsive source-backed document drawer.
  */
 export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject, onOpenProjects }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const selectedWorkView = classification === 'STRATEGY'
+    && new URLSearchParams(location.search).get('workView') === 'INSPECT' ? 'INSPECT' : 'WORK';
+  const selectWorkView = (nextView) => {
+    const params = new URLSearchParams(location.search);
+    if (classification === 'STRATEGY' && nextView === 'INSPECT') params.set('workView', 'INSPECT');
+    else params.delete('workView');
+    navigate({ pathname: location.pathname, search: params.toString() ? '?' + params.toString() : '' },
+      { replace: true });
+    setM04FocusMode(nextView);
+    setExecutionInspectorOpen(nextView === 'INSPECT');
+  };
   const auth = useContext(AuthContext) || {};
   const baseScope = currentUnifiedMyWorkScope(auth, auth.user?.tenantId);
   const credential = useRef({ token: auth.token, revision: 0 });
@@ -638,11 +657,15 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [executionSearch, setExecutionSearch] = useState('');
   const [executionFilter, setExecutionFilter] = useState('ALL');
   const [executionPage, setExecutionPage] = useState(0);
-  const [executionInspectorOpen, setExecutionInspectorOpen] = useState(false);
-  const [m04FocusMode, setM04FocusMode] = useState('WORK');
+  const [executionInspectorOpen, setExecutionInspectorOpen] = useState(selectedWorkView === 'INSPECT');
+  const [m04FocusMode, setM04FocusMode] = useState(selectedWorkView);
   const [browseOtherProjects, setBrowseOtherProjects] = useState(false);
   const [projectRegisterOpen, setProjectRegisterOpen] = useState(false);
   const [sessionTaskVisits, setSessionTaskVisits] = useState([]);
+  useEffect(() => {
+    setM04FocusMode(selectedWorkView);
+    setExecutionInspectorOpen(selectedWorkView === 'INSPECT');
+  }, [selectedWorkView]);
   const executionInspectorRef = useRef(null);
   const executionSearchRef = useRef(null);
   const focusWorkOnOpen = useRef(false);
@@ -747,7 +770,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
    * Source-owned Projects task readback for Strategy planning; never a durable
    * strategy-objective relationship, task command, or completion assertion.
    */
-  const loadDelivery = async (projectId, offset = 0) => {
+  const loadDelivery = async (projectId, offset = 0, verifiedProjects = null) => {
     const request = ++deliveryReadRef.current.sequence;
     deliveryReadRef.current.controller?.abort();
     const controller = new AbortController();
@@ -759,7 +782,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     setDelivery({ state: 'LOADING', projectId, page: null, error: '' });
     if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
       || !/^prj-[a-f0-9]{48}$/.test(projectId) || !Number.isSafeInteger(offset) || offset < 0
-      || !projectItems.some(item => item.project_id === projectId)) {
+      || !(verifiedProjects || projectItems).some(item => item.project_id === projectId)) {
       setDelivery({ state: 'DENIED', projectId: null, page: null, error: '' });
       return;
     }
@@ -786,7 +809,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
             || page.next_offset !== offset + page.items.length || page.items.length === 0
           : page.next_offset !== null)) throw new Error('STRATEGY_PROJECT_TASK_READBACK_INVALID');
       setDelivery({ state: 'READY', projectId, page, verifiedAt: new Date().toISOString(), error: '' });
-      if (projectItems.some(item => item.project_id === projectId && item.name === FOUNDATION_PROJECT_NAME)) void loadStrategyLinks();
+      if ((verifiedProjects || projectItems).some(item => item.project_id === projectId && item.name === FOUNDATION_PROJECT_NAME)) void loadStrategyLinks();
     } catch (failure) {
       if (!active(key) || request !== deliveryReadRef.current.sequence) return;
       if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
@@ -811,8 +834,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     setExecutionSearch('');
     setExecutionFilter('ALL');
     setExecutionPage(0);
-    setExecutionInspectorOpen(false);
-    setM04FocusMode('WORK');
+    setExecutionInspectorOpen(selectedWorkView === 'INSPECT');
+    setM04FocusMode(selectedWorkView);
     projectMutation.current = null;
     planMutation.current = null;
     setPlanState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
@@ -830,7 +853,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
         if (!active(readScope) || !Array.isArray(items)) return;
         const foundations = items.filter(item =>
           item.name === FOUNDATION_PROJECT_NAME && item.status === 'active');
-        if (foundations.length === 1) void loadDelivery(foundations[0].project_id, 0);
+        if (foundations.length === 1) void loadDelivery(foundations[0].project_id, 0, items);
       });
     }
     return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); strategyLinkReadRef.current.sequence += 1; strategyLinkReadRef.current.controller?.abort(); strategyLinkWriteRef.current = null; projectMutation.current = null; };
@@ -1085,7 +1108,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     return true;
   }) : [];
   const focusExecutionWork = filter => {
-    setM04FocusMode('INSPECT');
+    selectWorkView('INSPECT');
     setExecutionSearch('');
     setExecutionFilter(filter);
     setExecutionPage(0);
@@ -1101,7 +1124,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     });
   };
   const resumeTask = task => {
-    setM04FocusMode('INSPECT');
+    selectWorkView('INSPECT');
     setExecutionSearch(task.title);
     setExecutionFilter('ALL');
     setExecutionPage(0);
@@ -2135,14 +2158,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </div>
                         {m04Execution && <nav aria-label="M04 execution focus" className="mt-3 flex flex-wrap items-center gap-2">
                           <button type="button" aria-pressed={m04FocusMode === 'WORK'}
-                            onClick={() => { setM04FocusMode('WORK'); setExecutionInspectorOpen(false); }}
+                            onClick={() => selectWorkView('WORK')}
                             className={m04FocusMode === 'WORK'
                               ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
                               : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
                             Next assigned task
                           </button>
                           <button type="button" aria-pressed={m04FocusMode === 'INSPECT'}
-                            onClick={() => { setM04FocusMode('INSPECT'); setExecutionInspectorOpen(true); focusWorkOnOpen.current = true; }}
+                            onClick={() => { focusWorkOnOpen.current = true; selectWorkView('INSPECT'); }}
                             className={m04FocusMode === 'INSPECT'
                               ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
                               : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
@@ -2562,7 +2585,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.4-RESTORED-FOUNDATION-READ
+// VERSION: v2.32.5-REFRESH-READY-EXECUTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
