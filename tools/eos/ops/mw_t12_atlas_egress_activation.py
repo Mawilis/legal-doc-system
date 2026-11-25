@@ -1,5 +1,5 @@
 """TITLE: MW-T12 three-node Atlas outbound CloudFormation activation gate.
-VERSION: v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT
+VERSION: v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify fresh Atlas replica DNS and exact reviewed three-rule,
          outbound-only nonproduction CloudFormation change set before optional
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation dormant foundation,
          Atlas test cluster's three DNS hosts and ECS AWS read helper.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT removes the unsupported
+           DescribeChangeSet.ChangeSetType response assertion. Independently
+           verifies exact existing UPDATE_COMPLETE stack state and stack
+           identity instead; retains three-addition and parameter guards.
 CHANGELOG: v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT executes the one approved
            CloudFormation API with a shell-free empty-body acknowledgement;
            do not parse empty AWS CLI stdout as a JSON document.
@@ -36,7 +40,7 @@ import time
 
 from tools.eos.ops import mw_t12_task_definition_admission as aws_authority
 
-VERSION = "v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT"
+VERSION = "v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT"
 STACK = "wilsy-mwt12-nonproduction-foundation"
 CHANGE_SET = "mwt12-three-node-egress-review"
 SG_ID = "sg-05bbf379de9a0eee8"
@@ -129,8 +133,20 @@ def exact_change_set(profile: str) -> None:
             and result.get("ChangeSetName") == CHANGE_SET
             and result.get("Status") == "CREATE_COMPLETE"
             and result.get("ExecutionStatus") == "AVAILABLE"
-            and result.get("ChangeSetType") == "UPDATE",
+            and not result.get("NextToken"),
             "CLOUDFORMATION_CHANGE_SET_NOT_EXECUTABLE")
+    # DescribeChangeSet does not return ChangeSetType. Prove this is an
+    # update of the existing stack using independently verified stack truth.
+    stacks = aws(
+        profile, "cloudformation", "describe-stacks",
+        "--stack-name", STACK,
+    ).get("Stacks")
+    require(isinstance(stacks, list) and len(stacks) == 1
+            and stacks[0].get("StackName") == STACK
+            and stacks[0].get("StackStatus") == "UPDATE_COMPLETE"
+            and isinstance(stacks[0].get("StackId"), str)
+            and stacks[0].get("StackId") == result.get("StackId"),
+            "CLOUDFORMATION_TARGET_STACK_NOT_VERIFIED")
     modifications = result.get("Changes")
     require(isinstance(modifications, list) and len(modifications) == 3,
             "CLOUDFORMATION_CHANGE_COUNT_DRIFT")
@@ -294,7 +310,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_egress_activation.py
-# VERSION: v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT
+# VERSION: v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT
 # AUTHORITY BOUNDARY: Only optional exact outbound CFN egress change set.
 # TENANT POSTURE: Synthetic Atlas network only, no production data.
 # FAIL-CLOSED POSTURE: DNS/changeset/SG drift or compute denies activation.
