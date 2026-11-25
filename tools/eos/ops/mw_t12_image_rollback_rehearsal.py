@@ -247,8 +247,9 @@ def _verify_phase(name: str, image: str, network: str, database: str,
     # The owned Mongo sidecar publishes the fixed host-facing EOS port.
     # Docker network namespace sharing makes 127.0.0.1 a true loopback
     # peer rather than treating the bridge DNS hostname as a remote target.
-    port = int(environment["MW_T12_IMAGE_EOS_PORT"])
-    mongo_container = environment["MW_T12_IMAGE_MONGO_CONTAINER"]
+    port = (int(environment["MW_T12_IMAGE_EOS_PORT"])
+            if "MW_T12_IMAGE_EOS_PORT" in environment else _free_port())
+    mongo_container = environment.get("MW_T12_IMAGE_MONGO_CONTAINER", network)
     mongo_uri = (
         f"mongodb://127.0.0.1:27017/{database}"
         f"?replicaSet={SET_NAME}&directConnection=true"
