@@ -49,6 +49,8 @@ vi.mock('../../components/intelligence/wilsyAIConversationHistoryEngine.js', () 
   createWilsyAIConversationThread: vi.fn(async () => ({ id: 'thread-1', messages: [] })),
   loadWilsyAIConversationThreads: vi.fn(async () => [{ id: 'thread-1', messages: [] }]),
   persistWilsyAIConversationTurn: vi.fn(),
+  deleteWilsyAIConversationThread: vi.fn(async () => []),
+  wilsyAIConversationHistoryPosture: vi.fn(() => 'UNAVAILABLE'),
 }));
 
 import WilsyOSIntelligenceDock from '../../components/intelligence/WilsyOSIntelligenceDock.jsx';
