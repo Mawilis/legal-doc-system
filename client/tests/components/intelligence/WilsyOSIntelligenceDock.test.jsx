@@ -1,12 +1,14 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.37.1-MW-T11-HISTORY-COPY-REGRESSION-CERT
+ * VERSION: v1.38.0-MW-T11-READABLE-PROGRESSIVE-EVIDENCE
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.38.0-MW-T11-READABLE-PROGRESSIVE-EVIDENCE certifies formatted EOS task evidence
+ * in the conversation transcript and read-only replay without paid model calls.
  * CHANGELOG: v1.37.1-MW-T11-HISTORY-COPY-REGRESSION-CERT updates legacy history assertions to the session-only UI language; retains negative and no-provider checks.
  * CHANGELOG: v1.37.0-MW-T11-SESSION-SOURCE-CERT certifies explicit MW-T11 source inspection
  * from current authorized EOS project-task list, independently verified
@@ -1742,6 +1744,13 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByText('Recent session activity')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /EOS source · MW-T11/ }));
     expect(await screen.findByText(/EOS source verified: MW-T11/)).toBeVisible();
+    expect(screen.getByText('Lifecycle')).toBeVisible();
+    expect(screen.getByText('in progress')).toBeVisible();
+    expect(screen.getByText('Revision')).toBeVisible();
+    expect(screen.getByText('3')).toBeVisible();
+    expect(screen.getByText('Deadline')).toBeVisible();
+    expect(screen.getByText('2026-11-26')).toBeVisible();
+    expect(screen.getByText(/Python EOS · Read-only inspection/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
