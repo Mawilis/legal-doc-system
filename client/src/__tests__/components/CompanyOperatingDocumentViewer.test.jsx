@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.32.0-FOUNDATION-PROGRESSIVE-DISCLOSURE-CERT
+ * VERSION: v1.32.1-ASYNC-FOUNDATION-READINESS-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.32.1-ASYNC-FOUNDATION-READINESS-CERT
+ *            waits for independently loaded Strategy and EOS Foundation
+ *            project source before asserting disclosure controls; prevents
+ *            asserting source-ready UI during the initial loading frame.
  * CHANGELOG: v1.32.0-FOUNDATION-PROGRESSIVE-DISCLOSURE-CERT
  *            verifies that Strategy initially prioritizes its Foundation
  *            source action while the full project register remains an
@@ -730,7 +734,7 @@ describe('Strategy source-owned project execution readback', () => {
     });
     const openCanonicalProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject: openCanonicalProject }));
-    expect(screen.getByRole('region', { name: 'Foundation Strategy execution focus' })).toBeVisible();
+    expect(await screen.findByRole('region', { name: 'Foundation Strategy execution focus' })).toBeVisible();
     const browseProjects = screen.getByRole('button', { name: 'Browse all 1 projects' });
     expect(browseProjects).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('table', { name: 'Verified EOS project register' })).not.toBeInTheDocument();
@@ -1321,7 +1325,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.32.0-FOUNDATION-PROGRESSIVE-DISCLOSURE-CERT
+// VERSION: v1.32.1-ASYNC-FOUNDATION-READINESS-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
