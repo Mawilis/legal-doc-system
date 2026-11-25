@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK
+VERSION: v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK verifies the same
+           synthetic canary and exact scoped Atlas role over three separate
+           freshly established TLS sessions with independent client cleanup.
+           It does not infer EOS/Fargate rollback, and remains read-only.
 CHANGELOG: v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK requires the
            exact pre-seeded immutable synthetic Atlas recovery document to
            be read successfully with only the dedicated database-scoped
@@ -54,7 +58,7 @@ from urllib.parse import parse_qsl, urlsplit
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK"
+VERSION = "v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"
@@ -310,6 +314,7 @@ def check(profile: str) -> tuple[str, ...]:
     )
     if not mongo_allowed:
         blockers.append("ATLAS_TCP_27017_TASK_EGRESS_DENIED")
+    blockers.append("ATLAS_STABLE_TASK_EGRESS_IP_NOT_CONFIGURED")
     blockers.append("ATLAS_TEST_CLUSTER_NETWORK_ALLOWLIST_NOT_CERTIFIED")
     blockers.append("INDEPENDENT_AUTHENTICATED_HTTP_READBACK_UNAVAILABLE")
     # ECR / CloudWatch logs require private endpoints, NAT, or public egress.
@@ -321,10 +326,12 @@ def check(profile: str) -> tuple[str, ...]:
 
 
 def verify_scoped_test_database(uri: str) -> str:
-    """Read only the dedicated Atlas login authority with verified remote TLS.
+    """Independently read scoped synthetic evidence in three fresh TLS sessions.
 
-    Does not test data continuity or grant an IAM/user role. Database names are
-    reserved for new synthetic fixtures; sample and existing test DBs denied.
+    A fresh MongoClient is created and closed for each proposed rollback
+    phase. This proves a durable Atlas marker is not a client-local cache.
+    It does not certify ECS application behavior or an actual image change.
+    No records, credentials, grants or infrastructure are modified.
     """
     try:
         parts = urlsplit(uri)
@@ -348,7 +355,7 @@ def verify_scoped_test_database(uri: str) -> str:
             "ATLAS_TLS_OVERRIDE_DENIED")
     require(not any(key in {"tls", "ssl"} and value != "true"
                     for key, value in lower), "ATLAS_TLS_REQUIRED")
-    require(sum(key in {"authsource"} and value == "admin"
+    require(sum(key == "authsource" and value == "admin"
                 for key, value in lower) <= 1
             and not any(key == "authsource" and value != "admin"
                         for key, value in lower), "ATLAS_AUTH_SOURCE_INVALID")
@@ -358,31 +365,35 @@ def verify_scoped_test_database(uri: str) -> str:
         from pymongo import MongoClient
         from pymongo.errors import PyMongoError
 
-        with MongoClient(
-            uri, tls=True, tlsAllowInvalidCertificates=False,
-            tlsAllowInvalidHostnames=False,
-            serverSelectionTimeoutMS=5000, connectTimeoutMS=5000,
-            socketTimeoutMS=5000, retryWrites=False,
-        ) as client:
-            require(client.get_database(database).command("ping").get("ok") == 1,
-                    "ATLAS_PING_UNVERIFIED")
-            auth = client.admin.command("connectionStatus").get("authInfo", {})
-            roles = auth.get("authenticatedUserRoles")
-            require(isinstance(roles, list) and len(roles) == 1
-                    and roles[0].get("role") == "readWrite"
-                    and roles[0].get("db") == database,
-                    "ATLAS_CREDENTIAL_NOT_DATABASE_SCOPED")
-            canary = client.get_database(database).get_collection(
-                RECOVERY_COLLECTION
-            ).find_one(
-                {"_id": RECOVERY_CANARY["_id"]},
-                {field: 1 for field in RECOVERY_CANARY},
-            )
-            require(canary == RECOVERY_CANARY,
-                    "ATLAS_SYNTHETIC_RECOVERY_CANARY_DRIFT")
-    except (PyMongoError, OSError, ValueError) as exc:
+        # These are *independent Atlas connections*, not running EOS task
+        # revisions. The real ECS rollback remains strictly unverified.
+        for _phase in PROPOSED_PHASES:
+            with MongoClient(
+                uri, tls=True, tlsAllowInvalidCertificates=False,
+                tlsAllowInvalidHostnames=False,
+                serverSelectionTimeoutMS=5000, connectTimeoutMS=5000,
+                socketTimeoutMS=5000, retryWrites=False,
+            ) as client:
+                require(client.get_database(database).command("ping").get("ok") == 1,
+                        "ATLAS_PING_UNVERIFIED")
+                auth = client.admin.command("connectionStatus").get("authInfo", {})
+                roles = auth.get("authenticatedUserRoles")
+                require(isinstance(roles, list) and len(roles) == 1
+                        and roles[0].get("role") == "readWrite"
+                        and roles[0].get("db") == database,
+                        "ATLAS_CREDENTIAL_NOT_DATABASE_SCOPED")
+                canary = client.get_database(database).get_collection(
+                    RECOVERY_COLLECTION
+                ).find_one(
+                    {"_id": RECOVERY_CANARY["_id"]},
+                    {field: 1 for field in RECOVERY_CANARY},
+                )
+                require(canary == RECOVERY_CANARY,
+                        "ATLAS_SYNTHETIC_RECOVERY_CANARY_DRIFT")
+    except (PyMongoError, OSError, ValueError):
         raise ReadinessError("ATLAS_SCOPED_CONNECTION_UNAVAILABLE") from None
     return database
+
 
 def main(argv: list[str] | None = None) -> int:
     """Report verified registration separately from blocked runtime readiness."""
@@ -399,6 +410,8 @@ def main(argv: list[str] | None = None) -> int:
             verify_scoped_test_database(uri)
             print("MW_T12_SCOPED_ATLAS_CREDENTIAL=VERIFIED_READ_ONLY")
             print("MW_T12_ATLAS_SYNTHETIC_CANARY=VERIFIED_READ_ONLY")
+            print("MW_T12_ATLAS_FRESH_TLS_READBACKS=3")
+            print("MW_T12_ATLAS_ECS_ROLLBACK_CERTIFIED=FALSE")
         print("MW_T12_RUNTIME_METADATA=VERIFIED")
         print("MW_T12_TASK_REVISIONS=1,2")
         print("MW_T12_RUNNING_TASKS=ZERO")
@@ -430,7 +443,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK
+# VERSION: v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
