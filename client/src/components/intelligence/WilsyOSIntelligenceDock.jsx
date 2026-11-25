@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.48.0-MW-T11-QUIET-CONVERSATIONAL-SOURCE
+ * VERSION: v4.49.0-MW-T11-ANSWER-FOCUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,11 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.49.0-MW-T11-ANSWER-FOCUS places verified EOS task answers at the
+ *            focal point of the conversation and moves optional full source
+ *            details below the answer. Suppresses duplicated source prompt
+ *            and headings after a verified turn; retains independent source
+ *            inspection and current access checks without duplicate content.
  * CHANGELOG: v4.48.0-MW-T11-QUIET-CONVERSATIONAL-SOURCE fixes old one-line source replies
  * being formatted as one oversized title; uses calm conversational body
  * text for legacy and structured turns, with a modest task heading and
@@ -1165,6 +1170,7 @@ export function WilsyOSIntelligenceDock({
   const [deadlineLoading, setDeadlineLoading] = useState(false);
   const [deadlineError, setDeadlineError] = useState('');
   const messagesEndRef = useRef(null);
+  const latestVerifiedReplyRef = useRef(null);
   const healthAbortRef = useRef(null);
   const healthGenerationRef = useRef(0);
   const dockScope = [
@@ -1616,18 +1622,25 @@ export function WilsyOSIntelligenceDock({
     };
   }, [hydrateDockContext]);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [conversationThreads, activeThreadId, isSubmitting]);
-
   const activeThread = useMemo(() => {
     return (
       conversationThreads.find((t) => t.id === activeThreadId) ||
       conversationThreads[0] || { id: null, messages: [] }
     );
   }, [conversationThreads, activeThreadId]);
+
+  // Source inspection is a conversation turn, not a competing status panel.
+  // This is a presentation choice only; EOS supplies every actual task fact.
+  const hasVerifiedSourceReply = conversationView === 'SOURCE'
+    && (activeThread?.messages || []).some(message =>
+      message.role === 'assistant' && message.meta?.source === 'PYTHON_EOS'
+      && message.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY');
+
+  useEffect(() => {
+    if (activeTab !== 'chat' || !isOpen) return;
+    const target = hasVerifiedSourceReply ? latestVerifiedReplyRef.current : messagesEndRef.current;
+    target?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  }, [conversationThreads, activeThreadId, activeTab, isOpen, isSubmitting, hasVerifiedSourceReply]);
 
   // A verified source read is an inspectable same-session turn, not a
   // model-generated answer or a durable EOS conversation record. Record it
@@ -2487,7 +2500,7 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
-                <div className={styles.messagesContainer} style={{ minHeight: 0 }}>
+                <div className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
                   {conversationView === 'WELCOME'
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
@@ -2503,13 +2516,13 @@ export function WilsyOSIntelligenceDock({
                       </p>
                     </div>
                   )}
-                  {conversationView !== 'WELCOME' && localSourceQuery && (
+                  {conversationView !== 'WELCOME' && localSourceQuery && !hasVerifiedSourceReply && (
                     <div className={`${styles.chatMessageBubble} ${styles.userBubble}`}
                       aria-label="Your source request" style={{ margin: '4px 0 14px' }}>
                       <div className={styles.bubbleBody}>{localSourceQuery}</div>
                     </div>
                   )}
-                  {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
+                  {conversationView !== 'WELCOME' && !hasVerifiedSourceReply && !isLegalDockRole(authUser?.role) && (
                     <div className={styles.conversationSectionHeading}>
                       <strong style={{ color: '#eaf3ff', fontSize: 15 }}>
                         {conversationView === 'SOURCE' ? 'EOS workspace evidence' :
@@ -2524,6 +2537,7 @@ export function WilsyOSIntelligenceDock({
                   )}
                   {/* EOS observations are read-only, scoped, and not assistant messages. */}
                 {conversationView === 'SOURCE' && authUser?.id && !isLegalDockRole(authUser?.role) && <section
+                  className={hasVerifiedSourceReply ? styles.secondarySourceEvidence : undefined}
                   aria-label="Verified workspace context" aria-live="polite"
                   style={{ padding: '10px 0', background: 'transparent', color: '#e5edf6',
                     borderTop: '1px solid rgba(148,163,184,.25)',
@@ -2531,15 +2545,17 @@ export function WilsyOSIntelligenceDock({
                   {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef} open={!activeThread?.messages?.some(message =>
                     message?.meta?.source === 'PYTHON_EOS' && message?.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY')}>
                     <summary aria-label="Inspect verified workspace context"
-                      style={{ cursor: 'pointer', minHeight: 44 }}>
-                      <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Verified workspace source'}</strong>
-                      {visibleWorkspaceContext.data.work?.selected_task?.title
+                      style={{ cursor: 'pointer', minHeight: hasVerifiedSourceReply ? 32 : 44 }}>
+                      {hasVerifiedSourceReply
+                        ? <span className={styles.sourceDisclosureLabel}>View source details</span>
+                        : <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Verified workspace source'}</strong>}
+                      {!hasVerifiedSourceReply && visibleWorkspaceContext.data.work?.selected_task?.title
                         ? <span style={{ display: 'block', overflowWrap: 'anywhere', fontWeight: 400 }}>
                           {'Viewing task: '}{visibleWorkspaceContext.data.work.selected_task.title}
                         </span> : null}
-                      {' · '}{aiEntitlementNotProvisioned ? 'AI reasoning not activated'
+                      {!hasVerifiedSourceReply && ' · '}{!hasVerifiedSourceReply && (aiEntitlementNotProvisioned ? 'AI reasoning not activated'
                         : aiProviderUnavailable ? 'AI provider unavailable'
-                          : `${visibleWorkspaceContext.data.allowance.available_request_units} available · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.daily_consumed_request_units) ? visibleWorkspaceContext.data.allowance.daily_consumed_request_units : 'unverified'} completed · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.held_request_units) ? visibleWorkspaceContext.data.allowance.held_request_units : 'unverified'} held`}
+                          : `${visibleWorkspaceContext.data.allowance.available_request_units} available · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.daily_consumed_request_units) ? visibleWorkspaceContext.data.allowance.daily_consumed_request_units : 'unverified'} completed · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.held_request_units) ? visibleWorkspaceContext.data.allowance.held_request_units : 'unverified'} held`)}
                     </summary>
                     {workLocator.task_id && visibleWorkspaceContext.data.work?.selected_task
                       && visibleWorkspaceContext.data.work.selected_task.task_id === workLocator.task_id
@@ -2705,7 +2721,7 @@ export function WilsyOSIntelligenceDock({
                         onClick={() => setFocusedWorkIndex(null)}>Clear focus</button>
                     </section>
                   )}
-                {conversationView !== 'WELCOME' && !isLegalDockRole(authUser?.role) && (
+                {conversationView !== 'WELCOME' && !hasVerifiedSourceReply && !isLegalDockRole(authUser?.role) && (
                   <nav aria-label="Source follow-up actions"
                     className={styles.conversationFollowUps}>
                     {conversationView !== 'WORK' && workLocator.workspace === 'HEADQUARTERS' && (
@@ -2735,6 +2751,9 @@ export function WilsyOSIntelligenceDock({
                 {(activeThread?.messages || []).map((msg, idx) => (
                     <div
                       key={`${msg.timestamp || idx}-${idx}`}
+                      ref={msg.role === 'assistant' && msg.meta?.source === 'PYTHON_EOS'
+                        && msg.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY'
+                        ? latestVerifiedReplyRef : undefined}
                       className={`${styles.chatMessageBubble} ${
                         msg.role === 'user' ? styles.userBubble : styles.assistantBubble
                       }`}
@@ -3140,7 +3159,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.48.0-MW-T11-QUIET-CONVERSATIONAL-SOURCE
+ * VERSION: v4.49.0-MW-T11-ANSWER-FOCUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
