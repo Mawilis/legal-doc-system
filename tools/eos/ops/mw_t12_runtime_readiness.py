@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.0.0-READ-ONLY-RUNTIME-BLOCKERS
+VERSION: v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING looks up the
+           CloudFormation-owned group ID rather than assuming a group name.
 CHANGELOG: v1.0.0-READ-ONLY-RUNTIME-BLOCKERS validates the recorded AWS
            image identities, both task revisions, zero compute, networking,
            persistent storage and independent verification prerequisites.
@@ -26,7 +28,7 @@ import sys
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.0.0-READ-ONLY-RUNTIME-BLOCKERS"
+VERSION = "v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 
@@ -112,12 +114,24 @@ def check(profile: str) -> tuple[str, ...]:
     require(tasks[0].get("family") == tasks[1].get("family"),
             "TASK_FAMILY_DRIFT")
     # The only existing security group has no ingress, by foundation design.
+    stacks = registered.aws(
+        profile, "cloudformation", "describe-stacks",
+        "--stack-name", published.STACK,
+    ).get("Stacks", [])
+    require(isinstance(stacks, list) and len(stacks) == 1,
+            "FOUNDATION_STACK_NOT_VERIFIED")
+    outputs = stacks[0].get("Outputs", [])
+    matched = [x.get("OutputValue") for x in outputs
+               if isinstance(x, dict) and x.get("OutputKey") == "ClosedSecurityGroup"]
+    require(len(matched) == 1 and isinstance(matched[0], str)
+            and matched[0].startswith("sg-"),
+            "FOUNDATION_SECURITY_GROUP_OUTPUT_INVALID")
     groups = registered.aws(
-        profile, "ec2", "describe-security-groups", "--filters",
-        "Name=group-name,Values=wilsy-mwt12-eos-closed",
+        profile, "ec2", "describe-security-groups",
+        "--group-ids", matched[0],
     ).get("SecurityGroups", [])
     require(isinstance(groups, list) and len(groups) == 1
-            and groups[0].get("GroupName") == "wilsy-mwt12-eos-closed"
+            and groups[0].get("GroupId") == matched[0]
             and groups[0].get("VpcId") == "vpc-05a3c2c855c4dde26",
             "EXACT_SECURITY_GROUP_UNVERIFIED")
     require(groups[0].get("IpPermissions") == [],
@@ -166,7 +180,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.0.0-READ-ONLY-RUNTIME-BLOCKERS
+# VERSION: v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
