@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.8.0-STABLE-NAMED-THREAD-CONTINUITY]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -18,6 +18,10 @@
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ CHANGELOG: 2026-11-25 v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK cross-checks EOS
+ * ║          history GET response against the actual active UI principal
+ * ║          and tenant when passed by the authenticated Dock; never trusts
+ * ║          browser tenant storage as a grant or data source.
  * ║ CHANGELOG: 2026-11-25 v5.8.0-STABLE-NAMED-THREAD-CONTINUITY preserves an explicitly
  * ║          named conversation across subsequent turns; only intentionally
  * ║          generic new-session titles are replaced by a contextual title.
@@ -163,7 +167,7 @@ export function resolveWilsyChatHistoryTitle(payload = {}) {
 
 /**
  * @function getTenantId
- * @description Extracts tenant ID from the active Kennel context or falls back to 'MASTER'.
+ * @description Reads browser tenant display selector; authorization is always EOS-owned.
  * @returns {string} Tenant ID.
  * @collaboration Wilsy OS Kennel context.
  * @institutional Enforces tenant isolation for all history operations.
@@ -277,9 +281,11 @@ export async function loadWilsyAIConversationThreads(_options = {}) {
   try {
     const response = await api.get('/wilsy-ai/history', { timeout: 12000 });
     const data = response?.data;
-    const tenantId = getTenantId();
+    const tenantId = _options?.tenantId || getTenantId();
+    const principalId = _options?.principalId || null;
     if (data?.schema !== 'WILSY-AI-HISTORY/V1'
       || data.tenant_id !== tenantId || !data.principal_id
+      || (principalId && data.principal_id !== principalId)
       || !Array.isArray(data.threads) || data.threads.length > 30) {
       throw new Error('WILSY_AI_HISTORY_SOURCE_INVALID');
     }
@@ -550,7 +556,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.8.0-STABLE-NAMED-THREAD-CONTINUITY
+ * VERSION: v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK
  * AUTHORITY BOUNDARY: authenticated Python EOS owns durable encrypted records; browser owns only presentation
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: failed EOS source/store leaves clear session-only posture without localStorage
