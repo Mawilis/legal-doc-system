@@ -2524,7 +2524,8 @@ export function WilsyOSIntelligenceDock({
                   style={{ padding: '10px 0', background: 'transparent', color: '#e5edf6',
                     borderTop: '1px solid rgba(148,163,184,.25)',
                     fontSize: 13, lineHeight: 1.65, overflowWrap: 'anywhere' }}>
-                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef} open>
+                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef} open={!activeThread?.messages?.some(message =>
+                    message?.meta?.source === 'PYTHON_EOS' && message?.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY')}>
                     <summary aria-label="Inspect verified workspace context"
                       style={{ cursor: 'pointer', minHeight: 44 }}>
                       <strong>{visibleWorkspaceContext.data.work?.project?.name || 'Verified workspace source'}</strong>
@@ -3096,7 +3097,7 @@ export function WilsyOSIntelligenceDock({
                       className={`${styles.threadCard} ${
                         thread.id === activeThreadId ? styles.activeThreadCard : ''
                       }`}
-                      onClick={() => { setActiveThreadId(thread.id); setConversationView('WELCOME'); setActiveTab('chat'); }}
+                      onClick={() => { setAnimatedAssistantKey(null); setActiveThreadId(thread.id); setConversationView('WELCOME'); setActiveTab('chat'); }}
                     >
                       <MessageSquareText size={16} />
                       <div>
