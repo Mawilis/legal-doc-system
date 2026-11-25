@@ -1352,7 +1352,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.33.2-SINGLE-MY-WORK-TOOLBAR-ACTION-CERT
+// VERSION: v1.33.3-ROUTED-STRATEGY-TEST-HARNESS
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
