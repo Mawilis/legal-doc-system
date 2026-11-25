@@ -1,12 +1,15 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Conversation History Engine
- * VERSION: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT
+ * VERSION: v5.11.0-HISTORY-FAILURE-DIAGNOSTICS
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Current-session history cache and authenticated EOS encrypted archival transport
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
  * COLLABORATION / OWNERSHIP: Intelligence Dock, Python EOS history source, canonical API transport
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v5.11.0-HISTORY-FAILURE-DIAGNOSTICS preserves unsaved
+ *            session threads across successful archive refresh and exposes
+ *            a bounded nonsecret classification for unavailable persistence.
  * CHANGELOG: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT prevents automatic empty New Sovereign
  *            Session placeholders from occupying the bounded durable
  *            archive on every fresh page. The first actual turn creates
@@ -19,7 +22,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No paid model or financial execution
  *
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.11.0-HISTORY-FAILURE-DIAGNOSTICS]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -36,7 +39,7 @@
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CHANGELOG: 2026-11-25 v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT cross-checks EOS
+ * ║ CHANGELOG: 2026-11-25 v5.11.0-HISTORY-FAILURE-DIAGNOSTICS cross-checks EOS
  * ║          history GET response against the actual active UI principal
  * ║          and tenant when passed by the authenticated Dock; never trusts
  * ║          browser tenant storage as a grant or data source.
@@ -70,6 +73,22 @@ import api from '../../services/api';
 let conversationCache = [];
 let conversationGeneration = 0;
 let historyRemoteStatus = 'UNVERIFIED';
+let historyRemoteIssue = null;
+
+function classifyHistoryTransportError(error) {
+  const status = error?.response?.status;
+  const detail = error?.response?.data?.detail;
+  if (status === 401) return 'SIGN_IN_REQUIRED';
+  if (status === 403) return 'HISTORY_PERMISSION_DENIED';
+  if (status === 503 && detail === 'WILSY_AI_HISTORY_KEY_UNAVAILABLE') return 'ENCRYPTION_KEY_UNAVAILABLE';
+  if (status === 503 && typeof detail === 'string' && detail.startsWith('WILSY_AI_HISTORY_')) {
+    return 'EOS_HISTORY_DEPENDENCY_UNAVAILABLE';
+  }
+  if (status === 409) return 'EOS_HISTORY_CONFLICT';
+  if (status === 404 || status === 405) return 'EOS_HISTORY_ROUTE_UNAVAILABLE';
+  if (status === 422) return 'EOS_HISTORY_PAYLOAD_REJECTED';
+  return 'EOS_HISTORY_TRANSPORT_UNAVAILABLE';
+}
 
 
 /**
@@ -87,6 +106,7 @@ export function resetWilsyAIConversationSession() {
   conversationGeneration += 1;
   conversationCache = [];
   historyRemoteStatus = 'UNVERIFIED';
+  historyRemoteIssue = null;
   return [];
 }
 
@@ -329,11 +349,16 @@ export async function loadWilsyAIConversationThreads(_options = {}) {
     }));
     requireCurrentConversationGeneration(generation);
     historyRemoteStatus = 'READY';
-    conversationCache = decoded;
+    historyRemoteIssue = null;
+    // Preserve local unsaved work while incorporating server-owned history.
+    const sessionOnly = conversationCache.filter(item => item.storagePosture !== 'EOS_ENCRYPTED_HISTORY'
+      && !decoded.some(saved => saved.id === item.id));
+    conversationCache = [...sessionOnly, ...decoded];
     return [...conversationCache];
   } catch (error) {
     requireCurrentConversationGeneration(generation);
     historyRemoteStatus = 'UNAVAILABLE';
+    historyRemoteIssue = classifyHistoryTransportError(error);
     // Fail closed on remote history. The existing local conversation is usable
     // but never represented as synchronized or persistently retained.
     return [...conversationCache];
@@ -379,9 +404,11 @@ export async function createWilsyAIConversationThread(payload = {}) {
     }
     stored = { ...thread, revision: 1, storagePosture: 'EOS_ENCRYPTED_HISTORY' };
     historyRemoteStatus = 'READY';
+    historyRemoteIssue = null;
   } catch (error) {
     requireCurrentConversationGeneration(generation);
     historyRemoteStatus = 'UNAVAILABLE';
+    historyRemoteIssue = classifyHistoryTransportError(error);
     // Do not erase the user's current work, and do not claim it was saved.
   }
   conversationCache = [stored, ...conversationCache.filter(item => item.id !== stored.id)];
@@ -467,9 +494,11 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
     stored = { ...updated, revision: result.data.revision,
       storagePosture: 'EOS_ENCRYPTED_HISTORY' };
     historyRemoteStatus = 'READY';
+    historyRemoteIssue = null;
   } catch (error) {
     requireCurrentConversationGeneration(generation);
     historyRemoteStatus = 'UNAVAILABLE';
+    historyRemoteIssue = classifyHistoryTransportError(error);
     stored = { ...updated, revision: existing.revision || 0,
       storagePosture: 'SESSION_ONLY' };
     // No silent retry of potentially committed writes or replayed messages.
@@ -512,6 +541,11 @@ export async function deleteWilsyAIConversationThread(threadId) {
 /** Read-only status of the latest authenticated history transport admission. */
 export function wilsyAIConversationHistoryPosture() {
   return historyRemoteStatus;
+}
+
+/** Safe error category only; no tokens, URIs or database details. */
+export function wilsyAIConversationHistoryIssue() {
+  return historyRemoteIssue;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -576,7 +610,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT
+ * VERSION: v5.11.0-HISTORY-FAILURE-DIAGNOSTICS
  * AUTHORITY BOUNDARY: authenticated Python EOS owns durable encrypted records; browser owns only presentation
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: failed EOS source/store leaves clear session-only posture without localStorage
