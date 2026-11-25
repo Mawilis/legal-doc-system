@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST
+ * VERSION: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION adds one source-assigned next-task
+ *            handoff based on current M04 graph, authorized principal,
+ *            completed dependencies, status and deterministic due ordering.
+ *            Uses existing Projects task navigation; no EOS write/score.
  * CHANGELOG: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST restores
  *            approved primary and secondary button visibility in the
  *            verified project register, with scoped stylesheet authority.
@@ -1051,6 +1055,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     focusWorkOnOpen.current = true;
     setExecutionInspectorOpen(true);
   };
+  // Only source-assigned executable work, never unassigned or blocked work.
+  const nextAccountableTask = m04Execution?.rows
+    .filter(({ task, remaining }) => task.assignee_principal_id === scope.principalId
+      && ['TODO', 'IN_PROGRESS'].includes(task.status) && remaining === 0)
+    .map(({ task }) => task)
+    .sort((a, b) => {
+      const dueA = a.due_date || '9999-12-31';
+      const dueB = b.due_date || '9999-12-31';
+      if (dueA !== dueB) return dueA.localeCompare(dueB);
+      if (a.status !== b.status) return a.status === 'IN_PROGRESS' ? -1 : 1;
+      return a.task_id.localeCompare(b.task_id);
+    })[0] || null;
   // Genuine cross-session continuation comes from the currently verified task
   // snapshot. It reflects recorded changes by this principal, not page views.
   const latestSourceWork = m04Execution?.rows
@@ -2027,6 +2043,24 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           </button>}
                         </div>
                         {m04Execution ? <>
+                          {nextAccountableTask && typeof onOpenProject === 'function' && <div role="region"
+                            aria-label="Continue accountable Strategy work"
+                            className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-400/50 bg-slate-900/60 px-3 py-3">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-sky-200">Your next source-assigned task</p>
+                              <p className="text-sm font-semibold text-white">{nextAccountableTask.title}</p>
+                              <p className="mt-1 text-xs text-slate-300">Assigned to your current principal · predecessors complete
+                                {nextAccountableTask.due_date ? ' · due ' + nextAccountableTask.due_date : ' · no source deadline'}
+                              </p>
+                            </div>
+                            <button type="button"
+                              aria-label={'Continue accountable task ' + nextAccountableTask.title}
+                              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-3 py-2 text-sm font-bold text-white hover:bg-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                              onClick={() => {
+                                recordTaskVisit(nextAccountableTask.task_id);
+                                onOpenProject(m04Execution.project.project_id, { taskId: nextAccountableTask.task_id });
+                              }}>Continue task in Projects <ArrowUpRight size={15}/></button>
+                          </div>}
                           {latestSourceWork && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
@@ -2416,7 +2450,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST
+// VERSION: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
