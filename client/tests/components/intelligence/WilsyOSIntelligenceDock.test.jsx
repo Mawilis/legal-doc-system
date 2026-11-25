@@ -1740,7 +1740,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     expect(screen.getByText('Recent session activity')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /EOS source · MW-T11/ }));
-    expect(screen.getByText(/EOS source verified: MW-T11/)).toBeVisible();
+    expect(await screen.findByText(/EOS source verified: MW-T11/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
