@@ -235,6 +235,7 @@ vi.mock('../../../src/components/intelligence/wilsyAIConversationHistoryEngine.j
   clearWilsyAIConversationThreads: mockClearThreads,
   deleteWilsyAIConversationThread: vi.fn(async threadId => mockThreads.filter(item => item.id !== threadId)),
   wilsyAIConversationHistoryPosture: vi.fn(() => 'UNAVAILABLE'),
+  wilsyAIConversationHistoryIssue: vi.fn(() => null),
 }));
 
 mockLoadThreads.mockImplementation(() => mockThreads);
