@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION
+ * VERSION: v2.31.0-FOCUSED-FOUNDATION-EXECUTION-DISCLOSURE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.31.0-FOCUSED-FOUNDATION-EXECUTION-DISCLOSURE prioritizes verified
+ *            Foundation execution over a secondary all-project register.
+ *            Progressive disclosure retains EOS project search/read authority.
  * CHANGELOG: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION adds one source-assigned next-task
  *            handoff based on current M04 graph, authorized principal,
  *            completed dependencies, status and deterministic due ordering.
@@ -601,6 +604,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [executionPage, setExecutionPage] = useState(0);
   const [executionInspectorOpen, setExecutionInspectorOpen] = useState(false);
   const [browseOtherProjects, setBrowseOtherProjects] = useState(false);
+  const [projectRegisterOpen, setProjectRegisterOpen] = useState(false);
   const [sessionTaskVisits, setSessionTaskVisits] = useState([]);
   const executionInspectorRef = useRef(null);
   const executionSearchRef = useRef(null);
@@ -765,6 +769,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     setExecutionEvidence({ state: 'IDLE', taskId: null, items: [], error: '' });
     setDelivery({ state: 'IDLE', projectId: null, page: null, error: '' });
     setBrowseOtherProjects(false);
+    setProjectRegisterOpen(false);
     setSessionTaskVisits([]);
     setExecutionSearch('');
     setExecutionFilter('ALL');
@@ -1564,6 +1569,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   // are validated against unfiltered projectItems, never rendered search rows.
   const visibleStrategyProjects = projectItems.filter(item => item.name.toLocaleLowerCase()
     .includes(projectSearch.trim().toLocaleLowerCase()));
+  const foundationProject = projectState === 'READY'
+    ? projectItems.find(item => item.name === FOUNDATION_PROJECT_NAME) : null;
+  const registerVisible = projectRegisterOpen || projectSearch.trim().length > 0
+    || (projectState === 'READY' && !foundationProject);
   const selectedStrategyProject = delivery.state === 'READY'
     ? projectItems.find(item => item.project_id === delivery.projectId) : null;
   const displayedStrategyProjects = projectSearch.trim() || browseOtherProjects || !selectedStrategyProject
@@ -1971,6 +1980,40 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
                       <RefreshCw size={15}/> Refresh projects</button></div>
                     {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
+                    {projectState === 'READY' && foundationProject && <section
+                      aria-label="Foundation Strategy execution focus"
+                      className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-400/50 bg-slate-900/70 px-4 py-3 text-slate-100">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-sky-200">Pillar 1 · Existing Foundation project</p>
+                        <p className="mt-1 text-sm font-semibold text-white">{foundationProject.name}</p>
+                        <p className="mt-1 text-xs text-slate-300">EOS project {foundationProject.status.replaceAll('_', ' ')} · revision {foundationProject.revision}.
+                          {' '}Task execution requires its own current source read.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" disabled={delivery.state === 'LOADING'}
+                          aria-label={'Verify task execution for ' + foundationProject.name}
+                          onClick={() => { setProjectRegisterOpen(false); setBrowseOtherProjects(false);
+                            setProjectSearch(''); void loadDelivery(foundationProject.project_id, 0); }}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-600">
+                          <RefreshCw size={15}/> {delivery.state === 'READY' && delivery.projectId === foundationProject.project_id
+                            ? 'Reverify Foundation work' : 'Verify Foundation work'}
+                        </button>
+                        {typeof onOpenProject === 'function' && <button type="button"
+                          onClick={() => onOpenProject(foundationProject.project_id)}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-400 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                          Open Work &amp; milestones <ArrowUpRight size={14}/>
+                        </button>}
+                      </div>
+                    </section>}
+                    {projectState === 'READY' && projectItems.length > 0 && <button type="button"
+                      aria-expanded={registerVisible}
+                      aria-controls="strategy-project-source-register"
+                      onClick={() => { setProjectRegisterOpen(current => !current); setProjectSearch('');
+                        setBrowseOtherProjects(true); }}
+                      className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-500 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                      {registerVisible ? 'Hide project register' : 'Browse all ' + projectItems.length + ' projects'}
+                    </button>}
+                    <div id="strategy-project-source-register" hidden={!registerVisible}>
                     {selectedStrategyProject && !projectSearch.trim() && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/50 p-2.5">
                       <span className="text-sm text-slate-200">Working in <strong className="text-white">{selectedStrategyProject.name}</strong></span>
                       <button type="button" aria-expanded={browseOtherProjects} className="rounded-md border border-slate-500 bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
@@ -2016,6 +2059,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </tbody>
                       </table>
                     </div>}
+                    </div>
                     {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
                     {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
                     {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution">
@@ -2450,7 +2494,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION
+// VERSION: v2.31.0-FOCUSED-FOUNDATION-EXECUTION-DISCLOSURE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
