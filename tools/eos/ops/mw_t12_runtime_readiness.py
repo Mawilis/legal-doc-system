@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK
+VERSION: v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION correctly anchors the
+           isolated synthetic database name at the string boundary.
 CHANGELOG: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK introduces an optional
            hidden-input, TLS-verified read-only scoped Mongo credential audit
            for the existing separate FREE Atlas test cluster; no database or
@@ -45,11 +47,11 @@ from urllib.parse import parse_qsl, urlsplit
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK"
+VERSION = "v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"
-SYNTHETIC_DB = re.compile(r"wilsy_mwt12_synthetic_[0-9a-f]{12}\\Z")
+SYNTHETIC_DB = re.compile(r"wilsy_mwt12_synthetic_[0-9a-f]{12}\Z")
 
 
 
@@ -397,7 +399,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK
+# VERSION: v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
