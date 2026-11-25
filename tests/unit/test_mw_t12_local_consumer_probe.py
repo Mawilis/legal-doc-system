@@ -1,11 +1,14 @@
 """TITLE: MW-T12 local Mongo consumer classification and privacy certificate.
-VERSION: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX
+VERSION: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify no credential emission, exact Atlas target classification,
          loopback/other handling and no inference of running EOS secret.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_local_consumer_probe.py
 COLLABORATION / OWNERSHIP: Existing MW-T12 read-only local listener/URI probe.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION certifies
+           independently classified loopback, other and unparsed lsof
+           records, with denial of false Atlas or live-credential proof.
 CHANGELOG: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX corrects synthetic
            lsof byte fixtures to contain actual newline-delimited records.
 CHANGELOG: v1.1.0-LISTENER-OWNED-ATLAS-SOCKET-CERT adds
@@ -116,7 +119,8 @@ def test_actual_eos_listener_socket_matches_reviewed_atlas(monkeypatch):
     monkeypatch.setattr(probe.subprocess, "run", fake_run)
     value = probe.owned_established_mongo_peers([789])
     assert value == {"state": "MATCHES_REVIEWED_ATLAS_NODES",
-                     "recognized": "2", "unrecognized": "0"}
+                     "recognized": "2", "loopback": "0",
+                     "other": "0", "unparsed": "0"}
     assert all("-p" in command and "789" in command for command in observed)
     assert all("-F" in command and "n" in command for command in observed)
 
@@ -129,7 +133,36 @@ def test_non_atlas_socket_never_attributed_to_shared_cluster(monkeypatch):
 
     monkeypatch.setattr(probe.subprocess, "run", fake_run)
     result = probe.owned_established_mongo_peers([789])
-    assert result["state"] == "MIXED_OR_OTHER_MONGODB_TARGET"
+    assert result["state"] == "LOOPBACK_MONGODB_PEERS"
+    assert result["recognized"] == "0"
+    assert result["loopback"] == "1"
+    assert result["unparsed"] == "0"
+
+
+def test_unknown_peer_class_is_distinct_from_loopback(monkeypatch):
+    """A non-Atlas public peer must not be confused with localhost."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0, "stdout":
+                    b"n127.0.0.1:51000->8.8.8.8:27017\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers([789])
+    assert result["state"] == "OTHER_MONGODB_PEERS"
+    assert result["other"] == "1"
+    assert result["loopback"] == "0"
+
+
+def test_unparsed_lsof_descriptor_not_called_a_connection(monkeypatch):
+    """Unknown descriptors are diagnostic counts, not established IP peers."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0, "stdout":
+                    b"n->\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers([789])
+    assert result["state"] == "UNPARSED_SOCKET_RECORDS"
+    assert result["unparsed"] == "1"
+    assert result["other"] == "0"
     assert result["recognized"] == "0"
 
 
@@ -158,7 +191,7 @@ def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_local_consumer_probe.py
-# VERSION: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX
+# VERSION: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION
 # AUTHORITY BOUNDARY: Mocked local evidence read only; no cloud changes.
 # TENANT POSTURE: Synthetic fixtures only.
 # FAIL-CLOSED POSTURE: Shell target never certifies a live EOS process.
