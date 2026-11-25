@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned dormant ECS task-definition admission.
-VERSION: v1.0.2-VALID-PYTHON-SOURCE-NEWLINES
+VERSION: v1.1.0-SCOPED-SECURESTRING-ADMISSION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify immutable ECR provenance and optionally register two dormant,
          equivalent nonproduction Fargate task definitions.
@@ -7,6 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Reuses MW-T12 ECR budget/ownership preflight,
          existing CloudFormation resources, and later read-only ECS admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-SCOPED-SECURESTRING-ADMISSION adds read-only
+           exact-path AWS SSM SecureString and execution-role authorization
+           checks, plus a dormant synthetic MONGODB_URI secret-backed task
+           specification. No parameter value, credential, IAM mutation or
+           ECS runtime is admitted or started by the plan.
 CHANGELOG: v1.0.2-VALID-PYTHON-SOURCE-NEWLINES restores physical Python
            lines in ECS port readback without changing runtime authority.
 CHANGELOG: v1.0.1-ECS-PORT-READBACK-NORMALIZATION handles ECS normalized
@@ -15,7 +20,10 @@ CHANGELOG: v1.0.0-DORMANT-IMAGE-ADMISSION binds exact source/image digests,
            verifies dormant cluster, role, logs and account budget, and requires
            --register for task-definition-only metadata mutation/readback.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY / PRIVACY POSTURE: No task role, credentials, secret refs, public
+SECURITY / PRIVACY POSTURE: Existing revisions retain no secrets; optional
+                           secure-plan uses only exact SSM ARN metadata, never
+                           reads its value, creates IAM policy or starts tasks.
+                           No task role, credentials, public
                            ingress, live tenancy, database or production change.
 TENANT BOUNDARY: No real tenant data and no EOS source write.
 AUTHORITY BOUNDARY: ECS task-definition metadata only; no service or task
@@ -33,7 +41,7 @@ import tempfile
 
 from tools.eos.ops import mw_t12_ecr_publication as source
 
-VERSION = "v1.0.2-VALID-PYTHON-SOURCE-NEWLINES"
+VERSION = "v1.1.0-SCOPED-SECURESTRING-ADMISSION"
 FAMILY = "wilsy-mwt12-eos-nonproduction"
 CLUSTER = "wilsy-mwt12-nonproduction"
 LOG_GROUP = "/wilsy/mwt12/nonproduction/eos"
@@ -205,6 +213,79 @@ def definition(image: str) -> dict:
     }
 
 
+
+SSM_PARAMETER_NAME = "/wilsy/mwt12/nonproduction/synthetic-mongodb-uri"
+SSM_PARAMETER_ARN = (
+    "arn:aws:ssm:" + source.REGION + ":" + source.ACCOUNT +
+    ":parameter" + SSM_PARAMETER_NAME
+)
+
+
+def secure_definition(image: str) -> dict:
+    """Build a dormant synthetic-only runtime specification from the owned base.
+
+    Exposes only a pinned parameter ARN to ECS, never the SecureString value.
+    The existing /tmp and data scratch mounts remain task-local and readonly
+    root and absent application task role are preserved. Not launch authority.
+    """
+    spec = definition(image)
+    container = spec["containerDefinitions"][0]
+    require(container.get("secrets") == []
+            and not spec.get("taskRoleArn"),
+            "SECURE_TASK_BASELINE_DRIFT")
+    container["secrets"] = [{
+        "name": "MONGODB_URI",
+        "valueFrom": SSM_PARAMETER_ARN,
+    }]
+    return spec
+
+
+def secure_plan(profile: str) -> None:
+    """Read exact nonproduction SSM and IAM authorization, never secret values.
+
+    No credential injection, parameter write, role mutation, cluster activation
+    or task registration is permitted here. Atlas allowlist and Fargate egress
+    remain separate independent prerequisites.
+    """
+    source.preflight(profile)
+    foundation(profile)
+    parameters = aws(
+        profile, "ssm", "describe-parameters", "--parameter-filters",
+        "Key=Name,Option=Equals,Values=" + SSM_PARAMETER_NAME,
+    ).get("Parameters", [])
+    require(isinstance(parameters, list)
+            and len(parameters) == 1
+            and parameters[0].get("Name") == SSM_PARAMETER_NAME
+            and parameters[0].get("Type") == "SecureString"
+            and parameters[0].get("Tier") == "Standard",
+            "EXACT_STANDARD_SECURESTRING_NOT_ADMITTED")
+    # Simulate the *actual* named ECS execution role, never the operator's
+    # broader IAM privileges. This does not retrieve the protected value.
+    outcome = aws(
+        profile, "iam", "simulate-principal-policy",
+        "--policy-source-arn", ROLE,
+        "--action-names", "ssm:GetParameters",
+        "--resource-arns", SSM_PARAMETER_ARN,
+    ).get("EvaluationResults", [])
+    require(isinstance(outcome, list)
+            and len(outcome) == 1
+            and outcome[0].get("EvalActionName") == "ssm:GetParameters"
+            and outcome[0].get("EvalResourceName") == SSM_PARAMETER_ARN
+            and outcome[0].get("EvalDecision") == "allowed",
+            "EXECUTION_ROLE_SCOPED_SSM_READ_NOT_ADMITTED")
+    require(secure_definition("nonproduction-image-only")[
+        "containerDefinitions"][0]["secrets"] == [{
+            "name": "MONGODB_URI", "valueFrom": SSM_PARAMETER_ARN,
+        }], "SECURE_TASK_SPEC_DRIFT")
+    no_compute(profile)
+    print("MW_T12_SECURE_STRING_METADATA=VERIFIED")
+    print("MW_T12_EXECUTION_ROLE_PARAMETER_READ=VERIFIED")
+    print("MW_T12_SECURE_TASK_SPEC=PREPARED_NOT_REGISTERED")
+    print("MW_T12_ATLAS_EGRESS_AND_ALLOWLIST=NOT_CERTIFIED")
+    print("MW_T12_ECS_TASKS_LAUNCHED=ZERO")
+    print("MW_T12_PRODUCTION_AUTHORIZED=FALSE")
+
+
 def verify(profile: str, arn: str, expected: dict) -> int:
     """Independently reopen exact registered revision and inspect safety fields."""
     response = aws(profile, "ecs", "describe-task-definition",
@@ -298,10 +379,16 @@ def main(argv: list[str] | None = None) -> int:
     """Expose explicitly opted-in ECS metadata registration only."""
     parser = argparse.ArgumentParser(description="MW-T12 dormant ECS admission")
     parser.add_argument("--profile", default="wilsy-legal-cert")
-    parser.add_argument("--register", action="store_true")
+    options = parser.add_mutually_exclusive_group()
+    options.add_argument("--register", action="store_true")
+    options.add_argument("--secure-plan", action="store_true",
+                         help="Read-only SSM/IAM preflight; no task registration")
     args = parser.parse_args(argv)
     try:
-        run(args.profile, args.register)
+        if args.secure_plan:
+            secure_plan(args.profile)
+        else:
+            run(args.profile, args.register)
         return 0
     except (AdmissionError, source.PublicationError, KeyboardInterrupt) as exc:
         code = str(exc) if not isinstance(exc, KeyboardInterrupt) else "INTERRUPTED"
@@ -315,7 +402,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_task_definition_admission.py
-# VERSION: v1.0.2-VALID-PYTHON-SOURCE-NEWLINES
+# VERSION: v1.1.0-SCOPED-SECURESTRING-ADMISSION
 # AUTHORITY BOUNDARY: Exact owned ECS task metadata; no running services/tasks.
 # TENANT POSTURE: No business records or tenant runtime authorized.
 # FAIL-CLOSED POSTURE: Unknown image, budget, task identity or compute denies.
