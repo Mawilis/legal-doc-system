@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.40.0-MW-T11-HISTORY-DURABILITY-UX-CERT
+ * VERSION: v1.41.0-EOS-HISTORY-MOCK-CONTRACT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.41.0-EOS-HISTORY-MOCK-CONTRACT synchronizes the mocked history
+ *            adapter with authenticated EOS history-posture and deletion
+ *            exports, without weakening existing Dock tests.
  * CHANGELOG: v1.40.0-MW-T11-HISTORY-DURABILITY-UX-CERT retains historic session-only
  * checks while recognizing canonical EOS history status, explicit deletion
  * UX, and source-owned due_at task deadline field.
@@ -216,6 +219,8 @@ vi.mock('../../../src/components/intelligence/wilsyAIConversationHistoryEngine.j
   }),
   resetWilsyAIConversationSession: vi.fn(),
   clearWilsyAIConversationThreads: mockClearThreads,
+  deleteWilsyAIConversationThread: vi.fn(async threadId => mockThreads.filter(item => item.id !== threadId)),
+  wilsyAIConversationHistoryPosture: vi.fn(() => 'UNAVAILABLE'),
 }));
 
 mockLoadThreads.mockImplementation(() => mockThreads);
