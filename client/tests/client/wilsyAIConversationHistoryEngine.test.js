@@ -1,13 +1,13 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TITLE: WILSY OS Conversation History Engine Durable Archive Certificate
- * VERSION: v5.6.2-DEFER-EMPTY-HISTORY-TEST
+ * VERSION: v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Encrypted history transport, owner isolation and session fallback
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/wilsyAIConversationHistoryEngine.test.js
  * COLLABORATION / OWNERSHIP: EOS history router and current Dock history engine
  * CERTIFICATION / UPDATE DATE: 2026-11-25
- * CHANGELOG: v5.6.2-DEFER-EMPTY-HISTORY-TEST tests
+ * CHANGELOG: v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT tests
  *            same-tenant foreign-principal archive denial and non-elevation
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
  * SECURITY / PRIVACY POSTURE: Synthetic scopes and prompts; no real secrets
@@ -18,15 +18,17 @@
  * Wilsy OS — AI Conversation History Engine Session-Bound Certificate
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * Version:        v5.6.2-DEFER-EMPTY-HISTORY-TEST
+ * Version:        v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Direct certificate for transient same-session conversation
  *                 history with EOS-encrypted remote archive and explicit
  *                 session-only fallback; no localStorage conversation data.
  * Classification: Production Test Artifact — Institutional Contract
  *
+ * CHANGELOG: v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT tests missing encryption key,
+ *     local unsaved-thread recovery and exact EOS archive posture.
  * Change Log:
- *   2026-11-25 v5.6.2-DEFER-EMPTY-HISTORY-TEST — Verifies the authenticated
+ *   2026-11-25 v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT — Verifies the authenticated
  *     principal selector must match the EOS history response even when HTTP
  *     succeeds, without creating cross-identity cached conversations.
  *   2026-11-25 v5.6.0-EOS-DURABLE-HISTORY-ISOLATION-CERT — Tests approved Python EOS history transport,
@@ -37,7 +39,7 @@
  *   2026-08-05 v5.1.1-KENNEL-PHASE5 — Fixed async integrity checks.
  *   2026-08-05 v5.1.0-KENNEL-PHASE5 — Initial creation.
  *
- * Certification Seal: PRODUCTION_READY_v5.6.2-DEFER-EMPTY-HISTORY-TEST
+ * Certification Seal: PRODUCTION_READY_v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -64,6 +66,7 @@ import {
   verifyThreadIntegrity,
   deleteWilsyAIConversationThread,
   wilsyAIConversationHistoryPosture,
+  wilsyAIConversationHistoryIssue,
 } from '../../src/components/intelligence/wilsyAIConversationHistoryEngine.js';
 
 describe('Wilsy AI Conversation History Engine — session-bound authority', () => {
@@ -238,6 +241,34 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
 
 
   describe('encrypted EOS history persistence and currentness', () => {
+    it('retains session work and classifies a missing encrypted archive key', async () => {
+      saveWilsyAIConversationThreads([{ id: 'local-note', title: 'Unsaved work',
+        workspace: 'Projects', storagePosture: 'SESSION_ONLY',
+        messages: [{ role: 'user', content: 'Preserve draft' }] }]);
+      mockGet.mockRejectedValue({ response: { status: 503,
+        data: { detail: 'WILSY_AI_HISTORY_KEY_UNAVAILABLE' } } });
+      const retained = await loadWilsyAIConversationThreads();
+      expect(retained).toHaveLength(1);
+      expect(retained[0].messages[0].content).toBe('Preserve draft');
+      expect(wilsyAIConversationHistoryPosture()).toBe('UNAVAILABLE');
+      expect(wilsyAIConversationHistoryIssue()).toBe('ENCRYPTION_KEY_UNAVAILABLE');
+    });
+
+    it('does not erase an unsaved thread on valid empty EOS recovery', async () => {
+      saveWilsyAIConversationThreads([{ id: 'local-note', title: 'Unsaved work',
+        workspace: 'Projects', storagePosture: 'SESSION_ONLY',
+        messages: [{ role: 'user', content: 'Keep current work' }] }]);
+      mockGet.mockResolvedValue({ data: { schema: 'WILSY-AI-HISTORY/V1',
+        tenant_id: 'TEST_TENANT', principal_id: 'principal-1', threads: [] } });
+      const retained = await loadWilsyAIConversationThreads({
+        tenantId: 'TEST_TENANT', principalId: 'principal-1',
+      });
+      expect(retained).toHaveLength(1);
+      expect(retained[0].messages[0].content).toBe('Keep current work');
+      expect(wilsyAIConversationHistoryPosture()).toBe('READY');
+      expect(wilsyAIConversationHistoryIssue()).toBe(null);
+    });
+
     it('does not exhaust 30 archive slots by persisting automatic empty sessions', async () => {
       const empty = await createWilsyAIConversationThread({
         title: 'New Sovereign Session', workspace: 'WILSY OS',
@@ -390,10 +421,10 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.6.2-DEFER-EMPTY-HISTORY-TEST
+ * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * VERSION: v5.6.2-DEFER-EMPTY-HISTORY-TEST
+ * VERSION: v5.7.0-ARCHIVE-FAILURE-DIAGNOSTIC-CERT
  * AUTHORITY BOUNDARY: synthetic tests only; EOS source and IAM are independent
  * TENANT POSTURE: tenant identifiers partition presentation context but grant no access
  * DURABLE HISTORY AUTHORITY: Python EOS authenticated encrypted history; tests use mock transport only
