@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS
+ * VERSION: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,10 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH searches all authorized
+ *            loaded conversation turns, showing the matching historical
+ *            excerpt instead of silently restricting search to the latest
+ *            assistant message. Queries stay browser-local, no provider calls.
  * CHANGELOG: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS shows a safe actionable
  *            reason why EOS history is not saved, preserving permission,
  *            encryption-key and current-session boundaries.
@@ -21,7 +25,7 @@
  *            searchable, time-grouped, actionable navigator: previews,
  *            archive provenance, open and explicit delete, keyboard
  *            filters and reversible session-only state. No new IAM.
- * CHANGELOG: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS supports explicitly requested,
+ * CHANGELOG: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH supports explicitly requested,
  *            independently authorized project-task event inspection using
  *            the canonical Projects events source, with strict tenant,
  *            principal, task and event schema checks. It records historical
@@ -292,16 +296,26 @@ function classifyWilsyAISourceIntent(value) {
 /**
  * @description Narrow explicit project-task inspection intent, without model inference.
  */
-function describeConversation(thread) {
+function describeConversation(thread, query = '') {
   const messages = Array.isArray(thread?.messages) ? thread.messages : [];
   const last = messages.at(-1);
+  const normalizedQuery = query.toLocaleLowerCase();
+  const matchingTurn = normalizedQuery ? [...messages].reverse().find(
+    message => typeof message?.content === 'string'
+      && message.content.toLocaleLowerCase().includes(normalizedQuery),
+  ) : null;
+  const excerpt = matchingTurn || last;
   const rawDate = thread.updatedAt || last?.timestamp || thread.createdAt;
   const millis = typeof rawDate === 'string' ? Date.parse(rawDate) : NaN;
   return {
     id: thread.id,
     title: thread.title?.trim() || 'Untitled conversation',
-    preview: typeof last?.content === 'string'
-      ? last.content.replace(/\s+/g, ' ').trim().slice(0, 140) : '',
+    preview: typeof excerpt?.content === 'string'
+      ? excerpt.content.replace(/\s+/g, ' ').trim().slice(0, 140) : '',
+    matchesQuery: !normalizedQuery
+      || [thread.title || '', thread.workspace || ''].some(
+        value => String(value).toLocaleLowerCase().includes(normalizedQuery),
+      ) || Boolean(matchingTurn),
     workspace: thread.workspace || 'Workspace',
     saved: thread.storagePosture === 'EOS_ENCRYPTED_HISTORY',
     millis: Number.isFinite(millis) ? millis : 0,
@@ -3324,11 +3338,9 @@ export function WilsyOSIntelligenceDock({
                     const query = historySearch.trim().toLocaleLowerCase();
                     const visible = conversationThreads
                       .filter(thread => (thread.messages?.length || 0) > 0)
-                      .map(describeConversation)
-                      .filter(thread => (historyFilter === 'ALL' ||
-                        (historyFilter === 'EOS' ? thread.saved : !thread.saved))
-                        && (!query || [thread.title, thread.preview, thread.workspace]
-                          .some(item => item.toLocaleLowerCase().includes(query))))
+                      .map(thread => describeConversation(thread, query))
+                      .filter(thread => thread.matchesQuery && (historyFilter === 'ALL' ||
+                        (historyFilter === 'EOS' ? thread.saved : !thread.saved)))
                       .sort((a,b) => b.millis - a.millis || a.id.localeCompare(b.id));
                     if (!visible.length) return <div className={styles.historyEmpty}>
                       <p>{query || historyFilter !== 'ALL'
@@ -3431,7 +3443,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS
+ * VERSION: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
