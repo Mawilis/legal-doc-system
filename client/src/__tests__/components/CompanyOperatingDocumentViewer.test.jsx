@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.33.1-VERIFIED-EXECUTION-REPLACES-SELECTION-CERT
+ * VERSION: v1.33.2-SINGLE-MY-WORK-TOOLBAR-ACTION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.33.2-SINGLE-MY-WORK-TOOLBAR-ACTION-CERT
+ *            verifies the authorized My Work navigation remains in the
+ *            document toolbar without an orphan duplicate in Strategy.
  * CHANGELOG: v1.33.1-VERIFIED-EXECUTION-REPLACES-SELECTION-CERT
  *            verifies the initial Foundation selection prompt is removed
  *            after the complete source-owned M04 task graph is certified.
@@ -743,6 +746,8 @@ describe('Strategy source-owned project execution readback', () => {
     const openCanonicalProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject: openCanonicalProject }));
     expect(await screen.findByRole('region', { name: 'Foundation Strategy execution focus' })).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'My Work' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Open current My Work' })).not.toBeInTheDocument();
     const browseProjects = screen.getByRole('button', { name: 'Browse all 1 projects' });
     expect(browseProjects).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('table', { name: 'Verified EOS project register' })).not.toBeInTheDocument();
@@ -1343,7 +1348,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.33.1-VERIFIED-EXECUTION-REPLACES-SELECTION-CERT
+// VERSION: v1.33.2-SINGLE-MY-WORK-TOOLBAR-ACTION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
