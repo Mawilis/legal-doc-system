@@ -1,6 +1,10 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
-VERSION: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION
+VERSION: v1.4.8-MWT12-EXACT-RECOVERY-OPERATOR-CLASSIFICATION
+CHANGELOG: v1.4.8-MWT12-EXACT-RECOVERY-OPERATOR-CLASSIFICATION classifies two separately authenticated
+MW-T12 CLI-only recovery utilities as non-runtime constructors only with
+explicit entrypoint, ephemeral localhost Mongo and synthetic Atlas TLS/read
+bounds. New unclassified Mongo clients still fail the runtime ownership test.
 CHANGELOG: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION records the
 single local MW-T12 synthetic-replica recovery operator as non-runtime only
 when its explicit CLI main guard, loopback binding, process ownership and
@@ -75,6 +79,8 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/ops/provision_atlas_strategy_project_link_indexes.py",
     "tools/eos/ops/provision_local_strategy_project_link_indexes.py",
     "tools/eos/ops/mw_t12_local_eos_recovery.py",
+    "tools/eos/ops/mw_t12_image_rollback_rehearsal.py",
+    "tools/eos/ops/mw_t12_runtime_readiness.py",
 }
 LEGACY_MIGRATION_HISTORY = (
     "server/scripts/finalize-migration.js",
@@ -225,6 +231,45 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
     assert 'process = subprocess.Popen(' in recovery_source
     assert '_stop_owned(process)' in recovery_source
 
+    # These two MW-T12 tools are explicit operator-only processes, never
+    # authoritative runtime MongoDB consumers. Their admission is narrow:
+    # future additional constructors elsewhere still break the set assertion.
+    for relative, required_symbols in (
+        ("tools/eos/ops/mw_t12_image_rollback_rehearsal.py",
+         ("def main(", "def _wait_mongo(", "def _local_database_uri(",
+          'f"mongodb://127.0.0.1:', "--rehearse",
+          "client.close()", "IMAGE_MONGO_PRIMARY_UNVERIFIED")),
+        ("tools/eos/ops/mw_t12_runtime_readiness.py",
+         ("def main(", "def verify_scoped_test_database(",
+          'TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"',
+          "SYNTHETIC_DB", "tlsAllowInvalidCertificates=False",
+          "tlsAllowInvalidHostnames=False", "--verify-scoped-database",
+          "ATLAS_ECS_ROLLBACK_CERTIFIED=FALSE")),
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=relative)
+        functions = {node.name for node in tree.body
+                     if isinstance(node, ast.FunctionDef)}
+        assert "main" in functions, relative
+        guards = [
+            node for node in tree.body
+            if isinstance(node, ast.If)
+            and isinstance(node.test, ast.Compare)
+            and isinstance(node.test.left, ast.Name)
+            and node.test.left.id == "__name__"
+            and len(node.test.comparators) == 1
+            and isinstance(node.test.comparators[0], ast.Constant)
+            and node.test.comparators[0].value == "__main__"
+        ]
+        assert len(guards) == 1, relative
+        assert any(isinstance(node, ast.Call)
+                   and isinstance(node.func, ast.Name)
+                   and node.func.id == "main"
+                   for node in ast.walk(guards[0])), relative
+        assert _constructs_mongo_client(tree), relative
+        for symbol in required_symbols:
+            assert symbol in source, (relative, symbol)
+
     founder_cli = (ROOT / "tools/eos/auth/founder_development_admission.py").read_text(encoding="utf-8")
     assert 'if __name__ == "__main__":' in founder_cli
     assert "def _main()" in founder_cli
@@ -340,7 +385,7 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     )
 
 # ARTIFACT: EOS Runtime Database Ownership Certificate
-# VERSION: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION
+# VERSION: v1.4.8-MWT12-EXACT-RECOVERY-OPERATOR-CLASSIFICATION
 # AUTHORITY BOUNDARY: Offline repository ownership evidence.
 # TENANT POSTURE: No data access or mutation.
 # FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.
