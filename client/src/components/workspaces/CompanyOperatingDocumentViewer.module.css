@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.12.0-M04-NATIVE-ACTION-SURFACES
+ * VERSION: v1.13.0-M04-COMPACT-ACTION-HIERARCHY
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.13.0-M04-COMPACT-ACTION-HIERARCHY styles the remaining M04 evidence,
+ *            Projects continuation and overview actions with native navy/blue
+ *            controls; in inspector mode compresses or defers duplicate
+ *            preview material to bring the authenticated work search above
+ *            the fold. Source, IAM and lifecycle semantics remain intact.
  * CHANGELOG: v1.12.0-M04-NATIVE-ACTION-SURFACES gives the two
  *            Strategy M04 focus controls and exact-source Projects task
  *            handoff explicit navy/blue button surfaces with 44px targets,
@@ -349,8 +354,73 @@
  .execution [aria-label="Continue accountable Strategy work"] button{transition:none}
 }
 
+
+/* M04 inspector: expose the task list first, not the previously-read preview.
+ * The task update remains visible through Next assigned task and EOS Projects. */
+.execution [aria-label="M04 governed Strategy execution"]:has([aria-label="M04 execution focus"] button:nth-child(2)[aria-pressed="true"])
+  [aria-label="Continue your last updated task"] {
+ display:none;
+}
+.execution [aria-label="M04 governed Strategy execution"] [aria-label="Continue your last updated task"] button {
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ min-height:40px;padding:9px 13px;border:1px solid #92afd1;border-radius:9px;
+ background:#1b3552;color:#f5f9ff;font-size:12px;font-weight:700;
+ line-height:1.35;white-space:normal;
+}
+.execution [aria-label="M04 governed Strategy execution"] [aria-label="Continue your last updated task"] button:hover:not(:disabled) {
+ border-color:#c3dbf6;background:#294b70;
+}
+.execution [aria-label="M04 governed Strategy execution"] [aria-label="Continue your last updated task"] button:last-child {
+ border-color:#79b7ff;background:#155fc4;color:#fff;
+}
+.execution [aria-label="M04 governed Strategy execution"] [aria-label="Continue your last updated task"] button:last-child:hover:not(:disabled) {
+ border-color:#b9e0ff;background:#0e4d9e;
+}
+/* The overview shortcut is a proper button; it remains reachable while inspecting. */
+.execution [aria-label="M04 governed Strategy execution"] button:is([data-m04-overview], [data-m04-overview="true"]) {
+ display:inline-flex;align-items:center;justify-content:center;min-height:40px;
+ padding:8px 13px;border:1px solid #8caccd;border-radius:9px;
+ background:#1d3957;color:#f4f8ff;font-size:12px;font-weight:700;
+ box-shadow:0 2px 8px #00000026;
+}
+.execution [aria-label="M04 governed Strategy execution"] button[data-m04-overview]:hover:not(:disabled) {
+ background:#2d4e72;border-color:#c2d9f5;
+}
+/* Existing button is identified by its same inspector summary sibling.
+ * No new behavior or inaccessible overlay is introduced. */
+.execution [aria-label="M04 governed Strategy execution"] div:has(> span + button):has(+ details[open]) {
+ margin-top:8px;padding:7px 10px;min-height:0;
+}
+.execution [aria-label="M04 governed Strategy execution"] div:has(> span + button):has(+ details[open]) > button {
+ display:inline-flex;align-items:center;justify-content:center;min-height:40px;
+ padding:8px 13px;border:1px solid #8caccd;border-radius:9px;
+ background:#1d3957;color:#f4f8ff;font-size:12px;font-weight:700;
+}
+.execution [aria-label="M04 governed Strategy execution"] div:has(> span + button):has(+ details[open]) > button:hover:not(:disabled){
+ background:#2d4e72;border-color:#c2d9f5;
+}
+.execution [aria-label="M04 governed Strategy execution"] details[open] {
+ margin-top:8px;padding:10px 12px;
+}
+.execution [aria-label="M04 governed Strategy execution"] details[open] > summary {
+ font-size:13px;line-height:1.35;
+}
+@media(max-width:720px){
+ .execution [aria-label="M04 governed Strategy execution"] [aria-label="Continue your last updated task"] button{
+  flex:1 1 155px;
+ }
+ .execution [aria-label="M04 governed Strategy execution"] div:has(> span + button):has(+ details[open]){
+  align-items:flex-start;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .execution [aria-label="M04 governed Strategy execution"] [aria-label="Continue your last updated task"] button{
+  transition:none;
+ }
+}
+
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.12.0-M04-NATIVE-ACTION-SURFACES
+ * VERSION: v1.13.0-M04-COMPACT-ACTION-HIERARCHY
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
