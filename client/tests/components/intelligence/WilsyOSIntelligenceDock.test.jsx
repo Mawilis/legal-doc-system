@@ -1729,7 +1729,9 @@ describe('WilsyOSIntelligenceDock', () => {
       detail: { tenantId: 'TEST_TENANT', principalId: person,
         locator: { workspace: 'PROJECTS', project_id: projectId, project_revision: 3 } },
     })));
-    await waitFor(() => expect(screen.getByText('Foundation')).toBeVisible());
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path, options]) =>
+      path === '/wilsy-ai/reasoning/context' && options?.params?.project_id === projectId)).toBe(true));
+    await waitFor(() => expect(screen.getByText(/You're viewing “Foundation”/)).toBeVisible());
     requestReadOnlySource('Inspect MW-T11');
     await waitFor(() => expect(screen.getByLabelText('EOS-verified selected task lifecycle'))
       .toHaveTextContent('in progress'));
