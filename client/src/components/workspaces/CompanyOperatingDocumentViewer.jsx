@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.31.1-UNAMBIGUOUS-REGISTER-ACTION-LABEL
+ * VERSION: v2.31.2-SEARCH-FOCUS-SCOPE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.31.2-SEARCH-FOCUS-SCOPE suppresses the
+ *            primary Foundation focus action during explicit registry search
+ *            so filtered results have one unambiguous actionable surface.
  * CHANGELOG: v2.31.1-UNAMBIGUOUS-REGISTER-ACTION-LABEL disambiguates focused Foundation
  *            task verification from the on-demand project-register command
  *            for accessible role names and deterministic keyboard actions.
@@ -1983,7 +1986,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
                       <RefreshCw size={15}/> Refresh projects</button></div>
                     {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
-                    {projectState === 'READY' && foundationProject && <section
+                    {projectState === 'READY' && foundationProject && !projectSearch.trim() && <section
                       aria-label="Foundation Strategy execution focus"
                       className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-400/50 bg-slate-900/70 px-4 py-3 text-slate-100">
                       <div className="min-w-0">
@@ -2497,7 +2500,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.31.1-UNAMBIGUOUS-REGISTER-ACTION-LABEL
+// VERSION: v2.31.2-SEARCH-FOCUS-SCOPE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
