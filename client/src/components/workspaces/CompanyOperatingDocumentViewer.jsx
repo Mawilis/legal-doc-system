@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.7-TASK-FIRST-INSPECTOR
+ * VERSION: v2.32.8-FOCUSED-M04-LOCAL-TABS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.8-FOCUSED-M04-LOCAL-TABS removes repeated context ahead of
+ *            the verified M04 inspector and switches task/overview in local
+ *            React state without routing or document-source reload. URL
+ *            refresh hints remain; EOS authorization is independently read.
  * CHANGELOG: v2.32.7-TASK-FIRST-INSPECTOR gives verified task search the first
  *            visible content in INSPECT mode. The last-update preview is
  *            shown only in work focus; the compact overview action remains
@@ -353,7 +357,7 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, BookOpen, CheckCircle2, Clock3, FileText, History, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import { currentUnifiedMyWorkScope } from '../../services/unifiedMyWorkSync.js';
@@ -634,15 +638,15 @@ const commandFailure = (failure, action, acknowledged) => {
  */
 export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject, onOpenProjects }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const selectedWorkView = classification === 'STRATEGY'
     && new URLSearchParams(location.search).get('workView') === 'INSPECT' ? 'INSPECT' : 'WORK';
   const selectWorkView = (nextView) => {
     const params = new URLSearchParams(location.search);
     if (classification === 'STRATEGY' && nextView === 'INSPECT') params.set('workView', 'INSPECT');
     else params.delete('workView');
-    navigate({ pathname: location.pathname, search: params.toString() ? '?' + params.toString() : '' },
-      { replace: true });
+    // Persist only a display hint. A Router navigation here remounts the EOS document.
+    window.history.replaceState(window.history.state, '',
+      location.pathname + (params.toString() ? '?' + params.toString() : '') + location.hash);
     setM04FocusMode(nextView);
     setExecutionInspectorOpen(nextView === 'INSPECT');
   };
@@ -1642,6 +1646,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const approvedSourceAlreadyPublished = classification === 'STRATEGY'
     && data?.state === 'PUBLISHED';
   const executionFirst = approvedSourceAlreadyPublished && !query.review && query.revision === null;
+  const focusedM04Inspector = Boolean(m04Execution && m04FocusMode === 'INSPECT');
   const showPublicationBody = !executionFirst || strategyMode === 'DOCUMENT';
   const showExecutionSurface = !executionFirst || strategyMode === 'EXECUTION';
   // Filtering is view-only; EOS project authority and linked source snapshots
@@ -2047,18 +2052,18 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                 </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
                 </>}
                 {showExecutionSurface && <section className={styles.execution} aria-label="Company operating execution">
-                  <h2>Business execution</h2>
-                  {classification === 'STRATEGY' ? <details className="mb-4 rounded-lg border border-slate-600/60 bg-slate-900/40 px-4 py-3">
+                  {!focusedM04Inspector && <h2>Business execution</h2>}
+                  {!focusedM04Inspector && (classification === 'STRATEGY' ? <details className="mb-4 rounded-lg border border-slate-600/60 bg-slate-900/40 px-4 py-3">
                     <summary className="cursor-pointer text-sm font-medium text-slate-200">How Strategy links to projects</summary>
                     <p className="mt-3 text-sm leading-relaxed text-slate-300">Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred. Tenant projects are not automatically linked to strategic pillars.</p>
-                  </details> : <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>}
+                  </details> : <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>)}
                   {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
-                    <div className={styles.editorHeading}><div>
+                    {!focusedM04Inspector && <div className={styles.editorHeading}><div>
                       <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
                       <h3>Projects &amp; delivery</h3>
                       <p>Current tenant projects · verified through Python EOS</p>
                     </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
-                      <RefreshCw size={15}/> Refresh projects</button></div>
+                      <RefreshCw size={15}/> Refresh projects</button></div>}
                     {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
                     {projectState === 'READY' && foundationProject && !projectSearch.trim()
                       && !(m04Execution && delivery.projectId === foundationProject.project_id) && <section
@@ -2086,7 +2091,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </button>}
                       </div>
                     </section>}
-                    {projectState === 'READY' && foundationProject && projectItems.length > 0 && <button type="button"
+                    {!focusedM04Inspector && projectState === 'READY' && foundationProject && projectItems.length > 0 && <button type="button"
                       aria-expanded={registerVisible}
                       aria-controls="strategy-project-source-register"
                       onClick={() => { setProjectRegisterOpen(current => !current); setProjectSearch('');
@@ -2143,8 +2148,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                     {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
                     {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
-                    {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution">
-                      <div className={styles.strategyDeliveryHeader}>
+                    {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution" style={focusedM04Inspector ? { marginTop: 0, padding: '10px 12px' } : undefined}>
+                      {!focusedM04Inspector && <div className={styles.strategyDeliveryHeader}>
                         <div>
                           <span className={styles.eyebrow}>EOS · VERIFIED SOURCE RECORDS</span>
                           <h3>Source-verified project execution</h3>
@@ -2153,17 +2158,17 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.offset)}>
                           <RefreshCw size={15}/> Refresh execution
                         </button>
-                      </div>
-                      <p className={styles.strategyDeliveryNote}>Lifecycle records only. No strategic pillar linkage or Strategy completion percentage is inferred.</p>
+                      </div>}
+                      {!focusedM04Inspector && <p className={styles.strategyDeliveryNote}>Lifecycle records only. No strategic pillar linkage or Strategy completion percentage is inferred.</p>}
                       <section aria-label="M04 governed Strategy execution"
-                        className="mt-4 rounded-xl border border-slate-500/60 bg-slate-950/40 p-4 text-slate-100">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
+                        className="rounded-xl border border-slate-500/60 bg-slate-950/40 p-3 text-slate-100" style={focusedM04Inspector ? { marginTop: 0 } : { marginTop: 12 }}>
+                        {!focusedM04Inspector && <div className="flex flex-wrap items-start justify-between gap-3">
                           <div><h4 className="text-base font-semibold text-white">M04 · Governed Strategy execution</h4>
                             <p className="mt-1 text-sm text-slate-200">Source-owned accountability, due dates,
                               dependencies and immutable task lifecycle evidence. No outcomes are inferred from task counts.</p>
                           </div>
 
-                        </div>
+                        </div>}
                         {m04Execution && <nav aria-label="M04 execution focus" className="mt-3 flex flex-wrap items-center gap-2">
                           <button type="button" aria-pressed={m04FocusMode === 'WORK'}
                             onClick={() => selectWorkView('WORK')}
@@ -2217,15 +2222,17 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                               </button>}
                             </div>
                           </div>}
-                          <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
+                          {!focusedM04Inspector && <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
                             Strategy revision {document.revision} and Foundation project revision {m04Execution.project.revision}.
-                            {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
+                            {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>}
                           {m04FocusMode === 'INSPECT' && executionInspectorOpen && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/60 p-2.5">
                             <span className="text-sm text-slate-200">{m04Execution.rows.length} verified tasks · {executionMatches.length} matching current view</span>
                             <button type="button" data-m04-overview="true" onClick={() => setExecutionInspectorOpen(false)}
                               className="rounded-md border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">Show execution overview</button>
                           </div>}
                           {m04FocusMode === 'INSPECT' && !executionInspectorOpen && <>
+                          <button type="button" data-m04-overview="true" onClick={() => setExecutionInspectorOpen(true)}
+                            className="min-h-10 rounded-lg border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white">Back to tasks</button>
                           <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                             {[
                               ['Assigned in task source', m04Execution.assigned, 'ASSIGNED'],
@@ -2593,7 +2600,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.7-TASK-FIRST-INSPECTOR
+// VERSION: v2.32.8-FOCUSED-M04-LOCAL-TABS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
