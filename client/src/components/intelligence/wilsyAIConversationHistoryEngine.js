@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.7.0-EOS-HISTORY-DELETION-CURRENTNESS]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.8.0-STABLE-NAMED-THREAD-CONTINUITY]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -18,6 +18,9 @@
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ CHANGELOG: 2026-11-25 v5.8.0-STABLE-NAMED-THREAD-CONTINUITY preserves an explicitly
+ * ║          named conversation across subsequent turns; only intentionally
+ * ║          generic new-session titles are replaced by a contextual title.
  * ║ CHANGELOG: 2026-11-25 v5.7.0-EOS-HISTORY-DELETION-CURRENTNESS supports explicit, owner-scoped
  * ║          revision-guarded durable deletion. No data is silently deleted
  * ║          by session reset, and remote writes remain fail-closed.
@@ -134,9 +137,9 @@ export function resolveWilsyChatHistoryTitle(payload = {}) {
   const promptText = normalizeWilsyAIConversationText(payload.promptText || payload.prompt || payload.question, '');
   const answerText = normalizeWilsyAIConversationText(payload.answerText || payload.answer || payload.response, '');
   const existingTitle = normalizeWilsyAIConversationText(payload.thread?.title, '');
-  const existingIsPlaceholder = /new chat|current workspace|workspace conversation|saved wilsy ai chat|untitled/i.test(existingTitle);
+  const existingIsPlaceholder = /new chat|new sovereign session|current workspace|workspace conversation|saved wilsy ai chat|untitled/i.test(existingTitle);
 
-  if (!promptText && existingTitle && !existingIsPlaceholder) {
+  if (existingTitle && !existingIsPlaceholder) {
     return existingTitle;
   }
 
@@ -547,7 +550,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.7.0-EOS-HISTORY-DELETION-CURRENTNESS
+ * VERSION: v5.8.0-STABLE-NAMED-THREAD-CONTINUITY
  * AUTHORITY BOUNDARY: authenticated Python EOS owns durable encrypted records; browser owns only presentation
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: failed EOS source/store leaves clear session-only posture without localStorage
