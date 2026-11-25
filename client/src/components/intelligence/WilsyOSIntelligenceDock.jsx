@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.52.0-HISTORICAL-TRANSCRIPT-PROVENANCE
+ * VERSION: v4.53.0-EXACT-HISTORY-REHYDRATION-SCOPE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,10 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.53.0-EXACT-HISTORY-REHYDRATION-SCOPE supplies current authenticated
+ *            tenant and principal as expected response scope on history
+ *            rehydration and refresh; any mismatched EOS history projection
+ *            is discarded rather than rendered as another user's dialogue.
  * CHANGELOG: v4.52.0-HISTORICAL-TRANSCRIPT-PROVENANCE distinguishes EOS-stored historical
  *            transcripts from live task evidence in the conversation header;
  *            archived source text cannot imply current EOS verification.
@@ -1593,7 +1597,10 @@ export function WilsyOSIntelligenceDock({
     const scopeAtStart = dockScopeRef.current;
     setErrorMessage('');
     try {
-      const refreshed = await loadWilsyAIConversationThreads();
+      const refreshed = await loadWilsyAIConversationThreads({
+        tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId,
+        principalId: authUser?.id,
+      });
       if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads(refreshed);
       if (!refreshed.find(t => t.id === activeThreadId)) {
@@ -1605,13 +1612,16 @@ export function WilsyOSIntelligenceDock({
         setErrorMessage('Failed to refresh threads.');
       }
     }
-  }, [activeThreadId, hydrateDockContext]);
+  }, [activeThreadId, hydrateDockContext, activeTenant?.tenantId, activeTenant?._id, authUser?.tenantId, authUser?.id]);
 
   useEffect(() => {
     let active = true;
     const hydrate = async () => {
       try {
-        let threads = await loadWilsyAIConversationThreads();
+        let threads = await loadWilsyAIConversationThreads({
+        tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId,
+        principalId: authUser?.id,
+      });
         if (!threads.length) {
           const fresh = await createWilsyAIConversationThread({
             title: 'New Sovereign Session',
@@ -3228,7 +3238,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.52.0-HISTORICAL-TRANSCRIPT-PROVENANCE
+ * VERSION: v4.53.0-EXACT-HISTORY-REHYDRATION-SCOPE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
