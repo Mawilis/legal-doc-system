@@ -1,12 +1,17 @@
 /**
  * TITLE: WILSY OS Company Document Drawer Presentation
- * VERSION: v1.11.0-FOUNDATION-ACTION-HIERARCHY
+ * VERSION: v1.12.0-M04-NATIVE-ACTION-SURFACES
  * AUTHORITY: Presentation only; EOS owns all document/publication truth.
  * EPITOME: Provide one responsive navy/gold reading and review experience with
  * legible source documents, contained scroll and visible keyboard focus.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.module.css
  * COLLABORATION / OWNERSHIP: CompanyOperatingDocumentViewer and Headquarters.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.12.0-M04-NATIVE-ACTION-SURFACES gives the two
+ *            Strategy M04 focus controls and exact-source Projects task
+ *            handoff explicit navy/blue button surfaces with 44px targets,
+ *            selected mode, keyboard focus, hover and mobile treatment.
+ *            Overrides the inherited .execution button reset; no IAM change.
  * CHANGELOG: v1.11.0-FOUNDATION-ACTION-HIERARCHY overrides the
  *            legacy .execution button reset for precisely the two
  *            existing Foundation focus actions. Provides unmistakable
@@ -300,8 +305,52 @@
  .execution [aria-label="Foundation Strategy execution focus"] button {transition:none}
 }
 
+
+/* M04 focused actions: explicitly outrank the inherited .execution button reset. */
+.execution [aria-label="M04 execution focus"] button,
+.execution [aria-label="Continue accountable Strategy work"] button {
+ display:inline-flex;align-items:center;justify-content:center;gap:9px;
+ min-height:44px;padding:11px 16px;border:1px solid #8babc9;border-radius:10px;
+ background:#1b3552;color:#f5f9ff;font-size:13px;font-weight:700;
+ line-height:1.3;text-align:center;white-space:normal;
+ box-shadow:0 2px 10px #020c1b4d;
+ transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.execution [aria-label="M04 execution focus"] button[aria-pressed="true"] {
+ background:#1461b7;border-color:#8bc9ff;color:#fff;
+ box-shadow:0 2px 13px #0064b64d;
+}
+.execution [aria-label="Continue accountable Strategy work"] button {
+ background:#135bc4;border-color:#70b7ff;color:#fff;font-weight:750;
+ box-shadow:0 3px 14px #0358b94a;
+}
+.execution [aria-label="M04 execution focus"] button:hover:not(:disabled) {
+ background:#2a4b6b;border-color:#bdd7ef;
+}
+.execution [aria-label="M04 execution focus"] button[aria-pressed="true"]:hover:not(:disabled),
+.execution [aria-label="Continue accountable Strategy work"] button:hover:not(:disabled) {
+ background:#0d4d9f;border-color:#b6deff;box-shadow:0 4px 16px #0358b963;
+}
+.execution [aria-label="M04 execution focus"] button:focus-visible,
+.execution [aria-label="Continue accountable Strategy work"] button:focus-visible {
+ outline:3px solid #f0c96b;outline-offset:3px;
+}
+.execution [aria-label="M04 execution focus"] button:disabled,
+.execution [aria-label="Continue accountable Strategy work"] button:disabled {
+ opacity:.55;cursor:not-allowed;box-shadow:none;
+}
+.execution [aria-label="Continue accountable Strategy work"] button svg{flex:none}
+@media(max-width:720px){
+ .execution [aria-label="M04 execution focus"] button{flex:1 1 170px}
+ .execution [aria-label="Continue accountable Strategy work"] button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ .execution [aria-label="M04 execution focus"] button,
+ .execution [aria-label="Continue accountable Strategy work"] button{transition:none}
+}
+
 /* ARTIFACT: CompanyOperatingDocumentViewer.module.css
- * VERSION: v1.11.0-FOUNDATION-ACTION-HIERARCHY
+ * VERSION: v1.12.0-M04-NATIVE-ACTION-SURFACES
  * AUTHORITY BOUNDARY: Presentation only; source state and actions remain EOS-owned.
  * TENANT POSTURE: No authority decisions; no content or identity persisted.
  * FAIL-CLOSED POSTURE: Loading/unavailable/unpublished states remain visibly distinct.
