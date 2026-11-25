@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING
+VERSION: v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN verifies the exact
+           nonproduction subnet / main route / IGW configuration and records
+           a serial, zero-launch three-phase rehearsal plan with strict limits.
+           Routing evidence is not a live container connectivity certificate.
 CHANGELOG: v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING looks up the
            CloudFormation-owned group ID rather than assuming a group name.
 CHANGELOG: v1.0.0-READ-ONLY-RUNTIME-BLOCKERS validates the recorded AWS
@@ -28,7 +32,7 @@ import sys
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING"
+VERSION = "v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 
@@ -61,6 +65,100 @@ def task(profile: str, revision: int) -> dict:
             "TASK_ENVIRONMENT_OWNERSHIP_INVALID")
     return definition
 
+
+
+EXPECTED_VPC = "vpc-05a3c2c855c4dde26"
+EXPECTED_SUBNETS = frozenset({
+    "subnet-0a8fb56a15bc956db",
+    "subnet-04eac8554980423b3",
+    "subnet-0784e8739fcabf0e4",
+})
+MAX_PHASES = 3
+MAX_PHASE_MINUTES = 10
+PROPOSED_PHASES = ("CURRENT", "HISTORICAL", "CURRENT")
+
+
+def network_configuration(profile: str) -> None:
+    """Verify only the already-owned VPC's public outbound network *configuration*.
+
+    Three unique subnets must implicitly or explicitly use an active route to
+    an attached IGW. Does not authorize public inbound traffic, attest actual
+    task connectivity or create paid VPC endpoints / NAT.
+    """
+    found = registered.aws(
+        profile, "ec2", "describe-subnets", "--filters",
+        "Name=vpc-id,Values=" + EXPECTED_VPC,
+    ).get("Subnets", [])
+    require(isinstance(found, list)
+            and {x.get("SubnetId") for x in found if isinstance(x, dict)}
+            == EXPECTED_SUBNETS
+            and len(found) == len(EXPECTED_SUBNETS),
+            "EXPECTED_NONPRODUCTION_SUBNETS_DRIFT")
+    require(all(x.get("VpcId") == EXPECTED_VPC
+                and x.get("State") == "available"
+                and x.get("AvailableIpAddressCount", 0) > 0
+                for x in found), "SUBNET_CAPACITY_OR_STATE_INVALID")
+    routes = registered.aws(
+        profile, "ec2", "describe-route-tables", "--filters",
+        "Name=vpc-id,Values=" + EXPECTED_VPC,
+    ).get("RouteTables", [])
+    require(isinstance(routes, list), "ROUTE_TABLES_UNVERIFIED")
+    main = [table for table in routes
+            if isinstance(table, dict)
+            and any(a.get("Main") is True for a in table.get("Associations", [])
+                    if isinstance(a, dict))]
+    require(len(main) == 1, "MAIN_ROUTE_TABLE_AMBIGUOUS")
+    table = main[0]
+    # An explicitly associated subnet must have its own verified route to
+    # an internet gateway. The existing environment has no such association.
+    associated = {a.get("SubnetId") for entry in routes if isinstance(entry, dict)
+                  for a in entry.get("Associations", [])
+                  if isinstance(a, dict) and a.get("SubnetId")}
+    require(not (associated & EXPECTED_SUBNETS),
+            "EXPLICIT_SUBNET_ROUTE_REQUIRES_SEPARATE_REVIEW")
+    gateways = [r.get("GatewayId") for r in table.get("Routes", [])
+                if isinstance(r, dict)
+                and r.get("DestinationCidrBlock") == "0.0.0.0/0"
+                and r.get("State") == "active"
+                and isinstance(r.get("GatewayId"), str)
+                and r["GatewayId"].startswith("igw-")]
+    require(len(gateways) == 1, "ACTIVE_INTERNET_ROUTE_REQUIRED")
+    igws = registered.aws(
+        profile, "ec2", "describe-internet-gateways",
+        "--internet-gateway-ids", gateways[0],
+    ).get("InternetGateways", [])
+    require(isinstance(igws, list) and len(igws) == 1
+            and any(a.get("VpcId") == EXPECTED_VPC
+                    and a.get("State") == "available"
+                    for a in igws[0].get("Attachments", [])
+                    if isinstance(a, dict)),
+            "INTERNET_GATEWAY_ATTACHMENT_INVALID")
+    # assignPublicIp must be explicitly ENABLED in the eventual ECS run-task
+    # invocation; EC2 subnet's MapPublicIpOnLaunch is not an ECS task promise.
+
+
+def rehearsal_envelope() -> dict:
+    """Return a proposed serial drill contract, not permission to spend.
+
+    Each current->historical->current phase requires an explicit operator
+    gate, an external cost monitor, guaranteed task cleanup, and independent
+    authenticated evidence against one persisted synthetic data source.
+    """
+    require(MAX_PHASES == len(PROPOSED_PHASES) == 3
+            and 0 < MAX_PHASE_MINUTES <= 10,
+            "REHEARSAL_PHASE_BOUND_INVALID")
+    return {
+        "phases": ",".join(PROPOSED_PHASES),
+        "max_tasks_at_once": 1,
+        "max_minutes_per_phase": MAX_PHASE_MINUTES,
+        "max_total_minutes": MAX_PHASES * MAX_PHASE_MINUTES,
+        "persistent_state_required": True,
+        "authenticated_readback_required": True,
+        "no_public_ingress": True,
+        "public_ip_explicit_only": True,
+        "cost_approval_required": True,
+        "cleanup_readback_required": True,
+    }
 
 def check(profile: str) -> tuple[str, ...]:
     """Read exact budget, image, task, network and recovery prerequisites.
@@ -132,7 +230,7 @@ def check(profile: str) -> tuple[str, ...]:
     ).get("SecurityGroups", [])
     require(isinstance(groups, list) and len(groups) == 1
             and groups[0].get("GroupId") == matched[0]
-            and groups[0].get("VpcId") == "vpc-05a3c2c855c4dde26",
+            and groups[0].get("VpcId") == EXPECTED_VPC,
             "EXACT_SECURITY_GROUP_UNVERIFIED")
     require(groups[0].get("IpPermissions") == [],
             "SECURITY_GROUP_UNEXPECTED_INGRESS")
@@ -141,6 +239,7 @@ def check(profile: str) -> tuple[str, ...]:
             and rules[0].get("FromPort") == 443
             and rules[0].get("ToPort") == 443,
             "SECURITY_GROUP_EGRESS_DRIFT")
+    network_configuration(profile)
     blockers.append("INDEPENDENT_AUTHENTICATED_HTTP_READBACK_UNAVAILABLE")
     # ECR / CloudWatch logs require private endpoints, NAT, or public egress.
     # Nothing here authorizes a publicly exposed application endpoint.
@@ -159,6 +258,13 @@ def main(argv: list[str] | None = None) -> int:
         print("MW_T12_RUNTIME_METADATA=VERIFIED")
         print("MW_T12_TASK_REVISIONS=1,2")
         print("MW_T12_RUNNING_TASKS=ZERO")
+        print("MW_T12_PUBLIC_SUBNET_EGRESS_CONFIG=VERIFIED_NOT_LIVE")
+        envelope = rehearsal_envelope()
+        print("MW_T12_PLANNED_PHASES=" + envelope["phases"])
+        print("MW_T12_MAX_SIMULTANEOUS_TASKS=" + str(envelope["max_tasks_at_once"]))
+        print("MW_T12_MAX_PHASE_MINUTES=" + str(envelope["max_minutes_per_phase"]))
+        print("MW_T12_MAX_TOTAL_MINUTES=" + str(envelope["max_total_minutes"]))
+        print("MW_T12_COST_APPROVAL_REQUIRED=TRUE")
         for code in blockers:
             print("MW_T12_RUNTIME_BLOCKER=" + code)
         print("MW_T12_RUNTIME_RECOVERY_READY=FALSE")
@@ -180,7 +286,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.0.1-CLOUDFORMATION-SECURITY-GROUP-BINDING
+# VERSION: v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
