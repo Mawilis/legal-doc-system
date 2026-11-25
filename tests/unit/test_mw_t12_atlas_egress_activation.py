@@ -1,5 +1,5 @@
 """TITLE: MW-T12 verified Atlas three-node egress admission certificate.
-VERSION: v1.0.0-EXACT-THREE-RULE-OUTBOUND-REGRESSION
+VERSION: v1.1.0-AWS-DESCRIBE-CHANGE-SET-CONTRACT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Prove exact reviewed CloudFormation changes, DNS/compute denial,
          no-delete network boundary and independent SG permission readback.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation template and fresh
          node DNS admission operator only.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-AWS-DESCRIBE-CHANGE-SET-CONTRACT certifies the actual
+           AWS DescribeChangeSet response without ChangeSetType and exact
+           independent existing stack identity/state, denying wrong stack.
 CHANGELOG: v1.0.0-EXACT-THREE-RULE-OUTBOUND-REGRESSION introduces mocked
            DNS, AWS control-plane and guarded execution regression tests;
            no real DNS, AWS, Atlas or financial authority is invoked.
@@ -32,7 +35,7 @@ def _change_set():
         "ChangeSetName": gate.CHANGE_SET,
         "Status": "CREATE_COMPLETE",
         "ExecutionStatus": "AVAILABLE",
-        "ChangeSetType": "UPDATE",
+        "StackId": "arn:aws:cloudformation:af-south-1:121014832643:stack/" + gate.STACK + "/fixture",
         "Changes": [
             {"Type": "Resource", "ResourceChange": {
                 "Action": "Add",
@@ -63,14 +66,18 @@ def test_exact_reviewed_change_set_passes_read_only(monkeypatch) -> None:
 
     def fake_aws(profile, *args):
         commands.append(args)
-        return (
-            {"Account": gate.ACCOUNT} if args[0] == "sts"
-            else _change_set()
-        )
+        if args[0] == "sts":
+            return {"Account": gate.ACCOUNT}
+        if args[1] == "describe-stacks":
+            return {"Stacks": [{
+                "StackId": _change_set()["StackId"],
+                "StackName": gate.STACK, "StackStatus": "UPDATE_COMPLETE",
+            }]}
+        return _change_set()
 
     monkeypatch.setattr(gate, "aws", fake_aws)
     gate.exact_change_set("wilsy-legal-cert")
-    assert len(commands) == 2
+    assert len(commands) == 3
     assert all("execute-change-set" not in command for command in commands)
 
 
@@ -93,8 +100,33 @@ def test_change_set_drift_refused(monkeypatch, wrong: str) -> None:
 
     monkeypatch.setattr(gate, "aws", lambda profile, *args:
                         {"Account": gate.ACCOUNT} if args[0] == "sts"
+                        else {"Stacks": [{
+                            "StackId": snapshot["StackId"],
+                            "StackName": gate.STACK,
+                            "StackStatus": "UPDATE_COMPLETE",
+                        }]} if args[1] == "describe-stacks"
                         else snapshot)
     with pytest.raises(gate.EgressAdmissionError):
+        gate.exact_change_set("wilsy-legal-cert")
+
+
+def test_change_set_wrong_target_stack_refused(monkeypatch) -> None:
+    """Do not infer UPDATE from a null ChangeSetType or different stack ARN."""
+    snapshot = _change_set()
+
+    def fake_aws(profile, *args):
+        if args[0] == "sts":
+            return {"Account": gate.ACCOUNT}
+        if args[1] == "describe-stacks":
+            return {"Stacks": [{
+                "StackId": snapshot["StackId"] + "-other",
+                "StackName": gate.STACK, "StackStatus": "UPDATE_COMPLETE",
+            }]}
+        return snapshot
+
+    monkeypatch.setattr(gate, "aws", fake_aws)
+    with pytest.raises(gate.EgressAdmissionError,
+                       match="CLOUDFORMATION_TARGET_STACK_NOT_VERIFIED"):
         gate.exact_change_set("wilsy-legal-cert")
 
 
@@ -158,7 +190,7 @@ def test_sg_inbound_open_refuses_verification(monkeypatch) -> None:
 
 
 # ARTIFACT: tests/unit/test_mw_t12_atlas_egress_activation.py
-# VERSION: v1.0.0-EXACT-THREE-RULE-OUTBOUND-REGRESSION
+# VERSION: v1.1.0-AWS-DESCRIBE-CHANGE-SET-CONTRACT
 # AUTHORITY BOUNDARY: Offline strict DNS/change-set/SG evidence only.
 # TENANT POSTURE: No tenant persistence, identity or production access.
 # FAIL-CLOSED POSTURE: Extra permissions, drift or unknown DNS denied.
