@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.33.0-TASK-FIRST-M04-EVIDENCE-MODE-CERT
+ * VERSION: v1.33.1-VERIFIED-EXECUTION-REPLACES-SELECTION-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.33.1-VERIFIED-EXECUTION-REPLACES-SELECTION-CERT
+ *            verifies the initial Foundation selection prompt is removed
+ *            after the complete source-owned M04 task graph is certified.
  * CHANGELOG: v1.33.0-TASK-FIRST-M04-EVIDENCE-MODE-CERT
  *            certifies task-first M04 focus and explicit inspector mode:
  *            source-owned next-task action visible by default, analytical
@@ -753,6 +756,7 @@ describe('Strategy source-owned project execution readback', () => {
     }));
     const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
     await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
+    expect(screen.queryByRole('region', { name: 'Foundation Strategy execution focus' })).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'M04 execution focus' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Continue work' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Inspect work and evidence' })).toHaveAttribute('aria-pressed', 'false');
@@ -1339,7 +1343,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.33.0-TASK-FIRST-M04-EVIDENCE-MODE-CERT
+// VERSION: v1.33.1-VERIFIED-EXECUTION-REPLACES-SELECTION-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
