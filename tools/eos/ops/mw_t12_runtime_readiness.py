@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION
+VERSION: v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK requires the
+           exact pre-seeded immutable synthetic Atlas recovery document to
+           be read successfully with only the dedicated database-scoped
+           credential. Local evidence never certifies ECS task continuity.
 CHANGELOG: v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION labels
            missing ECS secret delivery separately from independently verified
            local Atlas readWrite login. No AWS/Atlas mutation authority added.
@@ -50,11 +54,24 @@ from urllib.parse import parse_qsl, urlsplit
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION"
+VERSION = "v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"
 SYNTHETIC_DB = re.compile(r"wilsy_mwt12_synthetic_[0-9a-f]{12}\Z")
+RECOVERY_COLLECTION = "mw_t12_recovery_proof"
+RECOVERY_CANARY = {
+    "_id": "MWT12-SYNTHETIC-SEED-V1",
+    "kind": "synthetic_recovery_canary",
+    "schema_version": 1,
+    "tenant_classification": "SYNTHETIC_ONLY",
+    "purpose": "immutable cross-revision recovery readback",
+    "created_on": "2026-11-25",
+    "expected_task_revisions": [2, 1, 2],
+    "payload": "MW-T12-NON-SENSITIVE-FIXTURE",
+    "production_data": False,
+}
+
 
 
 
@@ -355,6 +372,14 @@ def verify_scoped_test_database(uri: str) -> str:
                     and roles[0].get("role") == "readWrite"
                     and roles[0].get("db") == database,
                     "ATLAS_CREDENTIAL_NOT_DATABASE_SCOPED")
+            canary = client.get_database(database).get_collection(
+                RECOVERY_COLLECTION
+            ).find_one(
+                {"_id": RECOVERY_CANARY["_id"]},
+                {field: 1 for field in RECOVERY_CANARY},
+            )
+            require(canary == RECOVERY_CANARY,
+                    "ATLAS_SYNTHETIC_RECOVERY_CANARY_DRIFT")
     except (PyMongoError, OSError, ValueError) as exc:
         raise ReadinessError("ATLAS_SCOPED_CONNECTION_UNAVAILABLE") from None
     return database
@@ -373,6 +398,7 @@ def main(argv: list[str] | None = None) -> int:
                     "ATLAS_URI_REQUIRED")
             verify_scoped_test_database(uri)
             print("MW_T12_SCOPED_ATLAS_CREDENTIAL=VERIFIED_READ_ONLY")
+            print("MW_T12_ATLAS_SYNTHETIC_CANARY=VERIFIED_READ_ONLY")
         print("MW_T12_RUNTIME_METADATA=VERIFIED")
         print("MW_T12_TASK_REVISIONS=1,2")
         print("MW_T12_RUNNING_TASKS=ZERO")
@@ -404,7 +430,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION
+# VERSION: v1.4.0-PERSISTENT-SYNTHETIC-CANARY-READBACK
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
