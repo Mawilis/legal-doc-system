@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY
+VERSION: v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,6 +10,9 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS adds audited CAS deletion per
+         authenticated owner and indexes the 30-day TTL once per process.
+         History operations preserve no-store and never grant model authority.
 CHANGELOG: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY adds exact-current tenant/principal bounded
          read-only conversation archive and CAS snapshot writes encrypted with
          server-owned AES-256-GCM key, 30-day expiry, duplicate-safe identity,
@@ -119,7 +122,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY"
+VERSION: Final[str] = "v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -794,6 +797,7 @@ _HISTORY_COLLECTION: Final[str] = "wilsy_ai_conversation_history_v1"
 _HISTORY_AUDIT: Final[str] = "wilsy_ai_conversation_history_audit_v1"
 _HISTORY_THREAD_ID = re.compile(r"^session-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
 _HISTORY_TTL_DAYS: Final[int] = 30
+_HISTORY_INDEXES_READY = False
 
 
 class WilsyHistoryMessage(BaseModel):
@@ -836,16 +840,19 @@ def _history_id(context: TenantAuthorizationContext, thread_id: str) -> str:
 
 
 def _history_collections() -> tuple[Any, Any]:
-    """Use canonical Mongo; no browser or alternate persistence authority."""
+    """Resolve canonical Mongo collections with once-per-process indexes."""
+    global _HISTORY_INDEXES_READY
     database = _database()
     history = database[_HISTORY_COLLECTION]
     audit = database[_HISTORY_AUDIT]
-    try:
-        # Mongo indexes are idempotent and the TTL applies to encrypted payloads.
-        history.create_index("expires_at", expireAfterSeconds=0)
-        history.create_index([("tenant_id", 1), ("principal_id", 1), ("updated_at", -1)])
-    except Exception as error:
-        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_INDEX_UNAVAILABLE") from error
+    if not _HISTORY_INDEXES_READY:
+        try:
+            history.create_index("expires_at", expireAfterSeconds=0)
+            history.create_index([("tenant_id", 1), ("principal_id", 1), ("updated_at", -1)])
+            audit.create_index("expires_at", expireAfterSeconds=0)
+            _HISTORY_INDEXES_READY = True
+        except Exception as error:
+            raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_INDEX_UNAVAILABLE") from error
     return history, audit
 
 
@@ -941,6 +948,7 @@ def write_conversation_history(
         "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
         "thread_digest": owner_id, "revision": next_revision, "timestamp": now,
         "operation": "CREATE" if payload.expected_revision == 0 else "REVISE",
+        "expires_at": now + timedelta(days=365),
         "payload_digest": hashlib.sha3_256(encrypted["ciphertext"]).hexdigest()}
 
     def commit(session: Any) -> None:
@@ -971,6 +979,52 @@ def write_conversation_history(
     return {"schema": "WILSY-AI-HISTORY-THREAD/V1", "id": thread_id,
             "revision": next_revision, "storagePosture": "EOS_ENCRYPTED_HISTORY",
             "authority": "RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE"}
+
+
+
+@router.delete("/history/{thread_id}")
+def delete_conversation_history(
+    thread_id: str,
+    response: Response,
+    expected_revision: int = Query(ge=1),
+    context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
+) -> dict[str, Any]:
+    """Owner-only explicit CAS deletion, with separate metadata-only audit event.
+
+    Does not delete a different tenant/principal's row even when the client
+    supplies a valid thread ID; no text enters the audit event.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if not _HISTORY_THREAD_ID.fullmatch(thread_id):
+        raise HTTPException(status_code=422, detail="WILSY_AI_HISTORY_THREAD_ID_INVALID")
+    _history_key()
+    history, audit = _history_collections()
+    now = _utc_now()
+    digest = _history_id(context, thread_id)
+
+    def commit(session: Any) -> None:
+        result = history.delete_one(
+            {"_id": digest, "tenant_id": context.tenant_id,
+             "principal_id": context.identity.identity_id, "revision": expected_revision},
+            session=session)
+        if result.deleted_count != 1:
+            raise HTTPException(status_code=409, detail="WILSY_AI_HISTORY_DELETE_STALE")
+        audit.insert_one({
+            "_id": hashlib.sha3_256(f"{digest}:DELETE:{expected_revision}".encode()).hexdigest(),
+            "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+            "thread_digest": digest, "revision": expected_revision,
+            "timestamp": now, "expires_at": now + timedelta(days=365),
+            "operation": "DELETE",
+        }, session=session)
+
+    try:
+        _transaction(commit, retries=0)
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_DELETE_UNAVAILABLE") from error
+    return {"schema": "WILSY-AI-HISTORY-DELETED/V1", "id": thread_id,
+            "deleted": True}
 
 
 @router.post("/reasoning")
@@ -1146,7 +1200,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY
+# VERSION: v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
