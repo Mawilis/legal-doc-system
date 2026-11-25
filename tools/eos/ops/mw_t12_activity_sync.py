@@ -1,15 +1,20 @@
 """TITLE: MW-T12 source-owned EOS project activity synchronization.
-VERSION: v1.0.0-AUTHORIZED-HTTP-IDEMPOTENT-READBACK
+VERSION: v1.1.0-BROWSER-SESSION-ACTIVITY-FALLBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Append one verified milestone to the existing Foundation MW-T12 task.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_activity_sync.py
 COLLABORATION / OWNERSHIP: Canonical projects_router.py task-comment POST/GET;
     ProjectCommentRegistry owns tenant transaction and immutable event replay.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-BROWSER-SESSION-ACTIVITY-FALLBACK supplies a safe,
+    token-free browser publication path for an existing authorized EOS
+    session, and distinguishes absent from unsupported bearer input.
+    Does not read browser storage or bypass current IAM authority.
 CHANGELOG: v1.0.0-AUTHORIZED-HTTP-IDEMPOTENT-READBACK performs bounded
     authorized project/task discovery and deduplicated write/readback.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY / PRIVACY POSTURE: Hidden token prompt; localhost-only EOS HTTP;
+SECURITY / PRIVACY POSTURE: Browser-mode milestone text requires no token;
+    optional API-mode hidden bearer prompt; localhost-only EOS HTTP;
     never log credentials, response bodies, opaque principal or source rows.
 TENANT BOUNDARY: Canonical Founder tenant; server rechecks current IAM.
 AUTHORITY BOUNDARY: Existing task comment only; no fabricated completion.
@@ -27,7 +32,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-VERSION = "v1.0.0-AUTHORIZED-HTTP-IDEMPOTENT-READBACK"
+VERSION = "v1.1.0-BROWSER-SESSION-ACTIVITY-FALLBACK"
 BASE = "http://127.0.0.1:9095/api/projects"
 TENANT = "WILSYTENANT-4CD2FZ4O"
 FOUNDATION = "WILSY OS — Unified Operating Platform Foundation"
@@ -150,14 +155,33 @@ def sync(token: str) -> str:
 def main(argv: list[str] | None = None) -> int:
     """Require explicit authorized EOS write; never change task status."""
     parser = argparse.ArgumentParser(description="MW-T12 source activity sync")
-    parser.add_argument("--publish", action="store_true")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--publish", action="store_true",
+                      help="Use an existing EOS bearer token at a hidden prompt")
+    mode.add_argument("--browser", action="store_true",
+                      help="Display milestone for the already-authenticated browser")
     args = parser.parse_args(argv)
-    if not args.publish:
-        print("MW_T12_ACTIVITY=READ_ONLY_DEFAULT")
+    if args.browser:
+        print("MW_T12_ACTIVITY=READY_FOR_EXISTING_BROWSER_SESSION")
+        print("MW_T12_ACTIVITY_WRITE_EXECUTED=FALSE")
+        print("MW_T12_TARGET=FOUNDATION_PROJECT_EXISTING_MW_T12_ACTIVITY")
+        print("MW_T12_MILESTONE_BEGIN")
+        print(MILESTONE)
+        print("MW_T12_MILESTONE_END")
+        print("MW_T12_NEXT=PASTE_SAVE_AND_REOPEN_IN_WILSY_OS")
+        return 0
+    token = getpass("EOS access token, not password or MFA code (hidden; Enter for browser instructions): ").strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    if not token:
+        print("MW_T12_ACTIVITY=NO_BEARER_TOKEN_SUPPLIED")
+        print("MW_T12_ACTIVITY_WRITE_EXECUTED=FALSE")
+        print("MW_T12_NEXT=RUN_WITH_BROWSER_TO_USE_SIGNED_IN_WILSY_OS")
         return 2
-    token = getpass("EOS global principal access token (hidden): ")
-    if re.fullmatch(r"[A-Za-z0-9._-]{40,8192}", token) is None:
-        print("MW_T12_ACTIVITY=TOKEN_INVALID")
+    if re.fullmatch(r"[A-Za-z0-9._~+/=-]{20,8192}", token) is None:
+        print("MW_T12_ACTIVITY=UNSUPPORTED_BEARER_INPUT")
+        print("MW_T12_ACTIVITY_WRITE_EXECUTED=FALSE")
+        print("MW_T12_NEXT=RUN_WITH_BROWSER_TO_USE_SIGNED_IN_WILSY_OS")
         return 2
     try:
         print("MW_T12_ACTIVITY=" + sync(token))
@@ -174,7 +198,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_activity_sync.py
-# VERSION: v1.0.0-AUTHORIZED-HTTP-IDEMPOTENT-READBACK
+# VERSION: v1.1.0-BROWSER-SESSION-ACTIVITY-FALLBACK
 # AUTHORITY BOUNDARY: Existing audited task comment only.
 # TENANT POSTURE: Explicit canonical WILSY scope; EOS owns authentication.
 # FAIL-CLOSED POSTURE: Ambiguous source identities or readback deny.
