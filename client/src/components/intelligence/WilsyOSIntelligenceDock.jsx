@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.53.0-EXACT-HISTORY-REHYDRATION-SCOPE
+ * VERSION: v4.54.0-MW-T11-LIFECYCLE-EVENT-CONTEXT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,12 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.54.0-MW-T11-LIFECYCLE-EVENT-CONTEXT supports explicitly requested,
+ *            independently authorized project-task event inspection using
+ *            the canonical Projects events source, with strict tenant,
+ *            principal, task and event schema checks. It records historical
+ *            conversation text only after verification and never invokes a
+ *            paid model, infers task completion or changes source lifecycle.
  * CHANGELOG: v4.53.0-EXACT-HISTORY-REHYDRATION-SCOPE supplies current authenticated
  *            tenant and principal as expected response scope on history
  *            rehydration and refresh; any mismatched EOS history projection
@@ -282,6 +288,47 @@ function parseWilsyTaskInspection(value) {
   const match = /^(?:inspect|show|review|open|view)\s+(MW-T\d{1,3})[?.!]?$/i
     .exec(String(value || '').trim());
   return match ? match[1].toUpperCase() : null;
+}
+
+
+/** Recognize only the deliberate, no-model task event inspection command. */
+function parseWilsyTaskActivityInspection(value) {
+  const match = /^(?:inspect|show|review)\\s+(MW-T\\d{1,3})\\s+activity[?.!]?$/i
+    .exec(String(value || '').trim());
+  return match ? match[1].toUpperCase() : null;
+}
+
+/** Independently read one current EOS lifecycle event page, never cached chat. */
+async function readWilsyTaskActivity(projectId, taskId, tenantId, principalId, participantView) {
+  const base = '/projects/' + encodeURIComponent(projectId)
+    + (participantView ? '/my-project/tasks/' : '/tasks/')
+    + encodeURIComponent(taskId) + '/events?limit=20&offset=0';
+  const { data } = await api.get(base, {
+    headers: { 'X-Tenant-ID': tenantId }, timeout: 15000,
+  });
+  if (data?.schema !== 'WILSY-PROJECT-TASK-EVENT-LIST/V1'
+    || data.tenant_id !== tenantId || data.principal_id !== principalId
+    || data.project_id !== projectId || data.task_id !== taskId
+    || data.limit !== 20 || data.offset !== 0
+    || typeof data.has_more !== 'boolean' || !Array.isArray(data.items)
+    || data.items.length > 20
+    || data.next_offset !== (data.has_more ? data.items.length : null)) {
+    throw new Error('WILSY_TASK_ACTIVITY_SOURCE_INVALID');
+  }
+  for (const entry of data.items) {
+    if (entry?.schema !== 'wilsy.project.task.event.v1'
+      || entry.tenant_id !== tenantId || entry.project_id !== projectId
+      || entry.task_id !== taskId
+      || !Number.isSafeInteger(entry.revision) || entry.revision < 1
+      || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED',
+        'PROJECT_TASK_TRANSITIONED'].includes(entry.event_type)
+      || !['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(entry.status_after)
+      || typeof entry.occurred_at !== 'string'
+      || !Number.isFinite(Date.parse(entry.occurred_at))) {
+      throw new Error('WILSY_TASK_ACTIVITY_EVENT_INVALID');
+    }
+  }
+  return data;
 }
 
 /**
@@ -1778,6 +1825,84 @@ export function WilsyOSIntelligenceDock({
         ? null : planWilsyFinancialSourceRead(text);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
+      const activityCode = isLegalDockRole(authUser?.role)
+        ? null : parseWilsyTaskActivityInspection(text);
+      if (activityCode) {
+        const currentScope = dockScopeRef.current;
+        const locatorAtStart = workLocatorKeyRef.current;
+        const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+        const principal = authUser?.id;
+        const project = workLocator.workspace === 'PROJECTS' ? workLocator.project_id : null;
+        const task = visibleWorkspaceContext?.data?.work?.selected_task;
+        if (visibleWorkspaceContext?.state !== 'READY'
+          || !project || !/^prj-[a-f0-9]{48}$/.test(project)
+          || !task || task.task_id !== workLocator.task_id
+          || !(task.title?.startsWith(activityCode + ' — ')
+            || task.title?.startsWith(activityCode + ' - '))) {
+          setErrorMessage('Inspect the exact EOS-verified task first, then request its activity.');
+          return;
+        }
+        sendLockRef.current = true;
+        setIsSubmitting(true);
+        setErrorMessage('');
+        try {
+          const events = await readWilsyTaskActivity(project, task.task_id,
+            tenant, principal, Boolean(workLocator.participant_view));
+          if (dockScopeRef.current !== currentScope
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          const latest = events.items[0] || null;
+          const summary = activityCode + ' · EOS lifecycle activity'
+            + '\\nVerified event page: ' + events.items.length
+            + (events.has_more ? ' (additional pages exist)' : ' (no more event pages)')
+            + '\\nLatest event: ' + (latest
+              ? latest.event_type.replaceAll('_', ' ').toLowerCase() : 'no event on this page')
+            + '\\nStatus after event: ' + (latest
+              ? latest.status_after.replaceAll('_', ' ').toLowerCase() : 'not verified')
+            + '\\nObserved event time: ' + (latest?.occurred_at || 'not verified')
+            + '\\nPython EOS source-owned events · Read-only. No model or task command.';
+          let thread = activeThread;
+          if (!thread?.id) {
+            thread = await createWilsyAIConversationThread({
+              title: 'EOS activity · ' + activityCode, workspace: 'Projects',
+            });
+          }
+          if (dockScopeRef.current !== currentScope
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          const afterRequest = await persistWilsyAIConversationTurn({
+            threadId: thread.id, message: { role: 'user', content: text },
+          });
+          const recorded = await persistWilsyAIConversationTurn({
+            threadId: afterRequest.id, message: {
+              role: 'assistant', content: summary,
+              meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' },
+            },
+          });
+          if (dockScopeRef.current !== currentScope
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          setConversationThreads(previous => [
+            recorded, ...previous.filter(item => item.id !== recorded.id),
+          ]);
+          setActiveThreadId(recorded.id);
+          setAnimatedAssistantKey(recorded.id + ':' + recorded.messages?.at(-1)?.timestamp);
+          setConversationView('WELCOME');
+          setLocalSourceQuery('');
+          setPrompt('');
+        } catch (cause) {
+          if (dockScopeRef.current === currentScope
+            && workLocatorKeyRef.current === locatorAtStart) {
+            setErrorMessage([401, 403].includes(cause?.response?.status)
+              ? 'EOS denied access to this task activity.'
+              : 'EOS could not independently verify the current task activity.');
+          }
+        } finally {
+          if (dockScopeRef.current === currentScope
+            && workLocatorKeyRef.current === locatorAtStart) {
+            setIsSubmitting(false);
+            sendLockRef.current = false;
+          }
+        }
+        return;
+      }
       const taskCode = isLegalDockRole(authUser?.role) ? null : parseWilsyTaskInspection(text);
       if (taskCode) {
         const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
@@ -2415,7 +2540,8 @@ export function WilsyOSIntelligenceDock({
   const sourceWorkspaceLabel = visibleWorkspaceContext?.state === 'READY'
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
-  const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt) || parseWilsyTaskInspection(prompt));
+  const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
+    || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt));
   const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages)
     || resolveWilsyLocalClock(prompt)
     || (!isLegalDockRole(authUser?.role)
@@ -3238,7 +3364,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.53.0-EXACT-HISTORY-REHYDRATION-SCOPE
+ * VERSION: v4.54.0-MW-T11-LIFECYCLE-EVENT-CONTEXT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
