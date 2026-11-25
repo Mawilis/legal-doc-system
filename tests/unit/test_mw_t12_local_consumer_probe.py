@@ -1,11 +1,13 @@
 """TITLE: MW-T12 local Mongo consumer classification and privacy certificate.
-VERSION: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS
+VERSION: v1.3.1-ALIGNED-PEER-PARAMETER-FIXTURE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify no credential emission, exact Atlas target classification,
          loopback/other handling and no inference of running EOS secret.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_local_consumer_probe.py
 COLLABORATION / OWNERSHIP: Existing MW-T12 read-only local listener/URI probe.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.1-ALIGNED-PEER-PARAMETER-FIXTURE aligns mocked socket
+           function signature with optional candidate DNS peer set.
 CHANGELOG: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS covers
            fresh DNS exact-three-node resolution and distinct matched
            Wilsy Atlas socket classification without credential inference.
@@ -49,7 +51,8 @@ def test_atlas_srv_target_redacts_credentials_and_identity(capsys, monkeypatch):
     monkeypatch.setattr(probe, "resolve_wilsy_atlas_nodes",
                         lambda: frozenset())
     monkeypatch.setattr(probe, "owned_established_mongo_peers",
-                        lambda pids: {"state": "NO_ACTIVE_MONGODB_SOCKET_OBSERVED",
+                        lambda pids, wilsy_peers=frozenset(): {
+                            "state": "NO_ACTIVE_MONGODB_SOCKET_OBSERVED",
                                       "recognized": "0", "wilsy": "0",
                                       "loopback": "0", "other": "0",
                                       "unparsed": "0"})
@@ -236,7 +239,7 @@ def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_local_consumer_probe.py
-# VERSION: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS
+# VERSION: v1.3.1-ALIGNED-PEER-PARAMETER-FIXTURE
 # AUTHORITY BOUNDARY: Mocked local evidence read only; no cloud changes.
 # TENANT POSTURE: Synthetic fixtures only.
 # FAIL-CLOSED POSTURE: Shell target never certifies a live EOS process.
