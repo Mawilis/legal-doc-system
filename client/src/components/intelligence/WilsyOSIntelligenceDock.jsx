@@ -789,7 +789,7 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
   const visibleText = fullText.slice(0, visibleCount);
   const formatted = format === 'VERIFIED_TASK'
     ? <div className={styles.verifiedReply}>
-      {visibleText.split('\\n').map((line, index) => {
+      {visibleText.split('\n').map((line, index) => {
         if (!line) return null;
         if (index === 0) {
           return <p key={index} className={styles.verifiedReplyTitle}>{line}</p>;
@@ -1659,10 +1659,10 @@ export function WilsyOSIntelligenceDock({
         const verifiedStatus = typeof task.status === 'string'
           ? task.status.replaceAll('_', ' ').toLowerCase() : 'not provided';
         const reply = 'EOS source verified: ' + task.title
-          + '\\nLifecycle: ' + verifiedStatus
-          + '\\nRevision: ' + task.revision
-          + '\\nDeadline: ' + (task.due_date || 'not supplied by EOS')
-          + '\\nPython EOS · Read-only inspection. No model invoked or task changed.';
+          + '\nLifecycle: ' + verifiedStatus
+          + '\nRevision: ' + task.revision
+          + '\nDeadline: ' + (task.due_date || 'not supplied by EOS')
+          + '\nPython EOS · Read-only inspection. No model invoked or task changed.';
         const recorded = await persistWilsyAIConversationTurn({
           threadId: afterRequest.id,
           message: { role: 'assistant', content: reply,
