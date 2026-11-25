@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION
+VERSION: v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION accepts AWS
+           omitting the empty secrets array while forbidding real secret refs.
 CHANGELOG: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION explicitly blocks
            Atlas TCP/27017 egress when only HTTPS is allowed, rejects task
            credential and connection misconfiguration, and retains the
@@ -36,7 +38,7 @@ import sys
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION"
+VERSION = "v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 
@@ -218,7 +220,7 @@ def check(profile: str) -> tuple[str, ...]:
         require(not (supplied & {"MONGODB_URI", "MONGO_URI",
                                  "WILSY_JWT_SECRET"}),
                 "UNREVIEWED_TASK_CREDENTIAL_CONFIGURATION")
-        require(containers[0].get("secrets") == [],
+        require(not containers[0].get("secrets"),
                 "UNREVIEWED_TASK_SECRET_CONFIGURATION")
         if "SCOPED_ATLAS_MONGODB_CREDENTIAL_NOT_ADMITTED" not in blockers:
             blockers.append("SCOPED_ATLAS_MONGODB_CREDENTIAL_NOT_ADMITTED")
@@ -321,7 +323,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION
+# VERSION: v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
