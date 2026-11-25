@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION
+VERSION: v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION labels
+           missing ECS secret delivery separately from independently verified
+           local Atlas readWrite login. No AWS/Atlas mutation authority added.
 CHANGELOG: v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION correctly anchors the
            isolated synthetic database name at the string boundary.
 CHANGELOG: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK introduces an optional
@@ -47,7 +50,7 @@ from urllib.parse import parse_qsl, urlsplit
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION"
+VERSION = "v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"
@@ -234,8 +237,10 @@ def check(profile: str) -> tuple[str, ...]:
                 "UNREVIEWED_TASK_CREDENTIAL_CONFIGURATION")
         require(not containers[0].get("secrets"),
                 "UNREVIEWED_TASK_SECRET_CONFIGURATION")
-        if "SCOPED_ATLAS_MONGODB_CREDENTIAL_NOT_ADMITTED" not in blockers:
-            blockers.append("SCOPED_ATLAS_MONGODB_CREDENTIAL_NOT_ADMITTED")
+        # Local scoped Atlas authentication can pass independently. Neither
+        # already-registered ECS revision contains approved secret delivery.
+        if "SCOPED_ATLAS_CREDENTIAL_NOT_CONFIGURED_IN_ECS" not in blockers:
+            blockers.append("SCOPED_ATLAS_CREDENTIAL_NOT_CONFIGURED_IN_ECS")
         if "AUTHENTICATED_DATABASE_SOURCE_NOT_CONFIGURED" not in blockers:
             blockers.append("AUTHENTICATED_DATABASE_SOURCE_NOT_CONFIGURED")
     require(tasks[0].get("revision") < tasks[1].get("revision"),
@@ -399,7 +404,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.3.1-SYNTHETIC-NAME-REGEX-CORRECTION
+# VERSION: v1.3.2-ATLAS-LOCAL-VS-ECS-ADMISSION-DISTINCTION
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
