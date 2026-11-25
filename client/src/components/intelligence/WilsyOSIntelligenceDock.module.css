@@ -1346,3 +1346,135 @@
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+
+/* MW-T11 · Productive conversation navigator. No cards, no counter-driven hierarchy.
+ * Row selection and authorization are separate from transient history display. */
+.intelligenceDockContainer .historyTabContent {
+  display:flex;flex-direction:column;gap:14px;min-height:0;flex:1;overflow-y:auto;
+  padding:clamp(14px,2.4vw,24px);background:transparent;
+}
+.intelligenceDockContainer .historyNavigatorHead {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;
+}
+.intelligenceDockContainer .historyNavigatorHead h4 {
+  margin:0;color:#f5f8fd;font-size:clamp(18px,2vw,23px);
+  line-height:1.3;font-weight:670;letter-spacing:-.025em;
+}
+.intelligenceDockContainer .historyNavigatorHead p {
+  margin:5px 0 0;max-width:65ch;color:#b9c9dd;font-size:12px;line-height:1.5;
+}
+.intelligenceDockContainer .historyNewButton {
+  min-height:40px;padding:9px 14px;border-radius:9px;
+  background:#24578a;border:1px solid #77b5f1;color:#fff;
+  font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+.intelligenceDockContainer .historyNewButton:hover{background:#316ba4}
+.intelligenceDockContainer .historyArchiveStatus {
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  color:#becde0;font-size:12px;line-height:1.5;
+  padding:8px 0;border-bottom:1px solid rgba(145,176,208,.18);
+}
+.intelligenceDockContainer .historyArchiveReady,
+.intelligenceDockContainer .historyArchiveOffline {
+  display:block;flex:none;width:8px;height:8px;border-radius:50%;background:#51cb9e;
+}
+.intelligenceDockContainer .historyArchiveOffline{background:#e6b568}
+.intelligenceDockContainer .historyArchiveStatus button {
+  margin-left:auto;border:0;background:none;color:#a9cfff;
+  font:inherit;font-weight:650;text-decoration:underline;
+  text-underline-offset:3px;cursor:pointer;min-height:36px;
+}
+.intelligenceDockContainer .historyToolbar {
+  display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;
+}
+.intelligenceDockContainer .historySearch{flex:1 1 210px;min-width:180px;display:grid;gap:5px;}
+.intelligenceDockContainer .historySearch span{font-size:11px;font-weight:650;color:#c4d4e8}
+.intelligenceDockContainer .historySearch input {
+  box-sizing:border-box;width:100%;min-height:43px;padding:9px 12px;
+  color:#f9fcff;background:#0a1d32;border:1px solid #6784a5;
+  border-radius:9px;font:inherit;font-size:13px;
+}
+.intelligenceDockContainer .historySearch input::placeholder{color:#a5b8ce}
+.intelligenceDockContainer .historyFilters{
+  display:flex;gap:3px;padding:3px;border-radius:9px;
+  background:#102a45;border:1px solid rgba(133,171,211,.3);
+}
+.intelligenceDockContainer .historyFilters button{
+  min-height:34px;padding:6px 12px;border-radius:6px;border:0;
+  background:transparent;color:#c5d4e7;font:inherit;font-size:12px;cursor:pointer;
+}
+.intelligenceDockContainer .historyFilters button[aria-pressed="true"]{
+  background:#315b86;color:#fff;font-weight:700;
+}
+.intelligenceDockContainer .historyRows{display:flex;flex-direction:column;min-height:80px}
+.intelligenceDockContainer .historyGroupHeading{
+  color:#9fb3ce;font-size:11px;font-weight:750;letter-spacing:.09em;
+  text-transform:uppercase;padding:13px 0 6px;margin:0;
+}
+.intelligenceDockContainer .historyRow{
+  display:flex;align-items:stretch;border-top:1px solid rgba(145,176,208,.2);
+  min-width:0;gap:5px;
+}
+.intelligenceDockContainer .historyOpenRow{
+  flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;
+  padding:13px 10px 13px 12px;text-align:left;border:0;
+  border-left:3px solid transparent;border-radius:0;
+  background:transparent;color:#f0f5fc;cursor:pointer;font:inherit;
+}
+.intelligenceDockContainer .historyOpenRow:hover,
+.intelligenceDockContainer .historySelectedRow{background:rgba(81,143,203,.13)}
+.intelligenceDockContainer .historySelectedRow{border-left-color:#83bbf5}
+.intelligenceDockContainer .historyRowTitle{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:16px;min-width:0;font-size:14px;font-weight:680;
+}
+.intelligenceDockContainer .historyRowTitle>span{
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0;
+}
+.intelligenceDockContainer .historyRowTitle time{
+  flex:none;font-size:11px;color:#afc1d6;font-weight:450;white-space:nowrap;
+}
+.intelligenceDockContainer .historyRowPreview {
+  color:#d4dfed;font-size:12px;line-height:1.5;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+.intelligenceDockContainer .historyRowFoot{
+  display:flex;gap:8px;flex-wrap:wrap;color:#a9bfd7;font-size:11px;line-height:1.3;
+}
+.intelligenceDockContainer .historyDeleteRow{
+  align-self:center;flex:none;border:0;background:transparent;color:#c2d1e4;
+  font:inherit;font-size:12px;cursor:pointer;min-height:40px;padding:8px 12px;
+}
+.intelligenceDockContainer .historyDeleteRow:hover{color:#ffd0c6;text-decoration:underline}
+.intelligenceDockContainer .historyEmpty{padding:30px 12px;color:#c5d5e6;text-align:center;}
+.intelligenceDockContainer .historyEmpty button{
+  border:1px solid #7da6cd;background:#21466b;color:white;border-radius:8px;
+  padding:8px 12px;min-height:38px;cursor:pointer;
+}
+.intelligenceDockContainer .historyOperationError{
+  margin:0;color:#ffc5bc;font-size:12px;line-height:1.5;
+}
+.intelligenceDockContainer .historyFooter{
+  margin-top:auto;padding-top:12px;border-top:1px solid rgba(145,176,208,.2);
+  display:flex;gap:14px;align-items:center;justify-content:space-between;
+  color:#a9bfd7;font-size:11px;flex-wrap:wrap;
+}
+.intelligenceDockContainer .historyFooter button{
+  color:#cbdcf1;background:transparent;border:0;
+  min-height:40px;cursor:pointer;font-size:11px;text-decoration:underline;
+  text-underline-offset:3px;
+}
+.intelligenceDockContainer .historyOpenRow:focus-visible,
+.intelligenceDockContainer .historyDeleteRow:focus-visible,
+.intelligenceDockContainer .historyTabContent button:focus-visible,
+.intelligenceDockContainer .historySearch input:focus-visible {
+  outline:2px solid #a9d7ff;outline-offset:2px;
+}
+@media(max-width:600px){
+ .intelligenceDockContainer .historyToolbar{align-items:stretch}
+ .intelligenceDockContainer .historyFilters{width:100%;justify-content:space-between}
+ .intelligenceDockContainer .historyFilters button{flex:1}
+ .intelligenceDockContainer .historyRowTitle{gap:8px}
+}
