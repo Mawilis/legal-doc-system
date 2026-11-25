@@ -1,5 +1,5 @@
 """TITLE: MW-T12 local Atlas consumer source binding probe.
-VERSION: v1.2.0-LOOPBACK-PEER-AND-PARSE-SEPARATION
+VERSION: v1.3.0-SECOND-ATLAS-CLUSTER-DNS-ATTRIBUTION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Read-only process/credential target evidence that distinguishes
          actual local EOS listener identity from inherited CLI environment.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Canonical tools/eos/kernel/db.py MONGODB_URI,
          local EOS 9095 listener and shared Atlas consumer attribution register.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-SECOND-ATLAS-CLUSTER-DNS-ATTRIBUTION distinguishes the separate Wilsy
+           legalDocSystem replica nodes by fresh DNS mapping of only
+           listener-owned established sockets; preserves unknown classification
+           and never claims authenticated database identity.
 CHANGELOG: v1.2.0-LOOPBACK-PEER-AND-PARSE-SEPARATION distinguishes loopback
            TCP/27017 endpoints, non-Atlas routable peers and unparsable
            lsof records; never treats a diagnostic record count as a Mongo
@@ -34,9 +38,10 @@ import ipaddress
 import os
 import re
 import subprocess
+import socket
 from urllib.parse import parse_qs, unquote, urlsplit
 
-VERSION = "v1.2.0-LOOPBACK-PEER-AND-PARSE-SEPARATION"
+VERSION = "v1.3.0-SECOND-ATLAS-CLUSTER-DNS-ATTRIBUTION"
 ATLAS_CLUSTER_SRV = "legal-doc-test.xmlpwmq.mongodb.net"
 ATLAS_SHARDS = frozenset(
     "ac-nagjjuj-shard-00-0" + str(i) + ".xmlpwmq.mongodb.net"
@@ -45,6 +50,11 @@ ATLAS_SHARDS = frozenset(
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 MAX_URI_LENGTH = 16384
 MAX_PROCESS_OUTPUT = 4096
+WILSY_ATLAS_SHARDS = (
+    "ac-sixxlf4-shard-00-00.knucgy2.mongodb.net",
+    "ac-sixxlf4-shard-00-01.knucgy2.mongodb.net",
+    "ac-sixxlf4-shard-00-02.knucgy2.mongodb.net",
+)
 REVIEWED_ATLAS_NODE_IPS = frozenset({
     "159.41.89.87", "159.41.89.104", "159.41.89.120",
 })
@@ -147,14 +157,50 @@ def local_listener_pids() -> list[int]:
     return sorted(set(int(p) for p in pids))
 
 
-def owned_established_mongo_peers(pids: list[int]) -> dict[str, str]:
+def resolve_wilsy_atlas_nodes() -> frozenset[str]:
+    """Classify only fresh DNS A records for the separately inventoried cluster.
+
+    This DNS association is evidence of remote IP ownership at observation
+    time; no authentication to MongoDB or Atlas control plane is implied.
+    DNS failure or ambiguous host-to-IP mapping returns UNKNOWN, never proof
+    that the listener's peers belong to some other cluster.
+    """
+    result = []
+    for host in WILSY_ATLAS_SHARDS:
+        try:
+            answers = socket.getaddrinfo(
+                host, 27017, family=socket.AF_INET,
+                type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP,
+            )
+        except OSError as exc:
+            raise ProbeDenied("WILSY_ATLAS_DNS_UNAVAILABLE") from exc
+        ips = set()
+        for record in answers:
+            try:
+                candidate = ipaddress.ip_address(record[4][0])
+            except (ValueError, IndexError, TypeError) as exc:
+                raise ProbeDenied("WILSY_ATLAS_DNS_INVALID") from exc
+            require(candidate.version == 4 and candidate.is_global,
+                    "WILSY_ATLAS_DNS_INVALID")
+            ips.add(str(candidate))
+        require(len(ips) == 1, "WILSY_ATLAS_DNS_AMBIGUOUS")
+        result.extend(ips)
+    require(len(set(result)) == 3, "WILSY_ATLAS_DNS_COLLISION")
+    require(not set(result).intersection(REVIEWED_ATLAS_NODE_IPS),
+            "WILSY_ATLAS_DNS_OVERLAPS_TEST_CLUSTER")
+    return frozenset(result)
+
+
+def owned_established_mongo_peers(
+    pids: list[int], wilsy_peers: frozenset[str] = frozenset(),
+) -> dict[str, str]:
     """Classify real established TCP/27017 peers owned by EOS listener PIDs.
 
     A recognized remote address proves only an active socket to that address,
     NOT an authenticated database session or Mongo credential selection.
     No raw endpoint, PID or lsof record escapes the function.
     """
-    empty = {"state": "NO_LISTENER", "recognized": "0",
+    empty = {"state": "NO_LISTENER", "recognized": "0", "wilsy": "0",
              "loopback": "0", "other": "0", "unparsed": "0"}
     if not pids:
         return empty
@@ -200,15 +246,22 @@ def owned_established_mongo_peers(pids: list[int]) -> dict[str, str]:
             except ValueError:
                 unparsed += 1
     recognized = len(observed.intersection(REVIEWED_ATLAS_NODE_IPS))
+    wilsy = len(observed.intersection(wilsy_peers))
     loopback = sum(ipaddress.ip_address(peer).is_loopback for peer in observed)
-    others = len(observed) - recognized - loopback
+    require(not wilsy_peers.intersection(REVIEWED_ATLAS_NODE_IPS),
+            "ATLAS_CLUSTER_IP_OVERLAP")
+    others = len(observed) - recognized - wilsy - loopback
     require(others >= 0, "LOCAL_SOCKET_CLASSIFICATION_INVALID")
     if unparsed:
         state = "UNPARSED_SOCKET_RECORDS"
-    elif recognized and (loopback or others):
+    elif (recognized and (wilsy or loopback or others)) or (
+        wilsy and (loopback or others)
+    ):
         state = "MIXED_ATLAS_AND_OTHER_PEERS"
     elif recognized:
         state = "MATCHES_REVIEWED_ATLAS_NODES"
+    elif wilsy:
+        state = "MATCHES_WILSY_ATLAS_NODES"
     elif loopback and not others:
         state = "LOOPBACK_MONGODB_PEERS"
     elif others:
@@ -216,8 +269,8 @@ def owned_established_mongo_peers(pids: list[int]) -> dict[str, str]:
     else:
         state = "NO_ACTIVE_MONGODB_SOCKET_OBSERVED"
     return {"state": state, "recognized": str(recognized),
-            "loopback": str(loopback), "other": str(others),
-            "unparsed": str(unparsed)}
+            "wilsy": str(wilsy), "loopback": str(loopback),
+            "other": str(others), "unparsed": str(unparsed)}
 
 
 def run() -> None:
@@ -227,9 +280,18 @@ def run() -> None:
           ("PRESENT" if pids else "ABSENT"))
     print("MW_T12_LOCAL_EOS_LISTENER_COUNT=" + str(len(pids)))
     print("MW_T12_LOCAL_EOS_PID_IDENTITY=NOT_BOUND_TO_SHELL_SECRET")
-    socket_evidence = owned_established_mongo_peers(pids)
+    try:
+        candidate_ips = resolve_wilsy_atlas_nodes() if pids else frozenset()
+    except ProbeDenied:
+        candidate_ips = frozenset()
+        print("MW_T12_WILSY_ATLAS_DNS=UNVERIFIED")
+    else:
+        print("MW_T12_WILSY_ATLAS_DNS=" +
+              ("FRESH_VERIFIED" if pids else "NOT_CHECKED"))
+    socket_evidence = owned_established_mongo_peers(pids, candidate_ips)
     print("MW_T12_EOS_PID_MONGO_SOCKET_CLASS=" + socket_evidence["state"])
     print("MW_T12_EOS_PID_REVIEWED_ATLAS_PEERS=" + socket_evidence["recognized"])
+    print("MW_T12_EOS_PID_WILSY_ATLAS_PEERS=" + socket_evidence["wilsy"])
     print("MW_T12_EOS_PID_LOOPBACK_MONGO_PEERS=" + socket_evidence["loopback"])
     print("MW_T12_EOS_PID_OTHER_MONGO_PEERS=" + socket_evidence["other"])
     print("MW_T12_EOS_PID_UNPARSED_SOCKET_RECORDS=" + socket_evidence["unparsed"])
@@ -268,7 +330,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_local_consumer_probe.py
-# VERSION: v1.2.0-LOOPBACK-PEER-AND-PARSE-SEPARATION
+# VERSION: v1.3.0-SECOND-ATLAS-CLUSTER-DNS-ATTRIBUTION
 # AUTHORITY BOUNDARY: Own shell env + local 9095 listener only, read-only.
 # TENANT POSTURE: No tenant reads or credential/identity output.
 # FAIL-CLOSED POSTURE: Does not infer runtime ownership from shell URI.
