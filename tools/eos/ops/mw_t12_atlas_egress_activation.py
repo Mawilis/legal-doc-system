@@ -1,5 +1,5 @@
 """TITLE: MW-T12 three-node Atlas outbound CloudFormation activation gate.
-VERSION: v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT
+VERSION: v1.0.4-STACK-PARAMETER-EQUIVALENCE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify fresh Atlas replica DNS and exact reviewed three-rule,
          outbound-only nonproduction CloudFormation change set before optional
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation dormant foundation,
          Atlas test cluster's three DNS hosts and ECS AWS read helper.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.4-STACK-PARAMETER-EQUIVALENCE compares effective
+           foundation/VPC change-set values against independent live-stack
+           parameters, accepting either UsePreviousValue or an explicit
+           identical value. Never accepts changed VPC or inactive foundation.
 CHANGELOG: v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT removes the unsupported
            DescribeChangeSet.ChangeSetType response assertion. Independently
            verifies exact existing UPDATE_COMPLETE stack state and stack
@@ -40,7 +44,7 @@ import time
 
 from tools.eos.ops import mw_t12_task_definition_admission as aws_authority
 
-VERSION = "v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT"
+VERSION = "v1.0.4-STACK-PARAMETER-EQUIVALENCE"
 STACK = "wilsy-mwt12-nonproduction-foundation"
 CHANGE_SET = "mwt12-three-node-egress-review"
 SG_ID = "sg-05bbf379de9a0eee8"
@@ -119,7 +123,7 @@ def fresh_dns() -> tuple[str, str, str]:
 def exact_change_set(profile: str) -> None:
     """Admit only the three pre-reviewed additions and exact CIDR parameters.
 
-    Existing foundation/VPC parameters must have UsePreviousValue=true;
+    Existing foundation/VPC parameters must resolve to actual stack values;
     egress opt-in must be explicit true. No IAM role, replacement or task
     resource is permitted. The change set must be executable and unexecuted.
     """
@@ -173,9 +177,30 @@ def exact_change_set(profile: str) -> None:
                 "EnableDormantFoundation", "ExistingVpcId",
                 "EnableAtlasEndpointEgress", *PARAMS,
             }, "CLOUDFORMATION_PARAMETER_SET_DRIFT")
-    require(by_name["EnableDormantFoundation"].get("UsePreviousValue") is True
-            and by_name["ExistingVpcId"].get("UsePreviousValue") is True
-            and by_name["EnableAtlasEndpointEgress"].get("ParameterValue")
+    current_parameters = stacks[0].get("Parameters")
+    require(isinstance(current_parameters, list),
+            "CLOUDFORMATION_STACK_PARAMETERS_UNVERIFIED")
+    stack_parameters = {
+        row.get("ParameterKey"): row.get("ParameterValue")
+        for row in current_parameters if isinstance(row, dict)
+    }
+    require(len(stack_parameters) == len(current_parameters)
+            and isinstance(stack_parameters.get("ExistingVpcId"), str)
+            and stack_parameters["ExistingVpcId"]
+                == "vpc-05a3c2c855c4dde26"
+            and stack_parameters.get("EnableDormantFoundation") == "true",
+            "CLOUDFORMATION_STACK_AUTHORITY_DRIFT")
+    for key in ("EnableDormantFoundation", "ExistingVpcId"):
+        item = by_name[key]
+        previous = item.get("UsePreviousValue") is True
+        explicit = (item.get("UsePreviousValue") is not True
+                    and item.get("ParameterValue") == stack_parameters[key])
+        require(previous or explicit,
+                "CLOUDFORMATION_AUTHORITY_PARAMETER_DRIFT")
+        if previous and item.get("ParameterValue") is not None:
+            require(item["ParameterValue"] == stack_parameters[key],
+                    "CLOUDFORMATION_AUTHORITY_PARAMETER_DRIFT")
+    require(by_name["EnableAtlasEndpointEgress"].get("ParameterValue")
             == "true", "CLOUDFORMATION_AUTHORITY_PARAMETER_DRIFT")
     for name, value in zip(PARAMS, REVIEWED, strict=True):
         require(by_name[name].get("ParameterValue") == value,
@@ -310,7 +335,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_egress_activation.py
-# VERSION: v1.0.3-CLOUDFORMATION-ACTUAL-RESPONSE-CONTRACT
+# VERSION: v1.0.4-STACK-PARAMETER-EQUIVALENCE
 # AUTHORITY BOUNDARY: Only optional exact outbound CFN egress change set.
 # TENANT POSTURE: Synthetic Atlas network only, no production data.
 # FAIL-CLOSED POSTURE: DNS/changeset/SG drift or compute denies activation.
