@@ -297,7 +297,7 @@ function describeConversation(thread) {
     id: thread.id,
     title: thread.title?.trim() || 'Untitled conversation',
     preview: typeof last?.content === 'string'
-      ? last.content.replace(/\\s+/g, ' ').trim().slice(0, 140) : '',
+      ? last.content.replace(/\s+/g, ' ').trim().slice(0, 140) : '',
     workspace: thread.workspace || 'Workspace',
     saved: thread.storagePosture === 'EOS_ENCRYPTED_HISTORY',
     millis: Number.isFinite(millis) ? millis : 0,
