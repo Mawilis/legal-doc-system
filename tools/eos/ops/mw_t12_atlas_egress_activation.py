@@ -1,5 +1,5 @@
 """TITLE: MW-T12 three-node Atlas outbound CloudFormation activation gate.
-VERSION: v1.0.0-EXACT-DNS-AND-CHANGESET-ADMISSION
+VERSION: v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify fresh Atlas replica DNS and exact reviewed three-rule,
          outbound-only nonproduction CloudFormation change set before optional
@@ -8,6 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation dormant foundation,
          Atlas test cluster's three DNS hosts and ECS AWS read helper.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION waits boundedly for CloudFormation
+           UPDATE_COMPLETE without mistaking UPDATE_IN_PROGRESS for success;
+           accepts AWS's coalesced same-port outbound rule representation.
 CHANGELOG: v1.0.0-EXACT-DNS-AND-CHANGESET-ADMISSION introduces read-only
            preflight by default and separately opted-in narrowly scoped
            CloudFormation execution; independent status and egress readback.
@@ -25,10 +28,11 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import socket
+import time
 
 from tools.eos.ops import mw_t12_task_definition_admission as aws_authority
 
-VERSION = "v1.0.0-EXACT-DNS-AND-CHANGESET-ADMISSION"
+VERSION = "v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION"
 STACK = "wilsy-mwt12-nonproduction-foundation"
 CHANGE_SET = "mwt12-three-node-egress-review"
 SG_ID = "sg-05bbf379de9a0eee8"
@@ -200,7 +204,7 @@ def verify_egress(profile: str) -> None:
     require(observed == {
         (443, "0.0.0.0/0"),
         *((27017, cidr) for cidr in REVIEWED),
-    } and len(egress) == 4, "SG_EGRESS_EXACT_RULES_DRIFT")
+    } and len(observed) == 4, "SG_EGRESS_EXACT_RULES_DRIFT")
     print("MW_T12_ATLAS_THREE_NODE_EGRESS=VERIFIED")
     print("MW_T12_NO_PUBLIC_INBOUND=VERIFIED")
 
@@ -228,13 +232,23 @@ def run(profile: str, execute: bool) -> None:
         profile, "cloudformation", "execute-change-set",
         "--stack-name", STACK, "--change-set-name", CHANGE_SET,
     )
-    # Independent readback, fail closed while CloudFormation is updating.
-    outcome = aws(
-        profile, "cloudformation", "describe-stacks", "--stack-name", STACK,
-    ).get("Stacks", [])
-    require(isinstance(outcome, list) and len(outcome) == 1
-            and outcome[0].get("StackStatus") == "UPDATE_COMPLETE",
-            "CLOUDFORMATION_EXECUTION_NOT_YET_COMPLETE")
+    # An update can take time to propagate; never report success early.
+    deadline = time.monotonic() + 150
+    while True:
+        outcome = aws(
+            profile, "cloudformation", "describe-stacks",
+            "--stack-name", STACK,
+        ).get("Stacks", [])
+        require(isinstance(outcome, list) and len(outcome) == 1,
+                "CLOUDFORMATION_STACK_READBACK_INVALID")
+        status = outcome[0].get("StackStatus")
+        if status == "UPDATE_COMPLETE":
+            break
+        require(status in {"UPDATE_IN_PROGRESS", "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS"},
+                "CLOUDFORMATION_EXECUTION_FAILED_OR_ROLLED_BACK")
+        require(time.monotonic() < deadline,
+                "CLOUDFORMATION_EXECUTION_TIMEOUT")
+        time.sleep(3)
     verify_egress(profile)
     no_compute(profile)
     print("MW_T12_CLOUDFORMATION_EXECUTED=VERIFIED")
@@ -267,7 +281,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_egress_activation.py
-# VERSION: v1.0.0-EXACT-DNS-AND-CHANGESET-ADMISSION
+# VERSION: v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION
 # AUTHORITY BOUNDARY: Only optional exact outbound CFN egress change set.
 # TENANT POSTURE: Synthetic Atlas network only, no production data.
 # FAIL-CLOSED POSTURE: DNS/changeset/SG drift or compute denies activation.
