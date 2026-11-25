@@ -1,11 +1,12 @@
 # WILSY OS — MW-T12 Controlled Nonproduction Rollback Gate
 
-VERSION: v1.1.0-LOCAL-AUTHENTICATED-EOS-RECOVERY-VERIFIED  
+VERSION: v1.2.0-FOUNDER-BROWSER-GATE-READBACK  
 TITLE: MW-T12 Nonproduction Rollback and Independent Recovery Certification  
 EPITOME: Operational admission criteria, evidence chain and release-denial policy for the existing Foundation MW-T12 task.  
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/mw-t12-nonproduction-rollback-gate.md  
 COLLABORATION / OWNERSHIP: WILSY OS Engineering; Python EOS source owners; independent recovery verifier.  
 CERTIFICATION / UPDATE DATE: 2026-11-24  
+CHANGELOG: v1.2.0-FOUNDER-BROWSER-GATE-READBACK reconciles the Founder-observed 25 November activity and Strategy navigation, preserving the distinction between browser-visible EOS evidence and independent scripted Gate 0 attestation; records unresolved security/network, paid drill, durable recovery and release gates, and a nonblocking MW-T11 development handoff.
 CHANGELOG: v1.1.0-LOCAL-AUTHENTICATED-EOS-RECOVERY-VERIFIED records 2026-11-24 Mac execution evidence of isolated host Mongo PRIMARY, authenticated Python EOS shutdown/relaunch, 5/5 browser journeys, independent durable Headquarters source readback and cleanup. This is NOT production rollback or infrastructure restore certification.  
 CHANGELOG: v1.0.0-FAIL-CLOSED-DRILL-ADMISSION records the verified project update, maps real infrastructure boundaries and defines a non-destructive admission gate before any rollback.  
 AUTHORITY: WILSY OS Core Governance / AGENTS.md  
@@ -44,6 +45,29 @@ On **2026-11-24**, the Founder supplied the complete terminal output from the Ma
 The browser output was supplied directly by the operator. It is not an independent infrastructure assessor's approval. The suite's durable verifier did independently query the disposable MongoDB source and verify the source-owned work record outcomes rather than accepting UI state as evidence.
 
 **Remaining MW-T12 blockers:** Gate 0 exact Foundation project task/comment readback; Gate 1 isolated nonproduction deployment and backup/rollback mechanism admission; Gates 2–3 actual authorized nonproduction deployment rollback and independently observed recovery; Gate 4 release adjudication. PR #419 remains draft and MW-T12 remains in progress.
+
+## 25 November 2026 — Founder browser acceptance and development handoff
+
+**Source classification:** The Founder supplied screenshots of the live, authenticated WILSY OS browser, showing the original MW-T12 task under the existing Foundation project, its Activity tab, and the expanded "No-cost engineering preparation completed" comment. This is **browser-observed EOS activity**, not a newly run CLI Gate 0 proof, deployed rollback, or release decision.
+
+| Claim observed in the existing task Activity | Evidence boundary |
+| --- | --- |
+| MW-T12 `IN_PROGRESS`; assigned contributor; task revision 3; overdue 2026-11-23 | Browser-visible task detail; do not mutate lifecycle or due date automatically |
+| Existing task Activity displayed 9 comments and an expanded 25 November no-cost preparation update | Browser readback of EOS activity; exact comment fingerprint, immutable server record and double-GET Gate 0 certificate not established in this record |
+| Expanded update states 23/23 exact-head workflows, secure historical/current ECS task definitions, reviewed three-node Atlas egress changes, local Python EOS connectivity, 49/49 focused M04 tests and successful client production build | Engineering milestone claims recorded in EOS activity; retain their exact scope and verify against CI/artifacts before independent certification |
+| Strategy → Projects → exact MW-T12 task → Activity and Strategy inspector navigation succeeded in Founder browser | UI journey evidenced by screenshots; not image rollback, backup restoration, production IAM or independent infrastructure recovery |
+| Expanded comment expressly states MW-T12 `IN_PROGRESS` and production rollback `NOT CERTIFIED` | Positive evidence of the *blocked release decision*, not of completed Gate 2/3 |
+
+**Remaining exact gates (all fail closed):**
+
+1. **Shared Atlas consumers and network ACL:** attribute the shared `legal-doc-test` consumer(s), verify independently authorized restricted access, and retire unrestricted `0.0.0.0/0` only after proving every required consumer remains admitted. No blind ingress rule deletion.
+2. **Nonproduction target and cost admission:** independent isolation, storage/backup and credentials, immutable image provenance, approved change/abort procedure, funding and change approval. No Fargate deployment or paid task without these.
+3. **Actual rollback and recovery:** perform prior↔current image rollback in the admitted nonproduction target; verify authenticated EOS startup, task/comment persistence, tenancy/IAM denials, recovery evidence, and measured recovery characteristics. The local synthetic rehearsal is not a substitute.
+4. **Gate 0 scripted source readback and release adjudication:** use the existing `python -m tools.eos.ops.mw_t12_foundation_readback --check` and, with an authorized **locally entered** EOS bearer, `--run` to obtain the double-GET source certificate. Browser screenshots do not manufacture its result. Independent release authorization is a separate final gate.
+
+**Decision recorded in repository:** `MW_T12=IN_PROGRESS`, `ROLLBACK=NOT_CERTIFIED`, `PRODUCTION_RELEASE=BLOCKED`, `PR_419=DRAFT`. No duplicate project, task, bearer, IAM grant, lifecycle completion or paid cloud action.
+
+**MW-T11 handoff — independent work allowed:** Proceed in the existing Foundation task `MW-T11 — Align Intelligence Dock with the authorized work graph`, which the Founder browser displayed as `TODO`, unassigned, without a due date and with no visible unfinished predecessors. Assignment and scheduling must be independently authorized and read back from EOS. Implement only the existing Intelligence Dock's bounded current principal/tenant, project and work-source context; preserve exact-permission source admission, no cached elevation, fail-closed unavailable/denied states and no paid AI-provider dependence. Do not count MW-T11 progress as MW-T12 rollback evidence or close the MW-T12 gate.
 
 ## Connection and blast-radius matrix
 
@@ -126,7 +150,7 @@ Return the isolated target to the intended tested release. A separate verifier m
 ---
 
 ARTIFACT: docs/architecture/mw-t12-nonproduction-rollback-gate.md  
-VERSION: v1.1.0-LOCAL-AUTHENTICATED-EOS-RECOVERY-VERIFIED  
+VERSION: v1.2.0-FOUNDER-BROWSER-GATE-READBACK  
 AUTHORITY BOUNDARY: Non-executable engineering admission contract; Python EOS remains source owner.  
 TENANT POSTURE: Canonical Founder tenant and all shared/production targets remain untouched.  
 FAIL-CLOSED POSTURE: Any unknown environment identity, recovery capability, backup, permission or verification prevents certification.  
