@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.31.4-UNIQUE-FOUNDATION-FOCUS
+ * VERSION: v2.32.0-SINGLE-FOCUS-M04-EXECUTION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.32.0-SINGLE-FOCUS-M04-EXECUTION makes
+ *            verified task continuation the default M04 execution surface;
+ *            operational metrics, work navigation and the existing
+ *            implementation programme become explicitly selectable
+ *            evidence rather than permanently stacked panels. No changes
+ *            to EOS source authority, project commands or tenant IAM.
  * CHANGELOG: v2.31.4-UNIQUE-FOUNDATION-FOCUS requires exactly
  *            one verified Foundation identity before showing its quick
  *            work handoff; ambiguous matches retain full register readback.
@@ -615,6 +621,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [executionFilter, setExecutionFilter] = useState('ALL');
   const [executionPage, setExecutionPage] = useState(0);
   const [executionInspectorOpen, setExecutionInspectorOpen] = useState(false);
+  const [m04FocusMode, setM04FocusMode] = useState('WORK');
   const [browseOtherProjects, setBrowseOtherProjects] = useState(false);
   const [projectRegisterOpen, setProjectRegisterOpen] = useState(false);
   const [sessionTaskVisits, setSessionTaskVisits] = useState([]);
@@ -787,6 +794,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     setExecutionFilter('ALL');
     setExecutionPage(0);
     setExecutionInspectorOpen(false);
+    setM04FocusMode('WORK');
     projectMutation.current = null;
     planMutation.current = null;
     setPlanState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
@@ -1051,6 +1059,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     return true;
   }) : [];
   const focusExecutionWork = filter => {
+    setM04FocusMode('INSPECT');
     setExecutionSearch('');
     setExecutionFilter(filter);
     setExecutionPage(0);
@@ -1066,6 +1075,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     });
   };
   const resumeTask = task => {
+    setM04FocusMode('INSPECT');
     setExecutionSearch(task.title);
     setExecutionFilter('ALL');
     setExecutionPage(0);
@@ -2099,8 +2109,24 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             <RefreshCw size={14} aria-hidden="true"/> Verify current work
                           </button>}
                         </div>
+                        {m04Execution && <nav aria-label="M04 execution focus" className="mt-3 flex flex-wrap items-center gap-2">
+                          <button type="button" aria-pressed={m04FocusMode === 'WORK'}
+                            onClick={() => { setM04FocusMode('WORK'); setExecutionInspectorOpen(false); }}
+                            className={m04FocusMode === 'WORK'
+                              ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
+                              : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
+                            Continue work
+                          </button>
+                          <button type="button" aria-pressed={m04FocusMode === 'INSPECT'}
+                            onClick={() => setM04FocusMode('INSPECT')}
+                            className={m04FocusMode === 'INSPECT'
+                              ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
+                              : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
+                            Inspect work and evidence
+                          </button>
+                        </nav>}
                         {m04Execution ? <>
-                          {nextAccountableTask && typeof onOpenProject === 'function' && <div role="region"
+                          {m04FocusMode === 'WORK' && nextAccountableTask && typeof onOpenProject === 'function' && <div role="region"
                             aria-label="Continue accountable Strategy work"
                             className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-400/50 bg-slate-900/60 px-3 py-3">
                             <div className="min-w-0">
@@ -2118,7 +2144,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                 onOpenProject(m04Execution.project.project_id, { taskId: nextAccountableTask.task_id });
                               }}>Continue task in Projects <ArrowUpRight size={15}/></button>
                           </div>}
-                          {latestSourceWork && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
+                          {latestSourceWork && (m04FocusMode === 'INSPECT' || latestSourceWork.task_id !== nextAccountableTask?.task_id) && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
                               <p className="max-w-xl truncate text-sm font-semibold text-white">{latestSourceWork.title}</p>
@@ -2139,12 +2165,12 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                           <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
                             Strategy revision {document.revision} and Foundation project revision {m04Execution.project.revision}.
                             {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>
-                          {executionInspectorOpen && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/60 p-2.5">
+                          {m04FocusMode === 'INSPECT' && executionInspectorOpen && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/60 p-2.5">
                             <span className="text-sm text-slate-200">{m04Execution.rows.length} verified tasks · {executionMatches.length} matching current view</span>
                             <button type="button" onClick={() => setExecutionInspectorOpen(false)}
                               className="rounded-md border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">Show execution overview</button>
                           </div>}
-                          {!executionInspectorOpen && <>
+                          {m04FocusMode === 'INSPECT' && !executionInspectorOpen && <>
                           <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                             {[
                               ['Assigned in task source', m04Execution.assigned, 'ASSIGNED'],
@@ -2171,7 +2197,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             Due-date comparisons use a UTC calendar date, not a server-certified overdue decision.
                             Task DONE and audit history are not strategic outcome certification.</p>
                           </>}
-                          <details ref={executionInspectorRef} open={executionInspectorOpen} className="mt-4 scroll-mt-44 rounded-lg border border-slate-600/70 p-3">
+                          {m04FocusMode === 'INSPECT' && <details ref={executionInspectorRef} open={executionInspectorOpen} className="mt-4 scroll-mt-44 rounded-lg border border-slate-600/70 p-3">
                             <summary className="cursor-pointer font-semibold" onClick={event => {
                               event.preventDefault();
                               setExecutionInspectorOpen(open => !open);
@@ -2297,8 +2323,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                                 onClick={() => setExecutionPage(page => Math.min(executionPageCount - 1, page + 1))}
                                 className="rounded-lg border border-slate-500 px-3 py-2 text-sm">Next work</button>
                             </div>}
-                          </details>
-                          {typeof onOpenProject === 'function' && <button type="button"
+                          </details>}
+                          {m04FocusMode === 'INSPECT' && typeof onOpenProject === 'function' && <button type="button"
                             className="mt-3 rounded-lg border border-slate-500 px-3 py-2 text-sm"
                             onClick={() => onOpenProject(m04Execution.project.project_id)}>
                             Open source-owned task commands <ArrowUpRight size={14} aria-hidden="true"/>
@@ -2326,7 +2352,13 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       </div>}
                     </section>}
                     {delivery.state === 'READY' && projectItems.some(item => item.project_id === delivery.projectId
-                      && item.name === FOUNDATION_PROJECT_NAME) && <section className={styles.strategyPlan}
+                      && item.name === FOUNDATION_PROJECT_NAME) && <details
+                        className="mt-3 rounded-xl border border-slate-600/60 bg-slate-900/30 p-3"
+                        open={!m04Execution || m04FocusMode === 'INSPECT'}>
+                      <summary className="cursor-pointer text-sm font-semibold text-slate-100">
+                        Implementation programme and source evidence · {verifiedFoundationPlanCount} of 18 verified
+                      </summary>
+                      <section className={styles.strategyPlan}
                         aria-label="Planned My Work overhaul programme">
                       <div className={styles.strategyPlanHeader}>
                         <div>
@@ -2444,7 +2476,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       </div>
                       <p className={styles.strategyDeliveryNote}>Creation requires current EOS project:update authority. No assignee,
                         deadline, task completion, approval, financial authorization or strategy linkage is inferred.</p>
-                    </section>}
+                    </section></details>}
                     {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
                       {projectError || 'Projects source has not been verified for this session.'}</p>}
                     {projectState === 'UNAVAILABLE' && typeof onOpenProjects === 'function' && <button
@@ -2507,7 +2539,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.31.4-UNIQUE-FOUNDATION-FOCUS
+// VERSION: v2.32.0-SINGLE-FOCUS-M04-EXECUTION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
