@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.33.2-SINGLE-MY-WORK-TOOLBAR-ACTION-CERT
+ * VERSION: v1.33.3-ROUTED-STRATEGY-TEST-HARNESS
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.33.3-ROUTED-STRATEGY-TEST-HARNESS supplies MemoryRouter context in
+ *            the actual production-routed Strategy viewer test harness,
+ *            retaining existing source, IAM and URL-state assertions.
  * CHANGELOG: v1.33.2-SINGLE-MY-WORK-TOOLBAR-ACTION-CERT
  *            verifies the authorized My Work navigation remains in the
  *            document toolbar without an orphan duplicate in Strategy.
@@ -228,6 +231,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No execution authority.
  */
 import React, { StrictMode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AuthContext from '../../contexts/authContext.jsx';
@@ -259,7 +263,7 @@ const view = (document = null, actions = ['READ_HISTORY'], review = false) => ({
 });
 const receipt = document => ({ data: { schema: 'WILSY-COMPANY-OPERATING-DOCUMENT-COMMAND-RESULT/V1',
   tenant_id: scope.tenantId, principal_id: scope.principalId, classification: document.classification, document } });
-const wrap = (props = {}, identity = auth) => <StrictMode><AuthContext.Provider value={identity}><CompanyOperatingDocumentViewer classification="MISSION" onClose={() => {}} onOpenWork={() => {}} {...props}/></AuthContext.Provider></StrictMode>;
+const wrap = (props = {}, identity = auth) => <StrictMode><MemoryRouter initialEntries={['/headquarters']}><AuthContext.Provider value={identity}><CompanyOperatingDocumentViewer classification="MISSION" onClose={() => {}} onOpenWork={() => {}} {...props}/></AuthContext.Provider></MemoryRouter></StrictMode>;
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 const reduceDraftToOneSection = () => {
   const titles = screen.getAllByLabelText('Section title');
