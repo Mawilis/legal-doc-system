@@ -1170,6 +1170,7 @@ export function WilsyOSIntelligenceDock({
   const [deadlineLoading, setDeadlineLoading] = useState(false);
   const [deadlineError, setDeadlineError] = useState('');
   const messagesEndRef = useRef(null);
+  const messagesScrollRef = useRef(null);
   const latestVerifiedReplyRef = useRef(null);
   const healthAbortRef = useRef(null);
   const healthGenerationRef = useRef(0);
@@ -1639,7 +1640,17 @@ export function WilsyOSIntelligenceDock({
   useEffect(() => {
     if (activeTab !== 'chat' || !isOpen) return;
     const target = hasVerifiedSourceReply ? latestVerifiedReplyRef.current : messagesEndRef.current;
-    target?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    const scroller = messagesScrollRef.current;
+    if (!target || !scroller) return;
+    const distance = target.getBoundingClientRect().top
+      - scroller.getBoundingClientRect().top;
+    const prefersReducedMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Scroll only the Dock's transcript. Never move the underlying Projects page.
+    scroller.scrollTo?.({
+      top: Math.max(0, scroller.scrollTop + distance - 18),
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
   }, [conversationThreads, activeThreadId, activeTab, isOpen, isSubmitting, hasVerifiedSourceReply]);
 
   // A verified source read is an inspectable same-session turn, not a
@@ -2500,7 +2511,7 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
-                <div className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
+                <div ref={messagesScrollRef} className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
                   {conversationView === 'WELCOME'
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
