@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT
+ * VERSION: v2.32.2-SINGLE-MY-WORK-NAVIGATION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,11 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.32.2-SINGLE-MY-WORK-NAVIGATION removes
+ *            the orphaned bottom-of-Strategy 'Open current My Work'
+ *            button: the existing persistent document toolbar already
+ *            provides the same authorized My Work navigation action.
+ *            Preserves the single toolbar route, focus and source state.
  * CHANGELOG: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT removes the
  *            redundant Foundation verification prompt after the complete
  *            current EOS Strategy task graph is source verified; the task
@@ -2531,7 +2536,6 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                       </form>
                     </details>}
                   </div>}
-                  <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
                 </section>}
                 {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
                 </>}
@@ -2544,7 +2548,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT
+// VERSION: v2.32.2-SINGLE-MY-WORK-NAVIGATION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
