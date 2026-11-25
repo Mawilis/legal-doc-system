@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.44.0-FULL-TRANSCRIPT-SEARCH-CERT
+ * VERSION: v1.45.0-LIVE-TASK-REFRESH-LOOP-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,9 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.45.0-LIVE-TASK-REFRESH-LOOP-CERT exercises one live
+ *            Python EOS task source request and its explicit refresh
+ *            readback without a paid model, navigation or task mutation.
  * CHANGELOG: v1.44.0-FULL-TRANSCRIPT-SEARCH-CERT verifies searching an
  *            earlier authorized turn changes the visible excerpt without
  *            a paid model or history API search and preserves continuation.
@@ -1774,6 +1777,16 @@ describe('WilsyOSIntelligenceDock', () => {
     requestReadOnlySource('Inspect MW-T11');
     await waitFor(() => expect(screen.getByLabelText('EOS-verified selected task lifecycle'))
       .toHaveTextContent('in progress'));
+    const liveTask = await screen.findByRole('region', { name: 'Live EOS task' });
+    expect(liveTask).toHaveTextContent('MW-T11 — Align Intelligence Dock');
+    expect(liveTask).toHaveTextContent('in progress · Revision 3');
+    const previousReadCount = mockApiGet.mock.calls.filter(([url]) =>
+      url === '/wilsy-ai/reasoning/context').length;
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh live EOS task' }));
+    await waitFor(() => expect(mockApiGet.mock.calls.filter(([url]) =>
+      url === '/wilsy-ai/reasoning/context').length).toBeGreaterThan(previousReadCount));
+    await waitFor(() => expect(liveTask).toHaveTextContent('in progress · Revision 3'));
+    expect(mockApiPost).not.toHaveBeenCalled();
     await waitFor(() => expect(mockPersistTurn).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.getByText('View source details')).toBeVisible());
     expect(screen.queryByLabelText('Your source request')).not.toBeInTheDocument();
@@ -2396,7 +2409,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.44.0-FULL-TRANSCRIPT-SEARCH-CERT
+ * VERSION: v1.45.0-LIVE-TASK-REFRESH-LOOP-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
