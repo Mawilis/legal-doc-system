@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.48.1-MONGO-DRIVER-PHASE-CORRELATION
+VERSION: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -29,8 +29,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
                       response follows commit. The registry never opens one.
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
+CHANGELOG: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS exposes exact-command
+  immutable receipt reconciliation without resubmitting a mutation.
 CHANGELOG:
-   v1.48.1-MONGO-DRIVER-PHASE-CORRELATION wraps authorized
+   v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS wraps authorized
   GET transaction execution in the existing opt-in Mongo driver scope,
   exposing command/pool/pre-command waits to the same safe trace as IAM.
   No new Mongo call, changed transaction interface, timeout or retry.
@@ -374,7 +376,7 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.48.1-MONGO-DRIVER-PHASE-CORRELATION"
+VERSION: Final[str] = "v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS"
 logger = logging.getLogger("WilsyOS.API.Projects")
 
 def _safe_projects_read_trace() -> str:
@@ -3528,6 +3530,71 @@ def revise_project_task(
     return _transaction(context, revise, write=True)
 
 
+def _read_task_transition_receipt(
+    context: TenantAuthorizationContext, project_id: str, task_id: str,
+    expected_revision: int, target_status: str, key: str, *, participant: bool,
+) -> dict[str, object]:
+    """Current IAM plus source receipt, never an inference from equal task state."""
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        if participant:
+            _require_current_project_participation(context, registry, project_id, session, contribute=True)
+        store = _project_task_store(registry, context.tenant_id, project_id, session)
+        current = store.get(tenant_id=context.tenant_id, project_id=project_id,
+                            task_id=task_id, session=session)
+        if participant and current.assignee_principal_id != context.identity.identity_id:
+            raise HTTPException(status_code=403, detail="PROJECT_TASK_ASSIGNEE_SCOPE_REQUIRED")
+        receipt = store.read_transition_receipt(
+            tenant_id=context.tenant_id, project_id=project_id, task_id=task_id,
+            actor_principal_id=context.identity.identity_id, status=target_status,
+            expected_revision=expected_revision, idempotency_key=key, session=session,
+        )
+        if receipt is None:
+            raise HTTPException(status_code=404, detail="PROJECT_TASK_COMMAND_NOT_YET_VERIFIED")
+        return _task_result(context, project_id, receipt)
+    return _transaction(context, read)
+
+
+@router.get("/{project_id}/tasks/{task_id}/transition-receipt")
+def read_owner_task_transition_receipt(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    expected_revision: int = Query(ge=1),
+    target_status: Literal["IN_PROGRESS", "DONE"] = Query(),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Owner-authorized exact-tenant read-only reconciliation; no new command.
+
+    Current IAM and product entitlement remain mandatory. Durable command
+    evidence binds actor, revision, key and target; absence remains unverified.
+    Caller-owned majority snapshot; no financial or execution authority added.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    return _read_task_transition_receipt(context, project_id, task_id, expected_revision,
+                                         target_status, _note_idempotency_key(idempotency_key), participant=False)
+
+
+@router.get("/{project_id}/my-project/tasks/{task_id}/transition-receipt")
+def read_participant_task_transition_receipt(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    expected_revision: int = Query(ge=1),
+    target_status: Literal["IN_PROGRESS", "DONE"] = Query(),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Reconcile only a current contributor's personally assigned exact task.
+
+    Rechecks IAM, active project participation and current assignment before
+    reading immutable receipt evidence; no retry, write or financial authority.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    return _read_task_transition_receipt(context, project_id, task_id, expected_revision,
+                                         target_status, _note_idempotency_key(idempotency_key), participant=True)
+
+
 @router.post("/{project_id}/tasks/{task_id}/transition")
 def transition_project_task(
     payload: ProjectTaskTransitionRequest,
@@ -4312,9 +4379,10 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.48.1-MONGO-DRIVER-PHASE-CORRELATION
+# VERSION: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+

@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.7.0-VERIFIED-TENANT-NAVIGATION-CERT
+ * VERSION: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v1.7.0-VERIFIED-TENANT-NAVIGATION-CERT asserts that
+ * CHANGELOG: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT verifies strict history body and tenant-bound Dock reads.
+ * CHANGELOG: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT asserts that
  *            authenticated Projects, My Work, attention and CRM cannot
  *            leave the browser without an EOS-verified transport tenant;
  *            navigation retains the exact selected ID, logout clears it,
@@ -550,6 +551,19 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.data.get('file').name).toBe('report.pdf');
     });
 
+    it('preserves the exact encrypted-history PUT body and forensic headers', async () => {
+      bindAuthenticatedTransport();
+      const body = { expected_revision: 0, title: 'Task-bound work', workspace: 'Projects', messages: [],
+        work_locator: { workspace: 'PROJECTS', project_id: 'prj-' + 'a'.repeat(48), task_id: 'ptk-' + 'b'.repeat(48) } };
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/wilsy-ai/history/session-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa', method: 'put', data: { ...body }, headers: {},
+      });
+      expect(sealed.data).toEqual(body);
+      expect(sealed.data).not.toHaveProperty('timestamp');
+      expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+      expect(sealed.headers['X-Tenant-ID']).toBe(tenantId);
+    });
+
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
@@ -698,7 +712,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.7.0-VERIFIED-TENANT-NAVIGATION-CERT
+ * VERSION: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.

@@ -1,17 +1,18 @@
 """TITLE: WILSY OS Enterprise Project Task Transaction Registry
-VERSION: v1.2.0-TASK-ACTIVITY-EVENT-READ
+VERSION: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY
 AUTHORITY: Python EOS canonical tenant/project task and milestone source truth.
 EPITOME: Source-backed tasks, nested subtasks, milestones, dependencies, due
          dates, assignees and audited lifecycle CAS with idempotent command replay.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/projects/project_task_registry.py
 COLLABORATION / OWNERSHIP: Projects router admits IAM, participant assignment,
          currentness, project existence and entitlement. EOS owns transactions.
-CERTIFICATION / UPDATE DATE: 2026-11-18
+CERTIFICATION / UPDATE DATE: 2026-11-25
+CHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY shares canonical completion gates with read-only Dock eligibility.
 CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ reads bounded immutable lifecycle events in newest revision order with exact-tenant/project/task binding, source validation and privacy-preserving projection. No command or audit mutation.
 CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING adds guarded title, description,
 due date and assignee editing for active work, durable replay, CAS and
 immutable audit without rewriting dependency or completion history.
-CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ establishes an immutable
+CHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY establishes an immutable
          project-work aggregate and exact-tenant Mongo transaction registry.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain text; no HTML, inferred approval,
@@ -35,7 +36,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.2.0-TASK-ACTIVITY-EVENT-READ"
+VERSION: Final[str] = "v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY"
 SCHEMA: Final[str] = "wilsy.project.task.v1"
 COLLECTION: Final[str] = "wilsy_project_tasks"
 EVENT_COLLECTION: Final[str] = "wilsy_project_task_events"
@@ -264,7 +265,7 @@ class ProjectTask:
         }
         if not isinstance(record, dict) or set(record) != template or record["schema"] != SCHEMA:
             raise ProjectTaskError("PROJECT_TASK_RECORD_INVALID")
-        data = {key: value for key, value in record.items() if key != "schema"}
+        data: dict[str, Any] = {key: value for key, value in record.items() if key != "schema"}
         if not isinstance(data["depends_on"], (list, tuple)):
             raise ProjectTaskError("PROJECT_TASK_DEPENDENCIES_INVALID")
         data["depends_on"] = tuple(data["depends_on"])
@@ -635,6 +636,80 @@ class ProjectTaskRegistry:
         return revised
 
 
+    def _require_completion_ready(self, source: ProjectTask, session: Any) -> None:
+        """Use the same exact-source graph gate for suggestion reads and commands."""
+        tenant_id, project_id, task_id = source.tenant_id, source.project_id, source.task_id
+        for identity in source.depends_on:
+            preceding = self.get(
+                tenant_id=tenant_id, project_id=project_id,
+                task_id=identity, session=session,
+            )
+            if preceding.status != "DONE":
+                raise ProjectTaskConflict("PROJECT_TASK_DEPENDENCY_BLOCKED")
+        try:
+            child = self._tasks.find_one({
+                "tenant_id": _id(tenant_id, "TENANT"),
+                "project_id": _id(project_id, "PROJECT"),
+                "parent_task_id": _id(task_id, "TASK"),
+                "status": {"$nin": ["DONE", "CANCELLED"]},
+            }, session=session)
+        except PyMongoError as error:
+            raise ProjectTaskError("PROJECT_TASK_CHILD_READ_UNAVAILABLE") from error
+        if child is not None:
+            raise ProjectTaskConflict("PROJECT_TASK_CHILDREN_INCOMPLETE")
+
+    def transition_eligibility(
+        self, *, tenant_id: str, project_id: str, task_id: str, session: Any,
+    ) -> dict[str, str | None]:
+        """Read canonical lifecycle and completion gates without writing.
+
+        @collaboration Intelligence Dock consumes these source-owned suggestions.
+        @institutional Never duplicate graph rules or turn read access into IAM.
+        Exact tenant/project lookup and caller-owned snapshot are mandatory.
+        A null reason means source eligibility only; HTTP commands independently
+        reauthorize, check assignment, CAS and durable idempotency. Dependency or
+        child blockers are bounded codes; integrity/storage failures propagate.
+        No completion, approval or financial execution is performed.
+        """
+        source = self.get(tenant_id=tenant_id, project_id=project_id,
+                          task_id=task_id, session=session)
+        result: dict[str, str | None] = {}
+        for target in sorted(_TRANSITIONS[source.status]):
+            reason = None
+            if target == "DONE":
+                try:
+                    self._require_completion_ready(source, session)
+                except ProjectTaskConflict as error:
+                    if error.code not in {"PROJECT_TASK_DEPENDENCY_BLOCKED", "PROJECT_TASK_CHILDREN_INCOMPLETE"}:
+                        raise
+                    reason = error.code
+            result[target] = reason
+        return result
+
+    def read_transition_receipt(
+        self, *, tenant_id: str, project_id: str, task_id: str,
+        actor_principal_id: str, status: str, expected_revision: int,
+        idempotency_key: str, session: Any,
+    ) -> ProjectTask | None:
+        """Reconcile only durable exact-command evidence, without resubmission.
+
+        @collaboration Canonical Projects receipt GET after uncertain outcomes.
+        @institutional Equal current state is not evidence that this command ran.
+        Requires a current exact-tenant/project/task read and caller-owned session.
+        Actor, target, revision and key bind the immutable event fingerprint;
+        divergent replay fails closed. Absence is unverified, not rejection.
+        No write, IAM grant, provider or financial execution is performed.
+        """
+        self.get(tenant_id=tenant_id, project_id=project_id, task_id=task_id, session=session)
+        if type(expected_revision) is not int or expected_revision < 1 or status not in _STATES:
+            raise ProjectTaskError("PROJECT_TASK_COMMAND_INVALID")
+        actor = _id(actor_principal_id, "ACTOR")
+        digest = _hash({"command": "transition", "tenant_id": tenant_id,
+                        "project_id": project_id, "task_id": task_id, "actor": actor,
+                        "status": status, "expected_revision": expected_revision})
+        return self._replay(tenant_id=tenant_id, key=idempotency_key,
+                            request_digest=digest, session=session)
+
     def transition_or_replay(
         self, *, tenant_id: str, project_id: str, task_id: str,
         actor_principal_id: str, status: str, expected_revision: int,
@@ -662,24 +737,7 @@ class ProjectTaskRegistry:
             expected_revision=expected_revision, occurred_at=occurred_at,
         )
         if status == "DONE":
-            for identity in source.depends_on:
-                preceding = self.get(
-                    tenant_id=tenant_id, project_id=project_id,
-                    task_id=identity, session=session,
-                )
-                if preceding.status != "DONE":
-                    raise ProjectTaskConflict("PROJECT_TASK_DEPENDENCY_BLOCKED")
-            try:
-                child = self._tasks.find_one({
-                    "tenant_id": _id(tenant_id, "TENANT"),
-                    "project_id": _id(project_id, "PROJECT"),
-                    "parent_task_id": _id(task_id, "TASK"),
-                    "status": {"$nin": ["DONE", "CANCELLED"]},
-                }, session=session)
-            except PyMongoError as error:
-                raise ProjectTaskError("PROJECT_TASK_CHILD_READ_UNAVAILABLE") from error
-            if child is not None:
-                raise ProjectTaskConflict("PROJECT_TASK_CHILDREN_INCOMPLETE")
+            self._require_completion_ready(source, session)
         try:
             result = self._tasks.update_one({
                 "tenant_id": _id(tenant_id, "TENANT"),
@@ -706,9 +764,12 @@ __all__ = [
 ]
 
 # ARTIFACT: project_task_registry.py
-# VERSION: v1.2.0-TASK-ACTIVITY-EVENT-READ
+# VERSION: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY
 # AUTHORITY BOUNDARY: source lifecycle/CAS only; router owns independent IAM
 # TENANT POSTURE: exact tenant/project/assignee; no privileged fallback
 # FAIL-CLOSED POSTURE: invalid graph, dependency, replay or revision denies
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+

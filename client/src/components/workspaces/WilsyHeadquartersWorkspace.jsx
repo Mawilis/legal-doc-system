@@ -5,14 +5,15 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.16.0-URL-RESTORED-WORKSPACE-FOCUS
+ * VERSION: v4.17.0-ASSIGNED-WORK-URL-FOCUS
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
- * CHANGELOG: v4.16.0-URL-RESTORED-WORKSPACE-FOCUS binds Strategy/Mission
+ * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS preserves independently authorized assigned-task navigation from the Dock.
+ * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS binds Strategy/Mission
  *          and exact validated Projects task navigation to browser URL
  *          hints. Refresh and back/forward rehydrate presentation only;
  *          EOS still rechecks session, tenant, project and task authority.
@@ -440,7 +441,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
     initialNavigation.get('section') === 'projects' ? initialProject : null);
   const [projectTaskFocus, setProjectTaskFocus] = useState(
     initialNavigation.get('section') === 'projects' ? initialTask : null);
-  const [attentionProjectFocus, setAttentionProjectFocus] = useState(null);
+  const [attentionProjectFocus, setAttentionProjectFocus] = useState(initialNavigation.get('view') === 'assigned' ? initialProject : null);
   useEffect(() => {
     const focusAuthorizedSearch = (event) => {
       if (event.defaultPrevented) return;
@@ -464,14 +465,14 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const sectionFromUrl = new URLSearchParams(location.search).get('section');
   const [section, setSection] = useState(() =>
     linkedSections.has(sectionFromUrl) ? sectionFromUrl : 'overview');
-  const [showMyWork, setShowMyWork] = useState(false);
+  const [showMyWork, setShowMyWork] = useState(initialNavigation.get('section') === 'my-work');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 const [desktopNavigationOpen, setDesktopNavigationOpen] = useState(true);
 const [expandedNavigation, setExpandedNavigation] = useState({});
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const [workView, setWorkView] = useState('ALL');
-  const [myWorkFocusItem, setMyWorkFocusItem] = useState(null);
+  const [myWorkFocusItem, setMyWorkFocusItem] = useState(initialNavigation.get('section') === 'my-work' ? initialNavigation.get('work') : null);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const requested = params.get('section');
@@ -485,8 +486,13 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
         ? params.get('task') : null;
       setProjectDeliveryFocus(projectId);
       setProjectTaskFocus(taskId);
+      setAttentionProjectFocus(params.get('view') === 'assigned' ? projectId : null);
     }
-    if (linkedSections.has(requested)) {
+    if (requested === 'my-work') {
+      setSection('overview'); setShowMyWork(true);
+      const sourceKey = params.get('work');
+      setMyWorkFocusItem(typeof sourceKey === 'string' && sourceKey.length <= 240 ? sourceKey : null);
+    } else if (linkedSections.has(requested)) {
       setSection(requested);
       setShowMyWork(false);
     } else if (!requested) {
@@ -1718,10 +1724,12 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.16.0-URL-RESTORED-WORKSPACE-FOCUS
+ * VERSION: v4.17.0-ASSIGNED-WORK-URL-FOCUS
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no financial command is exposed.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+

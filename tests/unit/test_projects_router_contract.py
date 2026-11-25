@@ -1,7 +1,7 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.43.0-DRIVER-CORRELATED-PROJECT-READ-CERT
+VERSION: v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
@@ -16,8 +16,9 @@ TENANT BOUNDARY: Test identities use non-production values and assert exact
 AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
                     claim a live role assignment, entitlement or database write.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+CHANGELOG: v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT adds the two source-owned read-only receipt routes to the closed inventory.
 CHANGELOG:
-  v1.43.0-DRIVER-CORRELATED-PROJECT-READ-CERT asserts
+  v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT asserts
   that the authorized Projects GET transaction is wrapped exactly once
   in an opt-in driver timing scope, with the same sanitized trace label,
   while the original list transaction interface and no-write promise remain.
@@ -518,6 +519,8 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/tasks", ("POST",)),
         ("/projects/{project_id}/tasks/{task_id}", ("PATCH",)),
         ("/projects/{project_id}/tasks/{task_id}/transition", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/transition-receipt", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition-receipt", ("GET",)),
         ("/projects/{project_id}/my-project/tasks", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/transition", ("POST",)),
         ("/projects/{project_id}/my-project/participants", ("GET",)),
@@ -574,6 +577,8 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/tasks", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks/{task_id}", "PATCH"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks/{task_id}/transition", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}/transition-receipt", "GET"): ("project:update", "project_update"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition-receipt", "GET"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/my-project/tasks", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/transition", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/my-project/participants", "GET"): ("project:participant:read", "project_participant_detail"),
@@ -1707,9 +1712,11 @@ def test_profiled_projects_get_preserves_entitlement_denial(
 
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.43.0-DRIVER-CORRELATED-PROJECT-READ-CERT
+# VERSION: v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+

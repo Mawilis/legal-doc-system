@@ -1,13 +1,15 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Conversation History Engine
- * VERSION: v5.11.0-HISTORY-FAILURE-DIAGNOSTICS
+ * VERSION: v5.12.0-TASK-BOUND-REVISION-CONTINUITY
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Current-session history cache and authenticated EOS encrypted archival transport
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
  * COLLABORATION / OWNERSHIP: Intelligence Dock, Python EOS history source, canonical API transport
  * CERTIFICATION / UPDATE DATE: 2026-11-25
- * CHANGELOG: v5.11.0-HISTORY-FAILURE-DIAGNOSTICS preserves unsaved
+ * CHANGELOG: v5.12.0-TASK-BOUND-REVISION-CONTINUITY encrypts historical task locators,
+ * serializes per-thread writes, preserves unsaved conflicts and multiline text.
+ * CHANGELOG: v5.12.0-TASK-BOUND-REVISION-CONTINUITY preserves unsaved
  *            session threads across successful archive refresh and exposes
  *            a bounded nonsecret classification for unavailable persistence.
  * CHANGELOG: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT prevents automatic empty New Sovereign
@@ -22,7 +24,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No paid model or financial execution
  *
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.11.0-HISTORY-FAILURE-DIAGNOSTICS]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.12.0-TASK-BOUND-REVISION-CONTINUITY]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -39,7 +41,7 @@
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CHANGELOG: 2026-11-25 v5.11.0-HISTORY-FAILURE-DIAGNOSTICS cross-checks EOS
+ * ║ CHANGELOG: 2026-11-25 v5.12.0-TASK-BOUND-REVISION-CONTINUITY cross-checks EOS
  * ║          history GET response against the actual active UI principal
  * ║          and tenant when passed by the authenticated Dock; never trusts
  * ║          browser tenant storage as a grant or data source.
@@ -84,7 +86,7 @@ function classifyHistoryTransportError(error) {
   if (status === 503 && typeof detail === 'string' && detail.startsWith('WILSY_AI_HISTORY_')) {
     return 'EOS_HISTORY_DEPENDENCY_UNAVAILABLE';
   }
-  if (status === 409) return 'EOS_HISTORY_CONFLICT';
+  if (status === 409 || error?.message === 'WILSY_AI_HISTORY_UNRESOLVED_CONFLICT') return 'EOS_HISTORY_CONFLICT';
   if (status === 404 || status === 405) return 'EOS_HISTORY_ROUTE_UNAVAILABLE';
   if (status === 422) return 'EOS_HISTORY_PAYLOAD_REJECTED';
   return 'EOS_HISTORY_TRANSPORT_UNAVAILABLE';
@@ -107,6 +109,8 @@ export function resetWilsyAIConversationSession() {
   conversationCache = [];
   historyRemoteStatus = 'UNVERIFIED';
   historyRemoteIssue = null;
+  historyWriteQueues.clear();
+  expectedHistoryPrincipal = null; expectedHistoryTenant = null;
   return [];
 }
 
@@ -248,8 +252,8 @@ async function generateProofHash(entity) {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex;
   } catch (error) {
-    console.error('[HistoryEngine] generateProofHash error:', error);
-    return ''; // Fallback to empty – will cause integrity mismatch
+    console.error('[HistoryEngine] integrity calculation unavailable');
+    throw new Error('WILSY_AI_HISTORY_INTEGRITY_UNAVAILABLE');
   }
 }
 
@@ -280,6 +284,41 @@ export async function verifyThreadIntegrity(thread) {
 // ──────────────────────────────────────────────────────────────────────────────
 // SESSION-BOUND CONVERSATION HISTORY OPERATIONS
 // ──────────────────────────────────────────────────────────────────────────────
+
+let expectedHistoryPrincipal = null;
+let expectedHistoryTenant = null;
+async function verifySavedThread(thread, revision) {
+  const response = await api.get('/wilsy-ai/history/' + encodeURIComponent(thread.id), { timeout: 12000 });
+  const data = response?.data;
+  const saved = data?.threads?.[0];
+  if (data?.schema !== 'WILSY-AI-HISTORY/V1' || !Array.isArray(data.threads) || data.threads.length !== 1
+    || data.tenant_id !== (expectedHistoryTenant || thread.tenantId)
+    || (expectedHistoryPrincipal && data.principal_id !== expectedHistoryPrincipal)
+    || !data.principal_id || saved?.id !== thread.id || saved.revision !== revision
+    || saved.storagePosture !== 'EOS_ENCRYPTED_HISTORY'
+    || saved.authority !== 'RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE' || !sameTranscript(thread, saved)) {
+    throw new Error('WILSY_AI_HISTORY_READBACK_UNVERIFIED');
+  }
+}
+
+const historyWriteQueues = new Map();
+const historicalLocator = value => {
+  if (value === undefined || value === null) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)
+    || Object.keys(value).some(key => !['workspace', 'project_id', 'task_id', 'participant_view', 'task_revision', 'project_revision'].includes(key))
+    || value.workspace !== 'PROJECTS' || !/^prj-[a-f0-9]{48}$/.test(value.project_id || '')
+    || !/^ptk-[a-f0-9]{48}$/.test(value.task_id || '')
+    || (value.participant_view !== undefined && typeof value.participant_view !== 'boolean')) {
+    throw new Error('WILSY_AI_HISTORY_LOCATOR_INVALID');
+  }
+  // Saved revisions are never replayed as current source preconditions.
+  return { workspace: 'PROJECTS', project_id: value.project_id, task_id: value.task_id,
+    participant_view: value.participant_view === true };
+};
+const transcriptPayload = thread => ({ title: thread.title.slice(0, 160), workspace: thread.workspace.slice(0, 80),
+  messages: thread.messages.map(message => ({ role: message.role, content: message.content,
+    timestamp: String(message.timestamp) })), ...(thread.workLocator ? { work_locator: historicalLocator(thread.workLocator) } : {}) });
+const sameTranscript = (a, b) => JSON.stringify(transcriptPayload(a)) === JSON.stringify(transcriptPayload(b));
 
 const sessionThreadId = () => {
   const uuid = globalThis.crypto?.randomUUID?.();
@@ -332,11 +371,15 @@ export async function loadWilsyAIConversationThreads(_options = {}) {
         || thread.storagePosture !== 'EOS_ENCRYPTED_HISTORY'
         || thread.authority !== 'RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE'
         || !Number.isSafeInteger(thread.revision) || thread.revision < 1
-        || !Array.isArray(thread.messages) || thread.messages.length > 80) {
+        || !Array.isArray(thread.messages) || thread.messages.length > 80
+        || !thread.messages.every(message => ['user', 'assistant'].includes(message.role)
+          && typeof message.content === 'string' && message.content.length > 0 && message.content.length <= 6000
+          && typeof message.timestamp === 'string' && Number.isFinite(Date.parse(message.timestamp)))) {
         throw new Error('WILSY_AI_HISTORY_THREAD_UNVERIFIED');
       }
       return resealThread({
         ...thread, tenantId, createdAt: thread.createdAt || thread.updatedAt,
+        ...(thread.workLocator ? { workLocator: historicalLocator(thread.workLocator) } : {}),
         // Archive contents are historical caller transcripts. Never restore
         // them as currently-authorized EOS tool results or model attestations.
         messages: thread.messages.map(message => ({
@@ -348,12 +391,23 @@ export async function loadWilsyAIConversationThreads(_options = {}) {
       });
     }));
     requireCurrentConversationGeneration(generation);
+    expectedHistoryPrincipal = data.principal_id;
+    expectedHistoryTenant = data.tenant_id;
     historyRemoteStatus = 'READY';
     historyRemoteIssue = null;
     // Preserve local unsaved work while incorporating server-owned history.
-    const sessionOnly = conversationCache.filter(item => item.storagePosture !== 'EOS_ENCRYPTED_HISTORY'
-      && !decoded.some(saved => saved.id === item.id));
-    conversationCache = [...sessionOnly, ...decoded];
+    const localUnsaved = conversationCache.filter(item => item.storagePosture !== 'EOS_ENCRYPTED_HISTORY');
+    const merged = decoded.map(saved => {
+      const local = localUnsaved.find(item => item.id === saved.id);
+      if (!local || sameTranscript(local, saved)) return saved;
+      if (local.unverifiedSnapshot && sameTranscript(local.unverifiedSnapshot, saved)) {
+        return { ...local, revision: saved.revision, writeUncertain: false, unverifiedSnapshot: undefined,
+          conflict: false, storagePosture: 'SESSION_ONLY' };
+      }
+      historyRemoteIssue = 'EOS_HISTORY_CONFLICT';
+      return { ...local, remoteRevision: saved.revision, storagePosture: 'SESSION_ONLY', conflict: true };
+    });
+    conversationCache = [...localUnsaved.filter(item => !decoded.some(saved => saved.id === item.id)), ...merged];
     return [...conversationCache];
   } catch (error) {
     requireCurrentConversationGeneration(generation);
@@ -386,6 +440,7 @@ export async function createWilsyAIConversationThread(payload = {}) {
     messages: [],
     tenantId,
     storagePosture: 'SESSION_ONLY',
+    ...(normalized.workLocator ? { workLocator: historicalLocator(normalized.workLocator) } : {}),
   });
 
   requireCurrentConversationGeneration(generation);
@@ -394,7 +449,7 @@ export async function createWilsyAIConversationThread(payload = {}) {
   // Otherwise every refresh would consume one of the 30 durable archive slots.
   if (thread.title !== 'New Sovereign Session') try {
     const result = await api.put('/wilsy-ai/history/' + encodeURIComponent(thread.id), {
-      expected_revision: 0, title: thread.title, workspace: thread.workspace, messages: [],
+      expected_revision: 0, ...transcriptPayload(thread),
     }, { timeout: 12000 });
     requireCurrentConversationGeneration(generation);
     if (result?.data?.schema !== 'WILSY-AI-HISTORY-THREAD/V1'
@@ -402,6 +457,8 @@ export async function createWilsyAIConversationThread(payload = {}) {
       || result.data.storagePosture !== 'EOS_ENCRYPTED_HISTORY') {
       throw new Error('WILSY_AI_HISTORY_WRITE_NOT_VERIFIED');
     }
+    await verifySavedThread(thread, 1);
+    requireCurrentConversationGeneration(generation);
     stored = { ...thread, revision: 1, storagePosture: 'EOS_ENCRYPTED_HISTORY' };
     historyRemoteStatus = 'READY';
     historyRemoteIssue = null;
@@ -409,6 +466,9 @@ export async function createWilsyAIConversationThread(payload = {}) {
     requireCurrentConversationGeneration(generation);
     historyRemoteStatus = 'UNAVAILABLE';
     historyRemoteIssue = classifyHistoryTransportError(error);
+    if (!error?.response || [409, 503].includes(error.response.status)) {
+      stored = { ...thread, writeUncertain: true, unverifiedSnapshot: thread };
+    }
     // Do not erase the user's current work, and do not claim it was saved.
   }
   conversationCache = [stored, ...conversationCache.filter(item => item.id !== stored.id)];
@@ -419,7 +479,7 @@ export async function createWilsyAIConversationThread(payload = {}) {
  * Append one message to a session thread. A legacy (threadId, message) call is
  * accepted while the canonical shape is { threadId, message }.
  */
-export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage = null) {
+async function persistTurn(payload = {}, legacyMessage = null) {
   const generation = conversationGeneration;
   const normalized = (
     typeof payload === 'string'
@@ -439,10 +499,10 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
 
   const messages = [...(existing.messages || [])];
   if (normalized.message && typeof normalized.message === 'object') {
-    const content = normalizeWilsyAIConversationText(normalized.message.content, '');
+    const content = typeof normalized.message.content === 'string' ? normalized.message.content.replace(/[^\S\r\n]+/g, ' ').trim() : '';
     if (content) {
       messages.push({
-        role: normalizeWilsyAIConversationText(normalized.message.role, 'user'),
+        role: normalized.message.role === 'assistant' ? 'assistant' : 'user',
         content,
         timestamp: normalized.message.timestamp || new Date().toISOString(),
         ...(normalized.message.meta ? { meta: normalized.message.meta } : {}),
@@ -469,20 +529,17 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
     }),
     updatedAt: now,
     messages: messages.slice(-80),
+    ...(normalized.workLocator ? { workLocator: historicalLocator(normalized.workLocator) } : {}),
     storagePosture: 'SESSION_ONLY',
   });
 
   requireCurrentConversationGeneration(generation);
   let stored = updated;
   try {
+    if (existing.conflict || existing.writeUncertain) throw new Error('WILSY_AI_HISTORY_UNRESOLVED_CONFLICT');
     const result = await api.put('/wilsy-ai/history/' + encodeURIComponent(threadId), {
       expected_revision: Number.isSafeInteger(existing.revision) ? existing.revision : 0,
-      title: updated.title.slice(0, 160), workspace: updated.workspace.slice(0, 80),
-      messages: updated.messages.map(message => ({
-        role: message.role === 'assistant' ? 'assistant' : 'user',
-        content: message.content.slice(0, 6000),
-        timestamp: String(message.timestamp || now).slice(0, 64),
-      })),
+      ...transcriptPayload(updated),
     }, { timeout: 12000 });
     requireCurrentConversationGeneration(generation);
     const expected = (existing.revision || 0) + 1;
@@ -491,6 +548,8 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
       || result.data.storagePosture !== 'EOS_ENCRYPTED_HISTORY') {
       throw new Error('WILSY_AI_HISTORY_WRITE_NOT_VERIFIED');
     }
+    await verifySavedThread(updated, result.data.revision);
+    requireCurrentConversationGeneration(generation);
     stored = { ...updated, revision: result.data.revision,
       storagePosture: 'EOS_ENCRYPTED_HISTORY' };
     historyRemoteStatus = 'READY';
@@ -500,11 +559,33 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
     historyRemoteStatus = 'UNAVAILABLE';
     historyRemoteIssue = classifyHistoryTransportError(error);
     stored = { ...updated, revision: existing.revision || 0,
-      storagePosture: 'SESSION_ONLY' };
+      storagePosture: 'SESSION_ONLY',
+      ...((!error?.response || [409, 503].includes(error.response.status))
+        ? { writeUncertain: true, unverifiedSnapshot: existing.unverifiedSnapshot || updated } : {}),
+    };
     // No silent retry of potentially committed writes or replayed messages.
   }
   conversationCache = conversationCache.map(item => item.id === threadId ? stored : item);
   return stored;
+}
+
+/**
+ * @description Serialize writes to one thread; invalidate queued work on scope changes.
+ * @collaboration Dock and EOS encrypted revision CAS. No localStorage authority.
+ * @institutional Concurrent turns must not silently overwrite each other or a remote revision.
+ * @returns Current saved or explicitly session-only thread; never a fabricated durable receipt.
+ */
+export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage = null) {
+  const generation = conversationGeneration;
+  const id = typeof payload === 'string' ? payload : payload.threadId || '__new__';
+  const previous = historyWriteQueues.get(id) || Promise.resolve();
+  const operation = previous.catch(() => undefined).then(() => {
+    requireCurrentConversationGeneration(generation);
+    return persistTurn(payload, legacyMessage);
+  });
+  historyWriteQueues.set(id, operation);
+  try { return await operation; }
+  finally { if (historyWriteQueues.get(id) === operation) historyWriteQueues.delete(id); }
 }
 
 /**
@@ -523,7 +604,8 @@ export async function deleteWilsyAIConversationThread(threadId) {
   const generation = conversationGeneration;
   const thread = conversationCache.find(item => item.id === threadId);
   if (!thread) throw new Error('WILSY_AI_HISTORY_THREAD_NOT_FOUND');
-  if (thread.storagePosture === 'EOS_ENCRYPTED_HISTORY') {
+  if (thread.writeUncertain || thread.conflict) throw new Error('WILSY_AI_HISTORY_RECONCILE_BEFORE_DELETE');
+  if (thread.storagePosture === 'EOS_ENCRYPTED_HISTORY' || thread.revision > 0) {
     const response = await api.delete('/wilsy-ai/history/' + encodeURIComponent(threadId), {
       params: { expected_revision: thread.revision }, timeout: 12000,
     });
@@ -531,6 +613,14 @@ export async function deleteWilsyAIConversationThread(threadId) {
     if (response?.data?.schema !== 'WILSY-AI-HISTORY-DELETED/V1'
       || response.data.id !== threadId || response.data.deleted !== true) {
       throw new Error('WILSY_AI_HISTORY_DELETE_NOT_VERIFIED');
+    }
+    const readback = await api.get('/wilsy-ai/history', { timeout: 12000 });
+    requireCurrentConversationGeneration(generation);
+    if (readback?.data?.schema !== 'WILSY-AI-HISTORY/V1'
+      || readback.data.tenant_id !== (expectedHistoryTenant || thread.tenantId)
+      || (expectedHistoryPrincipal && readback.data.principal_id !== expectedHistoryPrincipal)
+      || !Array.isArray(readback.data.threads) || readback.data.threads.some(item => item.id === threadId)) {
+      throw new Error('WILSY_AI_HISTORY_DELETE_READBACK_UNVERIFIED');
     }
   }
   requireCurrentConversationGeneration(generation);
@@ -610,7 +700,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.11.0-HISTORY-FAILURE-DIAGNOSTICS
+ * VERSION: v5.12.0-TASK-BOUND-REVISION-CONTINUITY
  * AUTHORITY BOUNDARY: authenticated Python EOS owns durable encrypted records; browser owns only presentation
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: failed EOS source/store leaves clear session-only posture without localStorage

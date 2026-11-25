@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.45.0-LIST-FIRST-PROJECTS-ADMISSION
+ * VERSION: v2.46.0-ASSIGNED-TASK-FOCUS
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -16,7 +16,8 @@
  * AUTHORITY BOUNDARY: UI affordances are requests; EOS reauthorizes each route
  *                     and returns committed project/event state.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * CHANGELOG: v2.45.0-LIST-FIRST-PROJECTS-ADMISSION prioritizes the project
+ * CHANGELOG: v2.46.0-ASSIGNED-TASK-FOCUS preserves independently authorized assigned-task navigation from the Dock.
+ * CHANGELOG: v2.46.0-ASSIGNED-TASK-FOCUS prioritizes the project
  *            registry list before the optional portfolio summary
  *            read. Avoids initial simultaneous authenticated database
  *            transactions under Free-tier load while preserving independent
@@ -1532,7 +1533,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
     return <AssignedProjectsWorkspace
       tenantId={tenantId} principalId={principalId}
       tenantHeaders={tenantHeaders} sessionScope={sessionScope}
-      focusProjectId={focusAssignedProjectId}
+      focusProjectId={focusAssignedProjectId} focusTaskId={focusTaskId}
       onBack={() => { setShowAssignedProjects(false); void refresh({ preserveSelection: false }); }}/>;
   }
 
@@ -2041,9 +2042,10 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.45.0-LIST-FIRST-PROJECTS-ADMISSION
+// VERSION: v2.46.0-ASSIGNED-TASK-FOCUS
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
 // FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 // END OF WILSY OS SOVEREIGN ARTIFACT
+

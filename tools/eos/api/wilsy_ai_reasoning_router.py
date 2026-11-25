@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS
+VERSION: v2.3.0-DOCK-OPERATING-CONTRACT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,7 +10,9 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS adds audited CAS deletion per
+CHANGELOG: v2.3.0-DOCK-OPERATING-CONTRACT adds narrow permissioned task briefs,
+           shared source eligibility and encrypted historical work locators.
+CHANGELOG: v2.3.0-DOCK-OPERATING-CONTRACT adds audited CAS deletion per
          authenticated owner and indexes the 30-day TTL once per process.
          History operations preserve no-store and never grant model authority.
 CHANGELOG: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY adds exact-current tenant/principal bounded
@@ -68,6 +70,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import binascii
 import os
 import secrets
 from datetime import timedelta
@@ -82,6 +85,10 @@ from pymongo.errors import DuplicateKeyError
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
+from starlette.concurrency import run_in_threadpool
+from tools.eos.intelligence.wilsy_dock_contract import (
+    DockEnvelope, WorkBinding, TaskBrief, ActionList, DockAction, DockExecution,
+)
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from tools.eos.api.tenant_authorization_http import (
@@ -122,7 +129,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS"
+VERSION: Final[str] = "v2.3.0-DOCK-OPERATING-CONTRACT"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -791,6 +798,167 @@ def read_reasoning_context(
         raise _error_response(error) from error
 
 
+async def get_dock_command_authorities(
+    request: Request,
+    locator: WilsyAIContextLocator = Depends(get_reasoning_context_locator),
+    context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
+) -> dict[str, TenantAuthorizationContext]:
+    """Probe existing command IAM, never grant it or hide authority outages.
+
+    @collaboration Canonical tenant authorization and Projects command routes.
+    @institutional A read permission cannot become a mutation permission. Each
+    probe uses the current identity/tenant/capacity and existing operation pair.
+    Only explicit 403 becomes unavailable UI capability; all other errors deny
+    the envelope. Commands repeat these checks; no decision is cached durably.
+    No records, commercial admission or financial execution are created.
+    """
+    if locator.task_id is None:
+        return {}
+    from tools.eos.api import tenant_authorization_http as authority
+    from tools.eos.api.exceptions import WilsyAPIException
+    pairs = [("contribute", "project:participant:contribute", "project_participant_contribute")]
+    if not locator.participant_view:
+        pairs.insert(0, ("update", "project:update", "project_update"))
+    admitted = {}
+    for key, permission, operation in pairs:
+        try:
+            decision = await authority.RequireTenantAuthorization(permission, operation)(
+                request=request, identity=context.identity, tenant_id=context.tenant_id,
+                principal_repository=authority.get_principal_authority_repository(),
+                membership_repository=authority.get_tenant_membership_repository(),
+                role_assignment_repository=authority.get_role_assignment_repository(),
+            )
+        except (HTTPException, WilsyAPIException) as error:
+            if error.status_code == 403:
+                continue
+            raise
+        if (decision.tenant_id != context.tenant_id
+            or decision.identity.identity_id != context.identity.identity_id
+            or decision.decision.authorized is not True
+            or decision.decision.business_role != context.decision.business_role):
+            raise HTTPException(status_code=403, detail="WILSY_DOCK_COMMAND_SCOPE_DENIED")
+        admitted[key] = decision
+    return admitted
+
+
+def _read_dock_task(
+    locator: WilsyAIContextLocator, context: TenantAuthorizationContext,
+    commands: dict[str, TenantAuthorizationContext],
+) -> dict[str, Any]:
+    """Project one task in a caller-owned source snapshot; no commercial reads."""
+    from tools.eos.api import projects_router as projects
+    if not locator.project_id or not locator.task_id:
+        raise HTTPException(status_code=422, detail="WILSY_DOCK_TASK_REQUIRED")
+    project_id, task_id = locator.project_id, locator.task_id
+
+    def load(registry: Any, session: Any) -> dict[str, Any]:
+        if locator.participant_view:
+            project, _ = projects._require_current_project_participation(
+                context, registry, project_id, session,
+            )
+        else:
+            project = registry.get(tenant_id=context.tenant_id, project_id=project_id, session=session)
+        store = projects._project_task_store(registry, context.tenant_id, project_id, session)
+        task = store.get(tenant_id=context.tenant_id, project_id=project_id,
+                         task_id=task_id, session=session)
+        if ((locator.project_revision is not None and locator.project_revision != project.revision)
+            or (locator.task_revision is not None and locator.task_revision != task.revision)):
+            raise HTTPException(status_code=409, detail="WILSY_AI_CONTEXT_STALE")
+        contributor = False
+        if "contribute" in commands:
+            try:
+                projects._require_current_project_participation(
+                    commands["contribute"], registry, project_id, session, contribute=True,
+                )
+                contributor = True
+            except projects.ProjectParticipantNotFound:
+                contributor = False
+            except HTTPException as error:
+                if error.status_code != 403:
+                    raise
+        can_transition = (contributor and task.assignee_principal_id == context.identity.identity_id
+                          if locator.participant_view else "update" in commands)
+        eligibility = store.transition_eligibility(
+            tenant_id=context.tenant_id, project_id=project_id, task_id=task_id, session=session,
+        )
+        binding = WorkBinding(project_id=project_id, task_id=task_id,
+                              revision=task.revision, fingerprint=task.fingerprint,
+                              participant_view=locator.participant_view)
+        specs: list[tuple[str, str, str, str | None, bool]] = [("DRAFT_PLAN", "Draft alignment plan", "DRAFT_PLAN", None, False),
+                 ("OPEN_TASK", "Open full task", "NAVIGATE_TASK", None, False),
+                 ("REVIEW_EVIDENCE", "Review dependencies and evidence", "REVIEW_EVIDENCE", None, False)]
+        if can_transition and eligibility.get("IN_PROGRESS", "DENIED") is None:
+            specs.append(("START_TASK", "Resume work" if task.status == "BLOCKED" else "Start work",
+                          "PROJECT_TASK_TRANSITION", "IN_PROGRESS", True))
+        elif can_transition and eligibility.get("DONE", "DENIED") is None:
+            specs.append(("COMPLETE_TASK", "Complete task", "PROJECT_TASK_TRANSITION", "DONE", True))
+        actions = [DockAction.model_validate({
+            "id": task_id + ":" + kind, "component_id": "task-actions", "kind": kind,
+            "source": binding, "outcome": label, "priority": index, "verified_revision": task.revision,
+            "execution": {"operation": operation, "target_status": target, "requires_confirmation": confirm},
+            "correlation_id": hashlib.sha3_512(json.dumps(
+                [context.tenant_id, context.identity.identity_id, task_id, task.revision, kind],
+                separators=(",", ":"),
+            ).encode()).hexdigest(),
+        }) for index, (kind, label, operation, target, confirm) in enumerate(specs)]
+        blockers = []
+        if task.status == "BLOCKED":
+            blockers.append("Task is marked blocked in Projects.")
+        if eligibility.get("DONE") == "PROJECT_TASK_DEPENDENCY_BLOCKED":
+            blockers.append("A recorded predecessor is not complete.")
+        if eligibility.get("DONE") == "PROJECT_TASK_CHILDREN_INCOMPLETE":
+            blockers.append("Recorded child work is not complete.")
+        # No owner names, approval states or deadlines are guessed. These exact
+        # persisted task fields remain plain source text and cannot issue tools.
+        brief = TaskBrief(
+            id="task-brief", source=binding, title=task.title, purpose=task.description,
+            status=task.status, deadline=task.due_date, dependencies=list(task.depends_on),
+            established="Projects verified the current task and its revision.",
+            blockers=blockers, next_action=actions[0].outcome, can_attach=contributor,
+        )
+        return DockEnvelope(
+            tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+            observed_at=_utc_now().isoformat(), source=binding,
+            components=[brief, ActionList(id="task-actions", actions=actions)],
+        ).model_dump()
+
+    return projects._transaction(context, load)
+
+
+@router.get("/dock/context")
+async def read_dock_context(
+    response: Response, request: Request,
+    locator: WilsyAIContextLocator = Depends(get_reasoning_context_locator),
+    context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
+    project_context: TenantAuthorizationContext | None = Depends(get_reasoning_project_authority),
+    commands: dict[str, TenantAuthorizationContext] = Depends(get_dock_command_authorities),
+) -> dict[str, Any]:
+    """Return a strict non-model work envelope after independent source admission.
+
+    @collaboration Intelligence Dock; existing EOS router mounted by server.py.
+    @institutional Read, rank and render without inventing lifecycle or IAM.
+    Every command and attachment uses its existing Projects endpoint. No model,
+    entitlement mutation, transaction write or financial execution is performed.
+    @raises HTTPException on denied, stale, absent or unavailable source evidence.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if (project_context is None or project_context.tenant_id != context.tenant_id
+        or project_context.identity.identity_id != context.identity.identity_id
+        or project_context.decision.authorized is not True
+        or project_context.decision.business_role != context.decision.business_role):
+        raise HTTPException(status_code=403, detail="WILSY_DOCK_SOURCE_SCOPE_DENIED")
+    from tools.eos.api import projects_router as projects
+    projects.require_projects_indexes_ready(request)
+    projects._require_selected_session_tenant(identity=context.identity, tenant_id=context.tenant_id)
+    try:
+        return await run_in_threadpool(_read_dock_task, locator, project_context, commands)
+    except HTTPException:
+        raise
+    except Exception as error:
+        _logger.error("WILSY_DOCK_CONTEXT_UNAVAILABLE failure_class=%s", type(error).__name__)
+        raise _error_response(error) from error
+
+
 # History is a distinct data authority within the existing Python EOS router.
 # Never derive history scope from the browser's thread owner or project locator.
 _HISTORY_COLLECTION: Final[str] = "wilsy_ai_conversation_history_v1"
@@ -817,6 +985,7 @@ class WilsyHistoryWrite(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     workspace: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9 _.-]+$")
     messages: list[WilsyHistoryMessage] = Field(max_length=80)
+    work_locator: WilsyAIContextLocator | None = None
 
 
 def _history_key() -> bytes:
@@ -824,7 +993,7 @@ def _history_key() -> bytes:
     encoded = os.environ.get("WILSY_AI_HISTORY_KEY_B64", "")
     try:
         key = base64.b64decode(encoded, validate=True)
-    except (ValueError, base64.binascii.Error):
+    except (ValueError, binascii.Error):
         key = b""
     if len(key) != 32:
         raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_KEY_UNAVAILABLE")
@@ -913,6 +1082,39 @@ def list_conversation_history(
             "principal_id": context.identity.identity_id, "threads": threads}
 
 
+@router.get("/history/{thread_id}")
+def read_conversation_history_thread(
+    thread_id: str, response: Response,
+    context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
+) -> dict[str, Any]:
+    """Independently read one encrypted owned revision after a save or reopen.
+
+    @collaboration Dock history writes require this readback before saved state.
+    @institutional A PUT response alone is not durable transcript read evidence.
+    Current Global Principal, exact tenant and owner remain required. Historical
+    work locators grant no source access. No write, model or financial execution.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if not _HISTORY_THREAD_ID.fullmatch(thread_id):
+        raise HTTPException(status_code=422, detail="WILSY_AI_HISTORY_THREAD_ID_INVALID")
+    key = _history_key()
+    history, _ = _history_collections()
+    try:
+        row = history.find_one({"_id": _history_id(context, thread_id),
+            "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+            "expires_at": {"$gt": _utc_now()}})
+        if row is None:
+            raise HTTPException(status_code=404, detail="WILSY_AI_HISTORY_THREAD_UNAVAILABLE")
+        thread = _history_projection(_history_decrypt(row, context, key), row["revision"])
+        return {"schema": "WILSY-AI-HISTORY/V1", "tenant_id": context.tenant_id,
+                "principal_id": context.identity.identity_id, "threads": [thread]}
+    except HTTPException:
+        raise
+    except Exception as error:
+        _logger.error("WILSY_AI_HISTORY_READ_UNAVAILABLE failure_class=%s", type(error).__name__)
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_READ_UNAVAILABLE") from error
+
+
 @router.put("/history/{thread_id}")
 def write_conversation_history(
     thread_id: str,
@@ -936,6 +1138,9 @@ def write_conversation_history(
     data = {"id": thread_id, "title": payload.title, "workspace": payload.workspace,
             "messages": [message.model_dump() for message in payload.messages],
             "updatedAt": now.isoformat()}
+    if payload.work_locator is not None:
+        # A historical locator is untrusted navigation metadata, never live IAM.
+        data["workLocator"] = payload.work_locator.model_dump(exclude_none=True)
     encrypted = _history_encrypt(data, context, thread_id, next_revision, key)
     owner_id = _history_id(context, thread_id)
     row = {"_id": owner_id, "tenant_id": context.tenant_id,
@@ -1200,9 +1405,14 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v2.2.0-HISTORY-DELETE-AND-INDEX-CURRENTNESS
+# VERSION: v2.3.0-DOCK-OPERATING-CONTRACT
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+
+
+

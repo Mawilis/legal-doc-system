@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.14.0-MW-T12-AUTHENTICATED-EOS-RESTART
+ * VERSION: v1.15.0-DOCK-OPERATING-CERT-SCOPE
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -14,7 +14,8 @@
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
- * CHANGELOG: v1.14.0-MW-T12-AUTHENTICATED-EOS-RESTART adds an explicit
+ * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an exact selected Dock suite with disposable task seeding and source verification.
+ * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an explicit
  *            opt-in controlled restart of only the runner-owned EOS process.
  *            It verifies before/after kernel health and independently admitted
  *            authenticated Legal, commercial and SYSTEM read/denial contracts,
@@ -642,6 +643,13 @@ try {
       { stdio: ['ignore', 'pipe', 'pipe'] }, 'COMPANY_DOCUMENT_FIXTURE_SEED');
   }
 
+  const dockOperatingSuite = process.argv.slice(2).length === 1
+    && process.argv[2] === 'tests/e2e/dock-operating.browser.spec.js';
+  if (dockOperatingSuite) {
+    await runAndWait(python, [join(repo, 'tests/e2e/dock_operating_cert_fixture.py'), 'seed', '--state', statePath],
+      { stdio: ['ignore', 'pipe', 'pipe'] }, 'DOCK_FIXTURE_SEED');
+  }
+
   setPhase('startup', 'eos_startup');
   console.info('[BROWSER-CERT-STARTUP] service=EOS action=starting port=' + eosPort);
   const eosProcess = spawnOwned(
@@ -738,7 +746,7 @@ try {
     && browserTestArguments[0] === 'tests/e2e/daily-attention-calendar.browser.spec.js';
   const headquartersSuite = browserTestArguments.length === 1
     && browserTestArguments[0] === 'tests/e2e/headquarters-operating-workspace.browser.spec.js';
-  const verificationScope = companyDocumentSuite ? 'company-documents' : headquartersSuite ? 'headquarters' : hrDashboardSuite ? 'hr'
+  const verificationScope = dockOperatingSuite ? 'dock' : companyDocumentSuite ? 'company-documents' : headquartersSuite ? 'headquarters' : hrDashboardSuite ? 'hr'
     : dailySuite ? 'daily'
       : systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
   await runAndWait(
@@ -808,9 +816,10 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.14.0-MW-T12-AUTHENTICATED-EOS-RESTART
+// VERSION: v1.15.0-DOCK-OPERATING-CERT-SCOPE
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 // END OF WILSY OS SOVEREIGN ARTIFACT
+

@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.59.0-DOCK-GOVERNED-TASK-START
+ * VERSION: v4.60.0-PERMISSIONED-OPERATING-JOURNEY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,7 +14,9 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
- * CHANGELOG: v4.59.0-DOCK-GOVERNED-TASK-START adds a governed Start/Resume command and independent
+ * CHANGELOG: v4.60.0-PERMISSIONED-OPERATING-JOURNEY wires controlled briefs, actions,
+ * deterministic editable PDF drafts and task-linked encrypted continuity.
+ * CHANGELOG: v4.60.0-PERMISSIONED-OPERATING-JOURNEY adds a governed Start/Resume command and independent
  *            source readback using existing Projects IAM, revision CAS and
  *            idempotency, without creating a second lifecycle authority.
  * CHANGELOG: v4.58.0-LIVE-TASK-CONVERSATION-FIRST presents a compact live
@@ -267,6 +269,7 @@ import {
   wilsyAIConversationHistoryPosture,
   wilsyAIConversationHistoryIssue,
 } from './wilsyAIConversationHistoryEngine.js';
+import WilsyDockOperatingWork from './WilsyDockOperatingWork.jsx';
 import styles from './WilsyOSIntelligenceDock.module.css';
 
 /**
@@ -1253,8 +1256,6 @@ export function WilsyOSIntelligenceDock({
   const [conversationView, setConversationView] = useState('WELCOME');
   const [localSourceQuery, setLocalSourceQuery] = useState('');
   const [contextRefresh, setContextRefresh] = useState(0);
-  const [taskTransition, setTaskTransition] = useState({ state: 'IDLE', message: '' });
-  const taskTransitionLockRef = useRef(false);
   const [founderActivationState, setFounderActivationState] = useState('IDLE');
   const [founderActivationMessage, setFounderActivationMessage] = useState('');
   const founderActivationKeyRef = useRef(null);
@@ -1334,8 +1335,6 @@ export function WilsyOSIntelligenceDock({
     setFocusedWorkIndex(null);
     setConversationView('WELCOME');
     setLocalSourceQuery('');
-    taskTransitionLockRef.current = false;
-    setTaskTransition({ state: 'IDLE', message: '' });
     setFounderActivationState('IDLE');
     setFounderActivationMessage('');
     founderActivationKeyRef.current = null;
@@ -1375,8 +1374,6 @@ export function WilsyOSIntelligenceDock({
     reasoningReplayRef.current = { scope: '', text: '', prompt: '', key: '' };
     setIsSubmitting(false);
     setErrorMessage('');
-    taskTransitionLockRef.current = false;
-    setTaskTransition({ state: 'IDLE', message: '' });
   }, [workLocatorKey]);
 
   // Navigation events are untrusted locators. No profile, permission, seat,
@@ -1522,76 +1519,19 @@ export function WilsyOSIntelligenceDock({
     && verifiedWorkspaceContext.data?.allowance?.state === 'NOT_PROVISIONED';
   const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
-  /**
-   * @function startVerifiedDockTask
-   * @description Reuses the canonical Projects revisioned transition command and
-   * independently verifies its result against a fresh authenticated EOS context.
-   * @tenant The tenant and principal must match the live verified source; server
-   * IAM independently rechecks the command. No cross-tenant inference.
-   * @mutation Single key-bound transition; unknown outcomes are never replayed.
-   * @financial No provider billing, financial execution or settlement authority.
-   */
-  const startVerifiedDockTask = async () => {
-    const snapshot = visibleWorkspaceContext;
-    const task = snapshot?.data?.work?.selected_task;
-    const projectId = workLocator.project_id;
-    const tenantId = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
-    if (taskTransitionLockRef.current || snapshot?.state !== 'READY'
-      || snapshot.scope !== dockScope || snapshot.locatorKey !== workLocatorKey
-      || snapshot.data?.tenant_id !== tenantId || snapshot.data?.principal_id !== authUser?.id
-      || snapshot.data?.authority?.source !== 'PYTHON_EOS'
-      || !/^prj-[0-9a-f]{48}$/.test(projectId || '')
-      || !/^ptk-[0-9a-f]{48}$/.test(task?.task_id || '')
-      || task.task_id !== workLocator.task_id
-      || !Number.isSafeInteger(task.revision) || task.revision < 1
-      || !['TODO', 'BLOCKED'].includes(task.status)) return;
-    if (!window.confirm('Start this task in EOS? Your current authority, lifecycle and revision must permit it.')) return;
-    const key = globalThis.crypto?.randomUUID?.();
-    if (!key) {
-      setTaskTransition({ state: 'ERROR', message: 'Secure command identity unavailable. No task change was attempted.' });
-      return;
+  const recordDockWork = async (content, locator) => {
+    const scope = dockScopeRef.current;
+    let thread = conversationThreads.find(item => item.id === activeThreadId);
+    if (!thread || (thread.workLocator?.task_id && thread.workLocator.task_id !== locator.task_id)) {
+      thread = await createWilsyAIConversationThread({ title: content.slice(0, 120), workspace: 'Projects', workLocator: locator });
     }
-    taskTransitionLockRef.current = true;
-    setTaskTransition({ state: 'PENDING', message: 'EOS is verifying the transition…' });
-    const scope = dockScope;
-    const locator = workLocatorKey;
-    try {
-      await api.post('/projects/' + encodeURIComponent(projectId)
-        + '/tasks/' + encodeURIComponent(task.task_id) + '/transition',
-      { expected_revision: task.revision, status: 'IN_PROGRESS' },
-      { headers: { 'X-Tenant-ID': tenantId, 'Idempotency-Key': key }, timeout: 15000 });
-      const response = await api.get('/wilsy-ai/reasoning/context', {
-        params: { ...workLocator, task_revision: undefined },
-        headers: { 'X-Tenant-ID': tenantId }, timeout: 15000, forceNetworkRetry: true,
-      });
-      if (dockScopeRef.current !== scope || workLocatorKeyRef.current !== locator) return;
-      const data = response?.data;
-      const verified = data?.schema === 'WILSY-AI-VERIFIED-CONTEXT/V1'
-        && data.tenant_id === tenantId && data.principal_id === authUser.id
-        && data.authority?.source === 'PYTHON_EOS'
-        && data.work?.selected_task?.task_id === task.task_id
-        && data.work.selected_task.status === 'IN_PROGRESS'
-        && Number.isSafeInteger(data.work.selected_task.revision)
-        && data.work.selected_task.revision > task.revision;
-      if (!verified) {
-        setTaskTransition({ state: 'ERROR', message: 'The transition is not independently verified. Refresh EOS before another command.' });
-        return;
-      }
-      setTaskTransition({ state: 'VERIFIED', message: 'EOS verified: task is in progress.' });
-      setWorkLocator(previous => previous.task_id === task.task_id
-        ? { ...previous, task_revision: data.work.selected_task.revision } : previous);
-      setContextRefresh(previous => previous + 1);
-    } catch (error) {
-      if (dockScopeRef.current !== scope || workLocatorKeyRef.current !== locator) return;
-      const status = error?.response?.status;
-      setTaskTransition({ state: 'ERROR', message: status === 403
-        ? 'EOS denied this transition for the selected operating capacity.'
-        : status === 409 ? 'The task revision changed. Refresh and inspect current EOS state.'
-          : status === 422 ? 'EOS rejected this lifecycle transition.'
-            : 'Command or readback unavailable. Outcome unverified; refresh before retrying.' });
-    } finally {
-      taskTransitionLockRef.current = false;
-    }
+    if (scope !== dockScopeRef.current) return;
+    const saved = await persistWilsyAIConversationTurn({ threadId: thread.id, workLocator: locator,
+      message: { role: 'assistant', content, meta: { source: 'PYTHON_EOS_WORKFLOW', phase: 'RECORDED_WORK' } } });
+    if (scope !== dockScopeRef.current) return;
+    setConversationThreads(previous => [saved, ...previous.filter(item => item.id !== saved.id)]);
+    setActiveThreadId(saved.id);
+    if (saved.storagePosture !== 'EOS_ENCRYPTED_HISTORY') throw new Error('DOCK_HISTORY_NOT_SAVED');
   };
 
   const currentTenantForAI = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
@@ -1806,6 +1746,12 @@ export function WilsyOSIntelligenceDock({
         if (active) {
           setConversationThreads(threads);
           setActiveThreadId(threads[0]?.id || null);
+          const restored = threads[0]?.workLocator;
+          if (restored?.workspace === 'PROJECTS' && /^prj-[a-f0-9]{48}$/.test(restored.project_id || '')
+            && /^ptk-[a-f0-9]{48}$/.test(restored.task_id || '')) {
+            setWorkLocator(previous => previous.task_id ? previous : { workspace: 'PROJECTS',
+              project_id: restored.project_id, task_id: restored.task_id, participant_view: restored.participant_view === true });
+          }
         }
       } catch {
         if (active) {
@@ -1878,7 +1824,7 @@ export function WilsyOSIntelligenceDock({
     const saveSessionInspection = async () => {
       try {
         const thread = await createWilsyAIConversationThread({
-          workspace: 'Projects', title: 'EOS source · ' + code, promptText: localSourceQuery,
+          workspace: 'Projects', title: 'EOS source · ' + code, promptText: localSourceQuery, workLocator,
         });
         const afterRequest = await persistWilsyAIConversationTurn({
           threadId: thread.id,
@@ -2132,12 +2078,14 @@ export function WilsyOSIntelligenceDock({
       };
 
       let threadId = activeThreadId;
+      const threadLocator = workLocator.task_id ? workLocator : undefined;
+      if (threadLocator && activeThread?.workLocator?.task_id !== threadLocator.task_id) threadId = null;
       try {
         if (!threadId) {
           const fresh = await createWilsyAIConversationThread({
             title: text.slice(0, 48) || 'New Sovereign Session',
             promptText: text,
-            workspace: 'WILSY OS',
+            workspace: 'WILSY OS', workLocator: threadLocator,
           });
           if (!requestIsCurrent()) return;
           threadId = fresh.id;
@@ -2146,7 +2094,7 @@ export function WilsyOSIntelligenceDock({
         }
         const afterUser = await persistWilsyAIConversationTurn({
           threadId,
-          message: userTurn,
+          message: userTurn, workLocator: threadLocator,
         });
         if (!requestIsCurrent()) return;
         setConversationThreads((prev) => [
@@ -2449,7 +2397,7 @@ export function WilsyOSIntelligenceDock({
 
         const afterAssistant = await persistWilsyAIConversationTurn({
           threadId,
-          message: assistantTurn,
+          message: assistantTurn, workLocator: threadLocator,
         });
         if (!requestIsCurrent()) return;
         setConversationThreads((prev) => [
@@ -2822,18 +2770,7 @@ export function WilsyOSIntelligenceDock({
                                 : 'Live source not verified'}
                         </span>}
                     </div>
-                    {visibleWorkspaceContext?.state === 'READY'
-                      && visibleWorkspaceContext.data.work?.selected_task?.task_id === workLocator.task_id
-                      && ['TODO', 'BLOCKED'].includes(visibleWorkspaceContext.data.work.selected_task.status) && (
-                      <button type="button" className={styles.liveTaskRefresh}
-                        aria-label={visibleWorkspaceContext.data.work.selected_task.status === 'BLOCKED'
-                          ? 'Resume verified task in EOS' : 'Start verified task in EOS'}
-                        disabled={taskTransition.state === 'PENDING'}
-                        onClick={startVerifiedDockTask}>
-                        {visibleWorkspaceContext.data.work.selected_task.status === 'BLOCKED'
-                          ? 'Resume work' : 'Start work'}
-                      </button>
-                    )}
+
                     <button type="button" className={styles.liveTaskRefresh}
                       aria-label="Refresh live EOS task"
                       disabled={visibleWorkspaceContext?.state === 'LOADING'}
@@ -2842,13 +2779,24 @@ export function WilsyOSIntelligenceDock({
                     </button>
                   </div>
                 )}
-                {taskTransition.state !== 'IDLE' && workLocator.workspace === 'PROJECTS'
-                  && workLocator.task_id && <div role="status" aria-live="polite"
-                    style={{ padding: '6px 16px', fontSize: 12, color: '#e0eaff' }}>
-                    {taskTransition.message}
-                  </div>}
                 <div ref={messagesScrollRef} className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
-                  {conversationView === 'WELCOME'
+                  {conversationView === 'WELCOME' && !isLegalDockRole(authUser?.role) && isOpen && (
+                    <WilsyDockOperatingWork
+                      tenantId={activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId}
+                      principalId={authUser?.id} scope={dockScope} locator={workLocator} refresh={contextRefresh}
+                      providerReady={visibleWorkspaceContext?.state === 'READY'
+                        && visibleWorkspaceContext.data.authority?.provider_binding === 'CONFIGURED'
+                        && visibleWorkspaceContext.data.allowance?.available_request_units > 0}
+                      usageConsent={reasoningUsageConsent}
+                      onVerified={source => {
+                        setWorkLocator(previous => previous.task_id === source.task_id
+                          ? { ...previous, task_revision: source.revision, project_revision: undefined } : previous);
+                        setContextRefresh(value => value + 1);
+                      }}
+                      onRecord={recordDockWork}
+                      onSelectWork={locator => { setWorkLocator(locator); setConversationView('WELCOME'); }}/>
+                  )}
+                  {conversationView === 'WELCOME' && isLegalDockRole(authUser?.role)
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
                     <div className={styles.emptyChatWelcome}>
                       <h4>{welcomeGreeting}</h4>
@@ -3499,6 +3447,14 @@ export function WilsyOSIntelligenceDock({
                             onClick={() => {
                               setAnimatedAssistantKey(null); setActiveThreadId(thread.id);
                               setConversationView('WELCOME'); setActiveTab('chat');
+                              const historical = conversationThreads.find(item => item.id === thread.id)?.workLocator;
+                              if (historical?.workspace === 'PROJECTS' && /^prj-[a-f0-9]{48}$/.test(historical.project_id || '')
+                                && /^ptk-[a-f0-9]{48}$/.test(historical.task_id || '')) {
+                                setVerifiedWorkspaceContext(null);
+                                setWorkLocator({ workspace: 'PROJECTS', project_id: historical.project_id,
+                                  task_id: historical.task_id, participant_view: historical.participant_view === true });
+                                setContextRefresh(value => value + 1);
+                              }
                             }}>
                             <span className={styles.historyRowTitle}>
                               <span>{thread.title}</span><time>{thread.date}</time>
@@ -3574,7 +3530,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.59.0-DOCK-GOVERNED-TASK-START
+ * VERSION: v4.60.0-PERMISSIONED-OPERATING-JOURNEY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate

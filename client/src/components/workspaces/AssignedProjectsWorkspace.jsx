@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK
+ * VERSION: v1.9.0-VERIFIED-TASK-FOCUS
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
- * CHANGELOG: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK records the last
+ * CHANGELOG: v1.9.0-VERIFIED-TASK-FOCUS preserves independently authorized assigned-task navigation from the Dock.
+ * CHANGELOG: v1.9.0-VERIFIED-TASK-FOCUS records the last
  *          exact source scope and header snapshot when live mount dispatches.
  *          Replayed effects and same-selector rerenders cannot issue a
  *          second GET, but a changed selector generates new admission evidence
@@ -127,7 +128,7 @@ function checkNotice(item, tenantId, projectId, principalId) {
 /** @description Real participant workflow without any owner-role fallback. */
 export default function AssignedProjectsWorkspace({
   tenantId, principalId, tenantHeaders, sessionScope, onBack,
-  focusProjectId = null,
+  focusProjectId = null, focusTaskId = null,
 }) {
   const [projects, setProjects] = useState([]);
   const [projectOffset, setProjectOffset] = useState(0);
@@ -363,6 +364,15 @@ export default function AssignedProjectsWorkspace({
     }
   };
 
+  // A URL is only a locator. Open discussion only for an independently
+  // authorized task on the loaded exact-project page; never synthesize a row.
+  useEffect(() => {
+    if (workState === 'READY' && selection?.project?.project_id === focusProjectId
+      && TASK_ID.test(focusTaskId || '') && work.some(item => item.task_id === focusTaskId)) {
+      setDiscussionTaskId(focusTaskId);
+    }
+  }, [focusProjectId, focusTaskId, workState, selection?.project?.project_id, work]);
+
   const transition = (task, status) => {
     if (!selection || selection.participation.role !== 'CONTRIBUTOR'
       || task.assignee_principal_id !== principalId) return;
@@ -569,7 +579,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.8.1-ASSIGNED-PROJECT-INITIAL-READ-INTERLOCK
+// VERSION: v1.9.0-VERIFIED-TASK-FOCUS
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny

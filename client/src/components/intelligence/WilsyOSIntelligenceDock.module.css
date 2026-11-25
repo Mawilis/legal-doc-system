@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.12.0-MW-T11-ANSWER-FOCUS
+ * VERSION: v1.13.0-OPERATING-WORK-ARTIFACTS
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
- * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.13.0-OPERATING-WORK-ARTIFACTS adds compact work actions and an accessible editable artifact area.
  * CHANGELOG: v1.8.0-BALANCED-FOLLOWUP-ROW uses a full-width responsive auto-fit grid for contextual follow-ups so two choices occupy balanced equal-width action lanes; retains transparent inline actions, keyboard focus, reduced-motion and source-only authority.
  * CHANGELOG: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS adds accessible, low-chrome inline contextual actions, a flexible follow-up row, clearly focused work links and restrained responsive focus treatment instead of bulky black/gold rectangular status buttons.
  * CHANGELOG: v1.6.0-CONTEXT-TOOLBAR-AND-LINEAR-RECENTS makes the two-entry conversation/history navigation a compact toolbar and renders authenticated session threads as text rows, not dark static cards; reuses existing focus and keyboard contrast.
@@ -1339,7 +1340,7 @@
 
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.12.0-MW-T11-ANSWER-FOCUS
+ * VERSION: v1.13.0-OPERATING-WORK-ARTIFACTS
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
@@ -1479,6 +1480,27 @@
  .intelligenceDockContainer .historyRowTitle{gap:8px}
 }
 
+
+
+.operatingWork { color: #e3edf8; font-size: 13px; line-height: 1.55; padding: 8px 0 16px; overflow-wrap: anywhere; }
+.operatingWork h4 { font-size: 14px; font-weight: 650; margin: 0 0 10px; color: #f3f7ff; }
+.operatingWork p { margin: 6px 0; }
+.taskPurpose { white-space: pre-wrap; max-height: 120px; overflow: auto; }
+.nextAction { color: #c9def9; }
+.operatingWork button, .operatingWork a { font: inherit; color: #d6e8ff; background: transparent; border: 1px solid #526884; border-radius: 7px; min-height: 36px; padding: 6px 10px; text-decoration: none; cursor: pointer; }
+.operatingWork button:disabled { opacity: .58; cursor: default; }
+.operatingWork button:focus-visible, .operatingWork a:focus-visible, .artifactFrame textarea:focus-visible { outline: 2px solid #80c8ff; outline-offset: 3px; }
+.operatingWork button[data-primary="true"] { color: #081626; background: #b9dcff; border-color: #b9dcff; font-weight: 650; }
+.operatingActions { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; align-items: center; }
+.operatingNotice { border-left: 2px solid #86b9ed; padding-left: 9px; }
+.attentionRows { list-style: none; padding: 0; margin: 0; }
+.attentionRows li { display: flex; gap: 10px; align-items: center; justify-content: space-between; border-bottom: 1px solid #33465c; padding: 10px 0; }
+.attentionRows li span { min-width: 0; }
+.attentionRows small { display: block; color: #afc5dd; font-size: 11px; }
+.attentionRows button, .attentionRows a { flex-shrink: 0; }
+.artifactFrame label { display: block; margin: 10px 0 5px; }
+.artifactFrame textarea { display: block; box-sizing: border-box; width: 100%; resize: vertical; min-height: 180px; max-height: 50vh; background: #0c1b2e; color: #eef5ff; border: 1px solid #536a85; border-radius: 7px; padding: 10px; font-size: 13px; line-height: 1.6; }
+@media (max-width: 480px) { .operatingActions { gap: 6px; } .operatingWork button, .operatingWork a { min-height: 42px; } }
 
 /* v1.14.0 — Dynamic task-first Dock: conversation, not an oversized banner.
  * Existing EOS IAM, provenance, and provider-admission UI remain functional. */
