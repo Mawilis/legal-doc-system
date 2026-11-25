@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.15.0-DOCK-OPERATING-CERT-SCOPE
+ * VERSION: v1.15.1-DOCK-EVIDENCE-HANDOFF
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -14,6 +14,7 @@
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.15.1-DOCK-EVIDENCE-HANDOFF sets a per-run synthetic evidence directory for the selected Dock browser suite, preserving explicit operator override and disposable fixture cleanup.
  * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an exact selected Dock suite with disposable task seeding and source verification.
  * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an explicit
  *            opt-in controlled restart of only the runner-owned EOS process.
@@ -723,6 +724,14 @@ try {
     BROWSER_CERT_BASE_URL: 'http://127.0.0.1:' + vitePort,
   };
   if (chrome) playwrightEnvironment.WILSY_BROWSER_EXECUTABLE = chrome;
+  if (dockOperatingSuite) {
+    // Preserve synthetic browser evidence beyond fixture cleanup. An explicit
+    // operator-supplied evidence directory takes precedence.
+    playwrightEnvironment.WILSY_DOCK_EVIDENCE_DIR = process.env.WILSY_DOCK_EVIDENCE_DIR
+      || await mkdtemp(join(tmpdir(), 'wilsy-dock-browser-evidence-'));
+    console.info('[BROWSER-CERT-DOCK-EVIDENCE] directory='
+      + playwrightEnvironment.WILSY_DOCK_EVIDENCE_DIR);
+  }
   await runAndWait(
     playwright,
     ['test', '--config', 'tests/e2e/playwright.config.js', ...process.argv.slice(2)],
@@ -816,10 +825,9 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.15.0-DOCK-OPERATING-CERT-SCOPE
+// VERSION: v1.15.1-DOCK-EVIDENCE-HANDOFF
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 // END OF WILSY OS SOVEREIGN ARTIFACT
-
