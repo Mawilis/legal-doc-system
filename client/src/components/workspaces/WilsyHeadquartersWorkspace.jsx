@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.15.0-DEFER-REPLAYED-SUMMARY-READ
+ * VERSION: v4.16.0-URL-RESTORED-WORKSPACE-FOCUS
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v4.16.0-URL-RESTORED-WORKSPACE-FOCUS binds Strategy/Mission
+ *          and exact validated Projects task navigation to browser URL
+ *          hints. Refresh and back/forward rehydrate presentation only;
+ *          EOS still rechecks session, tenant, project and task authority.
  * CHANGELOG: v4.15.0-DEFER-REPLAYED-SUMMARY-READ schedules
  *          the Headquarters overview summary GET after the effect setup
  *          turn. Development-mode discarded mounts therefore send no
@@ -166,7 +170,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial, settlement, or release authority.
  */
 import React, { lazy, Suspense, useContext, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import {
@@ -420,12 +424,22 @@ function SourceBoundary({ title, description }) {
  */
 export default function WilsyHeadquartersWorkspace({ tenantId = null, productNavigation = null }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const auth = useContext(AuthContext) || {};
   const authUser = auth.user || {};
   const operatingCapacity = authUser.businessRole || (authUser.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION' ? authUser.role : null);
-  const [operatingDocumentClass, setOperatingDocumentClass] = useState(null);
-  const [projectDeliveryFocus, setProjectDeliveryFocus] = useState(null);
-  const [projectTaskFocus, setProjectTaskFocus] = useState(null);
+  const initialNavigation = new URLSearchParams(location.search);
+  const initialDocument = ['STRATEGY', 'MISSION'].includes(initialNavigation.get('document'))
+    ? initialNavigation.get('document') : null;
+  const initialProject = /^prj-[0-9a-f]{48}$/.test(initialNavigation.get('project') || '')
+    ? initialNavigation.get('project') : null;
+  const initialTask = initialProject && /^ptk-[0-9a-f]{48}$/.test(initialNavigation.get('task') || '')
+    ? initialNavigation.get('task') : null;
+  const [operatingDocumentClass, setOperatingDocumentClass] = useState(initialDocument);
+  const [projectDeliveryFocus, setProjectDeliveryFocus] = useState(
+    initialNavigation.get('section') === 'projects' ? initialProject : null);
+  const [projectTaskFocus, setProjectTaskFocus] = useState(
+    initialNavigation.get('section') === 'projects' ? initialTask : null);
   const [attentionProjectFocus, setAttentionProjectFocus] = useState(null);
   useEffect(() => {
     const focusAuthorizedSearch = (event) => {
@@ -459,7 +473,19 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const [workView, setWorkView] = useState('ALL');
   const [myWorkFocusItem, setMyWorkFocusItem] = useState(null);
   useEffect(() => {
-    const requested = new URLSearchParams(location.search).get('section');
+    const params = new URLSearchParams(location.search);
+    const requested = params.get('section');
+    const documentKind = ['STRATEGY', 'MISSION'].includes(params.get('document'))
+      ? params.get('document') : null;
+    setOperatingDocumentClass(documentKind);
+    if (requested === 'projects') {
+      const projectId = /^prj-[0-9a-f]{48}$/.test(params.get('project') || '')
+        ? params.get('project') : null;
+      const taskId = projectId && /^ptk-[0-9a-f]{48}$/.test(params.get('task') || '')
+        ? params.get('task') : null;
+      setProjectDeliveryFocus(projectId);
+      setProjectTaskFocus(taskId);
+    }
     if (linkedSections.has(requested)) {
       setSection(requested);
       setShowMyWork(false);
@@ -868,12 +894,33 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       const verifiedTaskId = item.task_id || item.work_item_id;
       setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(verifiedTaskId || '')
         ? verifiedTaskId : null);
-      navigateSection('projects');
+      navigateSection('projects', { projectId: item.project_id, taskId: verifiedTaskId });
       return;
     }
     openMyWork(item);
   };
-  const navigateSection = (nextSection) => {
+  const updateWorkspaceUrl = (nextSection, documentKind = null, projectId = null, taskId = null) => {
+    const params = new URLSearchParams(location.search);
+    for (const key of ['section', 'document', 'project', 'task']) params.delete(key);
+    if (linkedSections.has(nextSection)) params.set('section', nextSection);
+    if (['STRATEGY', 'MISSION'].includes(documentKind)) params.set('document', documentKind);
+    if (nextSection === 'projects' && /^prj-[0-9a-f]{48}$/.test(projectId || '')) {
+      params.set('project', projectId);
+      if (/^ptk-[0-9a-f]{48}$/.test(taskId || '')) params.set('task', taskId);
+    }
+    navigate({ pathname: location.pathname, search: params.toString() ? '?' + params.toString() : '' },
+      { replace: true });
+  };
+  const openOperatingDocument = (documentKind) => {
+    setOperatingDocumentClass(documentKind);
+    updateWorkspaceUrl(section, documentKind);
+  };
+  const closeOperatingDocument = () => {
+    setOperatingDocumentClass(null);
+    updateWorkspaceUrl(section);
+  };
+  const navigateSection = (nextSection, focus = null) => {
+    updateWorkspaceUrl(nextSection, null, focus?.projectId, focus?.taskId);
     setSection(nextSection);
     setShowMyWork(false);
     setCalendarOpen(false);
@@ -977,7 +1024,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                     <h2>One Platform. One Team. Infinite Possibilities.</h2>
                     <p>{platformOwnerWorkspace ? 'Develop. Operate. Maintain — WILSY OS.' : 'Coordinate. Execute. Deliver — together.'}</p>
                   </div>
-                  <button className="hq-mission-button" type="button" onClick={() => setOperatingDocumentClass('MISSION')}>Our Mission <ArrowUpRight size={14}/></button>
+                  <button className="hq-mission-button" type="button" onClick={() => openOperatingDocument('MISSION')}>Our Mission <ArrowUpRight size={14}/></button>
                   <small className="hq-illustration-label">Illustrative campus</small>
                 </section>
                 <section className="hq-panel hq-glance" aria-labelledby="hq-glance-title">
@@ -1045,7 +1092,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   <section className="hq-strategy" aria-label="Company strategy">
                     <span className="hq-strategy-icon"><img src={WILSY_PLATFORM_LOGO_SRC} alt="" aria-hidden="true"/></span>
                     <div><h2>Together, we build a smarter, stronger WILSY.</h2><p>One team. Current priorities. Verified actions.</p></div>
-                    <button type="button" onClick={() => setOperatingDocumentClass('STRATEGY')}>Our Strategy <ArrowUpRight size={14}/></button>
+                    <button type="button" onClick={() => openOperatingDocument('STRATEGY')}>Our Strategy <ArrowUpRight size={14}/></button>
                   </section>
                   </div>
                   <div className="hq-operating-column hq-reporting-column" data-hq-column="reporting">
@@ -1191,14 +1238,14 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           </div>
         </div>
       </div>
-      {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={() => setOperatingDocumentClass(null)} onOpenWork={() => { setOperatingDocumentClass(null); openMyWork(); }}
+      {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={closeOperatingDocument} onOpenWork={() => { closeOperatingDocument(); openMyWork(); }}
         onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects'); }}
         onOpenProject={(projectId, focus = null) => {
           if (!/^prj-[0-9a-f]{48}$/.test(projectId)) return;
           setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(focus?.taskId || '') ? focus.taskId : null);
           setProjectDeliveryFocus(projectId);
           setOperatingDocumentClass(null);
-          navigateSection('projects');
+          navigateSection('projects', { projectId, taskId: focus?.taskId });
         }}/>}
     </main>
   );
@@ -1671,7 +1718,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.15.0-DEFER-REPLAYED-SUMMARY-READ
+ * VERSION: v4.16.0-URL-RESTORED-WORKSPACE-FOCUS
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
