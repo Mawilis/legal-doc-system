@@ -20,7 +20,7 @@
  * rendering lifecycle facts; denied/unavailable stays fail-closed. Uses
  * current Python EOS context GET, no paid provider, IAM or new surface.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
- * CHANGELOG: v4.43.0-MW-T11-TASK-CONTEXT-FIRST registers explicit POS location-authorized commercial count and immutable Billing evidence-by-identity reads. Strictly validates exact source, tenant, principal, counts and financial non-execution claims; does not infer billing balances or POS settlements and never invokes a model for these verified source requests.
+ * CHANGELOG: v4.42.0-BILLING-POS-CERTIFIED-SOURCE-READS registers explicit POS location-authorized commercial count and immutable Billing evidence-by-identity reads. Strictly validates exact source, tenant, principal, counts and financial non-execution claims; does not infer billing balances or POS settlements and never invokes a model for these verified source requests.
  * CHANGELOG: v4.41.0-GOVERNED-MULTIDOMAIN-WORK-SOURCE adds independently authorised multi-domain work intelligence (HR, CRM, Operations, Legal, Intelligence and Projects task queues) using the canonical My Work aggregate and its complete tenant/principal/source-coverage validator. Uses typed read-only plans, no provider calls or omitted-source zeros, keeps business writes and the existing AI replay boundary closed.
  * CHANGELOG: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING plans multiple safe read-only operations in one Projects source turn from verified conversation context, including 'How many are active and what are details?'. Reuses independently authorised EOS source reads and never sends the combined request to paid inference. Rejects mixed domain, ambiguous and write commands; no IAM or financial changes.
  * CHANGELOG: v4.39.0-VERIFIED-ACTIVE-PROJECT-DETAILS continues a verified Projects status conversation into source-authorised active-project detail, using independent exact-tenant summary, bounded status-filtered list and detail GETs, validating each response; no model request, inferred project data, financial authority, tenant expansion or held-admission changes.
@@ -2359,7 +2359,7 @@ export function WilsyOSIntelligenceDock({
                         {Number.isSafeInteger(visibleWorkspaceContext.data.work.selected_task.revision)
                           ? visibleWorkspaceContext.data.work.selected_task.revision : 'unverified'}
                         {' · Deadline '}
-                        {/^\\d{4}-\\d{2}-\\d{2}$/.test(
+                        {/^\d{4}-\d{2}-\d{2}$/.test(
                           visibleWorkspaceContext.data.work.selected_task.due_date || '')
                           ? visibleWorkspaceContext.data.work.selected_task.due_date : 'not verified'}
                       </p>}
