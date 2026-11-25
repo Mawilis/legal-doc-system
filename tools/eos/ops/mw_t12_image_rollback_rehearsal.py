@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback rehearsal.
-VERSION: v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION
+VERSION: v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify two provenance-labelled Python EOS Docker image identities
          against one owned persistent MongoDB volume across forward/reverse
@@ -9,6 +9,12 @@ COLLABORATION / OWNERSHIP: Extends the existing MW-T12 Git staging, immutable
          artifact admission, synthetic browser fixture, source read/deny and
          audit snapshot verification. Docker owns only names created here.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION
+           colocates sequential EOS image containers with the owned Mongo
+           network namespace so the database URI remains genuine loopback,
+           preserving EOS mandatory TLS for remote destinations. Publishes
+           one fixed loopback EOS port on the owned Mongo sidecar for all
+           three deployment phases, without sharing the data filesystem.
 CHANGELOG: v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION
            repairs the three-phase immutable image recheck indentation so
            the rollback operator imports and phase admission can execute.
@@ -69,7 +75,7 @@ from tools.eos.ops.mw_t12_same_data_rehearsal import (
     FIXTURE, _authenticate_unchanged, _fingerprint_fixture, _run_fixture,
 )
 
-VERSION = "v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION"
+VERSION = "v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION"
 MONGO_IMAGE = "mongo:7"
 SOURCE_LABEL = "wilsy.mwt12.source_sha"
 DRILL_LABEL = "wilsy.mwt12.disposable"
@@ -238,13 +244,17 @@ def _verify_phase(name: str, image: str, network: str, database: str,
                   environment: dict[str, str], baseline: str,
                   revision: str) -> None:
     """Verify exact image, authorization, durable fixture and audit digest."""
-    port = _free_port()
+    # The owned Mongo sidecar publishes the fixed host-facing EOS port.
+    # Docker network namespace sharing makes 127.0.0.1 a true loopback
+    # peer rather than treating the bridge DNS hostname as a remote target.
+    port = int(environment["MW_T12_IMAGE_EOS_PORT"])
+    mongo_container = environment["MW_T12_IMAGE_MONGO_CONTAINER"]
     mongo_uri = (
-        f"mongodb://mongo:27017/{database}"
+        f"mongodb://127.0.0.1:27017/{database}"
         f"?replicaSet={SET_NAME}&directConnection=true"
     )
     args = [
-        "--network", network, "--publish", f"127.0.0.1:{port}:9095",
+        "--network", "container:" + mongo_container,
         "--env", "MONGODB_URI=" + mongo_uri,
         "--env", "MONGO_URI=" + mongo_uri,
         "--env", "BROWSER_CERT_MONGO_URI=" + mongo_uri,
@@ -304,6 +314,9 @@ def rehearse_image(target: str) -> int:
         state_file = root / "state.json"
         database = "wilsy_l8_8m_r3_mwt12_image_" + drill
         port = _free_port()
+        eos_port = _free_port()
+        if eos_port == port:
+            raise MWRecoveryError("IMAGE_HOST_PORT_COLLISION")
         uri = _local_database_uri(port, database)
         env = os.environ.copy()
         for key in (
@@ -317,6 +330,8 @@ def rehearse_image(target: str) -> int:
             "WILSY_JWT_SECRET": jwt,
             "WILSY_PLATFORM_WORKFORCE_SCOPE_ID": "browser-cert-platform-workforce",
             "MW_T12_IMAGE_DRILL": drill,
+            "MW_T12_IMAGE_MONGO_CONTAINER": mongo,
+            "MW_T12_IMAGE_EOS_PORT": str(eos_port),
             "ENV": "development", "WILSY_ENV": "development",
             "WILSY_KENNEL_DB_TLS": "0",
             "PYTHONPATH": str(checkout),
@@ -347,6 +362,7 @@ def rehearse_image(target: str) -> int:
                 "run", "-d", "--name", mongo, "--network", network,
                 "--network-alias", "mongo",
                 "--publish", f"127.0.0.1:{port}:27017",
+                "--publish", f"127.0.0.1:{eos_port}:9095",
                 "--mount", f"type=volume,source={volume},target=/data/db",
                 MONGO_IMAGE, "mongod", "--bind_ip_all", "--replSet", SET_NAME,
                 "--quiet",
@@ -436,7 +452,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.3.1-IMAGE-PHASE-SYNTAX-RESTORATION
+# VERSION: v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION
 # AUTHORITY BOUNDARY: Local immutable Docker image and synthetic data only.
 # TENANT POSTURE: UUID-scoped local fixture, no canonical Founder tenant.
 # FAIL-CLOSED POSTURE: Provenance, exact HTTP, audit and cleanup are required.
