@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.43.0-PRODUCTIVE-HISTORY-NAVIGATOR-CERT
+ * VERSION: v1.43.1-ASYNC-HISTORY-HYDRATION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,8 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.43.1-ASYNC-HISTORY-HYDRATION-CERT waits for authorized
+ *            async history hydration before querying transcript previews.
  * CHANGELOG: v1.43.0-PRODUCTIVE-HISTORY-NAVIGATOR-CERT verifies compact searchable
  *            conversation continuation and archive provenance replaces
  *            passive message counters, retaining current auth permissions.
@@ -2050,7 +2052,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     expect(screen.getByRole('searchbox', { name: 'Search conversations' })).toBeVisible();
-    expect(screen.getByText('Task deadline verified in EOS')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('Task deadline verified in EOS')).toBeVisible());
     expect(screen.getByText('Draft context in session')).toBeVisible();
     expect(screen.getByText('Saved in EOS')).toBeVisible();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search conversations' }), {
@@ -2384,7 +2386,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.43.0-PRODUCTIVE-HISTORY-NAVIGATOR-CERT
+ * VERSION: v1.43.1-ASYNC-HISTORY-HYDRATION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
