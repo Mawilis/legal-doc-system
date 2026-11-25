@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.54.0-MW-T11-LIFECYCLE-EVENT-CONTEXT
+ * VERSION: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,7 +14,11 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
- * CHANGELOG: v4.54.0-MW-T11-LIFECYCLE-EVENT-CONTEXT supports explicitly requested,
+ * CHANGELOG: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR replaces static message counters with a
+ *            searchable, time-grouped, actionable navigator: previews,
+ *            archive provenance, open and explicit delete, keyboard
+ *            filters and reversible session-only state. No new IAM.
+ * CHANGELOG: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR supports explicitly requested,
  *            independently authorized project-task event inspection using
  *            the canonical Projects events source, with strict tenant,
  *            principal, task and event schema checks. It records historical
@@ -284,6 +288,25 @@ function classifyWilsyAISourceIntent(value) {
 /**
  * @description Narrow explicit project-task inspection intent, without model inference.
  */
+function describeConversation(thread) {
+  const messages = Array.isArray(thread?.messages) ? thread.messages : [];
+  const last = messages.at(-1);
+  const rawDate = thread.updatedAt || last?.timestamp || thread.createdAt;
+  const millis = typeof rawDate === 'string' ? Date.parse(rawDate) : NaN;
+  return {
+    id: thread.id,
+    title: thread.title?.trim() || 'Untitled conversation',
+    preview: typeof last?.content === 'string'
+      ? last.content.replace(/\\s+/g, ' ').trim().slice(0, 140) : '',
+    workspace: thread.workspace || 'Workspace',
+    saved: thread.storagePosture === 'EOS_ENCRYPTED_HISTORY',
+    millis: Number.isFinite(millis) ? millis : 0,
+    date: Number.isFinite(millis)
+      ? new Date(millis).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+      : 'Unknown date',
+  };
+}
+
 function parseWilsyTaskInspection(value) {
   const match = /^(?:inspect|show|review|open|view)\s+(MW-T\d{1,3})[?.!]?$/i
     .exec(String(value || '').trim());
@@ -1219,6 +1242,8 @@ export function WilsyOSIntelligenceDock({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
   const [historyOperationError, setHistoryOperationError] = useState('');
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyFilter, setHistoryFilter] = useState('ALL');
   const recordedSourceReadRef = useRef('');
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [animatedAssistantKey, setAnimatedAssistantKey] = useState(null);
@@ -3251,91 +3276,120 @@ export function WilsyOSIntelligenceDock({
             )}
 
             {activeTab === 'history' && (
-              <div className={styles.historyTabContent}>
-                <div className={styles.historyHeaderRow}>
-                  <div><h4>Conversations</h4><p style={{ color: '#aebed2', fontSize: 12, marginTop: 4 }}>
-                    {wilsyAIConversationHistoryPosture() === 'READY'
-                      ? 'Encrypted history is stored by Python EOS for 30 days. Saved transcripts are not live source verification.'
-                      : 'EOS saved history is unavailable. Current conversations are session-only and may disappear on refresh.'}
-                  </p></div>
-                  <div className={styles.historyHeaderActions}>
-                    <button type="button" className={styles.historyActionButton} onClick={handleNewThread}>+ New</button>
-                    <button type="button" className={styles.historyActionButton} onClick={handleRefresh}>Refresh history</button>
-                    <button
-                      type="button"
-                      className={styles.clearHistoryButton}
-                      onClick={async () => {
-                        const scope = dockScopeRef.current;
-                        try {
-                          await clearWilsyAIConversationThreads();
-                          const fresh = await createWilsyAIConversationThread({
-                            title: 'New Sovereign Session', workspace: 'WILSY OS',
-                          });
-                          if (scope !== dockScopeRef.current) return;
-                          setConversationThreads([fresh]);
-                          setActiveThreadId(fresh.id);
-                          setActiveTab('chat');
-                        } catch {
-                          if (scope === dockScopeRef.current) {
-                            setErrorMessage('Session history could not be reset. No completed reset is being claimed.');
-                          }
-                        }
-                      }}
-                    >
-                      Clear session
-                    </button>
+              <section className={styles.historyTabContent} aria-label="Conversation history">
+                <div className={styles.historyNavigatorHead}>
+                  <div>
+                    <h4>Pick up where you left off</h4>
+                    <p>Find a conversation and continue your work. Live task facts are verified again in EOS.</p>
+                  </div>
+                  <button className={styles.historyNewButton} type="button" onClick={handleNewThread}>+ New conversation</button>
+                </div>
+                <div className={styles.historyArchiveStatus} role="status">
+                  <span aria-hidden="true" className={wilsyAIConversationHistoryPosture() === 'READY'
+                    ? styles.historyArchiveReady : styles.historyArchiveOffline}/>
+                  <span>{wilsyAIConversationHistoryPosture() === 'READY'
+                    ? 'Encrypted conversation archive connected'
+                    : 'Not saved to EOS · This session may be lost on refresh'}</span>
+                  <button type="button" onClick={handleRefresh}>Check again</button>
+                </div>
+                <div className={styles.historyToolbar}>
+                  <label className={styles.historySearch}>
+                    <span>Find a conversation</span>
+                    <input aria-label="Search conversations" type="search" maxLength={120}
+                      placeholder="Search your conversations…" value={historySearch}
+                      onChange={event => setHistorySearch(event.target.value)}/>
+                  </label>
+                  <div role="group" aria-label="Filter conversation history" className={styles.historyFilters}>
+                    {[['ALL','All'],['EOS','Saved'],['SESSION','This session']].map(([value,label]) =>
+                      <button key={value} type="button" aria-pressed={historyFilter === value}
+                        onClick={() => setHistoryFilter(value)}>{label}</button>)}
                   </div>
                 </div>
-                <div className={styles.threadsList}>
-                  {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).length === 0
-                    && <p style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
-                      No conversation messages are available in this view. Refresh history to verify the current EOS archive.
-                    </p>}
-                  {historyOperationError && <p role="alert" style={{ color: '#ffccba', fontSize: 12 }}>
-                    {historyOperationError}
-                  </p>}
-                  {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).map((thread) => (
-                    <div key={thread.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button type="button"
-                        className={`${styles.threadCard} ${
-                          thread.id === activeThreadId ? styles.activeThreadCard : ''
-                        }`}
-                        style={{ flex: 1, minWidth: 0 }}
-                        onClick={() => { setAnimatedAssistantKey(null); setActiveThreadId(thread.id); setConversationView('WELCOME'); setActiveTab('chat'); }}
-                      >
-                        <MessageSquareText size={16} />
-                        <div>
-                          <h5>{thread.title || 'Conversation'}</h5>
-                          <span>{thread.messages?.length || 0} messages · {
-                            thread.storagePosture === 'EOS_ENCRYPTED_HISTORY'
-                              ? 'Saved in EOS' : 'Session only'
-                          }</span>
-                        </div>
+                {historyOperationError && <p role="alert" className={styles.historyOperationError}>{historyOperationError}</p>}
+                <div className={styles.historyRows} aria-label="Recent conversations">
+                  {(() => {
+                    const query = historySearch.trim().toLocaleLowerCase();
+                    const visible = conversationThreads
+                      .filter(thread => (thread.messages?.length || 0) > 0)
+                      .map(describeConversation)
+                      .filter(thread => (historyFilter === 'ALL' ||
+                        (historyFilter === 'EOS' ? thread.saved : !thread.saved))
+                        && (!query || [thread.title, thread.preview, thread.workspace]
+                          .some(item => item.toLocaleLowerCase().includes(query))))
+                      .sort((a,b) => b.millis - a.millis || a.id.localeCompare(b.id));
+                    if (!visible.length) return <div className={styles.historyEmpty}>
+                      <p>{query || historyFilter !== 'ALL'
+                        ? 'No matching conversations.' : 'No conversations yet.'}</p>
+                      <button type="button" onClick={query || historyFilter !== 'ALL'
+                        ? () => { setHistorySearch(''); setHistoryFilter('ALL'); } : handleNewThread}>
+                        {query || historyFilter !== 'ALL' ? 'Show all' : 'Start conversation'}
                       </button>
-                      <button type="button" className={styles.historyActionButton}
-                        aria-label={`Delete conversation ${thread.title || 'Conversation'}`}
-                        style={{ minHeight: 40, padding: '6px 10px' }}
-                        onClick={async () => {
-                          if (!window.confirm('Delete this conversation from WILSY OS history? This cannot be undone.')) return;
-                          const scope = dockScopeRef.current;
-                          setHistoryOperationError('');
-                          try {
-                            const remaining = await deleteWilsyAIConversationThread(thread.id);
-                            if (scope !== dockScopeRef.current) return;
-                            setConversationThreads(remaining);
-                            if (activeThreadId === thread.id) {
-                              setActiveThreadId(remaining[0]?.id || null);
-                            }
-                          } catch {
-                            if (scope === dockScopeRef.current) {
-                              setHistoryOperationError('EOS could not verify deletion. The conversation was not removed.');
-                            }
-                          }
-                        }}>Delete</button>
-                    </div>
-                  ))}
+                    </div>;
+                    const now = new Date();
+                    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                    let lastGroup = '';
+                    return visible.map(thread => {
+                      const group = thread.millis >= midnight ? 'Today'
+                        : thread.millis >= midnight - 86400000 ? 'Yesterday' : 'Earlier';
+                      const showGroup = group !== lastGroup;
+                      lastGroup = group;
+                      return <React.Fragment key={thread.id}>
+                        {showGroup && <h5 className={styles.historyGroupHeading}>{group}</h5>}
+                        <div className={styles.historyRow}>
+                          <button type="button"
+                            className={`${styles.historyOpenRow} ${thread.id === activeThreadId ? styles.historySelectedRow : ''}`}
+                            aria-label={`Open conversation ${thread.title}`}
+                            aria-current={thread.id === activeThreadId ? 'true' : undefined}
+                            onClick={() => {
+                              setAnimatedAssistantKey(null); setActiveThreadId(thread.id);
+                              setConversationView('WELCOME'); setActiveTab('chat');
+                            }}>
+                            <span className={styles.historyRowTitle}>
+                              <span>{thread.title}</span><time>{thread.date}</time>
+                            </span>
+                            <span className={styles.historyRowPreview}>{thread.preview}</span>
+                            <span className={styles.historyRowFoot}>
+                              {thread.workspace} <span aria-hidden="true">·</span>
+                              {thread.saved ? 'Saved in EOS' : 'Session only — not saved'}
+                            </span>
+                          </button>
+                          <button type="button" className={styles.historyDeleteRow}
+                            aria-label={`Delete conversation ${thread.title}`}
+                            onClick={async () => {
+                              if (!window.confirm('Delete this conversation from WILSY OS history? This cannot be undone.')) return;
+                              const scope = dockScopeRef.current;
+                              setHistoryOperationError('');
+                              try {
+                                const remaining = await deleteWilsyAIConversationThread(thread.id);
+                                if (scope !== dockScopeRef.current) return;
+                                setConversationThreads(remaining);
+                                if (activeThreadId === thread.id) setActiveThreadId(remaining[0]?.id || null);
+                              } catch {
+                                if (scope === dockScopeRef.current) setHistoryOperationError('Deletion was not verified by EOS.');
+                              }
+                            }}>Delete</button>
+                        </div>
+                      </React.Fragment>;
+                    });
+                  })()}
                 </div>
-              </div>
+                <div className={styles.historyFooter}>
+                  <span>Private to your authorized tenant and principal</span>
+                  <button type="button" onClick={async () => {
+                    const scope = dockScopeRef.current;
+                    try {
+                      await clearWilsyAIConversationThreads();
+                      const fresh = await createWilsyAIConversationThread({
+                        title: 'New Sovereign Session', workspace: 'WILSY OS',
+                      });
+                      if (scope !== dockScopeRef.current) return;
+                      setConversationThreads([fresh]); setActiveThreadId(fresh.id); setActiveTab('chat');
+                    } catch {
+                      if (scope === dockScopeRef.current) setHistoryOperationError('Session reset could not be verified.');
+                    }
+                  }}>Clear session</button>
+                </div>
+              </section>
             )}
           </div>
         </section>
@@ -3364,7 +3418,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.54.0-MW-T11-LIFECYCLE-EVENT-CONTEXT
+ * VERSION: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
