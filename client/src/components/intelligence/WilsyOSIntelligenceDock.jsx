@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.46.0-MW-T11-HISTORY-RECOVERY-UX
+ * VERSION: v4.47.0-MW-T11-PROGRESSIVE-VERIFIED-REPLY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,10 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.47.0-MW-T11-PROGRESSIVE-VERIFIED-REPLY renders verified task replies as progressive,
+ *            structured source transcripts with readable hierarchy, visible
+ *            evidence posture, and reduced-motion accessibility. Replayed
+ *            history stays instantaneous. No provider or source writes.
  * CHANGELOG: v4.46.0-MW-T11-HISTORY-RECOVERY-UX restores selected current-session turns
  *            to the active conversation panel and visibly distinguishes
  *            session activity from certified EOS durable history.
@@ -752,7 +756,7 @@ function resolveWilsyLocalClock(value, now = new Date()) {
  * immediately available to screen readers; reduced motion is instantaneous.
  * Intervals are cancelled on remount, thread switch, and Dock close.
  */
-function WilsyProgressiveAssistantText({ content, animate, onComplete }) {
+function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 'PLAIN' }) {
   const fullText = String(content || '');
   const [visibleCount, setVisibleCount] = useState(animate ? 0 : fullText.length);
   const onCompleteRef = useRef(onComplete);
@@ -769,7 +773,8 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete }) {
     }
     let shown = 0;
     setVisibleCount(0);
-    const step = Math.max(1, Math.ceil(fullText.length / 64));
+    // 90 paced increments, no fake network stream and no per-letter sluggishness.
+    const step = Math.max(1, Math.ceil(fullText.length / 90));
     const timer = window.setInterval(() => {
       shown = Math.min(fullText.length, shown + step);
       setVisibleCount(shown);
@@ -777,16 +782,34 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete }) {
         window.clearInterval(timer);
         onCompleteRef.current?.();
       }
-    }, 22);
+    }, 19);
     return () => window.clearInterval(timer);
   }, [animate, fullText]);
 
+  const visibleText = fullText.slice(0, visibleCount);
+  const formatted = format === 'VERIFIED_TASK'
+    ? <div className={styles.verifiedReply}>
+      {visibleText.split('\\n').map((line, index) => {
+        if (!line) return null;
+        if (index === 0) {
+          return <p key={index} className={styles.verifiedReplyTitle}>{line}</p>;
+        }
+        if (index >= 1 && index <= 3) {
+          const split = line.indexOf(': ');
+          return <p key={index} className={styles.verifiedReplyFact}>
+            <span>{split >= 0 ? line.slice(0, split) : line}</span>
+            {split >= 0 && <strong>{line.slice(split + 2)}</strong>}
+          </p>;
+        }
+        return <p key={index} className={styles.verifiedReplyNote}>{line}</p>;
+      })}
+    </div> : visibleText;
   return (
     <>
       <span aria-hidden={animate ? 'true' : undefined}>
-        {fullText.slice(0, visibleCount)}
+        {formatted}
         {animate && visibleCount < fullText.length && (
-          <span aria-hidden="true" style={{ opacity: 0.75 }}>▍</span>
+          <span aria-hidden="true" className={styles.replyCursor}>▍</span>
         )}
       </span>
       {animate && <span className={styles.srOnly}>{fullText}</span>}
@@ -1636,10 +1659,10 @@ export function WilsyOSIntelligenceDock({
         const verifiedStatus = typeof task.status === 'string'
           ? task.status.replaceAll('_', ' ').toLowerCase() : 'not provided';
         const reply = 'EOS source verified: ' + task.title
-          + '. Lifecycle: ' + verifiedStatus
-          + '. Revision: ' + task.revision
-          + '. Deadline: ' + (task.due_date || 'not supplied by EOS')
-          + '. This is a read-only source inspection, not AI reasoning or task execution.';
+          + '\\nLifecycle: ' + verifiedStatus
+          + '\\nRevision: ' + task.revision
+          + '\\nDeadline: ' + (task.due_date || 'not supplied by EOS')
+          + '\\nPython EOS · Read-only inspection. No model invoked or task changed.';
         const recorded = await persistWilsyAIConversationTurn({
           threadId: afterRequest.id,
           message: { role: 'assistant', content: reply,
@@ -1651,6 +1674,7 @@ export function WilsyOSIntelligenceDock({
           recorded, ...previous.filter(item => item.id !== recorded.id),
         ]);
         setActiveThreadId(recorded.id);
+        setAnimatedAssistantKey(recorded.id + ':' + recorded.messages?.at(-1)?.timestamp);
       } catch {
         if (current && dockScopeRef.current === dockScope) {
           recordedSourceReadRef.current = '';
@@ -2737,6 +2761,8 @@ export function WilsyOSIntelligenceDock({
                         {msg.role === 'assistant' ? (
                           <WilsyProgressiveAssistantText
                             content={msg.content}
+                            format={msg.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY'
+                              && msg.meta?.source === 'PYTHON_EOS' ? 'VERIFIED_TASK' : 'PLAIN'}
                             animate={Boolean(activeTab === 'chat' && isOpen && activeThread?.id
                               && animatedAssistantKey === activeThread.id + ':' + msg.timestamp)}
                             onComplete={() => setAnimatedAssistantKey((previousKey) => (
@@ -3109,7 +3135,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.46.0-MW-T11-HISTORY-RECOVERY-UX
+ * VERSION: v4.47.0-MW-T11-PROGRESSIVE-VERIFIED-REPLY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
