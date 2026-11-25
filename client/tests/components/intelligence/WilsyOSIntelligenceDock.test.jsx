@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.43.2-HISTORY-PROVENANCE-TEXT-CERT
+ * VERSION: v1.44.0-FULL-TRANSCRIPT-SEARCH-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,9 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.44.0-FULL-TRANSCRIPT-SEARCH-CERT verifies searching an
+ *            earlier authorized turn changes the visible excerpt without
+ *            a paid model or history API search and preserves continuation.
  * CHANGELOG: v1.43.2-HISTORY-PROVENANCE-TEXT-CERT matches saved
  *            history provenance within the workspace / source metadata
  *            line, without splitting one accessible status into cards.
@@ -2045,7 +2048,10 @@ describe('WilsyOSIntelligenceDock', () => {
     mockThreads = [
       { id: 'thread-1', title: 'Foundation work', workspace: 'Projects',
         updatedAt: '2026-11-25T12:00:00Z', storagePosture: 'EOS_ENCRYPTED_HISTORY',
-        messages: [{ role: 'assistant', content: 'Task deadline verified in EOS', timestamp: '2026-11-25T12:00:00Z' }] },
+        messages: [
+          { role: 'user', content: 'Task deadline verified in EOS', timestamp: '2026-11-25T11:59:00Z' },
+          { role: 'assistant', content: 'Follow up on Foundation status', timestamp: '2026-11-25T12:00:00Z' },
+        ] },
       { id: 'thread-2', title: 'Operating plan', workspace: 'Headquarters',
         updatedAt: '2026-11-25T11:00:00Z', storagePosture: 'SESSION_ONLY',
         messages: [{ role: 'assistant', content: 'Draft context in session', timestamp: '2026-11-25T11:00:00Z' }] },
@@ -2055,12 +2061,13 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     expect(screen.getByRole('searchbox', { name: 'Search conversations' })).toBeVisible();
-    await waitFor(() => expect(screen.getByText('Task deadline verified in EOS')).toBeVisible());
+    await waitFor(() => expect(screen.getByText('Follow up on Foundation status')).toBeVisible());
     expect(screen.getByText('Draft context in session')).toBeVisible();
     expect(screen.getByText(/Saved in EOS/)).toBeVisible();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search conversations' }), {
       target: { value: 'deadline' },
     });
+    expect(screen.getByText('Task deadline verified in EOS')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Open conversation Foundation work' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Open conversation Operating plan' })).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search conversations' }), {
@@ -2389,7 +2396,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.43.2-HISTORY-PROVENANCE-TEXT-CERT
+ * VERSION: v1.44.0-FULL-TRANSCRIPT-SEARCH-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
