@@ -1,11 +1,13 @@
 """TITLE: MW-T12 local Mongo consumer classification and privacy certificate.
-VERSION: v1.1.0-LISTENER-OWNED-ATLAS-SOCKET-CERT
+VERSION: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify no credential emission, exact Atlas target classification,
          loopback/other handling and no inference of running EOS secret.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_local_consumer_probe.py
 COLLABORATION / OWNERSHIP: Existing MW-T12 read-only local listener/URI probe.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX corrects synthetic
+           lsof byte fixtures to contain actual newline-delimited records.
 CHANGELOG: v1.1.0-LISTENER-OWNED-ATLAS-SOCKET-CERT adds
            synthetic established TCP socket ownership checks and makes shell
            classification tests independent of actual developer lsof output.
@@ -108,8 +110,8 @@ def test_actual_eos_listener_socket_matches_reviewed_atlas(monkeypatch):
     def fake_run(command, **kwargs):
         observed.append(command)
         return type("Result", (), {"returncode": 0, "stdout":
-                    b"n127.0.0.1:50123->159.41.89.87:27017\\n"
-                    b"n127.0.0.1:50124->159.41.89.104:27017\\n"})()
+                    b"n127.0.0.1:50123->159.41.89.87:27017\n"
+                    b"n127.0.0.1:50124->159.41.89.104:27017\n"})()
 
     monkeypatch.setattr(probe.subprocess, "run", fake_run)
     value = probe.owned_established_mongo_peers([789])
@@ -123,7 +125,7 @@ def test_non_atlas_socket_never_attributed_to_shared_cluster(monkeypatch):
     """Loopback and unrelated Mongo socket destinations remain unverified."""
     def fake_run(command, **kwargs):
         return type("Result", (), {"returncode": 0, "stdout":
-                    b"n127.0.0.1:50123->127.0.0.1:27017\\n"})()
+                    b"n127.0.0.1:50123->127.0.0.1:27017\n"})()
 
     monkeypatch.setattr(probe.subprocess, "run", fake_run)
     result = probe.owned_established_mongo_peers([789])
@@ -156,7 +158,7 @@ def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_local_consumer_probe.py
-# VERSION: v1.1.0-LISTENER-OWNED-ATLAS-SOCKET-CERT
+# VERSION: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX
 # AUTHORITY BOUNDARY: Mocked local evidence read only; no cloud changes.
 # TENANT POSTURE: Synthetic fixtures only.
 # FAIL-CLOSED POSTURE: Shell target never certifies a live EOS process.
