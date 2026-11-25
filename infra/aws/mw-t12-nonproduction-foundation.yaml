@@ -1,12 +1,16 @@
-# TITLE: MW-T12 Nonproduction AWS Budget and Dormant Fargate Foundation
-# VERSION: v1.0.2-VALID-YAML-PREFLIGHT
+# TITLE: MW-T12 Dormant Regional Fargate Foundation
+# VERSION: v1.1.0-REGIONAL-FOUNDATION-BUDGET-SEPARATION
 # AUTHORITY: WILSY OS Core Governance / AGENTS.md
-# EPITOME: Bootstrap budget notifications before opt-in nonproduction ECR,
-#   zero-task ECS cluster, dedicated closed security group and execution role.
+# EPITOME: Declare opt-in ECR, zero-task ECS cluster, closed security group
+#   and execution role only after external account-wide budget admission.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/mw-t12-nonproduction-foundation.yaml
 # COLLABORATION / OWNERSHIP: Existing GHCR Python EOS image publication and
 #   MW-T12 ECS read-only admission retain image and recovery authority.
 # CERTIFICATION / UPDATE DATE: 2026-11-25
+# CHANGELOG: v1.1.0-REGIONAL-FOUNDATION-BUDGET-SEPARATION
+#   Remove unsupported budget resource from Cape Town regional stack; require
+#   separate AWS Budgets API confirmation before any foundation deployment.
+#   Preserve dormant resources and prevent service/task activation.
 # CHANGELOG: v1.0.2-VALID-YAML-PREFLIGHT
 #   Reconstitute one complete YAML document after detecting a duplicated
 #   trailing block during post-commit validation; use literal-safe email
@@ -27,71 +31,26 @@
 # FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
-  MW-T12 nonproduction budget-first foundation. Default creates a notification
-  budget only; optional foundation creates no billable running Fargate tasks.
+  MW-T12 regional dormant foundation; account-wide budget must first be
+  independently verified through AWS Budgets API outside this stack.
+  No running Fargate tasks, ECS services or task definitions are created.
 Parameters:
-  BudgetNotificationEmail:
-    Type: String
-    Description: Verified email recipient of AWS budget notifications.
-    AllowedPattern: '^.+@.+[.].+$'
-    ConstraintDescription: An email address is required.
-  MonthlyBudgetUSD:
-    Type: Number
-    Description: Explicitly approved account-wide monthly USD warning threshold.
-    MinValue: 1
-    MaxValue: 10000
   EnableDormantFoundation:
     Type: String
     Default: 'false'
     AllowedValues: ['false', 'true']
     Description: >-
-      Explicit opt-in AFTER budget notification and billing permissions are
-      independently verified. No ECS tasks are ever launched by this template.
+      Explicit opt-in ONLY AFTER account-wide budget alerts are independently
+      verified. No ECS tasks are ever launched by this template.
   ExistingVpcId:
     Type: AWS::EC2::VPC::Id
     Description: Existing reviewed nonproduction VPC (no VPC or NAT created).
 Conditions:
   FoundationApproved: !Equals [!Ref EnableDormantFoundation, 'true']
 Resources:
-  MonthlySpendWarning:
-    Type: AWS::Budgets::Budget
-    Properties:
-      Budget:
-        BudgetName: !Sub 'wilsy-mwt12-nonproduction-warning-${AWS::AccountId}'
-        BudgetType: COST
-        TimeUnit: MONTHLY
-        BudgetLimit:
-          Amount: !Ref MonthlyBudgetUSD
-          Unit: USD
-      NotificationsWithSubscribers:
-        - Notification:
-            NotificationType: ACTUAL
-            ComparisonOperator: GREATER_THAN
-            ThresholdType: PERCENTAGE
-            Threshold: 50
-          Subscribers:
-            - SubscriptionType: EMAIL
-              Address: !Ref BudgetNotificationEmail
-        - Notification:
-            NotificationType: ACTUAL
-            ComparisonOperator: GREATER_THAN
-            ThresholdType: PERCENTAGE
-            Threshold: 80
-          Subscribers:
-            - SubscriptionType: EMAIL
-              Address: !Ref BudgetNotificationEmail
-        - Notification:
-            NotificationType: FORECASTED
-            ComparisonOperator: GREATER_THAN
-            ThresholdType: PERCENTAGE
-            Threshold: 100
-          Subscribers:
-            - SubscriptionType: EMAIL
-              Address: !Ref BudgetNotificationEmail
   EosImageRepository:
     Type: AWS::ECR::Repository
     Condition: FoundationApproved
-    DependsOn: MonthlySpendWarning
     Properties:
       RepositoryName: wilsy/mwt12-eos-nonproduction
       ImageTagMutability: IMMUTABLE
@@ -110,7 +69,6 @@ Resources:
   EosRuntimeLogs:
     Type: AWS::Logs::LogGroup
     Condition: FoundationApproved
-    DependsOn: MonthlySpendWarning
     Properties:
       LogGroupName: /wilsy/mwt12/nonproduction/eos
       RetentionInDays: 1
@@ -122,7 +80,6 @@ Resources:
   EosExecutionRole:
     Type: AWS::IAM::Role
     Condition: FoundationApproved
-    DependsOn: MonthlySpendWarning
     Properties:
       RoleName: wilsy-mwt12-eos-execution-nonproduction
       AssumeRolePolicyDocument:
@@ -168,7 +125,6 @@ Resources:
   EosClosedSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: FoundationApproved
-    DependsOn: MonthlySpendWarning
     Properties:
       GroupDescription: MW-T12 nonproduction EOS no inbound traffic, HTTPS egress only
       VpcId: !Ref ExistingVpcId
@@ -188,7 +144,6 @@ Resources:
   EosDormantCluster:
     Type: AWS::ECS::Cluster
     Condition: FoundationApproved
-    DependsOn: MonthlySpendWarning
     Properties:
       ClusterName: wilsy-mwt12-nonproduction
       CapacityProviders:
@@ -202,9 +157,6 @@ Resources:
         - Key: Project
           Value: MW-T12
 Outputs:
-  BudgetWarning:
-    Description: Account-wide COST warning, not an enforced spending cap.
-    Value: !Ref MonthlySpendWarning
   ComputeActivation:
     Description: This stack creates zero task definitions, services or running tasks.
     Value: DISABLED
@@ -222,8 +174,8 @@ Outputs:
     Condition: FoundationApproved
     Value: !Ref EosClosedSecurityGroup
 # ARTIFACT: infra/aws/mw-t12-nonproduction-foundation.yaml
-# VERSION: v1.0.2-VALID-YAML-PREFLIGHT
-# AUTHORITY BOUNDARY: Budget-first nonproduction infrastructure; no task runtime.
+# VERSION: v1.1.0-REGIONAL-FOUNDATION-BUDGET-SEPARATION
+# AUTHORITY BOUNDARY: Regional dormant infrastructure; external budget required.
 # TENANT POSTURE: No real tenant, data, MFA or production connection.
 # FAIL-CLOSED POSTURE: Foundation defaults off; no task or service is started.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
