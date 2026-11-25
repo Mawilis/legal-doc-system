@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT
+ * VERSION: v1.37.0-MW-T11-SESSION-SOURCE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.37.0-MW-T11-SESSION-SOURCE-CERT certifies explicit MW-T11 source inspection
+ * from current authorized EOS project-task list, independently verified
+ * context, session-only turn recording and no paid reasoning POST.
  * CHANGELOG: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT certifies exact-principal POS location commercial counts and immutable Billing evidence-by-ID, excludes settlement and paid inference, refuses foreign or malformed financial evidence.
  * CHANGELOG: v1.35.0-GOVERNED-MULTIDOMAIN-READ-CERT certifies exact-tenant/principal My Work source coverage for CRM, HR and Operations counts, a composable multi-domain count, omitted-source refusal, unrecognised-semantic denial and zero provider POST.
  * CHANGELOG: v1.34.0-GOVERNED-COMPOUND-QUERY-CERT certifies compound count-and-details planning from verified Projects provenance and fresh read-only EOS endpoints, including denial of unsafe mixed-domain compound prompts.
@@ -1678,6 +1681,63 @@ describe('WilsyOSIntelligenceDock', () => {
     });
     expect(screen.getByLabelText('Send')).toBeDisabled();
     expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+
+  it('records a verified explicit MW-T11 source inspection in session history without a provider call', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const person = 'context-person';
+    mockApiGet.mockImplementation((path, options = {}) => {
+      if (path === '/wilsy-ai/reasoning/context') {
+        const params = options.params || {};
+        return Promise.resolve({ data: {
+          schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+          tenant_id: 'TEST_TENANT', principal_id: person,
+          authority: { source: 'PYTHON_EOS', read_only: true,
+            model_invoked: false, financial_execution: false, provider_binding: 'UNAVAILABLE' },
+          context_fingerprint: 'f'.repeat(128),
+          observed_at: '2026-11-25T12:00:00+00:00', locator: params,
+          allowance: { available_request_units: 0, state: 'NOT_PROVISIONED' },
+          work: params.project_id ? {
+            project: { project_id: projectId, revision: 3, name: 'Foundation' },
+            selected_task: params.task_id ? {
+              task_id: taskId, title: 'MW-T11 — Align Intelligence Dock',
+              revision: 3, status: 'IN_PROGRESS', due_date: '2026-11-26',
+            } : undefined,
+          } : null,
+        } });
+      }
+      if (path === '/projects/' + projectId + '/tasks?limit=50&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: person, project_id: projectId, limit: 50,
+          offset: 0, has_more: false, next_offset: null,
+          items: [{ schema: 'wilsy.project.task.v1', tenant_id: 'TEST_TENANT',
+            project_id: projectId, task_id: taskId, revision: 3,
+            title: 'MW-T11 — Align Intelligence Dock',
+            fingerprint: 'c'.repeat(128) }],
+        } });
+      }
+      return Promise.reject(rejectedResponse(503, 'unexpected source'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: person, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: person,
+        locator: { workspace: 'PROJECTS', project_id: projectId, project_revision: 3 } },
+    })));
+    await waitFor(() => expect(screen.getByText('Foundation')).toBeVisible());
+    requestReadOnlySource('Inspect MW-T11');
+    await waitFor(() => expect(screen.getByLabelText('EOS-verified selected task lifecycle'))
+      .toHaveTextContent('in progress'));
+    await waitFor(() => expect(mockPersistTurn).toHaveBeenCalledTimes(2));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    expect(screen.getByText('Recent session activity')).toBeVisible();
+    expect(screen.getByText('EOS source · MW-T11')).toBeVisible();
   });
 
   it('reads current context only while open and treats page events as locators', async () => {
