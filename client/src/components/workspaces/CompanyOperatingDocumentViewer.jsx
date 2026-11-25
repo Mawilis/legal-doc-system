@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.31.2-SEARCH-FOCUS-SCOPE
+ * VERSION: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE displays the
+ *            collapse/expand toggle only with the Foundation quick surface;
+ *            projects-only scopes retain their direct verified register.
  * CHANGELOG: v2.31.2-SEARCH-FOCUS-SCOPE suppresses the
  *            primary Foundation focus action during explicit registry search
  *            so filtered results have one unambiguous actionable surface.
@@ -2011,7 +2014,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                         </button>}
                       </div>
                     </section>}
-                    {projectState === 'READY' && projectItems.length > 0 && <button type="button"
+                    {projectState === 'READY' && foundationProject && projectItems.length > 0 && <button type="button"
                       aria-expanded={registerVisible}
                       aria-controls="strategy-project-source-register"
                       onClick={() => { setProjectRegisterOpen(current => !current); setProjectSearch('');
@@ -2500,7 +2503,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.31.2-SEARCH-FOCUS-SCOPE
+// VERSION: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
