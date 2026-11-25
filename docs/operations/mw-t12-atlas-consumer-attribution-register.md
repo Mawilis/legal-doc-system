@@ -1,11 +1,15 @@
 # MW-T12 — Shared Atlas consumer attribution and wildcard retirement register
 
-VERSION: v1.0.0-CONTROL-PLANE-BASELINE-AND-CONSUMER-ATTRIBUTION
+VERSION: v1.1.0-COST-BOUNDARY-AND-M04-RELEASE-SEPARATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md
 EPITOME: Establish a durable, evidence-classified baseline for shared test Atlas dependencies and explicitly prevent deleting global network access on insufficient consumer evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/mw-t12-atlas-consumer-attribution-register.md
 COLLABORATION / OWNERSHIP: MongoDB Atlas project metadata, Python EOS kernel DB authority, legacy deployment evidence, MW-T12 synthetic runbook and nonproduction AWS egress operator.
 CERTIFICATION / UPDATE DATE: 2026-11-25
+CHANGELOG: v1.1.0-COST-BOUNDARY-AND-M04-RELEASE-SEPARATION closes
+the verified zero-compute MW-T12 preparation tranche, distinguishes it from
+uncertified Fargate rollback, and releases unrelated M04 Strategy work without
+claiming production readiness, wildcard retirement or source-owned task update.
 CHANGELOG: v1.0.0-CONTROL-PLANE-BASELINE-AND-CONSUMER-ATTRIBUTION records live provider inventory and separately classified possible consumer surfaces; states independent cutover/rollback proof requirements.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: No connection-string credentials, secrets, access keys, exact individual source IP list or client identities copied. Public-wide exposure itself is described without inferring compromise.
@@ -71,6 +75,29 @@ For the two broad database users, require a *separate* owner inventory; a networ
 
 Until all six gates hold, output **`MW_T12_ATLAS_WILDCARD_RETIREMENT=BLOCKED`**. A PR comment or operator assertion cannot by itself certify a live consumer census.
 
+## Governed closure decision — no-cost preparation versus live release
+
+**Decision date: 2026-11-25.** The *zero-paid-compute preparation workstream* may be marked ENGINEERING_PREPARATION_COMPLETE based on existing scoped certificates, but this is NOT an assertion that the single MW-T12 Project task has reached `DONE`. Its existing source-owned status must remain `IN_PROGRESS` until governed authorized completion independently reads back from EOS. No GitHub comment may substitute for that source update.
+
+| Phase | Decision | Evidence / required completion |
+| --- | --- | --- |
+| Exact-source local regression and offline rollback preparation | Preparation complete | 23/23 GitHub exact-head CI on `6922f9a5d849677302caaf64f598138762e02308`; earlier source-version, same-data and loopback EOS recovery evidence are separate, not a production-grade image drill |
+| Dormant immutable-image-backed ECS metadata | Complete | Historical/current secure task definitions `:3`/`:4` registered/read back; no ECS task started |
+| Reviewed AWS destination egress | Complete | CloudFormation three TCP/27017 node rules executed and actual closed SG independently verified; zero ECS compute |
+| Running local Python EOS destination | Network-only source attribution complete | Mac EOS port-9095 listener owns three established peers matching fresh DNS of distinct `Wilsy / legalDocSystem` cluster; no observed `legal-doc-test` peers |
+| Authenticated local EOS credential/database binding | Not certified; noncritical to already completed *network* preparation | Independent auth/current database verification must not print credentials, should be source-owned and must not be confused with socket identity |
+| Shared test-cluster consumer census and wildcard retirement | Security gate blocked | 45 entries/one wildcard, zero owner comments; unrelated legacy/test consumers still not attributed; no deletion permitted |
+| Live image recovery current → historical → current | Future cost-bearing certification gate | Requires explicit bounded financial authorization, authenticated synthetic durable-canary readback, proven storage persistence and restore, exact image provenance and independent rollback evidence |
+| Production promotion | BLOCKED | No qualified live rollback or release authorization |
+
+### Scope and schedule boundary
+
+**Do not perform another local EOS socket-classification iteration without new contradictory evidence.** The network target is independently matched to `Wilsy / legalDocSystem`; current shell lack of `MONGODB_URI` is not a service failure. Do not treat the separate `legal-doc-test` legacy wildcard as proof of local EOS exposure. This remains a distinct security backlog dependency.
+
+**Release M04 Strategy delivery to continue in parallel now:** the existing Foundation Project, governed My Work/Daily Attention task graph, accountable owner, published strategic objective and source-owned tasks remain the approved work surfaces. Do not create another project, change release authority or report an unverified EOS task write as persisted. MW-T12 may be revisited at the next explicit, funded nonproduction recovery acceptance gate, rather than gating unrelated application development.
+
+The trigger to reopen the *cost-bearing* MW-T12 tranche is an authorized budget/drill window plus per-consumer impact acknowledgement, approved bounded task launch, scoped Atlas access operation and an independently executable verification/rollback plan. No implied approval arises from `PROCEED` on no-cost development.
+
 ## Nonproduction rollback-drill status
 
 The previously approved CloudFormation *outbound* network-only change has executed with actual SG readback: three Atlas destinations on TCP/27017, no inbound ingress, zero ECS compute. This is not equivalent to Atlas *inbound* access-list admission. Synthetic task definitions `:3`/`:4` are registered but dormant. Exact-source-IP bootstrap, private/temporary access, authenticated current→historical→current readback, durable canary and measured restore remain **UNCERTIFIED**.
@@ -80,7 +107,7 @@ The previously approved CloudFormation *outbound* network-only change has execut
 ---
 
 ARTIFACT: docs/operations/mw-t12-atlas-consumer-attribution-register.md  
-VERSION: v1.0.0-CONTROL-PLANE-BASELINE-AND-CONSUMER-ATTRIBUTION  
+VERSION: v1.1.0-COST-BOUNDARY-AND-M04-RELEASE-SEPARATION  
 AUTHORITY BOUNDARY: Consumer evidence and fail-closed decision register only.  
 TENANT POSTURE: Shared nonproduction; no real tenant reads or writes.  
 FAIL-CLOSED POSTURE: No consumer-coverage proof, no wildcard deletion.  
