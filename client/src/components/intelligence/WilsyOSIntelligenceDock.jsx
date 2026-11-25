@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.47.0-MW-T11-PROGRESSIVE-VERIFIED-REPLY
+ * VERSION: v4.48.0-MW-T11-QUIET-CONVERSATIONAL-SOURCE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,10 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.48.0-MW-T11-QUIET-CONVERSATIONAL-SOURCE fixes old one-line source replies
+ * being formatted as one oversized title; uses calm conversational body
+ * text for legacy and structured turns, with a modest task heading and
+ * independently labeled facts. Preserves progressive reveal and EOS authority.
  * CHANGELOG: v4.47.0-MW-T11-PROGRESSIVE-VERIFIED-REPLY renders verified task replies as progressive,
  *            structured source transcripts with readable hierarchy, visible
  *            evidence posture, and reduced-motion accessibility. Replayed
@@ -787,7 +791,7 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
   }, [animate, fullText]);
 
   const visibleText = fullText.slice(0, visibleCount);
-  const formatted = format === 'VERIFIED_TASK'
+  const formatted = format === 'VERIFIED_TASK' && fullText.includes('\n')
     ? <div className={styles.verifiedReply}>
       {visibleText.split('\n').map((line, index) => {
         if (!line) return null;
@@ -803,7 +807,7 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
         }
         return <p key={index} className={styles.verifiedReplyNote}>{line}</p>;
       })}
-    </div> : visibleText;
+    </div> : <span className={format === 'VERIFIED_TASK' ? styles.verifiedReplyLegacy : undefined}>{visibleText}</span>;
   return (
     <>
       <span aria-hidden={animate ? 'true' : undefined}>
@@ -3136,7 +3140,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.47.0-MW-T11-PROGRESSIVE-VERIFIED-REPLY
+ * VERSION: v4.48.0-MW-T11-QUIET-CONVERSATIONAL-SOURCE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
