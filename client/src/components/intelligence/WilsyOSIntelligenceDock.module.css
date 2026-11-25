@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.9.0-MW-T11-COMPACT-DOCK
+ * VERSION: v1.10.0-MW-T11-READABLE-REPLY-TYPOGRAPHY
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
@@ -1260,6 +1260,50 @@
 }
 @media(prefers-reduced-motion:reduce){
   .intelligenceDockContainer .historyHeaderActions button{transition:none}
+}
+
+
+/* v1.10.0: structured EOS evidence is a readable conversation response.
+ * No fake typing is applied to replayed turns or reduced-motion users. */
+.intelligenceDockContainer .verifiedReply{
+ display:grid; gap:8px; max-width:66ch; white-space:normal;
+ padding:2px 0 6px; color:#e9f2fd;
+ font-size:14px; line-height:1.65; letter-spacing:.005em;
+}
+.intelligenceDockContainer .verifiedReplyTitle{
+ margin:0 0 5px; color:#fff; font-size:16px;
+ font-weight:670; line-height:1.45; letter-spacing:-.01em;
+ text-wrap:pretty; overflow-wrap:anywhere;
+}
+.intelligenceDockContainer .verifiedReplyFact{
+ margin:0; display:grid; grid-template-columns:minmax(88px,120px) minmax(0,1fr);
+ column-gap:14px; align-items:baseline;
+ padding:5px 0; border-bottom:1px solid rgba(150,180,214,.13);
+}
+.intelligenceDockContainer .verifiedReplyFact span{
+ color:#abc0d8; font-size:12px; font-weight:570;
+}
+.intelligenceDockContainer .verifiedReplyFact strong{
+ font-weight:640; color:#eef6ff; overflow-wrap:anywhere;
+}
+.intelligenceDockContainer .verifiedReplyNote{
+ margin:7px 0 0; color:#b8cde2; font-size:12px;
+ line-height:1.6; padding-top:7px;
+ border-top:1px solid rgba(150,180,214,.2);
+}
+.intelligenceDockContainer .replyCursor{
+ display:inline-block; margin-left:2px; color:#9ed1ff;
+ font-weight:400; vertical-align:baseline;
+}
+@media(max-width:480px){
+ .intelligenceDockContainer .verifiedReply{font-size:13px}
+ .intelligenceDockContainer .verifiedReplyTitle{font-size:15px}
+ .intelligenceDockContainer .verifiedReplyFact{
+  grid-template-columns:minmax(72px,94px) minmax(0,1fr);gap:8px;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .intelligenceDockContainer .replyCursor{display:none}
 }
 
 /*
