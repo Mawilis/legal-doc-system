@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.45.0-MW-T11-SOURCE-SESSION-HISTORY
+ * VERSION: v4.46.0-MW-T11-HISTORY-RECOVERY-UX
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,9 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.46.0-MW-T11-HISTORY-RECOVERY-UX restores selected current-session turns
+ *            to the active conversation panel and visibly distinguishes
+ *            session activity from certified EOS durable history.
  * CHANGELOG: v4.45.0-MW-T11-SOURCE-SESSION-HISTORY records independently verified task source
  *            inspections in the existing same-session conversation engine;
  *            labels history as session-only pending a governed EOS durable
@@ -3024,7 +3027,7 @@ export function WilsyOSIntelligenceDock({
             {activeTab === 'history' && (
               <div className={styles.historyTabContent}>
                 <div className={styles.historyHeaderRow}>
-                  <h4>Recent session activity</h4>
+                  <div><h4>Recent session activity</h4><p style={{ color: '#aebed2', fontSize: 12, marginTop: 4 }}>Available only in the current authenticated session. EOS saved history is not yet enabled.</p></div>
                   <div className={styles.historyHeaderActions}>
                     <button type="button" className={styles.historyActionButton} onClick={handleNewThread}>+ New</button>
                     <button type="button" className={styles.historyActionButton} onClick={handleRefresh}>Refresh session</button>
@@ -3067,7 +3070,7 @@ export function WilsyOSIntelligenceDock({
                       className={`${styles.threadCard} ${
                         thread.id === activeThreadId ? styles.activeThreadCard : ''
                       }`}
-                      onClick={() => setActiveThreadId(thread.id)}
+                      onClick={() => { setActiveThreadId(thread.id); setConversationView('WELCOME'); setActiveTab('chat'); }}
                     >
                       <MessageSquareText size={16} />
                       <div>
@@ -3106,7 +3109,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.45.0-MW-T11-SOURCE-SESSION-HISTORY
+ * VERSION: v4.46.0-MW-T11-HISTORY-RECOVERY-UX
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
