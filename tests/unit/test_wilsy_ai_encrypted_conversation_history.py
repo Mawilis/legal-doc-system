@@ -24,6 +24,7 @@ from types import SimpleNamespace
 
 from fastapi import HTTPException, Response
 from pydantic import ValidationError
+from pymongo.errors import DuplicateKeyError
 import pytest
 
 from tools.eos.api import wilsy_ai_reasoning_router as history
@@ -63,7 +64,7 @@ class _Collection:
 
     def insert_one(self, row: dict, *, session=None) -> object:
         if row["_id"] in self.rows:
-            raise AssertionError("duplicate")
+            raise DuplicateKeyError("duplicate fixture")
         self.rows[row["_id"]] = row.copy()
         return SimpleNamespace(inserted_id=row["_id"])
 
