@@ -1,14 +1,19 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.2-SINGLE-MY-WORK-NAVIGATION
+ * VERSION: v2.32.3-M04-ACTION-CONSOLIDATION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
- * CHANGELOG: v2.32.2-SINGLE-MY-WORK-NAVIGATION removes
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.3-M04-ACTION-CONSOLIDATION removes the second
+ *            redundant M04 verification command, distinguishes the task
+ *            focus tab from the real Projects handoff, and opens the evidence
+ *            inspector immediately when selected. Source reads, IAM, task
+ *            mutations and strategic outcome truth are unchanged.
+ * CHANGELOG: v2.32.3-M04-ACTION-CONSOLIDATION removes
  *            the orphaned bottom-of-Strategy 'Open current My Work'
  *            button: the existing persistent document toolbar already
  *            provides the same authorized My Work navigation action.
@@ -2114,10 +2119,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             <p className="mt-1 text-sm text-slate-200">Source-owned accountability, due dates,
                               dependencies and immutable task lifecycle evidence. No outcomes are inferred from task counts.</p>
                           </div>
-                          {m04Execution && <button type="button" onClick={() => void loadDelivery(delivery.projectId, 0)}
-                            className="rounded-lg border border-slate-500 px-3 py-2 text-sm">
-                            <RefreshCw size={14} aria-hidden="true"/> Verify current work
-                          </button>}
+
                         </div>
                         {m04Execution && <nav aria-label="M04 execution focus" className="mt-3 flex flex-wrap items-center gap-2">
                           <button type="button" aria-pressed={m04FocusMode === 'WORK'}
@@ -2125,14 +2127,14 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                             className={m04FocusMode === 'WORK'
                               ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
                               : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
-                            Continue work
+                            Next assigned task
                           </button>
                           <button type="button" aria-pressed={m04FocusMode === 'INSPECT'}
-                            onClick={() => setM04FocusMode('INSPECT')}
+                            onClick={() => { setM04FocusMode('INSPECT'); setExecutionInspectorOpen(true); focusWorkOnOpen.current = true; }}
                             className={m04FocusMode === 'INSPECT'
                               ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
                               : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
-                            Inspect work and evidence
+                            Browse tasks & evidence
                           </button>
                         </nav>}
                         {m04Execution ? <>
@@ -2152,7 +2154,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                               onClick={() => {
                                 recordTaskVisit(nextAccountableTask.task_id);
                                 onOpenProject(m04Execution.project.project_id, { taskId: nextAccountableTask.task_id });
-                              }}>Continue task in Projects <ArrowUpRight size={15}/></button>
+                              }}>Open task in Projects <ArrowUpRight size={15}/></button>
                           </div>}
                           {latestSourceWork && (m04FocusMode === 'INSPECT' || latestSourceWork.task_id !== nextAccountableTask?.task_id) && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
                             <div className="min-w-0">
@@ -2548,7 +2550,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.2-SINGLE-MY-WORK-NAVIGATION
+// VERSION: v2.32.3-M04-ACTION-CONSOLIDATION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
