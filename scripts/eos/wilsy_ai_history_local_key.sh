@@ -11,6 +11,8 @@
 # CERTIFICATION / UPDATE DATE: 2026-11-25
 # CHANGELOG: v1.0.0-MW-T11-LOCAL-KEY-ADMISSION provides one guarded
 #            user-private local key file and fail-closed validation.
+# COMPLIANCE: AGENTS.md; POSIX shell development key boundary; no production key admission
+# AUTHORITY BOUNDARY: Development process environment only; Python EOS is source owner
 # SECURITY / PRIVACY POSTURE: No secret printed, committed, copied to logs or
 #                             placed inside repository files.
 # TENANT BOUNDARY: Secret is process master material; AES-GCM AAD binds each
