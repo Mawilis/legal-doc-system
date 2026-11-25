@@ -1,5 +1,5 @@
 # TITLE: MW-T12 Dormant Regional Fargate Foundation
-# VERSION: v1.2.1-SCOPED-IAM-OPTIONAL-ENDPOINT-EGRESS
+# VERSION: v1.3.0-ATLAS-THREE-NODE-DESTINATION-ADMISSION
 # AUTHORITY: WILSY OS Core Governance / AGENTS.md
 # EPITOME: Declare opt-in ECR, zero-task ECS cluster, closed security group
 #   and execution role only after external account-wide budget admission.
@@ -7,6 +7,9 @@
 # COLLABORATION / OWNERSHIP: Existing GHCR Python EOS image publication and
 #   MW-T12 ECS read-only admission retain image and recovery authority.
 # CERTIFICATION / UPDATE DATE: 2026-11-25
+# CHANGELOG: v1.3.0-ATLAS-THREE-NODE-DESTINATION-ADMISSION
+#   Admit three DNS-reviewed Atlas replica-set addresses as separate /32
+#   security group egress rules with shared default-off condition; no compute.
 # CHANGELOG: v1.2.1-SCOPED-IAM-OPTIONAL-ENDPOINT-EGRESS
 #   Reconcile exact ECS execution role SSM GetParameters into CloudFormation.
 #   Optional 27017 outbound rule restricted to one reviewed Atlas IPv4 /32,
@@ -59,12 +62,24 @@ Parameters:
     Default: ''
     AllowedPattern: '^$|^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/32$'
     Description: Verified one Atlas endpoint IPv4 /32, empty by default.
+  ApprovedAtlasEndpointCidr2:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/32$'
+    Description: Verified node 2 Atlas endpoint IPv4 /32, empty by default.
+  ApprovedAtlasEndpointCidr3:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/32$'
+    Description: Verified node 3 Atlas endpoint IPv4 /32, empty by default.
 Conditions:
   FoundationApproved: !Equals [!Ref EnableDormantFoundation, 'true']
   AtlasEgressApproved: !And
     - !Condition FoundationApproved
     - !Equals [!Ref EnableAtlasEndpointEgress, 'true']
     - !Not [!Equals [!Ref ApprovedAtlasEndpointCidr, '']]
+    - !Not [!Equals [!Ref ApprovedAtlasEndpointCidr2, '']]
+    - !Not [!Equals [!Ref ApprovedAtlasEndpointCidr3, '']]
 Resources:
   EosImageRepository:
     Type: AWS::ECR::Repository
@@ -172,7 +187,27 @@ Resources:
       FromPort: 27017
       ToPort: 27017
       CidrIp: !Ref ApprovedAtlasEndpointCidr
-      Description: MW-T12 opt-in one-node synthetic Atlas TLS egress
+      Description: MW-T12 opt-in node-1 synthetic Atlas TLS egress
+  EosAtlasEndpointEgress2:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: AtlasEgressApproved
+    Properties:
+      GroupId: !Ref EosClosedSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      CidrIp: !Ref ApprovedAtlasEndpointCidr2
+      Description: MW-T12 opt-in node-2 synthetic Atlas TLS egress
+  EosAtlasEndpointEgress3:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: AtlasEgressApproved
+    Properties:
+      GroupId: !Ref EosClosedSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      CidrIp: !Ref ApprovedAtlasEndpointCidr3
+      Description: MW-T12 opt-in node-3 synthetic Atlas TLS egress
   EosDormantCluster:
     Type: AWS::ECS::Cluster
     Condition: FoundationApproved
@@ -206,7 +241,7 @@ Outputs:
     Condition: FoundationApproved
     Value: !Ref EosClosedSecurityGroup
 # ARTIFACT: infra/aws/mw-t12-nonproduction-foundation.yaml
-# VERSION: v1.2.1-SCOPED-IAM-OPTIONAL-ENDPOINT-EGRESS
+# VERSION: v1.3.0-ATLAS-THREE-NODE-DESTINATION-ADMISSION
 # AUTHORITY BOUNDARY: Regional dormant infrastructure; external budget required.
 # TENANT POSTURE: No real tenant, data, MFA or production connection.
 # FAIL-CLOSED POSTURE: Foundation defaults off; no task or service is started.
