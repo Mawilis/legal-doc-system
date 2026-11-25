@@ -1,5 +1,5 @@
 """TITLE: MW-T12 verified Atlas three-node egress admission certificate.
-VERSION: v1.1.0-AWS-DESCRIBE-CHANGE-SET-CONTRACT
+VERSION: v1.2.0-CLOUDFORMATION-EFFECTIVE-PARAMETERS
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Prove exact reviewed CloudFormation changes, DNS/compute denial,
          no-delete network boundary and independent SG permission readback.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation template and fresh
          node DNS admission operator only.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-CLOUDFORMATION-EFFECTIVE-PARAMETERS tests independent
+           stack-parameter equivalence against real response variants
+           with explicit same values and denial of changed VPC/foundation.
 CHANGELOG: v1.1.0-AWS-DESCRIBE-CHANGE-SET-CONTRACT certifies the actual
            AWS DescribeChangeSet response without ChangeSetType and exact
            independent existing stack identity/state, denying wrong stack.
@@ -60,6 +63,24 @@ def _change_set():
     }
 
 
+def _stack(snapshot: dict, *, vpc: str = "vpc-05a3c2c855c4dde26",
+           foundation: str = "true") -> dict:
+    """Independent current-stack values; no fabricated UsePreviousValue."""
+    return {"Stacks": [{
+        "StackId": snapshot["StackId"],
+        "StackName": gate.STACK, "StackStatus": "UPDATE_COMPLETE",
+        "Parameters": [
+            {"ParameterKey": "EnableDormantFoundation",
+             "ParameterValue": foundation},
+            {"ParameterKey": "ExistingVpcId", "ParameterValue": vpc},
+            {"ParameterKey": "EnableAtlasEndpointEgress",
+             "ParameterValue": "false"},
+            *[{"ParameterKey": key, "ParameterValue": ""}
+              for key in gate.PARAMS],
+        ],
+    }]}
+
+
 def test_exact_reviewed_change_set_passes_read_only(monkeypatch) -> None:
     """The verified three-resource SG-only change set admits no ECS writes."""
     commands = []
@@ -69,10 +90,7 @@ def test_exact_reviewed_change_set_passes_read_only(monkeypatch) -> None:
         if args[0] == "sts":
             return {"Account": gate.ACCOUNT}
         if args[1] == "describe-stacks":
-            return {"Stacks": [{
-                "StackId": _change_set()["StackId"],
-                "StackName": gate.STACK, "StackStatus": "UPDATE_COMPLETE",
-            }]}
+            return _stack(_change_set())
         return _change_set()
 
     monkeypatch.setattr(gate, "aws", fake_aws)
@@ -100,11 +118,7 @@ def test_change_set_drift_refused(monkeypatch, wrong: str) -> None:
 
     monkeypatch.setattr(gate, "aws", lambda profile, *args:
                         {"Account": gate.ACCOUNT} if args[0] == "sts"
-                        else {"Stacks": [{
-                            "StackId": snapshot["StackId"],
-                            "StackName": gate.STACK,
-                            "StackStatus": "UPDATE_COMPLETE",
-                        }]} if args[1] == "describe-stacks"
+                        else _stack(snapshot) if args[1] == "describe-stacks"
                         else snapshot)
     with pytest.raises(gate.EgressAdmissionError):
         gate.exact_change_set("wilsy-legal-cert")
@@ -118,15 +132,73 @@ def test_change_set_wrong_target_stack_refused(monkeypatch) -> None:
         if args[0] == "sts":
             return {"Account": gate.ACCOUNT}
         if args[1] == "describe-stacks":
-            return {"Stacks": [{
-                "StackId": snapshot["StackId"] + "-other",
-                "StackName": gate.STACK, "StackStatus": "UPDATE_COMPLETE",
-            }]}
+            result = _stack(snapshot)
+            result["Stacks"][0]["StackId"] += "-other"
+            return result
         return snapshot
 
     monkeypatch.setattr(gate, "aws", fake_aws)
     with pytest.raises(gate.EgressAdmissionError,
                        match="CLOUDFORMATION_TARGET_STACK_NOT_VERIFIED"):
+        gate.exact_change_set("wilsy-legal-cert")
+
+
+def test_explicit_unchanged_parameters_allowed(monkeypatch) -> None:
+    """AWS may expand existing stack parameters to explicit effective values."""
+    snapshot = _change_set()
+    for item in snapshot["Parameters"][:2]:
+        item.pop("UsePreviousValue")
+    snapshot["Parameters"][0]["ParameterValue"] = "true"
+    snapshot["Parameters"][1]["ParameterValue"] = "vpc-05a3c2c855c4dde26"
+
+    def fake_aws(profile, *args):
+        if args[0] == "sts":
+            return {"Account": gate.ACCOUNT}
+        if args[1] == "describe-stacks":
+            return _stack(snapshot)
+        return snapshot
+
+    monkeypatch.setattr(gate, "aws", fake_aws)
+    gate.exact_change_set("wilsy-legal-cert")
+
+
+@pytest.mark.parametrize("field,value", [
+    ("EnableDormantFoundation", "false"),
+    ("ExistingVpcId", "vpc-99999999999999999"),
+])
+def test_drifted_explicit_authority_parameter_denied(
+    monkeypatch, field: str, value: str,
+) -> None:
+    """Explicit values may not change foundation activation or VPC target."""
+    snapshot = _change_set()
+    item = next(row for row in snapshot["Parameters"]
+                if row["ParameterKey"] == field)
+    item.pop("UsePreviousValue")
+    item["ParameterValue"] = value
+
+    def fake_aws(profile, *args):
+        if args[0] == "sts":
+            return {"Account": gate.ACCOUNT}
+        return _stack(snapshot) if args[1] == "describe-stacks" else snapshot
+
+    monkeypatch.setattr(gate, "aws", fake_aws)
+    with pytest.raises(gate.EgressAdmissionError,
+                       match="CLOUDFORMATION_AUTHORITY_PARAMETER_DRIFT"):
+        gate.exact_change_set("wilsy-legal-cert")
+
+
+def test_existing_stack_inactive_foundation_denied(monkeypatch) -> None:
+    """A syntactically valid change set cannot activate a closed foundation."""
+    snapshot = _change_set()
+
+    def fake_aws(profile, *args):
+        if args[0] == "sts":
+            return {"Account": gate.ACCOUNT}
+        return _stack(snapshot, foundation="false") if args[1] == "describe-stacks" else snapshot
+
+    monkeypatch.setattr(gate, "aws", fake_aws)
+    with pytest.raises(gate.EgressAdmissionError,
+                       match="CLOUDFORMATION_STACK_AUTHORITY_DRIFT"):
         gate.exact_change_set("wilsy-legal-cert")
 
 
@@ -190,7 +262,7 @@ def test_sg_inbound_open_refuses_verification(monkeypatch) -> None:
 
 
 # ARTIFACT: tests/unit/test_mw_t12_atlas_egress_activation.py
-# VERSION: v1.1.0-AWS-DESCRIBE-CHANGE-SET-CONTRACT
+# VERSION: v1.2.0-CLOUDFORMATION-EFFECTIVE-PARAMETERS
 # AUTHORITY BOUNDARY: Offline strict DNS/change-set/SG evidence only.
 # TENANT POSTURE: No tenant persistence, identity or production access.
 # FAIL-CLOSED POSTURE: Extra permissions, drift or unknown DNS denied.
