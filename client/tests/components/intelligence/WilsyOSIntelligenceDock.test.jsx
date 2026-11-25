@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.41.1-SAVED-THREAD-ACCESSIBLE-NAME-CERT
+ * VERSION: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT validates independently
+ *            admitted task event pages yield one recorded, non-metered
+ *            source conversation turn; foreign identity or provider calls
+ *            are never accepted as lifecycle truth.
  * CHANGELOG: v1.41.1-SAVED-THREAD-ACCESSIBLE-NAME-CERT disambiguates the actual saved
  *            conversation action from its separately labeled Delete control.
  * CHANGELOG: v1.41.0-EOS-HISTORY-MOCK-CONTRACT synchronizes the mocked history
@@ -1772,6 +1776,54 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByText('2026-11-26')).toBeVisible();
     expect(screen.getByText(/Python EOS · Read-only inspection/)).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('inspects the selected task lifecycle event page without a model request', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const principal = 'context-person';
+    mockApiGet.mockImplementation((path, options = {}) => {
+      if (path === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        locator: options.params, context_fingerprint: 'a'.repeat(128),
+        observed_at: '2026-11-25T12:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: projectId, revision: 3, name: 'Foundation' },
+          selected_task: { task_id: taskId, title: 'MW-T11 — Align Intelligence Dock',
+            status: 'IN_PROGRESS', revision: 3, due_at: '2026-11-26' } },
+      } });
+      if (path === '/projects/' + projectId + '/tasks/' + taskId
+        + '/events?limit=20&offset=0') return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: principal, project_id: projectId, task_id: taskId,
+          limit: 20, offset: 0, has_more: false, next_offset: null,
+          items: [{ schema: 'wilsy.project.task.event.v1',
+            tenant_id: 'TEST_TENANT', project_id: projectId, task_id: taskId,
+            revision: 3, event_type: 'PROJECT_TASK_TRANSITIONED',
+            status_after: 'IN_PROGRESS',
+            occurred_at: '2026-11-25T13:00:00Z' }],
+        } });
+      return Promise.reject(rejectedResponse(503, 'unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: projectId,
+          project_revision: 3, task_id: taskId, task_revision: 3 } },
+    })));
+    await waitFor(() => expect(screen.getByText(/You're viewing “MW-T11/)).toBeVisible());
+    requestReadOnlySource('Inspect MW-T11 activity');
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) =>
+      path.endsWith('/events?limit=20&offset=0'))).toBe(true));
+    await waitFor(() => expect(mockPersistTurn).toHaveBeenCalledTimes(2));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(await screen.findByText(/MW-T11 · EOS lifecycle activity/)).toBeVisible();
   });
 
   it('reads current context only while open and treats page events as locators', async () => {
