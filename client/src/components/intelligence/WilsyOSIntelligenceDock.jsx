@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.51.0-MW-T11-CANONICAL-DEADLINE-DEPENDENCY
+ * VERSION: v4.52.0-HISTORICAL-TRANSCRIPT-PROVENANCE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,9 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.52.0-HISTORICAL-TRANSCRIPT-PROVENANCE distinguishes EOS-stored historical
+ *            transcripts from live task evidence in the conversation header;
+ *            archived source text cannot imply current EOS verification.
  * CHANGELOG: v4.51.0-MW-T11-CANONICAL-DEADLINE-DEPENDENCY reads canonical selected-task due_at
  *            and verified dependency IDs from the independently admitted
  *            EOS context; never claims missing deadlines because client
@@ -2806,7 +2809,9 @@ export function WilsyOSIntelligenceDock({
                                   : msg.meta?.source === 'WILSY_EOS_BILLING_EVIDENCE'
                                     ? 'WILSY OS · Verified Billing'
                                     : msg.meta?.source === 'WILSY_EOS_POS_COMMERCIAL'
-                                      ? 'WILSY OS · Verified POS' : 'WILSY OS'}</span>
+                                      ? 'WILSY OS · Verified POS'
+                                      : msg.meta?.source === 'EOS_SAVED_TRANSCRIPT'
+                                        ? 'WILSY OS · Saved transcript (not live evidence)' : 'WILSY OS'}</span>
                         <span>
                           {msg.timestamp
                             ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -3223,7 +3228,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.51.0-MW-T11-CANONICAL-DEADLINE-DEPENDENCY
+ * VERSION: v4.52.0-HISTORICAL-TRANSCRIPT-PROVENANCE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
