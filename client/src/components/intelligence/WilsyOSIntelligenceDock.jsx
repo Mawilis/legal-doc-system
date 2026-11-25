@@ -1,21 +1,26 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.42.0-BILLING-POS-CERTIFIED-SOURCE-READS
+ * VERSION: v4.43.0-MW-T11-TASK-CONTEXT-FIRST
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-22
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
  * COMPLIANCE: AGENTS.md; exact-scope fail-closed source evidence.
  * SECURITY / PRIVACY POSTURE: Session-person label never displays account email;
  * no model calls arise from read-only context inspection.
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.43.0-MW-T11-TASK-CONTEXT-FIRST opens the existing Dock directly in EOS source
+ * context when launched from a selected Projects task. Validates returned
+ * task identity and revision against the selected untrusted locator before
+ * rendering lifecycle facts; denied/unavailable stays fail-closed. Uses
+ * current Python EOS context GET, no paid provider, IAM or new surface.
  * CHANGELOG: v4.34.0-LOCAL-COURTESY-NONMETERED-TURNS supports narrowly allowlisted casual courtesies as explicitly tagged built-in conversation turns, without invoking the OpenAI provider, making quota admissions, or replaying reconciliation-required attempts. Substantive prompts still require verified EOS model execution and usage evidence.
- * CHANGELOG: v4.42.0-BILLING-POS-CERTIFIED-SOURCE-READS registers explicit POS location-authorized commercial count and immutable Billing evidence-by-identity reads. Strictly validates exact source, tenant, principal, counts and financial non-execution claims; does not infer billing balances or POS settlements and never invokes a model for these verified source requests.
+ * CHANGELOG: v4.43.0-MW-T11-TASK-CONTEXT-FIRST registers explicit POS location-authorized commercial count and immutable Billing evidence-by-identity reads. Strictly validates exact source, tenant, principal, counts and financial non-execution claims; does not infer billing balances or POS settlements and never invokes a model for these verified source requests.
  * CHANGELOG: v4.41.0-GOVERNED-MULTIDOMAIN-WORK-SOURCE adds independently authorised multi-domain work intelligence (HR, CRM, Operations, Legal, Intelligence and Projects task queues) using the canonical My Work aggregate and its complete tenant/principal/source-coverage validator. Uses typed read-only plans, no provider calls or omitted-source zeros, keeps business writes and the existing AI replay boundary closed.
  * CHANGELOG: v4.40.0-GOVERNED-COMPOSITE-SOURCE-PLANNING plans multiple safe read-only operations in one Projects source turn from verified conversation context, including 'How many are active and what are details?'. Reuses independently authorised EOS source reads and never sends the combined request to paid inference. Rejects mixed domain, ambiguous and write commands; no IAM or financial changes.
  * CHANGELOG: v4.39.0-VERIFIED-ACTIVE-PROJECT-DETAILS continues a verified Projects status conversation into source-authorised active-project detail, using independent exact-tenant summary, bounded status-filtered list and detail GETs, validating each response; no model request, inferred project data, financial authority, tenant expansion or held-admission changes.
@@ -1202,6 +1207,11 @@ export function WilsyOSIntelligenceDock({
         || data.locator?.workspace !== workLocator.workspace
         || (data.locator?.project_id || null) !== (workLocator.project_id || null)
         || (data.locator?.task_id || null) !== (workLocator.task_id || null)
+        || (workLocator.task_id && (
+          data.work?.selected_task?.task_id !== workLocator.task_id
+          || (workLocator.task_revision
+            && data.work.selected_task.revision !== workLocator.task_revision)
+        ))
         || (workLocator.project_id && data.work?.project?.project_id !== workLocator.project_id)
         || (workLocator.project_revision && data.work?.project?.revision !== workLocator.project_revision)
         || !Number.isSafeInteger(data.allowance?.available_request_units)
@@ -2181,7 +2191,16 @@ export function WilsyOSIntelligenceDock({
         <div className={`${styles.launcherTray} ${launcherMinimized ? styles.launcherMinimized : ''}`}>
           {moveHandle}
           <button ref={launcherButtonRef} type="button" className={styles.dockLauncherButton}
-            onClick={() => setIsOpen(true)} title="Open Wilsy OS Intelligence Dock"
+            onClick={() => {
+              if (workLocator.workspace === 'PROJECTS' && workLocator.project_id && workLocator.task_id) {
+                // Untrusted locator is not displayed as task truth. Only the
+                // independently authorized EOS context response may do that.
+                setActiveTab('chat');
+                setConversationView('SOURCE');
+                setLocalSourceQuery('Inspect authorized task context');
+              }
+              setIsOpen(true);
+            }} title="Open Wilsy OS Intelligence Dock"
             aria-label="Open Wilsy OS Intelligence Dock" aria-expanded="false">
             <img src="/brand/wilsy-ai-emblem.svg" className={styles.aiEmblem} alt="" aria-hidden="true"/>
             {!launcherMinimized && <span>WILSY OS<small>AI COMPANION</small></span>}
@@ -2327,6 +2346,23 @@ export function WilsyOSIntelligenceDock({
                         : aiProviderUnavailable ? 'AI provider unavailable'
                           : `${visibleWorkspaceContext.data.allowance.available_request_units} available · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.daily_consumed_request_units) ? visibleWorkspaceContext.data.allowance.daily_consumed_request_units : 'unverified'} completed · ${Number.isSafeInteger(visibleWorkspaceContext.data.allowance.held_request_units) ? visibleWorkspaceContext.data.allowance.held_request_units : 'unverified'} held`}
                     </summary>
+                    {workLocator.task_id && visibleWorkspaceContext.data.work?.selected_task
+                      && visibleWorkspaceContext.data.work.selected_task.task_id === workLocator.task_id
+                      && <p aria-label="EOS-verified selected task lifecycle"
+                        style={{ margin: '4px 0', color: '#e8f1ff' }}>
+                        {'Current task · '}
+                        {['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'CANCELLED'].includes(
+                          visibleWorkspaceContext.data.work.selected_task.status)
+                          ? visibleWorkspaceContext.data.work.selected_task.status.replaceAll('_', ' ').toLowerCase()
+                          : 'lifecycle not supplied by EOS'}
+                        {' · Revision '}
+                        {Number.isSafeInteger(visibleWorkspaceContext.data.work.selected_task.revision)
+                          ? visibleWorkspaceContext.data.work.selected_task.revision : 'unverified'}
+                        {' · Deadline '}
+                        {/^\\d{4}-\\d{2}-\\d{2}$/.test(
+                          visibleWorkspaceContext.data.work.selected_task.due_date || '')
+                          ? visibleWorkspaceContext.data.work.selected_task.due_date : 'not verified'}
+                      </p>}
                     <p style={{ margin: '4px 0' }}>
                       {visibleWorkspaceContext.data.work?.current_person_name || 'Person name unavailable'}
                       {' · '}{aiEntitlementNotProvisioned ? 'AI activation required'
@@ -2907,7 +2943,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.42.0-BILLING-POS-CERTIFIED-SOURCE-READS
+ * VERSION: v4.43.0-MW-T11-TASK-CONTEXT-FIRST
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
