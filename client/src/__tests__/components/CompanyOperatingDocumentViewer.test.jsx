@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.30.1-SOURCE-RECENT-CONTINUITY-CERT
+ * VERSION: v1.30.2-M04-MULTIPHASE-CI-TIME-BOUND
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,11 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.30.2-M04-MULTIPHASE-CI-TIME-BOUND
+ *            bounds only the comprehensive 18-record M04 multiple-refresh
+ *            browser contract to 15 seconds after exact-head CI showed a
+ *            5-second Vitest global test deadline; retains all assertions
+ *            and the default deadline for other independent tests.
  * CHANGELOG: v1.30.1-SOURCE-RECENT-CONTINUITY-CERT
  *            imports scoped testing-library element queries for recent work.
  * CHANGELOG: v1.30.0-SOURCE-RECENT-CONTINUITY-CERT
@@ -808,7 +813,7 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.getByRole('region', { name: 'M04 governed Strategy execution' }))
       .not.toHaveTextContent('Complete authorized task snapshot');
     expect(api.post).not.toHaveBeenCalled();
-  });
+  }, 15000);
 
   it('M02 updates 18-record lifecycle and predecessor counts only after source refresh', async () => {
     const milestones = [
@@ -1292,7 +1297,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.30.1-SOURCE-RECENT-CONTINUITY-CERT
+// VERSION: v1.30.2-M04-MULTIPHASE-CI-TIME-BOUND
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
