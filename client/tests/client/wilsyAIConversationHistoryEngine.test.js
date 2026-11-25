@@ -1,5 +1,20 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
+ * TITLE: WILSY OS Conversation History Engine Durable Archive Certificate
+ * VERSION: v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT
+ * AUTHORITY: WILSY OS Core Governance
+ * EPITOME: Encrypted history transport, owner isolation and session fallback
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/wilsyAIConversationHistoryEngine.test.js
+ * COLLABORATION / OWNERSHIP: EOS history router and current Dock history engine
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT tests
+ *            same-tenant foreign-principal archive denial and non-elevation
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
+ * SECURITY / PRIVACY POSTURE: Synthetic scopes and prompts; no real secrets
+ * TENANT BOUNDARY: Exact identity scope is checked; mocks grant no IAM
+ * AUTHORITY BOUNDARY: Test-only evidence; Python EOS owns durable truth
+ * FINANCIAL AUTHORITY BOUNDARY: No paid model or payment execution
+ *
  * Wilsy OS — AI Conversation History Engine Session-Bound Certificate
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/tests/client/wilsyAIConversationHistoryEngine.test.js
