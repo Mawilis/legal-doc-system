@@ -1,5 +1,20 @@
 # MW-T11 — Governed Intelligence Dock Conversation Continuity
 
+TITLE: WILSY OS MW-T11 Durable Conversation History Architecture  
+VERSION: v1.0.0-MW-T11-DURABLE-HISTORY-ARCHITECTURE  
+AUTHORITY: WILSY OS Core Governance  
+EPITOME: Single-source encrypted Python EOS history for the existing Intelligence Dock  
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/mw-t11-durable-conversation-history.md  
+COLLABORATION / OWNERSHIP: Python EOS, global principal, Intelligence Dock, project work graph  
+CERTIFICATION / UPDATE DATE: 2026-11-25  
+CHANGELOG: v1.0.0-MW-T11-DURABLE-HISTORY-ARCHITECTURE maps encrypted storage, authority and browser evidence  
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2  
+SECURITY / PRIVACY POSTURE: No prompts or tokens included; recorded transcripts not source truth  
+TENANT BOUNDARY: Current authorized tenant and principal only  
+AUTHORITY BOUNDARY: Python EOS retains all durable archive, IAM and work-source authority  
+FINANCIAL AUTHORITY BOUNDARY: No provider invocation, settlement or paid execution  
+
+
 **VERSION:** v1.0.0-MW-T11-DURABLE-HISTORY-ARCHITECTURE  
 **Authority:** WILSY OS Core Governance  
 **Date:** 25 November 2026  
