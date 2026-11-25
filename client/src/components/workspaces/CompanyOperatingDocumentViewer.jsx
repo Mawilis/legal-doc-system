@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.8-FOCUSED-M04-LOCAL-TABS
+ * VERSION: v2.32.9-SINGLE-OVERVIEW-RETURN
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.9-SINGLE-OVERVIEW-RETURN reuses the M04 task navigation control
+ *            as the sole return from execution overview. Removes the
+ *            stacked third button; EOS reads and commands are unchanged.
  * CHANGELOG: v2.32.8-FOCUSED-M04-LOCAL-TABS removes repeated context ahead of
  *            the verified M04 inspector and switches task/overview in local
  *            React state without routing or document-source reload. URL
@@ -2177,12 +2180,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                               : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
                             Next assigned task
                           </button>
-                          <button type="button" aria-pressed={m04FocusMode === 'INSPECT'}
-                            onClick={() => { focusWorkOnOpen.current = true; selectWorkView('INSPECT'); }}
-                            className={m04FocusMode === 'INSPECT'
+                          <button type="button" aria-pressed={m04FocusMode === 'INSPECT' && executionInspectorOpen}
+                            onClick={() => {
+                              if (m04FocusMode === 'INSPECT' && !executionInspectorOpen) {
+                                setExecutionInspectorOpen(true);
+                              } else {
+                                focusWorkOnOpen.current = true;
+                                selectWorkView('INSPECT');
+                              }
+                            }}
+                            className={m04FocusMode === 'INSPECT' && executionInspectorOpen
                               ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
                               : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
-                            Browse tasks & evidence
+                            {m04FocusMode === 'INSPECT' && !executionInspectorOpen ? 'Back to tasks' : 'Browse tasks & evidence'}
                           </button>
                         </nav>}
                         {m04Execution ? <>
@@ -2231,8 +2241,6 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                               className="rounded-md border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">Show execution overview</button>
                           </div>}
                           {m04FocusMode === 'INSPECT' && !executionInspectorOpen && <>
-                          <button type="button" data-m04-overview="true" onClick={() => setExecutionInspectorOpen(true)}
-                            className="min-h-10 rounded-lg border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white">Back to tasks</button>
                           <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                             {[
                               ['Assigned in task source', m04Execution.assigned, 'ASSIGNED'],
@@ -2600,7 +2608,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.8-FOCUSED-M04-LOCAL-TABS
+// VERSION: v2.32.9-SINGLE-OVERVIEW-RETURN
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
