@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION
+VERSION: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK introduces an optional
+           hidden-input, TLS-verified read-only scoped Mongo credential audit
+           for the existing separate FREE Atlas test cluster; no database or
+           user mutation, production authority or Fargate activation.
 CHANGELOG: v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION accepts AWS
            omitting the empty secrets array while forbidding real secret refs.
 CHANGELOG: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION explicitly blocks
@@ -33,14 +37,20 @@ FINANCIAL AUTHORITY BOUNDARY: No paid compute activated; Kennel EOS exclusively.
 from __future__ import annotations
 
 import argparse
+from getpass import getpass
+import re
 import sys
+from urllib.parse import parse_qsl, urlsplit
 
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION"
+VERSION = "v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
+TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"
+SYNTHETIC_DB = re.compile(r"wilsy_mwt12_synthetic_[0-9a-f]{12}\\Z")
+
 
 
 class ReadinessError(RuntimeError):
@@ -285,13 +295,77 @@ def check(profile: str) -> tuple[str, ...]:
     return tuple(blockers)
 
 
+
+def verify_scoped_test_database(uri: str) -> str:
+    """Read only the dedicated Atlas login authority with verified remote TLS.
+
+    Does not test data continuity or grant an IAM/user role. Database names are
+    reserved for new synthetic fixtures; sample and existing test DBs denied.
+    """
+    try:
+        parts = urlsplit(uri)
+        options = parse_qsl(parts.query, keep_blank_values=True)
+    except (TypeError, ValueError) as exc:
+        raise ReadinessError("ATLAS_URI_INVALID") from exc
+    require(parts.scheme == "mongodb+srv"
+            and parts.hostname == TEST_ATLAS_HOST
+            and parts.port is None and parts.username is not None
+            and parts.password is not None and parts.fragment == "",
+            "EXACT_TEST_CLUSTER_TLS_URI_REQUIRED")
+    database = parts.path.lstrip("/")
+    require("/" not in database
+            and SYNTHETIC_DB.fullmatch(database) is not None,
+            "DEDICATED_SYNTHETIC_DATABASE_REQUIRED")
+    lower = [(key.lower(), value.lower()) for key, value in options]
+    blocked = {"tlsinsecure", "tlsallowinvalidcertificates",
+               "tlsallowinvalidhostnames", "sslallowinvalidcertificates",
+               "sslallowinvalidhostnames", "directconnection"}
+    require(not any(key in blocked for key, _ in lower),
+            "ATLAS_TLS_OVERRIDE_DENIED")
+    require(not any(key in {"tls", "ssl"} and value != "true"
+                    for key, value in lower), "ATLAS_TLS_REQUIRED")
+    require(sum(key in {"authsource"} and value == "admin"
+                for key, value in lower) <= 1
+            and not any(key == "authsource" and value != "admin"
+                        for key, value in lower), "ATLAS_AUTH_SOURCE_INVALID")
+    require(len(options) == len({key for key, _ in lower}),
+            "ATLAS_DUPLICATE_URI_OPTION_DENIED")
+    try:
+        from pymongo import MongoClient
+        from pymongo.errors import PyMongoError
+
+        with MongoClient(
+            uri, tls=True, tlsAllowInvalidCertificates=False,
+            tlsAllowInvalidHostnames=False,
+            serverSelectionTimeoutMS=5000, connectTimeoutMS=5000,
+            socketTimeoutMS=5000, retryWrites=False,
+        ) as client:
+            require(client.get_database(database).command("ping").get("ok") == 1,
+                    "ATLAS_PING_UNVERIFIED")
+            auth = client.admin.command("connectionStatus").get("authInfo", {})
+            roles = auth.get("authenticatedUserRoles")
+            require(isinstance(roles, list) and len(roles) == 1
+                    and roles[0].get("role") == "readWrite"
+                    and roles[0].get("db") == database,
+                    "ATLAS_CREDENTIAL_NOT_DATABASE_SCOPED")
+    except (PyMongoError, OSError, ValueError) as exc:
+        raise ReadinessError("ATLAS_SCOPED_CONNECTION_UNAVAILABLE") from None
+    return database
+
 def main(argv: list[str] | None = None) -> int:
     """Report verified registration separately from blocked runtime readiness."""
     parser = argparse.ArgumentParser(description="MW-T12 read-only runtime gate")
     parser.add_argument("--profile", default="wilsy-legal-cert")
+    parser.add_argument("--verify-scoped-database", action="store_true")
     args = parser.parse_args(argv)
     try:
         blockers = check(args.profile)
+        if args.verify_scoped_database:
+            uri = getpass("Scoped synthetic Atlas URI (hidden): ")
+            require(bool(uri) and len(uri) <= 4096,
+                    "ATLAS_URI_REQUIRED")
+            verify_scoped_test_database(uri)
+            print("MW_T12_SCOPED_ATLAS_CREDENTIAL=VERIFIED_READ_ONLY")
         print("MW_T12_RUNTIME_METADATA=VERIFIED")
         print("MW_T12_TASK_REVISIONS=1,2")
         print("MW_T12_RUNNING_TASKS=ZERO")
@@ -323,7 +397,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.2.1-OPTIONAL-ECS-SECRET-LIST-NORMALIZATION
+# VERSION: v1.3.0-SCOPED-ATLAS-CREDENTIAL-READBACK
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
