@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE
+ * VERSION: v2.31.4-UNIQUE-FOUNDATION-FOCUS
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,9 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.31.4-UNIQUE-FOUNDATION-FOCUS requires exactly
+ *            one verified Foundation identity before showing its quick
+ *            work handoff; ambiguous matches retain full register readback.
  * CHANGELOG: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE displays the
  *            collapse/expand toggle only with the Foundation quick surface;
  *            projects-only scopes retain their direct verified register.
@@ -1578,8 +1581,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   // are validated against unfiltered projectItems, never rendered search rows.
   const visibleStrategyProjects = projectItems.filter(item => item.name.toLocaleLowerCase()
     .includes(projectSearch.trim().toLocaleLowerCase()));
-  const foundationProject = projectState === 'READY'
-    ? projectItems.find(item => item.name === FOUNDATION_PROJECT_NAME) : null;
+  const foundationCandidates = projectState === 'READY'
+    ? projectItems.filter(item => item.name === FOUNDATION_PROJECT_NAME) : [];
+  const foundationProject = foundationCandidates.length === 1 ? foundationCandidates[0] : null;
   const registerVisible = projectRegisterOpen || projectSearch.trim().length > 0
     || (projectState === 'READY' && !foundationProject);
   const selectedStrategyProject = delivery.state === 'READY'
@@ -2503,7 +2507,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE
+// VERSION: v2.31.4-UNIQUE-FOUNDATION-FOCUS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
