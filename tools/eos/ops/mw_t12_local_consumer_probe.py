@@ -1,5 +1,5 @@
 """TITLE: MW-T12 local Atlas consumer source binding probe.
-VERSION: v1.0.0-LOCAL-CONNECTION-OWNERSHIP-EVIDENCE
+VERSION: v1.1.0-LIVE-OWNED-TCP-SOCKET-CLASSIFICATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Read-only process/credential target evidence that distinguishes
          actual local EOS listener identity from inherited CLI environment.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Canonical tools/eos/kernel/db.py MONGODB_URI,
          local EOS 9095 listener and shared Atlas consumer attribution register.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-LIVE-OWNED-TCP-SOCKET-CLASSIFICATION inspects only
+           actual listener-owned established outbound Mongo TCP sockets,
+           redacts endpoints, and distinguishes current recognized Atlas
+           peers from unknown/absent socket evidence without claiming IAM.
 CHANGELOG: v1.0.0-LOCAL-CONNECTION-OWNERSHIP-EVIDENCE establishes independent
            listener PID check, shell-environment target classification and
            explicit unknown-ownership denials with no credential logging.
@@ -22,12 +26,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import os
 import re
 import subprocess
 from urllib.parse import parse_qs, unquote, urlsplit
 
-VERSION = "v1.0.0-LOCAL-CONNECTION-OWNERSHIP-EVIDENCE"
+VERSION = "v1.1.0-LIVE-OWNED-TCP-SOCKET-CLASSIFICATION"
 ATLAS_CLUSTER_SRV = "legal-doc-test.xmlpwmq.mongodb.net"
 ATLAS_SHARDS = frozenset(
     "ac-nagjjuj-shard-00-0" + str(i) + ".xmlpwmq.mongodb.net"
@@ -36,6 +41,9 @@ ATLAS_SHARDS = frozenset(
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 MAX_URI_LENGTH = 16384
 MAX_PROCESS_OUTPUT = 4096
+REVIEWED_ATLAS_NODE_IPS = frozenset({
+    "159.41.89.87", "159.41.89.104", "159.41.89.120",
+})
 
 
 class ProbeDenied(RuntimeError):
@@ -135,6 +143,65 @@ def local_listener_pids() -> list[int]:
     return sorted(set(int(p) for p in pids))
 
 
+def owned_established_mongo_peers(pids: list[int]) -> dict[str, str]:
+    """Observe only established TCP/27017 peers of EOS listener processes.
+
+    A matching connection is evidence of a network path at sampling time,
+    not proof of authenticated database identity, selected Mongo URI, or
+    target database. Missing sockets are NOT evidence of inactive clients.
+    """
+    if not pids:
+        return {"state": "NO_LISTENER", "recognized": "0",
+                "unrecognized": "0"}
+    observed: set[str] = set()
+    unparsed = 0
+    for pid in pids:
+        try:
+            result = subprocess.run(
+                ["lsof", "-nP", "-a", "-p", str(pid),
+                 "-iTCP:27017", "-sTCP:ESTABLISHED", "-F", "n"],
+                capture_output=True, timeout=6, check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise ProbeDenied("LOCAL_MONGO_SOCKET_QUERY_UNAVAILABLE") from exc
+        require(result.returncode in {0, 1}
+                and len(result.stdout) <= MAX_PROCESS_OUTPUT,
+                "LOCAL_MONGO_SOCKET_QUERY_FAILED")
+        for line in result.stdout.decode("ascii", "strict").splitlines():
+            if not line.startswith("n"):
+                continue
+            endpoint = line[1:]
+            if "->" not in endpoint:
+                unparsed += 1
+                continue
+            peer = endpoint.rsplit("->", 1)[-1]
+            if peer.startswith("["):
+                host = peer.split("]", 1)[0].lstrip("[")
+                port = peer.rsplit(":", 1)[-1]
+            else:
+                host, separator, port = peer.rpartition(":")
+                if not separator:
+                    unparsed += 1
+                    continue
+            if port != "27017":
+                unparsed += 1
+                continue
+            try:
+                observed.add(str(ipaddress.ip_address(host)))
+            except ValueError:
+                unparsed += 1
+    recognized = len(observed.intersection(REVIEWED_ATLAS_NODE_IPS))
+    other = len(observed.difference(REVIEWED_ATLAS_NODE_IPS)) + unparsed
+    state = (
+        "MATCHES_REVIEWED_ATLAS_NODES"
+        if recognized and not other else
+        "MIXED_OR_OTHER_MONGODB_TARGET" if other
+        else "NO_ACTIVE_MONGODB_SOCKET_OBSERVED"
+    )
+    return {"state": state, "recognized": str(recognized),
+            "unrecognized": str(other)}
+
+
 def run() -> None:
     """Emit safe local evidence, explicitly denying runtime/secret inference."""
     pids = local_listener_pids()
@@ -142,6 +209,10 @@ def run() -> None:
           ("PRESENT" if pids else "ABSENT"))
     print("MW_T12_LOCAL_EOS_LISTENER_COUNT=" + str(len(pids)))
     print("MW_T12_LOCAL_EOS_PID_IDENTITY=NOT_BOUND_TO_SHELL_SECRET")
+    socket_evidence = owned_established_mongo_peers(pids)
+    print("MW_T12_EOS_PID_MONGO_SOCKET_CLASS=" + socket_evidence["state"])
+    print("MW_T12_EOS_PID_REVIEWED_ATLAS_PEERS=" + socket_evidence["recognized"])
+    print("MW_T12_EOS_PID_OTHER_MONGO_PEERS=" + socket_evidence["unrecognized"])
     try:
         result = classify_uri(os.environ.get("MONGODB_URI"))
     except ProbeDenied as error:
@@ -177,7 +248,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_local_consumer_probe.py
-# VERSION: v1.0.0-LOCAL-CONNECTION-OWNERSHIP-EVIDENCE
+# VERSION: v1.1.0-LIVE-OWNED-TCP-SOCKET-CLASSIFICATION
 # AUTHORITY BOUNDARY: Own shell env + local 9095 listener only, read-only.
 # TENANT POSTURE: No tenant reads or credential/identity output.
 # FAIL-CLOSED POSTURE: Does not infer runtime ownership from shell URI.
