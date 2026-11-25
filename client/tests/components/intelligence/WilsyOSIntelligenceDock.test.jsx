@@ -1,12 +1,14 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.41.0-EOS-HISTORY-MOCK-CONTRACT
+ * VERSION: v1.41.1-SAVED-THREAD-ACCESSIBLE-NAME-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.41.1-SAVED-THREAD-ACCESSIBLE-NAME-CERT disambiguates the actual saved
+ *            conversation action from its separately labeled Delete control.
  * CHANGELOG: v1.41.0-EOS-HISTORY-MOCK-CONTRACT synchronizes the mocked history
  *            adapter with authenticated EOS history-posture and deletion
  *            exports, without weakening existing Dock tests.
@@ -1758,7 +1760,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     expect(screen.getByRole('heading', { name: 'Conversations' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: /EOS source · MW-T11/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^EOS source · MW-T11/ }));
     expect(await screen.findByText(/EOS source verified: MW-T11/)).toBeVisible();
     const title = screen.getByText(/EOS source verified: MW-T11/);
     expect(title.textContent).not.toMatch(/Lifecycle|Revision|Deadline/);
