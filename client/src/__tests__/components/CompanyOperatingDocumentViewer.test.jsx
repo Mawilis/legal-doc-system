@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.30.2-M04-MULTIPHASE-CI-TIME-BOUND
+ * VERSION: v1.31.0-M04-ACCOUNTABLE-TASK-HANDOFF-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.31.0-M04-ACCOUNTABLE-TASK-HANDOFF-CERT
+ *            certifies deterministic exact-principal next-task handoff
+ *            into existing Projects task editor; no status or IAM write.
  * CHANGELOG: v1.30.2-M04-MULTIPHASE-CI-TIME-BOUND
  *            bounds only the comprehensive 18-record M04 multiple-refresh
  *            browser contract to 15 seconds after exact-head CI showed a
@@ -652,7 +655,7 @@ describe('Strategy source-owned project execution readback', () => {
       status: 'TODO', fingerprint: 'c'.repeat(128),
       updated_by_principal_id: i === 0 ? scope.principalId : null,
       updated_at: i === 0 ? '2026-11-23T13:00:00Z' : null,
-      assignee_principal_id: i === 7 ? 'synthetic-assignee' : null,
+      assignee_principal_id: i === 7 ? scope.principalId : null,
       depends_on: i === 6 ? ['ptk-' + '1'.padStart(48, '0')] : [],
       due_date: i === 7 ? '2020-01-01' : null,
     }));
@@ -728,6 +731,13 @@ describe('Strategy source-owned project execution readback', () => {
     }));
     const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
     await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
+    const accountable = screen.getByRole('region', { name: 'Continue accountable Strategy work' });
+    expect(within(accountable).getByText('MW-T02 — Define Operating, Platform Build and Unclassified work')).toBeVisible();
+    fireEvent.click(within(accountable).getByRole('button', {
+      name: 'Continue accountable task MW-T02 — Define Operating, Platform Build and Unclassified work',
+    }));
+    expect(openCanonicalProject).toHaveBeenCalledWith(projectId, { taskId: work[7].task_id });
+    expect(api.post).not.toHaveBeenCalled();
     expect(m04).toHaveTextContent('Unassigned work17');
     expect(m04).toHaveTextContent('Assigned in task source1');
     expect(m04).toHaveTextContent('Waiting on predecessors1');
@@ -1297,7 +1307,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.30.2-M04-MULTIPHASE-CI-TIME-BOUND
+// VERSION: v1.31.0-M04-ACCOUNTABLE-TASK-HANDOFF-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
