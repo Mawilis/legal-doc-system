@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT
+ * VERSION: v1.43.0-PRODUCTIVE-HISTORY-NAVIGATOR-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,9 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.43.0-PRODUCTIVE-HISTORY-NAVIGATOR-CERT verifies compact searchable
+ *            conversation continuation and archive provenance replaces
+ *            passive message counters, retaining current auth permissions.
  * CHANGELOG: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT validates independently
  *            admitted task event pages yield one recorded, non-metered
  *            source conversation turn; foreign identity or provider calls
@@ -1124,7 +1127,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByRole('button', { name: 'Suggestions' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal tools' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Conversations' })).toBeVisible());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Pick up where you left off' })).toBeVisible());
     expect(screen.getByText(/No conversation messages are available in this view/)).toBeVisible();
     expect(screen.queryByText('Thread 1')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
@@ -1768,8 +1771,8 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText('Inspect verified workspace context')).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    expect(screen.getByRole('heading', { name: 'Conversations' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: /^EOS source · MW-T11/ }));
+    expect(screen.getByRole('heading', { name: 'Pick up where you left off' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /Open conversation EOS source · MW-T11/ }));
     expect(await screen.findByText(/EOS source verified: MW-T11/)).toBeVisible();
     const title = screen.getByText(/EOS source verified: MW-T11/);
     expect(title.textContent).not.toMatch(/Lifecycle|Revision|Deadline/);
@@ -2032,11 +2035,43 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByText('New Sovereign Session')).not.toBeInTheDocument();
   });
 
-  it('refreshes authorized EOS history and context when Refresh history is clicked', async () => {
+  it('searches conversation previews and filters storage provenance without changing current source', async () => {
+    mockThreads = [
+      { id: 'thread-1', title: 'Foundation work', workspace: 'Projects',
+        updatedAt: '2026-11-25T12:00:00Z', storagePosture: 'EOS_ENCRYPTED_HISTORY',
+        messages: [{ role: 'assistant', content: 'Task deadline verified in EOS', timestamp: '2026-11-25T12:00:00Z' }] },
+      { id: 'thread-2', title: 'Operating plan', workspace: 'Headquarters',
+        updatedAt: '2026-11-25T11:00:00Z', storagePosture: 'SESSION_ONLY',
+        messages: [{ role: 'assistant', content: 'Draft context in session', timestamp: '2026-11-25T11:00:00Z' }] },
+    ];
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    expect(screen.getByRole('searchbox', { name: 'Search conversations' })).toBeVisible();
+    expect(screen.getByText('Task deadline verified in EOS')).toBeVisible();
+    expect(screen.getByText('Draft context in session')).toBeVisible();
+    expect(screen.getByText('Saved in EOS')).toBeVisible();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search conversations' }), {
+      target: { value: 'deadline' },
+    });
+    expect(screen.getByRole('button', { name: 'Open conversation Foundation work' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Open conversation Operating plan' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search conversations' }), {
+      target: { value: '' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Saved' }));
+    expect(screen.queryByRole('button', { name: 'Open conversation Operating plan' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'This session' }));
+    expect(screen.getByRole('button', { name: 'Open conversation Operating plan' })).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('checks current EOS archive without hiding current conversation state', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh history' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
 
     await waitFor(() => {
       expect(mockLoadThreads).toHaveBeenCalled();
@@ -2348,7 +2383,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT
+ * VERSION: v1.43.0-PRODUCTIVE-HISTORY-NAVIGATOR-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
