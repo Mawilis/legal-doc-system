@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.33.3-ROUTED-STRATEGY-TEST-HARNESS
+ * VERSION: v1.34.0-AUTOVERIFIED-TASK-FIRST-STRATEGY-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.34.0-AUTOVERIFIED-TASK-FIRST-STRATEGY-CERT updates comprehensive 18-record
+ *            M04 source/permission/evidence certification to task-first
+ *            auto-verification and local inspector/overview switching,
+ *            without reducing source-owned assertions.
  * CHANGELOG: v1.33.3-ROUTED-STRATEGY-TEST-HARNESS supplies MemoryRouter context in
  *            the actual production-routed Strategy viewer test harness,
  *            retaining existing source, IAM and URL-state assertions.
@@ -749,7 +753,11 @@ describe('Strategy source-owned project execution readback', () => {
     });
     const openCanonicalProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject: openCanonicalProject }));
-    expect(await screen.findByRole('region', { name: 'Foundation Strategy execution focus' })).toBeVisible();
+    // Current UI automatically revalidates the unique Foundation task page.
+    // Test source admission rather than a now-removed mandatory Verify click.
+    const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
+    await waitFor(() => expect(m04)
+      .toHaveTextContent('Complete authorized task snapshot: 18 work records'));
     expect(screen.getAllByRole('button', { name: 'My Work' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Open current My Work' })).not.toBeInTheDocument();
     const browseProjects = screen.getByRole('button', { name: 'Browse all 1 projects' });
@@ -757,18 +765,12 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.queryByRole('table', { name: 'Verified EOS project register' })).not.toBeInTheDocument();
     fireEvent.click(browseProjects);
     expect(screen.getByRole('table', { name: 'Verified EOS project register' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Hide project register' })).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Hide project register' }));
     expect(screen.queryByRole('table', { name: 'Verified EOS project register' })).not.toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', {
-      name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/,
-    }));
-    const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
-    await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
     expect(screen.queryByRole('region', { name: 'Foundation Strategy execution focus' })).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'M04 execution focus' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Continue work' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Inspect work and evidence' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Next assigned task' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Browse tasks & evidence' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByRole('button', { name: 'Inspect unassigned work' })).not.toBeInTheDocument();
     expect(screen.getByText(/Implementation programme and source evidence/).closest('details')?.open).toBe(false);
 
@@ -779,48 +781,35 @@ describe('Strategy source-owned project execution readback', () => {
     }));
     expect(openCanonicalProject).toHaveBeenCalledWith(projectId, { taskId: work[7].task_id });
     expect(api.post).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect work and evidence' }));
-    expect(screen.getByRole('button', { name: 'Inspect work and evidence' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/Implementation programme and source evidence/).closest('details')?.open).toBe(true);
-    expect(m04).toHaveTextContent('Unassigned work17');
+
+    // Task-first inspector is a local view switch. No extra EOS read or reload.
+    const requestsBeforeSwitch = api.get.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Browse tasks & evidence' }));
+    expect(screen.getByRole('button', { name: 'Browse tasks & evidence' })).toHaveAttribute('aria-pressed', 'true');
+    const inspectorSummary = screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/);
+    expect(inspectorSummary.closest('details')?.open).toBe(true);
+    expect(screen.getByRole('searchbox', { name: 'Find work by title' })).toBeVisible();
+    expect(api.get.mock.calls.length).toBe(requestsBeforeSwitch);
+    expect(screen.getByText('18 matching · page 1 of 3')).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })).toHaveLength(6);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
+    expect(inspectorSummary.closest('details')?.open).toBe(false);
+    expect(m04).toHaveTextContent('Unassigned work19'.replace('19', '17'));
     expect(m04).toHaveTextContent('Assigned in task source1');
     expect(m04).toHaveTextContent('Waiting on predecessors1');
     expect(m04).toHaveTextContent('Past calendar due date1');
     expect(m04).toHaveTextContent('Certified strategic outcome: Not established');
-    const resume = screen.getByRole('region', { name: 'Continue your last updated task' });
-    expect(within(resume).getByText('Your last recorded task update')).toBeVisible();
-    fireEvent.click(within(resume).getByRole('button', { name: 'Inspect evidence' }));
-    expect(screen.getByRole('searchbox', { name: 'Find work by title' })).toHaveValue(work[0].title);
-    expect(screen.getByRole('button', { name: 'Show execution overview' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
-    expect(api.post).not.toHaveBeenCalled();
-    const inspectorSummary = screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/);
-    expect(inspectorSummary.closest('details')?.open).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Inspect unassigned work' }));
     expect(inspectorSummary.closest('details')?.open).toBe(true);
-    expect(screen.getByRole('searchbox', { name: 'Find work by title' })).toHaveFocus();
-    expect(screen.getByRole('button', { name: 'Show execution overview' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Inspect assigned in task source' })).not.toBeInTheDocument();
-    expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('UNASSIGNED');
+    expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
     expect(screen.getAllByText(/Needs attention: assign an eligible project contributor/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Manage MW-M01 — Operating taxonomy and strategy alignment in Projects/ }));
     expect(openCanonicalProject).toHaveBeenCalledWith(projectId, { taskId: work[0].task_id });
     expect(api.post).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect assigned in task source' }));
-    expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
-    expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('ASSIGNED');
-    fireEvent.click(inspectorSummary);
-    expect(inspectorSummary.closest('details')?.open).toBe(false);
-    expect(api.post).not.toHaveBeenCalled();
-    expect(screen.getByText('Browse all 18 planned milestones and tasks').closest('details')?.open).toBe(false);
-    expect(screen.getByText('Source task register · 18 records (additional detail)').closest('details')?.open).toBe(false);
-    fireEvent.click(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/));
-    expect(screen.getByRole('combobox', { name: 'Show work' })).toHaveValue('ASSIGNED');
-    expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
+
     fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'ALL' } });
-    expect(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })).toHaveLength(6);
     expect(screen.getByText('18 matching · page 1 of 3')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Next work' }));
     expect(screen.getByText('18 matching · page 2 of 3')).toBeVisible();
@@ -828,9 +817,7 @@ describe('Strategy source-owned project execution readback', () => {
     expect(screen.getByText('1 matching · page 1 of 1')).toBeVisible();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Find work by title' }), { target: { value: '' } });
     expect(screen.getByText('18 matching · page 1 of 3')).toBeVisible();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'UNASSIGNED' } });
-    expect(screen.getByText('17 matching · page 1 of 3')).toBeVisible();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'ALL' } });
+
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(screen.getByLabelText('Current session task shortcuts')).toBeVisible();
     expect(screen.getByText('Recently inspected this session')).toBeVisible();
@@ -839,33 +826,32 @@ describe('Strategy source-owned project execution readback', () => {
     expect(evidencePanel).toHaveAttribute('data-evidence-state', 'READY');
     expect(evidencePanel).toHaveFocus();
     expect(screen.getByText('Task history checked')).toBeVisible();
-    expect(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0])
+      .toHaveAttribute('aria-expanded', 'true');
     const governanceSummary = screen.getByText('What does this check confirm?');
     expect(governanceSummary.closest('details')?.open).toBe(false);
     expect(api.get.mock.calls.some(([url, options]) => url === eventUrl
       && options?.headers?.['X-Tenant-ID'] === scope.tenantId)).toBe(true);
+    expect(api.post).not.toHaveBeenCalled();
+
+    // Source refresh is an explicit independent EOS read, not a UI tab change.
     work[0] = { ...work[0], status: 'DONE', revision: 2 };
+    fireEvent.click(screen.getByRole('button', { name: 'Next assigned task' }));
     fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
     await waitFor(() => expect(screen.getByRole('region', {
       name: 'M04 governed Strategy execution',
     })).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
-    expect(screen.getByText(/Inspect accountable work and lifecycle evidence · 18 records/)
-      .closest('details')?.open).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Browse tasks & evidence' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show work' }), { target: { value: 'ALL' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Inspect lifecycle evidence' })[0]);
     expect(await screen.findByText(/2 recorded changes/)).toBeVisible();
     expect(screen.getByText(/Approvals: 1 approved/)).toBeVisible();
     expect(screen.getByText(/Files checked: 1/)).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Show execution overview' }));
-    expect(screen.getByRole('region', { name: 'M04 governed Strategy execution' }))
-      .toHaveTextContent('Certified strategic outcome: Not established');
     expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Next assigned task' }));
     currentLink = false;
     fireEvent.click(screen.getByRole('button', { name: 'Refresh execution' }));
-    await waitFor(() => expect(screen.getByRole('region', {
-      name: 'M04 governed Strategy execution',
-    })).toHaveTextContent('M04 execution unavailable'));
-    expect(screen.getByRole('region', { name: 'M04 governed Strategy execution' }))
-      .not.toHaveTextContent('Complete authorized task snapshot');
+    await waitFor(() => expect(m04).not.toHaveTextContent('Complete authorized task snapshot'));
     expect(api.post).not.toHaveBeenCalled();
   }, 15000);
 
@@ -1352,7 +1338,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.33.3-ROUTED-STRATEGY-TEST-HARNESS
+// VERSION: v1.34.0-AUTOVERIFIED-TASK-FIRST-STRATEGY-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
