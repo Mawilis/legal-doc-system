@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # WILSY OS Sovereign Development Key Bootstrap
 # TITLE: EOS Local Encrypted AI Conversation History Key Loader
-# VERSION: v1.0.0-MW-T11-LOCAL-KEY-ADMISSION
+# VERSION: v1.0.1-MW-T11-BASH-ZSH-LOCAL-KEY-ADMISSION
 # AUTHORITY: WILSY OS Core Governance
 # EPITOME: Load one stable, locally owned 256-bit key into the existing
 #          Python EOS process environment without logging the key or invoking
@@ -9,6 +9,8 @@
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/scripts/eos/wilsy_ai_history_local_key.sh
 # COLLABORATION / OWNERSHIP: Python EOS local runtime startup; no Node backend.
 # CERTIFICATION / UPDATE DATE: 2026-11-25
+# CHANGELOG: v1.0.1-MW-T11-BASH-ZSH-LOCAL-KEY-ADMISSION admits both macOS zsh
+#            source and Bash source while refusing direct execution.
 # CHANGELOG: v1.0.0-MW-T11-LOCAL-KEY-ADMISSION provides one guarded
 #            user-private local key file and fail-closed validation.
 # COMPLIANCE: AGENTS.md; POSIX shell development key boundary; no production key admission
@@ -22,7 +24,7 @@
 # Use: source scripts/eos/wilsy_ai_history_local_key.sh
 # Then restart Python EOS from the SAME shell with the existing MFA launcher.
 #
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ -z "${ZSH_EVAL_CONTEXT-}" && "${BASH_SOURCE[0]-}" == "$0" ]]; then
   printf 'WILSY_AI_HISTORY_KEY=SOURCE_THIS_SCRIPT_NOT_EXECUTE\n' >&2
   exit 2
 fi
@@ -78,7 +80,7 @@ printf 'WILSY_AI_HISTORY_KEY=CONFIGURED_LOCAL_DEVELOPMENT\n'
 printf 'WILSY_AI_HISTORY_KEY_NOTE=RESTART_PYTHON_EOS_IN_THIS_SHELL\n'
 
 # ARTIFACT: wilsy_ai_history_local_key.sh
-# VERSION: v1.0.0-MW-T11-LOCAL-KEY-ADMISSION
+# VERSION: v1.0.1-MW-T11-BASH-ZSH-LOCAL-KEY-ADMISSION
 # AUTHORITY BOUNDARY: local key provisioning only; EOS owns all durable records
 # TENANT POSTURE: not an IAM grant or tenant switch
 # FAIL-CLOSED POSTURE: refuses symlink, malformed key or insecure file
