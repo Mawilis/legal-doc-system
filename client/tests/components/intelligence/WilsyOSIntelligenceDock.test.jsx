@@ -7,6 +7,11 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
+ * SECURITY / PRIVACY POSTURE: Synthetic fixtures, no secrets or real customer records
+ * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
+ * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
+ * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
  * CHANGELOG: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT validates independently
  *            admitted task event pages yield one recorded, non-metered
  *            source conversation turn; foreign identity or provider calls
@@ -2343,7 +2348,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.36.0-BILLING-POS-SOURCE-BOUNDARY-CERT
+ * VERSION: v1.42.0-MW-T11-SOURCE-ACTIVITY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
