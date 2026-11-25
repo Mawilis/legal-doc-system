@@ -1478,3 +1478,96 @@
  .intelligenceDockContainer .historyFilters button{flex:1}
  .intelligenceDockContainer .historyRowTitle{gap:8px}
 }
+
+
+/* v1.14.0 — Dynamic task-first Dock: conversation, not an oversized banner.
+ * Existing EOS IAM, provenance, and provider-admission UI remain functional. */
+.intelligenceDockContainer .dockHeader {
+  min-height:52px;
+  padding:8px 12px;
+  gap:9px;
+}
+.intelligenceDockContainer .dockHeaderTitle {
+  display:flex;align-items:center;gap:8px;min-width:0;
+}
+.intelligenceDockContainer .dockHeaderTitle>div {min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.intelligenceDockContainer .dockHeaderTitle>div>span {
+  font-size:13px;line-height:1.3;font-weight:660;letter-spacing:0;color:#edf5ff;
+}
+.intelligenceDockContainer .headerEmblem {height:26px;width:26px;flex:none}
+.intelligenceDockContainer .dockHeaderTitle .kennelBadge {
+  font-size:10px;line-height:1.3;letter-spacing:0;text-transform:none;
+  font-weight:500;color:#bad4e8;
+}
+.intelligenceDockContainer .dockHeaderTitle .workspaceBrand {display:none}
+.intelligenceDockContainer .dockHeaderActions {gap:4px}
+.intelligenceDockContainer .dockHeaderActions button {
+  width:32px;height:32px;min-width:32px;min-height:32px;padding:6px;
+  display:grid;place-items:center;border-radius:8px;
+}
+.intelligenceDockContainer .dockNavBar {
+  min-height:37px;padding:0 12px;gap:6px;background:#08192c;
+}
+.intelligenceDockContainer .navTabButton {
+  flex:0 0 auto;min-height:36px;min-width:0;
+  padding:6px 10px;font-size:12px;
+}
+.intelligenceDockContainer .chatTabContent {min-height:0;flex:1;overflow:hidden}
+.intelligenceDockContainer .liveTaskStrip {
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;min-height:39px;padding:6px 12px;
+  background:#102a45;border-bottom:1px solid rgba(157,194,231,.28);
+}
+.intelligenceDockContainer .liveTaskFacts {
+  min-width:0;display:flex;align-items:center;gap:8px;overflow:hidden;
+  color:#e3edfb;font-size:11px;line-height:1.35;
+}
+.intelligenceDockContainer .liveTaskLabel {
+  white-space:nowrap;color:#96bfe6;font-size:9px;
+  font-weight:700;letter-spacing:.05em;
+}
+.intelligenceDockContainer .liveTaskFacts strong {
+  min-width:0;max-width:40ch;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  font-size:12px;font-weight:610;
+}
+.intelligenceDockContainer .liveTaskLifecycle {
+  flex:none;white-space:nowrap;color:#bbcee1;font-size:11px;
+}
+.intelligenceDockContainer .liveTaskRefresh {
+  flex:none;display:flex;align-items:center;gap:5px;
+  padding:5px 8px;border:1px solid #648aad;border-radius:7px;
+  color:#e8f4ff;background:#234b70;font:inherit;font-size:11px;
+  font-weight:600;min-height:32px;cursor:pointer;
+}
+.intelligenceDockContainer .liveTaskRefresh:hover {background:#32618b}
+.intelligenceDockContainer .liveTaskRefresh:disabled {cursor:wait;opacity:.65}
+.intelligenceDockContainer .messagesContainer {
+  padding:12px 16px 14px;
+  gap:10px;
+}
+.intelligenceDockContainer .messagesContainer>.chatMessageBubble {order:1}
+.intelligenceDockContainer .messagesContainer>.secondarySourceEvidence {
+  order:2;margin-top:2px; padding:3px 0!important;border:0!important;
+  font-size:11px!important;
+}
+.intelligenceDockContainer .messagesContainer>.secondarySourceEvidence summary {
+  min-height:30px!important;line-height:1.35;color:#b3c9e2;
+}
+.intelligenceDockContainer .assistantBubble {padding:7px 0}
+.intelligenceDockContainer .assistantBubble .bubbleHeader {margin-bottom:4px;font-size:11px}
+.intelligenceDockContainer .bubbleBody {font-size:13px;line-height:1.6}
+.intelligenceDockContainer .userBubble {
+  padding:8px 12px;max-width:min(80%,48ch);
+}
+.intelligenceDockContainer .chatInputArea {padding:8px 12px}
+.intelligenceDockContainer .promptInput {min-height:44px;max-height:130px}
+@media(max-width:620px){
+  .intelligenceDockContainer .liveTaskFacts{flex-wrap:wrap;gap:3px 7px}
+  .intelligenceDockContainer .liveTaskFacts strong{max-width:28ch}
+  .intelligenceDockContainer .liveTaskLifecycle{font-size:10px}
+  .intelligenceDockContainer .dockHeaderTitle .kennelBadge{display:none}
+  .intelligenceDockContainer .dockHeaderTitle>div>span{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .intelligenceDockContainer .liveTaskRefresh{transition:none}
+}
