@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR
+ * VERSION: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,11 +14,14 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS shows a safe actionable
+ *            reason why EOS history is not saved, preserving permission,
+ *            encryption-key and current-session boundaries.
  * CHANGELOG: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR replaces static message counters with a
  *            searchable, time-grouped, actionable navigator: previews,
  *            archive provenance, open and explicit delete, keyboard
  *            filters and reversible session-only state. No new IAM.
- * CHANGELOG: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR supports explicitly requested,
+ * CHANGELOG: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS supports explicitly requested,
  *            independently authorized project-task event inspection using
  *            the canonical Projects events source, with strict tenant,
  *            principal, task and event schema checks. It records historical
@@ -252,6 +255,7 @@ import {
   persistWilsyAIConversationTurn,
   deleteWilsyAIConversationThread,
   wilsyAIConversationHistoryPosture,
+  wilsyAIConversationHistoryIssue,
 } from './wilsyAIConversationHistoryEngine.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
 
@@ -3289,7 +3293,16 @@ export function WilsyOSIntelligenceDock({
                     ? styles.historyArchiveReady : styles.historyArchiveOffline}/>
                   <span>{wilsyAIConversationHistoryPosture() === 'READY'
                     ? 'Encrypted conversation archive connected'
-                    : 'Not saved to EOS · This session may be lost on refresh'}</span>
+                    : ({
+                        ENCRYPTION_KEY_UNAVAILABLE: 'EOS encryption key not configured · History cannot be saved',
+                        HISTORY_PERMISSION_DENIED: 'Your current EOS capacity is not authorized for saved history',
+                        SIGN_IN_REQUIRED: 'Sign in again to access your saved history',
+                        EOS_HISTORY_ROUTE_UNAVAILABLE: 'Python EOS history service is not available in this runtime',
+                        EOS_HISTORY_CONFLICT: 'EOS history changed elsewhere · Refresh to reconcile',
+                        EOS_HISTORY_PAYLOAD_REJECTED: 'EOS rejected the conversation archive request',
+                        EOS_HISTORY_DEPENDENCY_UNAVAILABLE: 'EOS history storage is unavailable · Not saved',
+                        EOS_HISTORY_TRANSPORT_UNAVAILABLE: 'EOS history connection unavailable · Not saved',
+                      }[wilsyAIConversationHistoryIssue()] || 'Not saved to EOS · This session may be lost on refresh')}</span>
                   <button type="button" onClick={handleRefresh}>Check again</button>
                 </div>
                 <div className={styles.historyToolbar}>
@@ -3418,7 +3431,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.55.0-PRODUCTIVE-CONVERSATION-NAVIGATOR
+ * VERSION: v4.56.0-ACTIONABLE-HISTORY-PERSISTENCE-STATUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
