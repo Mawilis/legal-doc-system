@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.0.0-OWNED-ROLLBACK-AND-ACCESS-DRIFT-CERTIFICATION
+VERSION: v1.0.1-PUBLIC-IP-MOCK-FIXTURE-VALIDATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,11 +7,14 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.1-PUBLIC-IP-MOCK-FIXTURE-VALIDATION selects a globally routable
+           mock-only public IPv4 so strict source-IP checks are exercised;
+           no live network activity or Atlas mutation.
 CHANGELOG: v1.0.0-OWNED-ROLLBACK-AND-ACCESS-DRIFT-CERTIFICATION
            adds deterministic pure/monkeypatched denial and success tests
            without real AWS, Atlas API, credentials, tasks or network writes.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY / PRIVACY POSTURE: Fake API responses and RFC documentation IPs only.
+SECURITY / PRIVACY POSTURE: Mock-only global IPv4 fixture and fake API responses;
 TENANT BOUNDARY: Synthetic recovery fixture only; no business data.
 AUTHORITY BOUNDARY: Test doubles do not grant network or task authority.
 FINANCIAL AUTHORITY BOUNDARY: No spending; Kennel EOS exclusively.
@@ -30,7 +33,7 @@ TASK_ARN = (
     "arn:aws:ecs:af-south-1:121014832643:task/"
     "wilsy-mwt12-nonproduction/" + TASK_ID
 )
-TEST_SOURCE_IP = "192.0.2.44"  # Documentation-only; never sent to Atlas.
+TEST_SOURCE_IP = "8.8.8.8"  # Mock-only; never sent to Atlas or AWS.
 
 
 def _entry(*, owner: str | None = None, expiry: str | None = None) -> dict:
@@ -204,7 +207,7 @@ def test_invalid_task_arn_fails_without_aws_or_atlas(monkeypatch) -> None:
 
 
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.0.0-OWNED-ROLLBACK-AND-ACCESS-DRIFT-CERTIFICATION
+# VERSION: v1.0.1-PUBLIC-IP-MOCK-FIXTURE-VALIDATION
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
