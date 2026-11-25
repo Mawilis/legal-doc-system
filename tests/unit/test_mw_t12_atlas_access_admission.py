@@ -1,0 +1,212 @@
+"""TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
+VERSION: v1.0.0-OWNED-ROLLBACK-AND-ACCESS-DRIFT-CERTIFICATION
+AUTHORITY: WILSY OS Core Governance / AGENTS.md.
+EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
+         closed on wildcard, ownership drift, concurrency and unauthorized task.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_atlas_access_admission.py
+COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
+         existing exact ECS identity and CloudFormation safety controls.
+CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.0-OWNED-ROLLBACK-AND-ACCESS-DRIFT-CERTIFICATION
+           adds deterministic pure/monkeypatched denial and success tests
+           without real AWS, Atlas API, credentials, tasks or network writes.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Fake API responses and RFC documentation IPs only.
+TENANT BOUNDARY: Synthetic recovery fixture only; no business data.
+AUTHORITY BOUNDARY: Test doubles do not grant network or task authority.
+FINANCIAL AUTHORITY BOUNDARY: No spending; Kennel EOS exclusively.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from tools.eos.ops import mw_t12_atlas_access_admission as admission
+
+
+TASK_ID = "a" * 32
+TASK_ARN = (
+    "arn:aws:ecs:af-south-1:121014832643:task/"
+    "wilsy-mwt12-nonproduction/" + TASK_ID
+)
+TEST_SOURCE_IP = "192.0.2.44"  # Documentation-only; never sent to Atlas.
+
+
+def _entry(*, owner: str | None = None, expiry: str | None = None) -> dict:
+    """Build nonlive task source entry with exact task-comment ownership."""
+    return {
+        "ipAddress": TEST_SOURCE_IP,
+        "cidrBlock": TEST_SOURCE_IP + "/32",
+        "comment": owner if owner is not None
+        else admission.owned_comment(TASK_ARN),
+        "deleteAfterDate": expiry or (
+            datetime.now(timezone.utc) + timedelta(hours=2)
+        ).isoformat(timespec="seconds").replace("+00:00", "Z"),
+    }
+
+
+def test_canonical_network_baseline_is_order_independent() -> None:
+    """Fingerprint exact IP networks, never volatile Atlas metadata."""
+    first = [{"ipAddress": TEST_SOURCE_IP},
+             {"cidrBlock": "0.0.0.0/0"}]
+    second = [{"cidrBlock": "0.0.0.0/0", "comment": "changed"},
+              {"cidrBlock": TEST_SOURCE_IP + "/32",
+               "deleteAfterDate": "later"}]
+    assert admission.network_fingerprint(first) == (
+        admission.network_fingerprint(second)
+    )
+    assert admission.network_fingerprint(first) != (
+        admission.network_fingerprint([{"ipAddress": TEST_SOURCE_IP}])
+    )
+
+
+def test_temporary_admission_refuses_global_entry(monkeypatch) -> None:
+    """An additional /32 never compensates for unrestricted shared access."""
+    def forbidden(*args, **kwargs):
+        raise AssertionError("MUST_NOT_CALL_ATLAS")
+
+    monkeypatch.setattr(admission, "atlas", forbidden)
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="SHARED_ATLAS_GLOBAL_ACCESS"):
+        admission.admit(None, [{"cidrBlock": "0.0.0.0/0"}],
+                        TEST_SOURCE_IP, TASK_ARN)
+
+
+def test_temporary_admission_rechecks_access_before_write(monkeypatch) -> None:
+    """Another actor changing the access list invalidates the read snapshot."""
+    monkeypatch.setattr(
+        admission, "inventory",
+        lambda unused: [{"cidrBlock": "0.0.0.0/0"}],
+    )
+    def forbidden(*args, **kwargs):
+        raise AssertionError("MUST_NOT_MUTATE_ATLAS")
+
+    monkeypatch.setattr(admission, "atlas", forbidden)
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="ATLAS_ACCESS_LIST_CHANGED_DURING_ADMISSION"):
+        admission.admit(None, [], TEST_SOURCE_IP, TASK_ARN)
+
+
+def test_exact_task_receipt_and_ttl_are_read_back(monkeypatch, capsys) -> None:
+    """A successful mocked POST is recorded only after matching GET readback."""
+    writes = []
+
+    def fake_atlas(client, method, route, *, payload=None, params=None):
+        assert method == "POST"
+        assert route == "/accessList"
+        writes.append(payload)
+        return {}
+
+    def fake_inventory(client):
+        if not writes:
+            return []
+        return [{
+            "ipAddress": TEST_SOURCE_IP,
+            "comment": admission.owned_comment(TASK_ARN),
+            "deleteAfterDate": writes[0][0]["deleteAfterDate"],
+        }]
+
+    monkeypatch.setattr(admission, "atlas", fake_atlas)
+    monkeypatch.setattr(admission, "inventory", fake_inventory)
+    admission.admit(None, [], TEST_SOURCE_IP, TASK_ARN)
+    assert len(writes) == 1
+    assert writes[0][0]["ipAddress"] == TEST_SOURCE_IP
+    assert writes[0][0]["comment"] == admission.owned_comment(TASK_ARN)
+    expiry = datetime.fromisoformat(
+        writes[0][0]["deleteAfterDate"].replace("Z", "+00:00")
+    )
+    remaining = expiry - datetime.now(timezone.utc)
+    assert timedelta(hours=5, minutes=59) < remaining <= timedelta(hours=6)
+    assert "MW_T12_ATLAS_TEMPORARY_ACCESS=VERIFIED_READBACK" in capsys.readouterr().out
+
+
+def test_revoke_refuses_unowned_entry(monkeypatch) -> None:
+    """Never DELETE another user's shared rule, even on the same /32."""
+    monkeypatch.setattr(
+        admission, "atlas",
+        lambda *a, **k: pytest.fail("DELETE_MUST_NOT_RUN"),
+    )
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="OWNED_ATLAS_ENTRY_IDENTITY_MISMATCH"):
+        admission.revoke_owned(
+            None, [_entry(owner="unrelated consumer")],
+            TASK_ARN, TEST_SOURCE_IP,
+        )
+
+
+def test_revoke_refuses_wildcard_and_wrong_task(monkeypatch) -> None:
+    """Task identity or IPv4 scope mismatch cannot revoke a network entry."""
+    monkeypatch.setattr(
+        admission, "atlas",
+        lambda *a, **k: pytest.fail("DELETE_MUST_NOT_RUN"),
+    )
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="REVOKE_SOURCE_IPV4_INVALID"):
+        admission.revoke_owned(
+            None, [{"cidrBlock": "0.0.0.0/0"}], TASK_ARN, "0.0.0.0",
+        )
+    wrong_task = TASK_ARN[:-32] + "b" * 32
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="OWNED_ATLAS_ENTRY_IDENTITY_MISMATCH"):
+        admission.revoke_owned(None, [_entry()], wrong_task, TEST_SOURCE_IP)
+
+
+def test_revoke_refuses_modified_entry_between_reads(monkeypatch) -> None:
+    """A concurrent CIDR change prevents any DELETE before it is attempted."""
+    monkeypatch.setattr(
+        admission, "inventory",
+        lambda unused: [{"cidrBlock": "203.0.113.12/32"}],
+    )
+    monkeypatch.setattr(
+        admission, "atlas",
+        lambda *a, **k: pytest.fail("DELETE_MUST_NOT_RUN"),
+    )
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="ATLAS_ACCESS_LIST_CHANGED_DURING_REVOKE"):
+        admission.revoke_owned(None, [_entry()], TASK_ARN, TEST_SOURCE_IP)
+
+
+def test_revoke_owner_only_and_post_delete_absence(monkeypatch, capsys) -> None:
+    """One exact task-owned entry is removed; unrelated shared entry survives."""
+    owned = _entry()
+    shared = {"cidrBlock": "198.51.100.7/32", "comment": "legacy consumer"}
+    calls = []
+    deleted = False
+
+    def fake_atlas(client, method, route, *, payload=None, params=None):
+        nonlocal deleted
+        assert method == "DELETE"
+        assert route == "/accessList/" + TEST_SOURCE_IP
+        calls.append(route)
+        deleted = True
+        return {}
+
+    def fake_inventory(client):
+        return [shared] if deleted else [owned, shared]
+
+    monkeypatch.setattr(admission, "atlas", fake_atlas)
+    monkeypatch.setattr(admission, "inventory", fake_inventory)
+    admission.revoke_owned(None, [owned, shared], TASK_ARN, TEST_SOURCE_IP)
+    assert calls == ["/accessList/" + TEST_SOURCE_IP]
+    assert "MW_T12_OWNED_ATLAS_ENTRY_REVOKED=VERIFIED" in capsys.readouterr().out
+
+
+def test_invalid_task_arn_fails_without_aws_or_atlas(monkeypatch) -> None:
+    """Unrelated ARN fails before consulting live ECS or network endpoints."""
+    monkeypatch.setattr(
+        admission.ecs, "aws",
+        lambda *a, **k: pytest.fail("AWS_MUST_NOT_RUN"),
+    )
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="EXACT_NONPRODUCTION_TASK_ARN_REQUIRED"):
+        admission.public_source_ip("wilsy-legal-cert", "other-task")
+
+
+# ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
+# VERSION: v1.0.0-OWNED-ROLLBACK-AND-ACCESS-DRIFT-CERTIFICATION
+# AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
+# TENANT POSTURE: No real tenant, MongoDB or credential access.
+# FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
