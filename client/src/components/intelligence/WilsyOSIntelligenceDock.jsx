@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.44.0-MW-T11-EXPLICIT-TASK-LOOKUP
+ * VERSION: v4.45.0-MW-T11-SOURCE-SESSION-HISTORY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,10 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.45.0-MW-T11-SOURCE-SESSION-HISTORY records independently verified task source
+ *            inspections in the existing same-session conversation engine;
+ *            labels history as session-only pending a governed EOS durable
+ *            route. No model calls, localStorage history or entitlement change.
  * CHANGELOG: v4.44.0-MW-T11-EXPLICIT-TASK-LOOKUP resolves explicit MW-T task inspection through
  * current EOS-authorized complete project-task pages, then independently
  * verified context GET. No provider, billing, IAM or task mutation.
@@ -1114,6 +1118,7 @@ export function WilsyOSIntelligenceDock({
   const sendLockRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationThreads, setConversationThreads] = useState([]);
+  const recordedSourceReadRef = useRef('');
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [animatedAssistantKey, setAnimatedAssistantKey] = useState(null);
   const [dockContext, setDockContext] = useState(null);
@@ -1593,6 +1598,66 @@ export function WilsyOSIntelligenceDock({
       conversationThreads[0] || { id: null, messages: [] }
     );
   }, [conversationThreads, activeThreadId]);
+
+  // A verified source read is an inspectable same-session turn, not a
+  // model-generated answer or a durable EOS conversation record. Record it
+  // only after exact task identity/revision and source scope were verified.
+  useEffect(() => {
+    const code = parseWilsyTaskInspection(localSourceQuery);
+    const evidence = visibleWorkspaceContext?.data;
+    const task = evidence?.work?.selected_task;
+    if (!isOpen || conversationView !== 'SOURCE' || !code
+      || visibleWorkspaceContext?.state !== 'READY'
+      || evidence?.locator?.workspace !== 'PROJECTS'
+      || evidence?.locator?.project_id !== workLocator.project_id
+      || evidence?.locator?.task_id !== workLocator.task_id
+      || !task || task.task_id !== workLocator.task_id
+      || (workLocator.task_revision && task.revision !== workLocator.task_revision)
+      || typeof task.title !== 'string'
+      || !(task.title.startsWith(code + ' — ') || task.title.startsWith(code + ' - '))) {
+      return undefined;
+    }
+    const key = [dockScope, workLocatorKey, evidence.context_fingerprint, code].join(':');
+    if (recordedSourceReadRef.current === key) return undefined;
+    recordedSourceReadRef.current = key;
+    let current = true;
+    const saveSessionInspection = async () => {
+      try {
+        const thread = await createWilsyAIConversationThread({
+          workspace: 'Projects', title: 'EOS source · ' + code, promptText: localSourceQuery,
+        });
+        const afterRequest = await persistWilsyAIConversationTurn({
+          threadId: thread.id,
+          message: { role: 'user', content: localSourceQuery },
+        });
+        const verifiedStatus = typeof task.status === 'string'
+          ? task.status.replaceAll('_', ' ').toLowerCase() : 'not provided';
+        const reply = 'EOS source verified: ' + task.title
+          + '. Lifecycle: ' + verifiedStatus
+          + '. Revision: ' + task.revision
+          + '. Deadline: ' + (task.due_date || 'not supplied by EOS')
+          + '. This is a read-only source inspection, not AI reasoning or task execution.';
+        const recorded = await persistWilsyAIConversationTurn({
+          threadId: afterRequest.id,
+          message: { role: 'assistant', content: reply,
+            meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' } },
+        });
+        if (!current || dockScopeRef.current !== dockScope
+          || workLocatorKeyRef.current !== workLocatorKey) return;
+        setConversationThreads(previous => [
+          recorded, ...previous.filter(item => item.id !== recorded.id),
+        ]);
+        setActiveThreadId(recorded.id);
+      } catch {
+        if (current && dockScopeRef.current === dockScope) {
+          recordedSourceReadRef.current = '';
+        }
+      }
+    };
+    void saveSessionInspection();
+    return () => { current = false; };
+  }, [isOpen, conversationView, localSourceQuery, visibleWorkspaceContext,
+    workLocatorKey, dockScope]);
 
   /**
    * @function handleSendMessage
@@ -2959,10 +3024,10 @@ export function WilsyOSIntelligenceDock({
             {activeTab === 'history' && (
               <div className={styles.historyTabContent}>
                 <div className={styles.historyHeaderRow}>
-                  <h4>Conversation Threads</h4>
+                  <h4>Recent session activity</h4>
                   <div className={styles.historyHeaderActions}>
                     <button type="button" className={styles.historyActionButton} onClick={handleNewThread}>+ New</button>
-                    <button type="button" className={styles.historyActionButton} onClick={handleRefresh}>⟳ Sync</button>
+                    <button type="button" className={styles.historyActionButton} onClick={handleRefresh}>Refresh session</button>
                     <button
                       type="button"
                       className={styles.clearHistoryButton}
@@ -2991,9 +3056,9 @@ export function WilsyOSIntelligenceDock({
                 <div className={styles.threadsList}>
                   {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).length === 0
                     && <p style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
-                      No conversations recorded in this authenticated session.
-                      Conversation history is session-only until an EOS durable
-                      history authority is certified.
+                      No recorded conversation turns or verified task inspections in this session.
+                      Source inspections and conversations are session-only; they do not survive
+                      refresh or sign-out until Python EOS certifies durable history.
                     </p>}
                   {conversationThreads.filter(thread => (thread.messages?.length || 0) > 0).map((thread) => (
                     <button
@@ -3041,7 +3106,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.44.0-MW-T11-EXPLICIT-TASK-LOOKUP
+ * VERSION: v4.45.0-MW-T11-SOURCE-SESSION-HISTORY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
