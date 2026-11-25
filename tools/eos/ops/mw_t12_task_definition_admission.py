@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned dormant ECS task-definition admission.
-VERSION: v1.1.0-SCOPED-SECURESTRING-ADMISSION
+VERSION: v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify immutable ECR provenance and optionally register two dormant,
          equivalent nonproduction Fargate task definitions.
@@ -7,6 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Reuses MW-T12 ECR budget/ownership preflight,
          existing CloudFormation resources, and later read-only ECS admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION adds opt-in, idempotent
+           registration of exact historical/current digest-pinned synthetic
+           SSM-secret-backed task revisions after the two dormant no-secret
+           revisions; verifies every registered task independently, with no
+           ECS task launch, Atlas changes or production admission.
 CHANGELOG: v1.1.0-SCOPED-SECURESTRING-ADMISSION adds read-only
            exact-path AWS SSM SecureString and execution-role authorization
            checks, plus a dormant synthetic MONGODB_URI secret-backed task
@@ -41,7 +46,7 @@ import tempfile
 
 from tools.eos.ops import mw_t12_ecr_publication as source
 
-VERSION = "v1.1.0-SCOPED-SECURESTRING-ADMISSION"
+VERSION = "v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION"
 FAMILY = "wilsy-mwt12-eos-nonproduction"
 CLUSTER = "wilsy-mwt12-nonproduction"
 LOG_GROUP = "/wilsy/mwt12/nonproduction/eos"
@@ -314,7 +319,8 @@ def verify(profile: str, arn: str, expected: dict) -> int:
             and ports[0].get("hostPort", 9095) == 9095
             and ports[0].get("protocol", "tcp") == "tcp",
             "TASK_NETWORK_PORT_DRIFT")
-    require(not actual[0].get("secrets"), "TASK_SECRETS_UNEXPECTED")
+    require(actual[0].get("secrets", []) == wanted.get("secrets", []),
+            "TASK_SECRETS_DRIFT")
     volumes = task.get("volumes", [])
     require([v.get("name") for v in volumes]
             == [v["name"] for v in expected["volumes"]]
@@ -375,6 +381,85 @@ def run(profile: str, register: bool) -> None:
     print("MW_T12_ROLLBACK_CERTIFIED=FALSE", flush=True)
 
 
+
+def register_secure(profile: str) -> None:
+    """Optionally register ONLY two synthetic SecureString-backed task revisions.
+
+    Exact existing dormant revisions 1/2 must match the historical/current
+    digests and zero-secret specs before new metadata can be registered.
+    Replays independently verify 3/4 and finish a partial 3-only registration.
+    Does not launch compute, enable Atlas egress or grant runtime authority.
+    """
+    secure_plan(profile)
+    head = source.preflight(profile)
+    historical, current = images(profile, head)
+    require(source.git("status", "--porcelain") == ""
+            and source.git("rev-parse", "HEAD") == head,
+            "GIT_SOURCE_CHANGED")
+    expected = (
+        definition(historical),
+        definition(current),
+        secure_definition(historical),
+        secure_definition(current),
+    )
+    arn_prefix = (
+        "arn:aws:ecs:" + source.REGION + ":" + source.ACCOUNT
+        + ":task-definition/" + FAMILY + ":"
+    )
+    actual = aws(
+        profile, "ecs", "list-task-definitions",
+        "--family-prefix", FAMILY, "--status", "ACTIVE", "--sort", "ASC",
+    ).get("taskDefinitionArns")
+    require(isinstance(actual, list) and 2 <= len(actual) <= 4
+            and set(actual) == {
+                arn_prefix + str(i) for i in range(1, len(actual) + 1)
+            }, "SECURE_REGISTRATION_EXISTING_REVISIONS_DRIFT")
+    for index, arn in enumerate(actual):
+        require(verify(profile, arn, expected[index]) == index + 1,
+                "SECURE_REGISTRATION_REVISION_DRIFT")
+    if len(actual) == 4:
+        no_compute(profile)
+        print("MW_T12_SECURE_TASK_REVISIONS=3,4")
+        print("MW_T12_SECURE_TASK_REGISTRATION=VERIFIED_ALREADY_PRESENT")
+        print("MW_T12_ECS_TASKS_LAUNCHED=ZERO")
+        print("MW_T12_ROLLBACK_CERTIFIED=FALSE")
+        return
+    for index in range(len(actual), 4):
+        require(source.git("status", "--porcelain") == ""
+                and source.git("rev-parse", "HEAD") == head,
+                "GIT_SOURCE_CHANGED")
+        no_compute(profile)
+        with tempfile.TemporaryDirectory(
+            prefix="wilsy-mwt12-secure-task-",
+        ) as temp:
+            task_path = Path(temp) / "task.json"
+            task_path.write_text(
+                json.dumps(expected[index], sort_keys=True),
+                encoding="utf-8",
+            )
+            response = aws(
+                profile, "ecs", "register-task-definition",
+                "--cli-input-json", "file://" + str(task_path),
+            )
+        arn = response.get("taskDefinition", {}).get("taskDefinitionArn")
+        require(arn == arn_prefix + str(index + 1),
+                "SECURE_REGISTRATION_UNEXPECTED_REVISION")
+        require(verify(profile, arn, expected[index]) == index + 1,
+                "SECURE_REGISTRATION_READBACK_FAILED")
+    no_compute(profile)
+    final = aws(
+        profile, "ecs", "list-task-definitions",
+        "--family-prefix", FAMILY, "--status", "ACTIVE", "--sort", "ASC",
+    ).get("taskDefinitionArns")
+    require(final == [arn_prefix + str(i) for i in range(1, 5)],
+            "SECURE_REGISTRATION_FINAL_INVENTORY_DRIFT")
+    print("MW_T12_SECURE_TASK_REVISIONS=3,4")
+    print("MW_T12_SECURE_TASK_REGISTRATION=VERIFIED_NO_COMPUTE")
+    print("MW_T12_ECS_TASKS_LAUNCHED=ZERO")
+    print("MW_T12_ATLAS_CONNECTIVITY=NOT_CERTIFIED")
+    print("MW_T12_ROLLBACK_CERTIFIED=FALSE")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Expose explicitly opted-in ECS metadata registration only."""
     parser = argparse.ArgumentParser(description="MW-T12 dormant ECS admission")
@@ -383,10 +468,14 @@ def main(argv: list[str] | None = None) -> int:
     options.add_argument("--register", action="store_true")
     options.add_argument("--secure-plan", action="store_true",
                          help="Read-only SSM/IAM preflight; no task registration")
+    options.add_argument("--register-secure", action="store_true",
+                         help="Opt-in dormant synthetic SSM-backed revisions; no compute")
     args = parser.parse_args(argv)
     try:
         if args.secure_plan:
             secure_plan(args.profile)
+        elif args.register_secure:
+            register_secure(args.profile)
         else:
             run(args.profile, args.register)
         return 0
@@ -402,7 +491,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_task_definition_admission.py
-# VERSION: v1.1.0-SCOPED-SECURESTRING-ADMISSION
+# VERSION: v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION
 # AUTHORITY BOUNDARY: Exact owned ECS task metadata; no running services/tasks.
 # TENANT POSTURE: No business records or tenant runtime authorized.
 # FAIL-CLOSED POSTURE: Unknown image, budget, task identity or compute denies.
