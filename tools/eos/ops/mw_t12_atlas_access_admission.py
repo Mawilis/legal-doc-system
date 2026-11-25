@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION
+VERSION: v1.2.0-FORENSIC-BASELINE-OWNED-ROLLBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-FORENSIC-BASELINE-OWNED-ROLLBACK adds canonical SHA3-512 Atlas IP/CIDR
+           inventory fingerprint, exact task-ID-bound temporary entry receipt
+           and explicit owner-only IP revocation with independent readback.
+           Never deletes wildcard or unrelated shared Atlas access entries.
 CHANGELOG: v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION admits only task revisions with the exact
            SSM-backed synthetic connection configuration, immutable known
            image digest, execution-role identity and no application task role.
@@ -28,6 +32,8 @@ FINANCIAL AUTHORITY BOUNDARY: No AWS billing action; Kennel EOS exclusively.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from datetime import datetime, timedelta, timezone
 from getpass import getpass
 import ipaddress
@@ -35,7 +41,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION"
+VERSION = "v1.2.0-FORENSIC-BASELINE-OWNED-ROLLBACK"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -43,6 +49,7 @@ CLUSTER = "wilsy-mwt12-nonproduction"
 FAMILY = "wilsy-mwt12-eos-nonproduction"
 SG = "sg-05bbf379de9a0eee8"
 PUBLIC_IP_TTL_HOURS = 6
+OWNED_COMMENT_PREFIX = "MW-T12 task "
 ATLAS_API = "https://cloud.mongodb.com/api/atlas/v2/groups/" + PROJECT
 ATLAS_MEDIA_TYPE = "application/vnd.atlas.2024-08-05+json"
 TASK_ARN = re.compile(
@@ -83,17 +90,29 @@ def atlas_session():
 
 def atlas(client, method: str, route: str, *, payload=None, params=None):
     """Execute only enumerated Atlas access-list API routes with bounded reads."""
-    require(method in {"GET", "POST"}, "ATLAS_METHOD_NOT_ADMITTED")
-    require(route == "/accessList", "ATLAS_ROUTE_NOT_ADMITTED")
+    require(method in {"GET", "POST", "DELETE"}, "ATLAS_METHOD_NOT_ADMITTED")
+    if method == "DELETE":
+        require(route.startswith("/accessList/"), "ATLAS_ROUTE_NOT_ADMITTED")
+        raw_ip = route.removeprefix("/accessList/")
+        try:
+            address = ipaddress.ip_address(raw_ip)
+        except ValueError as exc:
+            raise NetworkAdmissionError("ATLAS_DELETE_IPV4_INVALID") from exc
+        require(address.version == 4 and address.is_global
+                and str(address) == raw_ip,
+                "ATLAS_DELETE_IPV4_INVALID")
+    else:
+        require(route == "/accessList", "ATLAS_ROUTE_NOT_ADMITTED")
     try:
         response = client.request(
             method, ATLAS_API + route, json=payload, params=params, timeout=20,
         )
-        require(response.status_code in ({200} if method == "GET"
-                                         else {200, 201, 202}),
+        expected = {"GET": {200}, "POST": {200, 201, 202},
+                    "DELETE": {200, 202, 204}}
+        require(response.status_code in expected[method],
                 "ATLAS_API_REQUEST_DENIED")
         require(len(response.content) <= 1048576, "ATLAS_RESPONSE_OVERSIZED")
-        data = response.json()
+        data = {} if method == "DELETE" else response.json()
     except NetworkAdmissionError:
         raise
     except Exception as exc:
@@ -140,6 +159,10 @@ def audit_entries(entries: list[dict]) -> None:
     networks = [entry_ip(item) for item in entries]
     global_count = networks.count("0.0.0.0/0")
     owner_unknown = sum(not item.get("comment") for item in entries)
+    digest = hashlib.sha3_512(json.dumps(
+        sorted(networks), separators=(",", ":"), ensure_ascii=True,
+    ).encode("utf-8")).hexdigest()
+    print("MW_T12_ATLAS_ACCESS_CIDR_SHA3_512=" + digest)
     print("MW_T12_ATLAS_ACCESS_ENTRIES=" + str(len(entries)))
     print("MW_T12_ATLAS_UNRESTRICTED_ENTRIES=" + str(global_count))
     print("MW_T12_ATLAS_ENTRIES_WITHOUT_OWNER_COMMENT=" + str(owner_unknown))
@@ -239,11 +262,19 @@ def public_source_ip(profile: str, task_arn: str) -> str:
     return str(ip)
 
 
-def admit(client, entries: list[dict], task_ip: str) -> None:
-    """Add six-hour, exactly-scoped source /32 with independent API readback.
+def owned_comment(task_arn: str) -> str:
+    """Bind a temporary Atlas entry to the exact verified task ARN suffix."""
+    require(TASK_ARN.fullmatch(task_arn) is not None,
+            "EXACT_NONPRODUCTION_TASK_ARN_REQUIRED")
+    return OWNED_COMMENT_PREFIX + task_arn.rsplit("/", 1)[-1]
 
-    Existing broad project entries or pre-existing same-IP entries deny; never
-    infer an added /32 mitigates a wildcard. No deletion or renewal included.
+
+def admit(client, entries: list[dict], task_ip: str,
+          task_arn: str) -> None:
+    """Add an exact six-hour task-owned /32 and independently read it back.
+
+    Wildcard or existing same-IP entry denies. The comment is bound to one
+    exact AWS task identity; no existing shared entry can be overwritten.
     """
     networks = [entry_ip(row) for row in entries]
     require("0.0.0.0/0" not in networks,
@@ -255,7 +286,7 @@ def admit(client, entries: list[dict], task_ip: str) -> None:
     )
     payload = [{
         "ipAddress": task_ip,
-        "comment": "MW-T12 ECS temporary synthetic recovery source only",
+        "comment": owned_comment(task_arn),
         "deleteAfterDate": expires.isoformat(timespec="seconds").replace(
             "+00:00", "Z",
         ),
@@ -273,27 +304,85 @@ def admit(client, entries: list[dict], task_ip: str) -> None:
     print("MW_T12_ATLAS_ROLLBACK_CERTIFIED=FALSE")
 
 
+
+def revoke_owned(client, entries: list[dict], task_arn: str,
+                 task_ip: str) -> None:
+    """Remove only one task-identified MW-T12 entry and verify its absence.
+
+    Rollback is allowed after the task stops. It uses exact task ARN binding,
+    explicitly supplied IPv4, provider-recorded ownership and a bounded
+    expiration interval; never deletes wildcard, external or old entries.
+    """
+    require(TASK_ARN.fullmatch(task_arn) is not None,
+            "EXACT_NONPRODUCTION_TASK_ARN_REQUIRED")
+    try:
+        address = ipaddress.ip_address(task_ip)
+    except ValueError as exc:
+        raise NetworkAdmissionError("REVOKE_SOURCE_IPV4_INVALID") from exc
+    require(address.version == 4 and address.is_global
+            and str(address) == task_ip,
+            "REVOKE_SOURCE_IPV4_INVALID")
+    network = task_ip + "/32"
+    require(network != "0.0.0.0/0", "WILDCARD_REVOCATION_FORBIDDEN")
+    matching = [row for row in entries if entry_ip(row) == network]
+    require(len(matching) == 1, "OWNED_ATLAS_ENTRY_NOT_UNIQUE")
+    entry = matching[0]
+    require(entry.get("comment") == owned_comment(task_arn),
+            "OWNED_ATLAS_ENTRY_IDENTITY_MISMATCH")
+    expires = entry.get("deleteAfterDate")
+    require(isinstance(expires, str), "OWNED_ATLAS_EXPIRY_MISSING")
+    try:
+        expiry = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise NetworkAdmissionError("OWNED_ATLAS_EXPIRY_INVALID") from exc
+    require(expiry.tzinfo is not None
+            and datetime.now(timezone.utc) - timedelta(minutes=15)
+            <= expiry <= datetime.now(timezone.utc)
+            + timedelta(hours=PUBLIC_IP_TTL_HOURS, minutes=15),
+            "OWNED_ATLAS_EXPIRY_OUT_OF_BOUNDS")
+    atlas(client, "DELETE", "/accessList/" + task_ip)
+    remaining = inventory(client)
+    require(all(entry_ip(row) != network for row in remaining),
+            "OWNED_ATLAS_ENTRY_DELETE_NOT_VERIFIED")
+    print("MW_T12_OWNED_ATLAS_ENTRY_REVOKED=VERIFIED")
+    print("MW_T12_SHARED_ATLAS_ENTRIES_DELETED=ZERO")
+    print("MW_T12_ROLLBACK_CERTIFIED=FALSE")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Inventory by default; opt-in changes only exact project network scope."""
     parser = argparse.ArgumentParser(
         description="MW-T12 isolated Atlas source-network admission")
     parser.add_argument("--profile", default="wilsy-legal-cert")
     parser.add_argument("--task-arn", help="Exact running owned Fargate task ARN")
-    parser.add_argument("--admit-six-hours", action="store_true",
-                        help="Explicit Atlas temporary /32 mutation, no compute")
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument("--admit-six-hours", action="store_true",
+                         help="Explicit Atlas temporary /32 addition")
+    actions.add_argument("--revoke-owned", action="store_true",
+                         help="Delete only a verified MW-T12 task-owned /32")
+    parser.add_argument("--owned-source-ip",
+                        help="Exact recorded /32 source IPv4 for owned rollback")
     args = parser.parse_args(argv)
     try:
-        require(not args.admit_six_hours or bool(args.task_arn),
+        require(not (args.admit_six_hours or args.revoke_owned)
+                or bool(args.task_arn),
                 "TASK_ARN_REQUIRED_FOR_MUTATION")
+        require(not args.revoke_owned or bool(args.owned_source_ip),
+                "OWNED_SOURCE_IP_REQUIRED_FOR_ROLLBACK")
+        require(not args.owned_source_ip or args.revoke_owned,
+                "SOURCE_IP_ONLY_ALLOWED_FOR_ROLLBACK")
         client = atlas_session()
         try:
             entries = inventory(client)
             audit_entries(entries)
-            if args.task_arn:
+            if args.revoke_owned:
+                revoke_owned(client, entries, args.task_arn,
+                             args.owned_source_ip)
+            elif args.task_arn:
                 task_ip = public_source_ip(args.profile, args.task_arn)
                 print("MW_T12_ECS_SOURCE_ADDRESS=INDEPENDENTLY_VERIFIED")
                 if args.admit_six_hours:
-                    admit(client, entries, task_ip)
+                    admit(client, entries, task_ip, args.task_arn)
                 else:
                     print("MW_T12_ATLAS_SOURCE_ADMISSION=READ_ONLY")
             else:
@@ -314,9 +403,9 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.1.0-SECRET-BACKED-TASK-SOURCE-VERIFICATION
-# AUTHORITY BOUNDARY: Only exact Atlas project temporary /32 source mutation.
+# VERSION: v1.2.0-FORENSIC-BASELINE-OWNED-ROLLBACK
+# AUTHORITY BOUNDARY: Exact temporary /32 source add/owned delete only.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
-# FAIL-CLOSED POSTURE: Wildcard or missing task identity denies all mutations.
+# FAIL-CLOSED POSTURE: Wildcard add blocked; delete restricted to owned task.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
