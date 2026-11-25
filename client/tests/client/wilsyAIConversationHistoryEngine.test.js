@@ -379,5 +379,4 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * FAIL-CLOSED POSTURE: unknown thread identities reject; integrity tampering rejects
  * END OF WILSY OS SOVEREIGN ARTIFACT
- * ═══════════════════════════════════════════════════════════════════════════════
  */
