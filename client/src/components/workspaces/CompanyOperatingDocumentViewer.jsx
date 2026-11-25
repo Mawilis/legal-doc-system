@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.5-REFRESH-READY-EXECUTION
+ * VERSION: v2.32.6-VERIFIED-READ-ADMISSION
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.6-VERIFIED-READ-ADMISSION admits
+ *            immediate task GET from the freshly validated EOS project
+ *            list without waiting for React state to commit. No browser
+ *            snapshot is treated as task execution authority.
  * CHANGELOG: v2.32.5-REFRESH-READY-EXECUTION repairs automatic
  *            task loading from the verified list returned by EOS rather
  *            than stale pre-render React state; URL navigation retains the
@@ -780,7 +784,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     executionEvidenceReadRef.current.controller?.abort();
     setExecutionEvidence({ state: 'IDLE', taskId: null, items: [], error: '' });
     setDelivery({ state: 'LOADING', projectId, page: null, error: '' });
-    if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
+    if (!key || classification !== 'STRATEGY' || (projectState !== 'READY' && !verifiedProjects)
       || !/^prj-[a-f0-9]{48}$/.test(projectId) || !Number.isSafeInteger(offset) || offset < 0
       || !(verifiedProjects || projectItems).some(item => item.project_id === projectId)) {
       setDelivery({ state: 'DENIED', projectId: null, page: null, error: '' });
@@ -2585,7 +2589,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.5-REFRESH-READY-EXECUTION
+// VERSION: v2.32.6-VERIFIED-READ-ADMISSION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
