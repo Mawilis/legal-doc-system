@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned EOS image ECR publication.
-VERSION: v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK
+VERSION: v1.0.2-SOURCE-KEY-MATERIAL-GUARD
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Stage two exact Git revisions, build the existing Python EOS image
          locally and publish only digest-verifiable nonproduction ECR artifacts.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Reuses infra/docker/Dockerfile.eos, its dedicated
          build-context policy, the existing MW-T12 rollback source identities,
          the CloudFormation-owned ECR repository and account budget.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.2-SOURCE-KEY-MATERIAL-GUARD rejects plaintext PEM private-key material and
+           AWS long-lived access-key identifiers in tracked archive files
+           before local Docker build or any ECR image publication.
 CHANGELOG: v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK enforces account-wide Budgets endpoint,
            verifies existing ECR tags without conflating access-denied with
            absence, and requires known monthly budget notifications.
@@ -34,7 +37,7 @@ import subprocess
 import tarfile
 import tempfile
 
-VERSION = "v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK"
+VERSION = "v1.0.2-SOURCE-KEY-MATERIAL-GUARD"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
 REPO = "wilsy/mwt12-eos-nonproduction"
@@ -194,7 +197,11 @@ def stage_revision(revision: str, directory: Path) -> None:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 content = stream.extractfile(entry)
                 require(content is not None, "SOURCE_ARCHIVE_FILE_INVALID")
-                destination.write_bytes(content.read())
+                data = content.read()
+                require(not re.search(rb"-----BEGIN [A-Z ]*PRIVATE KEY-----", data)
+                        and not re.search(rb"(?<![A-Z0-9])AKIA[0-9A-Z]{16}(?![A-Z0-9])", data),
+                        "SOURCE_PLAINTEXT_SECRET_INDICATOR")
+                destination.write_bytes(data)
     archive.unlink()
     dockerfile = root / "infra/docker/Dockerfile.eos"
     policy = root / "infra/docker/Dockerfile.eos.dockerignore"
@@ -310,7 +317,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_ecr_publication.py
-# VERSION: v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK
+# VERSION: v1.0.2-SOURCE-KEY-MATERIAL-GUARD
 # AUTHORITY BOUNDARY: Nonproduction ECR images only; no ECS service mutations.
 # TENANT POSTURE: No business persistence or operational credentials.
 # FAIL-CLOSED POSTURE: Unverified budget, image source or digest denies.
