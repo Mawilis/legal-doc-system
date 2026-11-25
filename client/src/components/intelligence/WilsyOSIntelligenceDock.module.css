@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.11.0-MW-T11-QUIET-REPLY-TYPOGRAPHY
+ * VERSION: v1.12.0-MW-T11-ANSWER-FOCUS
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
@@ -1312,9 +1312,34 @@
 }
 .intelligenceDockContainer .verifiedReplyLegacy strong{font-weight:500}
 
+
+/* The EOS answer is the focal point. Detailed provenance remains inspectable
+ * after the message instead of competing above it. */
+.intelligenceDockContainer .verifiedAnswerFocus > .chatMessageBubble { order:1; }
+.intelligenceDockContainer .verifiedAnswerFocus > .secondarySourceEvidence {
+  order:2; padding:6px 0 2px !important; border:0 !important;
+  margin-top:2px; font-size:12px !important; color:#a8bfd6 !important;
+}
+.intelligenceDockContainer .verifiedAnswerFocus > .secondarySourceEvidence details {
+  margin:0; padding:0; border:0; background:transparent;
+}
+.intelligenceDockContainer .verifiedAnswerFocus > .secondarySourceEvidence summary {
+  min-height:32px !important; padding:4px 0;
+  line-height:1.4; color:#a8c6e3;
+}
+.intelligenceDockContainer .sourceDisclosureLabel {
+  font-size:12px; font-weight:450; letter-spacing:normal;
+}
+.intelligenceDockContainer .verifiedAnswerFocus > .secondarySourceEvidence summary:hover {
+  color:#e6f3ff;
+}
+.intelligenceDockContainer .verifiedAnswerFocus > .secondarySourceEvidence details[open] {
+  padding-bottom:8px;
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.11.0-MW-T11-QUIET-REPLY-TYPOGRAPHY
+ * VERSION: v1.12.0-MW-T11-ANSWER-FOCUS
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
