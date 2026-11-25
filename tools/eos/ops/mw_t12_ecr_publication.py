@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned EOS image ECR publication.
-VERSION: v1.0.2-SOURCE-KEY-MATERIAL-GUARD
+VERSION: v1.0.3-PHASE-SPECIFIC-DOCKER-DIAGNOSTICS
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Stage two exact Git revisions, build the existing Python EOS image
          locally and publish only digest-verifiable nonproduction ECR artifacts.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Reuses infra/docker/Dockerfile.eos, its dedicated
          build-context policy, the existing MW-T12 rollback source identities,
          the CloudFormation-owned ECR repository and account budget.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.3-PHASE-SPECIFIC-DOCKER-DIAGNOSTICS identifies Docker engine, ECR login,
+           image build and push failures independently without exposing
+           registry credentials or raw Docker error output.
 CHANGELOG: v1.0.2-SOURCE-KEY-MATERIAL-GUARD rejects plaintext PEM private-key material and
            AWS long-lived access-key identifiers in tracked archive files
            before local Docker build or any ECR image publication.
@@ -37,7 +40,7 @@ import subprocess
 import tarfile
 import tempfile
 
-VERSION = "v1.0.2-SOURCE-KEY-MATERIAL-GUARD"
+VERSION = "v1.0.3-PHASE-SPECIFIC-DOCKER-DIAGNOSTICS"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
 REPO = "wilsy/mwt12-eos-nonproduction"
@@ -69,7 +72,7 @@ def require(ok: bool, code: str) -> None:
 
 def run(command: list[str], *, cwd: Path | None = None,
         input_bytes: bytes | None = None, timeout: int = 90,
-        capture: bool = True) -> bytes:
+        capture: bool = True, failure_code: str | None = None) -> bytes:
     """Run without shell, bounded output, and no accidental credential logs."""
     try:
         p = subprocess.run(command, cwd=cwd, input=input_bytes,
@@ -78,7 +81,8 @@ def run(command: list[str], *, cwd: Path | None = None,
                            check=False)
     except (OSError, subprocess.SubprocessError) as exc:
         raise PublicationError("COMMAND_UNAVAILABLE") from exc
-    require(p.returncode == 0, "COMMAND_FAILED_" + command[0].upper())
+    require(p.returncode == 0, failure_code or
+            "COMMAND_FAILED_" + command[0].upper())
     data = p.stdout or b""
     require(len(data) <= 4194304, "COMMAND_OUTPUT_OVERSIZED")
     return data
@@ -244,11 +248,14 @@ def publish(profile: str, current: str) -> None:
     not silently deleted or overwritten.
     """
     historical, latest = HISTORICAL, current
+    run(["docker", "info", "--format", "{{.ServerVersion}}"],
+        failure_code="DOCKER_DAEMON_UNAVAILABLE")
     registry_password = run(["aws", "ecr", "get-login-password",
                              "--profile", profile, "--region", REGION])
     require(0 < len(registry_password) < 4096, "ECR_LOGIN_UNAVAILABLE")
     run(["docker", "login", "--username", "AWS", "--password-stdin",
-         REGISTRY], input_bytes=registry_password, timeout=60)
+         REGISTRY], input_bytes=registry_password, timeout=60,
+        failure_code="ECR_DOCKER_LOGIN_FAILED")
     identities: dict[str, str] = {}
     with tempfile.TemporaryDirectory(prefix="wilsy-mwt12-ecr-") as tmp:
         for revision in (historical, latest):
@@ -273,12 +280,14 @@ def publish(profile: str, current: str) -> None:
                  "--file", str(source / "context/infra/docker/Dockerfile.eos"),
                  "--label", SOURCE_LABEL + "=" + revision,
                  "--tag", ref, str(source / "context")],
-                timeout=3600, capture=False)
+                timeout=3600, capture=False,
+                failure_code="ECR_DOCKER_BUILD_FAILED")
             label = run(["docker", "image", "inspect", "--format",
                          '{{index .Config.Labels "' + SOURCE_LABEL + '"}}',
                          ref]).decode().strip()
             require(label == revision, "LOCAL_IMAGE_SOURCE_INVALID")
-            run(["docker", "push", ref], timeout=3600, capture=False)
+            run(["docker", "push", ref], timeout=3600, capture=False,
+                failure_code="ECR_DOCKER_PUSH_FAILED")
             digest = image_digest(profile, revision)
             identities[revision] = digest
             print("MW_T12_ECR_IMAGE_" + revision[:12] + "=" + URI + "@" + digest,
@@ -317,7 +326,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_ecr_publication.py
-# VERSION: v1.0.2-SOURCE-KEY-MATERIAL-GUARD
+# VERSION: v1.0.3-PHASE-SPECIFIC-DOCKER-DIAGNOSTICS
 # AUTHORITY BOUNDARY: Nonproduction ECR images only; no ECS service mutations.
 # TENANT POSTURE: No business persistence or operational credentials.
 # FAIL-CLOSED POSTURE: Unverified budget, image source or digest denies.
