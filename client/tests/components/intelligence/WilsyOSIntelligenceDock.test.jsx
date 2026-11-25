@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.37.0-MW-T11-SESSION-SOURCE-CERT
+ * VERSION: v1.37.1-MW-T11-HISTORY-COPY-REGRESSION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.37.1-MW-T11-HISTORY-COPY-REGRESSION-CERT updates legacy history assertions to the session-only UI language; retains negative and no-provider checks.
  * CHANGELOG: v1.37.0-MW-T11-SESSION-SOURCE-CERT certifies explicit MW-T11 source inspection
  * from current authorized EOS project-task list, independently verified
  * context, session-only turn recording and no paid reasoning POST.
@@ -1097,8 +1098,8 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByRole('button', { name: 'Suggestions' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal tools' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    await waitFor(() => expect(screen.getByText('Conversation Threads')).toBeVisible());
-    expect(screen.getByText(/No conversations recorded in this authenticated session/)).toBeVisible();
+    await waitFor(() => expect(screen.getByText('Recent session activity')).toBeVisible());
+    expect(screen.getByText(/No recorded conversation turns or verified task inspections in this session/)).toBeVisible();
     expect(screen.queryByText('Thread 1')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
     expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
@@ -1945,11 +1946,11 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByText('New Sovereign Session')).not.toBeInTheDocument();
   });
 
-  it('refreshes threads and context when "Sync" is clicked', async () => {
+  it('refreshes same-session threads and context when Refresh session is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    fireEvent.click(screen.getByText('⟳ Sync'));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh session' }));
 
     await waitFor(() => {
       expect(mockLoadThreads).toHaveBeenCalled();
