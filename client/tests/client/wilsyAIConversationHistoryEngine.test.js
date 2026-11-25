@@ -1,13 +1,13 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TITLE: WILSY OS Conversation History Engine Durable Archive Certificate
- * VERSION: v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT
+ * VERSION: v5.6.2-DEFER-EMPTY-HISTORY-TEST
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Encrypted history transport, owner isolation and session fallback
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/wilsyAIConversationHistoryEngine.test.js
  * COLLABORATION / OWNERSHIP: EOS history router and current Dock history engine
  * CERTIFICATION / UPDATE DATE: 2026-11-25
- * CHANGELOG: v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT tests
+ * CHANGELOG: v5.6.2-DEFER-EMPTY-HISTORY-TEST tests
  *            same-tenant foreign-principal archive denial and non-elevation
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
  * SECURITY / PRIVACY POSTURE: Synthetic scopes and prompts; no real secrets
@@ -18,7 +18,7 @@
  * Wilsy OS — AI Conversation History Engine Session-Bound Certificate
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * Version:        v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT
+ * Version:        v5.6.2-DEFER-EMPTY-HISTORY-TEST
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Direct certificate for transient same-session conversation
  *                 history with EOS-encrypted remote archive and explicit
@@ -26,7 +26,7 @@
  * Classification: Production Test Artifact — Institutional Contract
  *
  * Change Log:
- *   2026-11-25 v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT — Verifies the authenticated
+ *   2026-11-25 v5.6.2-DEFER-EMPTY-HISTORY-TEST — Verifies the authenticated
  *     principal selector must match the EOS history response even when HTTP
  *     succeeds, without creating cross-identity cached conversations.
  *   2026-11-25 v5.6.0-EOS-DURABLE-HISTORY-ISOLATION-CERT — Tests approved Python EOS history transport,
@@ -37,7 +37,7 @@
  *   2026-08-05 v5.1.1-KENNEL-PHASE5 — Fixed async integrity checks.
  *   2026-08-05 v5.1.0-KENNEL-PHASE5 — Initial creation.
  *
- * Certification Seal: PRODUCTION_READY_v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT
+ * Certification Seal: PRODUCTION_READY_v5.6.2-DEFER-EMPTY-HISTORY-TEST
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -238,6 +238,28 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
 
 
   describe('encrypted EOS history persistence and currentness', () => {
+    it('does not exhaust 30 archive slots by persisting automatic empty sessions', async () => {
+      const empty = await createWilsyAIConversationThread({
+        title: 'New Sovereign Session', workspace: 'WILSY OS',
+      });
+      expect(empty.storagePosture).toBe('SESSION_ONLY');
+      expect(mockPut).not.toHaveBeenCalled();
+      mockPut.mockResolvedValue({ data: {
+        schema: 'WILSY-AI-HISTORY-THREAD/V1', id: empty.id,
+        revision: 1, storagePosture: 'EOS_ENCRYPTED_HISTORY',
+      } });
+      const recorded = await persistWilsyAIConversationTurn({
+        threadId: empty.id,
+        message: { role: 'user', content: 'Inspect MW-T11' },
+      });
+      expect(recorded.storagePosture).toBe('EOS_ENCRYPTED_HISTORY');
+      expect(mockPut).toHaveBeenCalledWith(
+        '/wilsy-ai/history/' + encodeURIComponent(empty.id),
+        expect.objectContaining({ expected_revision: 0 }),
+        expect.anything(),
+      );
+    });
+
     it('persists a thread, revises its transcript and recovers it after browser-memory reset', async () => {
       const records = new Map();
       mockPut.mockImplementation(async (path, body) => {
@@ -368,10 +390,10 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT
+ * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.6.2-DEFER-EMPTY-HISTORY-TEST
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * VERSION: v5.6.1-PRINCIPAL-REHYDRATION-REFUSAL-CERT
+ * VERSION: v5.6.2-DEFER-EMPTY-HISTORY-TEST
  * AUTHORITY BOUNDARY: synthetic tests only; EOS source and IAM are independent
  * TENANT POSTURE: tenant identifiers partition presentation context but grant no access
  * DURABLE HISTORY AUTHORITY: Python EOS authenticated encrypted history; tests use mock transport only
