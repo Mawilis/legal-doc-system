@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP
+VERSION: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -10,6 +10,11 @@ COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
 CERTIFICATION / UPDATE DATE: 2026-11-20
+CHANGELOG: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY adds exact-current tenant/principal bounded
+         read-only conversation archive and CAS snapshot writes encrypted with
+         server-owned AES-256-GCM key, 30-day expiry, duplicate-safe identity,
+         metadata-only audit events and no paid-provider invocation. Saved
+         transcripts are NOT live source evidence. Existing reasoning unchanged.
 CHANGELOG: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP maps an allowlisted nested C1B admission replay conflict to HTTP 409 while preserving the fail-closed reservation, provider suppression and all tenant/usage evidence boundaries. No opaque exception text is exposed.
 CHANGELOG: v1.9.0-SAFE-ADMISSION-CAUSE-DIAGNOSTICS adds bounded admission cause-type and canonical error-code diagnostics only; no identities, prompts, stack traces, vendor material or sensitive exception text are retained. No admission arithmetic, retry, IAM, billing, or provider behaviour is changed.
 CHANGELOG: v1.8.0-SAFE-REASONING-FAILURE-STAGE-DIAGNOSTICS logs bounded stage names and model outcome classifications on failed reasoning attempts without recording prompts, identity, API secrets, exception messages, or vendor response data. The public error vocabulary, replay, IAM, admission and accounting semantics remain unchanged.
@@ -59,6 +64,10 @@ FAIL-CLOSED DECLARATION: Missing authority, persistence, binding, replay, and
 from __future__ import annotations
 
 import asyncio
+import base64
+import os
+import secrets
+from datetime import timedelta
 from collections.abc import Callable
 from datetime import datetime, timezone
 import hashlib
@@ -66,6 +75,8 @@ import json
 import logging
 import re
 from typing import Any, Final, Literal
+from pymongo.errors import DuplicateKeyError
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -108,7 +119,7 @@ from tools.eos.saas.billing.wilsy_ai_usage_observation_registry import (
 )
 
 
-VERSION: Final[str] = "v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP"
+VERSION: Final[str] = "v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY"
 _logger = logging.getLogger("WilsyOS.API.WilsyAIReasoning")
 REASONING_PERMISSION: Final[str] = "wilsy_ai:reasoning:execute"
 REASONING_OPERATION: Final[str] = "wilsy_ai_reasoning_execute"
@@ -777,6 +788,191 @@ def read_reasoning_context(
         raise _error_response(error) from error
 
 
+# History is a distinct data authority within the existing Python EOS router.
+# Never derive history scope from the browser's thread owner or project locator.
+_HISTORY_COLLECTION: Final[str] = "wilsy_ai_conversation_history_v1"
+_HISTORY_AUDIT: Final[str] = "wilsy_ai_conversation_history_audit_v1"
+_HISTORY_THREAD_ID = re.compile(r"^session-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
+_HISTORY_TTL_DAYS: Final[int] = 30
+
+
+class WilsyHistoryMessage(BaseModel):
+    """Untrusted historical text, never EOS source evidence or model execution."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=6000)
+    timestamp: str = Field(min_length=1, max_length=64)
+
+
+class WilsyHistoryWrite(BaseModel):
+    """CAS thread snapshot: caller text only, authenticated scope is server owned."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_revision: int = Field(ge=0, le=1000000)
+    title: str = Field(min_length=1, max_length=160)
+    workspace: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9 _.-]+$")
+    messages: list[WilsyHistoryMessage] = Field(max_length=80)
+
+
+def _history_key() -> bytes:
+    """Require an explicit server-held 256-bit key; fail closed on missing key."""
+    encoded = os.environ.get("WILSY_AI_HISTORY_KEY_B64", "")
+    try:
+        key = base64.b64decode(encoded, validate=True)
+    except (ValueError, base64.binascii.Error):
+        key = b""
+    if len(key) != 32:
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_KEY_UNAVAILABLE")
+    return key
+
+
+def _history_id(context: TenantAuthorizationContext, thread_id: str) -> str:
+    """Scope the opaque thread identity to independently verified auth data."""
+    return hashlib.sha3_256(json.dumps(
+        [context.tenant_id, context.identity.identity_id, thread_id],
+        separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+
+
+def _history_collections() -> tuple[Any, Any]:
+    """Use canonical Mongo; no browser or alternate persistence authority."""
+    database = _database()
+    history = database[_HISTORY_COLLECTION]
+    audit = database[_HISTORY_AUDIT]
+    try:
+        # Mongo indexes are idempotent and the TTL applies to encrypted payloads.
+        history.create_index("expires_at", expireAfterSeconds=0)
+        history.create_index([("tenant_id", 1), ("principal_id", 1), ("updated_at", -1)])
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_INDEX_UNAVAILABLE") from error
+    return history, audit
+
+
+def _history_encrypt(data: dict[str, Any], context: TenantAuthorizationContext,
+                     thread_id: str, revision: int, key: bytes) -> dict[str, bytes]:
+    """AEAD-bind ciphertext to its owner, thread and revision."""
+    nonce = secrets.token_bytes(12)
+    aad = json.dumps([context.tenant_id, context.identity.identity_id, thread_id, revision],
+                     separators=(",", ":")).encode("utf-8")
+    plaintext = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    if len(plaintext) > 65536:
+        raise HTTPException(status_code=422, detail="WILSY_AI_HISTORY_TOO_LARGE")
+    return {"nonce": nonce, "ciphertext": AESGCM(key).encrypt(nonce, plaintext, aad)}
+
+
+def _history_decrypt(row: dict[str, Any], context: TenantAuthorizationContext, key: bytes) -> dict[str, Any]:
+    """Reject any corrupted, wrong-scope or wrong-revision ciphertext."""
+    try:
+        aad = json.dumps([context.tenant_id, context.identity.identity_id,
+                          row["thread_id"], row["revision"]], separators=(",", ":")).encode("utf-8")
+        decoded = AESGCM(key).decrypt(row["nonce"], row["ciphertext"], aad)
+        data = json.loads(decoded.decode("utf-8"))
+        if not isinstance(data, dict) or data.get("id") != row["thread_id"]:
+            raise ValueError("history identity mismatch")
+        return data
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_INTEGRITY_UNAVAILABLE") from error
+
+
+def _history_projection(data: dict[str, Any], revision: int) -> dict[str, Any]:
+    """Label decrypted client transcript as history, never freshly certified EOS data."""
+    return {**data, "revision": revision, "storagePosture": "EOS_ENCRYPTED_HISTORY",
+            "authority": "RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE"}
+
+
+@router.get("/history")
+def list_conversation_history(
+    response: Response,
+    context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
+) -> dict[str, Any]:
+    """List up to 30 exact-current owned encrypted threads, no AI admission or charge."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _history_key()
+    history, _ = _history_collections()
+    now = _utc_now()
+    try:
+        cursor = history.find(
+            {"tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+             "expires_at": {"$gt": now}},
+        ).sort("updated_at", -1).limit(30)
+        threads = [_history_projection(_history_decrypt(row, context, key), row["revision"])
+                   for row in cursor]
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_READ_UNAVAILABLE") from error
+    return {"schema": "WILSY-AI-HISTORY/V1", "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id, "threads": threads}
+
+
+@router.put("/history/{thread_id}")
+def write_conversation_history(
+    thread_id: str,
+    payload: WilsyHistoryWrite,
+    response: Response,
+    context: TenantAuthorizationContext = Depends(_REASONING_AUTH),
+) -> dict[str, Any]:
+    """Persist a bounded encrypted revision and metadata-only audit atomically.
+
+    Client-supplied assistant turns are stored as untrusted transcripts, never
+    as proof of current EOS task facts or paid model execution. An uncertain
+    transaction outcome never silently retries or claims success.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if not _HISTORY_THREAD_ID.fullmatch(thread_id):
+        raise HTTPException(status_code=422, detail="WILSY_AI_HISTORY_THREAD_ID_INVALID")
+    key = _history_key()
+    history, audit = _history_collections()
+    now = _utc_now()
+    next_revision = payload.expected_revision + 1
+    data = {"id": thread_id, "title": payload.title, "workspace": payload.workspace,
+            "messages": [message.model_dump() for message in payload.messages],
+            "updatedAt": now.isoformat()}
+    encrypted = _history_encrypt(data, context, thread_id, next_revision, key)
+    owner_id = _history_id(context, thread_id)
+    row = {"_id": owner_id, "tenant_id": context.tenant_id,
+           "principal_id": context.identity.identity_id, "thread_id": thread_id,
+           "revision": next_revision, "updated_at": now,
+           "expires_at": now + timedelta(days=_HISTORY_TTL_DAYS),
+           **encrypted}
+    audit_event = {"_id": hashlib.sha3_256(
+        f"{owner_id}:{next_revision}".encode("utf-8")).hexdigest(),
+        "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+        "thread_digest": owner_id, "revision": next_revision, "timestamp": now,
+        "operation": "CREATE" if payload.expected_revision == 0 else "REVISE",
+        "payload_digest": hashlib.sha3_256(encrypted["ciphertext"]).hexdigest()}
+
+    def commit(session: Any) -> None:
+        if payload.expected_revision == 0:
+            if history.count_documents(
+                {"tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+                 "expires_at": {"$gt": now}}, session=session) >= 30:
+                raise HTTPException(status_code=409, detail="WILSY_AI_HISTORY_THREAD_LIMIT")
+            history.insert_one(row, session=session)
+        else:
+            result = history.replace_one(
+                {"_id": owner_id, "tenant_id": context.tenant_id,
+                 "principal_id": context.identity.identity_id,
+                 "revision": payload.expected_revision, "expires_at": {"$gt": now}},
+                row, session=session)
+            if result.matched_count != 1:
+                raise HTTPException(status_code=409, detail="WILSY_AI_HISTORY_STALE_REVISION")
+        audit.insert_one(audit_event, session=session)
+
+    try:
+        _transaction(commit, retries=0)
+    except DuplicateKeyError as error:
+        raise HTTPException(status_code=409, detail="WILSY_AI_HISTORY_CONFLICT") from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="WILSY_AI_HISTORY_WRITE_UNAVAILABLE") from error
+    return {"schema": "WILSY-AI-HISTORY-THREAD/V1", "id": thread_id,
+            "revision": next_revision, "storagePosture": "EOS_ENCRYPTED_HISTORY",
+            "authority": "RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE"}
+
+
 @router.post("/reasoning")
 def execute_reasoning(
     request: WilsyAIReasoningRequest,
@@ -950,7 +1146,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v2.0.0-CANONICAL-ADMISSION-REPLAY-CONFLICT-HTTP
+# VERSION: v2.1.0-ENCRYPTED-DURABLE-CONVERSATION-HISTORY
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
