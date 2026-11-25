@@ -1,6 +1,6 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.10.0-MW-T11-READABLE-REPLY-TYPOGRAPHY
+ * VERSION: v1.11.0-MW-T11-QUIET-REPLY-TYPOGRAPHY
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
@@ -1268,11 +1268,11 @@
 .intelligenceDockContainer .verifiedReply{
  display:grid; gap:8px; max-width:66ch; white-space:normal;
  padding:2px 0 6px; color:#e9f2fd;
- font-size:14px; line-height:1.65; letter-spacing:.005em;
+ font-size:14px; line-height:1.7; letter-spacing:normal; font-weight:400;
 }
 .intelligenceDockContainer .verifiedReplyTitle{
- margin:0 0 5px; color:#fff; font-size:16px;
- font-weight:670; line-height:1.45; letter-spacing:-.01em;
+ margin:0 0 7px; color:#edf4ff; font-size:14px;
+ font-weight:540; line-height:1.6; letter-spacing:normal;
  text-wrap:pretty; overflow-wrap:anywhere;
 }
 .intelligenceDockContainer .verifiedReplyFact{
@@ -1281,10 +1281,10 @@
  padding:5px 0; border-bottom:1px solid rgba(150,180,214,.13);
 }
 .intelligenceDockContainer .verifiedReplyFact span{
- color:#abc0d8; font-size:12px; font-weight:570;
+ color:#a9bfd7; font-size:12px; font-weight:400;
 }
 .intelligenceDockContainer .verifiedReplyFact strong{
- font-weight:640; color:#eef6ff; overflow-wrap:anywhere;
+ font-weight:450; color:#edf4fc; overflow-wrap:anywhere;
 }
 .intelligenceDockContainer .verifiedReplyNote{
  margin:7px 0 0; color:#b8cde2; font-size:12px;
@@ -1297,7 +1297,7 @@
 }
 @media(max-width:480px){
  .intelligenceDockContainer .verifiedReply{font-size:13px}
- .intelligenceDockContainer .verifiedReplyTitle{font-size:15px}
+ .intelligenceDockContainer .verifiedReplyTitle{font-size:14px}
  .intelligenceDockContainer .verifiedReplyFact{
   grid-template-columns:minmax(72px,94px) minmax(0,1fr);gap:8px;
  }
@@ -1306,9 +1306,15 @@
  .intelligenceDockContainer .replyCursor{display:none}
 }
 
+.intelligenceDockContainer .verifiedReplyLegacy{
+  font-size:14px;line-height:1.7;font-weight:400;color:#e4edf8;
+  letter-spacing:normal;white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.intelligenceDockContainer .verifiedReplyLegacy strong{font-weight:500}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.9.0-MW-T11-COMPACT-DOCK
+ * VERSION: v1.11.0-MW-T11-QUIET-REPLY-TYPOGRAPHY
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
