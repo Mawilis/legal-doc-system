@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH
+ * VERSION: v4.58.0-LIVE-TASK-CONVERSATION-FIRST
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,9 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.58.0-LIVE-TASK-CONVERSATION-FIRST presents a compact live
+ *            EOS task strip with explicit refresh; conversation takes
+ *            precedence over collapsed secondary source metadata.
  * CHANGELOG: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH searches all authorized
  *            loaded conversation turns, showing the matching historical
  *            excerpt instead of silently restricting search to the latest
@@ -25,7 +28,7 @@
  *            searchable, time-grouped, actionable navigator: previews,
  *            archive provenance, open and explicit delete, keyboard
  *            filters and reversible session-only state. No new IAM.
- * CHANGELOG: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH supports explicitly requested,
+ * CHANGELOG: v4.58.0-LIVE-TASK-CONVERSATION-FIRST supports explicitly requested,
  *            independently authorized project-task event inspection using
  *            the canonical Projects events source, with strict tenant,
  *            principal, task and event schema checks. It records historical
@@ -2715,6 +2718,37 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
+                {!isLegalDockRole(authUser?.role) && workLocator.workspace === 'PROJECTS'
+                  && workLocator.task_id && (
+                  <div className={styles.liveTaskStrip} role="region" aria-label="Live EOS task">
+                    <div className={styles.liveTaskFacts} aria-live="polite">
+                      <span className={styles.liveTaskLabel}>LIVE TASK</span>
+                      {visibleWorkspaceContext?.state === 'READY'
+                        && visibleWorkspaceContext.data.work?.selected_task?.task_id === workLocator.task_id
+                        ? <>
+                          <strong title={visibleWorkspaceContext.data.work.selected_task.title}>
+                            {visibleWorkspaceContext.data.work.selected_task.title}
+                          </strong>
+                          <span className={styles.liveTaskLifecycle}>
+                            {visibleWorkspaceContext.data.work.selected_task.status?.replaceAll('_', ' ').toLowerCase() || 'Unknown status'}
+                            {' · Revision '}{visibleWorkspaceContext.data.work.selected_task.revision}
+                          </span>
+                        </>
+                        : <span className={styles.liveTaskLifecycle}>
+                          {visibleWorkspaceContext?.state === 'LOADING' ? 'Checking EOS…'
+                            : visibleWorkspaceContext?.state === 'DENIED' ? 'Source access denied'
+                              : visibleWorkspaceContext?.state === 'STALE' ? 'Source changed · verify again'
+                                : 'Live source not verified'}
+                        </span>}
+                    </div>
+                    <button type="button" className={styles.liveTaskRefresh}
+                      aria-label="Refresh live EOS task"
+                      disabled={visibleWorkspaceContext?.state === 'LOADING'}
+                      onClick={() => setContextRefresh(previous => previous + 1)}>
+                      <RefreshCw size={14} aria-hidden="true"/> Refresh
+                    </button>
+                  </div>
+                )}
                 <div ref={messagesScrollRef} className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
                   {conversationView === 'WELCOME'
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
@@ -2752,13 +2786,12 @@ export function WilsyOSIntelligenceDock({
                   )}
                   {/* EOS observations are read-only, scoped, and not assistant messages. */}
                 {conversationView === 'SOURCE' && authUser?.id && !isLegalDockRole(authUser?.role) && <section
-                  className={hasVerifiedSourceReply ? styles.secondarySourceEvidence : undefined}
+                  className={styles.secondarySourceEvidence}
                   aria-label="Verified workspace context" aria-live="polite"
                   style={{ padding: '10px 0', background: 'transparent', color: '#e5edf6',
                     borderTop: '1px solid rgba(148,163,184,.25)',
                     fontSize: 13, lineHeight: 1.65, overflowWrap: 'anywhere' }}>
-                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef} open={!activeThread?.messages?.some(message =>
-                    message?.meta?.source === 'PYTHON_EOS' && message?.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY')}>
+                  {visibleWorkspaceContext?.state === 'READY' ? <details ref={workspaceDetailsRef}>
                     <summary aria-label="Inspect verified workspace context"
                       style={{ cursor: 'pointer', minHeight: hasVerifiedSourceReply ? 32 : 44 }}>
                       {hasVerifiedSourceReply
@@ -3443,7 +3476,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.57.0-BOUNDED-TRANSCRIPT-SEARCH
+ * VERSION: v4.58.0-LIVE-TASK-CONVERSATION-FIRST
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
