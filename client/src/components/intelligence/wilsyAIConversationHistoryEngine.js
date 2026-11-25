@@ -1,12 +1,16 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Conversation History Engine
- * VERSION: v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK
+ * VERSION: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Current-session history cache and authenticated EOS encrypted archival transport
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
  * COLLABORATION / OWNERSHIP: Intelligence Dock, Python EOS history source, canonical API transport
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT prevents automatic empty New Sovereign
+ *            Session placeholders from occupying the bounded durable
+ *            archive on every fresh page. The first actual turn creates
+ *            the encrypted EOS thread; no conversation content is lost.
  * CHANGELOG: v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK verifies current authenticated principal and tenant during history recovery
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
  * SECURITY / PRIVACY POSTURE: No browser-stored transcripts or exported secrets
@@ -15,7 +19,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No paid model or financial execution
  *
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -32,7 +36,7 @@
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CHANGELOG: 2026-11-25 v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK cross-checks EOS
+ * ║ CHANGELOG: 2026-11-25 v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT cross-checks EOS
  * ║          history GET response against the actual active UI principal
  * ║          and tenant when passed by the authenticated Dock; never trusts
  * ║          browser tenant storage as a grant or data source.
@@ -361,7 +365,9 @@ export async function createWilsyAIConversationThread(payload = {}) {
 
   requireCurrentConversationGeneration(generation);
   let stored = thread;
-  try {
+  // Empty auto-created sessions are local until the first real message.
+  // Otherwise every refresh would consume one of the 30 durable archive slots.
+  if (thread.title !== 'New Sovereign Session') try {
     const result = await api.put('/wilsy-ai/history/' + encodeURIComponent(thread.id), {
       expected_revision: 0, title: thread.title, workspace: thread.workspace, messages: [],
     }, { timeout: 12000 });
@@ -570,7 +576,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK
+ * VERSION: v5.10.0-DEFER-EMPTY-HISTORY-SNAPSHOT
  * AUTHORITY BOUNDARY: authenticated Python EOS owns durable encrypted records; browser owns only presentation
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: failed EOS source/store leaves clear session-only posture without localStorage
