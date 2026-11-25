@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned dormant ECS task-definition admission.
-VERSION: v1.0.0-DORMANT-IMAGE-ADMISSION
+VERSION: v1.0.1-ECS-PORT-READBACK-NORMALIZATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify immutable ECR provenance and optionally register two dormant,
          equivalent nonproduction Fargate task definitions.
@@ -7,7 +7,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Reuses MW-T12 ECR budget/ownership preflight,
          existing CloudFormation resources, and later read-only ECS admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
-CHANGELOG: v1.0.0-DORMANT-IMAGE-ADMISSION binds exact source/image digests,
+CHANGELOG: v1.0.1-ECS-PORT-READBACK-NORMALIZATION handles ECS normalized awsvpc hostPort during independent readback.\nCHANGELOG: v1.0.0-DORMANT-IMAGE-ADMISSION binds exact source/image digests,
            verifies dormant cluster, role, logs and account budget, and requires
            --register for task-definition-only metadata mutation/readback.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -29,7 +29,7 @@ import tempfile
 
 from tools.eos.ops import mw_t12_ecr_publication as source
 
-VERSION = "v1.0.0-DORMANT-IMAGE-ADMISSION"
+VERSION = "v1.0.1-ECS-PORT-READBACK-NORMALIZATION"
 FAMILY = "wilsy-mwt12-eos-nonproduction"
 CLUSTER = "wilsy-mwt12-nonproduction"
 LOG_GROUP = "/wilsy/mwt12/nonproduction/eos"
@@ -219,11 +219,11 @@ def verify(profile: str, arn: str, expected: dict) -> int:
             "TASK_CONTAINER_COUNT_DRIFT")
     wanted = expected["containerDefinitions"][0]
     for key in ("name", "image", "essential", "readonlyRootFilesystem",
-                "user", "portMappings", "mountPoints", "environment",
+                "user", "mountPoints", "environment",
                 "logConfiguration", "healthCheck"):
         require(actual[0].get(key) == wanted[key],
                 "TASK_CONTAINER_CONTRACT_DRIFT")
-    require(not actual[0].get("secrets"), "TASK_SECRETS_UNEXPECTED")
+    ports = actual[0].get("portMappings", [])\n    require(isinstance(ports, list) and len(ports) == 1\n            and ports[0].get("containerPort") == 9095\n            and ports[0].get("hostPort", 9095) == 9095\n            and ports[0].get("protocol", "tcp") == "tcp",\n            "TASK_NETWORK_PORT_DRIFT")\n    require(not actual[0].get("secrets"), "TASK_SECRETS_UNEXPECTED")
     volumes = task.get("volumes", [])
     require([v.get("name") for v in volumes]
             == [v["name"] for v in expected["volumes"]]
@@ -305,7 +305,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_task_definition_admission.py
-# VERSION: v1.0.0-DORMANT-IMAGE-ADMISSION
+# VERSION: v1.0.1-ECS-PORT-READBACK-NORMALIZATION
 # AUTHORITY BOUNDARY: Exact owned ECS task metadata; no running services/tasks.
 # TENANT POSTURE: No business records or tenant runtime authorized.
 # FAIL-CLOSED POSTURE: Unknown image, budget, task identity or compute denies.
