@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.6.0-EOS-ENCRYPTED-DURABLE-THREADS]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.7.0-EOS-HISTORY-DELETION-CURRENTNESS]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -18,6 +18,9 @@
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
  * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ CHANGELOG: 2026-11-25 v5.7.0-EOS-HISTORY-DELETION-CURRENTNESS supports explicit, owner-scoped
+ * ║          revision-guarded durable deletion. No data is silently deleted
+ * ║          by session reset, and remote writes remain fail-closed.
  * ║ CHANGELOG: 2026-11-25 v5.6.0-EOS-ENCRYPTED-DURABLE-THREADS binds owned conversations
  * ║          to EOS-encrypted, revision-checked archive with independent
  * ║          currentness; access-denied and unavailable remain session-only,
@@ -453,6 +456,35 @@ export async function clearWilsyAIConversationThreads(_options = {}) {
   return resetWilsyAIConversationSession();
 }
 
+/**
+ * Delete a single explicitly selected conversation. A failed EOS delete must
+ * never be represented as success and never silently fall back to local-only
+ * deletion of a durably saved transcript.
+ */
+export async function deleteWilsyAIConversationThread(threadId) {
+  const generation = conversationGeneration;
+  const thread = conversationCache.find(item => item.id === threadId);
+  if (!thread) throw new Error('WILSY_AI_HISTORY_THREAD_NOT_FOUND');
+  if (thread.storagePosture === 'EOS_ENCRYPTED_HISTORY') {
+    const response = await api.delete('/wilsy-ai/history/' + encodeURIComponent(threadId), {
+      params: { expected_revision: thread.revision }, timeout: 12000,
+    });
+    requireCurrentConversationGeneration(generation);
+    if (response?.data?.schema !== 'WILSY-AI-HISTORY-DELETED/V1'
+      || response.data.id !== threadId || response.data.deleted !== true) {
+      throw new Error('WILSY_AI_HISTORY_DELETE_NOT_VERIFIED');
+    }
+  }
+  requireCurrentConversationGeneration(generation);
+  conversationCache = conversationCache.filter(item => item.id !== threadId);
+  return [...conversationCache];
+}
+
+/** Read-only status of the latest authenticated history transport admission. */
+export function wilsyAIConversationHistoryPosture() {
+  return historyRemoteStatus;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // COMPATIBILITY & CACHE ACCESS
 // ──────────────────────────────────────────────────────────────────────────────
@@ -508,12 +540,14 @@ export default {
   saveWilsyAIConversationThreads,
   getCachedThreads,
   syncThreads,
+  deleteWilsyAIConversationThread,
+  wilsyAIConversationHistoryPosture,
   verifyThreadIntegrity,
 };
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.6.0-EOS-ENCRYPTED-DURABLE-THREADS
+ * VERSION: v5.7.0-EOS-HISTORY-DELETION-CURRENTNESS
  * AUTHORITY BOUNDARY: authenticated Python EOS owns durable encrypted records; browser owns only presentation
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: failed EOS source/store leaves clear session-only posture without localStorage
