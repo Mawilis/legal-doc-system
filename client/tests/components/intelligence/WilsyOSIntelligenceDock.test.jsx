@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.38.1-MW-T11-NORMAL-WEIGHT-SOURCE-CERT
+ * VERSION: v1.39.0-MW-T11-ANSWER-FOCUS-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.39.0-MW-T11-ANSWER-FOCUS-CERT ensures a
+ *            verified task answer suppresses duplicated source preamble,
+ *            retains optional source details and independent EOS authority.
  * CHANGELOG: v1.38.1-MW-T11-NORMAL-WEIGHT-SOURCE-CERT protects quiet source-response
  * hierarchy and prevents the verified title from containing the fact lines.
  * CHANGELOG: v1.38.0-MW-T11-READABLE-PROGRESSIVE-EVIDENCE certifies formatted EOS task evidence
@@ -1741,6 +1744,9 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => expect(screen.getByLabelText('EOS-verified selected task lifecycle'))
       .toHaveTextContent('in progress'));
     await waitFor(() => expect(mockPersistTurn).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText('View source details')).toBeVisible());
+    expect(screen.queryByLabelText('Your source request')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Inspect verified workspace context')).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     expect(screen.getByText('Recent session activity')).toBeVisible();
