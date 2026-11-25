@@ -1,4 +1,5 @@
 /**
+ * TITLE: WILSY OS Intelligence Dock Deadline Observation Certificate
  * WILSY OS — INTELLIGENCE DOCK DEADLINE OBSERVATION CERTIFICATE
  * VERSION: v1.0.0-D6B-INTELLIGENCE-DOCK-DEADLINE-CERT
  * AUTHORITY: Browser presentation and transport-wiring evidence only.
