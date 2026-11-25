@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.3-M04-ACTION-CONSOLIDATION
+ * VERSION: v2.32.4-RESTORED-FOUNDATION-READ
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,12 +8,16 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.32.4-RESTORED-FOUNDATION-READ automatically
+ *            revalidates the unique existing Foundation task page when
+ *            Strategy opens or remounts. No cached EOS truth, synthesized
+ *            link, mutation, privilege or execution status is restored.
  * CHANGELOG: v2.32.3-M04-ACTION-CONSOLIDATION removes the second
  *            redundant M04 verification command, distinguishes the task
  *            focus tab from the real Projects handoff, and opens the evidence
  *            inspector immediately when selected. Source reads, IAM, task
  *            mutations and strategic outcome truth are unchanged.
- * CHANGELOG: v2.32.3-M04-ACTION-CONSOLIDATION removes
+ * CHANGELOG: v2.32.2-SINGLE-MY-WORK-NAVIGATION removes
  *            the orphaned bottom-of-Strategy 'Open current My Work'
  *            button: the existing persistent document toolbar already
  *            provides the same authorized My Work navigation action.
@@ -820,7 +824,15 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
     setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription(''); setProjectEditSource(false);
     setProjectPillar('pillar-one');
-    if (classification === 'STRATEGY' && sessionKey) void loadProjects();
+    if (classification === 'STRATEGY' && sessionKey) {
+      const readScope = sessionKey;
+      void loadProjects().then((items) => {
+        if (!active(readScope) || !Array.isArray(items)) return;
+        const foundations = items.filter(item =>
+          item.name === FOUNDATION_PROJECT_NAME && item.status === 'active');
+        if (foundations.length === 1) void loadDelivery(foundations[0].project_id, 0);
+      });
+    }
     return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); strategyLinkReadRef.current.sequence += 1; strategyLinkReadRef.current.controller?.abort(); strategyLinkWriteRef.current = null; projectMutation.current = null; };
   }, [classification, sessionKey, loadProjects]);
 
@@ -2550,7 +2562,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.3-M04-ACTION-CONSOLIDATION
+// VERSION: v2.32.4-RESTORED-FOUNDATION-READ
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
