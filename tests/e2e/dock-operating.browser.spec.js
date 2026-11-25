@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Authenticated Dock Operating Browser Certificate
- * VERSION: v1.0.0
+ * VERSION: v1.1.0
  * AUTHORITY: Disposable synthetic browser/EOS/Mongo evidence only.
  * EPITOME: Advance real source-owned work from the Dock and recover encrypted task conversations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/dock-operating.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing browser harness, canonical EOS, Projects and Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.1.0 certifies mobile lost-response recovery using a real EOS POST, browser reload, and receipt-only reconciliation without a second command.
  * CHANGELOG: v1.0.0 adds desktop/mobile task commands, editable deterministic drafts and refresh continuity.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Runner-owned synthetic token; no real Founder credentials or S3 object writes.
@@ -72,14 +73,36 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await expect(attention.getByRole('heading', { name: 'Needs your attention' })).toBeVisible();
         await expect(attention).toContainText('MW-T11 browser alignment');
       }
-      await page.evaluate(({ tenant, principal, project, task }) => {
+      const selectTask = async () => page.evaluate(({ tenant, principal, project, task }) => {
         window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
           tenantId: tenant, principalId: principal,
           locator: { workspace: 'PROJECTS', project_id: project, task_id: task, participant_view: true },
         } }));
       }, { tenant: state.tenant_id, principal: actor.principal_id, project: fixture.project_id, task });
+      await selectTask();
       await expect(page.getByRole('button', { name: 'Start work', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Start work', exact: true }).click();
+      if (viewport.width === 390) {
+        // Deliver the real POST once to EOS, then drop only its response.
+        // The browser must recover the pending command after refresh by
+        // independently reading the immutable receipt, without a second POST.
+        let transitionPosts = 0;
+        await page.route('**/api/projects/**/transition', async route => {
+          transitionPosts += 1;
+          const committed = await route.fetch();
+          expect(committed.ok()).toBeTruthy();
+          await route.abort('failed');
+        });
+        await page.getByRole('button', { name: 'Start work', exact: true }).click();
+        await expect(page.getByText(/Command outcome unverified/)).toBeVisible();
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await mount();
+        await selectTask();
+        await expect(page.getByRole('button', { name: 'Reconcile task command' })).toBeVisible();
+        await page.getByRole('button', { name: 'Reconcile task command' }).click();
+        expect(transitionPosts).toBe(1);
+      } else {
+        await page.getByRole('button', { name: 'Start work', exact: true }).click();
+      }
       await expect(page.getByText('EOS verified the command receipt and independently read the current task.', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Draft alignment plan', exact: true }).click();
       const editor = page.getByRole('textbox', { name: 'Edit plan' });
@@ -131,11 +154,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 // ARTIFACT: dock-operating.browser.spec.js
-// VERSION: v1.0.0
+// VERSION: v1.1.0
 // AUTHORITY BOUNDARY: authenticated synthetic browser evidence; no Founder acceptance
 // TENANT POSTURE: UUID disposable database and explicit synthetic owner/contributor
 // FAIL-CLOSED POSTURE: real source state, saved history and no model call required
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 // END OF WILSY OS SOVEREIGN ARTIFACT
-
-
