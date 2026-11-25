@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.31.0-M04-ACCOUNTABLE-TASK-HANDOFF-CERT
+ * VERSION: v1.32.0-FOUNDATION-PROGRESSIVE-DISCLOSURE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,10 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.32.0-FOUNDATION-PROGRESSIVE-DISCLOSURE-CERT
+ *            verifies that Strategy initially prioritizes its Foundation
+ *            source action while the full project register remains an
+ *            accessible intentional disclosure; source tests and IAM retained.
  * CHANGELOG: v1.31.0-M04-ACCOUNTABLE-TASK-HANDOFF-CERT
  *            certifies deterministic exact-principal next-task handoff
  *            into existing Projects task editor; no status or IAM write.
@@ -726,6 +730,15 @@ describe('Strategy source-owned project execution readback', () => {
     });
     const openCanonicalProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject: openCanonicalProject }));
+    expect(screen.getByRole('region', { name: 'Foundation Strategy execution focus' })).toBeVisible();
+    const browseProjects = screen.getByRole('button', { name: 'Browse all 1 projects' });
+    expect(browseProjects).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('table', { name: 'Verified EOS project register' })).not.toBeInTheDocument();
+    fireEvent.click(browseProjects);
+    expect(screen.getByRole('table', { name: 'Verified EOS project register' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Hide project register' })).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide project register' }));
+    expect(screen.queryByRole('table', { name: 'Verified EOS project register' })).not.toBeInTheDocument();
     fireEvent.click(await screen.findByRole('button', {
       name: /Verify task execution for WILSY OS — Unified Operating Platform Foundation/,
     }));
@@ -1062,6 +1075,7 @@ describe('Strategy source-owned project execution readback', () => {
     });
     const onOpenProject = vi.fn();
     render(wrap({ classification: 'STRATEGY', onOpenProject }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Browse all 1 projects' }));
     const findProject = await screen.findByRole('searchbox', { name: 'Find a project' });
     fireEvent.change(findProject, { target: { value: 'never-a-real-project' } });
     expect(screen.getByText(/No verified projects match this search/)).toBeVisible();
@@ -1307,7 +1321,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.31.0-M04-ACCOUNTABLE-TASK-HANDOFF-CERT
+// VERSION: v1.32.0-FOUNDATION-PROGRESSIVE-DISCLOSURE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
