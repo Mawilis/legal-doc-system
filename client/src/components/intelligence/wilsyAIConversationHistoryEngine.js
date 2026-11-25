@@ -1,5 +1,19 @@
 /* eslint-disable */
 /**
+ * TITLE: WILSY OS Conversation History Engine
+ * VERSION: v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK
+ * AUTHORITY: WILSY OS Core Governance
+ * EPITOME: Current-session history cache and authenticated EOS encrypted archival transport
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
+ * COLLABORATION / OWNERSHIP: Intelligence Dock, Python EOS history source, canonical API transport
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK verifies current authenticated principal and tenant during history recovery
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
+ * SECURITY / PRIVACY POSTURE: No browser-stored transcripts or exported secrets
+ * TENANT BOUNDARY: EOS validates principal and tenant on each archive request
+ * AUTHORITY BOUNDARY: Browser is presentation; Python EOS owns encrypted transcript history
+ * FINANCIAL AUTHORITY BOUNDARY: No paid model or financial execution
+ *
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.9.0-AUTHENTICATED-HISTORY-SCOPE-READBACK]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
