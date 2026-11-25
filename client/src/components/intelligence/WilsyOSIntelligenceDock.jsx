@@ -293,7 +293,7 @@ function parseWilsyTaskInspection(value) {
 
 /** Recognize only the deliberate, no-model task event inspection command. */
 function parseWilsyTaskActivityInspection(value) {
-  const match = /^(?:inspect|show|review)\\s+(MW-T\\d{1,3})\\s+activity[?.!]?$/i
+  const match = /^(?:inspect|show|review)\s+(MW-T\d{1,3})\s+activity[?.!]?$/i
     .exec(String(value || '').trim());
   return match ? match[1].toUpperCase() : null;
 }
@@ -1852,14 +1852,14 @@ export function WilsyOSIntelligenceDock({
             || workLocatorKeyRef.current !== locatorAtStart) return;
           const latest = events.items[0] || null;
           const summary = activityCode + ' · EOS lifecycle activity'
-            + '\\nVerified event page: ' + events.items.length
+            + '\nVerified event page: ' + events.items.length
             + (events.has_more ? ' (additional pages exist)' : ' (no more event pages)')
-            + '\\nLatest event: ' + (latest
+            + '\nLatest event: ' + (latest
               ? latest.event_type.replaceAll('_', ' ').toLowerCase() : 'no event on this page')
-            + '\\nStatus after event: ' + (latest
+            + '\nStatus after event: ' + (latest
               ? latest.status_after.replaceAll('_', ' ').toLowerCase() : 'not verified')
-            + '\\nObserved event time: ' + (latest?.occurred_at || 'not verified')
-            + '\\nPython EOS source-owned events · Read-only. No model or task command.';
+            + '\nObserved event time: ' + (latest?.occurred_at || 'not verified')
+            + '\nPython EOS source-owned events · Read-only. No model or task command.';
           let thread = activeThread;
           if (!thread?.id) {
             thread = await createWilsyAIConversationThread({
