@@ -1,11 +1,14 @@
 """TITLE: MW-T12 local Mongo consumer classification and privacy certificate.
-VERSION: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT
+VERSION: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify no credential emission, exact Atlas target classification,
          loopback/other handling and no inference of running EOS secret.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_local_consumer_probe.py
 COLLABORATION / OWNERSHIP: Existing MW-T12 read-only local listener/URI probe.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS covers
+           fresh DNS exact-three-node resolution and distinct matched
+           Wilsy Atlas socket classification without credential inference.
 CHANGELOG: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT aligns the redaction test's mocked
            socket classification with the complete v1.2.0 runtime result
            contract (recognized, loopback, other and unparsed).
@@ -43,10 +46,13 @@ def test_atlas_srv_target_redacts_credentials_and_identity(capsys, monkeypatch):
     assert info["transport"] == "SRV_TLS"
     monkeypatch.setenv("MONGODB_URI", uri)
     monkeypatch.setattr(probe, "local_listener_pids", lambda: [12345])
+    monkeypatch.setattr(probe, "resolve_wilsy_atlas_nodes",
+                        lambda: frozenset())
     monkeypatch.setattr(probe, "owned_established_mongo_peers",
                         lambda pids: {"state": "NO_ACTIVE_MONGODB_SOCKET_OBSERVED",
-                                      "recognized": "0", "loopback": "0",
-                                      "other": "0", "unparsed": "0"})
+                                      "recognized": "0", "wilsy": "0",
+                                      "loopback": "0", "other": "0",
+                                      "unparsed": "0"})
     probe.run()
     output = capsys.readouterr().out
     assert token not in output
@@ -123,7 +129,7 @@ def test_actual_eos_listener_socket_matches_reviewed_atlas(monkeypatch):
     monkeypatch.setattr(probe.subprocess, "run", fake_run)
     value = probe.owned_established_mongo_peers([789])
     assert value == {"state": "MATCHES_REVIEWED_ATLAS_NODES",
-                     "recognized": "2", "loopback": "0",
+                     "recognized": "2", "wilsy": "0", "loopback": "0",
                      "other": "0", "unparsed": "0"}
     assert all("-p" in command and "789" in command for command in observed)
     assert all("-F" in command and "n" in command for command in observed)
@@ -181,6 +187,41 @@ def test_absent_socket_is_not_proof_of_no_client(monkeypatch):
     )
 
 
+def test_wilsy_atlas_dns_resolves_exact_three_nodes(monkeypatch):
+    """Snapshot separate provider-owned node DNS without a socket mutation."""
+    import socket
+    observed = []
+
+    def fake_lookup(host, port, *, family, type, proto):
+        observed.append(host)
+        index = probe.WILSY_ATLAS_SHARDS.index(host)
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
+                 ("159.41.88." + str(10 + index), 27017))]
+
+    monkeypatch.setattr(probe.socket, "getaddrinfo", fake_lookup)
+    result = probe.resolve_wilsy_atlas_nodes()
+    assert result == frozenset({"159.41.88.10", "159.41.88.11",
+                                "159.41.88.12"})
+    assert tuple(observed) == probe.WILSY_ATLAS_SHARDS
+
+
+def test_wilsy_dns_matched_socket_is_not_test_atlas(monkeypatch):
+    """Matching separate production-project Atlas nodes is only network proof."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0,
+                 "stdout": b"n127.0.0.1:51000->159.41.88.10:27017\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers(
+        [789], frozenset({"159.41.88.10", "159.41.88.11",
+                          "159.41.88.12"}),
+    )
+    assert result["state"] == "MATCHES_WILSY_ATLAS_NODES"
+    assert result["wilsy"] == "1"
+    assert result["recognized"] == "0"
+    assert result["other"] == "0"
+
+
 def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
     monkeypatch, capsys,
 ):
@@ -195,7 +236,7 @@ def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_local_consumer_probe.py
-# VERSION: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT
+# VERSION: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS
 # AUTHORITY BOUNDARY: Mocked local evidence read only; no cloud changes.
 # TENANT POSTURE: Synthetic fixtures only.
 # FAIL-CLOSED POSTURE: Shell target never certifies a live EOS process.
