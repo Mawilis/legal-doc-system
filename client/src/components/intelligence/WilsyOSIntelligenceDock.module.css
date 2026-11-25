@@ -1211,9 +1211,60 @@
   }
 }
 
+
+/* v1.9.0-MW-T11-COMPACT-DOCK: source-first conversation, not a blocking
+ * full-height decorative panel. Expanded mode remains user controlled. */
+.intelligenceDockContainer .dockWindow:not(.dockExpanded) {
+  width:min(444px,calc(100vw - 24px));
+  height:min(535px,calc(100dvh - 116px));
+  max-height:calc(100dvh - 24px);
+  border-radius:14px;
+}
+.intelligenceDockContainer .dockExpanded {
+  width:min(620px,calc(100vw - 24px));
+  height:min(690px,calc(100dvh - 40px));
+  max-height:calc(100dvh - 24px);
+}
+.intelligenceDockContainer .historyTabContent{
+  min-height:0; flex:1; padding:12px 14px; overflow-y:auto;
+}
+.intelligenceDockContainer .historyHeaderRow{
+  display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px;
+}
+.intelligenceDockContainer .historyHeaderActions{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.intelligenceDockContainer .historyHeaderActions button{
+  min-height:36px;padding:6px 10px;border:1px solid #718cad;
+  background:#1a3552;color:#f6f9ff;border-radius:9px;
+  font-size:12px;font-weight:650;cursor:pointer;
+}
+.intelligenceDockContainer .historyHeaderActions button:hover{
+  background:#264d79;border-color:#b4d1f3;
+}
+.intelligenceDockContainer .threadsList{display:grid;gap:7px}
+.intelligenceDockContainer .threadsList .threadCard{
+  min-height:54px;padding:10px 12px;border:1px solid #516d8d;
+  border-radius:10px;background:#112a46;color:#eaf2fc;
+  text-align:left;align-items:center;gap:10px;
+}
+.intelligenceDockContainer .threadsList .threadCard:hover{
+  background:#1d3d62;border-color:#a4c8ed;
+}
+@media(max-width:600px){
+  .intelligenceDockContainer .dockWindow:not(.dockExpanded),
+  .intelligenceDockContainer .dockExpanded{
+    width:calc(100vw - 24px);
+    height:min(535px,calc(100dvh - 40px));
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .intelligenceDockContainer .historyHeaderActions button{transition:none}
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.8.0-BALANCED-FOLLOWUP-ROW
+ * VERSION: v1.9.0-MW-T11-COMPACT-DOCK
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
