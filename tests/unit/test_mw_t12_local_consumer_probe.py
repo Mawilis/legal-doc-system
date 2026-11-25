@@ -1,11 +1,14 @@
 """TITLE: MW-T12 local Mongo consumer classification and privacy certificate.
-VERSION: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION
+VERSION: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify no credential emission, exact Atlas target classification,
          loopback/other handling and no inference of running EOS secret.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_local_consumer_probe.py
 COLLABORATION / OWNERSHIP: Existing MW-T12 read-only local listener/URI probe.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT aligns the redaction test's mocked
+           socket classification with the complete v1.2.0 runtime result
+           contract (recognized, loopback, other and unparsed).
 CHANGELOG: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION certifies
            independently classified loopback, other and unparsed lsof
            records, with denial of false Atlas or live-credential proof.
@@ -42,7 +45,8 @@ def test_atlas_srv_target_redacts_credentials_and_identity(capsys, monkeypatch):
     monkeypatch.setattr(probe, "local_listener_pids", lambda: [12345])
     monkeypatch.setattr(probe, "owned_established_mongo_peers",
                         lambda pids: {"state": "NO_ACTIVE_MONGODB_SOCKET_OBSERVED",
-                                      "recognized": "0", "unrecognized": "0"})
+                                      "recognized": "0", "loopback": "0",
+                                      "other": "0", "unparsed": "0"})
     probe.run()
     output = capsys.readouterr().out
     assert token not in output
@@ -191,7 +195,7 @@ def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_local_consumer_probe.py
-# VERSION: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION
+# VERSION: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT
 # AUTHORITY BOUNDARY: Mocked local evidence read only; no cloud changes.
 # TENANT POSTURE: Synthetic fixtures only.
 # FAIL-CLOSED POSTURE: Shell target never certifies a live EOS process.
