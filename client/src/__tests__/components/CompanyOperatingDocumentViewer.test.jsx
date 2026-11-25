@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.32.1-ASYNC-FOUNDATION-READINESS-CERT
+ * VERSION: v1.33.0-TASK-FIRST-M04-EVIDENCE-MODE-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,11 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.33.0-TASK-FIRST-M04-EVIDENCE-MODE-CERT
+ *            certifies task-first M04 focus and explicit inspector mode:
+ *            source-owned next-task action visible by default, analytical
+ *            counters and implementation detail hidden until selected,
+ *            and exact task commands continue through Projects unchanged.
  * CHANGELOG: v1.32.1-ASYNC-FOUNDATION-READINESS-CERT
  *            waits for independently loaded Strategy and EOS Foundation
  *            project source before asserting disclosure controls; prevents
@@ -748,6 +753,12 @@ describe('Strategy source-owned project execution readback', () => {
     }));
     const m04 = await screen.findByRole('region', { name: 'M04 governed Strategy execution' });
     await waitFor(() => expect(m04).toHaveTextContent('Complete authorized task snapshot: 18 work records'));
+    expect(screen.getByRole('navigation', { name: 'M04 execution focus' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Continue work' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Inspect work and evidence' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: 'Inspect unassigned work' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Implementation programme and source evidence/).closest('details')?.open).toBe(false);
+
     const accountable = screen.getByRole('region', { name: 'Continue accountable Strategy work' });
     expect(within(accountable).getByText('MW-T02 — Define Operating, Platform Build and Unclassified work')).toBeVisible();
     fireEvent.click(within(accountable).getByRole('button', {
@@ -755,6 +766,9 @@ describe('Strategy source-owned project execution readback', () => {
     }));
     expect(openCanonicalProject).toHaveBeenCalledWith(projectId, { taskId: work[7].task_id });
     expect(api.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect work and evidence' }));
+    expect(screen.getByRole('button', { name: 'Inspect work and evidence' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Implementation programme and source evidence/).closest('details')?.open).toBe(true);
     expect(m04).toHaveTextContent('Unassigned work17');
     expect(m04).toHaveTextContent('Assigned in task source1');
     expect(m04).toHaveTextContent('Waiting on predecessors1');
@@ -1325,7 +1339,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.32.1-ASYNC-FOUNDATION-READINESS-CERT
+// VERSION: v1.33.0-TASK-FIRST-M04-EVIDENCE-MODE-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
