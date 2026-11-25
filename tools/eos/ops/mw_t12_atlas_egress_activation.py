@@ -1,5 +1,5 @@
 """TITLE: MW-T12 three-node Atlas outbound CloudFormation activation gate.
-VERSION: v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION
+VERSION: v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify fresh Atlas replica DNS and exact reviewed three-rule,
          outbound-only nonproduction CloudFormation change set before optional
@@ -8,6 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation dormant foundation,
          Atlas test cluster's three DNS hosts and ECS AWS read helper.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT executes the one approved
+           CloudFormation API with a shell-free empty-body acknowledgement;
+           do not parse empty AWS CLI stdout as a JSON document.
 CHANGELOG: v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION waits boundedly for CloudFormation
            UPDATE_COMPLETE without mistaking UPDATE_IN_PROGRESS for success;
            accepts AWS's coalesced same-port outbound rule representation.
@@ -28,11 +31,12 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import socket
+import subprocess
 import time
 
 from tools.eos.ops import mw_t12_task_definition_admission as aws_authority
 
-VERSION = "v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION"
+VERSION = "v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT"
 STACK = "wilsy-mwt12-nonproduction-foundation"
 CHANGE_SET = "mwt12-three-node-egress-review"
 SG_ID = "sg-05bbf379de9a0eee8"
@@ -228,10 +232,19 @@ def run(profile: str, execute: bool) -> None:
     require(fresh_dns() == cidrs, "ATLAS_NODE_DNS_CHANGED_REVIEW_REQUIRED")
     no_compute(profile)
     exact_change_set(profile)
-    aws(
-        profile, "cloudformation", "execute-change-set",
+    command = [
+        "aws", "cloudformation", "execute-change-set",
         "--stack-name", STACK, "--change-set-name", CHANGE_SET,
-    )
+        "--profile", profile, "--region", REGION, "--no-cli-pager",
+    ]
+    try:
+        execution = subprocess.run(
+            command, capture_output=True, timeout=40, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise EgressAdmissionError("CHANGE_SET_EXECUTION_UNAVAILABLE") from exc
+    require(execution.returncode == 0 and not execution.stdout,
+            "CHANGE_SET_EXECUTION_REJECTED")
     # An update can take time to propagate; never report success early.
     deadline = time.monotonic() + 150
     while True:
@@ -281,7 +294,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_egress_activation.py
-# VERSION: v1.0.1-BOUNDED-STACK-WAIT-AND-SG-NORMALIZATION
+# VERSION: v1.0.2-EMPTY-EXECUTION-ACKNOWLEDGEMENT
 # AUTHORITY BOUNDARY: Only optional exact outbound CFN egress change set.
 # TENANT POSTURE: Synthetic Atlas network only, no production data.
 # FAIL-CLOSED POSTURE: DNS/changeset/SG drift or compute denies activation.
