@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.0-SINGLE-FOCUS-M04-EXECUTION
+ * VERSION: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT removes the
+ *            redundant Foundation verification prompt after the complete
+ *            current EOS Strategy task graph is source verified; the task
+ *            workspace replaces the initial project selection surface.
  * CHANGELOG: v2.32.0-SINGLE-FOCUS-M04-EXECUTION makes
  *            verified task continuation the default M04 execution surface;
  *            operational metrics, work navigation and the existing
@@ -2003,7 +2007,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
                       <RefreshCw size={15}/> Refresh projects</button></div>
                     {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
-                    {projectState === 'READY' && foundationProject && !projectSearch.trim() && <section
+                    {projectState === 'READY' && foundationProject && !projectSearch.trim()
+                      && !(m04Execution && delivery.projectId === foundationProject.project_id) && <section
                       aria-label="Foundation Strategy execution focus"
                       className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-400/50 bg-slate-900/70 px-4 py-3 text-slate-100">
                       <div className="min-w-0">
@@ -2539,7 +2544,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.0-SINGLE-FOCUS-M04-EXECUTION
+// VERSION: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
