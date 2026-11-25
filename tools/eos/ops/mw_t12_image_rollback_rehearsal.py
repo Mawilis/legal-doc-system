@@ -1,5 +1,5 @@
 """TITLE: MW-T12 immutable local Docker image rollback rehearsal.
-VERSION: v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION
+VERSION: v1.4.1-INDEPENDENT-LOOPBACK-PORT-ALLOCATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify two provenance-labelled Python EOS Docker image identities
          against one owned persistent MongoDB volume across forward/reverse
@@ -9,6 +9,10 @@ COLLABORATION / OWNERSHIP: Extends the existing MW-T12 Git staging, immutable
          artifact admission, synthetic browser fixture, source read/deny and
          audit snapshot verification. Docker owns only names created here.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.4.1-INDEPENDENT-LOOPBACK-PORT-ALLOCATION
+           allocates the additional published EOS host port with a separate
+           bounded loopback socket probe, retaining deterministic source-port
+           tests and failing closed on duplicate or unavailable ports.
 CHANGELOG: v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION
            colocates sequential EOS image containers with the owned Mongo
            network namespace so the database URI remains genuine loopback,
@@ -60,6 +64,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import socket
 import subprocess
 import tempfile
 import time
@@ -75,7 +80,7 @@ from tools.eos.ops.mw_t12_same_data_rehearsal import (
     FIXTURE, _authenticate_unchanged, _fingerprint_fixture, _run_fixture,
 )
 
-VERSION = "v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION"
+VERSION = "v1.4.1-INDEPENDENT-LOOPBACK-PORT-ALLOCATION"
 MONGO_IMAGE = "mongo:7"
 SOURCE_LABEL = "wilsy.mwt12.source_sha"
 DRILL_LABEL = "wilsy.mwt12.disposable"
@@ -315,9 +320,19 @@ def rehearse_image(target: str) -> int:
         state_file = root / "state.json"
         database = "wilsy_l8_8m_r3_mwt12_image_" + drill
         port = _free_port()
-        eos_port = _free_port()
-        if eos_port == port:
-            raise MWRecoveryError("IMAGE_HOST_PORT_COLLISION")
+        # A distinct host listener is needed for the shared EOS/Mongo
+        # namespace. Do not reuse the mocked fixture port allocator.
+        try:
+            for _ in range(8):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                    probe.bind(("127.0.0.1", 0))
+                    eos_port = probe.getsockname()[1]
+                if eos_port != port:
+                    break
+            else:
+                raise MWRecoveryError("IMAGE_HOST_PORT_COLLISION")
+        except OSError as error:
+            raise MWRecoveryError("IMAGE_HOST_PORT_UNAVAILABLE") from error
         uri = _local_database_uri(port, database)
         env = os.environ.copy()
         for key in (
@@ -453,7 +468,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_image_rollback_rehearsal.py
-# VERSION: v1.4.0-LOOPBACK-SIDECAR-MONGO-ISOLATION
+# VERSION: v1.4.1-INDEPENDENT-LOOPBACK-PORT-ALLOCATION
 # AUTHORITY BOUNDARY: Local immutable Docker image and synthetic data only.
 # TENANT POSTURE: UUID-scoped local fixture, no canonical Founder tenant.
 # FAIL-CLOSED POSTURE: Provenance, exact HTTP, audit and cleanup are required.
