@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned EOS image ECR publication.
-VERSION: v1.0.0-COST-GATED-ECR-IMAGE-PROVENANCE
+VERSION: v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Stage two exact Git revisions, build the existing Python EOS image
          locally and publish only digest-verifiable nonproduction ECR artifacts.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Reuses infra/docker/Dockerfile.eos, its dedicated
          build-context policy, the existing MW-T12 rollback source identities,
          the CloudFormation-owned ECR repository and account budget.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK enforces account-wide Budgets endpoint,
+           verifies existing ECR tags without conflating access-denied with
+           absence, and requires known monthly budget notifications.
 CHANGELOG: v1.0.0-COST-GATED-ECR-IMAGE-PROVENANCE establishes deterministic
            Git source staging, approved budget admission, no-ECS-write
            publication, verified ECR immutable manifest digests and no secrets.
@@ -24,16 +27,14 @@ from __future__ import annotations
 
 import argparse
 from decimal import Decimal, InvalidOperation
-import io
 import json
-import os
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import tarfile
 import tempfile
 
-VERSION = "v1.0.0-COST-GATED-ECR-IMAGE-PROVENANCE"
+VERSION = "v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
 REPO = "wilsy/mwt12-eos-nonproduction"
@@ -82,7 +83,8 @@ def run(command: list[str], *, cwd: Path | None = None,
 
 def aws(*args: str, profile: str) -> dict:
     """Read only declared AWS authority, never return credentials to stdout."""
-    result = run(["aws", *args, "--profile", profile, "--region", REGION,
+    endpoint = "us-east-1" if args[0] == "budgets" else REGION
+    result = run(["aws", *args, "--profile", profile, "--region", endpoint,
                   "--output", "json", "--no-cli-pager"])
     try:
         value = json.loads(result)
@@ -122,6 +124,17 @@ def preflight(profile: str) -> str:
     require(actual >= 0 and actual < Decimal("2")
             and (projected is None or projected < cap),
             "BUDGET_PUBLICATION_HEADROOM_INSUFFICIENT")
+    notifications = aws("budgets", "describe-notifications-for-budget",
+                        "--account-id", ACCOUNT, "--budget-name", BUDGET,
+                        profile=profile).get("Notifications", [])
+    expected = {("ACTUAL", Decimal("50")), ("ACTUAL", Decimal("80")),
+                ("FORECASTED", Decimal("100"))}
+    try:
+        present = {(x["NotificationType"], Decimal(str(x["Threshold"])))
+                   for x in notifications}
+    except (KeyError, TypeError, InvalidOperation) as exc:
+        raise PublicationError("BUDGET_NOTIFICATIONS_UNVERIFIED") from exc
+    require(present == expected, "BUDGET_NOTIFICATIONS_UNVERIFIED")
     state = aws("cloudformation", "describe-stacks", "--stack-name", STACK,
                 profile=profile).get("Stacks", [])
     require(len(state) == 1 and state[0].get("StackStatus")
@@ -242,13 +255,13 @@ def publish(profile: str, current: str) -> None:
             ref = URI + ":sha-" + revision
             # Repository tags are immutable. Existing tags require a separate
             # readback decision rather than a potentially destructive overwrite.
-            result = subprocess.run(
-                ["aws", "ecr", "describe-images", "--repository-name", REPO,
-                 "--image-ids", "imageTag=sha-" + revision,
-                 "--profile", profile, "--region", REGION, "--output", "json"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                timeout=30, check=False)
-            require(result.returncode != 0, "ECR_TAG_ALREADY_EXISTS_RECONCILE")
+            images = aws("ecr", "list-images", "--repository-name", REPO,
+                         "--filter", "tagStatus=TAGGED",
+                         profile=profile).get("imageIds", [])
+            require(isinstance(images, list), "ECR_TAG_LIST_UNVERIFIED")
+            require(not any(x.get("imageTag") == "sha-" + revision
+                            for x in images if isinstance(x, dict)),
+                    "ECR_TAG_ALREADY_EXISTS_RECONCILE")
             run(["docker", "build", "--pull=false", "--platform", "linux/amd64",
                  "--file", str(source / "context/infra/docker/Dockerfile.eos"),
                  "--label", SOURCE_LABEL + "=" + revision,
@@ -297,7 +310,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_ecr_publication.py
-# VERSION: v1.0.0-COST-GATED-ECR-IMAGE-PROVENANCE
+# VERSION: v1.0.1-ACCOUNT-BUDGET-AND-TAG-READBACK
 # AUTHORITY BOUNDARY: Nonproduction ECR images only; no ECS service mutations.
 # TENANT POSTURE: No business persistence or operational credentials.
 # FAIL-CLOSED POSTURE: Unverified budget, image source or digest denies.
