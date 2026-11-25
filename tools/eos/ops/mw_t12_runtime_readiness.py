@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN
+VERSION: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION explicitly blocks
+           Atlas TCP/27017 egress when only HTTPS is allowed, rejects task
+           credential and connection misconfiguration, and retains the
+           zero-compute independent admission contract.
 CHANGELOG: v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN verifies the exact
            nonproduction subnet / main route / IGW configuration and records
            a serial, zero-launch three-phase rehearsal plan with strict limits.
@@ -32,7 +36,7 @@ import sys
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN"
+VERSION = "v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION"
 REVISIONS = (1, 2)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 
@@ -205,6 +209,19 @@ def check(profile: str) -> tuple[str, ...]:
         # DO NOT survive stop/rollback; this cannot prove persistent recovery.
         if "PERSISTENT_RECOVERY_STORAGE_NOT_VERIFIED" not in blockers:
             blockers.append("PERSISTENT_RECOVERY_STORAGE_NOT_VERIFIED")
+        # No database URI, scoped credential, or encrypted secret reference is
+        # present in either already-registered task definition. The same
+        # database must survive replacement without exposing real tenant data.
+        supplied = {item.get("name") for item in
+                    containers[0].get("environment", [])
+                    if isinstance(item, dict)}
+        require(not (supplied & {"MONGODB_URI", "MONGO_URI",
+                                 "WILSY_JWT_SECRET"}),
+                "UNREVIEWED_TASK_CREDENTIAL_CONFIGURATION")
+        require(containers[0].get("secrets") == [],
+                "UNREVIEWED_TASK_SECRET_CONFIGURATION")
+        if "SCOPED_ATLAS_MONGODB_CREDENTIAL_NOT_ADMITTED" not in blockers:
+            blockers.append("SCOPED_ATLAS_MONGODB_CREDENTIAL_NOT_ADMITTED")
         if "AUTHENTICATED_DATABASE_SOURCE_NOT_CONFIGURED" not in blockers:
             blockers.append("AUTHENTICATED_DATABASE_SOURCE_NOT_CONFIGURED")
     require(tasks[0].get("revision") < tasks[1].get("revision"),
@@ -240,6 +257,24 @@ def check(profile: str) -> tuple[str, ...]:
             and rules[0].get("ToPort") == 443,
             "SECURITY_GROUP_EGRESS_DRIFT")
     network_configuration(profile)
+    # HTTPS-only egress is sufficient for ECR/CloudWatch control transport,
+    # but blocks ordinary Atlas MongoDB TLS connections on TCP port 27017.
+    # Do not add an unrestricted 27017 rule, weaken Atlas IP allowlists or
+    # count this as a database-connection certificate.
+    mongo_allowed = any(
+        isinstance(rule, dict)
+        and rule.get("IpProtocol") in {"tcp", "-1"}
+        and (
+            rule.get("IpProtocol") == "-1"
+            or (type(rule.get("FromPort")) is int
+                and type(rule.get("ToPort")) is int
+                and rule["FromPort"] <= 27017 <= rule["ToPort"])
+        )
+        for rule in rules
+    )
+    if not mongo_allowed:
+        blockers.append("ATLAS_TCP_27017_TASK_EGRESS_DENIED")
+    blockers.append("ATLAS_TEST_CLUSTER_NETWORK_ALLOWLIST_NOT_CERTIFIED")
     blockers.append("INDEPENDENT_AUTHENTICATED_HTTP_READBACK_UNAVAILABLE")
     # ECR / CloudWatch logs require private endpoints, NAT, or public egress.
     # Nothing here authorizes a publicly exposed application endpoint.
@@ -286,7 +321,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.1.0-REAL-SUBNET-AND-BOUNDED-DRILL-PLAN
+# VERSION: v1.2.0-ATLAS-EGRESS-AND-SECRET-ADMISSION
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
