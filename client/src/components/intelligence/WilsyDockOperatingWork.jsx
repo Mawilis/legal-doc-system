@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.9.2-STRICT-CROSS-SOURCE-INTEGRITY
+ * VERSION: v1.9.3-HUMAN-READABLE-LIFECYCLE
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.3-HUMAN-READABLE-LIFECYCLE renders EOS TODO as `to do` in the task assessment, retaining the canonical status, IAM, evidence and command contracts unchanged.
  * CHANGELOG: v1.9.2-STRICT-CROSS-SOURCE-INTEGRITY validates canonical IDs, fingerprints, event authors/dates, discussion data, attachment scan state and reviewer independence before any source can be counted as verified.
  * CHANGELOG: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION shows the exact current EOS task acceptance description and lifecycle separately from evidence counts; a source-verified record or recorded discussion never automatically satisfies source-defined delivery requirements.
  * CHANGELOG: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT independently verifies bounded EOS task events, comments, attachment and approval page identities inside the embedded assessment; distinguishes recorded artifacts from certified milestone execution and offers an evidence-driven next action with no invented completion or model authority.
@@ -595,7 +596,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
           <ul className="divide-y divide-slate-100 text-sm">
             <li className="flex flex-wrap justify-between gap-2 py-2">
               <span>EOS lifecycle</span>
-              <span className="text-slate-600">{brief.status.replaceAll('_', ' ').toLowerCase()}
+              <span className="text-slate-600">{brief.status === 'TODO' ? 'to do' : brief.status.replaceAll('_', ' ').toLowerCase()}
                 {' · '}revision {envelope.source.revision}</span>
             </li>
             <li className="flex flex-wrap justify-between gap-2 py-2">
@@ -743,7 +744,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.9.2-STRICT-CROSS-SOURCE-INTEGRITY
+// VERSION: v1.9.3-HUMAN-READABLE-LIFECYCLE
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
