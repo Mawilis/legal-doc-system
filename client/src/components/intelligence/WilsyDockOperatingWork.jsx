@@ -31,7 +31,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { Link, useInRouterContext } from 'react-router-dom';
 import { sha3_512 } from 'js-sha3';
 import api from '../../services/api.js';
-import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
+import { assertUnifiedMyWorkProjection, resolveUnifiedWorkDestination } from '../../services/unifiedMyWorkProjection.js';
 import { assertDockEnvelope, draftDockPlan, createDockPlanPdf, dockTaskPath } from './wilsyDockContract.js';
 import styles from './WilsyOSIntelligenceDock.module.css';
 
@@ -663,6 +663,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
             <li key={item.source_key}>
               {(() => {
                 const reason = rankedSourceReason(item, index + 1);
+                const destination = resolveUnifiedWorkDestination(item);
                 const label = <>
                   <span aria-hidden="true" style={{
                     alignSelf: 'flex-start', paddingTop: 3, flex: '0 0 20px',
@@ -687,14 +688,11 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
                   style: { gap: 10, alignItems: 'center', minHeight: 54,
                     padding: '8px 4px', border: 0, background: 'transparent',
                     width: '100%', textAlign: 'left' } };
-                return item.source === 'PROJECTS'
+                return destination.kind === 'PROJECTS_TASK'
                   ? <button type="button" {...common}
-                    onClick={() => callbacks.current.onSelectWork?.({
-                      workspace: 'PROJECTS', project_id: item.project_id,
-                      task_id: item.work_item_id, participant_view: true,
-                    })}>{label}</button>
-                   : <DockWorkLink {...common} onNavigate={() => callbacks.current.onNavigateWork?.()} href={'/headquarters?section=my-work&work='
-                    + encodeURIComponent(item.source_key)}>{label}</DockWorkLink>;
+                    onClick={() => callbacks.current.onSelectWork?.(destination.locator)}>{label}</button>
+                  : <DockWorkLink {...common} onNavigate={() => callbacks.current.onNavigateWork?.()}
+                    href={destination.href}>{label}</DockWorkLink>;
               })()}
             </li>)}</ol>
             : <p>{view.data.sources_included.length ? 'No active work in the verified sources.' : 'No work sources were admitted for this session.'}</p>}
