@@ -47,5 +47,8 @@ export default function UnifiedTaskHeader({
  * ARTIFACT: UnifiedTaskHeader.jsx
  * VERSION: v1.0.0-CANONICAL-SOURCE-NEUTRAL-TASK-PRESENTATION
  * AUTHORITY BOUNDARY: Shared UI only; all commands remain source-owned.
+ * TENANT POSTURE: Caller validates exact tenant, principal and source identity.
+ * FAIL-CLOSED POSTURE: No actions or authority created by this presentation component.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
