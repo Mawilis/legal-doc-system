@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT
+ * VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,9 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-26.
+ * CHANGELOG: v3.14.0-NONFOUNDER-SCOPE-CERT adds a real browser
+ *          Partner session and owner-only CRM denial with independently
+ *          verified per-principal work isolation in the existing tenant.
  * CHANGELOG: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT checks the
  *          return-to-Daily-Attention origin and independently authorized
  *          CRM source-actions tab in the canonical task modal.
@@ -1001,10 +1004,100 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await context.close();
     }
   });
+
+  test(`non-Founder Partner cannot inherit Owner CRM work or completion at ${viewport.width}px`, async ({browser}) => {
+    const owner = state.actors.tenant_owner;
+    const partner = state.actors.partner;
+    const ownerHeaders = {
+      Authorization: `Bearer ${owner.access_token}`,
+      'X-Tenant-ID': state.tenant_id,
+    };
+    const partnerHeaders = {
+      Authorization: `Bearer ${partner.access_token}`,
+      'X-Tenant-ID': state.tenant_id,
+    };
+    const context = await browser.newContext({viewport});
+    const title = 'Owner-only scope browser ' + randomUUID();
+    const crmPath = '/api/crm/owner-workspace/work-items';
+    try {
+      const ownerCreation = await context.request.post(crmPath, {
+        headers: {...ownerHeaders, 'Idempotency-Key': randomUUID()},
+        data: {title, description: 'Principal isolation acceptance',
+          kind: 'TASK', priority: 'NORMAL', due_at: null},
+      });
+      expect(ownerCreation.status()).toBe(201);
+      const created = await ownerCreation.json();
+      expect(created.tenant_id).toBe(state.tenant_id);
+      expect(created.work_item_id).toMatch(/^owk_/);
+
+      const ownerProjectionResponse = await context.request.get('/api/my-work', {
+        headers: ownerHeaders,
+      });
+      expect(ownerProjectionResponse.status()).toBe(200);
+      const ownerProjection = await ownerProjectionResponse.json();
+      expect(ownerProjection.principal_id).toBe(owner.principal_id);
+      expect(ownerProjection.items.some(item =>
+        item.source_key === 'CRM:' + created.work_item_id && item.title === title
+      )).toBe(true);
+
+      const partnerProjectionResponse = await context.request.get('/api/my-work', {
+        headers: partnerHeaders,
+      });
+      expect(partnerProjectionResponse.status()).toBe(200);
+      const partnerProjection = await partnerProjectionResponse.json();
+      expect(partnerProjection.tenant_id).toBe(state.tenant_id);
+      expect(partnerProjection.principal_id).toBe(partner.principal_id);
+      expect(partnerProjection.sources_included).not.toContain('CRM');
+      expect(partnerProjection.items.some(item =>
+        item.source_key === 'CRM:' + created.work_item_id || item.title === title
+      )).toBe(false);
+
+      const partnerOwnerRead = await context.request.get('/api/crm/owner-workspace', {
+        headers: partnerHeaders,
+      });
+      expect(partnerOwnerRead.status()).toBe(403);
+      expect(await partnerOwnerRead.text()).not.toContain(title);
+      const partnerCompletion = await context.request.post(
+        crmPath + '/' + created.work_item_id + '/complete', {
+          headers: partnerHeaders,
+          data: {completion_note: 'Must not be authorized'},
+        },
+      );
+      expect(partnerCompletion.status()).toBe(403);
+
+      const foreignRead = await context.request.get('/api/my-work', {
+        headers: {...partnerHeaders, 'X-Tenant-ID': state.foreign_tenant_id},
+      });
+      expect(foreignRead.status()).toBe(403);
+      expect(await foreignRead.text()).not.toContain(title);
+
+      const page = await context.newPage();
+      await page.addInitScript(({token}) => {
+        localStorage.setItem('wilsy_auth_token', token);
+        localStorage.setItem('token', token);
+      }, {token: partner.access_token});
+      const workspaceBootstrap = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
+        && response.request().method() === 'GET');
+      await page.goto('/headquarters');
+      expect((await workspaceBootstrap).status()).toBe(200);
+      const account = page.getByRole('button', {name: 'Open account menu'});
+      await expect(account).toBeVisible();
+      await account.click();
+      const menu = page.getByRole('menu', {name: 'Account menu'});
+      await expect(menu.getByText('Synthetic Partner', {exact: true})).toBeVisible();
+      await expect(menu.getByText('Synthetic Owner', {exact: true})).toHaveCount(0);
+      await expect(page.getByText(title, {exact: true})).toHaveCount(0);
+      console.log('[NONFOUNDER-STEP]', viewport.width, 'partner-isolated');
+    } finally {
+      await context.close();
+    }
+  });
+
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT
+// VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
