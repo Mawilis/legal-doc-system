@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT
+ * VERSION: v1.22.0-ATTENTION-TASK-ORIGIN-RETURN-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.22.0-ATTENTION-TASK-ORIGIN-RETURN-CERT ensures CRM work opened from Daily attention closes back to its originating route and reopens Daily attention, never dropping into an unrelated work list.
  * CHANGELOG: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT proves exact source-verified Projects work opens the canonical Projects route and does not mutate work or open the incomplete My Work details.
  * CHANGELOG: v1.20.0-UNIFIED-MODAL-SOURCE-CAPABILITY-CERT verifies the shared Projects/My Work task-modal header, CRM capability gating, and canonical command reconciliation behind independently admitted source actions.
  * CHANGELOG: v1.19.0-SOURCE-NEUTRAL-TASK-DETAIL-CERT certifies the task-first details view with CRM actions and audit under an explicit source tab. Existing CRM update, cancel, status/revision readback regressions continue through the same authorized source-specific controls.
@@ -143,6 +144,43 @@ function RouteProbe() {
   const location = useLocation();
   return <output data-testid="current-work-route">{location.pathname + location.search}</output>;
 }
+
+describe('attention-origin task return', () => {
+  it('returns CRM task closure to its original Daily attention route instead of the My Work queue', async () => {
+    const crm = {
+      source: 'CRM', source_key: 'CRM:crm-7', work_item_id: 'crm-7',
+      title: 'Follow up with customer', description: 'Read-only CRM work',
+      status: 'OPEN', priority: 'NORMAL', kind: 'TASK', due_at: null, is_overdue: false,
+    };
+    api.get.mockResolvedValue({ data: {
+      ...payload, items: [crm], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 0, source_counts: { CRM: 1 } },
+    } });
+    const ReturnProbe = () => {
+      const route = useLocation();
+      return <output data-testid="attention-return-route">
+        {route.pathname + route.search + '|' + String(route.state?.reopenDailyAttention === true)}
+      </output>;
+    };
+    render(<AuthContext.Provider value={{ user: { id: 'principal-a', tenantId: 'tenant-a' }, sessionGeneration: 30 }}>
+      <MemoryRouter initialEntries={[{
+        pathname: '/my-work',
+        state: { focusWorkItem: 'CRM:crm-7',
+          attentionReturn: { pathname: '/headquarters', search: '?section=overview' } },
+      }]}>
+        <MyWorkWorkspace/>
+        <ReturnProbe/>
+      </MemoryRouter>
+    </AuthContext.Provider>);
+    expect(await screen.findByRole('dialog', { name: 'Work details: Follow up with customer' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Daily attention' }));
+    await waitFor(() => expect(screen.getByTestId('attention-return-route')).toHaveTextContent(
+      '/headquarters?section=overview|true'));
+    expect(screen.queryByRole('dialog', { name: 'Work details: Follow up with customer' })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+});
 
 describe('canonical source-owned project task routing', () => {
   it('opens an EOS-admitted Projects task in the Projects workspace instead of the incomplete My Work drawer', async () => {
@@ -844,7 +882,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT
+ * VERSION: v1.22.0-ATTENTION-TASK-ORIGIN-RETURN-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
