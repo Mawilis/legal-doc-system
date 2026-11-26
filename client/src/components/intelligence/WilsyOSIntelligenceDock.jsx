@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.61.3-INLINE-CONVERSATION-STATUS
+ * VERSION: v4.61.4-CONTEXTUAL-TASK-CHROME
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.61.4-CONTEXTUAL-TASK-CHROME shows the live task strip only for an explicitly operated, inspected or thread-linked task; unrelated general conversations stay clean.
  * CHANGELOG: v4.61.3-INLINE-CONVERSATION-STATUS opens with a minimal general-purpose prompt and scrolls to the current error or last answer, without a persistent task panel.
  * CHANGELOG: v4.61.2-THREAD-FOCUS-CURRENTNESS clears transient work view for new and reset threads, without changing EOS history semantics.
  * CHANGELOG: v4.61.1-EXPLICIT-WORK-LOCATOR makes Conversation navigation leave the work view and an explicitly selected task enter it without requiring a redundant click.
@@ -2771,7 +2772,9 @@ export function WilsyOSIntelligenceDock({
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
                 {!isLegalDockRole(authUser?.role) && workLocator.workspace === 'PROJECTS'
-                  && workLocator.task_id && (
+                  && workLocator.task_id
+                  && (workSurfaceOpen || conversationView === 'SOURCE'
+                    || activeThread?.workLocator?.task_id === workLocator.task_id) && (
                   <div className={styles.liveTaskStrip} role="region" aria-label="Live EOS task">
                     <div className={styles.liveTaskFacts} aria-live="polite">
                       <span className={styles.liveTaskLabel}>LIVE TASK</span>
@@ -3566,7 +3569,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.61.3-INLINE-CONVERSATION-STATUS
+ * VERSION: v4.61.4-CONTEXTUAL-TASK-CHROME
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
