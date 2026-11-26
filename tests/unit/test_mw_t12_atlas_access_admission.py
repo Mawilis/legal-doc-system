@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.4.0-OAUTH-SERVICE-ACCOUNT-ISOLATION-CERT
+VERSION: v1.5.0-HERMETIC-OAUTH-TRANSPORT-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.5.0-HERMETIC-OAUTH-TRANSPORT-CERT isolates
+           the optional HTTP transport with mock-only modules, avoiding
+           external network access or undeclared runtime test dependencies.
 CHANGELOG: v1.4.0-OAUTH-SERVICE-ACCOUNT-ISOLATION-CERT covers
            successful OAuth Bearer exchange, denied/invalid responses,
            and restriction to read-only isolated inventory.
@@ -33,6 +36,7 @@ FINANCIAL AUTHORITY BOUNDARY: No spending; Kennel EOS exclusively.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+
 
 import pytest
 
@@ -304,10 +308,29 @@ def test_atlas_admin_api_denials_are_status_only(
     assert "PRIVATE-ERROR-BODY-MUST-NOT-BE-READ" not in str(denied.value)
 
 
+def _mock_requests(monkeypatch, session_class) -> None:
+    """Inject a hermetic requests transport; no pip or actual networking."""
+    import sys
+    from types import ModuleType
+
+    request_module = ModuleType("requests")
+    auth_module = ModuleType("requests.auth")
+
+    class Basic:
+        def __init__(self, username, password):
+            self.username = username
+            self.password = password
+
+    request_module.Session = session_class
+    auth_module.HTTPBasicAuth = Basic
+    auth_module.HTTPDigestAuth = Basic
+    request_module.auth = auth_module
+    monkeypatch.setitem(sys.modules, "requests", request_module)
+    monkeypatch.setitem(sys.modules, "requests.auth", auth_module)
+
+
 def test_oauth_service_account_token_uses_ephemeral_bearer(monkeypatch) -> None:
     """Client credentials only enter TLS Basic auth, not CLI, logs or files."""
-    import requests
-
     prompts = iter(("mdb_sa_id_synthetic", "mdb_sa_sk_synthetic"))
     monkeypatch.setattr(admission, "getpass", lambda prompt: next(prompts))
     calls = []
@@ -333,7 +356,7 @@ def test_oauth_service_account_token_uses_ephemeral_bearer(monkeypatch) -> None:
         def close(self):
             self.closed = True
 
-    monkeypatch.setattr(requests, "Session", Session)
+    _mock_requests(monkeypatch, Session)
     client = admission.atlas_session("service-account")
     assert len(calls) == 1
     url, options = calls[0]
@@ -359,7 +382,6 @@ def test_oauth_denials_do_not_parse_or_log_sensitive_body(
     monkeypatch, status, code,
 ) -> None:
     """Denied OAuth token responses never disclose bodies or retry."""
-    import requests
     prompts = iter(("mdb_sa_id_mock", "mdb_sa_sk_mock"))
     monkeypatch.setattr(admission, "getpass", lambda prompt: next(prompts))
 
@@ -378,7 +400,7 @@ def test_oauth_denials_do_not_parse_or_log_sensitive_body(
         def close(self):
             self.closed = True
 
-    monkeypatch.setattr(requests, "Session", Session)
+    _mock_requests(monkeypatch, Session)
     with pytest.raises(admission.NetworkAdmissionError,
                        match="^" + code + "$") as denied:
         admission.atlas_session("service-account")
@@ -393,7 +415,6 @@ def test_oauth_denials_do_not_parse_or_log_sensitive_body(
 ])
 def test_oauth_invalid_token_contract_denies(monkeypatch, payload) -> None:
     """Malformed token fields cannot become Authorization Bearer."""
-    import requests
     prompts = iter(("mdb_sa_id_mock", "mdb_sa_sk_mock"))
     monkeypatch.setattr(admission, "getpass", lambda prompt: next(prompts))
 
@@ -411,7 +432,7 @@ def test_oauth_invalid_token_contract_denies(monkeypatch, payload) -> None:
         def close(self):
             pass
 
-    monkeypatch.setattr(requests, "Session", Session)
+    _mock_requests(monkeypatch, Session)
     with pytest.raises(admission.NetworkAdmissionError,
                        match="^ATLAS_OAUTH_TOKEN_INVALID$"):
         admission.atlas_session("service-account")
@@ -434,7 +455,7 @@ def test_oauth_service_account_isolation_only_refuses_mutations(
 
 
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.4.0-OAUTH-SERVICE-ACCOUNT-ISOLATION-CERT
+# VERSION: v1.5.0-HERMETIC-OAUTH-TRANSPORT-CERT
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
