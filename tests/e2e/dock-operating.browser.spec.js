@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Authenticated Dock Operating Browser Certificate
- * VERSION: v1.3.0
+ * VERSION: v1.4.0
  * AUTHORITY: Disposable synthetic browser/EOS/Mongo evidence only.
  * EPITOME: Advance real source-owned work from the Dock and recover encrypted task conversations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/dock-operating.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing browser harness, canonical EOS, Projects and Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.4.0 recognizes source-owned desktop conversation continuity before mobile task selection, instead of treating an EOS-restored task as a fresh My Work queue.
  * CHANGELOG: v1.3.0 certifies on-demand authorized My Work hydration at both desktop and mobile before injecting the synthetic task locator; preserves real EOS commands, loss/reconcile and independent readback.
  * CHANGELOG: v1.2.0 verifies conversation is primary and work is an explicit replaceable view, preserving authenticated desktop/mobile task selection.
  * CHANGELOG: v1.1.0 certifies mobile lost-response recovery using a real EOS POST, browser reload, and receipt-only reconciliation without a second command.
@@ -70,16 +71,24 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     };
     try {
       await page.goto('/discovery', { waitUntil: 'domcontentloaded' }); await mount();
-      // Both viewports must certify the actual on-demand source feed before
-      // dispatching a context locator. A mounted launcher alone is not proof
-      // that its independently authenticated effects have settled.
+      // Both viewports share the same independently authenticated principal.
+      // Desktop starts with no saved task, but after its journey EOS owns a
+      // durable task-linked conversation. Mobile must first hydrate that saved
+      // conversation rather than assume a fresh Headquarters attention queue.
       await expect(page.getByRole('region', { name: 'Needs your attention' })).toHaveCount(0);
-      await page.getByRole('button', { name: 'Work', exact: true }).click();
-      const attention = page.getByRole('region', { name: 'Needs your attention' });
-      await expect(attention.getByRole('heading', { name: 'Needs your attention' })).toBeVisible();
-      await expect(attention).toContainText('MW-T11 browser alignment');
-      await page.getByRole('button', { name: 'Back to chat' }).click();
-      await expect(attention).toHaveCount(0);
+      if (viewport.width === 1440) {
+        await page.getByRole('button', { name: 'Work', exact: true }).click();
+        const attention = page.getByRole('region', { name: 'Needs your attention' });
+        await expect(attention.getByRole('heading', { name: 'Needs your attention' })).toBeVisible();
+        await expect(attention).toContainText('MW-T11 browser alignment');
+        await page.getByRole('button', { name: 'Back to chat' }).click();
+        await expect(attention).toHaveCount(0);
+      } else {
+        await page.getByRole('button', { name: 'Recent conversations' }).click();
+        await expect(page.getByRole('button', { name: /^Open conversation/ }).first())
+          .toContainText('Saved in EOS');
+        await page.getByRole('button', { name: 'Conversation', exact: true }).click();
+      }
       const selectTask = async () => page.evaluate(({ tenant, principal, project, task }) => {
         window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
           tenantId: tenant, principalId: principal,
@@ -161,7 +170,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 // ARTIFACT: dock-operating.browser.spec.js
-// VERSION: v1.3.0
+// VERSION: v1.4.0
 // AUTHORITY BOUNDARY: authenticated synthetic browser evidence; no Founder acceptance
 // TENANT POSTURE: UUID disposable database and explicit synthetic owner/contributor
 // FAIL-CLOSED POSTURE: real source state, saved history and no model call required
