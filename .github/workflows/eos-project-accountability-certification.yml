@@ -217,6 +217,9 @@ jobs:
       - name: Restore locked client dependencies
         working-directory: client
         run: npm ci --include=dev --no-audit --no-fund --progress=false
+      - name: Certify canonical Projects CSS source in Node
+        working-directory: client
+        run: node --test scripts/certify-projects-workspace-css.mjs
       - name: Certify project source-backed interaction
         working-directory: client
         run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx src/__tests__/components/ProjectApprovalInbox.test.jsx src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx src/__tests__/components/AssignedProjectsWorkspace.test.jsx src/__tests__/services/unifiedMyWorkProjection.test.js
