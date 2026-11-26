@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER
+ * VERSION: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
  *          existing source-owned comment editor directly under the action
  *          bar and replaces the timeline while writing. Opening explicitly
@@ -255,6 +256,8 @@ export default function ProjectTaskCommentsPanel({
   const [showComposer, setShowComposer] = useState(false);
   const [showTaskEvidence, setShowTaskEvidence] = useState(false);
   const [body, setBody] = useState('');
+  const [correction, setCorrection] = useState(null);
+  const [correctionReason, setCorrectionReason] = useState('');
   const [mentions, setMentions] = useState([]);
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
@@ -453,6 +456,8 @@ export default function ProjectTaskCommentsPanel({
     navigatedScope.current = null;
     setBody('');
     setMentions([]);
+    setCorrection(null);
+    setCorrectionReason('');
     setOffset(0);
     setHasMore(false);
     command.current = { fingerprint: '', key: '' };
@@ -521,8 +526,24 @@ export default function ProjectTaskCommentsPanel({
   const submit = async event => {
     event.preventDefault();
     if (state !== 'READY' || busy) return;
-    const text = body.trim();
-    if (!text || text.length > 5000) return;
+    const edited = body.trim();
+    const reason = correctionReason.trim();
+    if (correction && (reason.length < 10 || reason.length > 500
+      || edited === correction.body.trim())) {
+      setError('Provide a correction reason (10–500 characters) and change the original text.');
+      return;
+    }
+    // This is a new, linked EOS record. The original comment remains immutable.
+    const text = correction
+      ? '**Correction to earlier project activity**\n'
+        + 'Original comment: ' + correction.comment_id + '\n'
+        + '**Reason:** ' + reason + '\n'
+        + '**Corrected update:**\n' + edited
+      : edited;
+    if (!text || text.length > 5000) {
+      setError('The correction exceeds the EOS 5,000-character comment limit.');
+      return;
+    }
     if (mentions.some(person => !participants.some(item => item.principal_id === person))) {
       setError('Mention recipient is not in the verified project participant page.');
       return;
@@ -539,6 +560,22 @@ export default function ProjectTaskCommentsPanel({
     setBusy(true);
     setError('');
     try {
+      if (correction) {
+        // Re-read the exact current EOS page before appending a linked
+        // correction. Never let a stale or foreign comment be amended.
+        const { data: source } = await api.get(route + '?limit=50&offset=' + offset, { headers });
+        if (source?.schema !== LIST || source.tenant_id !== tenantId
+          || source.project_id !== projectId || source.task_id !== taskId
+          || source.principal_id !== principalId || source.offset !== offset
+          || !Array.isArray(source.items)
+          || !source.items.some(item => checkComment(item, tenantId, projectId, taskId)
+            && item.comment_id === correction.comment_id
+            && item.fingerprint === correction.fingerprint
+            && item.author_principal_id === principalId)) {
+          throw new Error('PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED');
+        }
+      }
+      if (currentScope.current !== active) return;
       const { data } = await api.post(route, { body: text, mentions }, {
         headers: { ...headers, 'Idempotency-Key': command.current.key },
       });
@@ -554,6 +591,8 @@ export default function ProjectTaskCommentsPanel({
       command.current = { fingerprint: '', key: '' };
       setBody('');
       setMentions([]);
+      setCorrection(null);
+      setCorrectionReason('');
       setShowComposer(false);
     } catch (cause) {
       if (currentScope.current !== active) return;
@@ -571,7 +610,9 @@ export default function ProjectTaskCommentsPanel({
       const serverReason = typeof detail === 'string'
         && Object.prototype.hasOwnProperty.call(safeCodes, detail)
         ? safeCodes[detail] : null;
-      setError(code === 403 ? 'EOS denied your task comment.'
+      setError(cause?.message === 'PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED'
+        ? 'The original comment could not be independently reverified. Refresh its activity before correcting it.'
+        : code === 403 ? 'EOS denied your task comment.'
         : code === 409 ? 'Mention eligibility or replay changed. Refresh and reconcile.'
           : code === 422 ? 'EOS rejected the comment input'
             + (safeFields.length ? ': ' + safeFields.join(', ') : '.')
@@ -628,6 +669,10 @@ export default function ProjectTaskCommentsPanel({
         {state === 'READY' && <button type="button" className={ACTIVITY_ACTION_CLASS} aria-expanded={showComposer}
           aria-controls="task-comment-composer" onClick={() => {
             setShowTaskEvidence(false);
+            if (showComposer) {
+              setCorrection(null);
+              setCorrectionReason('');
+            }
             setShowComposer(current => !current);
           }}>
           {showComposer ? 'Close editor' : 'Write update'}
@@ -645,7 +690,17 @@ export default function ProjectTaskCommentsPanel({
       {showComposer && <div id="task-comment-composer" ref={composerRef}
         className="scroll-mt-28" role="region" aria-label="Write a progress update">
       <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
-        <label className="block text-sm font-semibold text-slate-800">Write a progress update
+        {correction && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-slate-900">
+          <strong>Correct an existing entry · append-only audit</strong>
+          <p className="mt-1 text-xs">The original stays in EOS. Your revised text will be published as a new linked correction after the original is reverified.</p>
+          <label className="mt-3 block font-semibold">Reason for correction
+            <input aria-label="Reason for correction" required minLength={10} maxLength={500}
+              value={correctionReason} onChange={event => setCorrectionReason(event.target.value)}
+              placeholder="For example: Posted to MW-T09 instead of MW-T11"
+              className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm"/>
+          </label>
+        </div>}
+        <label className="block text-sm font-semibold text-slate-800">{correction ? 'Corrected update' : 'Write a progress update'}
           <textarea ref={composerInputRef} aria-label="New task comment" required rows={5}
             maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
             placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
@@ -677,7 +732,9 @@ export default function ProjectTaskCommentsPanel({
           <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
         </fieldset>
         <button className={ACTIVITY_ACTION_CLASS + " wp-button-primary"} type="submit"
-          disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
+          disabled={busy || !body.trim() || Boolean(correction && correctionReason.trim().length < 10)}>
+          <Send size={14}/> {correction ? 'Publish correction to EOS' : 'Publish to EOS'}
+        </button>
       </form>
       </div>}
       {!showComposer && <>
@@ -725,6 +782,20 @@ export default function ProjectTaskCommentsPanel({
             <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
               onClick={onViewAttachments}>Open governed attachment</button>}
           {entry.type === 'comment' && <ActivityCommentBody value={entry.item.body}/>}
+          {entry.type === 'comment' && entry.item.author_principal_id === principalId
+            && state === 'READY' && <button type="button" disabled={busy}
+              className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-blue-800 underline hover:bg-blue-50"
+              onClick={() => {
+                setCorrection({ comment_id: entry.item.comment_id,
+                  fingerprint: entry.item.fingerprint, body: entry.item.body });
+                setCorrectionReason('');
+                setBody(entry.item.body);
+                setMentions([]);
+                setShowComposer(true);
+                setShowTaskEvidence(false);
+                setError('');
+                command.current = { fingerprint: '', key: '' };
+              }}>Correct entry</button>}
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
         </li>)}
@@ -781,7 +852,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER
+// VERSION: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
