@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY
+ * VERSION: v1.39.0-ATTENTION-ORIGIN-RETURN
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.39.0-ATTENTION-ORIGIN-RETURN closes source tasks back to the actual originating Daily Attention route rather than dropping the principal into a different My Work list; draft/command safeguards remain.
  * CHANGELOG: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY routes source-key-only Projects attention handoffs through an independently EOS-verified My Work record before entering the canonical Projects task, never inferring a project ID from a paginated attention result.
  * CHANGELOG: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING opens verified Projects tasks in their source-owned Projects panel. Fixes modal title contrast and duplicate due-date prefix; source commands and IAM remain unchanged.
  * CHANGELOG: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS applies the shared Projects readiness component to all admitted My Work sources, retiring the remaining duplicate legacy metadata/provenance panel; source-specific completion commands remain governed in EOS.
@@ -725,6 +726,13 @@ export default function MyWorkWorkspace(props = {}) {
     setActionError('');
     setCrmEditNotice(null);
     setSelectedKey(null);
+    const origin = location.state?.attentionReturn;
+    if (origin && typeof origin.pathname === 'string'
+      && origin.pathname.startsWith('/') && !origin.pathname.startsWith('//')
+      && typeof origin.search === 'string') {
+      navigate({ pathname: origin.pathname, search: origin.search },
+        { state: { reopenDailyAttention: true } });
+    }
   }
 
   const discardDraftAndClose = () => {
@@ -1043,7 +1051,8 @@ export default function MyWorkWorkspace(props = {}) {
             <UnifiedTaskHeader kind="Task" source={SOURCE_LABELS[selectedItem.source] || selectedItem.source}
               title={selectedItem.title} status={statusLabel(selectedItem)}
               due={formatWorkDue(selectedItem)}
-              owner={null} onClose={requestClose} closeRef={closeButtonRef} closeLabel="Back to work"
+              owner={null} onClose={requestClose} closeRef={closeButtonRef}
+              closeLabel={location.state?.attentionReturn ? 'Back to Daily attention' : 'Back to work'}
               primaryControl={taskDetailTab === 'SOURCE'
                 ? <button type="button" onClick={() => setTaskDetailTab('DETAILS')}
                     className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-blue-800">
@@ -1762,7 +1771,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY
+ * VERSION: v1.39.0-ATTENTION-ORIGIN-RETURN
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
