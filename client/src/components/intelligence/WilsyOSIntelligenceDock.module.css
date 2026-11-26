@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.19.0-EOS-COMMENT-INLINE-DISCLOSURE
+ * VERSION: v1.20.0-CONVERSATION-COMMAND-BAR
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.20.0-CONVERSATION-COMMAND-BAR styles small, functional conversation-level New conversation and Clear chat controls separately from archived history management.
  * CHANGELOG: v1.19.0-EOS-COMMENT-INLINE-DISCLOSURE styles inline comment readback and full text without introducing a new overlay or changing authority.
  * CHANGELOG: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY adds compact full-width verified source answers and an independent quiet provenance footer, with mobile wrapping and no layout effects on archived transcript authority.
  * CHANGELOG: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY sets a modest, sentence-case welcome prompt and removes the obsolete oversized provider disclaimer treatment.
@@ -1799,9 +1800,62 @@
   font-size:13px;
 }
 
+/* Chat commands are in the conversation itself; archive commands remain in History. */
+.intelligenceDockContainer .conversationCommandBar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:6px 12px;
+  padding:6px 14px;
+  border-bottom:1px solid rgba(150,180,214,.13);
+  flex-shrink:0;
+}
+.intelligenceDockContainer .conversationCommandLabel {
+  color:#a9bfd7;
+  font-size:11px;
+  font-weight:500;
+}
+.intelligenceDockContainer .conversationCommandActions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+.intelligenceDockContainer .conversationCommandButton {
+  appearance:none;
+  border:1px solid rgba(161,192,228,.28);
+  border-radius:8px;
+  background:transparent;
+  color:#e3edf8;
+  padding:5px 9px;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:12px;
+  font-weight:500;
+  cursor:pointer;
+}
+.intelligenceDockContainer .conversationCommandButton:hover {
+  background:rgba(100,153,214,.13);
+}
+.intelligenceDockContainer .conversationCommandButton:focus-visible {
+  outline:2px solid #e7c978;
+  outline-offset:2px;
+}
+.intelligenceDockContainer .conversationCommandButton:disabled {
+  opacity:.48;
+  cursor:not-allowed;
+}
+@media(max-width:480px) {
+  .intelligenceDockContainer .conversationCommandLabel {display:none}
+  .intelligenceDockContainer .conversationCommandBar {justify-content:flex-end;padding:6px 9px}
+  .intelligenceDockContainer .conversationCommandButton {font-size:11px}
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.19.0-EOS-COMMENT-INLINE-DISCLOSURE
+ * VERSION: v1.20.0-CONVERSATION-COMMAND-BAR
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
