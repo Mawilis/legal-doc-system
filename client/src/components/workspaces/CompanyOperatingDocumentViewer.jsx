@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.33.0-RETURN-TO-GOVERNED-M04
+ * VERSION: v2.33.1-M04-RETURN-PROGRESS
+ * CHANGELOG: v2.33.1-M04-RETURN-PROGRESS retains the M04 document shell on a Strategy-origin return and explains the still-pending EOS publication and task verification, rather than showing an empty full-screen spinner or stale execution counts.
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -1776,7 +1777,19 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
             <button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}>Retry source read</button>
             <p className={styles.boundaryNote}>Company document access and publication are governed independently. The source-verified canonical Founder may ratify Strategy; other principals require separately authorized publication.</p>
           </section>}
-          {loading ? <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>
+          {loading ? (classification === 'STRATEGY' && new URLSearchParams(location.search).get('resumeM04') === '1'
+              ? <section role="status" aria-label="Returning to Strategy M04" className="mx-auto w-full max-w-5xl px-5 py-8 text-slate-100 sm:px-8">
+                  <p className="text-xs font-medium text-amber-200">Our Strategy / M04 · Governed execution</p>
+                  <h2 className="mt-3 text-xl font-semibold">Returning to your execution workspace</h2>
+                  <div className="mt-5 flex items-center gap-3 text-sm text-slate-300">
+                    <Loader2 className={styles.spin} size={19} aria-hidden="true"/>
+                    <span>Rechecking the authorized Strategy publication and Foundation work source…</span>
+                  </div>
+                  <p className="mt-3 max-w-2xl text-sm text-slate-400">
+                    Your previously selected task is unchanged. Current project, task and Strategy facts will appear only after EOS verifies them.
+                  </p>
+                </section>
+              : <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>)
             : error ? null : tab === 'history' ? <section className={styles.paper}><h2>Revision history</h2><p>Only revisions permitted for your current company capacity appear here.</p>{currentHistory?.items.length ? currentHistory.items.map(item => <button className={styles.revisionRow} key={item.revision} type="button" onClick={() => changeQuery({ review: query.review, revision: item.revision })}><FileText size={18}/><span><strong>Version {item.document_version} · revision {item.revision}</strong><small>{item.state} · {displayDate(item.recorded_at)}</small></span><ArrowUpRight size={15}/></button>) : !error && <p>No permitted revisions are available.</p>}</section>
               : data && <>
                 {!executionFirst && <nav className={styles.commandDeck} aria-label="Company document actions">
@@ -2625,7 +2638,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.33.0-RETURN-TO-GOVERNED-M04
+// VERSION: v2.33.1-M04-RETURN-PROGRESS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
