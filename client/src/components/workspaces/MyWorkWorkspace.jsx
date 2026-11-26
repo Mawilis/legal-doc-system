@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS
+ * VERSION: v1.34.0-CANONICAL-TASK-MODAL
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.34.0-CANONICAL-TASK-MODAL uses the shared Projects task header and modal interaction for My Work, with source-specific CRM controls hidden until independently authorized. Data/commands remain in the original EOS registry; no source migration or new AI entitlement.
  * CHANGELOG: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS makes CRM work open as a task-first, light, tabbed execution surface. The independently authorized CRM editor, status actions and history remain available under explicit Source actions & history. No CRM record is masqueraded as a Projects task, and EOS ownership and readback are unchanged.
  * CHANGELOG: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY restores the
  *          prior direct EOS queue GET because existing source-owned queue
@@ -172,6 +173,7 @@
  *                     independently authorizes its existing completion command.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
+import UnifiedTaskHeader from './UnifiedTaskHeader.jsx';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkTaskBlueprintRow, workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 import {
@@ -318,6 +320,7 @@ export default function MyWorkWorkspace(props = {}) {
   const rowRefs = useRef(new Map());
   const [selectedKey, setSelectedKey] = useState(null);
   const [taskDetailTab, setTaskDetailTab] = useState('DETAILS');
+  const [crmTaskCapability, setCrmTaskCapability] = useState({ key: null, edit: false, complete: false });
   const closeButtonRef = useRef(null);
   const queueHeadingRef = useRef(null);
   const previousSelectedRef = useRef(null);
@@ -517,6 +520,33 @@ export default function MyWorkWorkspace(props = {}) {
   }), [items]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
   const admittedSources = projection?.sources_included || [];
+  // Work source admission is NOT permission to edit or complete that source.
+  // Only a fresh, exact-principal capability result can expose CRM controls.
+  useEffect(() => {
+    const item = selectedItem;
+    if (item?.source !== 'CRM' || !authUser?.tenantId || !authUser?.id) {
+      setCrmTaskCapability({ key: null, edit: false, complete: false });
+      return undefined;
+    }
+    const key = scopeKey + ':' + item.source_key;
+    let active = true;
+    setCrmTaskCapability({ key: null, edit: false, complete: false });
+    readAttentionSourceActions({ tenantId: authUser.tenantId, principalId: authUser.id }, ['CRM'])
+      .then(result => {
+        if (!active || scopeRef.current !== scopeKey) return;
+        const actions = result?.unavailableSources?.includes('CRM')
+          ? [] : result?.sourceActions?.CRM || [];
+        setCrmTaskCapability({ key,
+          edit: Array.isArray(actions) && actions.includes('UPDATE'),
+          complete: Array.isArray(actions) && actions.includes('COMPLETE') });
+      }).catch(() => {
+        if (active) setCrmTaskCapability({ key: null, edit: false, complete: false });
+      });
+    return () => { active = false; };
+  }, [selectedItem?.source_key, selectedItem?.source, scopeKey, authUser?.tenantId, authUser?.id]);
+  const crmActionsAdmitted = selectedItem?.source === 'CRM'
+    && crmTaskCapability.key === scopeKey + ':' + selectedItem.source_key
+    && crmDetailState === 'VERIFIED';
   const openCount = items.filter((item) => item.status === 'OPEN').length;
   const progressCount = items.filter((item) => item.status === 'IN_PROGRESS').length;
   const dueTodayCount = useMemo(() => {
@@ -623,15 +653,13 @@ export default function MyWorkWorkspace(props = {}) {
   useEffect(() => {
     if (!selectedKey) return undefined;
     const onKeyDown = (event) => {
-      const modeless = window.innerWidth >= 768;
       const dialog = document.getElementById('my-work-detail-dialog');
-      if (modeless && !dialog?.contains(document.activeElement)) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         requestClose();
         return;
       }
-      if (event.key !== 'Tab' || modeless) return;
+      if (event.key !== 'Tab') return;
       const focusable = dialog?.querySelectorAll(
         'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
       );
@@ -972,35 +1000,30 @@ export default function MyWorkWorkspace(props = {}) {
       </main>
 
       {selectedItem && (
-        <section className="wilsy-source-task-focus px-3 py-4 sm:px-6" aria-label="Selected authorised work">
-          <aside id="my-work-detail-dialog" role="region" aria-labelledby="my-work-detail-title"
+        <section className="wilsy-source-task-focus fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/55 p-3 sm:p-6"
+          aria-label="Selected authorised work" onMouseDown={event => {
+            if (event.target === event.currentTarget) requestClose();
+          }}>
+          <aside id="my-work-detail-dialog" role="dialog" aria-modal="true"
+            aria-label={'Work details: ' + selectedItem.title}
             aria-describedby="my-work-detail-description"
-            className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[#d5dfef] bg-white shadow-sm">
-            <header className="flex items-start justify-between gap-3 border-b border-[#d5dfef] px-4 py-4 sm:px-6">
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">Task · {SOURCE_LABELS[selectedItem.source] || selectedItem.source} work</p>
-                <h2 id="my-work-detail-title" className="mt-1 break-words text-xl font-semibold text-white">{selectedItem.title}</h2>
-              </div>
-              <button ref={closeButtonRef} type="button" onClick={requestClose} aria-label="Back to work"
-                className="shrink-0 rounded-lg border border-[#c9d6e8] bg-white px-3 py-2 text-sm font-semibold text-[#18365f] hover:bg-[#eef5ff]">
-                ← Back to work
-              </button>
-            </header>
-
-            <nav className="flex flex-wrap gap-2 border-b border-[#d5dfef] px-4 py-3 sm:px-6" aria-label="Task work views">
-              <button type="button" aria-pressed={taskDetailTab === 'DETAILS'}
-                onClick={() => setTaskDetailTab('DETAILS')}
-                className="min-h-10 rounded-lg border border-[#c9d6e8] bg-white px-4 text-sm font-medium text-[#18365f] aria-pressed:bg-[#1747ce] aria-pressed:text-white">
-                Details
-              </button>
-              {selectedItem.source === 'CRM' && <button type="button"
-                aria-pressed={taskDetailTab === 'SOURCE'}
-                onClick={() => setTaskDetailTab('SOURCE')}
-                className="min-h-10 rounded-lg border border-[#c9d6e8] bg-white px-4 text-sm font-medium text-[#18365f] aria-pressed:bg-[#1747ce] aria-pressed:text-white">
-                Source actions &amp; history
-              </button>}
-            </nav>
-            <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
+            className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
+            <UnifiedTaskHeader kind="Task" source={SOURCE_LABELS[selectedItem.source] || selectedItem.source}
+              title={selectedItem.title} status={statusLabel(selectedItem)}
+              due={formatWorkDue(selectedItem) === 'Not set' ? 'No due date' : 'Due ' + formatWorkDue(selectedItem)}
+              owner={null} onClose={requestClose} closeLabel="Back to work"
+              primaryControl={taskDetailTab === 'SOURCE'
+                ? <button type="button" onClick={() => setTaskDetailTab('DETAILS')}
+                    className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-blue-800">
+                    Task details
+                  </button> : null}
+              actions={selectedItem.source === 'CRM' && crmActionsAdmitted && crmTaskCapability.edit
+                ? <button type="button" onClick={() => setTaskDetailTab('SOURCE')}
+                    className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-blue-800"
+                    aria-label="Authorized CRM source actions & history">Source actions &amp; history</button>
+                : null}
+            />
+            <div className="min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded border border-amber-300/25 bg-amber-300/[0.07] px-2 py-1 text-xs text-amber-100">{SOURCE_LABELS[selectedItem.source] || selectedItem.source}</span>
                 <span className={`rounded border px-2 py-1 text-xs font-semibold ${PRIORITY_STYLE[selectedItem.priority] || PRIORITY_STYLE.NORMAL}`}>{selectedItem.priority}</span>
@@ -1033,13 +1056,14 @@ export default function MyWorkWorkspace(props = {}) {
               {selectedItem.source === 'CRM' && taskDetailTab === 'DETAILS' && (
                 <p role="status" className="text-xs text-slate-600">
                   {crmDetailState === 'VERIFIED'
-                    ? 'Current CRM record independently verified by EOS. Source-owned edit and history controls are available in Source actions & history.'
+                    ? 'Current task source independently verified by EOS. No CRM editing or completion authority is inferred from task visibility.'
                     : crmDetailState === 'UNAVAILABLE'
                       ? 'CRM source detail could not be verified. Review the source status before editing.'
                       : 'Verifying CRM source record independently with EOS…'}
                 </p>
               )}
-              {selectedItem.source === 'CRM' && taskDetailTab === 'SOURCE' && (
+              {selectedItem.source === 'CRM' && taskDetailTab === 'SOURCE'
+                && crmActionsAdmitted && crmTaskCapability.edit && (
                 <section aria-label="Verified CRM source record"
                   className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
                   <h3 className="text-sm font-semibold text-white">CRM source record</h3>
@@ -1162,7 +1186,8 @@ export default function MyWorkWorkspace(props = {}) {
                       className="min-h-10 min-w-0 rounded-lg border border-white/15 bg-black/20 px-3 font-mono text-xs text-white outline-none focus:border-amber-300" />
                   </label>
                 </section>
-              ) : completionPath(selectedItem) ? (
+              ) : completionPath(selectedItem)
+                && (selectedItem.source !== 'CRM' || (crmActionsAdmitted && crmTaskCapability.complete)) ? (
                 <label className="grid min-w-0 gap-1 border-t border-white/10 pt-4 text-xs text-slate-300">
                   Completion note <span className="text-slate-500">(required by this source)</span>
                   <textarea value={notes[selectedItem.source_key] || ''}
@@ -1186,7 +1211,9 @@ export default function MyWorkWorkspace(props = {}) {
               )}
             </div>
 
-            {completionPath(selectedItem) || selectedItem.source === 'LEGAL' ? (
+            {(selectedItem.source === 'LEGAL'
+              || (completionPath(selectedItem)
+                && (selectedItem.source !== 'CRM' || (crmActionsAdmitted && crmTaskCapability.complete)))) ? (
               <footer className="border-t border-white/10 p-4 sm:p-6">
                 <button type="button" onClick={() => complete(selectedItem)}
                   disabled={completing === selectedItem.source_key || closeGuard
@@ -1701,7 +1728,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS
+ * VERSION: v1.34.0-CANONICAL-TASK-MODAL
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
