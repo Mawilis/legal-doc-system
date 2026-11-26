@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.28.1-IN-CONTEXT-STRATEGY-NAV-CERT
+ * VERSION: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT verifies a Headquarters Projects work row routes directly to its task and never selects the assigned-projects view.
  * CHANGELOG: v1.28.1-IN-CONTEXT-STRATEGY-NAV-CERT requires the M04 breadcrumb and primary action inside canonical Projects navigation, and rejects spurious return nav for ordinary Projects.
  * CHANGELOG: v1.28.0-STRATEGY-RETURN-CERT certifies the exact Strategy-originated Projects return action and its absence for ordinary Projects; only presentation routing changes.
  * CHANGELOG: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT asserts the
@@ -100,7 +101,7 @@ import {
   currentUnifiedMyWorkScope,
   invalidateUnifiedMyWork,
 } from '../../services/unifiedMyWorkSync.js';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
 vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
@@ -208,10 +209,16 @@ vi.mock('../../services/api.js', () => ({
   },
 }));
 
+const HeadquartersRouteProbe = () => {
+  const route = useLocation();
+  return <output data-testid="hq-canonical-route">{route.pathname + route.search}</output>;
+};
+
 const renderHeadquarters = (initialEntries = ['/'], authValue = auth, tenantIdValue = exactTenant) => render(
   <AuthContext.Provider value={authValue}>
     <MemoryRouter initialEntries={initialEntries}>
       <WilsyHeadquartersWorkspace tenantId={tenantIdValue}/>
+      <HeadquartersRouteProbe/>
     </MemoryRouter>
   </AuthContext.Provider>,
 );
@@ -286,6 +293,13 @@ describe('WILSY Headquarters authenticated shell', () => {
       }));
       expect(document.querySelector('.hq-subworkspace')).toBeTruthy();
       expect(screen.queryByTestId('my-work-focus')).toBeNull();
+      const route = screen.getByTestId('hq-canonical-route');
+      await waitFor(() => expect(route.textContent).toContain('section=projects'));
+      const params = new URLSearchParams(route.textContent.split('?')[1]);
+      expect(params.get('project')).toBe('prj-' + 'a'.repeat(48));
+      expect(params.get('task')).toBe('ptk-' + 'c'.repeat(48));
+      expect(params.get('view')).not.toBe('assigned');
+      expect(screen.queryByRole('heading', { name: 'My assigned projects' })).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Products & R&D' }));
       expect(screen.getByRole('button', { name: 'Projects & Delivery' })).toHaveAttribute('aria-current', 'page');
       expect(screen.queryByRole('region', { name: 'Selected work record' })).toBeNull();
@@ -1009,7 +1023,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.28.1-IN-CONTEXT-STRATEGY-NAV-CERT
+ * VERSION: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
