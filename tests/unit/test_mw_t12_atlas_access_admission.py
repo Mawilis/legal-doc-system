@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.0.1-PUBLIC-IP-MOCK-FIXTURE-VALIDATION
+VERSION: v1.1.0-READONLY-ISOLATION-DENIAL-TEST
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-READONLY-ISOLATION-DENIAL-TEST guards against
+           wildcard, broader, duplicate, unattributed and private network
+           inventory without making Atlas requests or launching ECS.
 CHANGELOG: v1.0.1-PUBLIC-IP-MOCK-FIXTURE-VALIDATION selects a globally routable
            mock-only public IPv4 so strict source-IP checks are exercised;
            no live network activity or Atlas mutation.
@@ -206,8 +209,40 @@ def test_invalid_task_arn_fails_without_aws_or_atlas(monkeypatch) -> None:
         admission.public_source_ip("wilsy-legal-cert", "other-task")
 
 
+@pytest.mark.parametrize("entries,denial", [
+    ([{"cidrBlock": "0.0.0.0/0", "comment": "test"}],
+     "ATLAS_PUBLIC_NETWORK_WILDCARD_PRESENT"),
+    ([{"cidrBlock": "8.8.8.0/24", "comment": "test"}],
+     "ATLAS_NONEXACT_OR_NONGLOBAL_NETWORK"),
+    ([{"cidrBlock": "10.0.0.1/32", "comment": "test"}],
+     "ATLAS_NONEXACT_OR_NONGLOBAL_NETWORK"),
+    ([{"cidrBlock": "8.8.8.8/32", "comment": ""}],
+     "ATLAS_NETWORK_CONSUMER_UNATTRIBUTED"),
+    ([{"cidrBlock": "8.8.8.8/32", "comment": "owner"},
+      {"ipAddress": "8.8.8.8", "comment": "other"}],
+     "ATLAS_DUPLICATE_NETWORKS_UNATTRIBUTED"),
+])
+def test_readonly_network_cert_rejects_unsafe_shared_sources(
+    entries, denial,
+) -> None:
+    """Read-only admission cannot mistake global or unknown sources for safe."""
+    with pytest.raises(admission.NetworkAdmissionError, match=denial):
+        admission.certify_isolated_network(entries)
+
+
+def test_readonly_network_cert_proves_only_ip_inventory(capsys) -> None:
+    """A valid source inventory still cannot certify actual ECS recovery."""
+    admission.certify_isolated_network([{
+        "cidrBlock": "8.8.8.8/32", "comment": "verified synthetic consumer",
+    }])
+    output = capsys.readouterr().out
+    assert "MW_T12_ATLAS_SOURCE_NETWORK_INVENTORY=ISOLATION_ELIGIBLE" in output
+    assert "MW_T12_ATLAS_ECS_CONNECTIVITY_CERTIFIED=FALSE" in output
+    assert "MW_T12_ATLAS_BACKUP_RESTORE_CERTIFIED=FALSE" in output
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.0.1-PUBLIC-IP-MOCK-FIXTURE-VALIDATION
+# VERSION: v1.1.0-READONLY-ISOLATION-DENIAL-TEST
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
