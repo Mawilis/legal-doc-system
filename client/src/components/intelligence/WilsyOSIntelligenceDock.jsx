@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS
+ * VERSION: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME adds chat-native New conversation and Clear chat actions (preserving EOS archive), displays source event times in local readable format without modifying stored evidence, and resets drafts safely when starting fresh.
  * CHANGELOG: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS binds expanded comment text to its verified task/context scope so focus changes cannot display previous task content under a new source.
  * CHANGELOG: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE hides internal comment references from rendered and screen-reader transcripts and rejects delayed full-comment responses after task scope changes.
  * CHANGELOG: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE summarizes EOS discussion cleanly and supports an explicit full-update read via fresh exact-task EOS readback; message archives retain only bounded comment references and no historical transcript is treated as current source.
@@ -281,6 +282,7 @@ import {
   Minus,
   RotateCcw,
   X,
+  Plus, Eraser,
 } from 'lucide-react';
 import api from '../../services/api.js'; // Sovereign HTTP client – forensic seals, tenant headers, auto refresh
 import { assertUnifiedMyWorkProjection, unifiedMyWorkSourceLabel } from '../../services/unifiedMyWorkProjection.js';
@@ -1203,6 +1205,22 @@ function resolveWilsyLocalClock(value, now = new Date()) {
 }
 
 /**
+ * Show source event timestamps in the operator's device timezone. Never
+ * rewrite the stored UTC instant, source fingerprint, or original EOS record.
+ */
+function formatWilsyEOSDisplayLine(line) {
+  if (!/^(?:Latest event:|Latest lifecycle event:|Observed event time:|Latest recorded comment \(|Latest recorded discussion \()/.test(line)) return line;
+  return line.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/g, timestamp => {
+    const parsed = new Date(timestamp);
+    if (!Number.isFinite(parsed.getTime())) return timestamp;
+    return new Intl.DateTimeFormat(undefined, {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+    }).format(parsed);
+  });
+}
+
+/**
  * @function WilsyProgressiveAssistantText
  * @description Animate only the newest committed response, not provider
  * execution, accounting or previous conversation history. The full text is
@@ -1240,7 +1258,8 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
   }, [animate, fullText]);
 
   const withoutInternalRef = text => text.replace(/^Source comment reference: [^\n]*(?:\n|$)/gm, '');
-  const visibleText = withoutInternalRef(fullText.slice(0, visibleCount));
+  const visibleText = withoutInternalRef(fullText.slice(0, visibleCount))
+    .split('\n').map(formatWilsyEOSDisplayLine).join('\n');
   const isVerified = format === 'VERIFIED_TASK' && fullText.includes('\n');
   const isFocusedAnswer = /^EOS source answer · MW-T\d{1,3}\n/.test(fullText);
   const sourceFooter = line => /^(?:Python EOS ·|Source records and discussion do not independently certify)/.test(line);
@@ -1278,7 +1297,8 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
           <span aria-hidden="true" className={styles.replyCursor}>▍</span>
         )}
       </span>
-      {animate && <span className={styles.srOnly}>{withoutInternalRef(fullText)}</span>}
+      {animate && <span className={styles.srOnly}>{withoutInternalRef(fullText)
+        .split('\n').map(formatWilsyEOSDisplayLine).join('\n')}</span>}
     </>
   );
 }
@@ -2076,6 +2096,7 @@ export function WilsyOSIntelligenceDock({
    * @institutional Allows operators to compartmentalize conversations by topic.
    */
   const handleNewThread = useCallback(async () => {
+    if (isSubmitting) return;
     const scopeAtStart = dockScopeRef.current;
     try {
       const fresh = await createWilsyAIConversationThread({
@@ -2088,13 +2109,16 @@ export function WilsyOSIntelligenceDock({
       setSessionThreadIds(previous => previous.includes(fresh.id) ? previous : [...previous, fresh.id]);
       setWorkSurfaceOpen(false);
       setConversationView('WELCOME');
+      setPrompt('');
+      setErrorMessage('');
+      setAnimatedAssistantKey(null);
       setActiveTab('chat');
     } catch (err) {
       if (scopeAtStart === dockScopeRef.current) {
         setErrorMessage(err?.message || 'Failed to create a new thread.');
       }
     }
-  }, []);
+  }, [isSubmitting]);
 
   /**
    * @function handleRefresh
@@ -3384,6 +3408,22 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
+                {!workSurfaceOpen && <div className={styles.conversationCommandBar}
+                  role="group" aria-label="Conversation actions">
+                  <span className={styles.conversationCommandLabel}>Conversation</span>
+                  <div className={styles.conversationCommandActions}>
+                    <button type="button" className={styles.conversationCommandButton}
+                      onClick={handleNewThread} disabled={isSubmitting}>
+                      <Plus size={14} aria-hidden="true"/> New conversation
+                    </button>
+                    <button type="button" className={styles.conversationCommandButton}
+                      onClick={handleNewThread}
+                      disabled={isSubmitting || !(activeThread?.messages || []).length}
+                      title="Clear this view and begin a new conversation. Saved history is kept.">
+                      <Eraser size={14} aria-hidden="true"/> Clear chat
+                    </button>
+                  </div>
+                </div>}
                 {!isLegalDockRole(authUser?.role) && workLocator.workspace === 'PROJECTS'
                   && workLocator.task_id
                   && (workSurfaceOpen || conversationView === 'SOURCE'
@@ -4217,7 +4257,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS
+ * VERSION: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
