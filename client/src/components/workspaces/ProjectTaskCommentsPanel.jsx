@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.17.1-CORRECTION-DRAFT-ISOLATION
+ * VERSION: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
- * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
+ * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
  *          existing source-owned comment editor directly under the action
@@ -534,13 +534,8 @@ export default function ProjectTaskCommentsPanel({
       setError('Provide a correction reason (10–500 characters) and change the original text.');
       return;
     }
-    // This is a new, linked EOS record. The original comment remains immutable.
-    const text = correction
-      ? '**Correction to earlier project activity**\n'
-        + 'Original comment: ' + correction.comment_id + '\n'
-        + '**Reason:** ' + reason + '\n'
-        + '**Corrected update:**\n' + edited
-      : edited;
+    // EOS owns the canonical audit wrapper and time-window admission.
+    const text = edited;
     if (!text || text.length > 5000) {
       setError('The correction exceeds the EOS 5,000-character comment limit.');
       return;
@@ -577,7 +572,14 @@ export default function ProjectTaskCommentsPanel({
         }
       }
       if (currentScope.current !== active) return;
-      const { data } = await api.post(route, { body: text, mentions }, {
+      const { data } = await api.post(route, {
+        body: text, mentions,
+        ...(correction ? {
+          correction_of: correction.comment_id,
+          correction_fingerprint: correction.fingerprint,
+          correction_reason: reason,
+        } : {}),
+      }, {
         headers: { ...headers, 'Idempotency-Key': command.current.key },
       });
       if (currentScope.current !== active) return;
@@ -611,8 +613,10 @@ export default function ProjectTaskCommentsPanel({
       const serverReason = typeof detail === 'string'
         && Object.prototype.hasOwnProperty.call(safeCodes, detail)
         ? safeCodes[detail] : null;
-      setError(cause?.message === 'PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED'
-        ? 'The original comment could not be independently reverified. Refresh its activity before correcting it.'
+      setError(code === 409 && detail === 'PROJECT_COMMENT_CORRECTION_WINDOW_EXPIRED'
+        ? 'The 30-minute correction window has expired. Ask an authorized reviewer to record a separate governance clarification.'
+        : cause?.message === 'PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED'
+          ? 'The original comment could not be independently reverified. Refresh its activity before correcting it.'
         : code === 403 ? 'EOS denied your task comment.'
         : code === 409 ? 'Mention eligibility or replay changed. Refresh and reconcile.'
           : code === 422 ? 'EOS rejected the comment input'
@@ -788,7 +792,10 @@ export default function ProjectTaskCommentsPanel({
               onClick={onViewAttachments}>Open governed attachment</button>}
           {entry.type === 'comment' && <ActivityCommentBody value={entry.item.body}/>}
           {entry.type === 'comment' && entry.item.author_principal_id === principalId
-            && state === 'READY' && <button type="button" disabled={busy}
+            && state === 'READY' && Number.isFinite(Date.parse(entry.item.created_at))
+            && Date.now() >= Date.parse(entry.item.created_at)
+            && Date.now() - Date.parse(entry.item.created_at) <= 30 * 60 * 1000
+            && <button type="button" disabled={busy}
               className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-blue-800 underline hover:bg-blue-50"
               onClick={() => {
                 setCorrection({ comment_id: entry.item.comment_id,
@@ -801,6 +808,12 @@ export default function ProjectTaskCommentsPanel({
                 setError('');
                 command.current = { fingerprint: '', key: '' };
               }}>Correct entry</button>}
+          {entry.type === 'comment' && entry.item.author_principal_id === principalId
+            && Number.isFinite(Date.parse(entry.item.created_at))
+            && Date.now() - Date.parse(entry.item.created_at) > 30 * 60 * 1000
+            && <p className="mt-2 text-xs text-slate-600">
+              Correction window closed · Original record retained. A separately governed clarification is required.
+            </p>}
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
         </li>)}
@@ -857,7 +870,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.17.1-CORRECTION-DRAFT-ISOLATION
+// VERSION: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
