@@ -97,11 +97,11 @@ describe('permissioned operating work', () => {
     const first = await screen.findByRole('button', { name: /First source item/ });
     const secondRow = screen.getByRole('button', { name: /Second source item/ });
     expect(first).toHaveTextContent('01');
-    expect(first).toHaveTextContent('Projects · normal priority · Due 2026-12-12');
+    expect(first).toHaveTextContent('PROJECTS · normal priority · Due 2026-12-12');
     expect(first).toHaveAttribute('title', expect.stringContaining(
       'Position 1 in the current EOS-authorized My Work response'));
     expect(secondRow).toHaveTextContent('02');
-    expect(secondRow).toHaveTextContent('Projects · high priority · Overdue');
+    expect(secondRow).toHaveTextContent('PROJECTS · high priority · Overdue');
     expect(secondRow).toHaveAttribute('title', expect.stringContaining(
       'Position 2 in the current EOS-authorized My Work response'));
     expect(secondRow).toHaveTextContent('Inspect');
