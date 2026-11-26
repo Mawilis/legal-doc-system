@@ -1,12 +1,12 @@
 """TITLE: WILSY OS MW-T09 Governed Command HTTP Boundary Certificate
-VERSION: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
+VERSION: v1.0.1-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
 AUTHORITY: Synthetic read-only inspection of the canonical Python EOS Projects router.
 EPITOME: Certifies existing create/revise/transition/approval/decision route declarations,
          current IAM, CAS, idempotent registry delegation and read-only receipt authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t09_governed_commands_contract.py
 COLLABORATION / OWNERSHIP: MW-T09 Foundation programme; Projects API/router/registry boundaries.
 CERTIFICATION / UPDATE DATE: 2026-11-26.
-CHANGELOG: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT adds explicit source contract assertions;
+CHANGELOG: v1.0.1-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT asserts the canonical actual financial fence strings rather than a synthesized phrase.\nCHANGELOG: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT adds explicit source contract assertions;
            authenticated HTTP, real Mongo and actor-denial tests are separate existing certificates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; WILSY institutional source governance.
 SECURITY / PRIVACY POSTURE: Static AST inspection; no tokens, identities, external requests or database.
@@ -198,4 +198,5 @@ def test_mutation_models_require_revision_and_constrained_terminal_decision():
 def test_no_financial_execution_authority_is_issued_by_project_commands():
     source = ROUTER.read_text(encoding="utf-8")
     assert 'FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend' in source
-    assert 'Kennel EOS exclusively' in source
+    assert 'Kennel EOS remains exclusive' in source
+    assert 'FINANCIAL EXECUTION AUTHORITY: none' in source
