@@ -286,7 +286,7 @@ describe('WILSY Headquarters authenticated shell', () => {
       return previous(path, config);
     });
     try {
-      renderHeadquarters();
+      renderHeadquarters(['/headquarters?view=assigned']);
       expect(await screen.findByText(/Waiting on 1 predecessor\(s\)/)).toBeTruthy();
       fireEvent.click(screen.getByRole('button', {
         name: 'Open authorized record: Validate tenant configuration',
