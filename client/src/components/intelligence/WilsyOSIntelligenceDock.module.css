@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.15.0-ACTIONABLE-WORK-ROWS
+ * VERSION: v1.16.0-UNOBTRUSIVE-EMPTY-CONVERSATION
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.16.0-UNOBTRUSIVE-EMPTY-CONVERSATION presents an unboxed general-purpose empty conversation state that disappears when an interaction starts.
  * CHANGELOG: v1.15.0-ACTIONABLE-WORK-ROWS makes authorized attention items full-width text rows, with explicit focus and an unobtrusive My Work exit.
  * CHANGELOG: v1.14.0-CONVERSATION-FOCUS compresses recents to a searchable text list and keeps work actions opt-in, preserving keyboard focus and existing color contrast.
  * CHANGELOG: v1.13.0-OPERATING-WORK-ARTIFACTS adds compact work actions and an accessible editable artifact area.
@@ -1696,4 +1697,28 @@
   font-size: 11px;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* An empty conversation gets one calm line, not persistent cards or a hero. */
+.intelligenceDockContainer .conversationEmptyPrompt {
+  align-self: stretch;
+  margin: auto 0;
+  padding: 14px 0;
+  text-align: center;
+  color: #e4edfa;
+}
+.intelligenceDockContainer .conversationEmptyPrompt p {
+  margin: 0;
+  font-size: clamp(17px, 2.4vw, 23px);
+  line-height: 1.45;
+  font-weight: 460;
+  letter-spacing: -.02em;
+}
+.intelligenceDockContainer .conversationEmptyPrompt small {
+  display: block;
+  max-width: 52ch;
+  margin: 9px auto 0;
+  color: #b3c8dd;
+  font-size: 12px;
+  line-height: 1.5;
 }
