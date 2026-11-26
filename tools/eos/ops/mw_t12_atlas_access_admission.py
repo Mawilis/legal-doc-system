@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.3.0-READONLY-ISOLATION-CERT
+VERSION: v1.4.0-SAFE-ADMIN-API-DENIAL-CODES
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.4.0-SAFE-ADMIN-API-DENIAL-CODES preserves only status-class
+           diagnostics for Atlas API 401/403/429, without exposing body,
+           headers, credentials, or mistaking API-key IP allowlists for DB
+           network lists. No retries, credential escalation or mutations.
 CHANGELOG: v1.3.0-READONLY-ISOLATION-CERT adds an opt-in, mutation-free
            isolation admission that denies global access, duplicate/invalid
            networks and missing consumer ownership without deleting access.
@@ -49,7 +53,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.3.0-READONLY-ISOLATION-CERT"
+VERSION = "v1.4.0-SAFE-ADMIN-API-DENIAL-CODES"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -117,6 +121,17 @@ def atlas(client, method: str, route: str, *, payload=None, params=None):
         )
         expected = {"GET": {200}, "POST": {200, 201, 202},
                     "DELETE": {200, 202, 204}}
+        # Reject unauthenticated or unauthorized requests with distinct
+        # *status-only* codes; never log Atlas body, headers, key identifiers,
+        # IP addresses, request URLs or the protected authentication context.
+        # A 403 may indicate missing project role OR the API credential's
+        # separate source-IP allowlist. Neither authorizes access-list changes.
+        if response.status_code == 401:
+            raise NetworkAdmissionError("ATLAS_ADMIN_API_AUTHENTICATION_DENIED_401")
+        if response.status_code == 403:
+            raise NetworkAdmissionError("ATLAS_ADMIN_API_ACCESS_DENIED_403")
+        if response.status_code == 429:
+            raise NetworkAdmissionError("ATLAS_ADMIN_API_RATE_LIMITED_429")
         require(response.status_code in expected[method],
                 "ATLAS_API_REQUEST_DENIED")
         require(len(response.content) <= 1048576, "ATLAS_RESPONSE_OVERSIZED")
@@ -474,7 +489,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.3.0-READONLY-ISOLATION-CERT
+# VERSION: v1.4.0-SAFE-ADMIN-API-DENIAL-CODES
 # AUTHORITY BOUNDARY: Exact temporary /32 source add/owned delete only.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
 # FAIL-CLOSED POSTURE: Wildcard add blocked; delete restricted to owned task.
