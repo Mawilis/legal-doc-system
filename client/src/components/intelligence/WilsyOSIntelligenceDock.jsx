@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.76.1-FOCUSED-TURN-CHAIN
+ * VERSION: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER distinguishes short EOS answers, governed full briefings, semantic fact rows and independent source footers while keeping saved-transcript provenance and source admission unchanged.
  * CHANGELOG: v4.76.1-FOCUSED-TURN-CHAIN treats the prior exact-task source answer as a verified conversational anchor for compact follow-ups, without extending scope to a different task.
  * CHANGELOG: v4.76.0-FOCUSED-SOURCE-CONVERSATION responds concisely to exact selected-task deadline, owner, approvals, attachments and latest-update questions from freshly validated EOS sources; general Brief keeps full assessment.
  * CHANGELOG: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY retains the LIVE TASK strip in a fresh conversation when independent EOS context still verifies the exact selected Projects task; never treats the new thread's absent locator as a source failure.
@@ -1157,18 +1158,27 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
   }, [animate, fullText]);
 
   const visibleText = fullText.slice(0, visibleCount);
-  const formatted = format === 'VERIFIED_TASK' && fullText.includes('\n')
-    ? <div className={styles.verifiedReply}>
+  const isVerified = format === 'VERIFIED_TASK' && fullText.includes('\n');
+  const isFocusedAnswer = /^EOS source answer · MW-T\d{1,3}\n/.test(fullText);
+  const sourceFooter = line => /^(?:Python EOS ·|Source records and discussion do not independently certify)/.test(line);
+  const factLabels = /^(?:Lifecycle|Revision|Deadline|Accountable contributor|Dependencies|Lifecycle events|Latest event|Latest recorded comment|Discussion comments|Attachments|Verified scan-clean attachments on this page|Scan-clean on this page|Approval decisions|Pending or rejected(?: decisions on this page| on this page)?|Latest recorded discussion|Latest lifecycle event): /;
+  const formatted = isVerified
+    ? <div className={isFocusedAnswer ? styles.verifiedFocusedReply : styles.verifiedReply}>
       {visibleText.split('\n').map((line, index) => {
-        if (!line) return null;
+        if (!line.trim()) return null;
         if (index === 0) {
-          return <p key={index} className={styles.verifiedReplyTitle}>{line}</p>;
+          return <p key={index} className={isFocusedAnswer
+            ? styles.verifiedFocusedTitle : styles.verifiedReplyTitle}>{line}</p>;
         }
-        if (index >= 1 && index <= 3) {
-          const split = line.indexOf(': ');
-          return <p key={index} className={styles.verifiedReplyFact}>
-            <span>{split >= 0 ? line.slice(0, split) : line}</span>
-            {split >= 0 && <strong>{line.slice(split + 2)}</strong>}
+        if (sourceFooter(line)) {
+          return <p key={index} className={styles.verifiedSourceFooter}>{line}</p>;
+        }
+        const split = line.indexOf(': ');
+        if (split >= 0 && factLabels.test(line)) {
+          return <p key={index} className={isFocusedAnswer
+            ? styles.verifiedFocusedFact : styles.verifiedReplyFact}>
+            <span>{line.slice(0, split)}</span>
+            <strong>{line.slice(split + 2)}</strong>
           </p>;
         }
         return <p key={index} className={styles.verifiedReplyNote}>{line}</p>;
@@ -4110,7 +4120,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.76.1-FOCUSED-TURN-CHAIN
+ * VERSION: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
