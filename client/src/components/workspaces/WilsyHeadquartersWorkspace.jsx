@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.18.0-STRATEGY-RETURN-ROUTE
+ * VERSION: v4.18.1-STRATEGY-RETURN-URL-PRIORITY
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v4.18.1-STRATEGY-RETURN-URL-PRIORITY mounts the Strategy return from exact URL provenance independently of asynchronous workspace section loading; no authority changes.
  * CHANGELOG: v4.18.0-STRATEGY-RETURN-ROUTE retains exact Strategy origin for handoffs and returns directly to the existing governed M04 workspace without a new project workflow or IAM grant.
  * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS preserves independently authorized assigned-task navigation from the Dock.
  * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS binds Strategy/Mission
@@ -991,6 +992,15 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
 
         <div className="hq-content">
           {!desktopNavigationOpen && <button type="button" className="hq-navigation-open" aria-label="Open Headquarters navigation" aria-expanded="false" onClick={() => setDesktopNavigationOpen(true)}><Menu size={15}/> Show navigation</button>}
+          {new URLSearchParams(location.search).get('section') === 'projects'
+            && new URLSearchParams(location.search).get('returnTo') === 'STRATEGY'
+            && <nav aria-label="Strategy project return" className="sticky top-[72px] z-30 mb-3 w-fit rounded-lg bg-white/95 shadow-sm">
+              <button type="button" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50" onClick={() => {
+                setSection('overview'); setShowMyWork(false); setProjectTaskFocus(null); setProjectDeliveryFocus(null);
+                setOperatingDocumentClass('STRATEGY');
+                updateWorkspaceUrl('overview', 'STRATEGY', null, null, false, true);
+              }}>← Back to Strategy execution</button>
+            </nav>}
           <div className={section === 'overview' && !showMyWork ? '' : 'hq-subworkspace'}>
           {showMyWork ? (
             <MyWorkWorkspace focusWorkItem={myWorkFocusItem} />
@@ -1215,13 +1225,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             />
           ) : section === 'projects' ? (
             <>
-              {new URLSearchParams(location.search).get('returnTo') === 'STRATEGY' && <nav aria-label="Strategy project return" className="sticky top-[72px] z-30 mb-3 w-fit rounded-lg bg-white/95 shadow-sm">
-                <button type="button" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50" onClick={() => {
-                  setSection('overview'); setShowMyWork(false); setProjectTaskFocus(null); setProjectDeliveryFocus(null);
-                  setOperatingDocumentClass('STRATEGY');
-                  updateWorkspaceUrl('overview', 'STRATEGY', null, null, false, true);
-                }}>← Back to Strategy execution</button>
-              </nav>}
+}
               <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}/>
             </>
           ) : section === 'onboarding' ? (
@@ -1736,7 +1740,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.18.0-STRATEGY-RETURN-ROUTE
+ * VERSION: v4.18.1-STRATEGY-RETURN-URL-PRIORITY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
