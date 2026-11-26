@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY
+ * VERSION: v1.19.0-EOS-COMMENT-INLINE-DISCLOSURE
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.19.0-EOS-COMMENT-INLINE-DISCLOSURE styles inline comment readback and full text without introducing a new overlay or changing authority.
  * CHANGELOG: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY adds compact full-width verified source answers and an independent quiet provenance footer, with mobile wrapping and no layout effects on archived transcript authority.
  * CHANGELOG: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY sets a modest, sentence-case welcome prompt and removes the obsolete oversized provider disclaimer treatment.
  * CHANGELOG: v1.16.1-END-SEAL-ALIGNMENT moves the matching sovereign end seal after all active CSS declarations.
@@ -1767,9 +1768,40 @@
   .intelligenceDockContainer .verifiedFocusedFact strong {font-size:15px}
 }
 
+/* Source-owned project comment: inline disclosure, no extra workspace or modal. */
+.intelligenceDockContainer .verifiedCommentDisclosure {
+  max-width:66ch;
+  margin:7px 0 0;
+  color:#b8cde2;
+  font-size:12px;
+  line-height:1.6;
+}
+.intelligenceDockContainer .verifiedCommentDisclosure button {
+  font-size:12px;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.intelligenceDockContainer .verifiedCommentDisclosure details {
+  margin:8px 0;
+  padding:10px 12px;
+  border:1px solid rgba(150,180,214,.2);
+  border-radius:10px;
+}
+.intelligenceDockContainer .verifiedCommentDisclosure summary {
+  cursor:pointer;
+  font-weight:550;
+}
+.intelligenceDockContainer .verifiedCommentFull {
+  margin:9px 0 0;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  color:#e9f2fd;
+  font-size:13px;
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY
+ * VERSION: v1.19.0-EOS-COMMENT-INLINE-DISCLOSURE
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
