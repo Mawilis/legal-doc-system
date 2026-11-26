@@ -1,7 +1,8 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
  * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
- * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.\n * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
+ * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.
+ * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
  * CHANGELOG: v2.80.1-PORTABLE-CSS-SOURCE-CERT reads exact stylesheet through Vite raw assets rather than Node fs/path built-ins, retaining both CSS rule assertions and supporting local Vitest module loading.
  * CHANGELOG: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT confirms Done tasks disappear from active work, remain in the Completed/All views and open their original source-backed task details; work selection resets on view changes, without mutation.
  * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
