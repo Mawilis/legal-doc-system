@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS
+ * VERSION: v4.19.1-HQ-EXACT-TASK-NAVIGATION
+ * CHANGELOG: v4.19.1-HQ-EXACT-TASK-NAVIGATION prevents a verified Headquarters task from switching to My assigned projects, clearing inherited assigned-view routing while retaining canonical project/task identifiers.
  * CHANGELOG: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS Delegates the Strategy-origin return into the canonical Projects context rather than leaving a detached Headquarters link; no changes to EOS authority.
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
@@ -913,6 +914,8 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const updateWorkspaceUrl = (nextSection, documentKind = null, projectId = null, taskId = null, strategyReturn = false, resumeM04 = false) => {
     const params = new URLSearchParams(location.search);
     for (const key of ['section', 'document', 'project', 'task', 'returnTo', 'resumeM04']) params.delete(key);
+    // Assigned-projects is a separate portfolio view, never inherited by a task deep link.
+    if (nextSection === 'projects' && taskId) params.delete('view');
     if (linkedSections.has(nextSection)) params.set('section', nextSection);
     if (['STRATEGY', 'MISSION'].includes(documentKind)) params.set('document', documentKind);
     if (nextSection === 'projects' && strategyReturn) params.set('returnTo', 'STRATEGY');
@@ -1741,7 +1744,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS
+ * VERSION: v4.19.1-HQ-EXACT-TASK-NAVIGATION
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
