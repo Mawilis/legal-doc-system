@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.73.0-VISIBLE-SEND-ADMISSION
+ * VERSION: v4.73.1-REPLAY-LOCK-PRESERVED
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.73.1-REPLAY-LOCK-PRESERVED keeps exact uncertain-reconciliation replay disabled while still allowing other nonempty submissions to receive explicit, fail-closed admission feedback without model execution.
  * CHANGELOG: v4.73.0-VISIBLE-SEND-ADMISSION permits nonempty Send to reach the existing fail-closed admission handler, returning visible provider, entitlement, consent and replay refusals without issuing prohibited model requests.
  * CHANGELOG: v4.72.0-MODAL-TO-TASK-CONVERSATION admits an explicit same-tenant/principal task-modal request to open the existing Dock after leaving the modal, with a separately verified task locator; no global modal overlay, model/permission bypass, or source-derived UI assertions.
  * CHANGELOG: v4.71.0-SPA-WORK-FOCUS minimizes the Dock when the operator follows an internal EOS work link, leaving destination reauthorization intact.
@@ -3351,7 +3352,11 @@ export function WilsyOSIntelligenceDock({
                     // fail-closed handler. Missing consent/provider/entitlement
                     // and replay holds produce an explicit visible refusal,
                     // never a disabled button or an unauthorized model call.
-                    disabled={isSubmitting || !prompt.trim()}
+                    disabled={isSubmitting || !prompt.trim()
+                      || (reasoningReplayRef.current.blocked === true
+                        && reasoningReplayRef.current.scope === dockScopeRef.current
+                        && reasoningReplayRef.current.text === prompt.trim()
+                        && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)}
                     title={!prompt.trim() ? 'Enter a question'
                       : isSubmitting ? 'WILSY AI is processing a request'
                         : 'Submit an EOS-admitted question'}
@@ -3719,7 +3724,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.73.0-VISIBLE-SEND-ADMISSION
+ * VERSION: v4.73.1-REPLAY-LOCK-PRESERVED
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
