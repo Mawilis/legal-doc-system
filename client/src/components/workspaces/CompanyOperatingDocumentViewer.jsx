@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.32.9-SINGLE-OVERVIEW-RETURN
+ * VERSION: v2.33.0-RETURN-TO-GOVERNED-M04
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.33.0-RETURN-TO-GOVERNED-M04 resumes the existing M04 workspace after Strategy-originated Projects navigation once its authenticated task graph verifies; no source write.
  * CHANGELOG: v2.32.9-SINGLE-OVERVIEW-RETURN reuses the M04 task navigation control
  *            as the sole return from execution overview. Removes the
  *            stacked third button; EOS reads and commands are unchanged.
@@ -1652,6 +1653,22 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const focusedM04Inspector = Boolean(m04Execution && m04FocusMode === 'INSPECT');
   const showPublicationBody = !executionFirst || strategyMode === 'DOCUMENT';
   const showExecutionSurface = !executionFirst || strategyMode === 'EXECUTION';
+  // Returning from a Strategy-originated Projects task is a navigation
+  // continuation, not another publication or a new EOS authority. Wait for
+  // the independently verified M04 graph before moving the document viewport.
+  const resumedM04 = useRef(false);
+  useEffect(() => {
+    if (classification !== 'STRATEGY' || !m04Execution || !showExecutionSurface
+      || resumedM04.current || new URLSearchParams(location.search).get('resumeM04') !== '1') return;
+    const node = containerRef.current?.querySelector('[aria-label="M04 governed Strategy execution"]');
+    if (!node) return;
+    resumedM04.current = true;
+    node.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+    const params = new URLSearchParams(location.search);
+    params.delete('resumeM04');
+    window.history.replaceState(window.history.state, '',
+      location.pathname + (params.toString() ? '?' + params.toString() : '') + location.hash);
+  }, [classification, m04Execution, showExecutionSurface, location.search, location.pathname, location.hash]);
   // Filtering is view-only; EOS project authority and linked source snapshots
   // are validated against unfiltered projectItems, never rendered search rows.
   const visibleStrategyProjects = projectItems.filter(item => item.name.toLocaleLowerCase()
@@ -2608,7 +2625,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.32.9-SINGLE-OVERVIEW-RETURN
+// VERSION: v2.33.0-RETURN-TO-GOVERNED-M04
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
