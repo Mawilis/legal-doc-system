@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK
+VERSION: v1.6.0-SECURE-ECS-REVISION-ADMISSION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.6.0-SECURE-ECS-REVISION-ADMISSION independently checks
+           dormant secure revision 3/4 contracts and scoped SSM/IAM policy,
+           without confusing metadata presence with runtime secret delivery.
 CHANGELOG: v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK verifies the same
            synthetic canary and exact scoped Atlas role over three separate
            freshly established TLS sessions with independent client cleanup.
@@ -60,6 +63,7 @@ from tools.eos.ops import mw_t12_task_definition_admission as registered
 
 VERSION = "v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK"
 REVISIONS = (1, 2)
+SECURE_REVISIONS = (3, 4)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
 TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"
 SYNTHETIC_DB = re.compile(r"wilsy_mwt12_synthetic_[0-9a-f]{12}\Z")
@@ -202,6 +206,31 @@ def rehearsal_envelope() -> dict:
         "cleanup_readback_required": True,
     }
 
+def verify_secure_task_revisions(profile: str, images: tuple[str, str]) -> None:
+    """Independently admit dormant SSM-backed revisions without starting ECS.
+
+    Require exact source-owned historical/current image pins, registered
+    task shape, tagged environment, and execution-role SSM read authority.
+    This establishes metadata only: it cannot attest live secret resolution,
+    authenticated application startup, durable recovery or production IAM.
+    """
+    require(len(images) == len(SECURE_REVISIONS),
+            "SECURE_REVISION_IMAGE_COUNT_INVALID")
+    registered.secure_plan(profile)
+    for revision, image in zip(SECURE_REVISIONS, images, strict=True):
+        actual = task(profile, revision)
+        expected_arn = (
+            "arn:aws:ecs:" + registered.source.REGION + ":"
+            + registered.source.ACCOUNT + ":task-definition/"
+            + TASK_FAMILY + ":" + str(revision)
+        )
+        require(actual.get("taskDefinitionArn") == expected_arn,
+                "SECURE_TASK_IDENTITY_DRIFT")
+        expected = registered.secure_definition(image)
+        require(registered.verify(profile, expected_arn, expected) == revision,
+                "SECURE_TASK_SPEC_OR_SECRET_DRIFT")
+
+
 def check(profile: str) -> tuple[str, ...]:
     """Read exact budget, image, task, network and recovery prerequisites.
 
@@ -247,9 +276,9 @@ def check(profile: str) -> tuple[str, ...]:
         # DO NOT survive stop/rollback; this cannot prove persistent recovery.
         if "PERSISTENT_RECOVERY_STORAGE_NOT_VERIFIED" not in blockers:
             blockers.append("PERSISTENT_RECOVERY_STORAGE_NOT_VERIFIED")
-        # No database URI, scoped credential, or encrypted secret reference is
-        # present in either already-registered task definition. The same
-        # database must survive replacement without exposing real tenant data.
+        # Original baseline revisions 1/2 intentionally contain no secrets.
+        # Scoped synthetic credential admission is independently checked on
+        # secure revisions 3/4; it does not prove ECS runtime connectivity.
         supplied = {item.get("name") for item in
                     containers[0].get("environment", [])
                     if isinstance(item, dict)}
@@ -258,12 +287,10 @@ def check(profile: str) -> tuple[str, ...]:
                 "UNREVIEWED_TASK_CREDENTIAL_CONFIGURATION")
         require(not containers[0].get("secrets"),
                 "UNREVIEWED_TASK_SECRET_CONFIGURATION")
-        # Local scoped Atlas authentication can pass independently. Neither
-        # already-registered ECS revision contains approved secret delivery.
-        if "SCOPED_ATLAS_CREDENTIAL_NOT_CONFIGURED_IN_ECS" not in blockers:
-            blockers.append("SCOPED_ATLAS_CREDENTIAL_NOT_CONFIGURED_IN_ECS")
-        if "AUTHENTICATED_DATABASE_SOURCE_NOT_CONFIGURED" not in blockers:
-            blockers.append("AUTHENTICATED_DATABASE_SOURCE_NOT_CONFIGURED")
+
+    verify_secure_task_revisions(profile, tuple(expected_images))
+    blockers.append("ECS_SCOPED_SECRET_RUNTIME_DELIVERY_NOT_VERIFIED")
+    blockers.append("AUTHENTICATED_ECS_DATABASE_READBACK_NOT_VERIFIED")
     require(tasks[0].get("revision") < tasks[1].get("revision"),
             "TASK_REVISION_ORDER_INVALID")
     require(tasks[0].get("family") == tasks[1].get("family"),
@@ -413,7 +440,7 @@ def main(argv: list[str] | None = None) -> int:
             print("MW_T12_ATLAS_FRESH_TLS_READBACKS=3")
             print("MW_T12_ATLAS_ECS_ROLLBACK_CERTIFIED=FALSE")
         print("MW_T12_RUNTIME_METADATA=VERIFIED")
-        print("MW_T12_TASK_REVISIONS=1,2")
+        print("MW_T12_TASK_REVISIONS=1,2,3,4")
         print("MW_T12_RUNNING_TASKS=ZERO")
         print("MW_T12_PUBLIC_SUBNET_EGRESS_CONFIG=VERIFIED_NOT_LIVE")
         envelope = rehearsal_envelope()
@@ -443,7 +470,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK
+# VERSION: v1.6.0-SECURE-ECS-REVISION-ADMISSION
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
