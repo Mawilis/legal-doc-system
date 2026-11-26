@@ -1,8 +1,22 @@
-"""MW-T09 source-owned command wiring: static HTTP boundary regression certificate.
+"""TITLE: WILSY OS MW-T09 Governed Command HTTP Boundary Certificate
+VERSION: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
+AUTHORITY: Synthetic read-only inspection of the canonical Python EOS Projects router.
+EPITOME: Certifies existing create/revise/transition/approval/decision route declarations,
+         current IAM, CAS, idempotent registry delegation and read-only receipt authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t09_governed_commands_contract.py
+COLLABORATION / OWNERSHIP: MW-T09 Foundation programme; Projects API/router/registry boundaries.
+CERTIFICATION / UPDATE DATE: 2026-11-26.
+CHANGELOG: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT adds explicit source contract assertions;
+           authenticated HTTP, real Mongo and actor-denial tests are separate existing certificates.
+COMPLIANCE: POPIA section 19; GDPR Article 32; WILSY institutional source governance.
+SECURITY / PRIVACY POSTURE: Static AST inspection; no tokens, identities, external requests or database.
+TENANT BOUNDARY / POSTURE: Exact-tenant scope must be admitted by canonical EOS authorization.
+AUTHORITY BOUNDARY: Tests inspect explicit dependent IAM and deny authority inferred from task state.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively; Projects cannot authorize financial execution.
 
-This suite checks the actual Python EOS router's declared command authority.
-It is intentionally NOT a live MongoDB / authenticated HTTP / rollback test.
-Those require a separately provisioned replica set and live IAM identity.
+MW-T09 source-owned command wiring: static HTTP boundary regression certificate.
+This is NOT live authenticated HTTP, MongoDB durability, or release certification.
+END OF WILSY OS SOVEREIGN ARTIFACT
 """
 from __future__ import annotations
 
