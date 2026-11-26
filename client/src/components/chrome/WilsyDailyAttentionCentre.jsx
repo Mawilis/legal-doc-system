@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD
+ * VERSION: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
- * CHANGELOG: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD reuses only still-valid exact-session read-through cache instead of forcing a duplicate read on opening; displays a compact non-authoritative task skeleton during verification.
+ * CHANGELOG: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS reuses only still-valid exact-session read-through cache instead of forcing a duplicate read on opening; displays a compact non-authoritative task skeleton during verification.
+ * CHANGELOG: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS runs independent EOS My Work and Attention GETs concurrently on session admission and refresh; holds feed privately until coverage is verified against current projection. No partial results or new permissions.
+ * CHANGELOG: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD reuses scoped read-through cache and renders a bounded loading skeleton.
  * CHANGELOG: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE enables the
  *          top resize edge and makes keyboard arrow controls match
  *          the moving boundary. Full pointer resize stays bounded
@@ -306,6 +308,7 @@ export default function WilsyDailyAttentionCentre({
   const [loadingMore, setLoadingMore] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const feedGenerationRef = useRef(0);
+  const initialFeedPrefetchRef = useRef(null);
   const verifiedProjectionScopeRef = useRef(null);
   const verifiedAttentionScopeRef = useRef(null);
   const skipSelfInvalidationRefreshRef = useRef(false);
@@ -324,6 +327,7 @@ export default function WilsyDailyAttentionCentre({
     setProjection(null);
     verifiedProjectionScopeRef.current = null;
     verifiedAttentionScopeRef.current = null;
+    initialFeedPrefetchRef.current = null;
     setStatus('IDLE');
     setWorkError('');
     setRecoveryAttempts(0);
@@ -360,6 +364,7 @@ export default function WilsyDailyAttentionCentre({
       verifiedProjectionScopeRef.current = null;
       setAttentionFeed(null);
       verifiedAttentionScopeRef.current = null;
+      initialFeedPrefetchRef.current = null;
       setVerifiedAttentionCriteria(null);
       setAttentionFailureCriteria(null);
       setAttentionStatus('IDLE');
@@ -397,6 +402,24 @@ export default function WilsyDailyAttentionCentre({
     // Authenticated production reads share the exact current session and
     // source validator with global chrome. Isolated presentational fixtures
     // without an AuthProvider retain their existing mocked read seam.
+    // Run the two independent authenticated read sources concurrently.
+    // The feed is held privately until the separately verified projection
+    // confirms identical admission/coverage; no provisional rows are shown.
+    if (workScope && liveScopeKey) {
+      const criteria = { filter, source, query: debouncedQuery.trim() };
+      const selectedView = {
+        ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+      }[criteria.filter];
+      initialFeedPrefetchRef.current = {
+        scope: liveScopeKey, criteria,
+        promise: readAttentionFeed(
+          { tenantId, principalId: auth.user.id },
+          { view: selectedView,
+            sources: criteria.source !== 'ALL' ? criteria.source : undefined,
+            q: criteria.query, limit: 50, signal: controller.signal },
+        ).then((data) => ({ data }), (error) => ({ error })),
+      };
+    }
     const request = workScope
       ? readUnifiedMyWork(
           workScope,
@@ -524,16 +547,27 @@ export default function WilsyDailyAttentionCentre({
     const selectedView = {
       ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
     }[filter];
-    readAttentionFeed(
-      { tenantId, principalId: auth.user.id },
-      {
-        view: selectedView,
-        sources: source !== 'ALL' ? source : undefined,
-        q: requestCriteria.query,
-        limit: 50,
-        signal: controller.signal,
-      },
-    ).then((verified) => {
+    const prefetch = initialFeedPrefetchRef.current;
+    const prefetchMatches = prefetch?.scope === liveScopeKey
+      && sameAttentionCriteria(prefetch.criteria, requestCriteria);
+    // A prefetched feed has no display authority on its own.
+    const request = prefetchMatches
+      ? prefetch.promise.then(({ data, error }) => {
+          if (error) throw error;
+          return data;
+        })
+      : readAttentionFeed(
+          { tenantId, principalId: auth.user.id },
+          {
+            view: selectedView,
+            sources: source !== 'ALL' ? source : undefined,
+            q: requestCriteria.query,
+            limit: 50,
+            signal: controller.signal,
+          },
+        );
+    initialFeedPrefetchRef.current = null;
+    request.then((verified) => {
       if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
       const included = projection.sources_included || [];
       if (
@@ -1634,7 +1668,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD
+ * VERSION: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
