@@ -897,13 +897,15 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const openGovernedWork = (item) => {
     if (!item || typeof item.source_key !== 'string') return;
     if (item.source === 'PROJECTS'
-      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
-      setAttentionProjectFocus(item.project_id);
+      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')
+      && /^ptk-[0-9a-f]{48}$/.test(item.work_item_id || '')
+      && item.source_key === 'PROJECTS:' + item.work_item_id) {
+      // A task locator MUST NOT set the assigned-projects view flag.
+      // That flag selects an entirely different workspace and hides task details.
+      setAttentionProjectFocus(null);
       setProjectDeliveryFocus(item.project_id);
-      const verifiedTaskId = item.task_id || item.work_item_id;
-      setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(verifiedTaskId || '')
-        ? verifiedTaskId : null);
-      navigateSection('projects', { projectId: item.project_id, taskId: verifiedTaskId });
+      setProjectTaskFocus(item.work_item_id);
+      navigateSection('projects', { projectId: item.project_id, taskId: item.work_item_id });
       return;
     }
     openMyWork(item);
