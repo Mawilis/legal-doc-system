@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.4.0-MW-T11-SCANNABLE-SOURCE-CERT
+ * VERSION: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT checks tenant-neutral sentence-case metadata and preserved full EOS rank explanation without changing task identity or action rights.
  * CHANGELOG: v1.4.0-MW-T11-SCANNABLE-SOURCE-CERT certifies readable work title and quiet metadata, preserved EOS ordinal and full source explanation in the accessible row, unchanged canonical selection, and no exposed opaque task ID.
  * CHANGELOG: v1.3.0-MW-T11-RANKED-HANDOFF-CERT checks exact-source work ordering, task handoff proof and wrong-identity rejection without executing mutations.
  * CHANGELOG: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION certifies a lost-response accepted PDF attachment across unmount/remount with independent manifest reconciliation, no duplicate POST and no scan-clearance claim.
@@ -97,14 +98,17 @@ describe('permissioned operating work', () => {
     const first = await screen.findByRole('button', { name: /First source item/ });
     const secondRow = screen.getByRole('button', { name: /Second source item/ });
     expect(first).toHaveTextContent('01');
-    expect(first).toHaveTextContent('PROJECTS · normal priority · Due 2026-12-12');
+    expect(first).toHaveTextContent('Projects · normal · Due 2026-12-12');
     expect(first).toHaveAttribute('title', expect.stringContaining(
       'Position 1 in the current EOS-authorized My Work response'));
     expect(secondRow).toHaveTextContent('02');
-    expect(secondRow).toHaveTextContent('PROJECTS · high priority · Overdue');
+    expect(secondRow).toHaveTextContent('Projects · high · Overdue');
     expect(secondRow).toHaveAttribute('title', expect.stringContaining(
       'Position 2 in the current EOS-authorized My Work response'));
     expect(secondRow).toHaveTextContent('Inspect');
+    expect(first).toHaveAttribute('title', expect.stringContaining('PROJECTS source, normal priority'));
+    expect(secondRow).toHaveAttribute('title', expect.stringContaining('PROJECTS source, high priority'));
+    expect(first).not.toHaveTextContent('PRIORITY');
     expect(first).not.toHaveTextContent('EOS order');
     expect(first).not.toHaveTextContent(TASK);
     fireEvent.click(secondRow);
@@ -295,7 +299,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.4.0-MW-T11-SCANNABLE-SOURCE-CERT
+// VERSION: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
