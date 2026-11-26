@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.61.2-THREAD-FOCUS-CURRENTNESS
+ * VERSION: v4.61.3-INLINE-CONVERSATION-STATUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.61.3-INLINE-CONVERSATION-STATUS opens with a minimal general-purpose prompt and scrolls to the current error or last answer, without a persistent task panel.
  * CHANGELOG: v4.61.2-THREAD-FOCUS-CURRENTNESS clears transient work view for new and reset threads, without changing EOS history semantics.
  * CHANGELOG: v4.61.1-EXPLICIT-WORK-LOCATOR makes Conversation navigation leave the work view and an explicitly selected task enter it without requiring a redundant click.
  * CHANGELOG: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND defaults to transcript, opens EOS work on demand, restores chat after send/history selection and scrolls to latest assistant reply.
@@ -1293,6 +1294,7 @@ export function WilsyOSIntelligenceDock({
   const [deadlineError, setDeadlineError] = useState('');
   const messagesEndRef = useRef(null);
   const latestAssistantReplyRef = useRef(null);
+  const requestStatusRef = useRef(null);
   const messagesScrollRef = useRef(null);
   const latestVerifiedReplyRef = useRef(null);
   const healthAbortRef = useRef(null);
@@ -1797,7 +1799,9 @@ export function WilsyOSIntelligenceDock({
   useEffect(() => {
     if (activeTab !== 'chat' || !isOpen) return;
     if (workSurfaceOpen) return;
-    const target = latestAssistantReplyRef.current || messagesEndRef.current;
+    const target = errorMessage
+      ? requestStatusRef.current || messagesEndRef.current
+      : latestAssistantReplyRef.current || messagesEndRef.current;
     const scroller = messagesScrollRef.current;
     if (!target || !scroller) return;
     const distance = target.getBoundingClientRect().top
@@ -1809,7 +1813,7 @@ export function WilsyOSIntelligenceDock({
       top: Math.max(0, scroller.scrollTop + distance - 18),
       behavior: prefersReducedMotion ? 'auto' : 'smooth',
     });
-  }, [conversationThreads, activeThreadId, activeTab, isOpen, isSubmitting, hasVerifiedSourceReply, workSurfaceOpen]);
+  }, [conversationThreads, activeThreadId, activeTab, isOpen, isSubmitting, hasVerifiedSourceReply, workSurfaceOpen, errorMessage]);
 
   // A verified source read is an inspectable same-session turn, not a
   // model-generated answer or a durable EOS conversation record. Record it
@@ -2799,6 +2803,16 @@ export function WilsyOSIntelligenceDock({
                   </div>
                 )}
                 <div ref={messagesScrollRef} className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
+                  {conversationView === 'WELCOME' && !workSurfaceOpen && !isLegalDockRole(authUser?.role)
+                    && (activeThread?.messages?.length || 0) === 0 && !errorMessage && !isSubmitting && (
+                    <div className={styles.conversationEmptyPrompt}>
+                      <p>What would you like to explore?</p>
+                      {(aiProviderUnavailable || aiEntitlementNotProvisioned) && <small>
+                        Verified EOS sources can still be inspected. General model answers require
+                        an activated AI entitlement and configured provider.
+                      </small>}
+                    </div>
+                  )}
                   {conversationView === 'WELCOME' && workSurfaceOpen && !isLegalDockRole(authUser?.role) && isOpen && (
                     <WilsyDockOperatingWork
                       tenantId={activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId}
@@ -3121,7 +3135,7 @@ export function WilsyOSIntelligenceDock({
                     </div>
                   )}
                   {!workSurfaceOpen && errorMessage && (
-                    <div className={styles.assistantBubble} role="status"
+                    <div ref={requestStatusRef} className={styles.assistantBubble} role="status"
                       aria-label="WILSY OS request status"
                       style={{ padding: '10px 0', maxWidth: '70ch' }}>
                       <div className={styles.bubbleHeader}>WILSY OS · Request status</div>
@@ -3552,7 +3566,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.61.2-THREAD-FOCUS-CURRENTNESS
+ * VERSION: v4.61.3-INLINE-CONVERSATION-STATUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
