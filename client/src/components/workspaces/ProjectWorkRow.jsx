@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
- * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.\n * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.\n * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
+ * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.
+ * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.
+ * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
  *          selected task focus and titles with the same accessible
  *          task blueprint used by Calendar, My Work and Daily Attention.
  * CHANGELOG: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
