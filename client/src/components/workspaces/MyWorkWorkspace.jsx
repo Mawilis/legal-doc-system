@@ -321,6 +321,7 @@ export default function MyWorkWorkspace(props = {}) {
   const closeButtonRef = useRef(null);
   const queueHeadingRef = useRef(null);
   const previousSelectedRef = useRef(null);
+  const lastRouteFocusRef = useRef(null);
   const pendingRef = useRef(new Set());
   const routeFocus = typeof location.state?.focusWorkItem === 'string'
     ? location.state.focusWorkItem : null;
@@ -587,7 +588,10 @@ export default function MyWorkWorkspace(props = {}) {
     if (!focusKey || !items.some((item) => item.source_key === focusKey)) return;
     rowRefs.current.get(focusKey)?.focus();
     rowRefs.current.get(focusKey)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-    setTaskDetailTab('DETAILS');
+    if (lastRouteFocusRef.current !== focusKey) {
+      setTaskDetailTab('DETAILS');
+      lastRouteFocusRef.current = focusKey;
+    }
     setSelectedKey(focusKey);
   }, [items, focusKey]);
 
