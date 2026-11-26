@@ -47,5 +47,8 @@ export default function UnifiedTaskReadiness({
  * ARTIFACT: UnifiedTaskReadiness.jsx
  * VERSION: v1.0.0-SOURCE-NEUTRAL-EXECUTION-READINESS
  * AUTHORITY BOUNDARY: Presentation only, independent EOS source ownership unchanged.
+ * TENANT POSTURE: No tenant binding or IAM grant; parent component verifies exact source.
+ * FAIL-CLOSED POSTURE: Missing facts are visibly not verified, not inferred successful.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
