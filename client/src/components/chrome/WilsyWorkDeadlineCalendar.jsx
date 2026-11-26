@@ -368,7 +368,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
           <div className="mt-1 flex items-center gap-1 text-xs text-slate-600"><Clock3 size={12}/> {deadlineTime(item.due_at)}</div>
           <button type="button" onClick={() => onOpenWork(item)}
             className={'mt-2 ' + workTaskBlueprint.primary}>
-            Review and complete in My Work <ArrowRight size={14}/>
+            Open authorized task <ArrowRight size={14}/>
           </button>
         </WorkTaskBlueprintRow>
       ))}
