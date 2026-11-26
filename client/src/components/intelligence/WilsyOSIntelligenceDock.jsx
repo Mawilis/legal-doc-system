@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE
+ * VERSION: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS binds expanded comment text to its verified task/context scope so focus changes cannot display previous task content under a new source.
  * CHANGELOG: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE hides internal comment references from rendered and screen-reader transcripts and rejects delayed full-comment responses after task scope changes.
  * CHANGELOG: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE summarizes EOS discussion cleanly and supports an explicit full-update read via fresh exact-task EOS readback; message archives retain only bounded comment references and no historical transcript is treated as current source.
  * CHANGELOG: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER distinguishes short EOS answers, governed full briefings, semantic fact rows and independent source footers while keeping saved-transcript provenance and source admission unchanged.
@@ -495,7 +496,7 @@ function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator
   const show = async () => {
     if (!scoped || state.status === 'LOADING') return;
     const capturedScope = currentScopeRef.current;
-    setState({ status: 'LOADING', text: '' });
+    setState({ status: 'LOADING', text: '', scope: capturedScope });
     try {
       const { evidence } = await readWilsyTaskBriefing(
         workLocator.project_id, task, tenantId, principalId,
@@ -506,27 +507,28 @@ function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator
         || comment.body.length > 5000) {
         throw new Error('SOURCE_COMMENT_CHANGED');
       }
-      setState({ status: 'READY', text: comment.body });
+      setState({ status: 'READY', text: comment.body, scope: capturedScope });
     } catch {
       if (currentScopeRef.current === capturedScope) {
-        setState({ status: 'ERROR', text: '' });
+        setState({ status: 'ERROR', text: '', scope: capturedScope });
       }
     }
   };
+  const visibleState = state.scope === currentScope ? state : { status: 'IDLE', text: '' };
   return <div className={styles.verifiedCommentDisclosure}>
-    {scoped && state.status !== 'READY' && <button type="button"
+    {scoped && visibleState.status !== 'READY' && <button type="button"
       className={styles.conversationInlineAction} onClick={show}
-      disabled={state.status === 'LOADING'}>
-      {state.status === 'LOADING' ? 'Verifying EOS comment…' : 'Read full update'}
+      disabled={visibleState.status === 'LOADING'}>
+      {visibleState.status === 'LOADING' ? 'Verifying EOS comment…' : 'Read full update'}
     </button>}
     {!scoped && <p>Reopen the exact task to verify this recorded comment.</p>}
-    {state.status === 'ERROR' && <p role="status">
+    {visibleState.status === 'ERROR' && <p role="status">
       The original update could not be reverified. Refresh the task before retrying.
     </p>}
-    {state.status === 'READY' && scoped && <details open>
+    {visibleState.status === 'READY' && scoped && <details open>
       <summary>Full EOS project update · source readback</summary>
       <div className={styles.verifiedCommentFull}>
-        {state.text.replace(/\*\*/g, '')}
+        {visibleState.text.replace(/\*\*/g, '')}
       </div>
     </details>}
   </div>;
@@ -4215,7 +4217,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE
+ * VERSION: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
