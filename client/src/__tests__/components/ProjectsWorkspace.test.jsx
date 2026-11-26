@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.80.1-PORTABLE-CSS-SOURCE-CERT
+ * VERSION: v2.80.2-NODE-ISOLATED-CSS-CERT
+ * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
  * CHANGELOG: v2.80.1-PORTABLE-CSS-SOURCE-CERT reads exact stylesheet through Vite raw assets rather than Node fs/path built-ins, retaining both CSS rule assertions and supporting local Vitest module loading.
  * CHANGELOG: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT confirms Done tasks disappear from active work, remain in the Completed/All views and open their original source-backed task details; work selection resets on view changes, without mutation.
  * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
@@ -377,7 +378,6 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial command is exercised.
  */
 import React from 'react';
-import projectsWorkspaceCss from '../../components/workspaces/ProjectsWorkspace.css?raw';
 import { within, act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -2276,9 +2276,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Customize included work' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Generate a reviewable AI plan' })).toBeDisabled();
     expect(screen.queryByText(/legacy starter templates/)).not.toBeInTheDocument();
-    const sheet = projectsWorkspaceCss;
-    expect(sheet).toContain('[aria-label="Industry project templates"] form :is(label, legend)');
-    expect(sheet).toContain('-webkit-text-fill-color: #193451 !important;');
     expect(screen.queryByText(PROJECT_ID)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Project name'), {
       target: { value: 'Legal litigation delivery' },
@@ -2694,9 +2691,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText('EOS verified 0 eligible project owners and 0 active tenant departments.')).toBeInTheDocument();
     const accountability = screen.getByRole('region', { name: 'Project accountability' });
     expect(accountability).toHaveClass('wp-accountability');
-    const css = projectsWorkspaceCss;
-    expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*color:\s*#203a5e\s*!important;/);
-    expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*text-transform:\s*none\s*!important;/);
     expect(screen.getByRole('combobox', { name: 'Eligible project owner' })).toBeDisabled();
     expect(screen.getByRole('combobox', { name: 'Tenant department' })).toBeDisabled();
     expect(screen.getByText(/No eligible project owner has been verified/)).toBeInTheDocument();
