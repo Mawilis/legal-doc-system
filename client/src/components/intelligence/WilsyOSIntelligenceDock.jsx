@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.75.1-EXACT-ANSWER-CONTINUITY
+ * VERSION: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY resolves narrow pronouns from the currently independently verified selected EOS task; otherwise presents explicit missing-task guidance before provider admission.
  * CHANGELOG: v4.75.1-EXACT-ANSWER-CONTINUITY binds pronoun follow-ups to the latest source-verified assistant reply naming the current EOS task; unlocated existing threads cannot silently borrow a different task's facts.
  * CHANGELOG: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS resolves bounded selected-task questions and verified same-thread pronouns into the already-governed nonbillable multi-source briefing, without widening provider, task or tenant authority.
  * CHANGELOG: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION fixes escaped regex/newline syntax in the exact-task read-only briefing path before testing.
@@ -382,6 +383,16 @@ function parseWilsyTaskActivityInspection(value) {
  * @authority This returns only an intent hint; the briefing handler rechecks
  * tenant, principal, project, task revision and all EOS source pages.
  */
+/** Detect narrow ambiguous task references before metered AI admission. */
+function isWilsyUnboundTaskFollowup(value) {
+  const text = String(value || '').trim();
+  const hasPronoun = /\b(?:it|its|that|those|them|this task|the current task)\b/i.test(text);
+  const isQuestion = /^(?:(?:please|and|also)\s+)?(?:what(?:'s| is| are| was)?|who(?:'s| is)?|when(?: is| was)?|show|tell|explain|review|check|any|are there|does|has|how many)\b/i.test(text);
+  const isFact = /\b(?:deadline|due|date|owner|assigned|contributor|status|progress|dependenc(?:y|ies)|predecessor|blocker|activity|events?|comments?|updates?|discussion|attachments?|files?|evidence|approvals?|decisions?|revision)\b/i.test(text);
+  return hasPronoun && isQuestion && isFact && !/MW-T\d{1,3}/i.test(text)
+    && !/\b(?:approve|reject|delete|edit|assign|change|complete|pay|send|upload|create)\b/i.test(text);
+}
+
 function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
   const text = String(value || '').trim();
   const code = /^((?:MW-T)\d{1,3})\s+[—-]\s+/i.exec(selectedTask?.title || '')?.[1]?.toUpperCase();
@@ -405,7 +416,14 @@ function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
     && (!thread?.workLocator?.task_id
       || (thread.workLocator.project_id === locator.project_id
         && thread.workLocator.task_id === locator.task_id));
-  const pronounReference = priorVerified && /\b(?:it|its|that|those|them)\b/i.test(text);
+  // The currently verified exact selected task is itself a referent; a
+  // historical assistant reply is not required when EOS has reauthorized it.
+  // A stale thread mentioning a different task must not override this focus.
+  const otherThreadTask = lastAssistant?.meta?.source === 'PYTHON_EOS'
+    && lastAssistant.meta.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && !sourceIdentifiesTask;
+  const pronounReference = !otherThreadTask
+    && /\b(?:it|its|that|those|them)\b/i.test(text);
   const anchoredIntent = /^(?:(?:please|and|also)\s+)?(?:what(?:'s| is| are| was)?|who(?:'s| is)?|when(?: is| was)?|show|tell|summari[sz]e|brief|review|check|explain|any|are there|does|has|how many)\b/i.test(text);
   const relatedFact = /\b(?:status|progress|owner|responsible|assigned|contributor|deadline|due|date|predecessor|dependenc(?:y|ies)|blocker|activity|event|comment|update|discussion|attachment|file|evidence|approval|decision|revision|changed|recorded|summary|brief|readiness)\b/i.test(text);
   const compactFollowup = priorVerified && /^(?:and|what about|how about)\s+(?:the\s+)?(?:deadline|owner|dependencies|activity|comments|updates|attachments|evidence|approvals|decisions)[?.!]?$/i.test(text);
@@ -2200,6 +2218,11 @@ export function WilsyOSIntelligenceDock({
             && parseWilsySelectedTaskFollowup(text,
               visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator))
           || null);
+      if (!briefingCode && !isLegalDockRole(authUser?.role)
+        && isWilsyUnboundTaskFollowup(text)) {
+        setErrorMessage('I cannot identify a currently verified task for that follow-up. Open MW-T11 in Projects, then ask again. No AI provider was invoked.');
+        return;
+      }
       if (briefingCode) {
         const scopeAtStart = dockScopeRef.current;
         const locatorAtStart = workLocatorKeyRef.current;
@@ -3049,7 +3072,8 @@ export function WilsyOSIntelligenceDock({
     || /^(?:brief|summari[sz]e|assess)\s+MW-T\d{1,3}(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i.test(prompt.trim())
     || (visibleWorkspaceContext?.state === 'READY'
       && parseWilsySelectedTaskFollowup(prompt,
-        visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator)));
+        visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator))
+    || isWilsyUnboundTaskFollowup(prompt));
   const localCourtesyIntent = Boolean((!consentedReasoningReady
     && resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser))
     || resolveWilsyLocalClock(prompt)
@@ -4031,7 +4055,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.75.1-EXACT-ANSWER-CONTINUITY
+ * VERSION: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
