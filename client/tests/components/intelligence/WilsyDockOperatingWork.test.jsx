@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.7.0-IN-MODAL-READONLY-CERT
+ * VERSION: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT certifies the compact embedded view uses independently read EOS revision/blocker state, routes to existing task Activity/Evidence/Approvals callbacks, and exposes no model/command controls.
  * CHANGELOG: v1.7.0-IN-MODAL-READONLY-CERT checks a sourced task brief remains available in the modal-safe read-only projection without exposing transition, draft or attachment execution affordances.
  * CHANGELOG: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT checks client-side Open yields task focus through one callback, retaining no reload and no write.
  * CHANGELOG: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT certifies CRM Open changes React Router location without document reload or task mutation and retains a valid canonical href for direct navigation. Existing mock-only tests remain Router-independent.
@@ -83,6 +84,35 @@ function RouteLocationProbe() {
 }
 
 describe('permissioned operating work', () => {
+  it('explains verified task attention and opens the canonical task work views without an AI command', async () => {
+    const activity = vi.fn(); const evidence = vi.fn(); const approvals = vi.fn();
+    mount({ readOnly: true, embedded: true,
+      onReviewActivity: activity, onReviewEvidence: evidence,
+      onReviewApprovals: approvals });
+    expect(await screen.findByText('Task source verified')).toBeVisible();
+    const assessment = screen.getByRole('region', { name: 'WILSY AI task assessment' });
+    expect(assessment).toHaveTextContent('EOS · Revision 1');
+    expect(assessment).toHaveTextContent('What needs attention');
+    expect(assessment).not.toHaveTextContent('EOS action order');
+    expect(assessment).not.toHaveTextContent('Draft alignment plan');
+    fireEvent.click(screen.getByRole('button', { name: 'Activity' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Evidence' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approvals' }));
+    expect(activity).toHaveBeenCalledTimes(1);
+    expect(evidence).toHaveBeenCalledTimes(1);
+    expect(approvals).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('fails closed in embedded mode when the EOS task source is unavailable', async () => {
+    get.mockRejectedValue(refusal(503));
+    mount({ readOnly: true, embedded: true });
+    expect(await screen.findByRole('button', { name: 'Retry verification' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Activity' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Task source verified')).not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('presents source-verified task intelligence inside a modal without any mutation affordance', async () => {
     mount({ readOnly: true });
     expect(await screen.findByRole('status', { name: 'EOS-confirmed work handoff' })).toBeVisible();
@@ -353,7 +383,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.7.0-IN-MODAL-READONLY-CERT
+// VERSION: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
