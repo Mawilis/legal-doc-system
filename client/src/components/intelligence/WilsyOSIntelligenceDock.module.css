@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY
+ * VERSION: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY adds compact full-width verified source answers and an independent quiet provenance footer, with mobile wrapping and no layout effects on archived transcript authority.
  * CHANGELOG: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY sets a modest, sentence-case welcome prompt and removes the obsolete oversized provider disclaimer treatment.
  * CHANGELOG: v1.16.1-END-SEAL-ALIGNMENT moves the matching sovereign end seal after all active CSS declarations.
  * CHANGELOG: v1.16.0-UNOBTRUSIVE-EMPTY-CONVERSATION presents an unboxed general-purpose empty conversation state that disappears when an interaction starts.
@@ -1712,9 +1713,63 @@
   text-transform: none;
 }
 
+/* Answer-aware transcript: short EOS facts use natural full-width answers.
+ * Provenance is always a quiet, separate footer, never a fact label. */
+.intelligenceDockContainer .verifiedFocusedReply {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+  max-width:66ch;
+  padding:2px 0 4px;
+  color:#e9f2fd;
+  font-size:14px;
+  line-height:1.6;
+  white-space:normal;
+}
+.intelligenceDockContainer .verifiedFocusedTitle {
+  margin:0;
+  color:#a9bfd7;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:normal;
+}
+.intelligenceDockContainer .verifiedFocusedFact {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 12px;
+  align-items:baseline;
+  margin:0;
+  padding:0 0 7px;
+  border-bottom:1px solid rgba(150,180,214,.15);
+  overflow-wrap:anywhere;
+}
+.intelligenceDockContainer .verifiedFocusedFact span {
+  color:#a9bfd7;
+  font-size:12px;
+}
+.intelligenceDockContainer .verifiedFocusedFact strong {
+  color:#edf4fc;
+  font-size:17px;
+  font-weight:500;
+  overflow-wrap:anywhere;
+}
+.intelligenceDockContainer .verifiedSourceFooter {
+  margin:7px 0 0;
+  padding-top:8px;
+  border-top:1px solid rgba(150,180,214,.16);
+  color:#a9bfd7;
+  font-size:11px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+@media(max-width:480px) {
+  .intelligenceDockContainer .verifiedFocusedFact strong {font-size:15px}
+}
+
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY
+ * VERSION: v1.18.0-ANSWER-AWARE-EOS-TYPOGRAPHY
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
