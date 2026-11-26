@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT
+ * VERSION: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT tests the authorized nonbillable consolidated task, event, comment, evidence and approval readback and foreign-source denial without a fabricated assistant turn.
  * CHANGELOG: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT accepts actionable nonempty Send while retaining the explicit fail-closed no-provider, no-entitlement, no-consent, and exact replay blocks. No backend authority, consent or model grants are inferred.
  * CHANGELOG: v1.57.0-MODAL-TASK-CONVERSATION-CERT checks same-principal/task-modal launch opens the real Dock, while a foreign tenant cannot open it or trigger a write.
  * CHANGELOG: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT begins in Conversation after a Projects task automatically opens its work surface, explicitly enters Work and requires independent EOS recheck on return. Only test navigation is corrected; no production or source assertion is weakened.
@@ -2021,6 +2022,134 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(await screen.findByText(/MW-T11 · EOS lifecycle activity/)).toBeVisible();
   });
 
+  it('briefs verified MW-T11 lifecycle, due date, discussion and evidence without provider calls', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    const principal = 'briefing-person';
+    const base = '/projects/' + project + '/tasks/' + task;
+    const page = (schema, items) => ({
+      schema, tenant_id: 'TEST_TENANT', principal_id: principal,
+      project_id: project, task_id: task, limit: 50, offset: 0,
+      has_more: false, next_offset: null, items,
+    });
+    mockApiGet.mockImplementation((url, options = {}) => {
+      if (url === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        locator: options.params, context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-26T09:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, provider_binding: 'UNAVAILABLE', financial_execution: false },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: project, revision: 3, name: 'Foundation' },
+          selected_task: { task_id: task, title: 'MW-T11 — Align Intelligence Dock',
+            status: 'IN_PROGRESS', revision: 4, assignee_name: 'Verified Contributor',
+            depends_on: [], predecessors: [] } },
+      } });
+      if (url === '/projects/' + project + '/tasks?limit=50&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: principal, project_id: project,
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [{ schema: 'wilsy.project.task.v1', tenant_id: 'TEST_TENANT',
+            project_id: project, task_id: task, revision: 4,
+            title: 'MW-T11 — Align Intelligence Dock', status: 'IN_PROGRESS',
+            due_date: '2026-11-27', fingerprint: 'a'.repeat(128) }],
+        } });
+      }
+      if (url === base + '/events?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-TASK-EVENT-LIST/V1', [{
+          schema: 'wilsy.project.task.event.v1', tenant_id: 'TEST_TENANT',
+          project_id: project, task_id: task, revision: 4,
+          actor_principal_id: principal, event_type: 'PROJECT_TASK_REVISED',
+          status_after: 'IN_PROGRESS', occurred_at: '2026-11-26T09:07:54Z',
+        }],
+      ) });
+      if (url === base + '/comments?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-COMMENT-LIST/V1', [{
+          schema: 'wilsy.project.comment.v1', tenant_id: 'TEST_TENANT',
+          project_id: project, task_id: task, comment_id: 'pcm-' + 'c'.repeat(48),
+          author_principal_id: principal, created_at: '2026-11-26T14:52:28Z',
+          body: 'MW-T11 — Live Browser Acceptance: Unified Task Navigation',
+          mentions: [], fingerprint: 'd'.repeat(128),
+        }],
+      ) });
+      if (url === base + '/attachments?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-ATTACHMENT-LIST/V1', [],
+      ) });
+      if (url === base + '/approvals?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-APPROVAL-LIST/V1', [],
+      ) });
+      return Promise.reject(rejectedResponse(503, 'unexpected task briefing source'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: project, project_revision: 3,
+          task_id: task, task_revision: 4 } },
+    })));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    requestReadOnlySource('Brief MW-T11');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.includes('EOS source briefing · MW-T11'))).toBe(true));
+    const briefing = mockPersistTurn.mock.calls.find(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.includes('EOS source briefing · MW-T11'))[0].message.content;
+    expect(briefing).toContain('Accountable contributor: Verified Contributor');
+    expect(briefing).toContain('Deadline: 2026-11-27');
+    expect(briefing).toContain('No recorded predecessors');
+    expect(briefing).toContain('Live Browser Acceptance: Unified Task Navigation');
+    expect(briefing).toContain('Approval decisions: 0 verified records');
+    expect(briefing).toContain('do not independently certify acceptance');
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on a foreign MW-T11 discussion page without producing a partial briefing', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    const principal = 'briefing-person';
+    mockApiGet.mockImplementation((url, options = {}) => {
+      if (url === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: principal, locator: options.params,
+        context_fingerprint: 'f'.repeat(128), observed_at: '2026-11-26T09:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true, provider_binding: 'UNAVAILABLE' },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: project, revision: 3 },
+          selected_task: { task_id: task, title: 'MW-T11 — Align Intelligence Dock',
+            status: 'IN_PROGRESS', revision: 4, depends_on: [], predecessors: [] } },
+      } });
+      if (url.endsWith('/comments?limit=50&offset=0')) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: 'FOREIGN_TENANT',
+        principal_id: principal, project_id: project, task_id: task,
+        limit: 50, offset: 0, has_more: false, next_offset: null, items: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: project, project_revision: 3,
+          task_id: task, task_revision: 4 } },
+    })));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    requestReadOnlySource('Brief MW-T11');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/could not verify all current task/));
+    expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+      payload?.message?.role === 'assistant')).toHaveLength(0);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('does not allow a natural task-inspection phrase to bypass missing EOS project authority', async () => {
     render(<WilsyOSIntelligenceDock authUser={{
       id: 'natural-task-principal', tenantId: 'TEST_TENANT', role: 'OWNER',
@@ -2662,7 +2791,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT
+ * VERSION: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
