@@ -283,6 +283,12 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   // revisions partition this optional badge. It is active-work evidence, never
   // an unread-notification count or browser permission authority.
   const currentWorkScope = currentUnifiedMyWorkScope(auth, sessionUser?.tenantId);
+  useEffect(() => {
+    if (location.state?.reopenDailyAttention !== true || !currentWorkScope) return;
+    setNotificationsOpen(true);
+    navigate({ pathname: location.pathname, search: location.search },
+      { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, currentWorkScope, navigate]);
   const isPlatformOwnerWorkspace = Boolean(currentWorkScope && isWilsyPlatformTenant(sessionUser?.tenantId));
 
   useEffect(() => {
@@ -462,7 +468,8 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               catch { return; } // Invalid or foreign source locator fails closed.
               setNotificationsOpen(false);
               navigate({ pathname: destination.pathname, search: destination.search },
-                { state: destination.state });
+                { state: { ...(destination.state || {}),
+                  attentionReturn: { pathname: location.pathname, search: location.search } } });
             }}
             onOpenWorkforce={() => {
               setNotificationsOpen(false);
