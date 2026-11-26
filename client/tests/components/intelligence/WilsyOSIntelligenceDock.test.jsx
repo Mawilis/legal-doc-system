@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT
+ * VERSION: v1.60.0-SOURCE-FOLLOWUP-CONTINUITY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.60.0-SOURCE-FOLLOWUP-CONTINUITY-CERT proves context-bound natural deadline and approvals follow-ups reread EOS without provider POST; mismatched task references cannot borrow prior task evidence.
  * CHANGELOG: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT repairs the negative-test context fixture to meet unchanged no-model/no-financial-execution source admission, then proves foreign discussion is independently requested and rejected without a partial briefing.
  * CHANGELOG: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT tests the authorized nonbillable consolidated task, event, comment, evidence and approval readback and foreign-source denial without a fabricated assistant turn.
  * CHANGELOG: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT accepts actionable nonempty Send while retaining the explicit fail-closed no-provider, no-entitlement, no-consent, and exact replay blocks. No backend authority, consent or model grants are inferred.
@@ -2107,6 +2108,27 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(briefing).toContain('Live Browser Acceptance: Unified Task Navigation');
     expect(briefing).toContain('Approval decisions: 0 verified records');
     expect(briefing).toContain('do not independently certify acceptance');
+    // Natural follow-ups stay tied to the latest EOS-verified task answer,
+    // and must reread current authorized sources rather than reuse its text.
+    requestReadOnlySource('What is its deadline?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source briefing · MW-T11')))
+      .toHaveLength(2));
+    requestReadOnlySource('And the approvals?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source briefing · MW-T11')))
+      .toHaveLength(3));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    // A reference to a different task never borrows the current task context.
+    const previousReads = mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0')).length;
+    requestReadOnlySource('What is the deadline for MW-T12?');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/AI reasoning is not yet activated|AI provider is not configured/));
+    expect(mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0'))).toHaveLength(previousReads);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -2795,7 +2817,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT
+ * VERSION: v1.60.0-SOURCE-FOLLOWUP-CONTINUITY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
