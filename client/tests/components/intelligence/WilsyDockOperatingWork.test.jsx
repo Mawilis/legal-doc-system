@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT
+ * VERSION: v1.7.0-IN-MODAL-READONLY-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.7.0-IN-MODAL-READONLY-CERT checks a sourced task brief remains available in the modal-safe read-only projection without exposing transition, draft or attachment execution affordances.
  * CHANGELOG: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT checks client-side Open yields task focus through one callback, retaining no reload and no write.
  * CHANGELOG: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT certifies CRM Open changes React Router location without document reload or task mutation and retains a valid canonical href for direct navigation. Existing mock-only tests remain Router-independent.
  * CHANGELOG: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT checks tenant-neutral sentence-case metadata and preserved full EOS rank explanation without changing task identity or action rights.
@@ -82,6 +83,16 @@ function RouteLocationProbe() {
 }
 
 describe('permissioned operating work', () => {
+  it('presents source-verified task intelligence inside a modal without any mutation affordance', async () => {
+    mount({ readOnly: true });
+    expect(await screen.findByRole('status', { name: 'EOS-confirmed work handoff' })).toBeVisible();
+    expect(screen.getByText(/Read-only EOS task inspection/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Draft alignment plan' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Start work/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept and attach PDF' })).not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('opens CRM work within React Router without restarting application bootstrap', async () => {
     const crmId = 'owk_' + 'a'.repeat(32);
     get.mockImplementation(async path => {
@@ -342,7 +353,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT
+// VERSION: v1.7.0-IN-MODAL-READONLY-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
