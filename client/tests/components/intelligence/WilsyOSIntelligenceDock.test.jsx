@@ -2552,8 +2552,7 @@ describe('WilsyOSIntelligenceDock', () => {
     }).format(new Date(original));
     await waitFor(() => expect(screen.getByText(/Latest event:/).textContent)
       .toContain(local));
-    expect(screen.queryByText(new RegExp(original.replace(/[.+]/g, '\\  it('creates a new thread when "New thread" is clicked', async () => {'))))
-      .not.toBeInTheDocument();
+    expect(screen.queryByText(original, { exact: false })).not.toBeInTheDocument();
     expect(mockThreads[0].messages[0].content).toContain(original);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
