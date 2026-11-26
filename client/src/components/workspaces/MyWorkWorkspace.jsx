@@ -1025,7 +1025,7 @@ export default function MyWorkWorkspace(props = {}) {
                     aria-label="Authorized CRM source actions & history">Source actions &amp; history</button>
                 : null}
             />
-            <div className="min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6">
               {selectedItem.source === 'CRM'
                 ? <UnifiedTaskReadiness
                     description="Current independently verified CRM work record. Project-specific dependencies, activity, approvals and AI are not asserted for this source."
