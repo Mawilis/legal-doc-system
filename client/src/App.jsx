@@ -133,7 +133,7 @@ import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
-import { resolveUnifiedWorkDestination } from './services/unifiedMyWorkProjection.js';
+import { resolveUnifiedWorkRoute } from './services/unifiedMyWorkProjection.js';
 import api from './services/api';
 import {
   currentUnifiedMyWorkScope,
@@ -458,19 +458,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               // source-owned destination contract as My Work and Headquarters.
               // A projection row never grants command authority at the target.
               let destination;
-              try { destination = resolveUnifiedWorkDestination(item); }
+              try { destination = resolveUnifiedWorkRoute(item); }
               catch { return; } // Invalid or foreign source locator fails closed.
               setNotificationsOpen(false);
-              if (destination.kind === 'PROJECTS_TASK') {
-                const query = new URLSearchParams({
-                  section: 'projects',
-                  project: destination.locator.project_id,
-                  task: destination.locator.task_id,
-                });
-                navigate('/headquarters?' + query.toString());
-              } else {
-                navigate('/my-work', { state: { focusWorkItem: item.source_key } });
-              }
+              navigate({ pathname: destination.pathname, search: destination.search },
+                { state: destination.state });
             }}
             onOpenWorkforce={() => {
               setNotificationsOpen(false);
