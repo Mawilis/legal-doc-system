@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.48.1-EMPTY-CONVERSATION-CERT
+ * VERSION: v1.49.0-RESTORED-TASK-MODE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.49.0-RESTORED-TASK-MODE-CERT certifies that task selection exits SOURCE history inspection into governed operating mode with exact selected task ID and no unauthorized write.
  * CHANGELOG: v1.48.1-EMPTY-CONVERSATION-CERT additionally requires a genuine unboxed chat entry with no automatic attention panel.
  * CHANGELOG: v1.48.0-NO-PREFETCH-CERT asserts zero My Work network reads on open, exactly one on intentional source query and one per explicit retry.
  * CHANGELOG: v1.47.0-CHAT-FIRST-REGRESSION verifies opt-in task view, return to transcript and compact recent-conversation heading.
@@ -1872,6 +1873,56 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(await screen.findByText(/MW-T11 · EOS lifecycle activity/)).toBeVisible();
   });
 
+  it('opens selected task operation from a restored SOURCE view without reusing the old locator', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const restoredTask = 'ptk-' + 'b'.repeat(48);
+    const selectedTask = 'ptk-' + 'c'.repeat(48);
+    const principal = 'restored-task-operator';
+    mockApiGet.mockImplementation((path, options = {}) => {
+      if (path === '/wilsy-ai/dock/context') {
+        return Promise.reject(rejectedResponse(503, 'synthetic source unavailable'));
+      }
+      if (path === '/wilsy-ai/reasoning/context') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+          tenant_id: 'TEST_TENANT', principal_id: principal,
+          observed_at: '2026-11-26T03:00:00+00:00',
+          context_fingerprint: 'e'.repeat(128),
+          locator: options.params,
+          authority: { source: 'PYTHON_EOS', read_only: true, model_invoked: false,
+            financial_execution: false, provider_binding: 'UNAVAILABLE' },
+          allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+          work: null,
+        } });
+      }
+      return Promise.reject(rejectedResponse(503, 'optional source unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    // Recreate the real failure: a restored task locator exists before the
+    // launcher opens, so its own handler chooses the SOURCE inspection mode.
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: project,
+          task_id: restoredTask, participant_view: true } },
+    })));
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(screen.queryByRole('region', { name: 'Task operating brief' })).not.toBeInTheDocument();
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: project,
+          task_id: selectedTask, participant_view: true } },
+    })));
+    const operating = await screen.findByRole('region', { name: 'Task operating brief' });
+    expect(operating).toBeVisible();
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path, options]) =>
+      path === '/wilsy-ai/dock/context'
+      && options?.params?.task_id === selectedTask)).toBe(true));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Start work' })).not.toBeInTheDocument();
+  });
+
   it('reads current context only while open and treats page events as locators', async () => {
     const principal = 'context-person';
     const projectId = 'prj-' + 'a'.repeat(48);
@@ -2428,7 +2479,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.48.1-EMPTY-CONVERSATION-CERT
+ * VERSION: v1.49.0-RESTORED-TASK-MODE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
