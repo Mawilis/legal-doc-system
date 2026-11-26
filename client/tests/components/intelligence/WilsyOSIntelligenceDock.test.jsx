@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.50.1-RETURN-TO-GREETING-CERT
+ * VERSION: v1.50.2-BROWSER-SAFE-RAW-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.50.2-BROWSER-SAFE-RAW-CERT retains source contract checks using Vite raw imports instead of a Node filesystem dependency under jsdom; no test assertions weakened.
  * CHANGELOG: v1.50.1-RETURN-TO-GREETING-CERT requires returning from opted-in Work to restore the personalized empty-conversation greeting.
  * CHANGELOG: v1.50.0-SESSION-AND-GREETING-CERT certifies EOS-saved threads also appear in the current-session filter after use, while unopened threads stay excluded, and authenticated greetings require no paid model.
  * CHANGELOG: v1.49.0-RESTORED-TASK-MODE-CERT certifies that task selection exits SOURCE history inspection into governed operating mode with exact selected task ID and no unauthorized write.
@@ -159,7 +160,9 @@
  */
 
 import React from 'react';
-import { readFileSync } from 'node:fs';
+import dockSource from '../../../src/components/intelligence/WilsyOSIntelligenceDock.jsx?raw';
+import mainSource from '../../../src/main.jsx?raw';
+import appSource from '../../../src/App.jsx?raw';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import api from '../../../src/services/api.js';
@@ -944,12 +947,11 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('retains a cancellable assistant-text renderer with motion preference', () => {
-    const source = readFileSync('src/components/intelligence/WilsyOSIntelligenceDock.jsx', 'utf8');
-    expect(source).toContain('function WilsyProgressiveAssistantText');
-    expect(source).toContain('prefers-reduced-motion: reduce');
-    expect(source).toContain('window.clearInterval(timer)');
-    expect(source).toContain('aria-hidden={animate');
-    expect(source).toContain('<WilsyProgressiveAssistantText');
+    expect(dockSource).toContain('function WilsyProgressiveAssistantText');
+    expect(dockSource).toContain('prefers-reduced-motion: reduce');
+    expect(dockSource).toContain('window.clearInterval(timer)');
+    expect(dockSource).toContain('aria-hidden={animate');
+    expect(dockSource).toContain('<WilsyProgressiveAssistantText');
   });
 
   it('preserves real provider admission for substantive questions instead of canned fallback', async () => {
@@ -990,9 +992,6 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it('certifies the Dock runtime lives inside the authoritative App tree with no independent React root', () => {
-    const mainSource = readFileSync(`${process.cwd()}/src/main.jsx`, 'utf8');
-    const appSource = readFileSync(`${process.cwd()}/src/App.jsx`, 'utf8');
-
     expect(mainSource).not.toMatch(/import\s+WilsyOSIntelligenceDockRuntime/);
     expect(mainSource).not.toMatch(/createRoot\(dockRoot\)/);
     expect(mainSource).not.toContain('wilsy-os-intelligence-dock-root');
@@ -2501,7 +2500,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.50.1-RETURN-TO-GREETING-CERT
+ * VERSION: v1.50.2-BROWSER-SAFE-RAW-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
