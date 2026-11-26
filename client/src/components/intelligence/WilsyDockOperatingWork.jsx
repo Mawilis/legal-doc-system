@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.0.0
+ * VERSION: v1.1.0
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.1.0 replaces repeated Open work cards with full-row, source-aware navigation and an explicit complete-queue link.
  * CHANGELOG: v1.0.0 adds briefs, ranked actions, deterministic drafts and read-only reconciliation.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2; keyboard controls.
  * SECURITY / PRIVACY POSTURE: No executable task text, provider calls or transcript browser storage.
@@ -376,12 +377,28 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
         <button type="button" onClick={() => setRetry(value => value + 1)}>Retry authorized work</button></div>
         : !hasTask ? <><h4>Needs your attention</h4>
           {view.data.items.length ? <ol className={styles.attentionRows}>{view.data.items.slice(0, 6).map(item =>
-            <li key={item.source_key}><span>{item.title}<small>{item.priority.toLowerCase()}{item.due_date ? ` · Due ${item.due_date}` : ''}</small></span>
-              {item.source === 'PROJECTS' ? <button type="button" onClick={() => callbacks.current.onSelectWork?.({
-                workspace: 'PROJECTS', project_id: item.project_id, task_id: item.work_item_id, participant_view: true,
-              })}>Open work</button> : <a href={"/headquarters?section=my-work&work=" + encodeURIComponent(item.source_key)}>Open work</a>}</li>)}</ol>
+            <li key={item.source_key}>
+              {item.source === 'PROJECTS'
+                ? <button type="button" className={styles.attentionItemAction}
+                  onClick={() => callbacks.current.onSelectWork?.({
+                    workspace: 'PROJECTS', project_id: item.project_id, task_id: item.work_item_id, participant_view: true,
+                  })}>
+                  <span className={styles.attentionItemText}><strong>{item.title}</strong>
+                    <small>{item.source} · {item.priority.toLowerCase()}{item.due_date ? ` · Due ${item.due_date}` : ''}</small>
+                  </span><span className={styles.attentionActionCue} aria-hidden="true">View</span>
+                </button>
+                : <a className={styles.attentionItemAction}
+                    href={"/headquarters?section=my-work&work=" + encodeURIComponent(item.source_key)}>
+                  <span className={styles.attentionItemText}><strong>{item.title}</strong>
+                    <small>{item.source} · {item.priority.toLowerCase()}{item.due_date ? ` · Due ${item.due_date}` : ''}</small>
+                  </span><span className={styles.attentionActionCue} aria-hidden="true">View</span>
+                </a>}
+            </li>)}</ol>
             : <p>{view.data.sources_included.length ? 'No active work in the verified sources.' : 'No work sources were admitted for this session.'}</p>}
-          <button type="button" onClick={() => setRetry(value => value + 1)}>Refresh attention</button></>
+          <div className={styles.attentionFooterActions}>
+            <button type="button" onClick={() => setRetry(value => value + 1)}>Refresh work</button>
+            <a href="/headquarters?section=my-work">View all in My Work</a>
+          </div></>
           : brief && <>
             {!artifact ? <><p className={styles.taskPurpose}>{brief.purpose || 'Review the full task to confirm its intended outcome.'}</p>
               <p>{brief.established}{brief.deadline ? ` Due ${brief.deadline}.` : ''}</p>
@@ -421,15 +438,9 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.0.0
+// VERSION: v1.1.0
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
 // FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 // END OF WILSY OS SOVEREIGN ARTIFACT
-
-
-
-
-
-
