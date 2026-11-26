@@ -1268,7 +1268,7 @@ const PROJECTS_STYLE_MY_WORK = `
 .wilsy-project-work-surface .wilsy-source-task-focus>aside{color:#172e52}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-amber-100,.text-amber-200){color:#172e52!important}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-slate-400,.text-slate-500){color:#526787!important}
-.wilsy-project-work-surface .wilsy-source-task-focus>aside section{background:#f8faff!important;border:1px solid #d5dfef!important;border-radius:12px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside section:not([aria-label="Source-verified task execution readiness"]){background:#f8faff!important;border:1px solid #d5dfef!important;border-radius:12px}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside :is(input,textarea,select){background:#fff!important;color:#172e52!important;border-color:#bfd0e7!important}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside button{border-radius:9px}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
