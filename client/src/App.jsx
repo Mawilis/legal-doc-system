@@ -693,7 +693,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<Navigate to="/" replace />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole, location.key].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
+          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
