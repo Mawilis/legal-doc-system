@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.16.0-UNOBTRUSIVE-EMPTY-CONVERSATION
+ * VERSION: v1.16.1-END-SEAL-ALIGNMENT
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.16.1-END-SEAL-ALIGNMENT moves the matching sovereign end seal after all active CSS declarations.
  * CHANGELOG: v1.16.0-UNOBTRUSIVE-EMPTY-CONVERSATION presents an unboxed general-purpose empty conversation state that disappears when an interaction starts.
  * CHANGELOG: v1.15.0-ACTIONABLE-WORK-ROWS makes authorized attention items full-width text rows, with explicit focus and an unobtrusive My Work exit.
  * CHANGELOG: v1.14.0-CONVERSATION-FOCUS compresses recents to a searchable text list and keeps work actions opt-in, preserving keyboard focus and existing color contrast.
@@ -1341,15 +1342,7 @@
   padding-bottom:8px;
 }
 
-/*
- * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.13.0-OPERATING-WORK-ARTIFACTS
- * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
- * TENANT POSTURE: no client-side tenant derivation or persistence
- * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
- * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * END OF WILSY OS SOVEREIGN ARTIFACT
- */
+
 
 
 /* MW-T11 · Productive conversation navigator. No cards, no counter-driven hierarchy.
@@ -1722,3 +1715,13 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/*
+ * ARTIFACT: WilsyOSIntelligenceDock.module.css
+ * VERSION: v1.16.1-END-SEAL-ALIGNMENT
+ * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
+ * TENANT POSTURE: no client-side tenant derivation or persistence
+ * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
