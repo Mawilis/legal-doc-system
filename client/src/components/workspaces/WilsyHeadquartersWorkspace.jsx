@@ -6,6 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
  * VERSION: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS
+ * CHANGELOG: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS Delegates the Strategy-origin return into the canonical Projects context rather than leaving a detached Headquarters link; no changes to EOS authority.
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
