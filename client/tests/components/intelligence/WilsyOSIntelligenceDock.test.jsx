@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT
+ * VERSION: v1.43.0-CHAT-FIRST-REGRESSION
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.43.0-CHAT-FIRST-REGRESSION verifies opt-in task view, return to transcript and compact recent-conversation heading.
  * CHANGELOG: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT admits automatic authorized daily attention
  * and compact live-task entry while retaining source denials and no-model assertions.
  * CHANGELOG: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT asserts source details
@@ -1144,7 +1145,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByRole('button', { name: 'Suggestions' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal tools' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Pick up where you left off' })).toBeVisible());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Recent conversations' })).toBeVisible());
     expect(screen.getByText('No conversations yet.')).toBeVisible();
     expect(screen.queryByText('Thread 1')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
@@ -1152,13 +1153,17 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
-  it('opens directly on authorized work instead of a greeting', async () => {
+  it('keeps the transcript clear until work is explicitly requested', async () => {
     render(<WilsyOSIntelligenceDock authUser={{
       id: 'named-person', tenantId: 'TEST_TENANT', role: 'OWNER',
       firstName: 'Nandi', displayName: 'Nandi Dlamini',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(screen.getByRole('region', { name: 'Needs your attention' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Needs your attention' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Work', exact: true }));
+    expect(await screen.findByRole('region', { name: 'Needs your attention' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
+    expect(screen.queryByRole('region', { name: 'Needs your attention' })).not.toBeInTheDocument();
     expect(screen.queryByText(/^Good (morning|afternoon|evening), Nandi\.$/)).not.toBeInTheDocument();
   });
 
@@ -1780,7 +1785,7 @@ describe('WilsyOSIntelligenceDock', () => {
     })));
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path, options]) =>
       path === '/wilsy-ai/reasoning/context' && options?.params?.project_id === projectId)).toBe(true));
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Needs your attention' })).toBeVisible());
+    expect(screen.queryByRole('region', { name: 'Needs your attention' })).not.toBeInTheDocument();
     requestReadOnlySource('Inspect MW-T11');
     await waitFor(() => expect(screen.getByLabelText('EOS-verified selected task lifecycle'))
       .toHaveTextContent('in progress'));
@@ -2419,7 +2424,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT
+ * VERSION: v1.43.0-CHAT-FIRST-REGRESSION
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
