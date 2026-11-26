@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT
+ * VERSION: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT verifies explicit MW-T11 navigation requires synchronous acceptance by an EOS-current Projects panel; unaccepted requests remain blocked without provider calls or fabricated assistant answers.
  * CHANGELOG: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT tests preservation of two genuinely populated EOS archives across Clear chat; empty threads are intentionally excluded by the history renderer.
  * CHANGELOG: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT respects the history list's nonempty-message filter and waits for tab transition before invoking the new conversation control, while still asserting no EOS deletion.
  * CHANGELOG: v1.64.1-STALE-CHAT-RECOVERY-CERT verifies an empty thread's stale task refusal and draft can be cleared in place without adding a thread or modifying EOS history.
@@ -2539,6 +2540,45 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockClearThreads).not.toHaveBeenCalled();
   });
 
+  it('offers direct canonical Projects task recovery and minimizes only after verified panel accepts', async () => {
+    const handler = event => {
+      expect(event.detail.tenantId).toBe('TEST_TENANT');
+      expect(event.detail.principalId).toBe('task-recovery-principal');
+      expect(event.detail.taskCode).toBe('MW-T11');
+      event.detail.accepted = true; // Simulates exact EOS-current Projects panel.
+    };
+    window.addEventListener('wilsy:projects-open-task-request', handler);
+    try {
+      render(<WilsyOSIntelligenceDock authUser={{ id: 'task-recovery-principal',
+        tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+      fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+      requestReadOnlySource('Brief MW-T11');
+      const open = await screen.findByRole('button', { name: 'Open MW-T11 task' });
+      expect(open).toBeEnabled();
+      fireEvent.click(open);
+      await waitFor(() => expect(screen.getByTitle('Open Wilsy OS Intelligence Dock'))
+        .toBeInTheDocument());
+      expect(mockApiPost).not.toHaveBeenCalled();
+      expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+        payload?.message?.role === 'assistant')).toHaveLength(0);
+    } finally {
+      window.removeEventListener('wilsy:projects-open-task-request', handler);
+    }
+  });
+
+  it('refuses task recovery when no exact verified Projects panel accepts navigation', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'task-recovery-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    requestReadOnlySource('Brief MW-T11');
+    fireEvent.click(await screen.findByRole('button', { name: 'Open MW-T11 task' }));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent('not available in the currently verified Projects work page');
+    expect(screen.getByRole('region', { name: 'WILSY OS AI companion' }))
+      .toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('clears an unsent question and stale task refusal without deleting archived history', async () => {
     mockThreads = [{ id: 'thread1', title: 'Existing archive',
       storagePosture: 'EOS_ENCRYPTED_HISTORY', messages: [] }];
@@ -2973,7 +3013,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT
+ * VERSION: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
