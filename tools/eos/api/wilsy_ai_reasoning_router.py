@@ -1430,7 +1430,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v2.3.0-DOCK-OPERATING-CONTRACT
+# VERSION: v2.4.0-MW-T11-VERIFIED-DEPENDENCY-EXPLANATIONS
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions
